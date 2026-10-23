@@ -1,0 +1,1077 @@
+[
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "signature",
+    "from": "new Block(BlockBehaviour.Properties.of())",
+    "to": "new Block(BlockBehaviour.Properties.of().setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(ns, name))))",
+    "note": "Pass the block ResourceKey through setId before constructing the Block; construction throws if the id is missing.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.2/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "signature",
+    "from": "new Item(new Item.Properties())",
+    "to": "new Item(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(ns, name))))",
+    "note": "Item.Properties#setId is mandatory because the default description id and model are now derived from that key.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.2/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "behaviour",
+    "from": "item name and model implied by the registry id",
+    "to": "DataComponents.ITEM_NAME and DataComponents.ITEM_MODEL, overridable via Item.Properties#overrideDescription and #overrideModel",
+    "note": "Set the component or the override when an item must not use its own id for name or model.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.2/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "data-format",
+    "from": "assets/<ns>/models/item/<name>.json as the only item render definition",
+    "to": "assets/<ns>/items/<name>.json (Client Items, with a model field) linking to assets/<ns>/models/item/<name>.json",
+    "note": "Add the items/<name>.json definition or the item falls back to a missing model.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.4/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "signature",
+    "from": "Entity#readAdditionalSaveData(CompoundTag) and Entity#addAdditionalSaveData(CompoundTag)",
+    "to": "Entity#readAdditionalSaveData(ValueInput) and Entity#addAdditionalSaveData(ValueOutput)",
+    "note": "Replace direct NBT reads and writes with ValueInput get* / read and ValueOutput put* / store.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.6/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "signature",
+    "from": "BlockEntity#loadAdditional(CompoundTag, HolderLookup.Provider) and BlockEntity#saveAdditional(CompoundTag, HolderLookup.Provider)",
+    "to": "BlockEntity#loadAdditional(ValueInput) and BlockEntity#saveAdditional(ValueOutput)",
+    "note": "The registry lookup now comes from the ValueInput/ValueOutput context instead of a separate provider argument.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.6/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "behaviour",
+    "from": "BlockBehaviour#onRemove",
+    "to": "BlockEntity#preRemoveSideEffects and BlockBehaviour#affectNeighborsAfterRemoval",
+    "note": "Split removal logic: drop stored contents in preRemoveSideEffects, send neighbour updates in affectNeighborsAfterRemoval.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.5/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "removed",
+    "from": "net.minecraft.world.Containers#dropContentsOnDestroy",
+    "to": "none",
+    "note": "Container contents are dropped by BlockEntity#preRemoveSideEffects by default.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.5/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "signature",
+    "from": "EntityRenderer#render(T entity, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffer, int light)",
+    "to": "EntityRenderer#submit(T renderState, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera)",
+    "note": "Move draw calls into submit* calls on the SubmitNodeCollector and fill a render state in extractRenderState.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.9/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "moved",
+    "from": "Level#isClientSide field",
+    "to": "Level#isClientSide()",
+    "note": "The field is private, so every check has to call the method form.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.9/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "signature",
+    "from": "new KeyMapping(name, keyCode, String category)",
+    "to": "new KeyMapping(name, keyCode, KeyMapping.Category)",
+    "note": "Register a KeyMapping.Category through KeyMapping.Category#register, otherwise the mapping throws when sorted.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.9/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "rename",
+    "from": "net.minecraft.resources.ResourceLocation",
+    "to": "net.minecraft.resources.Identifier",
+    "note": "Rename every ResourceLocation reference to Identifier, including method names and parameters.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.11/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "rename",
+    "from": "ResourceLocationException",
+    "to": "IdentifierException",
+    "note": "Catch and import the renamed exception type.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.11/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "moved",
+    "from": "net.minecraft.advancements.critereon",
+    "to": "net.minecraft.advancements.criterion",
+    "note": "Reimport every critereon class from the corrected criterion package.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.11/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "moved",
+    "from": "net.minecraft.BlockUtil, net.minecraft.FileUtil, net.minecraft.Util",
+    "to": "net.minecraft.util.BlockUtil, net.minecraft.util.FileUtil, net.minecraft.util.Util",
+    "note": "Most utility classes moved under net.minecraft.util and need new imports.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.11/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "moved",
+    "from": "net.minecraft.client.model.AllayModel",
+    "to": "net.minecraft.client.model.animal.allay.AllayModel",
+    "note": "net.minecraft.client.model and net.minecraft.world.entity were regrouped into per-type subpackages, so reimport all model and entity classes.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.11/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "removed",
+    "from": "OptionEnum",
+    "to": "none",
+    "note": "Build options through the OptionInstance$Enum constructor with the values and codec instead of implementing OptionEnum.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.11/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "signature",
+    "from": "Ingredient#CODEC and Ingredient#getItems",
+    "to": "Ingredient#CODEC (formerly CODEC_NONEMPTY) and Ingredient#items",
+    "note": "Ingredients are HolderSet based now, so drop EMPTY and the ItemStack stream factories and use Ingredient#of.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.2/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "signature",
+    "from": "Recipe#getResultItem and Recipe#getCategoryIconItem",
+    "to": "RecipeDisplay through Recipe#display",
+    "note": "Recipes are registry entries displayed via RecipeDisplay, so move result and icon data into a SlotDisplay.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.2/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "data-format",
+    "from": "item textures inside the minecraft:blocks atlas",
+    "to": "a separate minecraft:items atlas, id at AtlasIds#ITEMS",
+    "note": "Update atlas sources and MaterialMapper use so item sprites come from the items atlas.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.11/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "signature",
+    "from": "new GuiItemRenderState(..., ItemStackRenderState state, ...)",
+    "to": "new GuiItemRenderState(..., TrackingItemRenderState state, ...)",
+    "note": "GuiItemRenderState takes a TrackingItemRenderState, which tracks the model sources used for the stack.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.7/"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.11",
+    "kind": "signature",
+    "from": "BlockBehaviour#entityInside(BlockState, Level, BlockPos, Entity)",
+    "to": "BlockBehaviour#entityInside(BlockState, Level, BlockPos, Entity, boolean intersecting)",
+    "note": "Update the override signature to take the new boolean telling whether the entity is inside or only intersecting.",
+    "source": "https://docs.neoforged.net/primer/docs/1.21.10/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "behaviour",
+    "from": "Java 21 target",
+    "to": "Java 25 target",
+    "note": "Raise the toolchain and IDE to Java 25 before touching any API code.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "net.minecraft.client.gui.GuiGraphics",
+    "to": "net.minecraft.client.gui.GuiGraphicsExtractor",
+    "note": "Replace GuiGraphics everywhere and drop draw, render and submit prefixes plus RenderState suffixes on its methods.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "Renderable#render",
+    "to": "Renderable#extractRenderState",
+    "note": "Render methods that submit GUI elements are now extract* calls that fill a render state.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "AbstractWidget#renderWidget",
+    "to": "AbstractWidget#extractWidgetRenderState",
+    "note": "Rename the widget draw override and submit elements instead of drawing them.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "moved",
+    "from": "AbstractContainerScreen#renderBg",
+    "to": "Screen#extractBackground",
+    "note": "The background draw moved up to Screen under a new name.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "PlayerFaceRenderer",
+    "to": "PlayerFaceExtractor",
+    "note": "Follow the extractor naming for the player face helper.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "removed",
+    "from": "LootItemFunctionType (and the other loot *Type wrapper classes)",
+    "to": "none; BuiltInRegistries.LOOT_FUNCTION_TYPE holds a MapCodec, and getType becomes codec()",
+    "note": "Register the MapCodec directly and override codec() returning it.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "removed",
+    "from": "Entity#interactAt(Player, Vec3, InteractionHand)",
+    "to": "none; Entity#interact(Player, InteractionHand, Vec3) receives the hit location",
+    "note": "Fold interactAt handling into interact, which is now only called inside the interaction range.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "signature",
+    "from": "Level#random public field",
+    "to": "Level#getRandom()",
+    "note": "The field is protected now, so all callers must use the getter.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "signature",
+    "from": "new ChunkPos(BlockPos), new ChunkPos(long), ChunkPos#asLong",
+    "to": "ChunkPos#containing(BlockPos), ChunkPos#unpack(long), ChunkPos#pack",
+    "note": "ChunkPos is a record now, so swap constructors for the named factories and asLong for pack.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "removed",
+    "from": "BlockRenderDispatcher and ItemRenderer",
+    "to": "none; block and item models go through the feature submission pipeline",
+    "note": "Replace dispatcher and renderer calls with block model render states and item model submissions.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "signature",
+    "from": "ShapedRecipeBuilder(ItemStack result) and the other builders taking ItemStack",
+    "to": "ShapedRecipeBuilder(ItemStackTemplate result); ItemLike overloads kept",
+    "note": "Immutability is required in recipes now, so build results from ItemStackTemplate.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "behaviour",
+    "from": "assigning AbstractContainerScreen#imageWidth and #imageHeight",
+    "to": "passing width and height to AbstractContainerScreen(menu, inventory, title, width, height)",
+    "note": "The fields are final and default to 176x166, so move any assignment into the super call.",
+    "source": "https://docs.neoforged.net/primer/docs/26.1/"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup",
+    "to": "net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab",
+    "note": "Fabric API dropped Yarn names, so the itemgroup package is now creativetab.",
+    "source": "https://docs.fabricmc.net/26.1.2/develop/porting/fabric-api"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper#registerKeyBinding",
+    "to": "net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#registerKeyMapping",
+    "note": "Both the helper class and the method were renamed to the Mojang mapping names.",
+    "source": "https://docs.fabricmc.net/26.1.2/develop/porting/fabric-api"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "ClientWorldEvents and AFTER_CLIENT_WORLD_CHANGE",
+    "to": "ClientLevelEvents and AFTER_CLIENT_LEVEL_CHANGE",
+    "note": "World became Level across Fabric API lifecycle events.",
+    "source": "https://docs.fabricmc.net/26.1.2/develop/porting/fabric-api"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "moved",
+    "from": "net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents",
+    "to": "net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents",
+    "note": "The package moved from world to level and most members were renamed with it.",
+    "source": "https://docs.fabricmc.net/26.1.2/develop/porting/fabric-api"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents#onWorldLoad",
+    "to": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents#onLevelLoad",
+    "note": "Same world to level rename on the server lifecycle events.",
+    "source": "https://docs.fabricmc.net/26.1.2/develop/porting/fabric-api"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "net.fabricmc.fabric.api.datagen.v1.FabricDataOutput",
+    "to": "net.fabricmc.fabric.api.datagen.v1.FabricPackOutput",
+    "note": "Data generation output is named after the pack now.",
+    "source": "https://docs.fabricmc.net/26.1.2/develop/porting/fabric-api"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry",
+    "to": "net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry",
+    "note": "Particle factories are providers in the new naming, including the nested PendingParticleProvider type.",
+    "source": "https://docs.fabricmc.net/26.1.2/develop/porting/fabric-api"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "net.fabricmc.fabric.api.client.rendering.v1.BlockRenderLayerMap",
+    "to": "net.fabricmc.fabric.api.client.rendering.v1.ChunkSectionLayerMap",
+    "note": "Block render layers are registered per chunk section layer now.",
+    "source": "https://docs.fabricmc.net/26.1.2/develop/porting/fabric-api"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "net.fabricmc.fabric.api.datagen.v1.recipe.FabricRecipeExporter",
+    "to": "net.fabricmc.fabric.api.datagen.v1.recipe.FabricRecipeOutput",
+    "note": "The recipe data-gen sink was renamed alongside the vanilla RecipeOutput.",
+    "source": "https://docs.fabricmc.net/26.1.2/develop/porting/fabric-api"
+  },
+  {
+    "jump": "1.21.11 -> 26.1",
+    "kind": "rename",
+    "from": "net.fabricmc.fabric.api.client.command.v2.ClientCommandManager",
+    "to": "net.fabricmc.fabric.api.client.command.v2.ClientCommands",
+    "note": "The client command helper class was renamed, its methods are unchanged.",
+    "source": "https://docs.fabricmc.net/26.1.2/develop/porting/fabric-api"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "rename",
+    "from": "com.mojang.blaze3d.platform.DestFactor and SourceFactor",
+    "to": "com.mojang.blaze3d.pipeline.BlendFactor plus BlendOp",
+    "note": "One BlendFactor enum replaces both sides, with BlendOp naming the merge operation.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "rename",
+    "from": "TextureFormat and the per-element buffer formats of VertexFormatElement",
+    "to": "GpuFormat",
+    "note": "Every texture and buffer format is now expressed as a GpuFormat entry such as R8_UNORM.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "rename",
+    "from": "VertexFormat$IndexType and VertexFormat$Mode",
+    "to": "IndexType and PrimitiveTopology",
+    "note": "Both nested enums were promoted to top level types.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "removed",
+    "from": "the predefined VertexFormatElement constants",
+    "to": "VertexFormat$Builder#addAttribute(name, GpuFormat) with at most sixteen attributes",
+    "note": "Build vertex formats attribute by attribute; the fixed element constants are gone.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "removed",
+    "from": "RenderPipeline#UniformDescription and the plain sampler name list",
+    "to": "BindGroupLayout attached with RenderPipeline$Builder#withBindGroupLayout",
+    "note": "Describe samplers and uniforms in a BindGroupLayout instead of on the pipeline.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "moved",
+    "from": "Minecraft.getInstance().screen",
+    "to": "Minecraft.getInstance().gui.screen()",
+    "note": "Gui now owns the current screen, so route screen access through it.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "moved",
+    "from": "Minecraft.getInstance().gui.setOverlayMessage(...)",
+    "to": "Minecraft.getInstance().gui.hud.setOverlayMessage(...)",
+    "note": "The heads-up display moved into its own Hud object held by Gui.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "removed",
+    "from": "ChatFormatting inside Component building",
+    "to": "Style#withColor, withBold, withItalic, withUnderlined, withStrikethrough, withObfuscated",
+    "note": "ChatFormatting was gutted, so express colour and formatting through Style.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "signature",
+    "from": "FeatureRenderDispatcher#renderAllFeatures()",
+    "to": "FeatureRenderDispatcher#renderAllFeatures(SubmitNodeStorage) and #prepareFrame(SubmitNodeStorage)",
+    "note": "Feature rendering now requires a SubmitNodeStorage for the features to submit into.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "signature",
+    "from": "PictureInPictureRenderer constructor taking MultiBufferSource$BufferSource and renderToTexture without a collector",
+    "to": "constructor without the BufferSource and renderToTexture(state, PoseStack, SubmitNodeCollector)",
+    "note": "Drop the buffer source parameter and submit elements through the collector.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "removed",
+    "from": "StructureProcessorType, with StructureProcessor#getType",
+    "to": "none; StructureProcessor is an interface and getType becomes codec() returning the MapCodec",
+    "note": "Implement StructureProcessor and register the MapCodec directly.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "moved",
+    "from": "net.minecraft.advancements criteria, triggers and predicates in their old locations",
+    "to": "net.minecraft.advancements.triggers and net.minecraft.advancements.predicates (entity predicates in .predicates.entity)",
+    "note": "Reimport all advancement criteria, trigger and predicate classes.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "signature",
+    "from": "EntitySubPredicate implementations and Registries#ENTITY_SUB_PREDICATE_TYPE registrations",
+    "to": "EntitySubPredicate as a functional interface with matches, registered as a Codec",
+    "note": "Register the predicate Codec, which is now the key of the EntityPredicate map.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "removed",
+    "from": "HolderTagProvider, IntrinsicHolderTagsProvider and KeyTagProvider",
+    "to": "none; TagsProvider takes the KeyTagProvider tag methods and TagAppender takes ResourceKeys",
+    "note": "Extend TagsProvider directly and add entries by ResourceKey or TagKey.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "moved",
+    "from": "Items#WHITE_DYE and the other per-colour item fields",
+    "to": "Items#DYE ColorCollection",
+    "note": "Colour and weathering variants are grouped into collections, so read entries from the collection.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "moved",
+    "from": "ResourceKeys obtained from the Blocks, Items, EntityTypes, BlockEntityTypes, Fluids and Potions classes",
+    "to": "BlockIds, ItemIds, EntityTypeIds, BlockEntityTypeIds, FluidIds, PotionIds, and BlockItemIds for blocks with items",
+    "note": "Take the ResourceKey from the matching Ids class instead of the registry holder.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.1 -> 26.2",
+    "kind": "moved",
+    "from": "com.mojang.blaze3d.opengl classes",
+    "to": "a parallel API under com.mojang.blaze3d.vulkan",
+    "note": "Vulkan is a supported backend, so do not assume the OpenGL classes exist.",
+    "source": "https://docs.neoforged.net/primer/docs/26.2/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "rename",
+    "from": "NumberProvider",
+    "to": "ContextFloatProvider and ContextIntProvider",
+    "note": "Split float and int providers and register the MapCodec to CONTEXT_FLOAT_PROVIDER_TYPE or CONTEXT_INT_PROVIDER_TYPE.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "removed",
+    "from": "ContextAwarePredicate",
+    "to": "none; criteria instances take a Holder of LootItemCondition instead",
+    "note": "Replace the wrapper with a Holder-wrapped condition list in trigger instances.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "removed",
+    "from": "BlockStateProviderType, StructurePlacementType and PlacementModifierType with their type accessors",
+    "to": "none; the registries hold a MapCodec and type becomes codec()",
+    "note": "Register the MapCodec directly and rename the accessor to codec.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "removed",
+    "from": "Block#codec and the block type MapCodec registry",
+    "to": "none",
+    "note": "Delete block CODEC fields and codec overrides from custom blocks.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "removed",
+    "from": "PotionBrewing and ItemTags#BREWING_FUEL",
+    "to": "BrewingRecipe under RecipeType#BREWING and DataComponents#BREWING_FUEL",
+    "note": "Move brewing mixes into recipes and declare fuel through the data component.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "removed",
+    "from": "RenderSystem#outputColorTextureOverride and RenderSystem#outputDepthTextureOverride",
+    "to": "none; output textures are set per RenderPass",
+    "note": "Create the RenderPass in a try-with-resources and specify its output textures there.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "signature",
+    "from": "QuadCollection#getAll() passed straight to the buffer",
+    "to": "ItemQuads.split(quads), submitting ItemQuads#solid and #translucent to their phases",
+    "note": "Wrap item quads in ItemQuads so solid and translucent quads reach the right submit phase.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "rename",
+    "from": "RegistrySetBuilder$RegistryBootstrap",
+    "to": "SingleRegistryBootstrap and MultiRegistryBootstrap",
+    "note": "Providers implement one of the bootstrap interfaces to feed RegistriesDatapackGenerator#forReloadableLayer.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "signature",
+    "from": "LootTableProvider and AdvancementProvider as DataProviders",
+    "to": "SingleRegistryBootstrap implementations",
+    "note": "Rework data generation around bootstrap providers instead of a DataProvider subclass.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "signature",
+    "from": "AdvancementProvider taking a list of sub providers directly",
+    "to": "AdvancementProvider taking List<AdvancementSubProvider$Factory>, with parent references by Identifier only",
+    "note": "Supply factories that build each AdvancementSubProvider from the BootstrapContext.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "data-format",
+    "from": "loot tables, advancements and recipes loaded as non-reloadable registries, slot sources inlined",
+    "to": "reloadable datapack registries listed in RegistryDataLoader#RELOADABLE_REGISTRIES",
+    "note": "Expect these entries to reload with the datapack and to be referenced as Holder or HolderSet.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "data-format",
+    "from": "SlotSource values only inlined in loot tables",
+    "to": "SlotSource registered in Registries#SLOT_SOURCE",
+    "note": "Register custom slot sources to the new registry if commands or loot tables should reference them by id.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "behaviour",
+    "from": "LWJGL built on GLFW, with GLFW key codes",
+    "to": "LWJGL built on SDL, with different scancode values and SDLScancode",
+    "note": "Use the constants in InputConstants or SDLScancode instead of hardcoded key codes.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "rename",
+    "from": "LootPoolSingletonContainer",
+    "to": "UniformContainerBase and its subclass SingleEntryContainerBase",
+    "note": "Extend SingleEntryContainerBase for one-entry pools and ExpandableContainerBase for list-like entries.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "26.2 -> 26.3",
+    "kind": "signature",
+    "from": "ResourceKey or direct registry value references in reloadable registry code",
+    "to": "Holder-wrapped or HolderSet-wrapped registry objects",
+    "note": "Pick Holder or HolderSet per use case when referencing loot tables, recipes and similar reloadable entries.",
+    "source": "https://docs.neoforged.net/primer/docs/26.3/"
+  },
+  {
+    "jump": "1.21.5 -> 1.21.6",
+    "kind": "removed",
+    "from": "fabric-tag-api: getOrCreateTagBuilder / FabricTagBuilder",
+    "to": "unknown - no direct rename (tag providers are rebuilt, not renamed)",
+    "note": "One removal produced 68 errors in Traverse and 97 in Terrestria across four tag-provider files. Treat it as a mechanical rewrite of each provider, not a find-and-replace.",
+    "source": "bench/port/SUMMARY.md, Traverse and Terrestria builds",
+    "verified": "two real mod builds"
+  },
+  {
+    "jump": "1.21.5 -> 1.21.6",
+    "kind": "signature",
+    "from": "DrawContext.getMatrices() / push / pop",
+    "to": "Matrix3x2fStack with pushMatrix / popMatrix",
+    "note": "17 of Trinkets 21 errors were this single GUI matrix type change.",
+    "source": "bench/port/SUMMARY.md, Trinkets build",
+    "verified": "one real mod build"
+  },
+  {
+    "jump": "1.21.5 -> 1.21.6",
+    "kind": "removed",
+    "from": "ItemStack.fromNbt / ItemStack.toNbt",
+    "to": "unknown - value IO path (ValueInput / ValueOutput)",
+    "note": "4 errors in Trinkets; the knowledge base already covers the CompoundTag -> ValueInput move, so read that entry first.",
+    "source": "bench/port/SUMMARY.md, Trinkets build",
+    "verified": "one real mod build"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "moved",
+    "from": "CoreShaders, BakedModel, ThrownPotion",
+    "to": "moved packages (take the new owner from the compiler error)",
+    "note": "3 moved symbols cost 6 errors in Traveler's Backpack, plus one dead @Shadow target that warned without failing the build. A green build can still ship a dead mixin.",
+    "source": "bench/port/SUMMARY.md, Traveler's Backpack build",
+    "verified": "one real mod build"
+  },
+  {
+    "jump": "1.21.5 -> 1.21.6",
+    "kind": "signature",
+    "from": "PlayerEntity(World, GameProfile)",
+    "to": "unknown - constructor changed; also getProtocolVersion removed and writeCustomData(WriteView) added",
+    "note": "Polymer: 8 errors, all protocol/constructor shape.",
+    "source": "bench/port/SUMMARY.md, Polymer build",
+    "verified": "one real mod build"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "behaviour",
+    "from": "EntityRenderer.render / renderToBuffer / setupAnim overrides",
+    "to": "entity render-state objects (refactor landed in 1.21.2)",
+    "note": "68 of Artifacts 97 errors are inherited generic/override breaks from this refactor. Bumping step by step (1.21.1 -> 1.21.2 -> 1.21.4) is cheaper than one jump.",
+    "source": "bench/port/SUMMARY.md, Artifacts build",
+    "verified": "one real mod build"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "moved",
+    "from": "net.minecraft.client.resources.model.BakedModel, net.minecraft.world.entity.projectile.ThrownPotion, net.minecraft.client.renderer.CoreShaders",
+    "to": "BakedModel -> net.minecraft.client.renderer.block.model.BlockStateModel; ThrownPotion -> ThrownSplashPotion / ThrownLingeringPotion (AbstractThrownPotion is the shared base); CoreShaders -> RenderPipelines, and RenderSystem.setShader takes a RenderPipeline (no POSITION_TEX constant)",
+    "note": "Read from the 1.21.5 merged jar: no BakedModel, no ThrownPotion, no CoreShaders class exists at all. Traveler's Backpack hits exactly these three.",
+    "source": "jar listing of minecraft-merged 1.21.5 (loom cache) while repairing Traveler's Backpack",
+    "verified": "jar contents, not yet compiled against"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "CompoundTag#getBoolean/getInt/getLong/getFloat/getShort/getByte/getString/getCompound/getList(String) return the primitive or CompoundTag/ListTag",
+    "to": "same methods return Optional<T>; use getBooleanOr(k,b), getIntOr(k,i), getLongOr(k,l), getFloatOr(k,f), getShortOr(k,(short)0), getByteOr(k,(byte)0), getStringOr(k,\"\"), getCompoundOrEmpty(k), getListOrEmpty(k)",
+    "note": "net.minecraft.nbt.CompoundTag. This one change was ~130 of 196 errors in Traveler's Backpack. The Or(x) helpers reproduce the old absent-key defaults (0 / false / empty string / empty tag), so they are drop-in.",
+    "source": "javap net.minecraft.nbt.CompoundTag on minecraft-merged 1.21.5 (fabric-loom cache)",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "CompoundTag#contains(String, int tagType) and CompoundTag#getList(String, int tagType)",
+    "to": "contains(String) only; getList(String) returning Optional<ListTag> or getListOrEmpty(String)",
+    "note": "net.minecraft.nbt.CompoundTag. The 2-arg forms are gone; the element-type check they performed no longer exists.",
+    "source": "javap net.minecraft.nbt.CompoundTag 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "ListTag#getCompound(int)/getInt(int)/getString(int)/getList(int) return the value",
+    "to": "same methods return Optional<T>; use getCompoundOrEmpty(int), getIntOr(i,default), getStringOr(i,\"\"), getListOrEmpty(int)",
+    "note": "net.minecraft.nbt.ListTag mirrors the CompoundTag change for index access.",
+    "source": "javap net.minecraft.nbt.ListTag 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "ItemStack.parseOptional(HolderLookup.Provider, CompoundTag) -> ItemStack",
+    "to": "ItemStack.parse(HolderLookup.Provider, Tag) -> Optional<ItemStack>, usually .orElse(ItemStack.EMPTY)",
+    "note": "net.minecraft.world.item.ItemStack. Takes any Tag now and reports failure in the Optional instead of returning an empty stack.",
+    "source": "javap net.minecraft.world.item.ItemStack 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "ItemStack#saveOptional(HolderLookup.Provider) -> Tag",
+    "to": "ItemStack#save(HolderLookup.Provider) -> Tag (same body: empty stack gives an empty CompoundTag)",
+    "note": "net.minecraft.world.item.ItemStack. The CODEC routes are the longer alternative; save(provider) is the direct rename.",
+    "source": "javap net.minecraft.world.item.ItemStack 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "rename",
+    "from": "MobEffects.MOVEMENT_SLOWDOWN / MOVEMENT_SPEED / DIG_SLOWDOWN / DIG_SPEED / JUMP / CONFUSION / DAMAGE_RESISTANCE",
+    "to": "MobEffects.SLOWNESS / SPEED / MINING_FATIGUE / HASTE / JUMP_BOOST / NAUSEA / RESISTANCE",
+    "note": "net.minecraft.world.effect.MobEffects. All are Holder<MobEffect>; the old names no longer exist (they were removed, not deprecated).",
+    "source": "javap net.minecraft.world.effect.MobEffects 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "Item#appendHoverText(ItemStack, Item.TooltipContext, List<Component>, TooltipFlag)",
+    "to": "Item#appendHoverText(ItemStack, Item.TooltipContext, net.minecraft.world.item.component.TooltipDisplay, java.util.function.Consumer<Component>, TooltipFlag)",
+    "note": "Lines are appended with consumer.accept(...). Callers outside an Item pass TooltipDisplay.DEFAULT (and can use stack.getTooltipLines(ctx, player, flag) instead). The TooltipDisplay carries hidden-component state.",
+    "source": "javap net.minecraft.world.item.Item and ItemStack 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "ItemStack#onCraftedBy(Level, Player, int)",
+    "to": "ItemStack#onCraftedBy(Player, int)",
+    "note": "net.minecraft.world.item.ItemStack. The Level argument was dropped; take it from player.level() if it is still needed.",
+    "source": "javap net.minecraft.world.item.ItemStack 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "ServerPlayer#setRespawnPosition(ResourceKey<Level>, BlockPos, float angle, boolean forced, boolean sendMessage)",
+    "to": "ServerPlayer#setRespawnPosition(new ServerPlayer.RespawnConfig(dimension, pos, angle, forced), boolean sendMessage)",
+    "note": "net.minecraft.server.level.ServerPlayer$RespawnConfig is a record (dimension, pos, angle, forced) that also has a CODEC.",
+    "source": "javap net.minecraft.server.level.ServerPlayer and ServerPlayer$RespawnConfig 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "BlockBehaviour#onRemove(BlockState, Level, BlockPos, BlockState newState, boolean isMoving)",
+    "to": "BlockBehaviour#affectNeighborsAfterRemoval(BlockState, net.minecraft.server.level.ServerLevel, BlockPos, boolean isMoving)",
+    "note": "net.minecraft.world.level.block.state.BlockBehaviour. onRemove no longer exists at all, so the !state.is(newState.getBlock()) guard has no equivalent - the hook only fires on removal. ServerLevel replaces Level.",
+    "source": "javap net.minecraft.world.level.block.state.BlockBehaviour 1.21.5 (+ NeoForge primer 1.21.5)",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "removed",
+    "from": "Level#blockUpdated(BlockPos, Block)",
+    "to": "LevelAccessor#updateNeighborsAt(BlockPos, Block) (on Level: updateNeighborsAt(pos, block, Orientation))",
+    "note": "net.minecraft.world.level.Level. Bed-style placement code (BedBlock.setPlacedBy) is the usual caller; the 2-arg default lives on LevelAccessor.",
+    "source": "javap net.minecraft.world.level.Level and LevelAccessor 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "Block#fallOn(Level, BlockState, BlockPos, Entity, float fallDistance)",
+    "to": "Block#fallOn(Level, BlockState, BlockPos, Entity, double fallDistance)",
+    "note": "net.minecraft.world.level.block.Block. The override silently stops compiling because the parameter widened to double.",
+    "source": "javap net.minecraft.world.level.block.Block 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "BlockEntityRenderer#render(T, float, PoseStack, MultiBufferSource, int light, int overlay)",
+    "to": "BlockEntityRenderer#render(T, float, PoseStack, MultiBufferSource, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos)",
+    "note": "net.minecraft.client.renderer.blockentity.BlockEntityRenderer. Every implementation must add the camera position parameter.",
+    "source": "javap net.minecraft.client.renderer.blockentity.BlockEntityRenderer 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "moved",
+    "from": "net.minecraft.client.renderer.item.SelectItemModelProperty with abstract T get(...) and Type type()",
+    "to": "net.minecraft.client.renderer.item.properties.select.SelectItemModelProperty, now also requiring Codec<T> valueCodec()",
+    "note": "The Type record and SelectItemModelProperties.ID_MAPPER moved with it. valueCodec() is the codec for the selected value (Codec.INT for an int property).",
+    "source": "javap net.minecraft.client.renderer.item.properties.select.SelectItemModelProperty 1.21.5 + jar listing",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "SmithingRecipe#baseIngredient() -> Optional<Ingredient>",
+    "to": "SmithingRecipe#baseIngredient() -> Ingredient (required); templateIngredient() and additionIngredient() stay Optional",
+    "note": "net.minecraft.world.item.crafting.SmithingRecipe. The default matches() now calls baseIngredient().test(input.base()) unconditionally, so a base-less recipe can no longer pass by default. Ingredient.EMPTY does not exist in 1.21.5, so there is no no-op ingredient to return.",
+    "source": "javap net.minecraft.world.item.crafting.SmithingRecipe (+ javap -c of the default matches) 1.21.5",
+    "verified": "javap -c + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "visibility",
+    "from": "Inventory.items (public NonNullList<ItemStack>) and Inventory.selected (public int)",
+    "to": "private; use getNonEquipmentItems() / getItem(int) / setItem(int, ItemStack) / getContainerSize() / getSelectedSlot() / setSelectedSlot(int)",
+    "note": "net.minecraft.world.entity.player.Inventory. Also Inventory#getSelected() became getSelectedItem(), and the private offhand list is reached with Player#getOffhandItem(). Access widener is the alternative if a mod needs the raw list.",
+    "source": "javap -p net.minecraft.world.entity.player.Inventory 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "PotionContents#addPotionTooltip(Consumer<Component>, float durationFactor, float tickRate)",
+    "to": "PotionContents.addPotionTooltip(Iterable<MobEffectInstance>, Consumer<Component>, float, float) (static), fed by contents.getAllEffects()",
+    "note": "net.minecraft.world.item.alchemy.PotionContents. It is a static helper now, so the instance receiver becomes the first argument.",
+    "source": "javap net.minecraft.world.item.alchemy.PotionContents 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "signature",
+    "from": "new DyedItemColor(int color, boolean showInTooltip)",
+    "to": "new DyedItemColor(int color); the record accessor is rgb()",
+    "note": "net.minecraft.world.item.component.DyedItemColor. The show-in-tooltip flag moved to TooltipDisplay.withHidden.",
+    "source": "javap net.minecraft.world.item.component.DyedItemColor 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.4 -> 1.21.5",
+    "kind": "behaviour",
+    "from": "SoundEvents.SHIELD_BLOCK as SoundEvent, usable directly in Level#playSound(Entity, BlockPos, SoundEvent, ...)",
+    "to": "SoundEvents.SHIELD_BLOCK is Holder.Reference<SoundEvent>; call .value() for the SoundEvent overloads (the Holder overload exists only for the double x/y/z form)",
+    "note": "net.minecraft.sounds.SoundEvents / net.minecraft.world.level.Level. Only some constants became holders, so this surfaces as a single no-suitable-method error rather than a rename sweep.",
+    "source": "javap net.minecraft.sounds.SoundEvents and net.minecraft.world.level.Level 1.21.5",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "EntityModel<T extends Entity> / HumanoidModel<T extends LivingEntity>",
+    "to": "EntityModel<T extends EntityRenderState> / HumanoidModel<T extends HumanoidRenderState>",
+    "note": "The render-state refactor landed in 1.21.2. A model used outside the vanilla entity renderer (e.g. an armor-style artifact) must be parameterised with a render state it fills itself; the entity is no longer a type parameter.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) and prepareMobModel(...)",
+    "to": "setupAnim(T state) only; interpolation happens when the render state is extracted",
+    "note": "HumanoidModel.setupAnim reads left/rightArmPose, swimAmount, isFallFlying, xRot/yRot, walkAnimationPos/Speed, speedValue, isPassenger, mainArm, isUsingItem, useItemHand, ageInTicks, isCrouching, attackArm, attackTime, ageScale, maxCrossbowChargeDuration, ticksUsingItem. Fill every one, or setupAttackAnimation/poseArm null-derefs.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "removed",
+    "from": "override renderToBuffer(PoseStack, VertexConsumer, int light, int overlay, int color) on a Model subclass",
+    "to": "Model.renderToBuffer(...) is final; hide parts with ModelPart.visible (setAllVisible(false)) or push/scale the PoseStack at the call site",
+    "note": "ModelPart.copyFrom (used by HumanoidModel.copyPropertiesTo) copies scale, rotation and position but NOT visible, so hidden-part models survive follow-body rotations.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "removed",
+    "from": "Model.headParts() / Model.bodyParts() and the Model.young field",
+    "to": "per-part ModelPart.visible flags; baby-ness is HumanoidRenderState.isBaby",
+    "note": "Rendering walks the whole model root now, so a single-piece model must switch the other humanoid parts invisible in its constructor.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "moved",
+    "from": "HumanoidModel.leftArmPose / rightArmPose / crouching / attackTime / swimAmount fields",
+    "to": "HumanoidRenderState.leftArmPose/rightArmPose/isCrouching/attackTime/swimAmount, set before setupAnim",
+    "note": "Setting an arm pose from an event now means mutating the render state during extractRenderState, not the model after extraction.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "EntityRenderer.render(T entity, float yaw, float partialTicks, PoseStack, MultiBufferSource, int) and LivingEntityRenderer.getTextureLocation(T)",
+    "to": "render(S state, PoseStack, MultiBufferSource, int), getTextureLocation(S), plus createRenderState() and extractRenderState(T, S, float)",
+    "note": "MobRenderer is now MobRenderer<T, S, M>. Per-entity data a layer needs (a mimic's ticksInAir, a chosen chest material) must be copied into the state during extractRenderState, because render and layer code only sees the state.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "RenderLayer<S extends Entity, M extends EntityModel<S>> and render(..., S entity, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch)",
+    "to": "RenderLayer<S extends EntityRenderState, M extends EntityModel<? super S>> and render(PoseStack, MultiBufferSource, int light, S state, float limbSwing, float limbSwingAmount)",
+    "note": "No entity and no partial ticks inside a layer any more; bake interpolated values into the state at extraction time.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "removed",
+    "from": "EntityModel.copyPropertiesTo(EntityModel<T>)",
+    "to": "only HumanoidModel.copyPropertiesTo(HumanoidModel<T>) remains",
+    "note": "Passing a render-state model to a HumanoidModel copy needs a raw cast when the type arguments differ; the copy is per ModelPart so it stays safe.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "Entity.hurt(DamageSource, float), overridable and returning boolean",
+    "to": "Entity.hurtServer(ServerLevel, DamageSource, float) overridable; hurt(DamageSource, float) is final void",
+    "note": "Damage code calls entity.hurtServer(serverLevel, source, amount); the old boolean return now comes from hurtServer.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "LivingEntity.isInvulnerableTo(DamageSource)",
+    "to": "LivingEntity.isInvulnerableTo(ServerLevel, DamageSource)",
+    "note": "Only reachable through a LivingEntity cast; Entity no longer resolves the one-arg form.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "removed",
+    "from": "InteractionResultHolder<ItemStack> and Item.use(...) returning it",
+    "to": "net.minecraft.world.InteractionResult (SUCCESS/CONSUME/FAIL/PASS); Item.use(Level, Player, InteractionHand) returns InteractionResult",
+    "note": "InteractionResultHolder.consume(stack) becomes InteractionResult.CONSUME and .pass(stack) becomes InteractionResult.PASS.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "rename",
+    "from": "net.minecraft.world.item.UseAnim",
+    "to": "net.minecraft.world.item.ItemUseAnimation",
+    "note": "Item.getUseAnimation(ItemStack) returns ItemUseAnimation; EAT/DRINK/BLOCK are unchanged.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "ItemCooldowns.isOnCooldown(Item) / addCooldown(Item, int)",
+    "to": "isOnCooldown(ItemStack) / addCooldown(ItemStack, int)",
+    "note": "Cooldowns are keyed by the stack's cooldown-group component, so every call site must pass the stack it already holds.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "removed",
+    "from": "net.minecraft.client.renderer.item.ItemProperties.register / ItemPropertyFunction / ClampedItemPropertyFunction",
+    "to": "item model definitions: assets/<ns>/items/<name>.json with minecraft:condition + minecraft:using_item (was a custom 'artifacts:blocking' property)",
+    "note": "1.21.4 deleted the item-property registry; there is no Java-side replacement, only data. Fabric API 0.119.2 also dropped net.fabricmc.fabric.api.renderer.v1 (ForwardingBakedModel/RenderContext), so a BakedModel wrapper can no longer swap a model per display context.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "rename",
+    "from": "Level.getMinBuildHeight() / getLogicalHeight()",
+    "to": "Level.getMinY() / getHeight() (LevelHeightAccessor)",
+    "note": "Mechanical; both bounds come from LevelHeightAccessor now.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "rename",
+    "from": "LootContext.hasParam / getParam / getParamOrNull",
+    "to": "LootContext.hasParameter / getParameter / getOptionalParameter",
+    "note": "ContextKey moved to net.minecraft.util.context.ContextKey; the methods were renamed with it.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "TargetingConditions.selector(Predicate<LivingEntity>)",
+    "to": "TargetingConditions.selector(TargetingConditions.Selector), i.e. test(LivingEntity, ServerLevel)",
+    "note": "The selector gained the ServerLevel argument, so an existing lambda fails with 'incompatible parameter types in lambda expression'.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "rename",
+    "from": "Minecraft.getTimer() / Item.getDescription() / GuiGraphics.blit(ResourceLocation, ...)",
+    "to": "Minecraft.getDeltaTracker(); Item.getName(); GuiGraphics.blit(Function<ResourceLocation, RenderType>, ResourceLocation, ...) e.g. RenderType::guiTextured",
+    "note": "Three unrelated renames that land together in the same bump; the blit overload no longer accepts a raw texture id as its first argument.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "Registry.get(ResourceLocation) returning T; RegistryAccess.registry(ResourceKey); Registry.getOrCreateTag(TagKey)",
+    "to": "Registry.get / BuiltInRegistries.X.get return Optional<Holder.Reference<T>> (use getValue for the value); RegistryAccess.lookup(...); tags via getTags()/getTagOrEmpty/getRandomElementOf(TagKey, RandomSource)",
+    "note": "The tag helpers disappeared outright: there is no getTag(TagKey) on Registry any more, only a stream of HolderSet.Named plus getRandomElementOf.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "Level.getRecipeManager(); AbstractCookingRecipe.getResultItem(RegistryAccess) / getExperience()",
+    "to": "ServerLevel.recipeAccess() (a RecipeManager); recipe.assemble(RecipeInput, HolderLookup.Provider) for the result; AbstractCookingRecipe.experience()",
+    "note": "Level.recipeAccess() only exposes RecipeAccess (stonecutter + property sets), so recipe lookups need the ServerLevel covariant return.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "removed",
+    "from": "LivingEntity.eat(Level, ItemStack)",
+    "to": "DataComponents.CONSUMABLE -> Consumable.onConsume(Level, LivingEntity, ItemStack)",
+    "note": "Consumable.onConsume applies FoodProperties and the consume effects and fires the use event, which is what ItemStack.finishUsingItem now does.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "EntityType.create(Level); EntityType.Builder.build(String); Mob.getDefaultLootTable() override",
+    "to": "EntityType.create(Level, EntitySpawnReason); Builder.build(ResourceKey<EntityType<?>>); the loot table comes from that key (entities/<path>)",
+    "note": "The key passed to build() now also determines the default loot table, so a custom getDefaultLootTable override is both impossible and unnecessary.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "moved",
+    "from": "ArmorItem.DISPENSE_ITEM_BEHAVIOR",
+    "to": "net.minecraft.core.dispenser.EquipmentDispenseItemBehavior.INSTANCE",
+    "note": "Same behaviour, now a public singleton instead of a field on ArmorItem.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "MobEffect.applyEffectTick(LivingEntity, int); LightningBolt.create(Level); SpawnEggItem(type, int, int, Properties)",
+    "to": "MobEffect.applyEffectTick(ServerLevel, LivingEntity, int); EntityType.LIGHTNING_BOLT.create(Level, EntitySpawnReason); SpawnEggItem(type, Properties)",
+    "note": "The spawn-egg colours are gone (they come from the entity's spawn egg data), and ticking effects receive the ServerLevel.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  },
+  {
+    "jump": "1.21.1 -> 1.21.4",
+    "kind": "signature",
+    "from": "Fabric ResourceCondition.test(@Nullable HolderLookup.Provider)",
+    "to": "ResourceCondition.test(@Nullable RegistryOps.RegistryInfoLookup)",
+    "note": "Fabric API 0.119.2 for 1.21.4 changed the resource-condition lookup type; an unchanged override stops compiling and the class silently stops being a ResourceCondition.",
+    "source": "javap on 1.21.4 (minecraft-merged 1.21.4-loom.mappings) + Artifacts clean compileJava",
+    "verified": "javap + clean compileJava"
+  }
+]

@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "com.prismlab.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"ServerLoadMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

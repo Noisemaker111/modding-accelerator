@@ -1,0 +1,67 @@
+package com.prismlab.block;
+
+import com.mojang.serialization.MapCodec;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+
+import com.prismlab.PrismBlockEntities;
+import com.prismlab.block.entity.PrismNodeEntity;
+
+/** A block with a live block entity: it charges from light and answers a right click. */
+public class PrismNode extends BaseEntityBlock {
+	public static final MapCodec<PrismNode> CODEC = simpleCodec(PrismNode::new);
+
+	public PrismNode(Properties properties) {
+		super(properties);
+	}
+
+	// 1.21.1's BaseEntityBlock requires a codec; 26.3 dropped it.
+	@Override
+	protected MapCodec<? extends BaseEntityBlock> codec() {
+		return CODEC;
+	}
+
+	// 1.21.1's BaseEntityBlock draws nothing by default (RenderShape.INVISIBLE); the
+	// parent's 26.3 renderer defaults to the block model.
+	@Override
+	protected RenderShape getRenderShape(BlockState state) {
+		return RenderShape.MODEL;
+	}
+
+	@Override
+	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+		return new PrismNodeEntity(pos, state);
+	}
+
+	@Override
+	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+		return createTickerHelper(type, PrismBlockEntities.PRISM_NODE.get(), PrismNodeEntity::tick);
+	}
+
+	@Override
+	protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+		if (!(level.getBlockEntity(pos) instanceof PrismNodeEntity node)) {
+			return super.useWithoutItem(state, level, pos, player, hit);
+		}
+
+		node.addCharge(8);
+
+		if (level.isClientSide()) {
+			// 26.3 renamed displayClientMessage to sendOverlayMessage.
+			player.displayClientMessage(Component.literal("Prism node charge: " + node.charge()), true);
+		}
+
+		return InteractionResult.SUCCESS;
+	}
+}

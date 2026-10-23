@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 1,
+	"id": "prismlab",
+	"version": "${version}",
+	"name": "Prism Lab demo mod",
+	"description": "A small real mod used to prove the fast test loop: logic tests, headless server game tests and a scripted client test with screenshots.",
+	"authors": [
+		"Jon"
+	],
+	"license": "CC0-1.0",
+	"icon": "assets/prismlab/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.prismlab.PrismLab"
+		],
+		"client": [
+			"com.prismlab.client.PrismLabClient"
+		]
+	},
+	"mixins": [
+		"prismlab.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
+
+
+

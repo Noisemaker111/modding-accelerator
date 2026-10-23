@@ -1,0 +1,128 @@
+plugins {
+	// 1.21.11 is an obfuscated Minecraft: this is the remapping variant of the
+	// loom plugin. The plain `net.fabricmc.fabric-loom` plugin targets the
+	// non-obfuscated releases (that is what the parent's 26.3 build uses).
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+}
+
+// ---------------------------------------------------------------------------
+// This node builds the SAME mod sources as the parent (../../src). Nothing here
+// copies them; every Java file below is the parent's, except files that also
+// exist under this directory, which win (shadow) by relative path.
+// ---------------------------------------------------------------------------
+def parentDir = file('../..')
+def parentMainJava = new File(parentDir, 'src/main/java')
+def parentMainResources = new File(parentDir, 'src/main/resources')
+def parentClientJava = new File(parentDir, 'src/client/java')
+def parentClientResources = new File(parentDir, 'src/client/resources')
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"prismlab" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+// Loom has already created main/client above, so this replaces their defaults.
+sourceSets {
+	main {
+		java.srcDirs = [file('src/main/java'), parentMainJava]
+		resources.srcDirs = [file('src/main/resources'), parentMainResources]
+	}
+	client {
+		java.srcDirs = [file('src/client/java'), parentClientJava]
+		resources.srcDirs = [file('src/client/resources'), parentClientResources]
+	}
+}
+
+/**
+ * Parent files compiled as is, plus this node's overrides. A file in the override
+ * directory replaces the parent file at the same relative path, so there is never
+ * a duplicate class and the parent src tree is untouched.
+ */
+def layeredSources = { File overrideRoot, File parentRoot ->
+	List<File> overrides = overrideRoot.exists()
+			? fileTree(overrideRoot) { include '**/*.java' }.files.toList()
+			: []
+	Set<String> replaced = overrides.collect {
+		overrideRoot.toPath().relativize(it.toPath()).toString().replace('\\', '/')
+	} as Set
+	List<File> inherited = parentRoot.exists()
+			? fileTree(parentRoot) { include '**/*.java' }.files.findAll {
+				!replaced.contains(parentRoot.toPath().relativize(it.toPath()).toString().replace('\\', '/'))
+			}.toList()
+			: []
+	return (overrides + inherited) as Set<File>
+}
+
+loom {
+	runs {
+		// Same warm-client harness as the parent's clientWarm, on its own ports so
+		// the 26.3 node (27399/27398) and this node can both be up.
+		clientWarm {
+			client()
+			property("prismlab.lab.port", "27499")
+			vmArg "-javaagent:${projectDir}/.modaccel/agent.jar"
+			vmArg "-Dprismlab.agent.port=27498"
+			vmArg "-XX:+AllowEnhancedClassRedefinition"
+			vmArg "-XX:TieredStopAtLevel=1"
+			vmArg "-Dmodlab.screen=com.prismlab.client.PrismScreen"
+			vmArg "-Dmodlab.name=prismlab-ui-1.21.11"
+			vmArg "-Dmodlab.click=More shards"
+			vmArg "-Dmodlab.block=prismlab:prism_node"
+			vmArg "-Dmodlab.probe=charge"
+			vmArg "-Dprismlab.lab.port=27499"
+			ideConfigGenerated false
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	// Mojang names, not Yarn, so class and method names stay the ones the 26.3 node uses.
+	mappings loom.officialMojangMappings()
+
+	// modImplementation (not implementation): 1.21.11 is obfuscated, so Fabric API
+	// has to be remapped out of intermediary before our code can link against it.
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+tasks.named('compileJava', JavaCompile) {
+	source = layeredSources(file('src/main/java'), parentMainJava)
+}
+
+tasks.named('compileClientJava', JavaCompile) {
+	source = layeredSources(file('src/client/java'), parentClientJava)
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+processResources {
+	def modVersion = project.version
+	inputs.property 'version', modVersion
+	filesMatching('fabric.mod.json') {
+		expand 'version': modVersion
+		// The one shared resource that names a Minecraft version. Everything else in
+		// ../../src/main/resources is version-neutral.
+		filter { String line -> line.replace('"~26.3"', '"~1.21.11"') }
+	}
+}
+
+def licenceName = project.name
+jar {
+	from(new File(parentDir, 'LICENSE')) {
+		rename { String original -> "${original}_${licenceName}" }
+	}
+}

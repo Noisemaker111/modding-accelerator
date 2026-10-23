@@ -1,0 +1,129 @@
+{
+  "machine": "Ryzen 9 3900X, Windows 11, JDK 25 (JDK 21 for NeoForge 1.21.1), Minecraft 26.3 unless a row says otherwise",
+  "measured": "2026-10-21 (Fabric loop) and 2026-10-22 (Forge, NeoForge, Diorama, gates, port repairs, NeoForge hot reload)",
+  "loop": [
+    { "name": "lint (ids, assets, entrypoints)", "seconds": 0.53, "n": 5 },
+    { "name": "logic tests, no Minecraft", "seconds": 0.79, "n": 5 },
+    { "name": "screen change + screenshot", "seconds": 1.49, "n": 5 },
+    { "name": "block entity in a live world", "seconds": 2.09, "n": 5 },
+    { "name": "scripted scenario + screenshot", "seconds": 2.90, "n": 5 },
+    { "name": "suite of named cases (2)", "seconds": 3.80, "n": 3 },
+    { "name": "new registration, fresh server", "seconds": 15.0, "n": 3 },
+    { "name": "fresh client, 4 screenshots", "seconds": 53.0, "n": 1 },
+    { "name": "cold client boot + one check", "seconds": 36.5, "n": 1 }
+  ],
+  "compare": [
+    { "name": "this lab: one visual check", "seconds": 1.49 },
+    { "name": "this lab: one scripted scenario", "seconds": 2.90 },
+    { "name": "this lab: whole suite (2 cases)", "seconds": 3.80 },
+    { "name": "Diorama: one test section", "seconds": 300 },
+    { "name": "Diorama: full suite, local PC", "seconds": 1440 },
+    { "name": "Diorama: full suite, boat.dev VM", "seconds": 4080 }
+  ],
+  "versions": [
+    { "node": "26.3", "build": 16.7, "client": 22.4, "block": 2.1, "ui": 1.5 },
+    { "node": "1.21.11", "build": 16.7, "client": 22.4, "block": 4.1, "ui": 1.2 },
+    { "node": "NeoForge 1.21.1", "build": 4.9, "client": 20.5, "block": 2.7, "ui": 1.18 }
+  ],
+  "multiplayer": [
+    { "name": "server boot", "seconds": 24.2 },
+    { "name": "client boot, first join", "seconds": 27.1 },
+    { "name": "scenario, warm client", "seconds": 4.1 }
+  ],
+  "porting": [
+    { "name": "diff, clean jar", "seconds": 1.3 },
+    { "name": "diff, 58 broken classes", "seconds": 1.7 },
+    { "name": "port report, clean jar", "seconds": 3.0 }
+  ],
+  "portbuild": [
+    { "mod": "Trinkets", "baseline": 321.1, "bumped": 156.1 },
+    { "mod": "Traverse", "baseline": 328.9, "bumped": 115.0 },
+    { "mod": "Terrestria", "baseline": 141.8, "bumped": 89.4 },
+    { "mod": "Traveler's Backpack", "baseline": 335.1, "bumped": 161.0 },
+    { "mod": "Polymer", "baseline": 474.4, "bumped": 186.1 },
+    { "mod": "Artifacts", "baseline": 567.5, "bumped": 167.4 }
+  ],
+  "porterrors": [
+    { "name": "Trinkets (1.21.5→1.21.6)", "seconds": 21 },
+    { "name": "Traverse (1.21.5→1.21.6)", "seconds": 68 },
+    { "name": "Terrestria (1.21.5→1.21.6)", "seconds": 99 },
+    { "name": "Traveler's Backpack (1.21.4→1.21.5)", "seconds": 196 },
+    { "name": "Polymer (1.21.5→1.21.6)", "seconds": 8 },
+    { "name": "Artifacts (1.21.1→1.21.4)", "seconds": 97 }
+  ],
+  "hotreload": [
+    { "name": "Fabric 26.3: screen edit, same JVM", "seconds": 1.5 },
+    { "name": "NeoForge 1.21.1: screen edit, same JVM", "seconds": 1.5 },
+    { "name": "Fabric 1.21.11: screen edit, same JVM", "seconds": 1.88 },
+    { "name": "Fabric 1.21.11: schema change, restart", "seconds": 28.0 },
+    { "name": "NeoForge 1.21.1: schema change, restart", "seconds": 22.0 }
+  ],
+  "repair": [
+    { "name": "Trinkets (21 errors)", "seconds": 69 },
+    { "name": "Polymer (35 errors)", "seconds": 516 },
+    { "name": "Traveler's Backpack (196 errors, 4 cycles)", "seconds": 660 },
+    { "name": "Artifacts (97 errors, 8 builds)", "seconds": 1680 }
+  ],
+  "portfixes": [
+    { "name": "Traveler's Backpack: mechanical", "seconds": 22 },
+    { "name": "Traveler's Backpack: structural", "seconds": 78 },
+    { "name": "Artifacts: mechanical", "seconds": 22 },
+    { "name": "Artifacts: type mismatches", "seconds": 7 },
+    { "name": "Artifacts: structural (render state)", "seconds": 68 }
+  ],
+  "forgeloop": [
+    { "name": "their gradlew build -x test", "seconds": 328.3 },
+    { "name": "install the built jar", "seconds": 5.0 },
+    { "name": "first .\\modaccel fast", "seconds": 23.9 },
+    { "name": "one-file edit, .\\modaccel fast", "seconds": 2.3 },
+    { "name": "broken file: FAIL, no build", "seconds": 1.3 }
+  ],
+  "neoforgeloop": [
+    { "name": "first .\\modaccel ui (client start included)", "seconds": 25.6 },
+    { "name": "cold start, client listening", "seconds": 18.4 },
+    { "name": "first ui after start", "seconds": 2.4 },
+    { "name": "screen check, 2 screenshots", "seconds": 3.2 },
+    { "name": "repeat .\\modaccel ui, total", "seconds": 6.1 }
+  ],
+  "dioramaloop": [
+    { "name": "their :26.3:build -x test", "seconds": 204.5 },
+    { "name": "fast lane", "seconds": 2.1 },
+    { "name": "toolchain gate, READY", "seconds": 5.2 }
+  ],
+  "toolchain": [
+    { "name": "Diorama: READY", "seconds": 5.2 },
+    { "name": "MineColonies 1.20.4: BLOCKED", "seconds": 29.4 },
+    { "name": "MineColonies main: configures", "seconds": 88.7 },
+    { "name": "Traverse: BLOCKED", "seconds": 11.1 },
+    { "name": "Artifacts: BLOCKED", "seconds": 8.8 },
+    { "name": "NeoForge client, direct launch to listening", "seconds": 7.0 }
+  ],
+  "repairsites": [
+    { "name": "Traverse sites", "seconds": 68 },
+    { "name": "Terrestria sites", "seconds": 142 }
+  ],
+  "repairgreen": [
+    { "name": "Traverse build after repair", "seconds": 5.9 },
+    { "name": "Terrestria build after repair", "seconds": 7.5 },
+    { "name": "Traveler's Backpack build after repair", "seconds": 5.0 },
+    { "name": "Artifacts build after repair", "seconds": 13.0 }
+  ],
+  "notes": [
+    "Warm means the resident client or server was already running; cold is measured separately.",
+    "Timings come from .runs/bench.jsonl and .runs/index.jsonl; n is the number of runs.",
+    "Screenshots are 854x480 PNGs a human or an agent looks at; there are no pixel goldens.",
+    "Diorama figures are its own documented numbers, same machine where noted.",
+    "Forge loop, MineColonies 1.20.1 with 2102 sources on JDK 17: their gradlew build -x test 328.3s, install 5s, first .\\modaccel fast 23.9s, one-file edit 2.3s, broken file FAIL 1.3s.",
+    "NeoForge 1.21.1 node: first .\\modaccel ui 25.6s with client start, cold start to a listening client 18.4s, first ui after start 2.4s, screen check 3.2s with two screenshots, repeat .\\modaccel ui 6.1s total.",
+    "Diorama (Stonecutter): their :26.3:build -x test 204.5s, fast lane 2.1s, toolchain gate READY 5.2s.",
+    "Toolchain gate: Diorama READY 5.2s; MineColonies 1.20.4 BLOCKED 29.4s; MineColonies main configures 88.7s; Traverse BLOCKED 11.1s; Artifacts BLOCKED 8.8s; NeoForge client direct launch 7s to listening.",
+    "Port repairs, all six mods green: Trinkets 21 errors in 1.15 min; Polymer 35 errors in 8.6 min; Traverse 68 call sites in a single pass, 5.9s build after; Terrestria 142 sites, 7.5s build after; Traveler's Backpack 196 errors over 4 repair cycles, 11 min of edits, 5s final build; Artifacts 97 errors over 8 builds, 28 min of edits, 13s final build.",
+    "Port report classification on the Traveler's Backpack log: 100 errors, 22 mechanical, 78 structural. Artifacts' 97 compile errors split 22 mechanical, 7 type mismatches and 68 structural (a render-state refactor).",
+    "NeoForge 1.21.1 hot reload: edit a screen class to a new screenshot 1.5s in the same JVM, the same as Fabric 26.3. A schema change (new field, method or registry entry) still needs a restart, measured at 22s on NeoForge and 28s on 1.21.11.",
+    "Toolchain gate versions: NeoForge 1.21.4 exists (21.4.161); NeoForge 1.20.1 is BLOCKED because the gate looked for 20.1.*."
+  ]
+}
+
+
+
+

@@ -1,0 +1,41 @@
+[
+  {
+    "from": "ResourceLocation",
+    "to": "Identifier",
+    "jump": "1.21.4 -> 1.21.11",
+    "note": "Class renamed in official mappings; fromNamespaceAndPath/parse keep their names. Still the name in 26.3, so this one is safe to apply forward.",
+    "verifiedIn": "versions/1.21.11 DELTAS.md and the 26.3 demo build"
+  },
+  {
+    "from": "sendOverlayMessage",
+    "to": "displayClientMessage",
+    "jump": "1.21.4 -> 1.21.11",
+    "note": "Not applied: 26.3 still exposes sendOverlayMessage, so rewriting it would break a build that currently compiles. Apply only when porting TO 1.21.11.",
+    "verifiedIn": "versions/1.21.11 DELTAS.md",
+    "skip": true
+  },
+  {
+    "from": "toastManager",
+    "to": "getToastManager",
+    "jump": "1.21.11 -> 26.3",
+    "note": "Not applied: the 26.3 demo compiles with toastManager, so getToastManager is the 1.21.11 spelling, not the target spelling.",
+    "verifiedIn": "versions/1.21.11 DELTAS.md",
+    "skip": true
+  },
+  {
+    "from": "resizeGui",
+    "to": "resizeDisplay",
+    "jump": "1.21.11 -> 26.3",
+    "note": "Not applied for the same reason: direction matters, and 26.3 uses resizeGui.",
+    "verifiedIn": "versions/1.21.11 DELTAS.md",
+    "skip": true
+  },
+  {
+    "from": "CreativeModeTabEvents",
+    "to": "ItemGroupEvents",
+    "jump": "1.21.4 -> 1.21.11",
+    "note": "Not applied: 26.3 uses CreativeModeTabEvents; ItemGroupEvents is the 1.21.11 name.",
+    "verifiedIn": "versions/1.21.11 DELTAS.md",
+    "skip": true
+  }
+]

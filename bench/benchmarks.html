@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Modding Accelerator — measured</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font: 15px/1.5 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #111827; }
+  main { max-width: 960px; margin: 0 auto; padding: 40px 24px 64px; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  p.sub { margin: 0 0 28px; color: #6b7280; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .kpi { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
+  .kpi b { display: block; font-size: 28px; letter-spacing: -0.02em; }
+  .kpi span { color: #6b7280; font-size: 12px; }
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 20px 8px; margin-bottom: 18px; }
+  h2 { font-size: 16px; margin: 0 0 4px; }
+  p.note { margin: 0 0 8px; color: #6b7280; font-size: 12px; }
+  ul.notes { margin: 8px 0 0; padding-left: 18px; color: #4b5563; font-size: 13px; }
+  footer { color: #9ca3af; font-size: 12px; margin-top: 20px; }
+</style>
+</head>
+<body><main>
+<h1>Modding Accelerator — measured</h1>
+<p class="sub">Ryzen 9 3900X, Windows 11, JDK 25 (JDK 21 for NeoForge 1.21.1), Minecraft 26.3 unless a row says otherwise · 2026-10-21 (Fabric loop) and 2026-10-22 (Forge, NeoForge, Diorama, gates, port repairs, NeoForge hot reload) · every number below was produced by a run in the repo, recorded in .runs/</p>
+<div class="kpis">
+  <div class="kpi"><b>1.5s</b><span>one screen change, screenshot included (Fabric 26.3 and NeoForge 1.21.1)</span></div>
+  <div class="kpi"><b>2.9s</b><span>one scripted scenario with a probe</span></div>
+  <div class="kpi"><b>15s</b><span>a new registration on a fresh server</span></div>
+  <div class="kpi"><b>3.8s</b><span>a two-case suite, one warm client</span></div>
+</div>
+<section class='card'>
+<h2>One change, one answer</h2>
+<p class='note'>Log scale. Warm process unless a row says cold.</p>
+<svg viewBox='0 0 860 376' width='100%' role='img' aria-label='One change, one answer'>
+<line x1='319.1' y1='30' x2='319.1' y2='360' stroke='#e5e7eb' stroke-width='1'/>
+<text x='319.1' y='372' font-size='10' fill='#9ca3af' text-anchor='middle'>500ms</text>
+<line x1='378.4' y1='30' x2='378.4' y2='360' stroke='#e5e7eb' stroke-width='1'/>
+<text x='378.4' y='372' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0s</text>
+<line x1='437.7' y1='30' x2='437.7' y2='360' stroke='#e5e7eb' stroke-width='1'/>
+<text x='437.7' y='372' font-size='10' fill='#9ca3af' text-anchor='middle'>2.0s</text>
+<line x1='516.1' y1='30' x2='516.1' y2='360' stroke='#e5e7eb' stroke-width='1'/>
+<text x='516.1' y='372' font-size='10' fill='#9ca3af' text-anchor='middle'>5.0s</text>
+<line x1='575.4' y1='30' x2='575.4' y2='360' stroke='#e5e7eb' stroke-width='1'/>
+<text x='575.4' y='372' font-size='10' fill='#9ca3af' text-anchor='middle'>10.0s</text>
+<line x1='669.4' y1='30' x2='669.4' y2='360' stroke='#e5e7eb' stroke-width='1'/>
+<text x='669.4' y='372' font-size='10' fill='#9ca3af' text-anchor='middle'>30.0s</text>
+<line x1='728.7' y1='30' x2='728.7' y2='360' stroke='#e5e7eb' stroke-width='1'/>
+<text x='728.7' y='372' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0min</text>
+<text x='0' y='50' font-size='13' fill='#111827'>lint (ids, assets, entrypoints)</text>
+<rect x='300' y='34' width='24.0' height='20' rx='4' fill='#2563eb'/>
+<text x='332.0' y='50' font-size='12' fill='#374151'>530ms  (n=5)</text>
+<text x='0' y='84' font-size='13' fill='#111827'>logic tests, no Minecraft</text>
+<rect x='300' y='68' width='58.0' height='20' rx='4' fill='#2563eb'/>
+<text x='366.0' y='84' font-size='12' fill='#374151'>790ms  (n=5)</text>
+<text x='0' y='118' font-size='13' fill='#111827'>screen change + screenshot</text>
+<rect x='300' y='102' width='113.0' height='20' rx='4' fill='#2563eb'/>
+<text x='421.0' y='118' font-size='12' fill='#374151'>1.5s  (n=5)</text>
+<text x='0' y='152' font-size='13' fill='#111827'>block entity in a live world</text>
+<rect x='300' y='136' width='141.0' height='20' rx='4' fill='#2563eb'/>
+<text x='449.0' y='152' font-size='12' fill='#374151'>2.1s  (n=5)</text>
+<text x='0' y='186' font-size='13' fill='#111827'>scripted scenario + screenshot</text>
+<rect x='300' y='170' width='169.0' height='20' rx='4' fill='#2563eb'/>
+<text x='477.0' y='186' font-size='12' fill='#374151'>2.9s  (n=5)</text>
+<text x='0' y='220' font-size='13' fill='#111827'>suite of named cases (2)</text>
+<rect x='300' y='204' width='193.0' height='20' rx='4' fill='#2563eb'/>
+<text x='501.0' y='220' font-size='12' fill='#374151'>3.8s  (n=3)</text>
+<text x='0' y='254' font-size='13' fill='#111827'>new registration, fresh server</text>
+<rect x='300' y='238' width='310.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='618.0' y='254' font-size='12' fill='#374151'>15.0s  (n=3)</text>
+<text x='0' y='288' font-size='13' fill='#111827'>fresh client, 4 screenshots</text>
+<rect x='300' y='272' width='418.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='726.0' y='288' font-size='12' fill='#374151'>53.0s  (n=1)</text>
+<text x='0' y='322' font-size='13' fill='#111827'>cold client boot + one check</text>
+<rect x='300' y='306' width='386.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='694.0' y='322' font-size='12' fill='#374151'>36.5s  (n=1)</text>
+</svg>
+</section>
+<section class='card'>
+<h2>Against a conventional mod loop</h2>
+<p class='note'>This lab measured here; Diorama from its own commits and docs.</p>
+<svg viewBox='0 0 860 274' width='100%' role='img' aria-label='Against a conventional mod loop'>
+<line x1='310.2' y1='30' x2='310.2' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='310.2' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>500ms</text>
+<line x1='342.1' y1='30' x2='342.1' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='342.1' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0s</text>
+<line x1='373.9' y1='30' x2='373.9' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='373.9' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>2.0s</text>
+<line x1='415.9' y1='30' x2='415.9' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='415.9' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>5.0s</text>
+<line x1='447.7' y1='30' x2='447.7' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='447.7' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>10.0s</text>
+<line x1='498.1' y1='30' x2='498.1' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='498.1' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>30.0s</text>
+<line x1='529.9' y1='30' x2='529.9' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='529.9' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0min</text>
+<line x1='603.8' y1='30' x2='603.8' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='603.8' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>5.0min</text>
+<line x1='654.2' y1='30' x2='654.2' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='654.2' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>15.0min</text>
+<line x1='717.8' y1='30' x2='717.8' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='717.8' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0h</text>
+<text x='0' y='50' font-size='13' fill='#111827'>this lab: one visual check</text>
+<rect x='300' y='34' width='60.0' height='20' rx='4' fill='#2563eb'/>
+<text x='368.0' y='50' font-size='12' fill='#374151'>1.5s</text>
+<text x='0' y='84' font-size='13' fill='#111827'>this lab: one scripted scenario</text>
+<rect x='300' y='68' width='91.0' height='20' rx='4' fill='#2563eb'/>
+<text x='399.0' y='84' font-size='12' fill='#374151'>2.9s</text>
+<text x='0' y='118' font-size='13' fill='#111827'>this lab: whole suite (2 cases)</text>
+<rect x='300' y='102' width='103.0' height='20' rx='4' fill='#2563eb'/>
+<text x='411.0' y='118' font-size='12' fill='#374151'>3.8s</text>
+<text x='0' y='152' font-size='13' fill='#111827'>Diorama: one test section</text>
+<rect x='300' y='136' width='304.0' height='20' rx='4' fill='#dc2626'/>
+<text x='612.0' y='152' font-size='12' fill='#374151'>5.0min</text>
+<text x='0' y='186' font-size='13' fill='#111827'>Diorama: full suite, local PC</text>
+<rect x='300' y='170' width='376.0' height='20' rx='4' fill='#dc2626'/>
+<text x='684.0' y='186' font-size='12' fill='#374151'>24.0min</text>
+<text x='0' y='220' font-size='13' fill='#111827'>Diorama: full suite, boat.dev VM</text>
+<rect x='300' y='204' width='424.0' height='20' rx='4' fill='#dc2626'/>
+<text x='732.0' y='220' font-size='12' fill='#374151'>1.1h</text>
+</svg>
+</section>
+<section class='card'>
+<h2>Three nodes, same checks (build is a warm clean build; NeoForge's first build was ~290s to fetch and decompile)</h2>
+<svg viewBox='0 0 860 250' width='100%' role='img' aria-label='Three nodes, same checks (build is a warm clean build; NeoForge's first build was ~290s to fetch and decompile)'>
+<rect x='90.7' y='96.5' width='42.0' height='119.5' rx='3' fill='#2563eb'/>
+<text x='111.7' y='90.5' font-size='10' fill='#374151' text-anchor='middle'>16.7s</text>
+<rect x='138.7' y='55.8' width='42.0' height='160.2' rx='3' fill='#0ea5e9'/>
+<text x='159.7' y='49.8' font-size='10' fill='#374151' text-anchor='middle'>22.4s</text>
+<rect x='186.7' y='201.0' width='42.0' height='15.0' rx='3' fill='#f59e0b'/>
+<rect x='234.7' y='205.3' width='42.0' height='10.7' rx='3' fill='#16a34a'/>
+<text x='186.7' y='240' font-size='12' fill='#111827' text-anchor='middle'>26.3</text>
+<rect x='344.0' y='96.5' width='42.0' height='119.5' rx='3' fill='#2563eb'/>
+<text x='365.0' y='90.5' font-size='10' fill='#374151' text-anchor='middle'>16.7s</text>
+<rect x='392.0' y='55.8' width='42.0' height='160.2' rx='3' fill='#0ea5e9'/>
+<text x='413.0' y='49.8' font-size='10' fill='#374151' text-anchor='middle'>22.4s</text>
+<rect x='440.0' y='186.7' width='42.0' height='29.3' rx='3' fill='#f59e0b'/>
+<rect x='488.0' y='207.4' width='42.0' height='8.6' rx='3' fill='#16a34a'/>
+<text x='440.0' y='240' font-size='12' fill='#111827' text-anchor='middle'>1.21.11</text>
+<rect x='597.3' y='180.9' width='42.0' height='35.1' rx='3' fill='#2563eb'/>
+<rect x='645.3' y='69.3' width='42.0' height='146.7' rx='3' fill='#0ea5e9'/>
+<text x='666.3' y='63.3' font-size='10' fill='#374151' text-anchor='middle'>20.5s</text>
+<rect x='693.3' y='196.7' width='42.0' height='19.3' rx='3' fill='#f59e0b'/>
+<rect x='741.3' y='207.6' width='42.0' height='8.4' rx='3' fill='#16a34a'/>
+<text x='693.3' y='240' font-size='12' fill='#111827' text-anchor='middle'>NeoForge 1.21.1</text>
+<rect x='60' y='6' width='10' height='10' rx='2' fill='#2563eb'/>
+<text x='74' y='15' font-size='11' fill='#374151'>build</text>
+<rect x='118.5' y='6' width='10' height='10' rx='2' fill='#0ea5e9'/>
+<text x='132.5' y='15' font-size='11' fill='#374151'>client</text>
+<rect x='183.5' y='6' width='10' height='10' rx='2' fill='#f59e0b'/>
+<text x='197.5' y='15' font-size='11' fill='#374151'>block</text>
+<rect x='242' y='6' width='10' height='10' rx='2' fill='#16a34a'/>
+<text x='256' y='15' font-size='11' fill='#374151'>ui</text>
+</svg>
+</section>
+<section class='card'>
+<h2>Multiplayer: what the first run costs</h2>
+<p class='note'>After the server and client are up, a scenario is the same 4s.</p>
+<svg viewBox='0 0 860 172' width='100%' role='img' aria-label='Multiplayer: what the first run costs'>
+<text x='0' y='50' font-size='13' fill='#111827'>server boot</text>
+<rect x='300' y='34' width='334.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='642.0' y='50' font-size='12' fill='#374151'>24.2s</text>
+<text x='0' y='84' font-size='13' fill='#111827'>client boot, first join</text>
+<rect x='300' y='68' width='374.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='682.0' y='84' font-size='12' fill='#374151'>27.1s</text>
+<text x='0' y='118' font-size='13' fill='#111827'>scenario, warm client</text>
+<rect x='300' y='102' width='57.0' height='20' rx='4' fill='#2563eb'/>
+<text x='365.0' y='118' font-size='12' fill='#374151'>4.1s</text>
+</svg>
+</section>
+<section class='card'>
+<h2>Moving to another version: the report</h2>
+<p class='note'>The diff says what breaks; the port lane writes a handoff.</p>
+<svg viewBox='0 0 860 172' width='100%' role='img' aria-label='Moving to another version: the report'>
+<text x='0' y='50' font-size='13' fill='#111827'>diff, clean jar</text>
+<rect x='300' y='34' width='162.0' height='20' rx='4' fill='#2563eb'/>
+<text x='470.0' y='50' font-size='12' fill='#374151'>1.3s</text>
+<text x='0' y='84' font-size='13' fill='#111827'>diff, 58 broken classes</text>
+<rect x='300' y='68' width='212.0' height='20' rx='4' fill='#2563eb'/>
+<text x='520.0' y='84' font-size='12' fill='#374151'>1.7s</text>
+<text x='0' y='118' font-size='13' fill='#111827'>port report, clean jar</text>
+<rect x='300' y='102' width='374.0' height='20' rx='4' fill='#2563eb'/>
+<text x='682.0' y='118' font-size='12' fill='#374151'>3.0s</text>
+</svg>
+</section>
+<section class='card'>
+<h2>How much a real version bump costs to build (6 open-source mods)</h2>
+<svg viewBox='0 0 860 250' width='100%' role='img' aria-label='How much a real version bump costs to build (6 open-source mods)'>
+<rect x='75.3' y='119.7' width='42.0' height='96.3' rx='3' fill='#2563eb'/>
+<text x='96.3' y='113.7' font-size='10' fill='#374151' text-anchor='middle'>5.4min</text>
+<rect x='123.3' y='169.2' width='42.0' height='46.8' rx='3' fill='#0ea5e9'/>
+<text x='144.3' y='163.2' font-size='10' fill='#374151' text-anchor='middle'>2.6min</text>
+<text x='123.3' y='240' font-size='12' fill='#111827' text-anchor='middle'>Trinkets</text>
+<rect x='202.0' y='117.3' width='42.0' height='98.7' rx='3' fill='#2563eb'/>
+<text x='223.0' y='111.3' font-size='10' fill='#374151' text-anchor='middle'>5.5min</text>
+<rect x='250.0' y='181.5' width='42.0' height='34.5' rx='3' fill='#0ea5e9'/>
+<text x='271.0' y='175.5' font-size='10' fill='#374151' text-anchor='middle'>1.9min</text>
+<text x='250.0' y='240' font-size='12' fill='#111827' text-anchor='middle'>Traverse</text>
+<rect x='328.7' y='173.5' width='42.0' height='42.5' rx='3' fill='#2563eb'/>
+<text x='349.7' y='167.5' font-size='10' fill='#374151' text-anchor='middle'>2.4min</text>
+<rect x='376.7' y='189.2' width='42.0' height='26.8' rx='3' fill='#0ea5e9'/>
+<text x='397.7' y='183.2' font-size='10' fill='#374151' text-anchor='middle'>1.5min</text>
+<text x='376.7' y='240' font-size='12' fill='#111827' text-anchor='middle'>Terrestria</text>
+<rect x='455.3' y='115.5' width='42.0' height='100.5' rx='3' fill='#2563eb'/>
+<text x='476.3' y='109.5' font-size='10' fill='#374151' text-anchor='middle'>5.6min</text>
+<rect x='503.3' y='167.7' width='42.0' height='48.3' rx='3' fill='#0ea5e9'/>
+<text x='524.3' y='161.7' font-size='10' fill='#374151' text-anchor='middle'>2.7min</text>
+<text x='503.3' y='240' font-size='12' fill='#111827' text-anchor='middle'>Traveler's Backpack</text>
+<rect x='582.0' y='73.7' width='42.0' height='142.3' rx='3' fill='#2563eb'/>
+<text x='603.0' y='67.7' font-size='10' fill='#374151' text-anchor='middle'>7.9min</text>
+<rect x='630.0' y='160.2' width='42.0' height='55.8' rx='3' fill='#0ea5e9'/>
+<text x='651.0' y='154.2' font-size='10' fill='#374151' text-anchor='middle'>3.1min</text>
+<text x='630.0' y='240' font-size='12' fill='#111827' text-anchor='middle'>Polymer</text>
+<rect x='708.7' y='45.8' width='42.0' height='170.2' rx='3' fill='#2563eb'/>
+<text x='729.7' y='39.8' font-size='10' fill='#374151' text-anchor='middle'>9.5min</text>
+<rect x='756.7' y='165.8' width='42.0' height='50.2' rx='3' fill='#0ea5e9'/>
+<text x='777.7' y='159.8' font-size='10' fill='#374151' text-anchor='middle'>2.8min</text>
+<text x='756.7' y='240' font-size='12' fill='#111827' text-anchor='middle'>Artifacts</text>
+<rect x='60' y='6' width='10' height='10' rx='2' fill='#2563eb'/>
+<text x='74' y='15' font-size='11' fill='#374151'>baseline</text>
+<rect x='138' y='6' width='10' height='10' rx='2' fill='#0ea5e9'/>
+<text x='152' y='15' font-size='11' fill='#374151'>bumped</text>
+</svg>
+</section>
+<section class='card'>
+<h2>Compile errors at the first failure</h2>
+<p class='note'>Counts are not effort: Terrestria's 99 errors are 3 symbols in 2 files, Artifacts' 97 split into 22 mechanical, 7 type mismatches and 68 structural, Traveler's Backpack's 196 took 4 repair cycles.</p>
+<svg viewBox='0 0 860 274' width='100%' role='img' aria-label='Compile errors at the first failure'>
+<text x='0' y='50' font-size='13' fill='#111827'>Trinkets (1.21.5→1.21.6)</text>
+<rect x='300' y='34' width='40.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='348.0' y='50' font-size='12' fill='#374151'>21</text>
+<text x='0' y='84' font-size='13' fill='#111827'>Traverse (1.21.5→1.21.6)</text>
+<rect x='300' y='68' width='130.0' height='20' rx='4' fill='#dc2626'/>
+<text x='438.0' y='84' font-size='12' fill='#374151'>68</text>
+<text x='0' y='118' font-size='13' fill='#111827'>Terrestria (1.21.5→1.21.6)</text>
+<rect x='300' y='102' width='189.0' height='20' rx='4' fill='#dc2626'/>
+<text x='497.0' y='118' font-size='12' fill='#374151'>99</text>
+<text x='0' y='152' font-size='13' fill='#111827'>Traveler's Backpack (1.21.4→1.21.5)</text>
+<rect x='300' y='136' width='374.0' height='20' rx='4' fill='#dc2626'/>
+<text x='682.0' y='152' font-size='12' fill='#374151'>196</text>
+<text x='0' y='186' font-size='13' fill='#111827'>Polymer (1.21.5→1.21.6)</text>
+<rect x='300' y='170' width='15.0' height='20' rx='4' fill='#2563eb'/>
+<text x='323.0' y='186' font-size='12' fill='#374151'>8</text>
+<text x='0' y='220' font-size='13' fill='#111827'>Artifacts (1.21.1→1.21.4)</text>
+<rect x='300' y='204' width='185.0' height='20' rx='4' fill='#dc2626'/>
+<text x='493.0' y='220' font-size='12' fill='#374151'>97</text>
+</svg>
+</section>
+<section class='card'>
+<h2>Port report classification: mechanical work vs structural work</h2>
+<p class='note'>Port report run on each log. Traveler's Backpack: 100 errors, 22 mechanical and 78 structural. Artifacts: 97 errors, 22 mechanical, 7 type mismatches, 68 structural (render-state refactor).</p>
+<svg viewBox='0 0 860 240' width='100%' role='img' aria-label='Port report classification: mechanical work vs structural work'>
+<text x='0' y='50' font-size='13' fill='#111827'>Traveler's Backpack: mechanical</text>
+<rect x='300' y='34' width='105.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='413.0' y='50' font-size='12' fill='#374151'>22</text>
+<text x='0' y='84' font-size='13' fill='#111827'>Traveler's Backpack: structural</text>
+<rect x='300' y='68' width='374.0' height='20' rx='4' fill='#dc2626'/>
+<text x='682.0' y='84' font-size='12' fill='#374151'>78</text>
+<text x='0' y='118' font-size='13' fill='#111827'>Artifacts: mechanical</text>
+<rect x='300' y='102' width='105.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='413.0' y='118' font-size='12' fill='#374151'>22</text>
+<text x='0' y='152' font-size='13' fill='#111827'>Artifacts: type mismatches</text>
+<rect x='300' y='136' width='34.0' height='20' rx='4' fill='#2563eb'/>
+<text x='342.0' y='152' font-size='12' fill='#374151'>7</text>
+<text x='0' y='186' font-size='13' fill='#111827'>Artifacts: structural (render state)</text>
+<rect x='300' y='170' width='326.0' height='20' rx='4' fill='#dc2626'/>
+<text x='634.0' y='186' font-size='12' fill='#374151'>68</text>
+</svg>
+</section>
+<section class='card'>
+<h2>One screen edit, start to verified: hot reload vs a restart</h2>
+<p class='note'>Fabric 26.3 and NeoForge 1.21.1 redefine the class in the running client (edit to screenshot, same JVM). A schema change (new field, method or registry entry) still needs a full client start: 28s on Fabric 1.21.11, 22s on NeoForge.</p>
+<svg viewBox='0 0 860 240' width='100%' role='img' aria-label='One screen edit, start to verified: hot reload vs a restart'>
+<line x1='321.9' y1='30' x2='321.9' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='321.9' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>500ms</text>
+<line x1='389.8' y1='30' x2='389.8' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='389.8' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0s</text>
+<line x1='457.7' y1='30' x2='457.7' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='457.7' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>2.0s</text>
+<line x1='547.5' y1='30' x2='547.5' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='547.5' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>5.0s</text>
+<line x1='615.4' y1='30' x2='615.4' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='615.4' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>10.0s</text>
+<line x1='723.1' y1='30' x2='723.1' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='723.1' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>30.0s</text>
+<text x='0' y='50' font-size='13' fill='#111827'>Fabric 26.3: screen edit, same JVM</text>
+<rect x='300' y='34' width='130.0' height='20' rx='4' fill='#2563eb'/>
+<text x='438.0' y='50' font-size='12' fill='#374151'>1.5s</text>
+<text x='0' y='84' font-size='13' fill='#111827'>NeoForge 1.21.1: screen edit, same JVM</text>
+<rect x='300' y='68' width='130.0' height='20' rx='4' fill='#2563eb'/>
+<text x='438.0' y='84' font-size='12' fill='#374151'>1.5s</text>
+<text x='0' y='118' font-size='13' fill='#111827'>Fabric 1.21.11: screen edit, same JVM</text>
+<rect x='300' y='102' width='152.0' height='20' rx='4' fill='#2563eb'/>
+<text x='460.0' y='118' font-size='12' fill='#374151'>1.9s</text>
+<text x='0' y='152' font-size='13' fill='#111827'>Fabric 1.21.11: schema change, restart</text>
+<rect x='300' y='136' width='416.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='724.0' y='152' font-size='12' fill='#374151'>28.0s</text>
+<text x='0' y='186' font-size='13' fill='#111827'>NeoForge 1.21.1: schema change, restart</text>
+<rect x='300' y='170' width='393.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='701.0' y='186' font-size='12' fill='#374151'>22.0s</text>
+</svg>
+</section>
+<section class='card'>
+<h2>From first failure to a green build: all four mods repaired by time</h2>
+<p class='note'>Each repo's own Gradle build after the repair pass. Trinkets 21 errors in 69s, Polymer 35 in 516s, Traveler's Backpack 196 over 4 cycles in 660s, Artifacts 97 over 8 builds in 1680s. Traverse and Terrestria were counted in call sites instead, see the panels below.</p>
+<svg viewBox='0 0 860 206' width='100%' role='img' aria-label='From first failure to a green build: all four mods repaired by time'>
+<line x1='311.3' y1='30' x2='311.3' y2='190' stroke='#e5e7eb' stroke-width='1'/>
+<text x='311.3' y='202' font-size='10' fill='#9ca3af' text-anchor='middle'>500ms</text>
+<line x1='346.4' y1='30' x2='346.4' y2='190' stroke='#e5e7eb' stroke-width='1'/>
+<text x='346.4' y='202' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0s</text>
+<line x1='381.6' y1='30' x2='381.6' y2='190' stroke='#e5e7eb' stroke-width='1'/>
+<text x='381.6' y='202' font-size='10' fill='#9ca3af' text-anchor='middle'>2.0s</text>
+<line x1='428.0' y1='30' x2='428.0' y2='190' stroke='#e5e7eb' stroke-width='1'/>
+<text x='428.0' y='202' font-size='10' fill='#9ca3af' text-anchor='middle'>5.0s</text>
+<line x1='463.2' y1='30' x2='463.2' y2='190' stroke='#e5e7eb' stroke-width='1'/>
+<text x='463.2' y='202' font-size='10' fill='#9ca3af' text-anchor='middle'>10.0s</text>
+<line x1='518.9' y1='30' x2='518.9' y2='190' stroke='#e5e7eb' stroke-width='1'/>
+<text x='518.9' y='202' font-size='10' fill='#9ca3af' text-anchor='middle'>30.0s</text>
+<line x1='554.0' y1='30' x2='554.0' y2='190' stroke='#e5e7eb' stroke-width='1'/>
+<text x='554.0' y='202' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0min</text>
+<line x1='635.6' y1='30' x2='635.6' y2='190' stroke='#e5e7eb' stroke-width='1'/>
+<text x='635.6' y='202' font-size='10' fill='#9ca3af' text-anchor='middle'>5.0min</text>
+<line x1='691.3' y1='30' x2='691.3' y2='190' stroke='#e5e7eb' stroke-width='1'/>
+<text x='691.3' y='202' font-size='10' fill='#9ca3af' text-anchor='middle'>15.0min</text>
+<text x='0' y='50' font-size='13' fill='#111827'>Trinkets (21 errors)</text>
+<rect x='300' y='34' width='261.0' height='20' rx='4' fill='#dc2626'/>
+<text x='569.0' y='50' font-size='12' fill='#374151'>1.1min</text>
+<text x='0' y='84' font-size='13' fill='#111827'>Polymer (35 errors)</text>
+<rect x='300' y='68' width='363.0' height='20' rx='4' fill='#dc2626'/>
+<text x='671.0' y='84' font-size='12' fill='#374151'>8.6min</text>
+<text x='0' y='118' font-size='13' fill='#111827'>Traveler's Backpack (196 errors, 4 cycles)</text>
+<rect x='300' y='102' width='376.0' height='20' rx='4' fill='#dc2626'/>
+<text x='684.0' y='118' font-size='12' fill='#374151'>11.0min</text>
+<text x='0' y='152' font-size='13' fill='#111827'>Artifacts (97 errors, 8 builds)</text>
+<rect x='300' y='136' width='423.0' height='20' rx='4' fill='#dc2626'/>
+<text x='731.0' y='152' font-size='12' fill='#374151'>28.0min</text>
+</svg>
+</section>
+<section class='card'>
+<h2>Forge: what their build costs next to our first run and one edit</h2>
+<p class='note'>MineColonies 1.20.1, 2102 sources, JDK 17. Their gradlew build -x test 328.3s and install 5s; then .\modaccel fast 23.9s cold, 2.3s per edit, 1.3s to FAIL a broken file.</p>
+<svg viewBox='0 0 860 240' width='100%' role='img' aria-label='Forge: what their build costs next to our first run and one edit'>
+<line x1='314.0' y1='30' x2='314.0' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='314.0' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>500ms</text>
+<line x1='357.5' y1='30' x2='357.5' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='357.5' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0s</text>
+<line x1='401.0' y1='30' x2='401.0' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='401.0' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>2.0s</text>
+<line x1='458.5' y1='30' x2='458.5' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='458.5' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>5.0s</text>
+<line x1='502.1' y1='30' x2='502.1' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='502.1' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>10.0s</text>
+<line x1='571.0' y1='30' x2='571.0' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='571.0' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>30.0s</text>
+<line x1='614.5' y1='30' x2='614.5' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='614.5' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0min</text>
+<line x1='715.6' y1='30' x2='715.6' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='715.6' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>5.0min</text>
+<text x='0' y='50' font-size='13' fill='#111827'>their gradlew build -x test</text>
+<rect x='300' y='34' width='421.0' height='20' rx='4' fill='#dc2626'/>
+<text x='729.0' y='50' font-size='12' fill='#374151'>5.5min</text>
+<text x='0' y='84' font-size='13' fill='#111827'>install the built jar</text>
+<rect x='300' y='68' width='159.0' height='20' rx='4' fill='#2563eb'/>
+<text x='467.0' y='84' font-size='12' fill='#374151'>5.0s</text>
+<text x='0' y='118' font-size='13' fill='#111827'>first .\modaccel fast</text>
+<rect x='300' y='102' width='257.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='565.0' y='118' font-size='12' fill='#374151'>23.9s</text>
+<text x='0' y='152' font-size='13' fill='#111827'>one-file edit, .\modaccel fast</text>
+<rect x='300' y='136' width='110.0' height='20' rx='4' fill='#2563eb'/>
+<text x='418.0' y='152' font-size='12' fill='#374151'>2.3s</text>
+<text x='0' y='186' font-size='13' fill='#111827'>broken file: FAIL, no build</text>
+<rect x='300' y='170' width='74.0' height='20' rx='4' fill='#2563eb'/>
+<text x='382.0' y='186' font-size='12' fill='#374151'>1.3s</text>
+</svg>
+</section>
+<section class='card'>
+<h2>NeoForge 1.21.1: first check pays for the client, repeats do not</h2>
+<p class='note'>Same node, all .\modaccel ui: client start to listening 18.4s cold, first ui after start 2.4s, screen check 3.2s with two screenshots, 6.1s total on a repeat. The very first ui of the session, build included, was 25.6s.</p>
+<svg viewBox='0 0 860 240' width='100%' role='img' aria-label='NeoForge 1.21.1: first check pays for the client, repeats do not'>
+<line x1='322.3' y1='30' x2='322.3' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='322.3' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>500ms</text>
+<line x1='391.7' y1='30' x2='391.7' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='391.7' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0s</text>
+<line x1='461.0' y1='30' x2='461.0' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='461.0' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>2.0s</text>
+<line x1='552.7' y1='30' x2='552.7' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='552.7' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>5.0s</text>
+<line x1='622.0' y1='30' x2='622.0' y2='224' stroke='#e5e7eb' stroke-width='1'/>
+<text x='622.0' y='236' font-size='10' fill='#9ca3af' text-anchor='middle'>10.0s</text>
+<text x='0' y='50' font-size='13' fill='#111827'>first .\modaccel ui (client start included)</text>
+<rect x='300' y='34' width='416.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='724.0' y='50' font-size='12' fill='#374151'>25.6s</text>
+<text x='0' y='84' font-size='13' fill='#111827'>cold start, client listening</text>
+<rect x='300' y='68' width='383.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='691.0' y='84' font-size='12' fill='#374151'>18.4s</text>
+<text x='0' y='118' font-size='13' fill='#111827'>first ui after start</text>
+<rect x='300' y='102' width='179.0' height='20' rx='4' fill='#2563eb'/>
+<text x='487.0' y='118' font-size='12' fill='#374151'>2.4s</text>
+<text x='0' y='152' font-size='13' fill='#111827'>screen check, 2 screenshots</text>
+<rect x='300' y='136' width='208.0' height='20' rx='4' fill='#2563eb'/>
+<text x='516.0' y='152' font-size='12' fill='#374151'>3.2s</text>
+<text x='0' y='186' font-size='13' fill='#111827'>repeat .\modaccel ui, total</text>
+<rect x='300' y='170' width='273.0' height='20' rx='4' fill='#2563eb'/>
+<text x='581.0' y='186' font-size='12' fill='#374151'>6.1s</text>
+</svg>
+</section>
+<section class='card'>
+<h2>Diorama: their build vs the fast lane and the gate</h2>
+<p class='note'>Stonecutter repo: their :26.3:build -x test 204.5s, fast lane 2.1s, toolchain gate READY 5.2s.</p>
+<svg viewBox='0 0 860 172' width='100%' role='img' aria-label='Diorama: their build vs the fast lane and the gate'>
+<line x1='315.0' y1='30' x2='315.0' y2='156' stroke='#e5e7eb' stroke-width='1'/>
+<text x='315.0' y='168' font-size='10' fill='#9ca3af' text-anchor='middle'>500ms</text>
+<line x1='361.8' y1='30' x2='361.8' y2='156' stroke='#e5e7eb' stroke-width='1'/>
+<text x='361.8' y='168' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0s</text>
+<line x1='408.5' y1='30' x2='408.5' y2='156' stroke='#e5e7eb' stroke-width='1'/>
+<text x='408.5' y='168' font-size='10' fill='#9ca3af' text-anchor='middle'>2.0s</text>
+<line x1='470.3' y1='30' x2='470.3' y2='156' stroke='#e5e7eb' stroke-width='1'/>
+<text x='470.3' y='168' font-size='10' fill='#9ca3af' text-anchor='middle'>5.0s</text>
+<line x1='517.1' y1='30' x2='517.1' y2='156' stroke='#e5e7eb' stroke-width='1'/>
+<text x='517.1' y='168' font-size='10' fill='#9ca3af' text-anchor='middle'>10.0s</text>
+<line x1='591.1' y1='30' x2='591.1' y2='156' stroke='#e5e7eb' stroke-width='1'/>
+<text x='591.1' y='168' font-size='10' fill='#9ca3af' text-anchor='middle'>30.0s</text>
+<line x1='637.9' y1='30' x2='637.9' y2='156' stroke='#e5e7eb' stroke-width='1'/>
+<text x='637.9' y='168' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0min</text>
+<text x='0' y='50' font-size='13' fill='#111827'>their :26.3:build -x test</text>
+<rect x='300' y='34' width='421.0' height='20' rx='4' fill='#dc2626'/>
+<text x='729.0' y='50' font-size='12' fill='#374151'>3.4min</text>
+<text x='0' y='84' font-size='13' fill='#111827'>fast lane</text>
+<rect x='300' y='68' width='112.0' height='20' rx='4' fill='#2563eb'/>
+<text x='420.0' y='84' font-size='12' fill='#374151'>2.1s</text>
+<text x='0' y='118' font-size='13' fill='#111827'>toolchain gate, READY</text>
+<rect x='300' y='102' width='173.0' height='20' rx='4' fill='#2563eb'/>
+<text x='481.0' y='118' font-size='12' fill='#374151'>5.2s</text>
+</svg>
+</section>
+<section class='card'>
+<h2>Toolchain gate: how long before we know a repo is workable</h2>
+<p class='note'>Gate runs the clone the user gave us: Diorama READY 5.2s; MineColonies 1.20.4 BLOCKED 29.4s; MineColonies main configures 88.7s; Traverse BLOCKED 11.1s; Artifacts BLOCKED 8.8s. NeoForge client, direct launch, listening at 7s. Later version checks had no timing: NeoForge 1.21.4 exists (21.4.161); 1.20.1 BLOCKED, the gate looked for 20.1.*.</p>
+<svg viewBox='0 0 860 274' width='100%' role='img' aria-label='Toolchain gate: how long before we know a repo is workable'>
+<line x1='317.3' y1='30' x2='317.3' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='317.3' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>500ms</text>
+<line x1='371.1' y1='30' x2='371.1' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='371.1' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0s</text>
+<line x1='424.9' y1='30' x2='424.9' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='424.9' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>2.0s</text>
+<line x1='496.0' y1='30' x2='496.0' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='496.0' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>5.0s</text>
+<line x1='549.8' y1='30' x2='549.8' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='549.8' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>10.0s</text>
+<line x1='635.0' y1='30' x2='635.0' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='635.0' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>30.0s</text>
+<line x1='688.8' y1='30' x2='688.8' y2='258' stroke='#e5e7eb' stroke-width='1'/>
+<text x='688.8' y='270' font-size='10' fill='#9ca3af' text-anchor='middle'>1.0min</text>
+<text x='0' y='50' font-size='13' fill='#111827'>Diorama: READY</text>
+<rect x='300' y='34' width='199.0' height='20' rx='4' fill='#2563eb'/>
+<text x='507.0' y='50' font-size='12' fill='#374151'>5.2s</text>
+<text x='0' y='84' font-size='13' fill='#111827'>MineColonies 1.20.4: BLOCKED</text>
+<rect x='300' y='68' width='333.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='641.0' y='84' font-size='12' fill='#374151'>29.4s</text>
+<text x='0' y='118' font-size='13' fill='#111827'>MineColonies main: configures</text>
+<rect x='300' y='102' width='419.0' height='20' rx='4' fill='#dc2626'/>
+<text x='727.0' y='118' font-size='12' fill='#374151'>1.5min</text>
+<text x='0' y='152' font-size='13' fill='#111827'>Traverse: BLOCKED</text>
+<rect x='300' y='136' width='258.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='566.0' y='152' font-size='12' fill='#374151'>11.1s</text>
+<text x='0' y='186' font-size='13' fill='#111827'>Artifacts: BLOCKED</text>
+<rect x='300' y='170' width='240.0' height='20' rx='4' fill='#2563eb'/>
+<text x='548.0' y='186' font-size='12' fill='#374151'>8.8s</text>
+<text x='0' y='220' font-size='13' fill='#111827'>NeoForge client, direct launch to listening</text>
+<rect x='300' y='204' width='222.0' height='20' rx='4' fill='#2563eb'/>
+<text x='530.0' y='220' font-size='12' fill='#374151'>7.0s</text>
+</svg>
+</section>
+<section class='card'>
+<h2>Port repair size: call sites fixed per mod</h2>
+<p class='note'>Counts, not seconds. Traverse 68 sites and Terrestria 142 sites repaired to a green compile; both are the 1.21.5 to 1.21.6 jump.</p>
+<svg viewBox='0 0 860 138' width='100%' role='img' aria-label='Port repair size: call sites fixed per mod'>
+<text x='0' y='50' font-size='13' fill='#111827'>Traverse sites</text>
+<rect x='300' y='34' width='179.0' height='20' rx='4' fill='#dc2626'/>
+<text x='487.0' y='50' font-size='12' fill='#374151'>68</text>
+<text x='0' y='84' font-size='13' fill='#111827'>Terrestria sites</text>
+<rect x='300' y='68' width='374.0' height='20' rx='4' fill='#dc2626'/>
+<text x='682.0' y='84' font-size='12' fill='#374151'>142</text>
+</svg>
+</section>
+<section class='card'>
+<h2>What each repaired mod builds in</h2>
+<p class='note'>Same repos, their own Gradle build after the repair pass: Traverse 5.9s, Terrestria 7.5s, Traveler's Backpack 5s, Artifacts 13s.</p>
+<svg viewBox='0 0 860 206' width='100%' role='img' aria-label='What each repaired mod builds in'>
+<text x='0' y='50' font-size='13' fill='#111827'>Traverse build after repair</text>
+<rect x='300' y='34' width='170.0' height='20' rx='4' fill='#2563eb'/>
+<text x='478.0' y='50' font-size='12' fill='#374151'>5.9s</text>
+<text x='0' y='84' font-size='13' fill='#111827'>Terrestria build after repair</text>
+<rect x='300' y='68' width='216.0' height='20' rx='4' fill='#2563eb'/>
+<text x='524.0' y='84' font-size='12' fill='#374151'>7.5s</text>
+<text x='0' y='118' font-size='13' fill='#111827'>Traveler's Backpack build after repair</text>
+<rect x='300' y='102' width='144.0' height='20' rx='4' fill='#2563eb'/>
+<text x='452.0' y='118' font-size='12' fill='#374151'>5.0s</text>
+<text x='0' y='152' font-size='13' fill='#111827'>Artifacts build after repair</text>
+<rect x='300' y='136' width='374.0' height='20' rx='4' fill='#f59e0b'/>
+<text x='682.0' y='152' font-size='12' fill='#374151'>13.0s</text>
+</svg>
+</section>
+<section class='card'><h2>What to keep in mind</h2><ul class='notes'>
+<li>Warm means the resident client or server was already running; cold is measured separately.</li>
+<li>Timings come from .runs/bench.jsonl and .runs/index.jsonl; n is the number of runs.</li>
+<li>Screenshots are 854x480 PNGs a human or an agent looks at; there are no pixel goldens.</li>
+<li>Diorama figures are its own documented numbers, same machine where noted.</li>
+<li>Forge loop, MineColonies 1.20.1 with 2102 sources on JDK 17: their gradlew build -x test 328.3s, install 5s, first .\modaccel fast 23.9s, one-file edit 2.3s, broken file FAIL 1.3s.</li>
+<li>NeoForge 1.21.1 node: first .\modaccel ui 25.6s with client start, cold start to a listening client 18.4s, first ui after start 2.4s, screen check 3.2s with two screenshots, repeat .\modaccel ui 6.1s total.</li>
+<li>Diorama (Stonecutter): their :26.3:build -x test 204.5s, fast lane 2.1s, toolchain gate READY 5.2s.</li>
+<li>Toolchain gate: Diorama READY 5.2s; MineColonies 1.20.4 BLOCKED 29.4s; MineColonies main configures 88.7s; Traverse BLOCKED 11.1s; Artifacts BLOCKED 8.8s; NeoForge client direct launch 7s to listening.</li>
+<li>Port repairs, all six mods green: Trinkets 21 errors in 1.15 min; Polymer 35 errors in 8.6 min; Traverse 68 call sites in a single pass, 5.9s build after; Terrestria 142 sites, 7.5s build after; Traveler's Backpack 196 errors over 4 repair cycles, 11 min of edits, 5s final build; Artifacts 97 errors over 8 builds, 28 min of edits, 13s final build.</li>
+<li>Port report classification on the Traveler's Backpack log: 100 errors, 22 mechanical, 78 structural. Artifacts' 97 compile errors split 22 mechanical, 7 type mismatches and 68 structural (a render-state refactor).</li>
+<li>NeoForge 1.21.1 hot reload: edit a screen class to a new screenshot 1.5s in the same JVM, the same as Fabric 26.3. A schema change (new field, method or registry entry) still needs a restart, measured at 22s on NeoForge and 28s on 1.21.11.</li>
+<li>Toolchain gate versions: NeoForge 1.21.4 exists (21.4.161); NeoForge 1.20.1 is BLOCKED because the gate looked for 20.1.*.</li>
+</ul></section>
+<footer>Generated from bench/data.json by bench/charts.ps1. Regenerate after a new bench run.</footer></main></body></html>
+

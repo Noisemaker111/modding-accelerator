@@ -1,0 +1,29 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "CC0-1.0"
+
+[[mods]]
+modId = "modlabbridge"
+version = "1.0.0"
+displayName = "Mod Lab Bridge (Forge 1.20.1)"
+authors = "Jon"
+description = '''
+A tiny client mod that opens the lab control socket on a Minecraft client that
+belongs to someone else's mod, so the harness can ask it for root, a screenshot
+and quit. Added to a run as a jar in the game dir mods folder, never by editing
+that mod.
+'''
+
+[[dependencies.modlabbridge]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.modlabbridge]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,1.21)"
+ordering = "NONE"
+side = "CLIENT"

@@ -1,0 +1,21 @@
+pluginManagement {
+	repositories {
+		maven {
+			name = 'NeoForged'
+			url = 'https://maven.neoforged.net/releases'
+		}
+		gradlePluginPortal()
+		mavenCentral()
+	}
+}
+
+plugins {
+	// Lets Gradle download the Java 21 the game needs, without a system install.
+	// NeoForge 1.21.1 runs on Java 21; this PC only ships JDK/JBR 25.
+	// 1.0.0 is the first release that runs on Gradle 9 (0.8.0 reads a JvmVendorSpec
+	// constant that Gradle 9 removed).
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+// Same modid as the parent: this is the same mod on a third loader.
+rootProject.name = 'prismlab-neoforge-1.21.1'

@@ -1,0 +1,190 @@
+{
+  "benchmark": "one-step Minecraft version bump on real open-source Fabric/Architectury mods",
+  "date": "2026-10-21",
+  "machine": "AMD Ryzen 9 3900X (12C/24T), 64 GB RAM, Windows 11",
+  "jdk": "Temurin 21 (C:/Users/Jk101/tools/jdk-21). JDK 25 was tried first and every mod's Gradle 8.11-8.14 wrapper rejected it: \"BUG! ... Unsupported class file major version 69\" (log-jdk25-probe.txt).",
+  "method": "git clone --depth 1 at a 1.21.x branch -> .\\gradlew.bat build -x test --console=plain (baseline) -> edit only version pins (minecraft_version, yarn/mojang mappings, fabric_api_version, plus loader/loom/third-party pins only when resolution or tooling forced it) -> rebuild -> count javac errors. Builds ran 1-4 in parallel on one machine.",
+  "caveat": "Wall seconds include Gradle startup and dependency/MC setup. Baselines were cold (fresh clone: Gradle distribution + full dependency graph); bumped builds reused warm caches, so bump seconds understate the extra work and baseline seconds include one-off downloads. Bump seconds still include the new Minecraft jar download + remap.",
+  "mods": [
+    {
+      "name": "Trinkets",
+      "repo": "https://github.com/emilyploszaj/trinkets",
+      "license": "MIT",
+      "branch": "main",
+      "commit": "b6e6044 (2026-07-25)",
+      "baseline_pins": { "minecraft_version": "1.21.5", "yarn_mappings": "1.21.5+build.1", "loader_version": "0.16.10", "fabric_api_version": "0.119.5+1.21.5", "loom": "1.10-SNAPSHOT (1.10.5)", "gradle": "8.13" },
+      "current_mc": "1.21.5",
+      "target_mc": "1.21.6",
+      "bump_change": "minecraft_version=1.21.6, yarn_mappings=1.21.6+build.1, fabric_version=0.128.1+1.21.6 (3 lines)",
+      "baseline": { "ok": true, "seconds": 321.1 },
+      "bumped": { "ok": false, "seconds": 156.1 },
+      "errors": {
+        "total": 21,
+        "by_cause": {
+          "signature_shipped_GUI_matrix": 17,
+          "removed_ItemStack_NBT_methods": 4
+        },
+        "examples": [
+          "mixin/HandledScreenMixin.java:73 incompatible types: int cannot be converted to Matrix3x2f -- DrawContext.getMatrices() now returns Matrix3x2fStack, translate(x,y,z) is gone",
+          "TrinketScreenManager.java:204 symbol: method push() / pop() -- Matrix3x2fStack exposes pushMatrix()/popMatrix()",
+          "api/LivingEntityTrinketComponent.java:214 symbol: method fromNbt(WrapperLookup,NbtCompound) and :291 fromNbt(DynamicRegistryManager,NbtCompound) -- ItemStack NBT helpers removed",
+          "api/LivingEntityTrinketComponent.java:~318 symbol: method toNbt(WrapperLookup) removed"
+        ]
+      },
+      "notes": "Compiled cleanly against 1.21.6 mappings with the original Loom 1.10.5 and Gradle 8.13; only the 3 pins changed. Errors sit in 3 files, all client-render or item-NBT code."
+    },
+    {
+      "name": "Traverse",
+      "repo": "https://github.com/TerraformersMC/Traverse",
+      "license": "LGPL-3.0",
+      "branch": "1.21.5",
+      "commit": "c9e324b (2025-10-06)",
+      "baseline_pins": { "minecraft_version": "1.21.5", "yarn_mappings": "1.21.5+build.1", "loader_version": "0.16.10", "fabric_api_version": "0.119.6+1.21.5", "loom": "1.10.+ (1.10.5)", "gradle": "8.12.1" },
+      "current_mc": "1.21.5",
+      "target_mc": "1.21.6",
+      "bump_change": "minecraft_version=1.21.6, yarn_mappings=1.21.6+build.1, fabric_version=0.128.1+1.21.6 (3 lines)",
+      "baseline": { "ok": true, "seconds": 328.9 },
+      "bumped": { "ok": false, "seconds": 115.0 },
+      "errors": {
+        "total": 68,
+        "by_cause": {
+          "removed_Fabric_tag_provider_API": 68
+        },
+        "examples": [
+          "data/TraverseBiomeTagProvider.java:26 symbol: method getOrCreateTagBuilder(TagKey<Biome>) -- removed from FabricTagProvider in Fabric API 0.128",
+          "data/TraverseBlockTagProvider.java symbol: method getOrCreateTagBuilder(TagKey<Block>)",
+          "data/TraverseEntityTypeTagProvider.java / TraverseItemTagProvider.java same removal"
+        ]
+      },
+      "notes": "Needed 3 attempts but only 1 of them was compile-tooling: attempts 1 and 2 died on disk exhaustion ('There is not enough space on the disk') while several Loom builds shared the cache volume. A control run at the ORIGINAL Loom 1.10.5 + Gradle 8.12.1 also reached compileJava and produced the same 136 error lines, so no Loom/Gradle bump was required for 1.21.6. Errors are 100% one Fabric API data-gen rename in 4 files."
+    },
+    {
+      "name": "Terrestria",
+      "repo": "https://github.com/TerraformersMC/Terrestria",
+      "license": "LGPL-3.0",
+      "branch": "1.21.5",
+      "commit": "5bddf76 (2025-12-09)",
+      "baseline_pins": { "minecraft_version": "1.21.5", "yarn_mappings": "1.21.5+build.1", "loader_version": "0.16.10", "fabric_api_version": "0.119.6+1.21.5", "loom": "1.10.+ (1.10.5)", "gradle": "8.12.1" },
+      "current_mc": "1.21.5",
+      "target_mc": "1.21.6",
+      "bump_change": "minecraft_version=1.21.6, yarn_mappings=1.21.6+build.1, fabric_version=0.128.1+1.21.6 (3 lines)",
+      "baseline": { "ok": true, "seconds": 141.8 },
+      "bumped": { "ok": false, "seconds": 89.4 },
+      "errors": {
+        "total": 99,
+        "by_cause": {
+          "removed_Fabric_tag_provider_API": 97,
+          "removed_FabricTagBuilder_class": 1,
+          "renamed_vanilla_tag": 1
+        },
+        "examples": [
+          "data/TerrestriaBiomeTagProvider.java:26 symbol: method getOrCreateTagBuilder(TagKey<Biome>) (52 sites)",
+          "data/TerrestriaBlockTagProvider.java symbol: method getOrCreateTagBuilder(TagKey<Block>) (45 sites)",
+          "data/TerrestriaBiomeTagProvider.java: symbol: class FabricTagBuilder no longer exists in Fabric API 0.128",
+          "data/TerrestriaBiomeTagProvider.java: symbol: variable PLAYS_AMBIENT_DESERT_BLOCK_SOUNDS (BiomeTags tag renamed in 1.21.6)"
+        ]
+      },
+      "notes": "Same 3-pin change as Traverse and the same single root cause; 99 errors but only 3 distinct symbols, all in 2 data-provider files. Good example of error count overstating real work."
+    },
+    {
+      "name": "Traveler's Backpack",
+      "repo": "https://github.com/Tiviacz1337/Travelers-Backpack",
+      "license": "GPL-3.0 (declared in fabric.mod.json, no LICENSE file in tree)",
+      "branch": "1.21.4-fabric",
+      "commit": "3375b57 (2025-10-13)",
+      "baseline_pins": { "minecraft_version": "1.21.4", "yarn_mappings": "1.21.4+build.8", "loader_version": "0.16.13", "fabric_api_version": "0.119.2+1.21.4", "loom": "1.9-SNAPSHOT (1.9.2)", "gradle": "8.11.1" },
+      "current_mc": "1.21.4",
+      "target_mc": "1.21.5",
+      "bump_change": "minecraft_version=1.21.5, yarn_mappings=1.21.5+build.1, fabric_version=0.119.5+1.21.5, plus loom 1.9-SNAPSHOT->1.10-SNAPSHOT and Gradle 8.11.1->8.14 because a dependency jar guarded on Loom version; accessories pin reverted to its 1.21.4 build (no 1.21.5 artifact exists)",
+      "baseline": { "ok": true, "seconds": 335.1 },
+      "bumped": { "ok": false, "seconds": 161.0 },
+      "attempts": [
+        { "seconds": 24.4, "result": "FAIL dependency: Could not find io.wispforest:accessories-fabric:1.2.9-beta+1.21.5" },
+        { "seconds": 42.7, "result": "FAIL tooling: Mod was built with a newer version of Loom (1.10.1), you are using Loom (1.9.2)" },
+        { "seconds": 10.0, "result": "FAIL tooling: fabric-loom 1.10-SNAPSHOT requires at least Gradle 8.12, this build uses 8.11.1" },
+        { "seconds": 161.0, "result": "reached compileJava" }
+      ],
+      "errors": {
+        "total": 6,
+        "by_cause": {
+          "moved_client_render_class": 5,
+          "moved_entity_class": 1,
+          "mixin_target": 1
+        },
+        "examples": [
+          "client/screens/widgets/ScrollPanel.java:11 symbol: class CoreShaders, location: package net.minecraft.client.renderer (3 sites: ScrollPanel, StackModelPart, RenderHelper, ServerActions)",
+          "SupporterBadgeModel.java:14 symbol: class BakedModel, location: package net.minecraft.client.resources.model (2 sites)",
+          "ServerActions.java:37 symbol: class ThrownPotion, location: package net.minecraft.world.entity.projectile (1 site)",
+          "mixin/abilities/ExperienceOrbEntityMixin.java:15 warning: Cannot find target for @Shadow field in net.minecraft.world.entity.ExperienceOrb (compiles, but the injection is dead)"
+        ]
+      },
+      "notes": "Only 6 compile errors, but the bump was the most expensive to get to a compiler: the first three attempts died on dependency/tooling, not code. The @Shadow warning shows a silent mixin break that a green build would hide."
+    },
+    {
+      "name": "Polymer",
+      "repo": "https://github.com/Patbox/polymer",
+      "license": "LGPL-3.0",
+      "branch": "dev/1.21.5",
+      "commit": "0272ea5 (2025-05-28)",
+      "baseline_pins": { "minecraft_version": "1.21.5", "yarn_mappings": "1.21.5+build.1", "loader_version": "0.16.10", "fabric_api_version": "0.119.1+1.21.5", "loom": "1.10.+ (1.10.5)", "gradle": "8.12" },
+      "current_mc": "1.21.5",
+      "target_mc": "1.21.6",
+      "bump_change": "minecraft_version=1.21.6, yarn_mappings=1.21.6+build.1, fabric_version=0.128.1+1.21.6 (3 lines)",
+      "baseline": { "ok": true, "seconds": 474.4 },
+      "bumped": { "ok": false, "seconds": 186.1 },
+      "errors": {
+        "total": 8,
+        "by_cause": {
+          "constructor_signature": 3,
+          "removed_method": 2,
+          "abstract_method_added": 3
+        },
+        "examples": [
+          "common/impl/entity/InternalEntityHelpers.java:39 constructor PlayerEntity: required World,GameProfile; found World,BlockPos,int,GameProfile",
+          "common/impl/entity/InternalEntityHelpers.java: symbol: method getProtocolVersion() removed (2 sites)",
+          "FakeEntity is not abstract and does not override abstract method writeCustomData(WriteView) -- the 1.21.6 ValueInput/ValueOutput migration",
+          "entity spawn settings constructor gained Optional<Integer> (MonsterSettings)"
+        ]
+      },
+      "notes": "8 distinct errors, smallest set of the six, but they hit fake-entity and networking internals. The writeCustomData(WriteView) break is exactly the 1.21.6 serialization change the knowledge base already lists for Entity/BlockEntity."
+    },
+    {
+      "name": "Artifacts",
+      "repo": "https://github.com/ochotonida/artifacts",
+      "license": "MIT",
+      "branch": "1.21.1",
+      "commit": "7cf7dc4 (2026-09-02)",
+      "baseline_pins": { "minecraft_version": "1.21.1", "mappings": "loom.officialMojangMappings()", "fabric_loader_version": "0.16.5", "fabric_api_version": "0.115.2+1.21.1", "loom": "dev.architectury.loom 1.11-SNAPSHOT", "gradle": "8.14", "neoforge_version": "21.1.211" },
+      "current_mc": "1.21.1",
+      "target_mc": "1.21.4",
+      "bump_change": "minecraft_version=1.21.4, fabric_api_version=0.119.2+1.21.4, neoforge_version=21.1.211->21.4.161 (required even when building :fabric:build, because :neoforge is always configured)",
+      "baseline": { "ok": true, "seconds": 567.5, "note": "full build, fabric+neoforge; the same :fabric:build task alone took 25.5s warm" },
+      "bumped": { "ok": false, "seconds": 167.4, "note": ":fabric:build; not like-for-like with the 567.5s full baseline" },
+      "attempts": [
+        { "seconds": 166.7, "result": "FAIL NeoForge 21.1.211 is not for Minecraft 1.21.4 (expected: 1.21.1)" },
+        { "seconds": 21.0, "result": "FAIL same, after enabled_platforms=fabric" },
+        { "seconds": 167.4, "result": "reached compileJava after neoforge pin bump" }
+      ],
+      "errors": {
+        "total": 97,
+        "by_cause": {
+          "render_state_refactor_model_and_renderer_signatures": 68,
+          "cannot_find_symbol_moved_or_removed_classes": 22,
+          "other_type_mismatch": 7
+        },
+        "examples": [
+          "26x method does not override or implement a method from a supertype -- EntityModel/renderer overrides after the 1.21.2 entity render-state refactor",
+          "19x type argument LivingEntity is not within bounds of type-variable T -- EntityModel<T> is now bound to render state, not the entity",
+          "client/item/model/ArmsModel.java:65 setupAnim required LivingEntity, found LivingEntity,float,float,float,float,float",
+          "symbol: class InteractionResultHolder (4 sites), UseAnim (3), ClampedItemPropertyFunction (2), getMinBuildHeight()->getMinY() (1)"
+        ]
+      },
+      "notes": "The 1.21.1->1.21.4 step is a different class of work from the 1.21.5->1.21.6 step: it crosses the entity render-state refactor, so overrides and generics break wholesale rather than a few symbols. Baseline compiled 194 common + 32 fabric sources in 567.5s cold."
+    }
+  ],
+  "dropped": [
+    { "name": "Waystones", "repo": "https://github.com/TwelveIterations/Waystones", "reason": "LICENSE says 'All Rights Reserved' - not open source, so it does not meet the open-source criterion" },
+    { "name": "Farmer's Delight Fabric port", "repo": "https://github.com/newhoryzon/farmers-delight-fabric", "reason": "stale at 1.20.1 and no Gradle wrapper on the default branch" },
+    { "name": "ModernFix", "repo": "https://github.com/embeddedt/ModernFix", "reason": "default/1.21.1 branch is NeoForge moddev + buildSrc, not Fabric/Architectury; dropped to keep the set comparable" }
+  ]
+}

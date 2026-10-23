@@ -1,0 +1,197 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+}
+
+repositories {
+	// Add repositories to retrieve artifacts from in here.
+	// You should only use this when depending on other mods because
+	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
+	// for more information about repositories.
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"prismlab" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+loom {
+	runs {
+		clientWarm {
+			client()
+			runDir "build/run/warm"
+			property("prismlab.lab.port", "27399")
+			vmArg "-javaagent:${projectDir}/.modaccel/agent.jar"
+			vmArg "-Dprismlab.agent.port=27398"
+			vmArg "-XX:+AllowEnhancedClassRedefinition"
+			vmArg "-XX:TieredStopAtLevel=1"
+			vmArg "-Dmodlab.screen=com.prismlab.client.PrismScreen"
+			vmArg "-Dmodlab.name=prismlab-ui"
+			vmArg "-Dmodlab.click=More shards"
+			vmArg "-Dmodlab.block=prismlab:prism_node"
+			vmArg "-Dmodlab.probe=charge"
+			vmArg "-Dmodlab.shots=${projectDir}/build/run/warm/shots"
+			vmArg "-Dmodlab.root=${projectDir}"
+			vmArg "-Dprismlab.lab.port=27399"
+			ideConfigGenerated false
+		}
+		serverLab {
+			server()
+			runDir "build/run/serverLab"
+			ideConfigGenerated false
+		}
+		clientMp {
+			client()
+			runDir "build/run/mp"
+			property("prismlab.lab.port", "27389")
+			vmArg "-javaagent:${projectDir}/.modaccel/agent.jar"
+			vmArg "-Dprismlab.agent.port=27388"
+			vmArg "-XX:+AllowEnhancedClassRedefinition"
+			vmArg "-XX:TieredStopAtLevel=1"
+			vmArg "-Dmodlab.mp=127.0.0.1:25565"
+			vmArg "-Dmodlab.shots=${projectDir}/build/run/mp/shots"
+			vmArg "-Dmodlab.root=${projectDir}"
+			vmArg "-Dmodlab.run=mp"
+			ideConfigGenerated false
+		}
+		clientMp2 {
+			client()
+			runDir "build/run/mp2"
+			property("prismlab.lab.port", "27379")
+			vmArg "-javaagent:${projectDir}/.modaccel/agent.jar"
+			vmArg "-Dprismlab.agent.port=27378"
+			vmArg "-XX:+AllowEnhancedClassRedefinition"
+			vmArg "-XX:TieredStopAtLevel=1"
+			vmArg "-Dmodlab.mp=127.0.0.1:25565"
+			vmArg "-Dmodlab.shots=${projectDir}/build/run/mp2/shots"
+			vmArg "-Dmodlab.root=${projectDir}"
+			vmArg "-Dmodlab.run=mp2"
+			ideConfigGenerated false
+		}
+	}
+}
+
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "prismlab-gametest"
+		enableGameTests = true
+		enableClientGameTests = true
+		eula = true
+		clearRunDirectory = true
+	}
+}
+
+dependencies {
+	// To change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API. This is technically optional, but you probably want it anyway.
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Fast tier: real Minecraft classes inside the test JVM, no game launch.
+	testImplementation "net.fabricmc:fabric-loader-junit:${project.loader_version}"
+	testImplementation platform("org.junit:junit-bom:5.11.4")
+	testImplementation "org.junit.jupiter:junit-jupiter"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test {
+	useJUnitPlatform {
+		// `lab pure` runs only the tests tagged "pure": no Minecraft registry bootstrap.
+		if (project.hasProperty('pureOnly')) {
+			includeTags 'pure'
+		}
+	}
+	// The loop always wants the answer for the code as it is right now.
+	outputs.upToDateWhen { false }
+	testLogging {
+		events "passed", "failed", "skipped"
+		showStandardStreams = false
+	}
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+	// if it is present.
+	// If you remove this line, sources will not be generated.
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	def projectName = project.name
+	inputs.property "projectName", projectName
+
+	from("LICENSE") {
+		rename { "${it}_$projectName"}
+	}
+}
+
+// configure the maven publication
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+
+	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+	repositories {
+		// Add repositories to publish to here.
+		// Notice: This block does NOT have the same function as the block in the top level.
+		// The repositories here will be used for publishing your artifact, not for
+		// retrieving dependencies.
+	}
+}
+
+// Writes the test runtime classpath once so the resident fast lane (tools/LabDaemon.java)
+// can compile and run without Gradle in the loop.
+tasks.register("labClasspath") {
+	def out = layout.projectDirectory.file(".modaccel/classpath.txt")
+	def cp = sourceSets["test"].runtimeClasspath.asPath
+	doLast {
+		out.asFile.parentFile.mkdirs()
+		out.asFile.text = cp
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
