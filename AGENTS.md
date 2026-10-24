@@ -19,12 +19,14 @@ Live board: `docs/progress.html`, rendered from `coverage/ledger.json` by
   through, 61 semantic errors remain: render pipeline 20 sites, hunger API,
   tooltip component, networking. Tree: `.runs/beta-trials/appleskin-1201/`.
 - Phase 1 step 8 (next): render-pipeline rule family, then re-run step 7.
-- Phase 3 (doing): 26.3 is reachable. AppleSkin NeoForge 1.21.6 → 26.3 now configures and
-  compiles with no intermediary: the tool resolves NeoForge 26.3.0.97, moves NeoGradle 7.0 to
-  7.1, Java 21 to 25 and archivesBaseName to base.archivesName by itself, and four name rules
-  (ResourceLocation → Identifier, GuiGraphics → GuiGraphicsExtractor, GameRules and RenderType
-  packages) took 82 errors to 20 in under a minute. Next errors: HUD stat fields, KeyHelper's GLFW access,
-  tooltip draw calls, one GameRules import. Tree: `.runs/beta-trials/appleskin-neoforge-263/`.
+- Phase 3 (doing): 26.3 has a build. AppleSkin NeoForge 1.21.6 → 26.3 packages with the mixin
+  audit in 66s: the tool resolves NeoForge 26.3.0.97, moves NeoGradle 7.0 → 7.1, Java 21 → 25 and
+  archivesBaseName → base.archivesName, then rules take 82 compile errors to 1 (ResourceLocation →
+  Identifier, GuiGraphics → GuiGraphicsExtractor, GameRules and RenderType moves, InputConstants
+  keys, HUD state on mc.gui.hud, tooltip extract/rename). The last error is the removed debug-text
+  event: that file was written by hand (DebugInfoHandler in the trial tree) and is the one manual
+  step, so do not call this port automatic end to end. Next rung: load it in a real 26.3 client.
+  Tree: `.runs/beta-trials/appleskin-neoforge-263/`.
 - Phase 3 step 14 (doing): `VersionMap <v> <v> --from-names yarn --to-names mojmap` converts one
   version's names (1.21.6: 9,357 classes); applying it to a whole tree is still missing. A 26.3
   build of AppleSkin's own 26.3-fabric checkout compiles in 14s.

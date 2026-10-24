@@ -37,9 +37,10 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/pro
     a full-tree pass). **doing**
 15. Switch the build with the version: Loom 1.17, Gradle 9.5, Java 25, no mappings. **doing**
 16. Diff the old official names against the 26.3 jar to name what moved. **next**
-17. Port one mod to 26.3 to a build, then to a loaded client. First real attempt: AppleSkin
-    NeoForge 1.21.6 → 26.3 configures and compiles with no intermediary (NeoGradle, Java and
-    Gradle-9 build edits made automatically), 82 errors down to 20 after four renames. **doing**
+17. Port one mod to 26.3 to a build, then to a loaded client. AppleSkin NeoForge 1.21.6 → 26.3
+    reaches a packaged build with the mixin audit in 66s: build settings, NeoGradle, Java and 82 → 0
+    compile errors are handled by rules except the removed debug-text event, one hand-written file.
+    Loading it in a real 26.3 client is the next rung. **doing**
 
 ## Phase 4 — Loaders
 

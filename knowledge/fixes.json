@@ -3,6 +3,269 @@
   "note": "Ordered fix rules for `modaccel port -Fix`. `match` is a regex tested against each javac error's message + symbol + file. `apply.find` / `apply.replace` is a .NET regex replace in the affected source (named groups survive as ${name}); `apply.literal` is a plain string replace; `apply.ensureImports` adds an import only when the file lacks it. `scope` is `log` (only the files that error was reported in) or `repo` (every .java in the repo, for a family whose remaining call sites javac has not reached yet). `when` is an optional regex the candidate file's own text must match. `verified` names the repo, the count and the log a build actually proved it on; null means reasoned, not measured.",
   "rules": [
     {
+      "id": "neo263-drop-glfw-import",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "package org\\.lwjgl\\.glfw does not exist",
+      "apply": {
+        "find": "(?m)^import org\\.lwjgl\\.glfw\\.GLFW;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.3 reads keys through InputConstants, so the GLFW import has no owner left.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-key-left-control",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable GLFW",
+      "apply": {
+        "find": "GLFW\\.GLFW_KEY_LEFT_CONTROL",
+        "replace": "InputConstants.KEY_LCONTROL"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "GLFW key codes became InputConstants constants; LEFT_CONTROL is KEY_LCONTROL.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-key-right-control",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable GLFW",
+      "apply": {
+        "find": "GLFW\\.GLFW_KEY_RIGHT_CONTROL",
+        "replace": "InputConstants.KEY_RCONTROL"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "GLFW key codes became InputConstants constants; RIGHT_CONTROL is KEY_RCONTROL.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-key-left-shift",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable GLFW",
+      "apply": {
+        "find": "GLFW\\.GLFW_KEY_LEFT_SHIFT",
+        "replace": "InputConstants.KEY_LSHIFT"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "GLFW key codes became InputConstants constants; LEFT_SHIFT is KEY_LSHIFT.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-key-right-shift",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable GLFW",
+      "apply": {
+        "find": "GLFW\\.GLFW_KEY_RIGHT_SHIFT",
+        "replace": "InputConstants.KEY_RSHIFT"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "GLFW key codes became InputConstants constants; RIGHT_SHIFT is KEY_RSHIFT.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-key-left-super",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable GLFW",
+      "apply": {
+        "find": "GLFW\\.GLFW_KEY_LEFT_SUPER",
+        "replace": "InputConstants.KEY_LGUI"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The Mac command key is KEY_LGUI, not KEY_LSUPER.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-key-right-super",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable GLFW",
+      "apply": {
+        "find": "GLFW\\.GLFW_KEY_RIGHT_SUPER",
+        "replace": "InputConstants.KEY_RGUI"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The Mac command key is KEY_RGUI, not KEY_RSUPER.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-iskeydown-window-argument",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+method getWindow\\(\\)|symbol:\\s+method isKeyDown\\(",
+      "apply": {
+        "find": "InputConstants\\.isKeyDown\\(\\s*[A-Za-z_][\\w.]*\\s*,\\s*",
+        "replace": "InputConstants.isKeyDown("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.3's InputConstants.isKeyDown takes only the key; the window handle is gone.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-drop-window-handle",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+method getWindow\\(\\)",
+      "apply": {
+        "find": "(?m)^[ \\t]*long handle = Minecraft\\.getInstance\\(\\)\\.getWindow\\(\\)\\.getWindow\\(\\);\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The handle line only existed to feed the two-argument isKeyDown; 26.3 has no window argument.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-platform-check",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable ON_OSX",
+      "apply": {
+        "find": "Minecraft\\.ON_OSX",
+        "replace": "Util.getPlatform() == Util.OS.OSX",
+        "ensureImports": [
+          "net.minecraft.util.Util"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Minecraft.ON_OSX became Util.getPlatform() == Util.OS.OSX.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-hud-fields",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable (leftHeight|rightHeight)",
+      "apply": {
+        "find": "\\.gui\\.(leftHeight|rightHeight)",
+        "replace": ".gui.hud.$1"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The HUD's left and right heights live on mc.gui.hud in 26.3.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-hud-ticks",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+method getGuiTicks\\(\\)",
+      "apply": {
+        "find": "\\.gui\\.getGuiTicks\\(\\)",
+        "replace": ".gui.hud.getGuiTicks()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The GUI tick counter moved with the HUD state.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-hud-hidden",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable hideGui",
+      "apply": {
+        "find": "\\.options\\.hideGui",
+        "replace": ".gui.hud.isHidden()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "GameOptions.hideGui became the HUD's own isHidden(); !hideGui and the new call agree.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-current-screen",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable screen",
+      "apply": {
+        "find": "mc\\.screen\\b(?!\\()",
+        "replace": "mc.gui.screen()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The current screen is read through the GUI in 26.3.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-tooltip-extract-image",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "method does not override or implement a method from a supertype",
+      "apply": {
+        "find": "renderImage\\(",
+        "replace": "extractImage("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "ClientTooltipComponent renamed renderImage to extractImage in 26.3.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-tooltip-extract-text",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "method does not override or implement a method from a supertype",
+      "apply": {
+        "find": "renderText\\(",
+        "replace": "extractText("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "ClientTooltipComponent renamed renderText to extractText in 26.3.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-extractor-text",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+method drawString\\(Font",
+      "apply": {
+        "find": "\\.drawString\\(",
+        "replace": ".text("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "GuiGraphicsExtractor exposes text(...) instead of drawString(...).",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-dist-getter",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable dist",
+      "apply": {
+        "find": "FMLEnvironment\\.dist\\b",
+        "replace": "FMLEnvironment.getDist()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "FMLEnvironment.dist became a getter in NeoForge 26.3.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-gamerule-name",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+variable (GameRules|RULE_NATURAL_REGENERATION)",
+      "apply": {
+        "find": "GameRules\\.RULE_NATURAL_REGENERATION",
+        "replace": "GameRules.NATURAL_HEALTH_REGENERATION"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.3 renamed the natural regeneration rule.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
+      "id": "neo263-gamerule-get",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+method getBoolean",
+      "apply": {
+        "find": "\\.getBoolean\\((GameRules\\.)",
+        "replace": ".get($1"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "GameRules.get takes a typed rule in 26.3.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+    },
+    {
       "id": "resources-resourcelocation-identifier",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+class ResourceLocation",

@@ -24,8 +24,8 @@
       "loader": "neoforge",
       "from": "1.21.6",
       "to": "26.3",
-      "status": "stop",
-      "detail": "First port into the unobfuscated game. The tool resolved NeoForge 26.3.0.97, moved NeoGradle 7.0.185 to 7.1.39, Java 21 to 25 and archivesBaseName to base.archivesName, then compiled the 1.21.6 source with no intermediary at all. Four name rules (ResourceLocation to Identifier, GuiGraphics to GuiGraphicsExtractor, the GameRules and RenderType packages) took 82 errors to 20 in under a minute. Left: the key helper's GLFW calls, HUD stat fields, tooltip draw calls, one debug-event class and the platform check.",
+      "status": "build",
+      "detail": "First port into the unobfuscated game, to a packaged build with the mixin audit passing in 66s. The tool resolved NeoForge 26.3.0.97, moved NeoGradle 7.0.185 to 7.1.39, Java 21 to 25 and archivesBaseName to base.archivesName, and compiled with no mapping at all. Rule families took 82 errors to 1: ResourceLocation to Identifier, GuiGraphics to GuiGraphicsExtractor, the GameRules and RenderType moves, InputConstants keys, HUD state on mc.gui.hud, and the tooltip extract/rename set. The last error is the removed debug-text event, which needs a new debug screen entry; that one file was written by hand and is marked in the tree. Next rung: load it in a real 26.3 client.",
       "date": "2026-10-24"
     },
     {
