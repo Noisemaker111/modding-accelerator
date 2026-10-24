@@ -317,14 +317,15 @@ PLAN queue item 3). Any framing of this as "AI porting" would be inventing a cap
   measurements on one machine; no third party has reproduced them and no head-to-head against
   Fabric client gametest is published. Say "measured here: X" and never "the fastest"; the
   head-to-head is roadmap item 6.
-- **"Cross-platform."** Requirements are Windows + PowerShell 7 (README Quick start). Loom,
-  ModDevGradle, mc-mod-porter, HeadlessMC and MC-Runtime-Test all run elsewhere.
+- **"Cross-platform" as a blanket claim.** The portable commands run on Windows, Linux and macOS,
+  and all three pass the portable checks in hosted CI; game checks and the no-Java install are
+  verified on Windows only, and Linux/macOS game rendering has not been exercised by hand.
 - **"It replaces GameTest."** The world tier *is* GameTest; and a repo that ships its own
   gametest suite (Diorama, ~10 min) is skipped honestly rather than run (README §Two big repos).
 - **"No pixel goldens" as a strength.** It is a deliberate trade that removes regression
   detection: nothing in this loop can tell you a screen changed for the worse since last week.
   Fabric's screenshot artifacts at least give you history.
-- **"Mature enough to adopt."** This repo has no CI configuration and no published release
-  artifact (it has been MIT licensed since 2026-10-23); FabricMC and NeoForged own the tools in
-  §1–§3. Say "one person's lab that works on four loaders", not "a tool the ecosystem uses".
-  What remains is ordered in `ROADMAP.md`.
+- **"Mature enough to adopt."** `0.1.0-beta.1` is published with checksums and the portable
+  workflow is green on Windows, Linux and macOS, but this is still one person's lab, not an
+  ecosystem tool; FabricMC and NeoForged own the tooling in §1–§3. Say "a beta that works on
+  real mods", not "a tool the ecosystem uses". What remains is ordered in `ROADMAP.md`.
