@@ -42,8 +42,8 @@ separate real-game checks. Every run ends in either a checked result or a named 
 ### Verified platforms
 
 - Windows: command, packaging, game checks and a no-Java install that downloads a runtime.
-- Linux: command, packaging and the portable checks in hosted CI; game rendering unverified.
-- macOS: portable checks in hosted CI; not exercised by hand.
+- Linux: command, packaging and every portable check pass in hosted CI; game rendering unverified.
+- macOS: the same portable checks pass in hosted CI; not exercised by hand.
 
 ### Checks that must pass before a port is called good
 

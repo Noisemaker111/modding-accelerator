@@ -57,7 +57,7 @@ provides the same capability information to tools, without evaluating a project.
 | Quick logic checks | Runs supplied pure JUnit tests; zero tests fails |
 | UI, world and multiplayer | Actual game checks tied to a build; `--expect-change` proves an input visibly changed the frame and `--save-roundtrip` proves a save reloads; mod-specific behavior still needs assertions |
 | Installation | ZIP/JAR; Windows downloads a Java runtime (JRE 47 MB or JDK 196 MB) after a SHA-256 check when none is installed; macOS/Linux still need Java |
-| Operating systems | Windows command/game and Linux command/build evidence; macOS and Linux rendering unverified |
+| Operating systems | Windows command and game checks; Windows, Linux and macOS portable checks pass in hosted CI; Linux and macOS game rendering unverified |
 | Multi-project, other loaders, large jumps | NeoForge verified end to end (1.21.1 to 1.21.4 with no hand edits); changing loader is a separate, unbuilt capability; multi-project and Kotlin remain partial |
 | Portable hot reload | Unfinished; restart after source changes |
 

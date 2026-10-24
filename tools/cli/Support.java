@@ -19,7 +19,7 @@ final class Support {
                         Json.map("name", "visual-change", "status", "available", "scope", "ui-check/world-check --expect-change PERCENT fails when the key, click or screen changes too little of the real frame; it caught the invisible F3Nope overlay that a passing build missed"),
                         Json.map("name", "save-roundtrip", "status", "available", "scope", "world-check --save-roundtrip quits to the title, reloads the same save and requires the player position to come back within 0.05 blocks"),
                         Json.map("name", "portable-hot-reload", "status", "unfinished", "scope", "Source changes require stopping and rebuilding the portable client"),
-                        Json.map("name", "operating-systems", "status", "partial", "scope", "Windows command and game checks; Linux command/build checks; Linux game rendering and macOS execution unverified"),
+                        Json.map("name", "operating-systems", "status", "partial", "scope", "Windows command and game checks; Windows, Linux and macOS portable checks pass in hosted CI; Linux and macOS game rendering unverified"),
                         Json.map("name", "installation", "status", "partial", "scope", "Portable ZIP and JAR; a Windows machine with no Java downloads a verified JRE or JDK once; macOS and Linux still need Java installed")),
                 "testedExamples", List.of("Fabric AppleSkin 1.21.5 -> 1.21.6 automatic port and client check",
                         "Fabric AppleSkin 1.21.6 -> 1.21.5 automatic backport and mixin audit",
