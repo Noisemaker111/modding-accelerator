@@ -51,12 +51,23 @@ final class Port {
         if (!Set.of("yarn", "mojmap").contains(names) || !from.matches("[A-Za-z0-9._+\\-]+") || !to.matches("[A-Za-z0-9._+\\-]+"))
             throw new IllegalArgumentException("Invalid version or mapping namespace");
         Path map = options.values.containsKey("map") ? Path.of(options.get("map", "")).toAbsolutePath() : build.project.state().resolve("maps/" + names + "-" + from + "-" + to + ".json");
-        if (!Files.isRegularFile(map)) {
+        // 26.1 and newer ship with the game's own names and publish no intermediary, so there is nothing to
+        // generate: a source already in that namespace compiles, and every difference left is an API change
+        // the compiler names. The identity map keeps the repair rounds working on such a target.
+        boolean unobfuscated = Versions.compare(to, "26.1") >= 0 && !options.values.containsKey("map");
+        if (unobfuscated) {
+            map = build.project.state().resolve("maps/identity-" + names + "-" + to + ".json");
+            if (!Files.isRegularFile(map)) {
+                Files.createDirectories(map.getParent());
+                Files.writeString(map, "{\n  \"from\": \"" + to + "\", \"to\": \"" + to + "\", \"names\": \"" + names + "\",\n"
+                        + "  \"classes\": [], \"classesRemoved\": [], \"methods\": [], \"methodsMoved\": [], \"signatures\": [], \"methodsRemoved\": [], \"fields\": [], \"fieldsRemoved\": []\n}\n");
+            }
+        } else if (!Files.isRegularFile(map)) {
             var mapped = tools.run("VersionMap", List.of(from, to, "--names", names, "--out", map.toString()), "mapping");
             if (mapped.exit() != 0) throw new IOException("No verified mapping for this jump. " + Run.tail(mapped.log()));
         }
         var mapInfo = Json.read(map);
-        if (!from.equals(mapInfo.get("from")) || !to.equals(mapInfo.get("to")) || !names.equals(mapInfo.get("names"))) throw new IOException("Mapping identity does not match the requested source, target and namespace.");
+        if (!unobfuscated && (!from.equals(mapInfo.get("from")) || !to.equals(mapInfo.get("to")) || !names.equals(mapInfo.get("names")))) throw new IOException("Mapping identity does not match the requested source, target and namespace.");
         if (!options.has("fix")) {
             if (!options.values.containsKey("log")) return Json.map("ok", true, "tier", "mapping", "map", map.toString(), "gameVerified", false);
             var explain = tools.run("VersionMap", List.of("--map", map.toString(), "--explain", Path.of(options.get("log", "")).toAbsolutePath().toString()), "port-diagnosis");

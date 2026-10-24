@@ -60,6 +60,7 @@ final class Target {
             for (String key : List.of("neo_version_range", "neoforge_version_range")) if (pins.containsKey(key)) setup.replacements.put(key, "[" + resolved + ",)");
             Dependencies.resolve(setup, "neoforge");
             applyReplacements(setup, build, pins);
+            toolchain(setup, build, to);
             runTypeRename(setup, build, to);
             setup.applied.add(Json.map("artifact", "net.neoforged:neoforge", "to", resolved, "identity", "resolved from maven.neoforged.net", "gameVersion", to,
                     "evidence", "NeoForge " + resolved + " publishes for " + to));
@@ -131,6 +132,73 @@ final class Target {
             if (match.find()) throw new IOException("Duplicate property " + pin.getKey() + " in " + owner);
             setup.replace(owner, text, text.substring(0, start) + prefix + pin.getValue() + text.substring(end));
         }
+    }
+    /**
+     * The build plugin and Java toolchain move with the game. 26.1+ needs NeoGradle's 7.1 line and Java 25;
+     * leaving either behind fails during configuration, before a single source error is reported.
+     */
+    static void toolchain(Setup setup, Build build, String to) throws Exception {
+        if (Versions.compare(to, "26.1") < 0) return;
+        Path groovy = build.project.root.resolve("build.gradle"), kts = build.project.root.resolve("build.gradle.kts");
+        Path file = Files.isRegularFile(groovy) ? groovy : Files.isRegularFile(kts) ? kts : null;
+        if (file == null) return;
+        Matcher plugin = Pattern.compile("(id\\s*\\(?\\s*[\"']net\\.neoforged\\.gradle\\.userdev[\"']\\s*\\)?\\s*version\\s*[\"'])([^\"']+)([\"'])").matcher(setup.text(file));
+        if (plugin.find()) {
+            String current = plugin.group(2), latest = latestNeoGradle(build);
+            if (Versions.compare(latest, current) > 0) {
+                setup.replace(file, plugin.group(0), plugin.group(1) + latest + plugin.group(3));
+                setup.applied.add(Json.map("file", file.toString(), "change", "NeoGradle " + current + " -> " + latest + " for " + to));
+            }
+        }
+        Matcher java = Pattern.compile("JavaLanguageVersion\\.of\\((\\d+)\\)").matcher(setup.text(file));
+        if (java.find()) {
+            int want = javaFor(to);
+            if (Integer.parseInt(java.group(1)) != want) {
+                setup.replace(file, java.group(0), "JavaLanguageVersion.of(" + want + ")");
+                setup.applied.add(Json.map("file", file.toString(), "change", "Java toolchain " + java.group(1) + " -> " + want + " for " + to));
+            }
+        }
+        // Gradle 9 removed the project-level archivesBaseName property; the base extension owns it now.
+        Matcher archives = Pattern.compile("(?m)^[ \\t]*archivesBaseName[ \\t]*=[ \\t]*([^\\r\\n]+)$").matcher(setup.text(file));
+        if (archives.find()) {
+            String value = archives.group(1).trim();
+            setup.replace(file, archives.group(0), "base {\n\tarchivesName = " + value + "\n}");
+            setup.applied.add(Json.map("file", file.toString(), "change", "archivesBaseName -> base.archivesName for Gradle 9"));
+        }
+        String archivesText = setup.text(file);
+        String bare = archivesText.replaceAll("(?<![\\w.])archivesBaseName(?![\\w(])", "project.base.archivesName.get()");
+        if (!bare.equals(archivesText)) {
+            setup.originals.putIfAbsent(file, archivesText);
+            setup.texts.put(file, bare);
+            setup.applied.add(Json.map("file", file.toString(), "change", "remaining archivesBaseName reads go through base.archivesName"));
+        }
+        if (archivesText.contains("project.archivesBaseName")) {
+            String text = setup.text(file);
+            setup.originals.putIfAbsent(file, text);
+            setup.texts.put(file, text.replace("project.archivesBaseName", "project.base.archivesName.get()"));
+            setup.applied.add(Json.map("file", file.toString(), "change", "publication archivesBaseName read through base.archivesName"));
+        }
+    }
+    /** The project's own Gradle stays: NeoGradle 7.1 runs on Gradle 8.14 and 9.4, and the newest Gradle (9.8) breaks it. */
+    static int javaFor(String minecraft) {
+        if (Versions.compare(minecraft, "26.1") >= 0) return 25;
+        if (Versions.compare(minecraft, "1.20.5") >= 0) return 21;
+        if (Versions.compare(minecraft, "1.18") >= 0) return 17;
+        return Versions.compare(minecraft, "1.17") >= 0 ? 16 : 8;
+    }
+    /** NeoGradle's newest 7.x line, read from NeoForged's own published metadata. */
+    static String latestNeoGradle(Build build) throws Exception {
+        String xml = fetch(build, "https://maven.neoforged.net/releases/net/neoforged/gradle/userdev/maven-metadata.xml");
+        var factory = DocumentBuilderFactory.newInstance(); factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        var nodes = factory.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(java.nio.charset.StandardCharsets.UTF_8))).getElementsByTagName("version");
+        String chosen = "";
+        for (int i = 0; i < nodes.getLength(); i++) {
+            String value = nodes.item(i).getTextContent();
+            if (!value.startsWith("7.") || !value.matches("[0-9.]+")) continue;
+            if (chosen.isEmpty() || Versions.compare(value, chosen) > 0) chosen = value;
+        }
+        if (chosen.isEmpty()) throw new IOException("No published NeoGradle 7.x line for an unobfuscated target");
+        return chosen;
     }
     /** NeoForge versions are numbered by Minecraft minor: 1.21.6 publishes as 21.6.x (1.20.1 as 47.x). */
     static String neoForgePrefix(String minecraft) { return minecraft.equals("1.20.1") ? "47." : minecraft.replaceFirst("^1\\.", "") + "."; }

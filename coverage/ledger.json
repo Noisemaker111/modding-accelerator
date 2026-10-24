@@ -20,6 +20,15 @@
   ],
   "hops": [
     {
+      "mod": "AppleSkin",
+      "loader": "neoforge",
+      "from": "1.21.6",
+      "to": "26.3",
+      "status": "stop",
+      "detail": "First port into the unobfuscated game. The tool resolved NeoForge 26.3.0.97, moved NeoGradle 7.0.185 to 7.1.39, Java 21 to 25 and archivesBaseName to base.archivesName, then compiled the 1.21.6 source with no intermediary at all. Four renames (ResourceLocation to Identifier, GuiGraphics to GuiGraphicsExtractor, the GameRules and RenderType packages) took 82 errors to 22 in 52s. Left: HUD stat fields, the key helper's GLFW access, tooltip draw calls, one GameRules import.",
+      "date": "2026-10-24"
+    },
+    {
       "mod": "F3Nope",
       "loader": "fabric",
       "from": "1.21.5",

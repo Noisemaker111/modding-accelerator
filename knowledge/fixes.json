@@ -3,6 +3,96 @@
   "note": "Ordered fix rules for `modaccel port -Fix`. `match` is a regex tested against each javac error's message + symbol + file. `apply.find` / `apply.replace` is a .NET regex replace in the affected source (named groups survive as ${name}); `apply.literal` is a plain string replace; `apply.ensureImports` adds an import only when the file lacks it. `scope` is `log` (only the files that error was reported in) or `repo` (every .java in the repo, for a family whose remaining call sites javac has not reached yet). `when` is an optional regex the candidate file's own text must match. `verified` names the repo, the count and the log a build actually proved it on; null means reasoned, not measured.",
   "rules": [
     {
+      "id": "resources-resourcelocation-identifier",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+class ResourceLocation",
+      "apply": {
+        "find": "\\bResourceLocation\\b",
+        "replace": "Identifier",
+        "ensureImports": [
+          "net.minecraft.resources.Identifier"
+        ]
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "26.x renamed ResourceLocation to Identifier; the import line moves with the type because the same replacement rewrites net.minecraft.resources.ResourceLocation.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)"
+    },
+    {
+      "id": "gui-graphics-extractor",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+class GuiGraphics(?!Extractor)",
+      "apply": {
+        "find": "\\bGuiGraphics\\b",
+        "replace": "GuiGraphicsExtractor",
+        "ensureImports": [
+          "net.minecraft.client.gui.GuiGraphicsExtractor"
+        ]
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "26.x replaced GuiGraphics with GuiGraphicsExtractor; the drawing calls it exposes are the same ones the 1.21.6 branch used.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)"
+    },
+    {
+      "id": "gamerules-package-move",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+class GameRules",
+      "apply": {
+        "find": "net\\.minecraft\\.world\\.GameRules",
+        "replace": "net.minecraft.world.level.gamerules.GameRules"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "26.x moved GameRules into net.minecraft.world.level.gamerules; only the import changes because the simple name stayed.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)"
+    },
+    {
+      "id": "rendertype-package-move",
+      "jump": "1.21.6 -> 26.3 (official names)",
+      "match": "symbol:\\s+class RenderType",
+      "apply": {
+        "find": "net\\.minecraft\\.client\\.renderer\\.RenderType",
+        "replace": "net.minecraft.client.renderer.rendertype.RenderType"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "26.x moved RenderType into net.minecraft.client.renderer.rendertype.",
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)"
+    },
+    {
+      "id": "drawtexture-seven-args",
+      "jump": "1.20.1 -> 1.21.6 (yarn)",
+      "match": "no suitable method found for drawTexture\\(Identifier,int,int,int,int,int,int\\)",
+      "apply": {
+        "find": "\\.drawTexture\\((?!RenderPipelines)(?<tex>[A-Za-z_][\\w.]*)\\s*,\\s*(?<a>[^,()]+?)\\s*,\\s*(?<b>[^,()]+?)\\s*,\\s*(?<c>[^,()]+?)\\s*,\\s*(?<d>[^,()]+?)\\s*,\\s*(?<e>[^,()]+?)\\s*,\\s*(?<f>[^,()]+?)\\)",
+        "replace": ".drawTexture(RenderPipelines.GUI_TEXTURED, ${tex}, ${a}, ${b}, ${c}, ${d}, ${e}, ${f}, 256, 256)",
+        "ensureImports": [
+          "net.minecraft.client.gl.RenderPipelines"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.6 draws with a render pipeline; the 7-argument texture call needs the GUI pipeline and the 256x256 sheet size. Matches the call shape upstream's own 1.21.6 branch uses. Calls whose arguments contain parentheses are left for a human.",
+      "verified": null
+    },
+    {
+      "id": "drawtexture-ten-args-drop-z",
+      "jump": "1.20.1 -> 1.21.6 (yarn)",
+      "match": "incompatible types: Identifier cannot be converted to RenderPipeline",
+      "apply": {
+        "find": "\\.drawTexture\\((?!RenderPipelines)(?<tex>[A-Za-z_][\\w.]*)\\s*,\\s*(?<x>[^,()]+?)\\s*,\\s*(?<y>[^,()]+?)\\s*,\\s*(?<z>[^,()]+?)\\s*,\\s*(?<u>[^,()]+?)\\s*,\\s*(?<v>[^,()]+?)\\s*,\\s*(?<w>[^,()]+?)\\s*,\\s*(?<h>[^,()]+?)\\s*,\\s*(?<tw>[^,()]+?)\\s*,\\s*(?<th>[^,()]+?)\\)",
+        "replace": ".drawTexture(RenderPipelines.GUI_TEXTURED, ${tex}, ${x}, ${y}, ${u}, ${v}, ${w}, ${h}, ${tw}, ${th})",
+        "ensureImports": [
+          "net.minecraft.client.gl.RenderPipelines"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The 10-argument form carried a z offset that 1.21.6's pipeline draw no longer takes; upstream's 1.21.6 tooltip drops the same argument, so this rule drops it too instead of inventing a matrix push.",
+      "verified": null
+    },
+    {
       "id": "identifier-constructor-two-arg",
       "jump": "1.20.1 -> 1.21.6 (yarn)",
       "match": "Identifier\\(String,String\\) has private access",
