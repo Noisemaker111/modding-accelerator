@@ -13,7 +13,7 @@ public final class FabricMetadataTest {
                 """ : Files.readString(Path.of(args[0]));
         var before = Json.object(Json.parse(original));
         require("~1.20.1".equals(Json.object(before.get("depends")).get("minecraft")), "real original F3Nope constraint");
-        Path root = Files.createTempDirectory("modaccel-fabric-metadata-");
+        Path root = Files.createTempDirectory("modaccel-fabric-metadata-").toRealPath();
         try {
             Path resources = root.resolve("src/main/resources"); Files.createDirectories(resources);
             Path manifest = resources.resolve("fabric.mod.json"); Files.writeString(manifest, original);
