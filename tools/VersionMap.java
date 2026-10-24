@@ -33,13 +33,15 @@ public final class VersionMap {
 
 	public static void main(String[] args) throws Exception {
 		List<String> pos = new ArrayList<>();
-		String names = "mojmap", out = null, map = null, explain = null, fix = null, repo = ".", rules = null;
+		String names = "mojmap", out = null, map = null, explain = null, fix = null, repo = ".", rules = null, fromNames = null, toNames = null;
 		List<String> learn = new ArrayList<>();
 		boolean dryRun = false;
 		boolean preflight = false;
 		for (int i = 0; i < args.length; i++) {
 			switch (args[i]) {
 				case "--names" -> names = args[++i];
+				case "--from-names" -> fromNames = args[++i];
+				case "--to-names" -> toNames = args[++i];
 				case "--out" -> out = args[++i];
 				case "--cache" -> cache = Path.of(args[++i]);
 				case "--map" -> map = args[++i];
@@ -69,13 +71,18 @@ public final class VersionMap {
 			Explain.run(Path.of(map), Path.of(explain));
 			return;
 		}
-		if (pos.size() != 2 || !(names.equals("mojmap") || names.equals("yarn"))) {
-			System.err.println("usage: java tools/VersionMap.java <from> <to> [--names mojmap|yarn] [--out map.json]");
+		if (pos.size() != 2 || !(names.equals("mojmap") || names.equals("yarn"))
+				|| fromNames != null && !(fromNames.equals("mojmap") || fromNames.equals("yarn"))
+				|| toNames != null && !(toNames.equals("mojmap") || toNames.equals("yarn"))) {
+			System.err.println("usage: java tools/VersionMap.java <from> <to> [--names mojmap|yarn] [--from-names] [--to-names] [--out map.json]");
 			System.exit(2);
 		}
 		long t0 = System.nanoTime();
-		Table a = Table.load(pos.get(0), names);
-		Table b = Table.load(pos.get(1), names);
+		// Same version with two namespaces converts a source tree (yarn to official, for example);
+		// different versions with one namespace is the usual rename/move map.
+		String aNames = fromNames != null ? fromNames : names, bNames = toNames != null ? toNames : names;
+		Table a = Table.load(pos.get(0), aNames);
+		Table b = Table.load(pos.get(1), bNames);
 		Diff d = Diff.of(a, b);
 		Path target = out != null ? Path.of(out)
 				: cache.resolve("map-" + names + "-" + pos.get(0) + "-to-" + pos.get(1) + ".json");

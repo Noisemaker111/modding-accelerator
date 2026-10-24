@@ -126,6 +126,8 @@ sources". It now also matches a package reference anywhere in the file; on a fre
 copy the same selection resolves and lists `java/squeek/appleskin/mixin/JEIRenderHelperMixin.java`
 as the removed source (`.runs/appleskin-disable-test.json`).
 
+The first half of the 26.3 bridge exists: `VersionMap <v> <v> --from-names yarn --to-names mojmap` converts one version's names into the other namespace using the same intermediary join (1.21.6: 9,357 class renames, 36,521 method renames, 22,645 field renames). AppleSkin 26.3-fabric itself compiles through the tool in 14s, so the target toolchain works; diffing official names against the 26.3 jar is the missing half.
+
 Jade 1.21.1 -> 1.21.6 (five minors, including the GUI rewrite) reaches the real target and
 then stops honestly: NeoGradle 7.0.192 plus the run-type rename builds against NeoForge
 21.6, and 98 errors remain in the 1.21.6 rendering rework (fine GUI matrix stack instead of
