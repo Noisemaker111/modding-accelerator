@@ -4,11 +4,12 @@ What is still missing, in the order a stranger hits it, is in `ROADMAP.md`.
 
 ## The goal
 
-Jon's goal, clarified 2026-10-23: anyone can point the tool at their mod, choose a target
-Minecraft version, and get a port plus trustworthy logic, world, UI and multiplayer checks
-with as little waiting and setup as possible. This applies across Windows, Linux and macOS,
-shells, loaders and version families, including backports. Version portability and a change
-of loader are separate capabilities and must be reported separately.
+Jon's goal, clarified 2026-10-23 and sharpened 2026-10-24: any Minecraft version to any other,
+and any loader to any other. Anyone can point the tool at their mod, name the target, and get a
+port plus trustworthy logic, world, UI and multiplayer checks with as little waiting and setup
+as possible. This applies across Windows, Linux and macOS, shells, loaders and version families,
+including backports. Version portability and a change of loader are separate capabilities and
+must be reported separately.
 
 First use matters as much as repeat use. Record download/setup, build/repair, game startup
 and verification separately; an existing dependency cache is not an empty-machine result.

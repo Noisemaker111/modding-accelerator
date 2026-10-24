@@ -3,6 +3,13 @@
 Current as of 2026-10-24. The older gap sizing further down is history; sizes and status there
 describe the earlier Windows-only harness, not the portable tool.
 
+## Goal
+
+Any Minecraft version to any other, and any loader to any other. Version changes and loader
+changes are separate jobs with separate records: a version port keeps the loader, a loader port
+keeps the game version, and a mod that needs both is two steps. The verified path today is one
+hop inside one loader.
+
 ## What works now
 
 **Changing the Minecraft version of a mod, one loader at a time.** The tool detects the loader and
@@ -19,8 +26,8 @@ ports within it; every attempt ends in either a build plus mixin audit or a name
 - Repeat cost for an already-visited hop is 4.6s; a first visit is ~40s warm plus download/decompile.
 
 **Changing the loader is not built.** The tool never converts Fabric to NeoForge or the reverse, and
-Forge target setup is manual. That capability needs different build scripts, entrypoints, mixin
-targets and API translation, so it is sized as its own step below.
+Forge target setup is manual. The goal is any loader to any loader; that capability needs different
+build scripts, entrypoints, mixin targets and API translation, so it is sized as its own step below.
 
 **Checks, install and platforms.** Build and mixin audit run on every port; UI and world checks drive
 the real game and save inspected frame captures. Windows installs without Java (verified JRE/JDK
@@ -30,9 +37,9 @@ sources, which is not wired yet. Kotlin sources are untested.
 
 ## What's left, in order
 
-1. **Publish the beta.** Tag a version, attach the portable ZIP and JAR with checksums, and point the
-   README install step at the download. Needs Jon's approval. Check: on a machine with no Java,
-   download the release, run `support`, and port F3Nope 1.21.5 → 1.21.6 with the same numbers.
+1. **Publish the beta.** Done 2026-10-24: `v0.1.0-beta.1` is published with the portable ZIP and
+   JAR plus SHA-256 files, and the README install step points at it. Check: on a machine with no
+   Java, download the release, run `support`, and port F3Nope 1.21.5 → 1.21.6 with the same numbers.
 2. **Make the platform claim true or narrower.** Run one Linux game check (Xvfb path) and one macOS
    smoke run, or label both experimental in README and `support`. Check: the claim in `support`
    matches what was run, with the receipt named.
@@ -47,11 +54,14 @@ sources, which is not wired yet. Kotlin sources are untested.
 5. **Cover the 1.21.6 GUI rewrite.** Fine matrices replaced `PoseStack`, render pipelines gate
    blitting, and several block/entity classes were merged. Jade 1.21.1 → 1.21.6 is the target case.
    Check: Jade builds and its overlay renders in a real 1.21.6 client with a captured frame.
-6. **Size a loader change on one small mod.** Fabric → NeoForge for a mod with no GUI, measured
-   end to end: build scripts, entrypoints, mixin targets, registries. Then either build the adapter
-   or write "not supported" with the reason. Check: one mod loads on the other loader, or a written
-   decision with the measured blockers.
-7. **Add Kotlin and Stonecutter source coverage.** Port a real Kotlin mod; map Stonecutter errors on
+6. **Chain version hops.** Any version to any other means multi-hop jumps (1.20.1 → 1.21.6) with a
+   record per hop, mappings carried between hops and one reversible chain. Check: the same mod
+   reaches the far version through two or more hops, each hop's receipt naming what it changed.
+7. **Make a loader change possible.** Any loader to any loader, starting with one Fabric → NeoForge
+   mod with no GUI, measured end to end: build scripts, entrypoints, mixin targets, registries. Then
+   either build the adapter or write "not supported" with the reason. Check: one mod loads on the
+   other loader, or a written decision with the measured blockers.
+8. **Add Kotlin and Stonecutter source coverage.** Port a real Kotlin mod; map Stonecutter errors on
    generated sources back to the shared annotated `src/` so repairs land once. Check: each produces a
    building node or mod with repairs in the shared sources only.
 
@@ -59,6 +69,7 @@ sources, which is not wired yet. Kotlin sources are untested.
 
 | Question | Choice | Date |
 |---|---|---|
+| What is the goal? | Any Minecraft version to any other, and any loader to any other; today one hop inside one loader is verified | 2026-10-24 |
 | Is a version change the same capability as a loader change? | No; they are separate and are reported separately | 2026-10-24 |
 | Does a passing build prove a port? | No; loader-refused jars, invisible UI and unloaded mods were all caught after green builds | 2026-10-24 |
 | Which loader is supported automatically? | Fabric and NeoForge; Forge target setup stays manual | 2026-10-24 |
