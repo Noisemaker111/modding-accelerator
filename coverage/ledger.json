@@ -1,0 +1,20 @@
+{
+  "note": "Every entry is a port that was actually run. status: stop = named errors remain; build = packaged build + mixin audit passed; load = the real client or server loaded it; behaviour = something observable was asserted in the game. Add an entry only with a receipt.",
+  "versions": ["1.12.2", "1.16.5", "1.18.2", "1.20.1", "1.21.1", "1.21.4", "1.21.5", "1.21.6", "1.21.9", "26.3"],
+  "loaders": ["fabric", "neoforge", "forge", "quilt"],
+  "hops": [
+    { "mod": "F3Nope", "loader": "fabric", "from": "1.21.5", "to": "1.21.6", "status": "behaviour", "detail": "Three overlay lines inspected in the real client; a visual gate caught an invisible overlay that a passing build missed.", "date": "2026-10-24" },
+    { "mod": "F3Nope", "loader": "fabric", "from": "1.21.6", "to": "1.21.5", "status": "load", "detail": "Backport of the untouched upstream snapshot; built, audited and loaded in the 1.21.5 client.", "date": "2026-10-24" },
+    { "mod": "AppleSkin", "loader": "fabric", "from": "1.21.5", "to": "1.21.6", "status": "behaviour", "detail": "Port and backport; opening the inventory changed 95.6% of the frame, and a save reloaded at the same position.", "date": "2026-10-24" },
+    { "mod": "AppleSkin", "loader": "fabric", "from": "1.21.6", "to": "1.21.9", "status": "stop", "detail": "Guided debug HUD migration; the remaining changes are named rather than guessed.", "date": "2026-10-24" },
+    { "mod": "ZombieApocalypseAddon", "loader": "neoforge", "from": "1.21.1", "to": "1.21.4", "status": "behaviour", "detail": "19 API errors repaired by rules, packaged metadata rewritten, jar loaded and its /za dashboard rendered in a real 1.21.4 world.", "date": "2026-10-24" },
+    { "mod": "ZombieApocalypseAddon", "loader": "neoforge", "from": "1.21.1", "to": "1.21.6", "status": "stop", "detail": "38 reported errors reduced to 9 by rules; the rest is the 1.21.6 SavedData codec and owner/saddling API.", "date": "2026-10-24" },
+    { "mod": "Jade", "loader": "neoforge", "from": "1.21.1", "to": "1.21.6", "status": "stop", "detail": "98 errors left in the 1.21.6 GUI rewrite; the port refuses to ship a build against the old game.", "date": "2026-10-24" }
+  ],
+  "loader_pairs": [
+    { "from": "fabric", "to": "neoforge", "status": "unbuilt", "detail": "Different metadata, entrypoints, events, registries and mixin namespaces. First step: one small mod, measured." },
+    { "from": "neoforge", "to": "fabric", "status": "unbuilt", "detail": "Same work in reverse; no adapter exists yet." },
+    { "from": "fabric", "to": "quilt", "status": "unbuilt", "detail": "Closest pair: same metadata shape and mostly the same API." },
+    { "from": "forge", "to": "neoforge", "status": "unbuilt", "detail": "Close lineage and a mechanical name mapping; the build scripts differ." }
+  ]
+}
