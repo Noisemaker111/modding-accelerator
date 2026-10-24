@@ -208,6 +208,8 @@ final class Target {
             if (!Set.of("main", "client").contains(Json.text(set, "name", ""))) continue;
             for (String resource : ProjectModel.strings(set.get("resources"))) {
                 Path root = Path.of(resource).toAbsolutePath().normalize();
+                // A model can report a Windows 8.3 or symlinked path for the same directory; compare real paths.
+                try { root = root.toRealPath(); } catch (IOException missing) { }
                 if (!root.startsWith(directory)) throw new IOException("Fabric resource root is outside the selected project: " + root);
                 Path file = root.resolve("fabric.mod.json");
                 if (Files.isRegularFile(file)) {
