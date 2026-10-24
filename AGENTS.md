@@ -8,8 +8,26 @@ minimal setup. Aim across Windows, Linux, macOS, shells, loaders, Java/Kotlin an
 version families, including backports. Changing loader is a separate capability.
 The limited Fabric beta is a starting point, not the finished scope.
 
-Read README.md for the public goal/support table and PLAN.md for the current
-resume point and evidence. Finish the pending final game check before claiming
+## Where the work is (update this block when a phase step changes)
+
+ROADMAP.md holds the phases and numbered steps; only statuses there are claims.
+Live board: `docs/progress.html`, rendered from `coverage/ledger.json` by
+`python bench/progress.py`. A port run that is not in the ledger did not happen.
+
+- Phase 1 step 7 (doing): AppleSkin 1.20.1 → 1.21.6. Loom 1.8→1.10 and Gradle
+  8.10→8.13 done by hand, JEI dropped (upstream 1.21.6 has none), mappings went
+  through, 61 semantic errors remain: render pipeline 20 sites, hunger API,
+  tooltip component, networking. Tree: `.runs/beta-trials/appleskin-1201/`.
+- Phase 1 step 8 (next): render-pipeline rule family, then re-run step 7.
+- Phase 3 (doing): 26.3 builds already — AppleSkin 26.3-fabric compiles in 14s
+  with Loom 1.17 and Java 25, and the 26.3 jar carries official names, so
+  `net/minecraft/client/Minecraft` is `Minecraft`. `VersionMap <v> <v>
+  --from-names yarn --to-names mojmap` converts one version's names (1.21.6:
+  9,357 classes). Missing: applying that map to a whole tree, the build switch,
+  and a name diff against the 26.3 jar.
+
+Read README.md for the public goal/support table and PLAN.md for the evidence
+behind the steps above. Finish the pending final game check before claiming
 the current automatic semantic port works. Do not treat a passing build, mixin
 audit, or loaded world as proof of the mod's behavior.
 
