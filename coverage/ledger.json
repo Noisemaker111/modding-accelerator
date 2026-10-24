@@ -9,7 +9,8 @@
     { "mod": "AppleSkin", "loader": "fabric", "from": "1.21.6", "to": "1.21.9", "status": "stop", "detail": "Guided debug HUD migration; the remaining changes are named rather than guessed.", "date": "2026-10-24" },
     { "mod": "ZombieApocalypseAddon", "loader": "neoforge", "from": "1.21.1", "to": "1.21.4", "status": "behaviour", "detail": "19 API errors repaired by rules, packaged metadata rewritten, jar loaded and its /za dashboard rendered in a real 1.21.4 world.", "date": "2026-10-24" },
     { "mod": "ZombieApocalypseAddon", "loader": "neoforge", "from": "1.21.1", "to": "1.21.6", "status": "stop", "detail": "38 reported errors reduced to 9 by rules; the rest is the 1.21.6 SavedData codec and owner/saddling API.", "date": "2026-10-24" },
-    { "mod": "Jade", "loader": "neoforge", "from": "1.21.1", "to": "1.21.6", "status": "stop", "detail": "98 errors left in the 1.21.6 GUI rewrite; the port refuses to ship a build against the old game.", "date": "2026-10-24" }
+    { "mod": "Jade", "loader": "neoforge", "from": "1.21.1", "to": "1.21.6", "status": "stop", "detail": "98 errors left in the 1.21.6 GUI rewrite; the port refuses to ship a build against the old game.", "date": "2026-10-24" }    ,
+    { "mod": "AppleSkin", "loader": "fabric", "from": "1.20.1", "to": "1.21.6", "status": "stop", "detail": "Five-minor jump. Its Loom 1.8 and Gradle 8.10 had to move to 1.10/8.13 first, and JEI was dropped because upstream's 1.21.6 has none and JEI publishes no 1.21.6 artifact. Mapping-level renames went through; 61 semantic errors remain: render pipeline (drawTexture / RenderPipeline / GpuTextureView), hunger API, tooltip component and networking.", "date": "2026-10-24" }
   ],
   "loader_pairs": [
     { "from": "fabric", "to": "neoforge", "status": "unbuilt", "detail": "Different metadata, entrypoints, events, registries and mixin namespaces. First step: one small mod, measured." },

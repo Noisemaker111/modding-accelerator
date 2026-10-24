@@ -61,7 +61,8 @@ sources, which is not wired yet. Kotlin sources are untested.
    mod with no GUI, measured end to end: build scripts, entrypoints, mixin targets, registries. Then
    either build the adapter or write "not supported" with the reason. Check: one mod loads on the
    other loader, or a written decision with the measured blockers.
-8. **Add Kotlin and Stonecutter source coverage.** Port a real Kotlin mod; map Stonecutter errors on
+8. **Automate build-toolchain bumps.** A five-year hop needs Loom, Gradle, NeoGradle or ModDev bumped with the game: AppleSkin 1.20.1 -> 1.21.6 refused Loom 1.8 and Gradle 8.10 before any source could compile. Pick the versions from the target and prove it on the same hop. Check: the AppleSkin jump reaches the source-repair stage with no hand-edited build files.
+9. **Add Kotlin and Stonecutter source coverage.** Port a real Kotlin mod; map Stonecutter errors on
    generated sources back to the shared annotated `src/` so repairs land once. Check: each produces a
    building node or mod with repairs in the shared sources only.
 
