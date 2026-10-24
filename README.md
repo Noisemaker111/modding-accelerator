@@ -22,6 +22,10 @@ source projects; converting compiled mod JARs is unsupported.
 
 ## Local developer beta
 
+**Download:** [Modding Accelerator 0.1.0-beta.1](https://github.com/Noisemaker111/modding-accelerator/releases/tag/v0.1.0-beta.1)
+— portable ZIP and JAR with SHA-256 files. Extract the ZIP and run `./modaccel support`
+(Windows: `modaccel.cmd support`).
+
 The beta is for developers with a **Gradle source checkout**, starting with a single
 Fabric project. It prepares reversible ports, builds the result, audits mixin targets,
 and offers separate actual-game checks. Unknown APIs and dependencies can still need
