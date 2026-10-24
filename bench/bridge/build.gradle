@@ -1,0 +1,32 @@
+plugins {
+	id 'net.neoforged.moddev' version "${moddev_version}"
+}
+
+neoForge {
+	version = project.neoforge_version
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(project.java_version as int)
+	}
+	sourceCompatibility = JavaVersion.toVersion(project.java_version)
+	targetCompatibility = JavaVersion.toVersion(project.java_version)
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = project.java_version as int
+}
+
+processResources {
+	def modVersion = project.version
+	inputs.property 'version', modVersion
+	filesMatching('META-INF/neoforge.mods.toml') {
+		expand 'version': modVersion
+	}
+}
+
+jar {
+	archiveBaseName = 'modlabbridge'
+	archiveVersion = project.version
+}

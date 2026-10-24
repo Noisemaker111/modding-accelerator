@@ -1,0 +1,8 @@
+# Build artifacts and throwaway run folders of this bridge project.
+build/
+.gradle/
+run/
+logs/
+shots/
+client.pid
+*.log

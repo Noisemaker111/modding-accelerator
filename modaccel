@@ -1,0 +1,25 @@
+#!/bin/sh
+# POSIX launcher: orchestration lives in Java, independent of the calling shell.
+set -eu
+modaccel_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+modaccel_java=java
+if [ -n "${JAVA_HOME:-}" ] && { [ -f "$modaccel_dir/modaccel.jar" ] && [ -x "$JAVA_HOME/bin/java" ] || [ -x "$JAVA_HOME/bin/javac" ]; }; then
+    modaccel_java="$JAVA_HOME/bin/java"
+else
+    for modaccel_jdk in "$modaccel_dir"/.tools/jdk-* "$HOME"/.modaccel/jdks/* "$HOME"/.jdks/*; do
+        if [ -x "$modaccel_jdk/bin/javac" ]; then modaccel_java="$modaccel_jdk/bin/java"; break; fi
+    done
+fi
+if ! command -v "$modaccel_java" >/dev/null 2>&1 && [ ! -x "$modaccel_java" ]; then
+    echo "modaccel requires Java 17 or newer. Install Java, or set JAVA_HOME to its installation directory." >&2
+    exit 2
+fi
+if [ -f "$modaccel_dir/modaccel.jar" ]; then
+    case "${1:-}" in
+        ui|node|suite|world|look|mp|scenario|status|stop|restart|lint|bench)
+            echo "This older command is available only in a source checkout. Use portable commands such as port --from VERSION --to VERSION --fix, ui-check, world-check, mp-check, or game-status." >&2
+            exit 2 ;;
+    esac
+    exec "$modaccel_java" "-Dmodaccel.home=$modaccel_dir" -jar "$modaccel_dir/modaccel.jar" "$@"
+fi
+exec "$modaccel_java" "$modaccel_dir/tools/cli/Bootstrap.java" "$modaccel_dir" "$@"

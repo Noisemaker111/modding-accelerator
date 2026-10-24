@@ -1,0 +1,637 @@
+{
+  "version": 1,
+  "note": "Ordered fix rules for `modaccel port -Fix`. `match` is a regex tested against each javac error's message + symbol + file. `apply.find` / `apply.replace` is a .NET regex replace in the affected source (named groups survive as ${name}); `apply.literal` is a plain string replace; `apply.ensureImports` adds an import only when the file lacks it. `scope` is `log` (only the files that error was reported in) or `repo` (every .java in the repo, for a family whose remaining call sites javac has not reached yet). `when` is an optional regex the candidate file's own text must match. `verified` names the repo, the count and the log a build actually proved it on; null means reasoned, not measured.",
+  "rules": [
+    {
+      "id": "nbt-getboolean-optional",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
+      "apply": {
+        "find": "\\.getBoolean\\((?<key>\"[^\"]*\"|[A-Z][A-Z0-9_]*|[a-z_]\\w*)\\)(?!\\s*\\.\\s*(orElse|orElseGet|orElseThrow|ifPresent|ifPresentOrElse|isPresent|isEmpty|map|flatMap|filter|stream|or)\\b)",
+        "replace": ".getBooleanOr(${key}, false)"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "Every getter rule carries the same match: the whole Optional family, not one type. javac stops after the first wave, so a log that shows only Optional<Integer> still proves the target API and the sweep must cover the Boolean/Long/String sites it has not reached. The key group is a string literal, an ALL_CAPS constant or a single lowercase identifier (a ListTag index); the lookahead leaves a call that is already consumed as an Optional alone.",
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 39 sites in one round; the copy went 100 -> 6 reported errors, and with only the six removed-class imports hand-cleared javac reported 64 errors, none of them getter-family (bench/fix-test/tb, .runs/logs/port-fix-20261022-205549.log)"
+    },
+    {
+      "id": "nbt-getint-optional",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
+      "apply": {
+        "find": "\\.getInt\\((?<key>\"[^\"]*\"|[A-Z][A-Z0-9_]*|[a-z_]\\w*)\\)(?!\\s*\\.\\s*(orElse|orElseGet|orElseThrow|ifPresent|ifPresentOrElse|isPresent|isEmpty|map|flatMap|filter|stream|or)\\b)",
+        "replace": ".getIntOr(${key}, 0)"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "getInt returned 0 for a missing key before 1.21.5, so 0 is behaviour-preserving. One site used Tiers.LEATHER.getOrdinal(), which is also 0, so the same default held.",
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 38 sites, one round, no getter-family error in the 64-error follow-up build (bench/fix-test/tb)"
+    },
+    {
+      "id": "nbt-getlong-optional",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
+      "apply": {
+        "find": "\\.getLong\\((?<key>\"[^\"]*\"|[A-Z][A-Z0-9_]*|[a-z_]\\w*)\\)(?!\\s*\\.\\s*(orElse|orElseGet|orElseThrow|ifPresent|ifPresentOrElse|isPresent|isEmpty|map|flatMap|filter|stream|or)\\b)",
+        "replace": ".getLongOr(${key}, 0L)"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "0L is what getLong returned for a missing key before 1.21.5.",
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 8 sites, one round, no getter-family error later (bench/fix-test/tb)"
+    },
+    {
+      "id": "nbt-getfloat-optional",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
+      "apply": {
+        "find": "\\.getFloat\\((?<key>\"[^\"]*\"|[A-Z][A-Z0-9_]*|[a-z_]\\w*)\\)(?!\\s*\\.\\s*(orElse|orElseGet|orElseThrow|ifPresent|ifPresentOrElse|isPresent|isEmpty|map|flatMap|filter|stream|or)\\b)",
+        "replace": ".getFloatOr(${key}, 0F)"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "0F keeps the pre-1.21.5 absent-key value.",
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 1 site, one round (bench/fix-test/tb)"
+    },
+    {
+      "id": "nbt-getdouble-optional",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
+      "apply": {
+        "find": "\\.getDouble\\((?<key>\"[^\"]*\"|[A-Z][A-Z0-9_]*|[a-z_]\\w*)\\)(?!\\s*\\.\\s*(orElse|orElseGet|orElseThrow|ifPresent|ifPresentOrElse|isPresent|isEmpty|map|flatMap|filter|stream|or)\\b)",
+        "replace": ".getDoubleOr(${key}, 0D)"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "0D keeps the pre-1.21.5 absent-key value.",
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 2 sites, one round (bench/fix-test/tb)"
+    },
+    {
+      "id": "nbt-getstring-optional",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
+      "apply": {
+        "find": "\\.getString\\((?<key>\"[^\"]*\"|[A-Z][A-Z0-9_]*|[a-z_]\\w*)\\)(?!\\s*\\.\\s*(orElse|orElseGet|orElseThrow|ifPresent|ifPresentOrElse|isPresent|isEmpty|map|flatMap|filter|stream|or)\\b)",
+        "replace": ".getStringOr(${key}, \"\")"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "Empty string is the old absent-key value. Chaining after the call is normal and safe: nbt.getString(k).split(\",\") becomes nbt.getStringOr(k, \"\").split(\",\"). The first, unguarded version of this rule also rewrote Brigadier's StringArgumentType.getString(ctx, name), which keeps its old signature in 1.21.5; requiring the key to be a literal, a constant or a single identifier stops that, because a two-argument call no longer matches.",
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 10 sites, one round, no getter-family error later (bench/fix-test/tb)"
+    },
+    {
+      "id": "nbt-getcompound-optional",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
+      "apply": {
+        "find": "\\.getCompound\\((?<key>\"[^\"]*\"|[A-Z][A-Z0-9_]*|[a-z_]\\w*)\\)(?!\\s*\\.\\s*(orElse|orElseGet|orElseThrow|ifPresent|ifPresentOrElse|isPresent|isEmpty|map|flatMap|filter|stream|or)\\b)",
+        "replace": ".getCompoundOrEmpty(${key})"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "There is no getCompoundOr(key, default): getCompoundOrEmpty(key) returns a new empty tag, exactly what the old getter returned for a missing key. The same rule covers ListTag.getCompound(index), which is why the key group accepts a bare lowercase identifier.",
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 12 sites, one round, no getter-family error later (bench/fix-test/tb)"
+    },
+    {
+      "id": "nbt-getlist-optional",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
+      "apply": {
+        "find": "\\.getList\\((?<key>\"[^\"]*\"|[A-Z][A-Z0-9_]*|[a-z_]\\w*)(?:,\\s*[^()]+)?\\)",
+        "replace": ".getListOrEmpty(${key})"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "Covers both the Optional return and the removed two-argument getList(key, elementType), which had no Or form; the type argument is dropped because getListOrEmpty only takes the key.",
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: nbt.getList(\"Items\", Tag.TAG_COMPOUND) -> nbt.getListOrEmpty(\"Items\") in ItemStackHandler.deserializeNBT, and the file compiled in the follow-up build (bench/fix-test/tb)"
+    },
+    {
+      "id": "fabrictag-provider-valuelookup",
+      "jump": "1.21.5 -> 1.21.6 (yarn, fabric-data-generation 23.2.3)",
+      "match": "getOrCreateTagBuilder",
+      "apply": {
+        "literal": { "from": "getOrCreateTagBuilder(", "to": "valueLookupBuilder(" }
+      },
+      "scope": "log",
+      "when": "FabricValueLookupTagProvider|FabricTagProvider\\.(Block|Item)TagProvider",
+      "note": "Block and item providers hold registry values, so their builder is valueLookupBuilder(TagKey) -> ProvidedTagBuilder<T, T>. The fluent chain afterwards (add/addTag/setReplace/forceAddTag) is unchanged.",
+      "verified": "Traverse 1.21.5->1.21.6: 24 sites (22 block, 2 item), round 1 of a 2-round green run (bench/fix-test/traverse, .runs/logs/port-fix-20261022-205541.log)"
+    },
+    {
+      "id": "fabrictag-provider-plain",
+      "jump": "1.21.5 -> 1.21.6 (yarn, fabric-data-generation 23.2.3)",
+      "match": "getOrCreateTagBuilder",
+      "apply": {
+        "literal": { "from": "getOrCreateTagBuilder(", "to": "builder(" }
+      },
+      "scope": "log",
+      "when": "extends FabricTagProvider<|EntityTypeTagProvider",
+      "note": "A plain FabricTagProvider<T> (biomes) and an entity-type provider take builder(TagKey) -> ProvidedTagBuilder<RegistryKey<T>, T>. The entity-type one must use this form because it adds registry keys, not values.",
+      "verified": "Traverse 1.21.5->1.21.6: 44 sites (42 biome, 2 entity type), round 1 of the same green run (bench/fix-test/traverse)"
+    },
+    {
+      "id": "fabrictag-entitytype-add-key",
+      "jump": "1.21.5 -> 1.21.6 (yarn, fabric-data-generation 23.2.3)",
+      "match": "symbol:   method add\\(Identifier\\)|no suitable method found for add\\(Identifier\\)",
+      "apply": {
+        "find": "\\.add\\((?!RegistryKey)([^;]+?)\\);",
+        "replace": ".add(RegistryKey.of(RegistryKeys.ENTITY_TYPE, $1));",
+        "ensureImports": ["net.minecraft.registry.RegistryKey", "net.minecraft.registry.RegistryKeys"]
+      },
+      "scope": "log",
+      "when": "EntityTypeTagProvider",
+      "note": "ProvidedTagBuilder has no add(Identifier); only the removed FabricTagBuilder did. Entity-type tags therefore wrap the Identifier in RegistryKey.of(RegistryKeys.ENTITY_TYPE, id), and the two registry imports are added when absent. This is the only site the old chain cannot keep, which is why it needs its own round.",
+      "verified": "Traverse 1.21.5->1.21.6: 2 sites in round 2, then BUILD SUCCESSFUL; the four rewritten providers are byte-identical to the recorded manual repair (bench/fix-test/traverse, .runs/logs/port-fix-20261022-205544.log)"
+    },
+    {
+      "id": "inventory-items-get",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "items has private access in Inventory|selected has private access in Inventory",
+      "apply": {
+        "find": "(?<recv>getInventory\\(\\)|\\binventory)\\.items\\.get\\(",
+        "replace": "${recv}.getItem("
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "Inventory.items became private and Inventory exposes getItem(int)/getNonEquipmentItems(). The receiver must be getInventory() or a variable literally named inventory (the player inventory field of AbstractContainerMenu, as in the two menu classes); that prefix is what keeps the sweep off a mod's own NonNullList fields such as BackpackContainerContents.items and AbstractSmeltingUpgrade.items, which javap cannot tell apart but the text can. javap 1.21.5 Inventory: no public items field, getItem(int) and getNonEquipmentItems() present.",
+      "verified": "Traveler's Backpack 1.21.4->1.21.5 copy (bench/fix-test/tbx): 10 sites in round 1 of a 100-error wave, 100 -> 33 errors over 3 rounds (.runs/logs/port-fix-20261023-113005.log); green-sources probe: 1 site, then clean compile"
+    },
+    {
+      "id": "inventory-items-set",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "items has private access in Inventory|selected has private access in Inventory",
+      "apply": {
+        "find": "(?<recv>getInventory\\(\\)|\\binventory)\\.items\\.set\\(",
+        "replace": "${recv}.setItem("
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "Inventory.setItem(int, ItemStack) has the same two arguments as the old NonNullList.set, so only the field access moves out of the way. Same receiver guard as inventory-items-get: a mod's own items.set (BackpackContainerContents.items.set, AbstractSmeltingUpgrade.items.setStackInSlot) has no getInventory()/inventory prefix and is left alone.",
+      "verified": "Traveler's Backpack copy: 3 sites in round 1 of the same run (100 -> 33); probe: 1 site, then clean compile"
+    },
+    {
+      "id": "inventory-items-size",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "items has private access in Inventory|selected has private access in Inventory",
+      "apply": {
+        "find": "(?<recv>getInventory\\(\\)|\\binventory)\\.items\\.size\\(\\)",
+        "replace": "${recv}.getNonEquipmentItems().size()"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "getNonEquipmentItems() returns the same NonNullList<ItemStack>, so size() and iteration keep their meaning (41 slots, hotbar included). Needed because javac reports one error per statement: a for loop written as items.size() reports at the guard, not at the loop body.",
+      "verified": "Traveler's Backpack copy: 3 sites in round 1 of the same run (100 -> 33); probe: 1 site, then clean compile"
+    },
+    {
+      "id": "inventory-selected-slot",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "items has private access in Inventory|selected has private access in Inventory",
+      "apply": {
+        "find": "(?<recv>getInventory\\(\\)|\\binventory)\\.selected\\b(?!\\s*\\()",
+        "replace": "${recv}.getSelectedSlot()"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "Inventory.selected became private; getSelectedSlot() reads the same index. The (?!\\s*\\() lookahead is the counter-example guard: getInventory().getSelected() is a different, still-existing method name and is not rewritten (its own removal to getSelectedItem() is a separate family with no rule).",
+      "verified": "Traveler's Backpack copy: 11 sites in round 1 of the same run (100 -> 33); probe: 2 sites, and getSelectedItem() in the same method stayed (clean compile)"
+    },
+    {
+      "id": "itemstack-parseoptional",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "method parseOptional\\(",
+      "apply": {
+        "find": "ItemStack\\.parseOptional\\((?<args>[^()]*(?:\\([^()]*\\)[^()]*)*)\\)",
+        "replace": "ItemStack.parse(${args}).orElse(ItemStack.EMPTY)"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "ItemStack.parseOptional(provider, tag) is gone; ItemStack.parse(provider, tag) returns Optional<ItemStack>, and orElse(ItemStack.EMPTY) is what parseOptional itself returned for an absent or malformed tag, so this is behaviour-preserving rather than a guess. javap 1.21.5 ItemStack shows parse(HolderLookup.Provider, Tag) -> Optional<ItemStack> and no parseOptional. Counter-example: the mod's own static FluidVariantWrapper.parseOptional(provider, tag) stays, because the find requires the ItemStack. qualifier (its own call sites in FluidTank/RenderInfo are untouched). Argument capture handles one nesting level of parens, which covers every real call site seen.",
+      "verified": "Traveler's Backpack copy: 3 sites in round 1 (BackpackBlockEntity, BackpackManager, TravelersBackpackComponent); probe: 2 sites, and FluidVariantWrapper.parseOptional stayed (clean compile)"
+    },
+    {
+      "id": "item-appendhovertext-signature",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "method appendHoverText in class \\w+ cannot be applied",
+      "apply": {
+        "find": "appendHoverText\\((?<stack>ItemStack\\s+\\w+,\\s*)(?<ctx>[^,()]+),\\s*List<Component>(?<var>\\s+\\w+,\\s*)TooltipFlag",
+        "replace": "appendHoverText(${stack}${ctx}, TooltipDisplay tooltipDisplay, Consumer<Component>${var}TooltipFlag",
+        "ensureImports": ["java.util.function.Consumer", "net.minecraft.world.item.component.TooltipDisplay"]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "javap 1.21.5 Item.appendHoverText(ItemStack, Item.TooltipContext, TooltipDisplay, Consumer<Component>, TooltipFlag); the old List<Component> parameter became a consumer and TooltipDisplay is new. The find only matches a declaration (it needs the literal List<Component> in the parameter list), so the 4-argument call site in a mixin keeps its error instead of being half-rewritten; that one is a judgement call and out of scope. The body still calls .add(), which is why item-appendhovertext-consumer runs as a second round.",
+      "verified": "Traveler's Backpack copy: 1 site in round 1 (UpgradeItem), 3 sites in round 2 (TravelersBackpackItem, MagnetUpgradeItem, TanksUpgradeItem); probe: 1 site, clean compile"
+    },
+    {
+      "id": "item-appendhovertext-super-call",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "method appendHoverText in class \\w+ cannot be applied",
+      "apply": {
+        "find": "super\\.appendHoverText\\((?<a>[^,]+),\\s*(?<b>[^,]+),\\s*(?<list>[\\w$.]+),\\s*(?<flag>[\\w$.]+)\\)",
+        "replace": "super.appendHoverText(${a}, ${b}, tooltipDisplay, ${list}, ${flag})"
+      },
+      "scope": "log",
+      "when": "TooltipDisplay tooltipDisplay",
+      "note": "Same error, same round, same file as the signature rule: the super call also gains the TooltipDisplay argument. Guarded by the file already declaring TooltipDisplay tooltipDisplay, so a class whose parent is not an Item (or was already fixed) is never touched. Without this the override compiles but the super call fails with 'Consumer<Component> cannot be converted to List<Component>'.",
+      "verified": "Traveler's Backpack copy: 1 site round 1 and 3 sites round 2, same files as the signature rule; probe: 1 site, clean compile"
+    },
+    {
+      "id": "item-appendhovertext-consumer",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "method add\\((Mutable)?Component\\)",
+      "apply": {
+        "find": "tooltipComponents\\.add\\(",
+        "replace": "tooltipComponents.accept("
+      },
+      "scope": "log",
+      "when": "Consumer<Component>",
+      "note": "After the signature round the tooltip parameter is a Consumer<Component>, so tooltipComponents.add(x) must become tooltipComponents.accept(x). The first version also matched a variable named components and the build caught it: TravelersBackpackItem.addAttributeModifierTooltip takes a real List<Component> components, so those three sites became 'cannot find symbol: method accept(MutableComponent)' and the file stopped compiling. The counter-example is now excluded by name - tooltipComponents is what every tooltip consumer in this mod is called, components is what the surviving List helpers use - plus the when guard (file must already contain Consumer<Component>) and log scope.",
+      "verified": "Traveler's Backpack copy: 2 sites in round 2 and 15 in round 3, after which no accept/add error remained (100 -> 33); probe: 1 site with a List<Component> helper next to it, clean compile"
+    },
+    {
+      "id": "serverplayer-setrespawnposition",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "method setRespawnPosition in class ServerPlayer cannot be applied to given types",
+      "apply": {
+        "find": "\\.setRespawnPosition\\((?<dim>[^,]+),\\s*(?<pos>[^,]+),\\s*(?<yaw>[^,]+),\\s*(?<forced>true|false),\\s*(?<msg>true|false)\\)",
+        "replace": ".setRespawnPosition(new ServerPlayer.RespawnConfig(${dim}, ${pos}, ${yaw}, ${forced}), ${msg})",
+        "ensureImports": ["net.minecraft.server.level.ServerPlayer"]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "javap 1.21.5: the five-argument ServerPlayer.setRespawnPosition(ResourceKey, BlockPos, float, boolean, boolean) is gone and setRespawnPosition(ServerPlayer.RespawnConfig, boolean) replaces it; RespawnConfig has exactly the record constructor (dimension, pos, angle, forced). The old 5th argument (sendMessage) stays the outer boolean, so the arity mapping is 4 greedy arguments plus one flag. Counter-example: nothing else in the API is named setRespawnPosition, and the dimension argument itself contains a call (pLevel.dimension()), which the [^,]+ groups keep intact.",
+      "verified": "Traveler's Backpack copy: 1 site in round 1 (SleepingBagBlock); probe: 1 site, clean compile"
+    },
+    {
+      "id": "level-blockupdated-neighbors",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "method blockUpdated\\(",
+      "apply": {
+        "find": "\\.blockUpdated\\(",
+        "replace": ".updateNeighborsAt("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Level.blockUpdated(BlockPos, Block) was removed and LevelAccessor.updateNeighborsAt(BlockPos, Block) is the same default method the old call delegated to, so this is a pure rename with identical arguments. javap 1.21.5 LevelAccessor shows updateNeighborsAt(BlockPos, Block); Level also has a 3-argument Orientation overload, which is why this rule leaves the call arity alone. Counter-example: no mod in the bench names its own method blockUpdated, and the match is javac's unresolved-symbol text, so it cannot fire on a call that resolves.",
+      "verified": "Traveler's Backpack copy: 1 site in round 1 (SleepingBagBlock:224); probe: 1 site with the already-correct updateNeighborsAt call beside it, clean compile"
+    },
+    {
+      "id": "drawcontext-matrix-push",
+      "jump": "1.21.5 -> 1.21.6 (yarn)",
+      "match": "location: class (org\\.joml\\.)?Matrix3x2fStack",
+      "apply": {
+        "find": "(\\.getMatrices\\(\\)\\.)push\\(\\)",
+        "replace": "$1pushMatrix()"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "1.21.6 DrawContext.getMatrices() returns org.joml.Matrix3x2fStack instead of MatrixStack, so the stack verbs are pushMatrix/popMatrix. The prefix keeps the rule on a draw context and leaves an unrelated MatrixStack alone.",
+      "verified": ""
+    },
+    {
+      "id": "drawcontext-matrix-pop",
+      "jump": "1.21.5 -> 1.21.6 (yarn)",
+      "match": "location: class (org\\.joml\\.)?Matrix3x2fStack",
+      "apply": {
+        "find": "(\\.getMatrices\\(\\)\\.)pop\\(\\)",
+        "replace": "$1popMatrix()"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "Same class change as drawcontext-matrix-push; popMatrix is the only stack verb on Matrix3x2fStack.",
+      "verified": ""
+    },
+    {
+      "id": "drawcontext-matrix-translate-2d",
+      "jump": "1.21.5 -> 1.21.6 (yarn)",
+      "match": "int cannot be converted to Matrix3x2f",
+      "apply": {
+        "find": "(\\.getMatrices\\(\\)\\.translate\\(\\s*[^,()]+,\\s*[^,()]+),\\s*[^,()]+\\)",
+        "replace": "$1)"
+      },
+      "scope": "repo",
+      "when": "",
+      "note": "The 2D matrix stack only translates in x and y, so the z argument disappears. Vanilla 1.21.6 draw ordering comes from render layers, so dropping the third component is the documented migration; calls whose arguments contain a comma or call are left for a person.",
+      "verified": ""
+    },
+    {
+      "id": "level-getminy",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+(method )?getMinBuildHeight",
+      "apply": {
+        "find": "\\.getMinBuildHeight\\(\\)",
+        "replace": ".getMinY()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "LevelHeightAccessor renamed getMinBuildHeight to getMinY in 1.21.2 with the same value. The match is javac's unresolved-symbol text, so the sweep only runs in files that reported the missing method.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "level-getmaxy",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+(method )?getMaxBuildHeight",
+      "apply": {
+        "find": "\\.getMaxBuildHeight\\(\\)",
+        "replace": ".getMaxY()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Same rename as getMinBuildHeight; getMaxY is a default method on LevelHeightAccessor.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "loottable-get-optional",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "Optional<ResourceKey<LootTable>> cannot be converted",
+      "apply": {
+        "find": "\\.getLootTable\\(\\)(?!\\s*\\.)",
+        "replace": ".getLootTable().orElse(null)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Entity.getLootTable returns Optional<ResourceKey<LootTable>> from 1.21.2; orElse(null) restores the old nullable contract the call site expects. The lookahead leaves a call already used as an Optional alone.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "equipable-to-component",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+(class|variable) Equipable",
+      "apply": {
+        "find": "Equipable\\.get\\(([^;]+?)\\)",
+        "replace": "$1.get(DataComponents.EQUIPPABLE)",
+        "ensureImports": ["net.minecraft.core.component.DataComponents", "net.minecraft.world.item.equipment.Equippable"]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The Equipable helper class was replaced by the equippable data component, so Equipable.get(stack) becomes stack.get(DataComponents.EQUIPPABLE).",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "equipable-import",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+(class|variable) Equipable",
+      "apply": {
+        "literal": "import net.minecraft.world.item.Equipable;",
+        "replace": "import net.minecraft.world.item.equipment.Equippable;"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The replacement type lives in net.minecraft.world.item.equipment; the literal import swap cannot touch a file that never imported the old class.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "equippable-slot",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+(class|variable) Equipable",
+      "apply": {
+        "find": "\\b(?!stack\\b|item\\b)(\\w+)\\.getEquipmentSlot\\(\\)",
+        "replace": "$1.slot()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Equippable is a record whose accessor is slot(); java.util.EquipmentSlot has no getEquipmentSlot method, so this cannot fire on an unrelated class.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "equippable-type-name",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+(class|variable) Equipable",
+      "apply": {
+        "find": "\\bEquipable\\b(?!\\.get\\()",
+        "replace": "Equippable"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Runs after the Equipable.get(...) call rewrite and the import swap, so every remaining token is a type usage that must take the new class name. The negative lookahead keeps a call site for the old helper intact.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "level-getgamerules-serverlevel",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+(method )?getGameRules",
+      "apply": {
+        "find": "([\\w.()]+?)\\.level\\(\\)\\.getGameRules\\(\\)",
+        "replace": "((net.minecraft.server.level.ServerLevel) $1.level()).getGameRules()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Level.getGameRules moved to ServerLevel in 1.21.2. The cast is explicit so a client level fails loudly instead of returning null; game-rule reads in this family are server-side.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "entitytype-create-spawn-reason-command",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "no suitable method found for create\\(ServerLevel\\)",
+      "apply": {
+        "find": "(EntityType\\.[A-Z_]+)\\.create\\((\\w+)\\)",
+        "replace": "$1.create($2, EntitySpawnReason.COMMAND)",
+        "ensureImports": ["net.minecraft.world.entity.EntitySpawnReason"]
+      },
+      "scope": "log",
+      "when": "CommandSourceStack",
+      "note": "EntityType.create(Level) became create(Level, EntitySpawnReason). A file that builds its level from a command source gets COMMAND, which keeps command-spawned mobs out of natural-spawn bonuses.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "entitytype-create-spawn-reason-natural",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "no suitable method found for create\\(ServerLevel\\)",
+      "apply": {
+        "find": "(EntityType\\.[A-Z_]+)\\.create\\((\\w+)\\)",
+        "replace": "$1.create($2, EntitySpawnReason.NATURAL)",
+        "ensureImports": ["net.minecraft.world.entity.EntitySpawnReason"]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The remaining create(Level) sites are gameplay spawns, so NATURAL is the closest match to the old no-reason call. Runs after the COMMAND variant because that one is restricted to command files.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "registry-get-item-optional",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "incompatible types: Optional<Reference<Item>> cannot be converted",
+      "apply": {
+        "find": "Item (\\w+) = (\\w+)\\.get\\((\\w+)\\);",
+        "replace": "Item $1 = $2.get($3).map(h -> h.value()).orElse(null);"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Registry.get returns Optional<Reference<T>> from 1.21.2, so a plain Item lookup needs the holder unwrapped. The declaration type and the single-argument shape keep the rule off a Map lookup that happens to sit in the same file.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "registry-get-block-optional",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "incompatible types: Optional<Reference<Block>> cannot be converted",
+      "apply": {
+        "find": "Block (\\w+) = (\\w+)\\.get\\((\\w+)\\);",
+        "replace": "Block $1 = $2.get($3).map(h -> h.value()).orElse(null);"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Same registry change for blocks; callers already handle a missing entry as AIR in this family.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "targeting-selector-lambda",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "incompatible parameter types in lambda expression",
+      "apply": {
+        "find": "(\\w+) -> (\\w+\\.\\w+\\([^()]*(?:\\([^()]*\\))?[^()]*)\\)\\)",
+        "replace": "($1, serverLevel) -> $2))"
+      },
+      "scope": "log",
+      "when": "NearestAttackableTargetGoal",
+      "note": "NearestAttackableTargetGoal takes a TargetingConditions.Selector (two arguments: entity and level) instead of a Predicate. Restricted to files that build that goal so an unrelated one-argument lambda is left alone.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "mob-convert-to-conversion-params",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "no suitable method found for convertTo",
+      "apply": {
+        "find": "(\\w+)\\.convertTo\\((EntityType\\.[A-Z_]+),\\s*(true|false)\\)",
+        "replace": "$1.convertTo($2, ConversionParams.single($1, $3, false), EntitySpawnReason.TRIGGERED, null)",
+        "ensureImports": ["net.minecraft.world.entity.ConversionParams", "net.minecraft.world.entity.EntitySpawnReason"]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Mob.convertTo(EntityType, boolean) became convertTo(EntityType, ConversionParams, EntitySpawnReason, AfterConversion). The old boolean was keepEquipment, so it maps to ConversionParams.single(mob, keepEquipment, false); no after-conversion hook is needed because the caller continues with the returned mob.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "spawn-at-location-serverlevel",
+      "jump": "1.21.1 -> 1.21.4 (mojmap)",
+      "match": "no suitable method found for spawnAtLocation",
+      "apply": {
+        "find": "(\\w+)\\.spawnAtLocation\\(([^)]*)\\)",
+        "replace": "$1.spawnAtLocation((net.minecraft.server.level.ServerLevel) $1.level(), $2)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Entity.spawnAtLocation now takes the ServerLevel it drops into. The cast keeps the rule local and fails loudly if the entity is ever in a client level, which is the only place this call is valid.",
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+    },
+    {
+      "id": "nbt-contains-typed",
+      "jump": "1.21.1 -> 1.21.6 (mojmap)",
+      "match": "method contains in class CompoundTag cannot be applied",
+      "apply": {
+        "find": "\\.contains\\(([^,()]+),\\s*Tag\\.TAG_[A-Z_]+\\)",
+        "replace": ".contains($1)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "CompoundTag.contains(String, int) was removed in 1.21.6; contains(String) is the only form left. The typed tag argument carried no decision the caller used, because the following getListOrEmpty/getIntOr callers already tolerate a missing key.",
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+    },
+    {
+      "id": "nbt-uuid-has",
+      "jump": "1.21.1 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method hasUUID",
+      "apply": {
+        "find": "(\\w+)\\.hasUUID\\(([^)]+)\\)",
+        "replace": "$1.read($2, UUIDUtil.CODEC).isPresent()",
+        "ensureImports": ["net.minecraft.core.UUIDUtil"]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "CompoundTag.hasUUID/getUUID were replaced by codec reads in 1.21.6. UUIDUtil.CODEC is the same int-array form the old helpers wrote.",
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+    },
+    {
+      "id": "nbt-uuid-get",
+      "jump": "1.21.1 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method getUUID",
+      "apply": {
+        "find": "(\\w+)\\.getUUID\\(([^)]+)\\)",
+        "replace": "$1.read($2, UUIDUtil.CODEC).orElse(null)",
+        "ensureImports": ["net.minecraft.core.UUIDUtil"]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Same codec read as hasUUID; orElse(null) matches the old nullable contract at call sites that already check presence.",
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+    },
+    {
+      "id": "nbt-uuid-put",
+      "jump": "1.21.1 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method putUUID",
+      "apply": {
+        "find": "(\\w+)\\.putUUID\\(([^,]+),\\s*([^)]+)\\)",
+        "replace": "$1.store($2, UUIDUtil.CODEC, $3)",
+        "ensureImports": ["net.minecraft.core.UUIDUtil"]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "putUUID became a codec store in 1.21.6; UUIDUtil.CODEC keeps the on-disk shape compatible with data written by older builds.",
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+    },
+    {
+      "id": "level-day-rename",
+      "jump": "1.21.1 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method isDay",
+      "apply": {
+        "find": "\\.isDay\\(\\)",
+        "replace": ".isBrightOutside()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Level.isDay/isNight were renamed to isBrightOutside/isDarkOutside in 1.21.6 with the same daylight predicate. isNight uses its own rule so each replacement stays literal.",
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+    },
+    {
+      "id": "level-night-rename",
+      "jump": "1.21.1 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method isNight",
+      "apply": {
+        "find": "\\.isNight\\(\\)",
+        "replace": ".isDarkOutside()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Partner of level-day-rename.",
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+    },
+    {
+      "id": "entity-snapto",
+      "jump": "1.21.1 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method moveTo",
+      "apply": {
+        "find": "\\.moveTo\\(",
+        "replace": ".snapTo("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Entity.moveTo became snapTo in 1.21.6; the overloads (x,y,z and x,y,z,yaw,pitch) are identical.",
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+    },
+    {
+      "id": "entity-water-rain",
+      "jump": "1.21.1 -> 1.21.6 (mojmap)",
+      "match": "symbol:\\s+method isInWaterRainOrBubble",
+      "apply": {
+        "find": "\\.isInWaterRainOrBubble\\(\\)",
+        "replace": ".isInWaterOrRain()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Entity.isInWaterRainOrBubble was reduced to isInWaterOrRain in 1.21.6; the bubble check it carried is covered by isInWater on the same call sites.",
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+    },
+    {
+      "id": "soundevents-holder-argument",
+      "jump": "1.21.1 -> 1.21.6 (mojmap)",
+      "match": "Reference<SoundEvent>",
+      "apply": {
+        "find": "(\\.playSound\\([^;]*,\\s*)(SoundEvents\\.(?:AMBIENT_CAVE|AMBIENT_BASALT_DELTAS_ADDITIONS|AMBIENT_BASALT_DELTAS_LOOP|AMBIENT_BASALT_DELTAS_MOOD|AMBIENT_CRIMSON_FOREST_ADDITIONS|AMBIENT_CRIMSON_FOREST_LOOP|AMBIENT_CRIMSON_FOREST_MOOD|AMBIENT_NETHER_WASTES_ADDITIONS|AMBIENT_NETHER_WASTES_LOOP|AMBIENT_NETHER_WASTES_MOOD|AMBIENT_SOUL_SAND_VALLEY_ADDITIONS|AMBIENT_SOUL_SAND_VALLEY_LOOP|AMBIENT_SOUL_SAND_VALLEY_MOOD|AMBIENT_WARPED_FOREST_ADDITIONS|AMBIENT_WARPED_FOREST_LOOP|AMBIENT_WARPED_FOREST_MOOD|BREEZE_WIND_CHARGE_BURST|CAMEL_SADDLE|GENERIC_DRINK|GENERIC_EAT|GENERIC_EXPLODE|HARNESS_EQUIP|HONEY_DRINK|HORSE_ARMOR|HORSE_ARMOR_UNEQUIP|HORSE_SADDLE|ITEM_BREAK|LLAMA_SWAG|LLAMA_CARPET_UNEQUIP|MUSIC_CREATIVE|MUSIC_CREDITS|MUSIC_DISC_5|MUSIC_DISC_11|MUSIC_DISC_13|MUSIC_DISC_BLOCKS|MUSIC_DISC_CAT|MUSIC_DISC_CHIRP|MUSIC_DISC_FAR|MUSIC_DISC_MALL|MUSIC_DISC_MELLOHI|MUSIC_DISC_PIGSTEP|MUSIC_DISC_STAL|MUSIC_DISC_STRAD|MUSIC_DISC_WAIT|MUSIC_DISC_WARD|MUSIC_DISC_OTHERSIDE|MUSIC_DISC_RELIC|MUSIC_DISC_CREATOR|MUSIC_DISC_CREATOR_MUSIC_BOX|MUSIC_DISC_PRECIPICE|MUSIC_DISC_TEARS|MUSIC_DRAGON|MUSIC_END|MUSIC_GAME|MUSIC_MENU|MUSIC_BIOME_BASALT_DELTAS|MUSIC_BIOME_CRIMSON_FOREST|MUSIC_BIOME_DEEP_DARK|MUSIC_BIOME_DRIPSTONE_CAVES|MUSIC_BIOME_GROVE|MUSIC_BIOME_JAGGED_PEAKS|MUSIC_BIOME_LUSH_CAVES|MUSIC_BIOME_SWAMP|MUSIC_BIOME_FOREST|MUSIC_BIOME_OLD_GROWTH_TAIGA|MUSIC_BIOME_MEADOW|MUSIC_BIOME_CHERRY_GROVE|MUSIC_BIOME_NETHER_WASTES|MUSIC_BIOME_FROZEN_PEAKS|MUSIC_BIOME_SNOWY_SLOPES|MUSIC_BIOME_SOUL_SAND_VALLEY|MUSIC_BIOME_STONY_PEAKS|MUSIC_BIOME_WARPED_FOREST|MUSIC_BIOME_FLOWER_FOREST|MUSIC_BIOME_DESERT|MUSIC_BIOME_BADLANDS|MUSIC_BIOME_JUNGLE|MUSIC_BIOME_SPARSE_JUNGLE|MUSIC_BIOME_BAMBOO_JUNGLE|MUSIC_UNDER_WATER|NOTE_BLOCK_BASEDRUM|NOTE_BLOCK_BASS|NOTE_BLOCK_BELL|NOTE_BLOCK_CHIME|NOTE_BLOCK_FLUTE|NOTE_BLOCK_GUITAR|NOTE_BLOCK_HARP|NOTE_BLOCK_HAT|NOTE_BLOCK_PLING|NOTE_BLOCK_SNARE|NOTE_BLOCK_XYLOPHONE|NOTE_BLOCK_IRON_XYLOPHONE|NOTE_BLOCK_COW_BELL|NOTE_BLOCK_DIDGERIDOO|NOTE_BLOCK_BIT|NOTE_BLOCK_BANJO|NOTE_BLOCK_IMITATE_ZOMBIE|NOTE_BLOCK_IMITATE_SKELETON|NOTE_BLOCK_IMITATE_CREEPER|NOTE_BLOCK_IMITATE_ENDER_DRAGON|NOTE_BLOCK_IMITATE_WITHER_SKELETON|NOTE_BLOCK_IMITATE_PIGLIN|OMINOUS_BOTTLE_DISPOSE|PIG_SADDLE|RAID_HORN|RESPAWN_ANCHOR_DEPLETE|SHIELD_BLOCK|SHIELD_BREAK|SOUL_ESCAPE|STRIDER_SADDLE|UI_BUTTON_CLICK|WIND_CHARGE_BURST|WOLF_ARMOR_BREAK|SADDLE_UNEQUIP))(?=\\s*[,)])",
+        "replace": "$1$2.value()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "About a hundred SoundEvents constants became Holder.Reference in 1.21.2 while the rest stayed plain SoundEvent, so the rule carries the exact holder list read from the target SoundEvents class and only rewrites a playSound argument in a file javac already reported. A constant outside the list is left alone, which is what keeps a plain SoundEvent argument compiling.",
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+    }  ]
+}

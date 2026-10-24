@@ -1,0 +1,39 @@
+{ "from": "getWorld", "to": "getEntityWorld", "seen": 26, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "children().add", "to": "this.addEntry", "seen": 22, "sources": ["TerraformersMC_ModMenu-1.21.6-1.21.9"], "imports": [] }
+{ "from": "getName", "to": "name", "seen": 9, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "getTranslationKey", "to": "getId", "seen": 3, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "index, int y, int x, int entryWidth, int entryHeight, int", "to": "", "seen": 3, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "getId", "to": "id", "seen": 2, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "getPos", "to": "getEntityPos", "seen": 2, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "y, x", "to": "this.getContentY(), this.getContentX()", "seen": 2, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "factories", "to": "particleFactories", "seen": 2, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "regions", "to": "sprites", "seen": 2, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "BlockEntityRenderDispatcher", "to": "BlockEntityRenderManager", "seen": 2, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": ["net.minecraft.client.render.block.entity.BlockEntityRenderManager"] }
+{ "from": "EntityRenderDispatcher", "to": "EntityRenderManager", "seen": 2, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": ["net.minecraft.client.render.entity.EntityRenderManager"] }
+{ "from": "inventory", "to": "heldStacks", "seen": 2, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "index, y, x, rowWidth, rowHeight,", "to": "", "seen": 2, "sources": ["TerraformersMC_ModMenu-1.21.6-1.21.9"], "imports": [] }
+{ "from": "CHAIN", "to": "IRON_CHAIN", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "getId", "to": "getUuid", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "getRecipeIdentifier(advancement.id()", "to": "advancement.id(", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "player.clientWorld", "to": "(ClientWorld) player.getEntityWorld()", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "((GameRulesIntRuleAccessor) (Object) this).getValue", "to": "this.get", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "EntityTarget", "to": "EntityReference", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "manager", "to": "sharedState", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "assert negotiatedVersion == 1;", "to": "", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "final String uuid = player.getUuidAsString(", "to": "uuid.set(player.getUuidAsString()", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "SpriteBillboardParticle", "to": "BillboardParticle", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": ["net.minecraft.client.particle.BillboardParticle"] }
+{ "from": "particleAtlasTexture", "to": "PARTICLE_TEXTURE_SHEETS", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "ClientWorld world, TextureManager textureManager,", "to": "", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "&& info.hasOverlay ? info.overlaySprite :", "to": "? info.overlaySprite : this.", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "EntityRenderers", "to": "EntityRendererFactories", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": ["net.minecraft.client.render.entity.EntityRendererFactories"] }
+{ "from": "PLAYER_OUTER_ARMOR", "to": "PLAYER", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "packVersion, Optional.empty(", "to": "new Range<>(packVersion", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": ["net.minecraft.util.dynamic.Range"] }
+{ "from": "return PackResourceMetadata.SERIALIZER.codec()", "to": "", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "1, description", "to": "new PackVersion(1, 0), description, ResourceType.CLIENT_RESOURCES", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": ["net.minecraft.resource.PackVersion", "net.minecraft.resource.ResourceType"] }
+{ "from": "124, (screen.height / 4) + 96", "to": "88 - 10, (screen.height / 2) - 34", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": [] }
+{ "from": "SpriteAtlasManager.AtlasPreparation", "to": "NbtWriteView", "seen": 1, "sources": ["FabricMC_fabric-1.21.6-1.21.9"], "imports": ["net.minecraft.storage.NbtWriteView"] }
+{ "from": "isNarratable", "to": "isInteractable", "seen": 1, "sources": ["TerraformersMC_ModMenu-1.21.6-1.21.9"], "imports": [] }
+{ "from": "return super.remove(index", "to": "super.clearEntries(", "seen": 1, "sources": ["TerraformersMC_ModMenu-1.21.6-1.21.9"], "imports": [] }
+{ "from": "- this.headerHeight", "to": "", "seen": 1, "sources": ["TerraformersMC_ModMenu-1.21.6-1.21.9"], "imports": [] }
+{ "from": "4", "to": "5", "seen": 1, "sources": ["TerraformersMC_ModMenu-1.21.6-1.21.9"], "imports": [] }
+{ "from": "x +=", "to": "int x = this.getX() + this.", "seen": 1, "sources": ["TerraformersMC_ModMenu-1.21.6-1.21.9"], "imports": [] }

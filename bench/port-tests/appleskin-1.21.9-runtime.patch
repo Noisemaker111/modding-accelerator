@@ -1,0 +1,90 @@
+diff --git a/java/squeek/appleskin/client/DebugInfoHandler.java b/java/squeek/appleskin/client/DebugInfoHandler.java
+index 6eaa852..ef2f57e 100644
+--- a/java/squeek/appleskin/client/DebugInfoHandler.java
++++ b/java/squeek/appleskin/client/DebugInfoHandler.java
+@@ -2,15 +2,24 @@ package squeek.appleskin.client;
+ 
+ 
+ import net.minecraft.client.MinecraftClient;
++import net.minecraft.client.gui.hud.debug.DebugHudEntries;
++import net.minecraft.client.gui.hud.debug.DebugHudEntry;
++import net.minecraft.client.gui.hud.debug.DebugHudLines;
++import net.minecraft.client.gui.hud.debug.DebugHudEntryVisibility;
++import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+ import net.minecraft.entity.player.HungerManager;
++import net.minecraft.util.Identifier;
++import net.minecraft.world.World;
++import net.minecraft.world.chunk.WorldChunk;
+ import squeek.appleskin.ModConfig;
+ import squeek.appleskin.helpers.ExhaustionHelper;
+ import squeek.appleskin.helpers.FoodHelper;
+ 
+ import java.text.DecimalFormat;
+ import java.util.List;
++import java.util.ArrayList;
+ 
+-public class DebugInfoHandler
++public class DebugInfoHandler implements DebugHudEntry
+ {
+ 	public static DebugInfoHandler INSTANCE;
+ 
+@@ -21,6 +30,18 @@ public class DebugInfoHandler
+ 	public static void init()
+ 	{
+ 		INSTANCE = new DebugInfoHandler();
++		Identifier id = Identifier.of("appleskin", "food");
++		DebugHudEntries.register(id, INSTANCE);
++		ClientLifecycleEvents.CLIENT_STARTED.register(client ->
++			client.debugHudEntryList.setEntryVisibility(id, DebugHudEntryVisibility.IN_F3));
++	}
++
++	@Override
++	public void render(DebugHudLines lines, World world, WorldChunk clientChunk, WorldChunk chunk)
++	{
++		List<String> text = new ArrayList<>();
++		onTextRender(text);
++		text.forEach(lines::addLine);
+ 	}
+ 
+ 	public void onTextRender(List<String> leftDebugInfo)
+diff --git a/java/squeek/appleskin/mixin/DebugHudMixin.java b/java/squeek/appleskin/mixin/DebugHudMixin.java
+deleted file mode 100644
+index a7b454b..0000000
+--- a/java/squeek/appleskin/mixin/DebugHudMixin.java
++++ /dev/null
+@@ -1,21 +0,0 @@
+-package squeek.appleskin.mixin;
+-
+-import net.minecraft.client.gui.hud.DebugHud;
+-import org.spongepowered.asm.mixin.Mixin;
+-import org.spongepowered.asm.mixin.injection.At;
+-import org.spongepowered.asm.mixin.injection.Inject;
+-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+-import squeek.appleskin.client.DebugInfoHandler;
+-
+-import java.util.List;
+-
+-@Mixin(DebugHud.class)
+-public class DebugHudMixin
+-{
+-	@Inject(at = @At("RETURN"), method = "getLeftText")
+-	protected void getLeftText(CallbackInfoReturnable<List<String>> info)
+-	{
+-		if (DebugInfoHandler.INSTANCE != null)
+-			DebugInfoHandler.INSTANCE.onTextRender(info.getReturnValue());
+-	}
+-}
+diff --git a/resources/appleskin.mixins.json b/resources/appleskin.mixins.json
+index ee10f96..3e14d34 100644
+--- a/resources/appleskin.mixins.json
++++ b/resources/appleskin.mixins.json
+@@ -11,8 +11,7 @@
+     "InGameHudMixin",
+     "MinecraftClientMixin",
+     "ItemStackMixin",
+-    "TooltipComponentMixin",
+-    "DebugHudMixin"
++    "TooltipComponentMixin"
+   ],
+   "injectors": {
+     "defaultRequire": 1,

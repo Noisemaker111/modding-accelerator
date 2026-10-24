@@ -1,0 +1,20 @@
+Modding Accelerator
+
+Copyright (c) 2026 Jon. Released under MIT (see LICENSE).
+
+This repository contains no Minecraft code, assets or data. It does not ship, patch
+or redistribute the Minecraft jar.
+
+The demo mod is written against Minecraft's public API and compiled against a
+Minecraft jar resolved by Fabric Loom at build time, the same way every Fabric mod
+is built. Method and field names were read from the compiled jar's public
+signatures (javap) and from Fabric's public documentation; no decompiled Minecraft
+source is included or redistributed.
+
+Fabric's documentation and example mod informed the patterns used here (item and
+block registration, game tests, client screenshots). Those sources are licensed
+separately (Fabric docs: CC BY-NC-SA 4.0; fabric-example-mod: CC0-1.0). The code in
+this repository is our own implementation.
+
+Minecraft is a trademark of Mojang Synergies AB. This project is not affiliated
+with or endorsed by Mojang or Microsoft.

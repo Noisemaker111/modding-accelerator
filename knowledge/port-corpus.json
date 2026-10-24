@@ -1,0 +1,11 @@
+{
+  "note": "Open-source mods that keep one branch per Minecraft version. For a jump A -> B, modaccel port compares each repo's A and B branches on GitHub (their authors' real port) and learns the line rewrites that touch what Minecraft changed (tools/VersionMap.java --learn). {v} is the Minecraft version. A repo without both branches is skipped. Adding a repo here widens every future port; nothing here is per-version.",
+  "repos": [
+    { "repo": "FabricMC/fabric", "branch": "{v}" },
+    { "repo": "TerraformersMC/ModMenu", "branch": "{v}" },
+    { "repo": "squeek502/AppleSkin", "branch": "{v}-fabric" },
+    { "repo": "CaffeineMC/lithium-fabric", "branch": "{v}" },
+    { "repo": "CaffeineMC/sodium", "branch": "{v}/stable" },
+    { "repo": "IrisShaders/Iris", "branch": "{v}" }
+  ]
+}

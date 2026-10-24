@@ -1,0 +1,110 @@
+{
+  "measured": "2026-10-22",
+  "workspace": "C:/Users/Jk101/Projects/modding-accelerator/bench/mods",
+  "mods": [
+    {
+      "name": "diorama",
+      "repo": "https://github.com/SunkenInTime/diorama",
+      "branch": "master",
+      "commit": "0bfb25c",
+      "license": "MIT",
+      "size": { "source_bytes": 1880000, "files": 220, "java_files": 124, "with_build_outputs_mb": 157 },
+      "build_system": "Gradle 9.7.1 + Stonecutter 0.9.8 + Fabric Loom 1.18-SNAPSHOT + NeoForge moddev 2.0.148",
+      "jdk": "25",
+      "minecraft": { "active": "26.3", "nodes": "1.21 to 26.3 (21 nodes)" },
+      "loaders": ["fabric", "neoforge"],
+      "baseline": {
+        "command": ".\\gradlew.bat :26.3:build -x test --console=plain",
+        "result": "PASS",
+        "seconds": 204.5,
+        "artifact": "versions/26.3/build/libs/diorama-0.2.1+26.3.jar (470708 bytes)",
+        "log": "bench/mods/logs/diorama-baseline.log"
+      },
+      "bump": {
+        "attempted": "no newer Minecraft node exists (26.3 is newest; no 26.4 branch or tag upstream); bumped the fabric-api pin instead",
+        "pin_change": "versions/26.3/gradle.properties fabric_api_version 0.162.0+26.3 -> 0.163.0+26.3",
+        "result": "PASS",
+        "seconds": 8.2,
+        "gradle_reported": "BUILD SUCCESSFUL in 7s (1 task executed: compileJava)",
+        "log": "bench/mods/logs/diorama-bump.log"
+      },
+      "errors": 0,
+      "port_report": {
+        "run": false,
+        "why": "no failing build of the mod itself; the only diorama failures came from the install test (see install_test)"
+      },
+      "harness_installable_as_is": false,
+      "install_test": {
+        "target": "bench/mods/diorama-install (copy of the clone, no build dirs)",
+        "installer_output": "install: mod 'diorama' package dev.diorama.fabric (Minecraft )  +  'Stonecutter repo. Harness files are in place; paste this block into the active node's build script'",
+        "installer_exit": 0,
+        "wiring_written": false,
+        "empty_minecraft_version": "root gradle.properties has no minecraft_version or fabric_api_version; they live in versions/<v>/gradle.properties",
+        "pasted_block_build": "FAIL",
+        "pasted_block_seconds": 188,
+        "pasted_block_errors": 8,
+        "pasted_block_error_detail": [
+          "6 x deprecated-as-error on loom run config: property(), vmArg(), ideConfigGenerated() (Loom 1.18)",
+          "2 x Unresolved reference 'asFile' on rootProject.file(...).asFile in the labClasspath task"
+        ],
+        "log": "bench/mods/logs/diorama-install-build.log",
+        "also": "bridge copied to src/client/java/dev/modlab but diorama has no splitEnvironmentSourceSets() and no src/client source set, so it never compiles; installer's fabricApi block sets enableGameTests=true/createSourceSet=false while the mod already configures client game tests"
+      },
+      "biggest_blocker": "The harness's own Gradle wiring does not compile against Loom 1.18 Kotlin DSL (8 script errors), and Stonecutter means manual per-node pasting plus one run config per node."
+    },
+    {
+      "name": "minecolonies",
+      "repo": "https://github.com/ldtteam/minecolonies",
+      "branch": "version/main",
+      "commit": "d1573f78",
+      "license": "GPL-3.0",
+      "size": { "clone_mb": 151, "git_mb": 62, "files": 22522, "java_files": 2103 },
+      "build_system": "Gradle 8.1.1 + ForgeGradle via remote apply from https://raw.githubusercontent.com/ldtteam/OperaPublicaCreator/main/gradle/mod.gradle",
+      "jdk": "17 (downloaded Temurin 17 for this bench; Gradle 8.1.1 rejects JDK 21)",
+      "minecraft": { "active": "1.20.1", "forge": "47.1.3" },
+      "loaders": ["forge"],
+      "baseline": {
+        "command": ".\\gradlew.bat build -x test --console=plain",
+        "result": "PASS",
+        "seconds": 328.3,
+        "artifact": "build/libs/minecolonies-1.20.1-0.0.1-LOCAL.jar (67.1 MB)",
+        "log": "bench/mods/logs/minecolonies-baseline.log"
+      },
+      "jdk_wall": {
+        "jdk": "21",
+        "result": "FAIL",
+        "seconds": 7,
+        "error": "Could not open settings generic class cache ... BUG! exception in phase 'semantic analysis' in source unit '_BuildScript_' Unsupported class file major version 65",
+        "log": "bench/mods/logs/minecolonies-jdk21-probe.log"
+      },
+      "bump": {
+        "attempted": "next MC version its own branch supports: version/1.20.4 (MC 1.20.4, Forge 20.4.200, Gradle 8.8 wrapper)",
+        "result": "FAIL",
+        "seconds_to_first_failure": 56,
+        "errors": 1,
+        "javac_errors": 0,
+        "error": "Could not resolve all artifacts for configuration 'classpath'. > Could not resolve net.neoforged.gradle:userdev:7.0.+. > No matching variant of net.neoforged.gradle:userdev:7.0.192 was found ... attribute 'org.gradle.plugin.api-version' with value '8.8' but the component declares '8.13'",
+        "log": "bench/mods/logs/minecolonies-1.20.4.log"
+      },
+      "port_report": {
+        "run": true,
+        "command": ".\\modaccel port -Log bench/mods/logs/minecolonies-1.20.4.log",
+        "result": "0 error(s) in 0 file(s)",
+        "group_by_file": {},
+        "why_empty": "failure is a Gradle/NeoGradle variant resolution error; the tool only parses '<file>.java:line: error:' lines",
+        "jar": "none - ForgeGradle leaves no loom-cache, and the 1.20.4 clone failed before any jar existed"
+      },
+      "harness_installable_as_is": false,
+      "install_test": {
+        "command": "install.ps1 -Target bench/mods/minecolonies",
+        "exit": 1,
+        "message": "install: no src/main/resources/fabric.mod.json in ... - is this a Fabric mod repo?"
+      },
+      "biggest_blocker": "Not a Fabric/Loom repo at all: ForgeGradle driven by a remote floating 7.0.+ NeoGradle pin, so neither install.ps1 nor the loom-based fast lane applies, and the floating pin breaks the build as upstream moves."
+    }
+  ],
+  "notes": {
+    "port_lane": "ran twice (minecolonies 1.20.4 log, diorama install-build log): both '0 error(s) in 0 file(s)' - Gradle and Kotlin-DSL failures are invisible to it",
+    "port_report_side_effect": "the verb writes PORT-REPORT.md at the repo root and exits 1 even with 0 errors; the pre-run copy was restored from bench/mods/logs/PORT-REPORT.before.md"
+  }
+}

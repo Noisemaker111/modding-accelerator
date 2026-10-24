@@ -1,0 +1,177 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.JavaExec
+import org.gradle.api.tasks.testing.Test
+
+// Per-invocation metadata and launch capture. Never edits the user's build or sources.
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    def state = new File(root.projectDir, '.modaccel/portable')
+    def selected = System.getProperty('modaccel.project', '')
+    def planning = System.getProperty('modaccel.metadataMode', '') == 'plan'
+    def targetProjects = root.allprojects.findAll { !selected || it.path == selected }
+    if (selected && !targetProjects) throw new GradleException("No project ${selected}; available projects: ${root.allprojects*.path}")
+    def launchDirectory = { p, t ->
+        def directory = t.workingDir
+        // Loader tasks select their real game directory inside exec(), after doFirst.
+        if (t.hasProperty('internalRunDir')) {
+            def configured = t.internalRunDir.get()
+            directory = configured instanceof org.gradle.api.file.Directory ? configured.asFile : new File(p.projectDir, configured.toString())
+        }
+        if (t.hasProperty('gameDirectory')) directory = t.gameDirectory.get().asFile
+        directory
+    }
+    def parts = []
+    def metadataTasks = targetProjects.collect { p ->
+        def part = new File(state, 'model-parts/' + Base64.urlEncoder.withoutPadding().encodeToString(p.path.bytes) + '.json')
+        parts.add(part)
+        p.tasks.register('modaccelProjectMetadata') {
+        doLast {
+            part.parentFile.mkdirs()
+            def projects = [p].collect { ownedProject ->
+                def sets = p.extensions.findByName('sourceSets')
+                def javaTasks = planning ? [] : p.tasks.withType(JavaCompile).toList().collect { t ->
+                    def compiler = null
+                    try { compiler = t.javaCompiler.get().executablePath.asFile.absolutePath } catch (Exception ignored) {}
+                    // NeoGradle 7.1 routes Minecraft sources through a task output provider; reading it here
+                    // is only legal after that task runs, so fall back to the project's own source dirs.
+                    def ownSources = []
+                    try {
+                        ownSources = t.source.files.findAll { it.absolutePath.startsWith(p.projectDir.absolutePath) }.collect { it.absolutePath }.sort()
+                    } catch (Exception ignored) {
+                        def set = sets?.find { it.name == 'main' } ?: sets?.first()
+                        if (set) ownSources = (set.java.srcDirs + set.resources.srcDirs).collectMany { dir ->
+                            dir.exists() ? p.fileTree(dir).files.findAll { it.isFile() }.collect { it.absolutePath } : []
+                        }.sort()
+                    }
+                    def classpath = []
+                    try { classpath = t.classpath.files.collect { it.absolutePath } } catch (Exception ignored) {}
+                    [task: t.path, sources: ownSources,
+                     classpath: classpath,
+                     destination: t.destinationDirectory.get().asFile.absolutePath,
+                     release: t.options.release.present ? t.options.release.get() : t.targetCompatibility,
+                     encoding: t.options.encoding ?: 'UTF-8', compiler: compiler,
+                     arguments: t.options.compilerArgs, processors: t.options.annotationProcessorPath?.files?.collect { it.absolutePath } ?: []]
+                }
+                def sourceSets = sets ? sets.toList().collect { s ->
+                    [name: s.name, sources: s.allSource.srcDirs.collect { it.absolutePath },
+                     java: s.java.srcDirs.collect { it.absolutePath }, resources: s.resources.srcDirs.collect { it.absolutePath },
+                     classesTask: s.classesTaskName,
+                     runtime: planning ? [] : s.runtimeClasspath.files.collect { it.absolutePath }, output: s.output.files.collect { it.absolutePath }]
+                } : []
+                // NeoGradle adds dependencies to live configurations while they resolve; snapshot first.
+                def configurations = p.configurations.toList()
+                def artifacts = configurations.findAll { it.canBeResolved && it.name in ['modImplementation', 'modApi', 'modCompileOnly', 'modRuntimeOnly'] }.collectMany { c ->
+                    c.resolvedConfiguration.resolvedArtifacts.collect { a ->
+                        [group: a.moduleVersion.id.group, name: a.name, version: a.moduleVersion.id.version, file: a.file.absolutePath]
+                    }
+                }.unique()
+                def deps = configurations.collectMany { c -> c.dependencies.toList().collect { d ->
+                    [configuration: c.name, group: d.group, name: d.name, version: d.version]
+                }}.unique()
+                def pins = [:]
+                ['minecraft_version','minecraftVersion','exactMinecraftVersion','mc_version','loader_version','fabric_version','fabric_api_version',
+                 'yarn_mappings','yarn_version','neoforge_version','neo_version','neoForgeVersion','neoforgeVersion','forge_version'].each { key -> if (p.hasProperty(key)) pins[key] = p.property(key).toString() }
+                // Declared accepted game/loader ranges must travel with the version pins.
+                ['minecraft_version_range','neo_version_range','neoforge_version_range','forge_version_range','loader_version_range'].each { key -> if (p.hasProperty(key)) pins[key] = p.property(key).toString() }
+                def tasks = p.tasks.findAll { t -> t instanceof JavaExec || t instanceof Test || t.name == 'build' || t.name == 'classes' || t.name == 'testClasses' }.collect { t ->
+                    [task: t.path, kind: t instanceof Test ? 'test' : t instanceof JavaExec ? 'java' : 'build',
+                     directory: t instanceof JavaExec ? launchDirectory(p, t).absolutePath : null]
+                }
+                [path: p.path, directory: p.projectDir.absolutePath, buildFile: p.buildFile.absolutePath,
+                 plugins: p.plugins.collect { it.class.name }, pins: pins, dependencies: deps, artifacts: artifacts,
+                 repositories: p.repositories.withType(org.gradle.api.artifacts.repositories.MavenArtifactRepository).collect { r ->
+                     def u = r.url
+                     new URI(u.scheme, null, u.host, u.port, u.path, null, null).toString()
+                 },
+                 compile: javaTasks, sourceSets: sourceSets, tasks: tasks,
+                 composites: p.tasks.withType(org.gradle.api.tasks.GradleBuild).collect { it.path }]
+            }
+            part.text = JsonOutput.toJson(projects[0])
+        }
+        }
+    }
+    root.tasks.register('modaccelMetadata') {
+        dependsOn metadataTasks
+        doLast {
+            def model = [schema: 1, mode: planning ? 'plan' : 'full', root: root.projectDir.absolutePath, gradle: gradle.gradleVersion,
+                         java: System.getProperty('java.home'), projects: parts.collect { new JsonSlurper().parse(it) }]
+            def output = new File(state, planning ? 'plan-model.json' : 'model.json')
+            output.text = JsonOutput.toJson(model)
+            println 'MODACCEL_MODEL ' + output.absolutePath
+        }
+    }
+    // Capture at the JavaExec action boundary, after loader plugins have prepared natives/assets.
+    // A generated Launch Java agent (injected only by the portable command) supplies game control.
+    targetProjects.each { p ->
+        if (System.getProperty('modaccel.recompile', '') == 'true') {
+            // Force the project's own compilers to rerun, never a loader plugin's Minecraft
+            // recompile (NeoGradle's neoFormRecompile is a JavaCompile task too and costs a minute).
+            p.tasks.withType(JavaCompile).configureEach { t ->
+                if (!t.name.toLowerCase(Locale.ROOT).contains('neoform')) t.outputs.upToDateWhen { false }
+            }
+            p.tasks.withType(org.gradle.language.jvm.tasks.ProcessResources).configureEach { outputs.upToDateWhen { false } }
+        }
+        def sets = p.extensions.findByName('sourceSets')
+        if (sets?.findByName('test') && !p.tasks.findByName('modaccelPure')) {
+            p.tasks.register('modaccelPure', Test) {
+                testClassesDirs = sets.test.output.classesDirs
+                classpath = sets.test.runtimeClasspath
+                useJUnitPlatform { includeTags 'pure'; includeEngines 'junit-jupiter' }
+                outputs.upToDateWhen { false }
+                testLogging { events 'passed', 'failed', 'skipped' }
+            }
+        }
+        // A cached test task is build evidence, not a fresh logic check.
+        p.tasks.withType(Test).configureEach {
+            outputs.upToDateWhen { false }
+            def runId = System.getProperty('modaccel.runId', '')
+            if (runId) reports.junitXml.outputLocation = p.layout.buildDirectory.dir("modaccel/test-results/${runId}/${name}")
+        }
+        p.tasks.withType(JavaExec).configureEach { t ->
+            t.doFirst {
+                def wanted = System.getProperty('modaccel.captureTask', '')
+                if (wanted != t.path) return
+                state.mkdirs()
+                def agent = System.getProperty('modaccel.agent', '')
+                def fingerprint = System.getProperty('modaccel.fingerprint', '')
+                def token = System.getProperty('modaccel.token', '')
+                if (agent) {
+                    // Fabric's error popup otherwise waits for a click instead of reporting startup failure.
+                    t.jvmArgs "-javaagent:${agent}", "-Dmodaccel.root=${root.projectDir.absolutePath}",
+                            "-Dmodaccel.fingerprint=${fingerprint}", "-Dmodaccel.token=${token}",
+                            "-Dmodaccel.state=${state.absolutePath}", '-Dprismlab.lab.port=', '-Dmodlabbridge.port=',
+                            '-Dfabric.noGui=true'
+                }
+                def executable = t.executable
+                try { executable = t.javaLauncher.get().executablePath.asFile.absolutePath } catch (Exception ignored) {}
+                def arguments = []
+                arguments.addAll(t.allJvmArgs)
+                // Gradle's newer jvmArguments property and argument providers are separate
+                // from allJvmArgs. Loom puts its DLI properties and @classpath file here.
+                if (t.hasProperty('jvmArguments')) arguments.addAll(t.jvmArguments.getOrElse([]))
+                t.jvmArgumentProviders.each { arguments.addAll(it.asArguments()) }
+                def effectiveClasspath = p.files(t.classpath)
+                // ModDevGradle also assigns these inside exec(), after doFirst.
+                if (t.hasProperty('classpathProvider')) effectiveClasspath.from(t.classpathProvider)
+                if (!effectiveClasspath.empty) arguments.addAll(['-cp', effectiveClasspath.asPath])
+                arguments.add(t.mainClass.get())
+                arguments.addAll(t.args)
+                t.argumentProviders.each { arguments.addAll(it.asArguments()) }
+                def environment = [:]
+                // Record only variables the launch changes, never a dump of credentials.
+                t.environment.each { k, v -> if (System.getenv(k) != v?.toString()) environment[k] = v?.toString() }
+                def directory = launchDirectory(p, t)
+                if (t.hasProperty('internalEnvironmentVars')) environment.putAll(t.internalEnvironmentVars.get())
+                if (t.hasProperty('environmentProperty')) environment.putAll(t.environmentProperty.get())
+                def launchFile = new File(System.getProperty('modaccel.launchFile', new File(state, 'launch.json').absolutePath))
+                launchFile.parentFile.mkdirs()
+                launchFile.text = JsonOutput.toJson([schema: 1, task: t.path,
+                    executable: executable, arguments: arguments, directory: directory.absolutePath,
+                    environment: environment, fingerprint: fingerprint])
+                println 'MODACCEL_LAUNCH ' + launchFile.absolutePath
+            }
+        }
+    }
+}

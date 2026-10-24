@@ -1,0 +1,122 @@
+[
+	{
+		"id": "debug-hud-entry-1.21.9",
+		"jump": "1.21.6 -> 1.21.9 (yarn)",
+		"match": "getLeftText|DebugHudMixin|DebugHudEntry",
+		"title": "Debug HUD text moves to registered entries",
+		"steps": [
+			"Only for a mixin into net.minecraft.client.gui.hud.DebugHud that injects at RETURN into getLeftText(CallbackInfoReturnable<List<String>>) and appends its own lines: move that line-producing behavior into a client-side DebugHudEntry.render(DebugHudLines, World, WorldChunk, WorldChunk). Add the same lines through DebugHudLines.addLine.",
+			"Register the entry once with DebugHudEntries.register using the mod's own stable Identifier. At client startup set that id to DebugHudEntryVisibility.IN_F3 through the client's debugHudEntryList; registration alone does not select F3 display.",
+			"After the old injection's behavior is preserved and registration is wired, remove only that obsolete getLeftText mixin from the client mixin list. Keep every other mixin and its checks.",
+			"Guide, do not auto-rewrite, if the injection changes or removes vanilla lines, reads a different return type, runs at another injection point, has side effects beyond appending lines, or is not the DebugHud owner. Those cases need their own behavior mapping."
+		],
+		"note": "Target 1.21.9 yarn jar declares DebugHudEntry.render(DebugHudLines, World, WorldChunk, WorldChunk), DebugHudEntries.register(Identifier, DebugHudEntry), and IN_F3; DebugHud has no getLeftText. AppleSkin's guided port demonstrates keeping onTextRender's output through render and selecting IN_F3 at client startup. This is a scoped recipe, not a corpus copy of the mod implementation."
+	},
+	{
+		"id": "entity-render-state",
+		"jump": "1.21.2+",
+		"match": "does not override|is not abstract",
+		"title": "Entity render-state refactor",
+		"steps": [
+			"Add a render state class per entity (extend EntityRenderState or a MobRenderState).",
+			"In the renderer implement createRenderState() and extractRenderState(entity, state, partialTick); move every field you read in render into the state.",
+			"Change the render signature to render(state, poseStack, buffer, packedLight) and read anim fields from the state.",
+			"MobRenderer is now MobRenderer<T, S, M>; a layer is RenderLayer<S extends EntityRenderState, M extends EntityModel<? super S>> and loses the entity and partial ticks, so bake interpolated values into the state at extraction.",
+			"renderToBuffer(...) is final in 1.21.4+: apply scale/offset at the caller, not by overriding."
+		],
+		"note": "Structural: no rename or regex fixes this. Artifacts needed this for 68 of its 97 errors. Only the 'does not override' and 'is not abstract' lines carry this recipe; the generics errors on the same files are entity-model-generics."
+	},
+	{
+		"id": "entity-model-generics",
+		"jump": "1.21.4+",
+		"match": "cannot infer type arguments|HumanoidModel<",
+		"title": "Model generics now carry the render state",
+		"steps": [
+			"Model<T> became EntityModel<State> and HumanoidModel<State>: the type parameter is the render state, not the entity.",
+			"setupAnim(State state) replaces setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch); anything it reads from the entity has to be copied into the state during extractRenderState.",
+			"'new HumanoidModel<>(...) cannot infer type arguments' is the diamond on an anonymous subclass: write the type argument, e.g. new HumanoidModel<ArtifactRenderState>(part, RenderType::entityCutoutNoCull) { ... }.",
+			"Model.headParts()/bodyParts() and Model.young are gone: a single-piece model sets every other humanoid part invisible in its constructor (body.visible = true; head/hat/arms/legs false).",
+			"EntityModel.copyPropertiesTo(EntityModel<T>) is removed; only HumanoidModel.copyPropertiesTo(HumanoidModel<T>) is left, and it needs a raw cast when the type arguments differ."
+		],
+		"note": "The 'type argument X is not within bounds of type-variable T' and 'method setupAnim cannot be applied to given types' lines next to these are the same rewrite but are not labelled structural, so the report only guides the 'cannot infer type arguments' line. BeltModel.createHeliumFlamingoModel() in Artifacts is the diamond case."
+	},
+	{
+		"id": "item-model",
+		"jump": "1.21.4+",
+		"match": "BakedModel|ItemModel|ItemStackRenderState|ModelLoadingPlugin|addModels|renderStatic",
+		"title": "Item model and model-loading API",
+		"steps": [
+			"BakedModel is gone: an item now renders through ItemModel + ItemStackRenderState (Minecraft.getInstance().getModelManager().getItemModel(id)).",
+			"A field that held a BakedModel holds an ItemModel; draw it with model.update(renderState, stack, minecraft.getItemModelResolver(), ItemDisplayContext.NONE, null, null, 0) then renderState.render(poseStack, minecraft.renderBuffers().bufferSource(), light, OverlayTexture.NO_OVERLAY).",
+			"Declare standalone models in assets/<ns>/items/<name>.json with {\"model\":{\"type\":\"minecraft:model\",\"model\":\"<ns>:item/<name>\"}} instead of registering them in code.",
+			"Fabric model-loading 5.x removed ModelLoadingPlugin.Context.addModels and FabricBakedModelManager: the items/*.json definition replaces the loader, and a ModelLoadingPlugin that only existed to call addModels is deleted, not ported.",
+			"Rendering a stack from a model or renderer still uses ItemRenderer.renderStatic(stack, ItemDisplayContext.NONE, light, overlay, poseStack, buffer, null, seed); the 1.21.4 item-property registry (ItemProperties/ClampedItemPropertyFunction) has only the data replacement.",
+			"FRAPI's net.fabricmc.fabric.api.renderer.v1 (ForwardingBakedModel/RenderContext) is gone: a BakedModel wrapper that swapped a model per display context must become a real ItemModel."
+		],
+		"note": "Traveler's Backpack's SupporterBadgeModel is the solved BakedModel -> ItemModel + ItemStackRenderState case; its ModuleModelLoader was deleted outright because every call it made was addModels. Fabric model-loading has no error text of its own: it surfaces as a deleted class or a compile failure in the loader, so it stays folded into this recipe."
+	},
+	{
+		"id": "gui-shader",
+		"jump": "1.21.5+",
+		"match": "CoreShaders|setShader",
+		"title": "Core shaders removed from GUI and render code",
+		"steps": [
+			"CoreShaders does not exist: the shader is chosen by the RenderType or RenderPipeline you pass (RenderType::guiTextured, RenderType::guiTexturedOverlay) instead of setShader(GUI_TEXTURED) + setShaderColor.",
+			"RenderSystem.setShader now takes a RenderPipeline, and the POSITION_TEX / POSITION_COLOR shader constants are gone; anything that built a quad by hand goes through GuiGraphics.",
+			"Replace hand-built Tesselator/BufferBuilder POSITION_TEX and POSITION_COLOR quads with GuiGraphics.fill(x1, y1, x2, y2, argb) for solid areas and GuiGraphics.blitSprite(RenderType::guiTextured, sprite, x, y, w, h[, color]) for textures.",
+			"Keep the draw order with guiGraphics.pose().pushPose()/popPose(); RenderSystem.enableScissor/disableScissor still exist and take window-scaled coordinates."
+		],
+		"note": "Traveler's Backpack: ScrollPanel, StackModelPart and RenderHelper went from CoreShaders + hand-built quads to RenderType::guiTextured with GuiGraphics.fill/blitSprite. This is a rewrite of the draw call, not a rename: the shader constant and the quad both disappear."
+	},
+	{
+		"id": "gui-blit",
+		"jump": "1.21.4+",
+		"match": "Function<ResourceLocation,\\s*RenderType>|blitSprite|innerBlit",
+		"title": "GuiGraphics.blit takes a RenderType factory",
+		"steps": [
+			"GuiGraphics.blit's first argument is a RenderType factory, not a texture id: guiGraphics.blit(RenderType::guiTextured, texture, x, y, u, v, w, h, texWidth, texHeight).",
+			"blitSprite replaces the texture-region form for GUI sprites: guiGraphics.blitSprite(RenderType::guiTextured, sprite, x, y, w, h[, color]); sprite ids live under assets/<ns>/textures/gui/sprites/.",
+			"innerBlit and renderTooltipInternal are gone; use fill for solid areas and the public blit/blitSprite overloads.",
+			"A mixin @Inject/@WrapOperation aimed at the old blit signature no longer remaps (the annotation processor prints 'Cannot remap blit ... [net/minecraft/client/gui/GuiGraphics]'), so the descriptor changes with the call."
+		],
+		"note": "Artifacts' HeliumFlamingoOverlay kept its icon draw by passing RenderType::guiTextured; the same log shows the @Inject targets that stopped remapping, which javac never reports."
+	},
+	{
+		"id": "thrown-potion",
+		"jump": "1.21.5+",
+		"match": "ThrownPotion",
+		"title": "ThrownPotion split into splash and lingering",
+		"steps": [
+			"ThrownPotion is gone: use ThrownSplashPotion or ThrownLingeringPotion, with AbstractThrownPotion as the shared base to type a field or parameter against.",
+			"Spawn through Projectile.spawnProjectileFromRotation(ThrownSplashPotion::new, serverLevel, stack, player, -20.0F, ThrowablePotionItem.PROJECTILE_SHOOT_POWER, 1.0F); use ThrownLingeringPotion::new for the lingering form.",
+			"A splash/lingering boolean now selects which constructor reference you pass; there is no single class to instantiate with a flag."
+		],
+		"note": "Traveler's Backpack ServerActions.throwPotion: one import became two and the behaviour is chosen by the constructor reference. The jar diff already says ThrownPotion -> AbstractThrownPotion; this recipe says which of the two subclasses to build."
+	},
+	{
+		"id": "hurt-server",
+		"jump": "1.21.4+",
+		"match": "void cannot be converted to boolean|cannot override hurt",
+		"title": "Entity.hurt is final; override hurtServer",
+		"steps": [
+			"Entity.hurt(DamageSource, float) is final void: override hurtServer(ServerLevel, DamageSource, float) returning boolean instead.",
+			"Call sites use entity.hurtServer(serverLevel, source, amount); the boolean the old hurt() returned is now hurtServer's return value.",
+			"LivingEntity.isInvulnerableTo(DamageSource) became isInvulnerableTo(ServerLevel, DamageSource), so the invulnerability check needs the level the damage happens in."
+		],
+		"note": "'incompatible types: void cannot be converted to boolean' is the signature of this change; the 'hurt(...) cannot override hurt(...) in Entity' line beside it is the same edit but is not labelled structural. Artifacts hit it twice in MimicEntity (lines 163 and 202)."
+	},
+	{
+		"id": "nbt-optional",
+		"jump": "1.21.5+",
+		"match": "Optional<.*> cannot be converted|cannot find symbol.*get(List|Compound|Boolean|Int|String)|parseOptional",
+		"title": "CompoundTag getters return Optional",
+		"steps": [
+			"getBoolean -> getBooleanOr(key, false), getInt -> getIntOr(key, 0), getString -> getStringOr(key, \"\").",
+			"getCompound -> getCompoundOrEmpty, getList -> getListOrEmpty (the 2-arg getList is gone).",
+			"ListTag index access mirrors it: getCompoundOrEmpty(i), getIntOr(i, 0), getStringOr(i, \"\"), getListOrEmpty(i).",
+			"ItemStack.parseOptional -> parse(Provider, Tag): Optional; saveOptional -> save(Provider).",
+			"`port -Fix` applies this family automatically; the count is usually ~130 sites."
+		],
+		"note": "Mechanical once known: one sweep cleared 130 of Traveler's Backpack's 196 errors. The Or(x) helpers reproduce the old absent-key defaults, so they are drop-in."
+	}
+]

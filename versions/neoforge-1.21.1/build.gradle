@@ -1,0 +1,116 @@
+plugins {
+	// NeoForge's own Gradle plugin (ModDevGradle). It fetches NeoForge 21.1.x,
+	// produces the official-Mojang-mapped game jar and runs the client from Gradle.
+	id 'net.neoforged.moddev' version "${moddev_version}"
+}
+
+// ---------------------------------------------------------------------------
+// This node builds the SAME mod sources as the parent (../../src), main and
+// client together, because NeoForge has no split-environment source sets.
+// Nothing here copies them; a file that also exists under this directory wins
+// (shadows) by relative path, so the parent tree is never edited.
+// ---------------------------------------------------------------------------
+def parentDir = file('../..')
+def parentMainJava = new File(parentDir, 'src/main/java')
+def parentMainResources = new File(parentDir, 'src/main/resources')
+def parentClientJava = new File(parentDir, 'src/client/java')
+def parentClientResources = new File(parentDir, 'src/client/resources')
+
+neoForge {
+	version = project.neoforge_version
+
+	runs {
+		// The warm-client harness, on this node's own ports so the 26.3 parent
+		// (27399/27398) and the 1.21.11 node (27499/27498) can run alongside it.
+		clientWarm {
+			client()
+			gameDirectory = project.file('run')
+			systemProperty 'prismlab.lab.port', '27599'
+			systemProperty 'modlab.screen', 'com.prismlab.client.PrismScreen'
+			systemProperty 'modlab.name', 'prismlab-ui-neoforge'
+			systemProperty 'modlab.click', 'More shards'
+			systemProperty 'modlab.block', 'prismlab:prism_node'
+			systemProperty 'modlab.probe', 'charge'
+			systemProperty 'modlab.root', projectDir.absolutePath
+			systemProperty 'modlab.shots', project.file('build/run/warm/shots').absolutePath
+			jvmArgument '-XX:TieredStopAtLevel=1'
+			disableIdeRun()
+		}
+	}
+
+	mods {
+		prismlab {
+			sourceSet sourceSets.main
+		}
+	}
+}
+
+sourceSets {
+	main {
+		java.srcDirs = [file('src/main/java')]
+		resources.srcDirs = [file('src/main/resources'), file('src/client/resources'), parentMainResources, parentClientResources]
+	}
+}
+
+/**
+ * Overrides first, then every parent file whose relative path is not overridden.
+ * Parent main and client trees never collide with each other.
+ */
+def layeredSources = { List<File> overrideRoots, List<File> parentRoots ->
+	Set<String> replaced = [] as Set
+	List<File> overrides = []
+	overrideRoots.each { File overrideRoot ->
+		if (!overrideRoot.exists()) {
+			return
+		}
+		overrides += fileTree(overrideRoot) { include '**/*.java' }.files
+		fileTree(overrideRoot) { include '**/*.java' }.files.each {
+			replaced << overrideRoot.toPath().relativize(it.toPath()).toString().replace('\\', '/')
+		}
+	}
+	List<File> inherited = []
+	parentRoots.each { File parentRoot ->
+		if (!parentRoot.exists()) {
+			return
+		}
+		inherited += fileTree(parentRoot) { include '**/*.java' }.files.findAll {
+			!replaced.contains(parentRoot.toPath().relativize(it.toPath()).toString().replace('\\', '/'))
+		}
+	}
+	return (overrides + inherited) as Set<File>
+}
+
+tasks.named('compileJava', JavaCompile) {
+	source = layeredSources([file('src/main/java'), file('src/client/java')], [parentMainJava, parentClientJava])
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(project.java_version as int)
+	}
+	sourceCompatibility = JavaVersion.toVersion(project.java_version)
+	targetCompatibility = JavaVersion.toVersion(project.java_version)
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = project.java_version as int
+}
+
+processResources {
+	// Resources are a plain copy, not layered: the node's own resources come first in
+	// resources.srcDirs, so this makes a node file shadow the parent file with the same
+	// path instead of failing on a duplicate (used for the 1.21.1 recipe format).
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	def modVersion = project.version
+	inputs.property 'version', modVersion
+	filesMatching('META-INF/neoforge.mods.toml') {
+		expand 'version': modVersion
+	}
+}
+
+def licenceName = project.name
+jar {
+	from(new File(parentDir, 'LICENSE')) {
+		rename { String original -> "${original}_${licenceName}" }
+	}
+}

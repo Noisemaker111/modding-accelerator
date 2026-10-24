@@ -1,0 +1,28 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "CC0-1.0"
+
+[[mods]]
+modId = "modlabbridge"
+version = "${version}"
+displayName = "Mod Lab Bridge"
+authors = "Jon"
+description = '''
+A tiny client mod that opens the lab control socket on a Minecraft client that
+belongs to someone else's mod, so the harness can ask it for root, a screenshot
+and quit. Added to a run with -Dfml.modFolders, never by editing that mod.
+'''
+
+[[dependencies.modlabbridge]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1.0,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.modlabbridge]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,1.22)"
+ordering = "NONE"
+side = "CLIENT"

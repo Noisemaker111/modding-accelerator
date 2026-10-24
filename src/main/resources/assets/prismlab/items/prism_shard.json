@@ -1,0 +1,6 @@
+{
+	"model": {
+		"type": "minecraft:model",
+		"model": "prismlab:item/prism_shard"
+	}
+}

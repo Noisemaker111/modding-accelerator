@@ -1,0 +1,26 @@
+[
+	{
+		"match": "Unsupported class file major version",
+		"note": "Gradle 8.x cannot run on JDK 25: use JDK 17 below Gradle 8.5, JDK 21 for 8.5-8.14, JDK 25 only for 9+."
+	},
+	{
+		"match": "net.neoforged.gradle:userdev",
+		"note": "NeoGradle 7.0.192 declares Gradle 8.13; a wrapper below that cannot resolve the plugin (measured on MineColonies version/1.20.4, wrapper 8.8)."
+	},
+	{
+		"match": "com.terraformersmc",
+		"note": "maven.terraformersmc.com answered 521 on 2026-10-22; modmenu and terraform-api failed to resolve for Traverse, Terrestria, Traveler's Backpack and Artifacts. Not the mod's code."
+	},
+	{
+		"match": "requires at least Gradle",
+		"note": "Loom raises its Gradle floor with each release (Loom 1.10 needs Gradle 8.12); raise the wrapper to the version named in the message."
+	},
+	{
+		"match": "is not for Minecraft",
+		"note": "A NeoForge version is tied to one Minecraft version (21.1.x is 1.21.1, 21.4.x is 1.21.4); bump it whenever the game version moves."
+	},
+	{
+		"match": "Could not find io.wispforest",
+		"note": "A pinned dependency has no build for the target version; check the dependency's own releases before blaming the mod."
+	}
+]

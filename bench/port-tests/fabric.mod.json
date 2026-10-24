@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "appleskin-porttest",
+  "version": "1.0.0",
+  "name": "AppleSkin port verification",
+  "environment": "client",
+  "entrypoints": { "fabric-client-gametest": ["squeek.appleskin.client.PortClientTest"] }
+}

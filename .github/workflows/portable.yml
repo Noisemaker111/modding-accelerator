@@ -1,0 +1,64 @@
+name: Portable command
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  command:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: portable workspace
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Portable core and JDK archive outcomes
+        working-directory: portable workspace
+        run: java tools/cli/Bootstrap.java . self-test --json
+      - name: Package without PowerShell
+        working-directory: portable workspace
+        run: java tools/cli/Bootstrap.java . package --json
+      - name: Source launcher (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        working-directory: portable workspace
+        run: '& .\modaccel.cmd doctor --json'
+      - name: Source launcher (POSIX)
+        if: runner.os != 'Windows'
+        working-directory: portable workspace
+        run: ./modaccel doctor --json
+      - name: Standalone package
+        working-directory: portable workspace
+        run: java -jar build/distributions/modaccel.jar self-test --root . --json
+      - name: Extracted portable ZIP acceptance
+        working-directory: portable workspace
+        run: java tools/tests/PackageAcceptanceTest.java build/distributions/modaccel-portable.zip build/distributions/modaccel-portable.zip.sha256 "${{ runner.temp }}"
+      - name: Fabric metadata and logic
+        working-directory: portable workspace
+        run: java -jar build/distributions/modaccel.jar fast --json
+      - name: Multi-module FastLane isolation
+        working-directory: portable workspace
+        run: java tools/tests/FastLaneIsolationTest.java . build/distributions/modaccel.jar
+      - name: Port rewrites before compilation
+        working-directory: portable workspace
+        run: |
+          javac --release 21 -d .runs/preflight-tests tools/VersionMap.java tools/tests/PortPreflightTest.java
+          java -cp .runs/preflight-tests PortPreflightTest
+      - name: Outcome receipts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-${{ runner.os }}-${{ runner.arch }}-outcomes
+          path: |
+            portable workspace/.runs
+            portable workspace/.modaccel
+          include-hidden-files: true
+          if-no-files-found: ignore

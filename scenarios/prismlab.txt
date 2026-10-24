@@ -1,0 +1,6 @@
+# One case per line: name | steps
+# Steps: place=namespace:id, wait=<ticks>, assert=<blockEntityMethod>, screen=<class>,
+#        click=<button label>, capture=<name>, settle
+# Run: .\modaccel suite
+world-node|place=prismlab:prism_node|wait=40|assert=charge|settle|capture=suite-world-node
+ui-prism-screen|screen=com.prismlab.client.PrismScreen|click=More shards|settle|capture=suite-ui

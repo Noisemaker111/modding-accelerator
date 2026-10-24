@@ -1,0 +1,27 @@
+[31;1m.: [0mC:\Users\Jk101\Projects\modding-accelerator\versions\neoforge-1.21.1\modaccel.ps1:863[0m
+[31;1m[0m[36;1mLine |[0m
+[31;1m[0m[36;1m[36;1m 863 | [0m . [36;1m(Join-Path $root 'tools\mp.ps1')[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m     | [31;1m   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m     | [31;1mThe term 'C:\Users\Jk101\Projects\modding-accelerator\versions\neoforge-1.21.1\tools\mp.ps1' is not recognized[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m[31;1m[36;1m     | [31;1mas a name of a cmdlet, function, script file, or executable program. Check the spelling of the name, or if a[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m[31;1m[36;1m[31;1m[36;1m     | [31;1mpath was included, verify that the path is correct and try again.[0m
+[31;1m.: [0mC:\Users\Jk101\Projects\modding-accelerator\versions\neoforge-1.21.1\modaccel.ps1:864[0m
+[31;1m[0m[36;1mLine |[0m
+[31;1m[0m[36;1m[36;1m 864 | [0m . [36;1m(Join-Path $root 'tools\portlog.ps1')[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m     | [31;1m   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m     | [31;1mThe term 'C:\Users\Jk101\Projects\modding-accelerator\versions\neoforge-1.21.1\tools\portlog.ps1' is not[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m[31;1m[36;1m     | [31;1mrecognized as a name of a cmdlet, function, script file, or executable program. Check the spelling of the name,[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m[31;1m[36;1m[31;1m[36;1m     | [31;1mor if a path was included, verify that the path is correct and try again.[0m
+[31;1m.: [0mC:\Users\Jk101\Projects\modding-accelerator\versions\neoforge-1.21.1\modaccel.ps1:865[0m
+[31;1m[0m[36;1mLine |[0m
+[31;1m[0m[36;1m[36;1m 865 | [0m . [36;1m(Join-Path $root 'tools\check.ps1')[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m     | [31;1m   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m     | [31;1mThe term 'C:\Users\Jk101\Projects\modding-accelerator\versions\neoforge-1.21.1\tools\check.ps1' is not[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m[31;1m[36;1m     | [31;1mrecognized as a name of a cmdlet, function, script file, or executable program. Check the spelling of the name,[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m[31;1m[36;1m[31;1m[36;1m     | [31;1mor if a path was included, verify that the path is correct and try again.[0m
+[31;1mGet-Item: [0mC:\Users\Jk101\Projects\modding-accelerator\versions\neoforge-1.21.1\modaccel.ps1:428[0m
+[31;1m[0m[36;1mLine |[0m
+[31;1m[0m[36;1m[36;1m 428 | [0m .  $jar) -and ((Get-Item $jar).LastWriteTime -gt ([36;1mGet-Item $src[0m).LastWr .[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m     | [31;1m                                                   ~~~~~~~~~~~~~[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m     | [31;1mCannot find path 'C:\Users\Jk101\Projects\modding-accelerator\versions\neoforge-1.21.1\tools\LabAgent.java'[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m[31;1m[36;1m     | [31;1mbecause it does not exist.[0m

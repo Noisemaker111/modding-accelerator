@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "prismlab-gametest",
+	"version": "1.0.0",
+	"name": "Prism Lab game tests",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": [
+			"com.prismlab.gametest.PrismGameTest",
+			"com.prismlab.gametest.PrismBlockGameTest"
+		],
+		"fabric-client-gametest": [
+			"com.prismlab.gametest.PrismClientGameTest"
+		]
+	},
+	"depends": {
+		"prismlab": "*"
+	}
+}
+

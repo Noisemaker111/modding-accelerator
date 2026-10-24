@@ -1,0 +1,21 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"category": "misc",
+	"pattern": [
+		" A ",
+		"AGA",
+		" A "
+	],
+	"key": {
+		"A": {
+			"item": "minecraft:amethyst_shard"
+		},
+		"G": {
+			"item": "minecraft:glowstone_dust"
+		}
+	},
+	"result": {
+		"id": "prismlab:prism_shard",
+		"count": 2
+	}
+}

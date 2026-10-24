@@ -1,0 +1,33 @@
+{ "from": "getOrCreateTagBuilder", "to": "valueLookupBuilder", "seen": 327, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "getOrCreateTagBuilder", "to": "builder", "seen": 95, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "getServerWorld", "to": "getWorld", "seen": 5, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "getEntityWorld", "to": "getWorld", "seen": 5, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "RenderLayer::getGuiTextured", "to": "RenderPipelines.GUI_TEXTURED", "seen": 4, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": ["net.minecraft.client.gl.RenderPipelines"] }
+{ "from": "layer -> vertexConsumers.getBuffer(RenderLayerHelper.getEntityBlockLayer(layer)", "to": "RenderLayerHelper.entityDelegate(vertexConsumers", "seen": 3, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "FramebufferManager", "to": "BufferManager", "seen": 2, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": ["net.minecraft.client.gl.BufferManager"] }
+{ "from": "GlResourceManager", "to": "GlCommandEncoder", "seen": 2, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": ["net.minecraft.client.gl.GlCommandEncoder"] }
+{ "from": "fromTag", "to": "ofTag", "seen": 2, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "writeNbt", "to": "writeData", "seen": 2, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "layer -> vertexConsumers.getBuffer(RenderLayerHelper.getMovingBlockLayer(layer)", "to": "RenderLayerHelper.movingDelegate(vertexConsumers", "seen": 2, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "Fog", "to": "GpuBufferSlice", "seen": 2, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": ["com.mojang.blaze3d.buffers.GpuBufferSlice"] }
+{ "from": "getResourceVersion", "to": "packVersion", "seen": 2, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "getName", "to": "name", "seen": 2, "sources": ["TerraformersMC_ModMenu-1.21.5-1.21.6"], "imports": [] }
+{ "from": ", ordinal = 1", "to": "", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "disconnect", "to": "disconnectWithSavingScreen", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "sendCommand", "to": "runClickEventCommand", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "readNbt", "to": "readData", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "createNbtWithId", "to": "createNbtWithIdentifyingData", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "getRecipeIdentifier(advancement.id()", "to": "advancement.id(", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "set", "to": "enabled", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "Renderer.get().emitBlockModelPartQuads", "to": "VanillaBlockModelPartEncoder.emitQuads", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": ["net.fabricmc.fabric.impl.renderer.VanillaBlockModelPartEncoder"] }
+{ "from": "setVector", "to": "setVertices", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "addInner(sprite, lowLow, -1, -1, q -> lowLow = q", "to": "lowLow = addInner(sprite, lowLow, -1, -1", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "addInner(sprite, lowHigh, -1, 1, q -> lowHigh = q", "to": "lowHigh = addInner(sprite, lowHigh, -1, 1", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "addInner(sprite, highLow, 1, -1, q -> highLow = q", "to": "highLow = addInner(sprite, highLow, 1, -1", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "addInner(sprite, highHigh, 1, 1, q -> highHigh = q", "to": "highHigh = addInner(sprite, highHigh, 1, 1", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "FrameBlockStateModel(builder.immutableCopy(), obsidianSprite", "to": "MeshBakedGeometry(builder.immutableCopy()", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": ["net.fabricmc.fabric.api.renderer.v1.model.MeshBakedGeometry"] }
+{ "from": "SingleMeshBlockStateModel(builder.immutableCopy(), whiteConcreteSprite", "to": "MeshBakedGeometry(builder.immutableCopy()", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": ["net.fabricmc.fabric.api.renderer.v1.model.MeshBakedGeometry"] }
+{ "from": "getDynamicDisplayGlintConsumer", "to": "getSpecialItemGlintConsumer", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": [] }
+{ "from": "drawFluidInGui(drawContext, sprites[1], color, 0, renderY", "to": "drawContext.drawSpriteStretched(RenderPipelines.GUI_TEXTURED, sprites[1], 0, renderY, 16, 16, color", "seen": 1, "sources": ["FabricMC_fabric-1.21.5-1.21.6"], "imports": ["net.minecraft.client.gl.RenderPipelines"] }
+{ "from": "isStable", "to": "stable", "seen": 1, "sources": ["TerraformersMC_ModMenu-1.21.5-1.21.6"], "imports": [] }
+{ "from": "RenderLayer::getGuiTextured, UPDATE_ICON, x, y, 8, 8", "to": "RenderPipelines.GUI_TEXTURED, UPDATE_ICON, x, y, 8, 8, 0xFFFFFFFF", "seen": 1, "sources": ["TerraformersMC_ModMenu-1.21.5-1.21.6"], "imports": ["net.minecraft.client.gl.RenderPipelines"] }
