@@ -45,8 +45,7 @@ The ordered plan is in [`ROADMAP.md`](ROADMAP.md); the current resume point and 
 — portable ZIP and JAR with SHA-256 files. Extract the ZIP and run `./modaccel support`
 (Windows: `modaccel.cmd support`).
 
-The beta is for developers with a **Gradle source checkout**, starting with a single
-Fabric project. It prepares reversible ports, builds the result, audits mixin targets,
+The beta is for developers with a **Gradle source checkout** on Fabric or NeoForge. It prepares reversible ports, builds the result, audits mixin targets,
 and offers separate actual-game checks. Unknown APIs and dependencies can still need
 guided repair. It does not yet meet the goal of an instant port of any mod to any version.
 
@@ -103,8 +102,8 @@ The remaining work toward that goal, in order:
    **Started 2026-10-24**: Windows installs with no Java by downloading a verified JRE/JDK
    once (39.2s first, 0.2s repeat); macOS, Linux and hosted CI runs remain.
 
-The exact resume point and recorded evidence are in [PLAN.md](PLAN.md). The local
-beta has not been published, and its current changes remain uncommitted.
+The exact resume point and recorded evidence are in [PLAN.md](PLAN.md). The beta is published
+as `0.1.0-beta.1` with checksums, and every change is committed.
 
 ## Portable command
 
