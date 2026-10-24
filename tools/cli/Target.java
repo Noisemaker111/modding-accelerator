@@ -158,6 +158,29 @@ final class Target {
                 setup.applied.add(Json.map("file", file.toString(), "change", "Java toolchain " + java.group(1) + " -> " + want + " for " + to));
             }
         }
+        // Many builds put the plugin version in a property; the literal plugin line then carries no version.
+        Path properties = build.project.root.resolve("gradle.properties");
+        if (Files.isRegularFile(properties)) {
+            for (String key : List.of("neogradle_version", "neoGradleVersion", "neogradleVersion")) {
+                Matcher pin = Pattern.compile("(?m)^([ \\t]*" + key + "[ \\t]*=[ \\t]*)(\\S+)[ \\t]*$").matcher(setup.text(properties));
+                if (!pin.find()) continue;
+                String latest = latestNeoGradle(build);
+                if (Versions.compare(latest, pin.group(2)) > 0) {
+                    setup.replace(properties, pin.group(0), pin.group(1) + latest);
+                    setup.applied.add(Json.map("file", properties.toString(), "change", "NeoGradle " + pin.group(2) + " -> " + latest + " for " + to));
+                }
+                break;
+            }
+            for (String key : List.of("java_version", "java_toolchain_version")) {
+                Matcher pin = Pattern.compile("(?m)^([ \\t]*" + key + "[ \\t]*=[ \\t]*)(\\d+)[ \\t]*$").matcher(setup.text(properties));
+                if (!pin.find()) continue;
+                int want = javaFor(to);
+                if (Integer.parseInt(pin.group(2)) != want) {
+                    setup.replace(properties, pin.group(0), pin.group(1) + want);
+                    setup.applied.add(Json.map("file", properties.toString(), "change", key + " " + pin.group(2) + " -> " + want + " for " + to));
+                }
+            }
+        }
         // Gradle 9 removed the project-level archivesBaseName property; the base extension owns it now.
         Matcher archives = Pattern.compile("(?m)^[ \\t]*archivesBaseName[ \\t]*=[ \\t]*([^\\r\\n]+)$").matcher(setup.text(file));
         if (archives.find()) {

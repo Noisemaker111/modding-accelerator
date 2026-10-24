@@ -5,7 +5,7 @@
 - **Test logic fast.** Compile and run pure tests without launching the game — about a second in a warm repo.
 - **Check a screen faster.** Swap the edit into a running client and get a 1280×720 capture in about 1.5 s, against 22–28 s for a restart.
 - **Compile and prove a port.** Build, audit mixin targets, check the packaged metadata, then load the result in a real client.
-- **Auto-port a mod, on some versions.** Fabric 1.21.5 ↔ 1.21.6 and NeoForge 1.21.1 → 1.21.4 with no hand edits; larger jumps stop with the errors that remain.
+- **Auto-port a mod, on some versions.** Fabric 1.21.5 ↔ 1.21.6 and NeoForge 1.21.1 → 1.21.4 with no hand edits; NeoForge 1.21.6 → 26.3 reaches a packaged build too, with one file written by hand; larger jumps stop with the errors that remain.
 
 Beta 0.1.0, published 24 October 2026 · [download](https://github.com/Noisemaker111/modding-accelerator/releases/tag/v0.1.0-beta.1) · [one-page summary](https://noisemaker111.github.io/modding-accelerator/)
 
@@ -26,7 +26,8 @@ are the roadmap below, not current capability.
 
 | Area | Verified today | Next |
 |---|---|---|
-| One version hop | Fabric 1.21.5 ↔ 1.21.6 ports and backports; NeoForge 1.21.1 → 1.21.4 automatic (75 s first, 14 s repeat) | 1.21.1 → 1.21.6: 9 named errors left (SavedData codec, owner/saddling); then the 1.21.6 GUI rewrite |
+| One version hop | Fabric 1.21.5 ↔ 1.21.6 ports and backports; NeoForge 1.21.1 → 1.21.4 automatic (75 s first, 14 s repeat); NeoForge 1.21.6 → 26.3 packaged build in 66 s, 82 compile errors to 0 | 1.21.1 → 1.21.6: 9 named errors left (SavedData codec, owner/saddling); then the 1.21.6 GUI rewrite |
+| Unobfuscated 26.x | The build follows the game: NeoForge, NeoGradle 7.1, Java 25, Gradle 9 archive names, no mappings | One file (the removed debug-text event) still needed a hand rewrite; a load check in a real 26.3 client |
 | Version chains | A repeated port reuses the same project state | Any version to any other, including multi-hop chains (1.20.1 → 1.21.6) with one record per hop |
 | Version families | 1.21.x Fabric and NeoForge; 1.20.1 Forge runs the loop and checks | Older families (1.16–1.19), Quilt, backports across major versions |
 | Loaders | Fabric and NeoForge ports end to end; Forge fast lane and checks | Any loader to any loader (Fabric ↔ NeoForge ↔ Forge ↔ Quilt): unbuilt; first step is one small Fabric → NeoForge mod, measured |
