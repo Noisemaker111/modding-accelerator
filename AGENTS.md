@@ -23,7 +23,7 @@ Live board: `docs/progress.html`, rendered from `coverage/ledger.json` by
   compiles with no intermediary: the tool resolves NeoForge 26.3.0.97, moves NeoGradle 7.0 to
   7.1, Java 21 to 25 and archivesBaseName to base.archivesName by itself, and four name rules
   (ResourceLocation → Identifier, GuiGraphics → GuiGraphicsExtractor, GameRules and RenderType
-  packages) took 82 errors to 22 in 52s. Next errors: HUD stat fields, KeyHelper's GLFW access,
+  packages) took 82 errors to 20 in under a minute. Next errors: HUD stat fields, KeyHelper's GLFW access,
   tooltip draw calls, one GameRules import. Tree: `.runs/beta-trials/appleskin-neoforge-263/`.
 - Phase 3 step 14 (doing): `VersionMap <v> <v> --from-names yarn --to-names mojmap` converts one
   version's names (1.21.6: 9,357 classes); applying it to a whole tree is still missing. A 26.3

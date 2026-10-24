@@ -39,12 +39,12 @@
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+class GameRules",
       "apply": {
-        "find": "net\\.minecraft\\.world\\.GameRules",
+        "find": "net\\.minecraft\\.world\\.(?:level\\.)?GameRules",
         "replace": "net.minecraft.world.level.gamerules.GameRules"
       },
       "scope": "repo",
       "when": "",
-      "note": "26.x moved GameRules into net.minecraft.world.level.gamerules; only the import changes because the simple name stayed.",
+      "note": "26.x moved GameRules into net.minecraft.world.level.gamerules; both the yarn and the NeoForge import paths are rewritten, and the simple name stayed.",
       "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)"
     },
     {
