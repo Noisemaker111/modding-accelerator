@@ -14,6 +14,10 @@ ROADMAP.md holds the phases and numbered steps; only statuses there are claims.
 Live board: `docs/progress.html`, rendered from `coverage/ledger.json` by
 `python bench/progress.py`. A port run that is not in the ledger did not happen.
 
+- Promise (2026-10-24): the README claims only Fabric 1.21.5 → 1.21.6, proven on five untouched
+  mods (Animatica, Krypton, Falling Leaves, IJM's Tweaks, Accurate Block Placement). Keep the
+  README to what such a trial has shown; widen it only after the same trial passes on another hop.
+  Trial clones live outside the repo in `Projects/modding-accelerator-trials/mods`.
 - Phase 1 step 7 (doing): AppleSkin 1.20.1 → 1.21.6. Loom 1.8→1.10 and Gradle
   8.10→8.13 done by hand, JEI dropped (upstream 1.21.6 has none), mappings went
   through, 61 semantic errors remain: render pipeline 20 sites, hunger API,

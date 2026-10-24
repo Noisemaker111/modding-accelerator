@@ -21,6 +21,22 @@ get a reversible port, and see truthful results tied to the exact tested build. 
 semantic changes and missing target dependencies must be explicit; compiling alone cannot
 mean the port works. Source availability and dependencies constrain what can be ported.
 
+## One promise, five untouched mods (2026-10-24)
+
+README now promises only Fabric 1.21.5 → 1.21.6. Trial: Krypton, Falling Leaves, Animatica,
+Accurate Block Placement Reborn, IJM's Tweaks, cloned at their last 1.21.5 commit into
+`Projects/modding-accelerator-trials/mods` (outside this repo), ported with `port --fix`, then
+`ui-check` with the loader's mods-loaded answer. First pass: 2 of 5 ported. Fixed in the tool,
+not in the mods: static-target handler rule in the mixin audit, compile-only dependencies kept,
+release choice limited to the project's Loom minor, exact Modrinth ids for multiloader version
+numbers, formatting-preserving manifest retarget plus packaged-metadata read-back, and the agent
+render hook (ALOAD 0 at returns broke Krypton's client: shipped frames mark `this` dead and no
+mixin recomputed them). Final: 5 of 5 port with no hand edits and load in a real 1.21.6 client.
+Re-checked on the commit before this work: `support` 1.0 s, `doctor` 0.8 s, `fast` 48.5 s cold /
+4.2 s unchanged / 8.3 s after an edit (not "about a second"), ZombieApocalypseAddon NeoForge
+1.21.1 → 1.21.4 at upstream 1bb67d4 in 164.7 s (not 75 s; different commit). Portable hot
+reload does not exist; the 1.5 s screen swap is the old Windows lane only.
+
 ## Beta closed (2026-10-23/24)
 
 Frozen package JAR SHA-256 `e80f44d3338ed27389744dfe1698437c50ba0c6cef095c6b7554e230933d3137`,

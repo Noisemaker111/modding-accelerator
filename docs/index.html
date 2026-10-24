@@ -71,11 +71,11 @@
 </head>
 <body>
 
-<h1>Move a Minecraft mod to a new version, and see <em>what actually works</em>.</h1>
-<p class="sub"><b style="color:var(--ink)">Goal: any Minecraft version to any other, and any loader to any other.</b><br>One command takes a Gradle source project, rewrites it for another Minecraft version, builds it, audits its mixins and then drives the real game for screenshots and assertions. Every run ends with a checked result or a named list of what is left. Beta, published 24 October 2026.</p>
+<h1>Update a Fabric mod from 1.21.5 to 1.21.6 in one command, and see <em>it load in the real game</em>.</h1>
+<p class="sub"><b style="color:var(--ink)">Proven on five popular mods it was never tuned on: Krypton, Falling Leaves, Animatica, Accurate Block Placement Reborn and IJM's Tweaks.</b><br>One command moves the game, mappings, loader, Fabric API and dependency versions, builds, audits the mixins and reads the packaged metadata back; <code>ui-check</code> then starts a real 1.21.6 client and asks Fabric whether the mod loaded. Other hops are shown on one mod each; any version to any version, and any loader to any loader, is the goal, not current capability. Beta, published 24 October 2026.</p>
 
 <div class="tiles">
-  <div class="tile"><b>75 s</b><span>first NeoForge port in a fresh repo, 19 API errors repaired on the way (14 s when repeated)</span></div>
+  <div class="tile"><b>5 of 5</b><span>untouched Fabric mods ported 1.21.5 → 1.21.6 with no hand edits (13–36 s each) and loaded in a real client</span></div>
   <div class="tile"><b>2.3 s</b><span>answer after a one-file edit in a 2,102-source Forge repo, against 137 s for its own warm build</span></div>
   <div class="tile"><b>3 loaders</b><span>Fabric and NeoForge ports end to end; Forge runs the loop and checks</span></div>
   <div class="tile"><b>3 OS green</b><span>Windows, Linux and macOS portable checks in hosted CI; game checks on Windows</span></div>

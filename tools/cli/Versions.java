@@ -19,6 +19,14 @@ final class Versions {
         if (term.isEmpty()) return false;
         // "1.21.6-" accepts that version and any pre-release of it.
         String wanted = term.endsWith("-") ? term.substring(0, term.length() - 1) : term;
+        // "1.21.x" (also X or *) is an x-range: the parts before the wildcard must agree.
+        String[] parts = wanted.split("\\.");
+        for (int i = 0; i < parts.length; i++) {
+            if (!parts[i].matches("[xX*]")) continue;
+            String fixed = String.join(".", Arrays.copyOfRange(parts, 0, i));
+            if (operator.isEmpty() || operator.equals("=")) return i == 0 || prefix(version, fixed, i);
+            parts[i] = "0"; wanted = String.join(".", parts);
+        }
         int comparison = compare(version, wanted);
         return switch (operator) {
             case ">=" -> comparison >= 0;

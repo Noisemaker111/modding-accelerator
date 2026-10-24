@@ -41,7 +41,10 @@ public final class PortableAgent {
                                             super.visitLdcInsn("modaccel.frame");
                                             super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Properties", "get", "(Ljava/lang/Object;)Ljava/lang/Object;", false);
                                             super.visitTypeInsn(Opcodes.CHECKCAST, "java/util/function/Consumer");
-                                            super.visitVarInsn(Opcodes.ALOAD, 0);
+                                            // Not ALOAD 0: the shipped game's stack frames mark `this` dead before some
+                                            // returns, and with no mixin recomputing them (a mod without Fabric API) the
+                                            // verifier rejects the class. The singleton getter needs no local.
+                                            super.visitMethodInsn(Opcodes.INVOKESTATIC, name, "getInstance", "()L" + name + ";", false);
                                             super.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/function/Consumer", "accept", "(Ljava/lang/Object;)V", true);
                                         }
                                         super.visitInsn(opcode);
@@ -164,19 +167,21 @@ public final class PortableAgent {
             Object gui = optionalField(client, "gui");
             if (overlay == null && gui != null) try { overlay = call(gui, "overlay"); } catch (Exception ignored) {}
             String screenName = current == null ? "" : current.getClass().getSimpleName();
-            // Loading screens and the title screen's initial fade are transitional frames.
+            // Loading screens and the title screen's initial fade are transitional frames. The title
+            // fades its background over 2 s and then its buttons over 2 more (1.21.6), so wait 4.5 s.
             boolean transition = screenName.equals("MessageScreen") || screenName.equals("GenericMessageScreen")
                     || screenName.equals("LevelLoadingScreen") || screenName.equals("ProgressScreen") || screenName.equals("ReceivingLevelScreen")
-                    || System.nanoTime() - screenSince < (screenName.equals("TitleScreen") ? 2500000000L : 1000000000L);
-            String expectedScreen = Json.text(request, "expectScreen", "");
+                    || System.nanoTime() - screenSince < (screenName.equals("TitleScreen") ? 4500000000L : 1000000000L);
+            String expectedScreen = Json.text(request, "expectScreen", ""), leaveScreen = Json.text(request, "leaveScreen", "");
             boolean outcomePending = !expectedScreen.isEmpty() && (current == null || !expectedScreen.equals(current.getClass().getName()))
+                    || !leaveScreen.isEmpty() && current != null && leaveScreen.equals(current.getClass().getName())
                     || Boolean.TRUE.equals(request.get("expectWorld")) && !inWorld()
                     || Boolean.TRUE.equals(request.get("requireScreen")) && current == null;
             if (overlay != null || transition || outcomePending) {
                 long deadline = request.containsKey("deadline") ? ((Number)request.get("deadline")).longValue() : System.nanoTime() + 120000000000L;
                 request.put("deadline", deadline);
                 if (System.nanoTime() >= deadline) throw new IOException("Game did not reach the requested state; expected screen="
-                        + (Boolean.TRUE.equals(request.get("requireScreen")) ? "open" : expectedScreen)
+                        + (Boolean.TRUE.equals(request.get("requireScreen")) ? "open" : leaveScreen.isEmpty() ? expectedScreen : "not " + leaveScreen)
                         + ", world=" + request.get("expectWorld") + "; current screen=" + screenName);
                 pending.add(new Runnable() { public void run() { try { perform(request, done); } catch (Throwable e) { done.complete(Json.map("ok", false, "error", cause(e))); } } });
                 return;
@@ -298,6 +303,30 @@ public final class PortableAgent {
             Object result = method.invoke(null);
             if (method.getReturnType() == boolean.class && !Boolean.TRUE.equals(result)) throw new AssertionError("Assertion returned false: " + request.get("method"));
             done.complete(Json.map("ok", true, "assertion", request.get("method")));
+        } else if (command.equals("mods")) {
+            // Ask the running loader, not the log, whether each of the project's mods is loaded.
+            Object ids = request.get("ids");
+            Map<String, Object> loaded = new LinkedHashMap<String, Object>(), versions = new LinkedHashMap<String, Object>();
+            String loaderName = "unknown"; Object fabric = null, neo = null; Class<?> fabricType = null, neoType = null;
+            try { fabricType = load("net.fabricmc.loader.api.FabricLoader"); fabric = fabricType.getMethod("getInstance").invoke(null); loaderName = "fabric"; } catch (Throwable notFabric) {}
+            if (fabric == null) try { neoType = load("net.neoforged.fml.ModList"); neo = neoType.getMethod("get").invoke(null); loaderName = "neoforge"; } catch (Throwable notNeoForge) {}
+            if (ids instanceof List) for (Object id : (List<?>)ids) {
+                String name = String.valueOf(id); Object present = null;
+                if (fabric != null) {
+                    present = fabricType.getMethod("isModLoaded", String.class).invoke(fabric, name);
+                    try {
+                        Object container = ((Optional<?>)fabricType.getMethod("getModContainer", String.class).invoke(fabric, name)).orElse(null);
+                        // Through the public API interfaces: the loader's implementation classes are not public.
+                        if (container != null) {
+                            Object meta = load("net.fabricmc.loader.api.ModContainer").getMethod("getMetadata").invoke(container);
+                            Object version = load("net.fabricmc.loader.api.metadata.ModMetadata").getMethod("getVersion").invoke(meta);
+                            versions.put(name, String.valueOf(load("net.fabricmc.loader.api.Version").getMethod("getFriendlyString").invoke(version)));
+                        }
+                    } catch (Throwable noVersion) {}
+                } else if (neo != null) present = neoType.getMethod("isLoaded", String.class).invoke(neo, name);
+                loaded.put(name, present);
+            }
+            done.complete(Json.map("ok", true, "loader", loaderName, "loaded", loaded, "versions", versions));
         } else if (command.equals("quit")) {
             if (pauseField != null) pauseField.setBoolean(pauseOptions, originalPauseOnLostFocus);
             done.complete(Json.map("ok", true, "stopping", true)); call(client, "scheduleStop", "stop");

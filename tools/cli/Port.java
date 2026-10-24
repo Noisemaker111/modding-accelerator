@@ -167,11 +167,17 @@ final class Port {
                         "log", log.toString(), "mixinLog", audit == null ? null : audit.log().toString(), "diagnostics", Run.tail(audit == null ? log : audit.log()),
                         "requirements", List.of("Preserve existing behavior, including debug hooks and rendering.", "Do not remove required injections or disable checks to make a build pass.", "Rebuild and exercise relevant real game scenarios after a semantic repair.")));
                 result.put("repairRequest", repair.toString());
-                List<Object> unresolved = errors(log);
+                List<Object> unresolved = compiled ? List.of() : errors(log);
                 result.put("unresolved", unresolved);
                 result.put("stoppedSafely", true);
-                result.put("reason", unresolved.size() + " compiler error(s) remain after " + roundsTried + " repair round(s) and no typed rule matched. "
-                        + "This needs a semantic migration; the port stopped instead of guessing. Resolve them in source, or add a verified recipe, then rerun.");
+                if (compiled && audit != null && audit.exit() != 0)
+                    result.put("reason", "The code compiled against " + to + ", but the mixin audit found injections that would fail or do nothing in the game. "
+                            + "Each one is listed in details; fix the mixin target, then rerun.");
+                else if (compiled)
+                    result.put("reason", "The code compiled against " + to + ", but the packaged build failed; see the log.");
+                else
+                    result.put("reason", unresolved.size() + " compiler error(s) remain after " + roundsTried + " repair round(s) and no typed rule matched. "
+                            + "This needs a semantic migration; the port stopped instead of guessing. Resolve them in source, or add a verified recipe, then rerun.");
             }
             return result;
         } catch (Exception failure) {
@@ -251,8 +257,13 @@ final class Port {
      * range still names the old game. Check the packaged metadata, not just the compiler.
      */
     static Map<String, Object> verifyModMetadata(Path projectDir, Map<String, Object> model, String to) throws IOException {
-        boolean neoforge = false;
-        for (Object item : Json.array(model.get("projects"))) if (Support.loaders(Json.object(item)).contains("neoforge")) neoforge = true;
+        boolean neoforge = false, fabric = false;
+        for (Object item : Json.array(model.get("projects"))) {
+            Set<String> loaders = Support.loaders(Json.object(item));
+            if (loaders.contains("neoforge")) neoforge = true;
+            if (loaders.contains("fabric")) fabric = true;
+        }
+        if (!neoforge && fabric) return verifyFabricMetadata(projectDir, to);
         if (!neoforge) return null;
         Path libs = projectDir.resolve("build/libs");
         if (!Files.isDirectory(libs)) return Json.map("ok", true, "checked", false, "details", "No packaged jar to inspect.");
@@ -289,6 +300,40 @@ final class Port {
         }
         return Json.map("ok", true, "checked", !ranges.isEmpty(), "jars", jars, "ranges", ranges,
                 "details", ranges.isEmpty() ? "No Minecraft dependency range in the packaged metadata." : "Packaged metadata accepts " + to + ".");
+    }
+    /**
+     * Fabric refuses a jar whose packaged fabric.mod.json does not accept the running game, even when
+     * the source manifest used a placeholder the build expanded. Read the freshest jar, not the source.
+     */
+    static Map<String, Object> verifyFabricMetadata(Path projectDir, String to) throws IOException {
+        Path libs = projectDir.resolve("build/libs");
+        if (!Files.isDirectory(libs)) return Json.map("ok", true, "checked", false, "details", "No packaged jar to inspect.");
+        List<Path> candidates;
+        try (var stream = Files.list(libs)) {
+            candidates = new ArrayList<>(stream.filter(p -> p.toString().endsWith(".jar") && !p.getFileName().toString().matches(".*-(sources|api|javadoc|dev)\\.jar$")).toList());
+        }
+        candidates.sort(Comparator.comparingLong((Path p) -> p.toFile().lastModified()).reversed());
+        for (Path jar : candidates) {
+            try (var zip = new java.util.zip.ZipFile(jar.toFile())) {
+                var entry = zip.getEntry("fabric.mod.json");
+                if (entry == null) continue;
+                Map<String, Object> metadata;
+                try { metadata = Json.object(Json.parse(new String(zip.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8))); }
+                catch (IllegalArgumentException invalid) {
+                    return Json.map("ok", false, "checked", true, "jar", jar.toString(), "details", "The packaged fabric.mod.json is not valid JSON: " + invalid.getMessage());
+                }
+                Object depends = metadata.get("depends") instanceof Map<?, ?> map ? map.get("minecraft") : null;
+                if (depends == null) return Json.map("ok", true, "checked", true, "jar", jar.toString(), "details", "The packaged mod declares no Minecraft dependency.");
+                List<String> ranges = depends instanceof List<?> list ? list.stream().map(String::valueOf).toList() : List.of(String.valueOf(depends));
+                // A list is "any of": Fabric loads the mod when one entry accepts the game.
+                boolean accepted = ranges.stream().anyMatch(range -> Versions.matches(range, to));
+                if (!accepted) return Json.map("ok", false, "checked", true, "jar", jar.toString(), "declared", ranges,
+                        "details", "The packaged mod declares Minecraft " + String.join(" or ", ranges) + " but was ported to " + to
+                                + "; Fabric refuses to load it. Update the property or manifest behind that range and rerun.");
+                return Json.map("ok", true, "checked", true, "jar", jar.toString(), "declared", ranges, "details", "Packaged metadata accepts " + to + ".");
+            }
+        }
+        return Json.map("ok", true, "checked", false, "details", "No packaged fabric.mod.json to inspect.");
     }
     private static void excludeOtherTargets(List<String> tasks, Map<String, Object> model) {
         for (Object item : Json.array(model.get("projects"))) {

@@ -81,6 +81,7 @@ gradle.projectsEvaluated {
                 }
                 [path: p.path, directory: p.projectDir.absolutePath, buildFile: p.buildFile.absolutePath,
                  plugins: p.plugins.collect { it.class.name }, pins: pins, dependencies: deps, artifacts: artifacts,
+                 loomVersion: p.plugins.collect { pl -> pl.class.name.startsWith('net.fabricmc.loom.LoomGradlePlugin') ? (pl.class.fields.find { it.name == 'LOOM_VERSION' }?.get(null)) : null }.find { it != null }?.toString(),
                  repositories: p.repositories.withType(org.gradle.api.artifacts.repositories.MavenArtifactRepository).collect { r ->
                      def u = r.url
                      new URI(u.scheme, null, u.host, u.port, u.path, null, null).toString()

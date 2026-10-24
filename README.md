@@ -1,42 +1,62 @@
 # Modding Accelerator
 
-**Use this to:**
+**Update a Fabric mod from Minecraft 1.21.5 to 1.21.6 with one command, then see it load in the real game.**
 
-- **Test logic fast.** Compile and run pure tests without launching the game — about a second in a warm repo.
-- **Check a screen faster.** Swap the edit into a running client and get a 1280×720 capture in about 1.5 s, against 22–28 s for a restart.
-- **Compile and prove a port.** Build, audit mixin targets, check the packaged metadata, then load the result in a real client.
-- **Auto-port a mod, on some versions.** Fabric 1.21.5 ↔ 1.21.6 and NeoForge 1.21.1 → 1.21.4 with no hand edits; NeoForge 1.21.6 → 26.3 reaches a packaged build too, with one file written by hand; larger jumps stop with the errors that remain.
+```sh
+modaccel port --root /path/to/mod --from 1.21.5 --to 1.21.6 --fix
+modaccel ui-check --root /path/to/mod     # real 1.21.6 client: asks Fabric whether the mod loaded
+```
 
-Beta 0.1.0, published 24 October 2026 · [download](https://github.com/Noisemaker111/modding-accelerator/releases/tag/v0.1.0-beta.1) · [one-page summary](https://noisemaker111.github.io/modding-accelerator/)
+`port --fix` moves the Minecraft, Yarn, Fabric Loader and Fabric API versions, finds 1.21.6
+releases of the mod's dependencies, rebuilds, checks every mixin against the 1.21.6 game, reads the
+packaged `fabric.mod.json` back to make sure Fabric will accept 1.21.6, and records a byte-exact
+undo (`port --undo <path>`). Nothing is edited by hand.
 
-![What the beta does, measured](bench/showcase.png)
+## Measured on five mods it was never tuned on
 
-## Goal
+Popular open-source Fabric mods, untouched, at their last 1.21.5 commit. Windows 11, Ryzen 9 3900X,
+warm caches: each mod was built once at 1.21.5 first, and the 1.21.6 game files were already
+downloaded.
 
-Port a mod **from any Minecraft version to any other** — forward, backport, or across
-several hops — and **from any loader to any other** (Fabric, NeoForge, Forge, Quilt), starting
-from a Gradle source checkout, with fast checks showing what actually works.
+| Mod (Modrinth downloads) | What the port changed | `port` | `ui-check` |
+|---|---|---|---|
+| Krypton (45M) | Game, Yarn, Loader versions; Loom 1.6 and Gradle 8.6 kept | 14.0 s | loads, 23.0 s |
+| Falling Leaves (28M) | Versions, Fabric API, Cloth Config, Mod Menu, Serene Seasons; Fabric Seasons kept (compile-only, no 1.21.6 release) | 25.8 s | loads, 29.4 s |
+| Animatica (22M) | Versions, Fabric API | 17.1 s | loads, 43.1 s |
+| Accurate Block Placement Reborn (4.3M) | Versions, Fabric API, Cloth Config, Mod Menu | 13.3 s | loads, 29.9 s |
+| IJM's Tweaks (3.0M) | Versions, Fabric API, Mod Menu, Fabrishot, YACL 3.7.1 (3.8.x needs a newer Loom) | 35.7 s | loads, 29.0 s |
 
-Changing the version and changing the loader are separate jobs, recorded separately: a version
-port keeps the loader, a loader port keeps the game version, and a mod that needs both is two
-steps. Today one hop inside one loader is the verified path; loader changes and multi-hop chains
-are the roadmap below, not current capability.
+"Loads" means the client reached the title screen, Fabric reported the mod loaded, and the
+1280×720 frame was inspected. All five changed only `gradle.properties`; for Accurate Block
+Placement that matches the author's own 1.21.6 release, which also changed only that file.
+IJM's Tweaks is at its `v1.4.0+1.21.5` tag, because its last 1.21.5 commit does not compile.
 
-## What works today, and what is next
+Before this change the same five gave 2 ports out of 5, and neither of those had been loaded in a
+client. Every failure was a general tool bug, now fixed: the mixin audit rejected correct handlers
+on static methods; a compile-only integration blocked the port; the newest YACL needed a newer Loom
+than the project's; Modrinth's Maven served the Forge jar of a multiloader dependency; and
+`ui-check`'s own hook crashed the client of a mod that runs without Fabric API (Krypton).
+The two mods the tool was developed on still port and load: F3Nope in 22.6 s (its `fabric.mod.json`
+now changes by one line instead of being rewritten) and AppleSkin in 40.8 s.
 
-| Area | Verified today | Next |
-|---|---|---|
-| One version hop | Fabric 1.21.5 ↔ 1.21.6 ports and backports; NeoForge 1.21.1 → 1.21.4 automatic (75 s first, 14 s repeat); NeoForge 1.21.6 → 26.3 packaged build in 66 s, 82 compile errors to 0 | 1.21.1 → 1.21.6: 9 named errors left (SavedData codec, owner/saddling); then the 1.21.6 GUI rewrite |
-| Unobfuscated 26.x | The build follows the game: NeoForge, NeoGradle 7.1, Java 25, Gradle 9 archive names, no mappings | One file (the removed debug-text event) still needed a hand rewrite; a load check in a real 26.3 client |
-| Version chains | A repeated port reuses the same project state | Any version to any other, including multi-hop chains (1.20.1 → 1.21.6) with one record per hop |
-| Version families | 1.21.x Fabric and NeoForge; 1.20.1 Forge runs the loop and checks | Older families (1.16–1.19), Quilt, backports across major versions |
-| Loaders | Fabric and NeoForge ports end to end; Forge fast lane and checks | Any loader to any loader (Fabric ↔ NeoForge ↔ Forge ↔ Quilt): unbuilt; first step is one small Fabric → NeoForge mod, measured |
-| Project shapes | One Gradle project; Stonecutter nodes listed and built | Multi-module orchestration, Stonecutter repairs in shared sources, Kotlin sources |
-| Platforms | Game checks on Windows; portable checks on Windows, Linux and macOS in CI | Linux and macOS game rendering |
-| Verification | Build, mixins, packaged metadata, real client, inspected captures, `--expect-change`, save roundtrip | Behaviour assertions for items, entities and multiplayer; optional pixel goldens |
+## Other hops and tools: less proven
 
-The ordered plan is in [`ROADMAP.md`](ROADMAP.md); the current resume point and evidence are in
-[`PLAN.md`](PLAN.md).
+These run, but each is shown on one mod or measured below what earlier notes claimed:
+
+- **NeoForge 1.21.1 → 1.21.4:** one mod (ZombieApocalypseAddon), no hand edits; 165 s on its
+  current upstream commit.
+- **Bigger jumps** (1.21.1 → 1.21.6, 1.20.1 → 1.21.6) stop with the errors that remain, named.
+- **26.3:** one mod (AppleSkin NeoForge) reaches a packaged build; one file was written by hand.
+- **`fast`:** compiles and runs the mod's own `@Tag("pure")` tests without the game. On this repo's
+  lab mod: 48 s cold, 4.2 s with nothing changed, 8.3 s after a one-file edit. A mod with no pure
+  tests gets nothing from it.
+- **Screen checks:** `ui-check` restarts the client (23–44 s in the trial above). Swapping an
+  edit into a running client exists only in the older Windows lab lane, not in the portable command.
+
+**Not built:** any version to any version, and any loader to any loader. That is the goal in
+[`ROADMAP.md`](ROADMAP.md), not current capability.
+
+Beta 0.1.0, published 24 October 2026, does not include the fixes above yet · [download](https://github.com/Noisemaker111/modding-accelerator/releases/tag/v0.1.0-beta.1) · [porting coverage](https://noisemaker111.github.io/modding-accelerator/progress.html)
 
 ## Quick start
 
@@ -46,8 +66,9 @@ Download the portable ZIP, check it against the `.sha256`, extract it, then:
 ./modaccel support
 ./modaccel doctor --root "/path/to/mod"
 ./modaccel port --root "/path/to/mod" --from 1.21.5 --to 1.21.6 --fix
+./modaccel ui-check --root "/path/to/mod"                # real client, mods-loaded check, capture
+./modaccel game-stop --root "/path/to/mod"
 ./modaccel fast --root "/path/to/mod"                    # compile + pure tests, no game
-./modaccel ui-check --root "/path/to/mod"                # real client, inspected capture
 ./modaccel world-check --root "/path/to/mod" --world lab # loaded save, optional assertions
 ```
 
@@ -57,18 +78,19 @@ source: `java tools/cli/Bootstrap.java . package --json` with a JDK 17+.
 
 ## Limits
 
-- **One hop, one loader.** Loader changes and multi-hop chains are not built yet; the tool says so instead of guessing.
+- **One proven hop.** Fabric 1.21.5 → 1.21.6 is the only hop tried on mods the tool was not built
+  around. Loader changes and multi-hop chains are not built.
 - **Source checkouts only.** A compiled mod JAR cannot be ported.
 - **Big jumps stop named.** The 1.21.6 storage and GUI families still need a human, and the receipt lists them.
-- **No pixel goldens.** Frames are captured for a person or an agent; nothing compares them with last week.
-- **First use costs more.** The first NeoForge port in a repo pays about 40 s of per-project setup.
+- **Loading is not behaviour.** `ui-check` proves the mod loads and renders a frame; what the mod
+  does in a world needs `world-check` with an assertion.
 - **Game checks are verified on Windows.** Linux and macOS run the portable checks in CI, not the game.
 - **No AI porting.** It is mapping diffs, typed rules and measured repairs.
 
 ## Details and evidence
 
-- [**Porting coverage**](https://noisemaker111.github.io/modding-accelerator/progress.html) — the version map, every hop that was run, and the loader grid. Generated from [`coverage/ledger.json`](coverage/ledger.json).
+- [**Porting coverage**](https://noisemaker111.github.io/modding-accelerator/progress.html) — every hop that was run. Generated from [`coverage/ledger.json`](coverage/ledger.json).
 - [`docs/details.md`](docs/details.md) — portable command internals, older Windows lanes, scenarios, multiplayer, the porting toolbox, measurements.
 - [`bench/alternatives.md`](bench/alternatives.md) — sourced comparison with Loom, GameTest, HeadlessMC, MC-Runtime-Test, mc-mod-porter and others, including where they win.
 - [`PLAN.md`](PLAN.md) — dated evidence and the current resume point.
-- [`ROADMAP.md`](ROADMAP.md) — what's left, in order.
+- [`ROADMAP.md`](ROADMAP.md) — the any-version, any-loader goal and what's left, in order.

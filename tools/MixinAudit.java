@@ -62,8 +62,8 @@ import java.util.regex.Pattern;
  *     in that class. The owner's superclass and interface families are walked for @At.
  *   - @Inject handler signature: the declared handler must return void, end in exactly one
  *     CallbackInfo (void target) or CallbackInfoReturnable<T> whose T is the target's return
- *     type, and take at most the target's parameters as a leading prefix of matching types
- *     (a static handler takes the target instance first). Both signatures are printed. Handler
+ *     type, and take at most the target's parameters as a leading prefix of matching types;
+ *     the handler is static exactly when the target is. Both signatures are printed. Handler
  *     parameters annotated @Local/@Share/@Coerce are captured locals: the callback is still
  *     checked, the capture is not.
  *
@@ -104,7 +104,7 @@ public final class MixinAudit {
 		String superName;
 		final List<String> interfaces = new ArrayList<>();
 		final List<String[]> fields = new ArrayList<>();  // {name, descriptor}
-		final List<String[]> methods = new ArrayList<>(); // {name, descriptor}
+		final List<String[]> methods = new ArrayList<>(); // {name, descriptor, "static"|"instance"}
 	}
 
 	/** Opens the jars once and answers "what members does this class have" from them. */
@@ -152,7 +152,9 @@ public final class MixinAudit {
 						ci.fields.add(new String[] {f.fieldName().stringValue(), f.fieldType().stringValue()});
 					}
 					for (MethodModel mm : m.methods()) {
-						ci.methods.add(new String[] {mm.methodName().stringValue(), mm.methodType().stringValue()});
+						boolean isStatic = (mm.flags().flagsMask() & ClassFile.ACC_STATIC) != 0;
+						ci.methods.add(new String[] {mm.methodName().stringValue(), mm.methodType().stringValue(),
+								isStatic ? "static" : "instance"});
 					}
 				} catch (RuntimeException e) {
 					ci = null; // class format this JDK cannot read
@@ -727,28 +729,29 @@ public final class MixinAudit {
 		List<String> params = decl.params();
 		List<String> given = params.subList(0, params.size() - 1); // before the CallbackInfo
 		List<String> types = paramDescriptors(method[1]);
-		int offset = 0;
+		// Mixin requires an @Inject handler to be static exactly when its target is static; the
+		// handler never receives the target instance as a parameter.
+		if (method.length > 2) {
+			boolean targetStatic = method[2].equals("static");
+			if (targetStatic && !decl.isStatic()) {
+				return method[0] + " is static, so the handler must be static too";
+			}
+			if (!targetStatic && decl.isStatic()) {
+				return method[0] + " is an instance method, so the handler must not be static";
+			}
+		}
 		if (decl.captures()) {
 			// @Local/@Share/@Coerce parameters depend on what is in scope at the point: not checked.
 			return callbackMismatch(params.get(params.size() - 1), method, loader);
 		}
-		if (decl.isStatic()) {
-			offset = 1;
-			if (given.isEmpty()) { return "a static handler takes the target instance first"; }
-			String first = typeDescriptor(given.get(0), loader);
-			if (first == null || !first.startsWith("L")) {
-				return "a static handler takes the target instance (" + target.replace('/', '.')
-						+ ") first, not " + given.get(0);
-			}
-		}
-		if (given.size() - offset > types.size()) {
-			return "it takes " + (given.size() - offset) + " parameter(s) before the callback but "
+		if (given.size() > types.size()) {
+			return "it takes " + given.size() + " parameter(s) before the callback but "
 					+ method[0] + " takes " + types.size();
 		}
-		for (int i = offset; i < given.size(); i++) {
+		for (int i = 0; i < given.size(); i++) {
 			String mine = typeDescriptor(given.get(i), loader);
 			if (mine == null) { continue; } // unresolvable source type: arity decides
-			String want = types.get(i - offset);
+			String want = types.get(i);
 			if (!mine.equals(want)) {
 				return "parameter " + (i + 1) + " is " + given.get(i) + " (" + mine + ") but "
 						+ method[0] + " takes " + want + " there";

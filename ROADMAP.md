@@ -1,7 +1,22 @@
 # Roadmap
 
-Goal: any Minecraft version to any other, and any loader to any other, from a Gradle source
-checkout, with checks that prove it works. Version changes and loader changes are separate jobs.
+Goal: any Minecraft version to any other — forward, backport, or across several hops — and any
+loader to any other (Fabric, NeoForge, Forge, Quilt), from a Gradle source checkout, with checks
+that prove it works. Version changes and loader changes are separate jobs: a version port keeps
+the loader, a loader port keeps the game version, and a mod that needs both is two steps.
+
+## Where this stands
+
+The goal is not built. Proven on mods the tool was not developed on: **one hop, Fabric 1.21.5 →
+1.21.6**, five popular mods ported with no hand edits and loaded in a real 1.21.6 client (table in
+the README). The steps below marked **done** ran on one or two mods; none is a general capability
+until it holds the same way on untouched mods.
+
+Next for the promise itself, in order:
+
+- The same five-mod trial for Fabric 1.21.6 → 1.21.7 / 1.21.8, then a backport set.
+- Five untouched NeoForge mods 1.21.1 → 1.21.4, each with a client load check.
+- Behaviour after loading: one `world-check` assertion per trial mod, not only a loaded frame.
 
 Status words: **done** (ran and checked), **doing** (current step), **next**, **later**.
 Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/progress.html
@@ -62,3 +77,4 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/pro
 | Are version and loader changes the same job? | No; separate records, separate claims | 2026-10-24 |
 | Does a passing build prove a port? | No; loader-refused jars, invisible UI and unloaded mods all passed builds | 2026-10-24 |
 | What counts as progress? | A row in `coverage/ledger.json` with a receipt, shown on the progress page | 2026-10-24 |
+| What does the README promise? | Only what held on five untouched mods: Fabric 1.21.5 → 1.21.6; the rest is listed as less proven | 2026-10-24 |

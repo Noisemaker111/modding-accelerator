@@ -108,6 +108,51 @@
       "status": "build",
       "detail": "Its own 26.3-fabric checkout compiled through the tool in 14s (Loom 1.17, Java 25, no mappings). The build path reaches the newest game; porting into 26.3 still needs a name bridge from yarn to the unobfuscated names.",
       "date": "2026-10-24"
+    },
+    {
+      "mod": "Krypton",
+      "loader": "fabric",
+      "from": "1.21.5",
+      "to": "1.21.6",
+      "status": "load",
+      "detail": "Only the game, Yarn and Loader versions changed; Loom 1.6 and Gradle 8.6 kept. Its first client check exposed a ui-check hook crash for mods without Fabric API, fixed in the tool. Untouched upstream checkout at its last 1.21.5 commit, one port --fix with no hand edits; the real 1.21.6 client reached the title screen and Fabric reported the mod loaded.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "Falling Leaves",
+      "loader": "fabric",
+      "from": "1.21.5",
+      "to": "1.21.6",
+      "status": "load",
+      "detail": "Cloth Config, Mod Menu and Serene Seasons moved to 1.21.6 releases (Serene Seasons by exact Modrinth id, after the version number served the Forge jar); the compile-only Fabric Seasons integration was kept at its 1.21 release. Untouched upstream checkout at its last 1.21.5 commit, one port --fix with no hand edits; the real 1.21.6 client reached the title screen and Fabric reported the mod loaded.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "Animatica",
+      "loader": "fabric",
+      "from": "1.21.5",
+      "to": "1.21.6",
+      "status": "load",
+      "detail": "Versions and Fabric API only. The first attempt failed a false mixin-audit finding on a static Identifier.of handler, fixed in the audit. Untouched upstream checkout at its last 1.21.5 commit, one port --fix with no hand edits; the real 1.21.6 client reached the title screen and Fabric reported the mod loaded.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "Accurate Block Placement Reborn",
+      "loader": "fabric",
+      "from": "1.21.5",
+      "to": "1.21.6",
+      "status": "load",
+      "detail": "Versions, Fabric API, Cloth Config and Mod Menu; the same file the author's own 1.21.6 release changed. Untouched upstream checkout at its last 1.21.5 commit, one port --fix with no hand edits; the real 1.21.6 client reached the title screen and Fabric reported the mod loaded.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "IJM's Tweaks",
+      "loader": "fabric",
+      "from": "1.21.5",
+      "to": "1.21.6",
+      "status": "load",
+      "detail": "At tag v1.4.0+1.21.5. YACL went to 3.7.1+1.21.6 because the 3.8.x releases were built with a newer Loom than the project's 1.10.5. Untouched upstream checkout at its last 1.21.5 commit, one port --fix with no hand edits; the real 1.21.6 client reached the title screen and Fabric reported the mod loaded.",
+      "date": "2026-10-24"
     }
   ],
   "loader_pairs": [

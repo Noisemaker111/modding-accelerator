@@ -97,10 +97,13 @@ final class Game {
         List<Object> actions = new ArrayList<>();
         request(current, Json.map("command", "resize", "width", 1280, "height", 720));
         request(current, Json.map("command", "ready"));
+        Map<String, Object> modsLoaded = modsLoaded(current);
         // A never-started client opens first-run onboarding before any world; dismiss it like a person would.
         Map<String, Object> first = request(current, Json.map("command", "status"));
         if (String.valueOf(first.get("screen")).endsWith("AccessibilityOnboardingScreen")) {
             actions.add(request(current, Json.map("command", "click", "label", "Continue")));
+            // Continue only starts a fade; the title screen opens when it ends. Capture after that.
+            request(current, Json.map("command", "ready", "leaveScreen", first.get("screen")));
         }
         if (command.equals("world-check")) {
             String world = options.get("world", "lab");
@@ -190,6 +193,7 @@ final class Game {
                 "actionOrder", List.of("screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-value", "capture"),
                 "worldVerified", command.equals("world-check") || command.equals("mp-check"), "behaviorVerified", options.values.containsKey("assert") || options.values.containsKey("expect-value") || change != null || saveRoundtrip != null,
                 "visualInspectionRequired", true, "details", "Real client rendered a 1280x720 Minecraft framebuffer: " + shot));
+        result.put("modsLoaded", modsLoaded);
         if (change != null) {
             result.put("visualChange", change);
             result.put("details", change.get("details"));
@@ -200,6 +204,48 @@ final class Game {
         }
         if (command.equals("mp-check") && options.values.containsKey("server")) result.put("server", Json.map("owned", false, "address", options.get("server", ""), "buildVerified", false));
         return result;
+    }
+    /**
+     * A rendered frame does not prove the project's mod is in the game. Ask the running loader for
+     * every mod id this project declares, and refuse the check when one is missing.
+     */
+    Map<String, Object> modsLoaded(Map<String, Object> session) throws Exception {
+        List<String> ids = projectModIds(model);
+        if (ids.isEmpty()) return Json.map("checked", false, "details", "No mod id found in the project's fabric.mod.json or neoforge.mods.toml.");
+        Map<String, Object> answer;
+        try { answer = request(session, Json.map("command", "mods", "ids", ids)); }
+        catch (IOException olderAgent) { return Json.map("checked", false, "ids", ids, "details", "The running client cannot answer which mods loaded: " + olderAgent.getMessage().lines().findFirst().orElse("")); }
+        var loaded = Json.object(answer.get("loaded"));
+        List<String> missing = ids.stream().filter(id -> !Boolean.TRUE.equals(loaded.get(id))).toList();
+        if ("unknown".equals(answer.get("loader"))) return Json.map("checked", false, "ids", ids, "details", "The client's mod loader did not answer.");
+        if (!missing.isEmpty()) throw new IOException("The client started but its mod loader did not load " + missing + "; the game log names why: " + session.get("log"));
+        return Json.map("checked", true, "loader", answer.get("loader"), "ids", ids, "versions", answer.get("versions"),
+                "details", "The running " + answer.get("loader") + " loader reports " + String.join(", ", ids) + " loaded.");
+    }
+    /** Mod ids from processed resources first (placeholders expanded), then the source resources. */
+    static List<String> projectModIds(Map<String, Object> model) {
+        Set<String> ids = new LinkedHashSet<>();
+        java.util.regex.Pattern modId = java.util.regex.Pattern.compile("(?m)^\\s*modId\\s*=\\s*\"([^\"]+)\"");
+        for (Object item : Json.array(model.get("projects"))) for (Object set : Json.array(Json.object(item).get("sourceSets"))) {
+            var sourceSet = Json.object(set);
+            if (!Set.of("main", "client").contains(Json.text(sourceSet, "name", ""))) continue;
+            List<String> roots = new ArrayList<>(ProjectModel.strings(sourceSet.get("output")));
+            roots.addAll(ProjectModel.strings(sourceSet.get("resources")));
+            for (String root : roots) {
+                try {
+                    Path fabric = Path.of(root, "fabric.mod.json"), neo = Path.of(root, "META-INF", "neoforge.mods.toml");
+                    if (Files.isRegularFile(fabric)) {
+                        String id = Json.text(Json.object(Json.parse(Files.readString(fabric))), "id", "");
+                        if (!id.isEmpty() && !id.contains("${")) { ids.add(id); break; }
+                    } else if (Files.isRegularFile(neo)) {
+                        var match = modId.matcher(Files.readString(neo)); boolean found = false;
+                        while (match.find()) if (!match.group(1).contains("${")) { ids.add(match.group(1)); found = true; }
+                        if (found) break;
+                    }
+                } catch (Exception unreadable) { }
+            }
+        }
+        return new ArrayList<>(ids);
     }
     String fingerprint() throws Exception {
         return Fingerprints.bytes((Fingerprints.build(model, build.project, build.init) + Fingerprints.files(List.of(

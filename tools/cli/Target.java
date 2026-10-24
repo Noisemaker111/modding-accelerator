@@ -270,9 +270,52 @@ final class Target {
             if (Versions.matches(constraint, setup.to)) continue;
             if (!constraint.matches("~?[0-9]+(?:\\.[0-9]+){1,2}"))
                 throw new IOException("Fabric manifest depends.minecraft has a complex constraint " + constraint + " in " + file + "; update its owner manually.");
-            depends.put("minecraft", setup.to);
-            setup.replace(file, before, Json.write(metadata) + (before.endsWith("\n") ? "\n" : ""));
+            setup.replace(file, before, retargetMinecraft(before, constraint, setup.to, file));
         }
+    }
+    /**
+     * Change only the depends.minecraft literal and keep every other byte, so the diff a mod author
+     * reviews is one line instead of a re-serialized manifest.
+     */
+    static String retargetMinecraft(String text, String constraint, String to, Path file) throws IOException {
+        Matcher depends = Pattern.compile("\"depends\"\\s*:\\s*\\{").matcher(text);
+        int start = -1, end = -1;
+        while (depends.find()) {
+            if (depth(text, depends.start()) != 1) continue;
+            if (start >= 0) throw new IOException("Fabric manifest has two depends objects in " + file + "; update its owner manually.");
+            start = depends.end(); end = closing(text, depends.end() - 1);
+        }
+        if (start < 0 || end < 0) throw new IOException("Cannot locate depends in Fabric manifest " + file + "; update its owner manually.");
+        String block = text.substring(start, end);
+        Matcher entry = Pattern.compile("(\"minecraft\"\\s*:\\s*\")" + Pattern.quote(constraint) + "\"").matcher(block);
+        if (!entry.find()) throw new IOException("Cannot locate depends.minecraft \"" + constraint + "\" in " + file + "; update its owner manually.");
+        int at = entry.start(), after = entry.end(); String key = entry.group(1);
+        if (entry.find()) throw new IOException("Fabric manifest names minecraft twice in depends in " + file + "; update its owner manually.");
+        return text.substring(0, start + at) + key + to + "\"" + text.substring(start + after);
+    }
+    /** JSON object depth at a position, ignoring braces inside strings. */
+    private static int depth(String text, int position) {
+        int depth = 0; boolean string = false;
+        for (int i = 0; i < position; i++) {
+            char c = text.charAt(i);
+            if (string) { if (c == '\\') i++; else if (c == '"') string = false; }
+            else if (c == '"') string = true;
+            else if (c == '{' || c == '[') depth++;
+            else if (c == '}' || c == ']') depth--;
+        }
+        return depth;
+    }
+    /** Index of the brace that closes the object opened at {@code open}, or -1. */
+    private static int closing(String text, int open) {
+        int depth = 0; boolean string = false;
+        for (int i = open; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (string) { if (c == '\\') i++; else if (c == '"') string = false; }
+            else if (c == '"') string = true;
+            else if (c == '{') depth++;
+            else if (c == '}' && --depth == 0) return i;
+        }
+        return -1;
     }
     private static String toRange(String to) { return to; }
     static List<Edit> manifestEditsForModel(Map<String, Object> model, String to) throws Exception {
