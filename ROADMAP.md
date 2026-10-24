@@ -18,8 +18,8 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/pro
 5. Dependency blockers become one-file answers: verified selection, disable with proof, and a
    reference that is not an `import` still counts (AppleSkin's JEI mixin). **done**
 6. A port refuses to pass while it still targets the old game: packaged metadata is read back. **done**
-7. A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. Currently 61 errors, mostly the
-   render pipeline. **doing**
+7. A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. 62 errors down to 51 after seven
+   rules (Identifier, food components, debug HUD); the rest needs real code changes. **doing**
 8. Turn the render-pipeline family into rules (draw texture / render pipeline / texture view), then
    re-run step 7 to a build. **next**
 9. Build-toolchain bumps follow the target automatically (AppleSkin needed Loom 1.10 + Gradle 8.13). **next**

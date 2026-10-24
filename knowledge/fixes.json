@@ -3,6 +3,103 @@
   "note": "Ordered fix rules for `modaccel port -Fix`. `match` is a regex tested against each javac error's message + symbol + file. `apply.find` / `apply.replace` is a .NET regex replace in the affected source (named groups survive as ${name}); `apply.literal` is a plain string replace; `apply.ensureImports` adds an import only when the file lacks it. `scope` is `log` (only the files that error was reported in) or `repo` (every .java in the repo, for a family whose remaining call sites javac has not reached yet). `when` is an optional regex the candidate file's own text must match. `verified` names the repo, the count and the log a build actually proved it on; null means reasoned, not measured.",
   "rules": [
     {
+      "id": "identifier-constructor-two-arg",
+      "jump": "1.20.1 -> 1.21.6 (yarn)",
+      "match": "Identifier\\(String,String\\) has private access",
+      "apply": {
+        "find": "new Identifier\\((?<ns>\"[^\"]*\")\\s*,\\s*(?<path>\"[^\"]*\")\\)",
+        "replace": "Identifier.of(${ns}, ${path})"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 privatised the Identifier constructors; the two-argument form is Identifier.of(namespace, path).",
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+    },
+    {
+      "id": "identifier-constructor-one-arg",
+      "jump": "1.20.1 -> 1.21.6 (yarn)",
+      "match": "constructor Identifier in class Identifier cannot be applied",
+      "apply": {
+        "find": "new Identifier\\((?<path>\"[^\"]*\")\\)",
+        "replace": "Identifier.ofVanilla(${path})"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The single-argument form is Identifier.ofVanilla(path) for vanilla resources; mod-owned paths use the two-argument rule.",
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+    },
+    {
+      "id": "item-is-food-component",
+      "jump": "1.20.1 -> 1.21.6 (yarn)",
+      "match": "symbol:\\s+method isFood\\(\\)",
+      "apply": {
+        "find": "(?<stack>[\\w.]+)\\.getItem\\(\\)\\.isFood\\(\\)",
+        "replace": "${stack}.contains(DataComponentTypes.FOOD)",
+        "ensureImports": [
+          "net.minecraft.component.DataComponentTypes"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Item#isFood() was removed with the component migration; a stack is food when it carries the FOOD component.",
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+    },
+    {
+      "id": "item-get-food-component",
+      "jump": "1.20.1 -> 1.21.6 (yarn)",
+      "match": "symbol:\\s+method getFoodComponent\\(\\)",
+      "apply": {
+        "find": "(?<stack>[\\w.]+)\\.getItem\\(\\)\\.getFoodComponent\\(\\)",
+        "replace": "${stack}.get(DataComponentTypes.FOOD)",
+        "ensureImports": [
+          "net.minecraft.component.DataComponentTypes"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The food values moved onto the stack; get(FOOD) replaces Item#getFoodComponent().",
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+    },
+    {
+      "id": "food-component-nutrition",
+      "jump": "1.20.1 -> 1.21.6 (yarn)",
+      "match": "symbol:\\s+method getHunger\\(\\)",
+      "apply": {
+        "find": "\\.getHunger\\(\\)",
+        "replace": ".nutrition()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "FoodComponent is a record in 1.21.2+: the hunger value is the nutrition() accessor.",
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+    },
+    {
+      "id": "food-component-saturation",
+      "jump": "1.20.1 -> 1.21.6 (yarn)",
+      "match": "symbol:\\s+method getSaturationModifier\\(\\)",
+      "apply": {
+        "find": "\\.getSaturationModifier\\(\\)",
+        "replace": ".saturation()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "FoodComponent is a record in 1.21.2+: the saturation modifier is the saturation() accessor.",
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+    },
+    {
+      "id": "debug-hud-visible",
+      "jump": "1.20.1 -> 1.21.6 (yarn)",
+      "match": "symbol:\\s+variable debugEnabled",
+      "apply": {
+        "find": "\\.options\\.debugEnabled",
+        "replace": ".getDebugHud().shouldShowDebugHud()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "GameOptions.debugEnabled was removed; the debug HUD answers for itself in 1.21.6.",
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+    },
+    {
       "id": "nbt-getboolean-optional",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
@@ -111,7 +208,10 @@
       "jump": "1.21.5 -> 1.21.6 (yarn, fabric-data-generation 23.2.3)",
       "match": "getOrCreateTagBuilder",
       "apply": {
-        "literal": { "from": "getOrCreateTagBuilder(", "to": "valueLookupBuilder(" }
+        "literal": {
+          "from": "getOrCreateTagBuilder(",
+          "to": "valueLookupBuilder("
+        }
       },
       "scope": "log",
       "when": "FabricValueLookupTagProvider|FabricTagProvider\\.(Block|Item)TagProvider",
@@ -123,7 +223,10 @@
       "jump": "1.21.5 -> 1.21.6 (yarn, fabric-data-generation 23.2.3)",
       "match": "getOrCreateTagBuilder",
       "apply": {
-        "literal": { "from": "getOrCreateTagBuilder(", "to": "builder(" }
+        "literal": {
+          "from": "getOrCreateTagBuilder(",
+          "to": "builder("
+        }
       },
       "scope": "log",
       "when": "extends FabricTagProvider<|EntityTypeTagProvider",
@@ -137,7 +240,10 @@
       "apply": {
         "find": "\\.add\\((?!RegistryKey)([^;]+?)\\);",
         "replace": ".add(RegistryKey.of(RegistryKeys.ENTITY_TYPE, $1));",
-        "ensureImports": ["net.minecraft.registry.RegistryKey", "net.minecraft.registry.RegistryKeys"]
+        "ensureImports": [
+          "net.minecraft.registry.RegistryKey",
+          "net.minecraft.registry.RegistryKeys"
+        ]
       },
       "scope": "log",
       "when": "EntityTypeTagProvider",
@@ -216,7 +322,10 @@
       "apply": {
         "find": "appendHoverText\\((?<stack>ItemStack\\s+\\w+,\\s*)(?<ctx>[^,()]+),\\s*List<Component>(?<var>\\s+\\w+,\\s*)TooltipFlag",
         "replace": "appendHoverText(${stack}${ctx}, TooltipDisplay tooltipDisplay, Consumer<Component>${var}TooltipFlag",
-        "ensureImports": ["java.util.function.Consumer", "net.minecraft.world.item.component.TooltipDisplay"]
+        "ensureImports": [
+          "java.util.function.Consumer",
+          "net.minecraft.world.item.component.TooltipDisplay"
+        ]
       },
       "scope": "log",
       "when": "",
@@ -256,7 +365,9 @@
       "apply": {
         "find": "\\.setRespawnPosition\\((?<dim>[^,]+),\\s*(?<pos>[^,]+),\\s*(?<yaw>[^,]+),\\s*(?<forced>true|false),\\s*(?<msg>true|false)\\)",
         "replace": ".setRespawnPosition(new ServerPlayer.RespawnConfig(${dim}, ${pos}, ${yaw}, ${forced}), ${msg})",
-        "ensureImports": ["net.minecraft.server.level.ServerPlayer"]
+        "ensureImports": [
+          "net.minecraft.server.level.ServerPlayer"
+        ]
       },
       "scope": "log",
       "when": "",
@@ -361,7 +472,10 @@
       "apply": {
         "find": "Equipable\\.get\\(([^;]+?)\\)",
         "replace": "$1.get(DataComponents.EQUIPPABLE)",
-        "ensureImports": ["net.minecraft.core.component.DataComponents", "net.minecraft.world.item.equipment.Equippable"]
+        "ensureImports": [
+          "net.minecraft.core.component.DataComponents",
+          "net.minecraft.world.item.equipment.Equippable"
+        ]
       },
       "scope": "log",
       "when": "",
@@ -427,7 +541,9 @@
       "apply": {
         "find": "(EntityType\\.[A-Z_]+)\\.create\\((\\w+)\\)",
         "replace": "$1.create($2, EntitySpawnReason.COMMAND)",
-        "ensureImports": ["net.minecraft.world.entity.EntitySpawnReason"]
+        "ensureImports": [
+          "net.minecraft.world.entity.EntitySpawnReason"
+        ]
       },
       "scope": "log",
       "when": "CommandSourceStack",
@@ -441,7 +557,9 @@
       "apply": {
         "find": "(EntityType\\.[A-Z_]+)\\.create\\((\\w+)\\)",
         "replace": "$1.create($2, EntitySpawnReason.NATURAL)",
-        "ensureImports": ["net.minecraft.world.entity.EntitySpawnReason"]
+        "ensureImports": [
+          "net.minecraft.world.entity.EntitySpawnReason"
+        ]
       },
       "scope": "log",
       "when": "",
@@ -494,7 +612,10 @@
       "apply": {
         "find": "(\\w+)\\.convertTo\\((EntityType\\.[A-Z_]+),\\s*(true|false)\\)",
         "replace": "$1.convertTo($2, ConversionParams.single($1, $3, false), EntitySpawnReason.TRIGGERED, null)",
-        "ensureImports": ["net.minecraft.world.entity.ConversionParams", "net.minecraft.world.entity.EntitySpawnReason"]
+        "ensureImports": [
+          "net.minecraft.world.entity.ConversionParams",
+          "net.minecraft.world.entity.EntitySpawnReason"
+        ]
       },
       "scope": "log",
       "when": "",
@@ -534,7 +655,9 @@
       "apply": {
         "find": "(\\w+)\\.hasUUID\\(([^)]+)\\)",
         "replace": "$1.read($2, UUIDUtil.CODEC).isPresent()",
-        "ensureImports": ["net.minecraft.core.UUIDUtil"]
+        "ensureImports": [
+          "net.minecraft.core.UUIDUtil"
+        ]
       },
       "scope": "log",
       "when": "",
@@ -548,7 +671,9 @@
       "apply": {
         "find": "(\\w+)\\.getUUID\\(([^)]+)\\)",
         "replace": "$1.read($2, UUIDUtil.CODEC).orElse(null)",
-        "ensureImports": ["net.minecraft.core.UUIDUtil"]
+        "ensureImports": [
+          "net.minecraft.core.UUIDUtil"
+        ]
       },
       "scope": "log",
       "when": "",
@@ -562,7 +687,9 @@
       "apply": {
         "find": "(\\w+)\\.putUUID\\(([^,]+),\\s*([^)]+)\\)",
         "replace": "$1.store($2, UUIDUtil.CODEC, $3)",
-        "ensureImports": ["net.minecraft.core.UUIDUtil"]
+        "ensureImports": [
+          "net.minecraft.core.UUIDUtil"
+        ]
       },
       "scope": "log",
       "when": "",
@@ -633,5 +760,6 @@
       "when": "",
       "note": "About a hundred SoundEvents constants became Holder.Reference in 1.21.2 while the rest stayed plain SoundEvent, so the rule carries the exact holder list read from the target SoundEvents class and only rewrites a playSound argument in a file javac already reported. A constant outside the list is left alone, which is what keeps a plain SoundEvent argument compiling.",
       "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
-    }  ]
+    }
+  ]
 }

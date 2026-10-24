@@ -1,22 +1,130 @@
 {
   "note": "Every entry is a port that was actually run. status: stop = named errors remain; build = packaged build + mixin audit passed; load = the real client or server loaded it; behaviour = something observable was asserted in the game. Add an entry only with a receipt.",
-  "versions": ["1.12.2", "1.16.5", "1.18.2", "1.20.1", "1.21.1", "1.21.4", "1.21.5", "1.21.6", "1.21.9", "26.3"],
-  "loaders": ["fabric", "neoforge", "forge", "quilt"],
+  "versions": [
+    "1.12.2",
+    "1.16.5",
+    "1.18.2",
+    "1.20.1",
+    "1.21.1",
+    "1.21.4",
+    "1.21.5",
+    "1.21.6",
+    "1.21.9",
+    "26.3"
+  ],
+  "loaders": [
+    "fabric",
+    "neoforge",
+    "forge",
+    "quilt"
+  ],
   "hops": [
-    { "mod": "F3Nope", "loader": "fabric", "from": "1.21.5", "to": "1.21.6", "status": "behaviour", "detail": "Three overlay lines inspected in the real client; a visual gate caught an invisible overlay that a passing build missed.", "date": "2026-10-24" },
-    { "mod": "F3Nope", "loader": "fabric", "from": "1.21.6", "to": "1.21.5", "status": "load", "detail": "Backport of the untouched upstream snapshot; built, audited and loaded in the 1.21.5 client.", "date": "2026-10-24" },
-    { "mod": "AppleSkin", "loader": "fabric", "from": "1.21.5", "to": "1.21.6", "status": "behaviour", "detail": "Port and backport; opening the inventory changed 95.6% of the frame, and a save reloaded at the same position.", "date": "2026-10-24" },
-    { "mod": "AppleSkin", "loader": "fabric", "from": "1.21.6", "to": "1.21.9", "status": "stop", "detail": "Guided debug HUD migration; the remaining changes are named rather than guessed.", "date": "2026-10-24" },
-    { "mod": "ZombieApocalypseAddon", "loader": "neoforge", "from": "1.21.1", "to": "1.21.4", "status": "behaviour", "detail": "19 API errors repaired by rules, packaged metadata rewritten, jar loaded and its /za dashboard rendered in a real 1.21.4 world.", "date": "2026-10-24" },
-    { "mod": "ZombieApocalypseAddon", "loader": "neoforge", "from": "1.21.1", "to": "1.21.6", "status": "stop", "detail": "38 reported errors reduced to 9 by rules; the rest is the 1.21.6 SavedData codec and owner/saddling API.", "date": "2026-10-24" },
-    { "mod": "Jade", "loader": "neoforge", "from": "1.21.1", "to": "1.21.6", "status": "stop", "detail": "98 errors left in the 1.21.6 GUI rewrite; the port refuses to ship a build against the old game.", "date": "2026-10-24" }    ,
-    { "mod": "AppleSkin", "loader": "fabric", "from": "1.20.1", "to": "1.21.6", "status": "stop", "detail": "Five-minor jump. Its Loom 1.8 and Gradle 8.10 had to move to 1.10/8.13 first, and JEI was dropped because upstream's 1.21.6 has none and JEI publishes no 1.21.6 artifact. Mapping-level renames went through; 61 semantic errors remain: render pipeline (drawTexture / RenderPipeline / GpuTextureView), hunger API, tooltip component and networking.", "date": "2026-10-24" }    ,
-    { "mod": "AppleSkin", "loader": "fabric", "from": "26.3", "to": "26.3", "status": "build", "detail": "Its own 26.3-fabric checkout compiled through the tool in 14s (Loom 1.17, Java 25, no mappings). The build path reaches the newest game; porting into 26.3 still needs a name bridge from yarn to the unobfuscated names.", "date": "2026-10-24" }
+    {
+      "mod": "F3Nope",
+      "loader": "fabric",
+      "from": "1.21.5",
+      "to": "1.21.6",
+      "status": "behaviour",
+      "detail": "Three overlay lines inspected in the real client; a visual gate caught an invisible overlay that a passing build missed.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "F3Nope",
+      "loader": "fabric",
+      "from": "1.21.6",
+      "to": "1.21.5",
+      "status": "load",
+      "detail": "Backport of the untouched upstream snapshot; built, audited and loaded in the 1.21.5 client.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "AppleSkin",
+      "loader": "fabric",
+      "from": "1.21.5",
+      "to": "1.21.6",
+      "status": "behaviour",
+      "detail": "Port and backport; opening the inventory changed 95.6% of the frame, and a save reloaded at the same position.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "AppleSkin",
+      "loader": "fabric",
+      "from": "1.21.6",
+      "to": "1.21.9",
+      "status": "stop",
+      "detail": "Guided debug HUD migration; the remaining changes are named rather than guessed.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.4",
+      "status": "behaviour",
+      "detail": "19 API errors repaired by rules, packaged metadata rewritten, jar loaded and its /za dashboard rendered in a real 1.21.4 world.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.6",
+      "status": "stop",
+      "detail": "38 reported errors reduced to 9 by rules; the rest is the 1.21.6 SavedData codec and owner/saddling API.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "Jade",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.6",
+      "status": "stop",
+      "detail": "98 errors left in the 1.21.6 GUI rewrite; the port refuses to ship a build against the old game.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "AppleSkin",
+      "loader": "fabric",
+      "from": "1.20.1",
+      "to": "1.21.6",
+      "status": "stop",
+      "detail": "Five-minor jump. Loom 1.8 to 1.10 and Gradle 8.10 to 8.13 first, JEI dropped because upstream 1.21.6 has none. Mappings went through, then seven rules cleared 11 sites (Identifier.of/ofVanilla, food components, debug HUD), taking the error count from 62 to 51 with no new error. The rest is structural: render pipeline (texture colour and depth), the removed exhaustion getter, tooltip component methods, and payload records.",
+      "date": "2026-10-24"
+    },
+    {
+      "mod": "AppleSkin",
+      "loader": "fabric",
+      "from": "26.3",
+      "to": "26.3",
+      "status": "build",
+      "detail": "Its own 26.3-fabric checkout compiled through the tool in 14s (Loom 1.17, Java 25, no mappings). The build path reaches the newest game; porting into 26.3 still needs a name bridge from yarn to the unobfuscated names.",
+      "date": "2026-10-24"
+    }
   ],
   "loader_pairs": [
-    { "from": "fabric", "to": "neoforge", "status": "unbuilt", "detail": "Different metadata, entrypoints, events, registries and mixin namespaces. First step: one small mod, measured." },
-    { "from": "neoforge", "to": "fabric", "status": "unbuilt", "detail": "Same work in reverse; no adapter exists yet." },
-    { "from": "fabric", "to": "quilt", "status": "unbuilt", "detail": "Closest pair: same metadata shape and mostly the same API." },
-    { "from": "forge", "to": "neoforge", "status": "unbuilt", "detail": "Close lineage and a mechanical name mapping; the build scripts differ." }
+    {
+      "from": "fabric",
+      "to": "neoforge",
+      "status": "unbuilt",
+      "detail": "Different metadata, entrypoints, events, registries and mixin namespaces. First step: one small mod, measured."
+    },
+    {
+      "from": "neoforge",
+      "to": "fabric",
+      "status": "unbuilt",
+      "detail": "Same work in reverse; no adapter exists yet."
+    },
+    {
+      "from": "fabric",
+      "to": "quilt",
+      "status": "unbuilt",
+      "detail": "Closest pair: same metadata shape and mostly the same API."
+    },
+    {
+      "from": "forge",
+      "to": "neoforge",
+      "status": "unbuilt",
+      "detail": "Close lineage and a mechanical name mapping; the build scripts differ."
+    }
   ]
 }
