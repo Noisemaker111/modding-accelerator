@@ -1,24 +1,43 @@
 # Modding Accelerator
 
-## What we are building
+**Use this to:**
 
-Bring a mod's source project, choose a Minecraft version, and get a reversible
-port with fast checks showing what actually works. The goal is for an unfamiliar
-developer to do this with minimal setup on Windows, Linux or macOS, from their
-usual shell, across loaders and version families, including backports. Support
-for changing loaders is separate from changing Minecraft versions.
+- **Test logic fast.** Compile and run pure tests without launching the game — about a second in a warm repo.
+- **Check a screen faster.** Swap the edit into a running client and get a 1280×720 capture in about 1.5 s, against 22–28 s for a restart.
+- **Compile and prove a port.** Build, audit mixin targets, check the packaged metadata, then load the result in a real client.
+- **Auto-port a mod, on some versions.** Fabric 1.21.5 ↔ 1.21.6 and NeoForge 1.21.1 → 1.21.4 with no hand edits; larger jumps stop with the errors that remain.
 
-Known changes should apply programmatically in seconds. The complete result must
-also include dependency setup, a packaged build, and appropriate logic or actual
-game checks. Reusing downloads, mappings, prepared builds and running game sessions
-is part of the approach; first use must also be measured and improved. "Almost
-instant" is the ambition, not a universal timing promise or an edit-only benchmark.
+Beta 0.1.0, published 24 October 2026 · [download](https://github.com/Noisemaker111/modding-accelerator/releases/tag/v0.1.0-beta.1) · [one-page summary](https://noisemaker111.github.io/modding-accelerator/)
 
-The finish line is a tested port or a precise, actionable blocker, without someone
-personally rescuing each project. A successful build or world load cannot establish
-that every mod feature works. Missing target dependencies and features requiring
-redesign must be reported, never silently removed. The current tool accepts Gradle
-source projects; converting compiled mod JARs is unsupported.
+![What the beta does, measured](bench/showcase.png)
+
+## Goal
+
+Bring a mod's source project, choose a Minecraft version, and get a reversible port with
+fast checks showing what actually works — on Windows, Linux or macOS, from a normal shell,
+across loaders and version families. Changing a mod's loader is a separate capability from
+changing its Minecraft version, and is reported separately.
+
+Known changes should apply in seconds. The complete result also includes dependency setup, a
+packaged build, and logic or actual game checks. First use must be measured as carefully as
+repeat use. The finish line is a tested port or a precise blocker, never a build that quietly
+keeps the old game or a feature silently removed. Compiled mod JARs are unsupported; this
+tool starts from a Gradle source checkout.
+
+## Roadmap: versions, porting and verification
+
+| Area | Verified today | Next |
+|---|---|---|
+| Fabric versions | 1.21.5 ↔ 1.21.6 ports and backports; 1.21.6 → 1.21.9 guided | Wider 1.21.x coverage and more backports |
+| NeoForge versions | 1.21.1 → 1.21.4 automatic (75 s first, 14 s repeat) | 1.21.1 → 1.21.6: 9 named errors left (SavedData codec, owner/saddling); then the 1.21.6 GUI rewrite |
+| Loaders | Fabric and NeoForge ports end to end; Forge fast lane and checks | Changing loader is a separate, unbuilt capability: first step is one small Fabric → NeoForge mod, measured |
+| Project shapes | One Gradle project; Stonecutter nodes listed and built | Multi-module orchestration, Stonecutter repairs in shared sources, Kotlin sources |
+| Platforms | Game checks on Windows; portable checks on Windows, Linux and macOS in CI | Linux and macOS game rendering |
+| Verification | Build, mixins, packaged metadata, real client, inspected captures, `--expect-change`, save roundtrip | Behaviour assertions for items, entities and multiplayer; optional pixel goldens |
+
+The ordered plan is in [`ROADMAP.md`](ROADMAP.md); the current resume point and evidence are in
+[`PLAN.md`](PLAN.md).
+
 
 ## Local developer beta
 
