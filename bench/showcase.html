@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Modding Accelerator 0.1.0-beta.1, shown</title>
+<style>
+  :root {
+    --surface: #ffffff;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-3: #8a8983;
+    --rule: #ecebe7;
+    --tile: #f6f5f2;
+    --old: #b9b7b0;
+    --new: #2a78d6;
+    --yes: #1f7a3a;
+    --warn: #a35a00;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--surface); color: var(--ink); width: 1200px;
+         font-family: "Segoe UI", system-ui, sans-serif; padding: 44px 56px 36px; }
+  code { font-family: "Cascadia Mono", Consolas, monospace; font-size: 0.92em; background: var(--tile); padding: 1px 5px; border-radius: 4px; }
+  h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.01em; }
+  h1 em { font-style: normal; color: var(--new); }
+  .sub { margin-top: 8px; font-size: 17px; color: var(--ink-2); max-width: 980px; line-height: 1.45; }
+
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 26px; }
+  .tile { background: var(--tile); border-radius: 10px; padding: 16px 18px; }
+  .tile b { display: block; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+  .tile span { display: block; margin-top: 5px; font-size: 13.5px; color: var(--ink-2); line-height: 1.35; }
+
+  section { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--rule); }
+  h2 { font-size: 21px; font-weight: 700; }
+  .lede { margin-top: 4px; font-size: 14.5px; color: var(--ink-2); line-height: 1.45; }
+  .key { display: flex; gap: 22px; margin-top: 10px; font-size: 13.5px; color: var(--ink-2); }
+  .key span::before { content: ""; display: inline-block; width: 12px; height: 12px;
+         border-radius: 3px; margin-right: 7px; vertical-align: -1px; background: var(--c); }
+
+  .row { display: grid; grid-template-columns: 250px 1fr 92px; align-items: center;
+         column-gap: 18px; margin-top: 11px; }
+  .mod b { display: block; font-size: 15.5px; }
+  .mod span { font-size: 12.5px; color: var(--ink-3); }
+  .bars { display: flex; flex-direction: column; gap: 4px; }
+  .bar { display: flex; align-items: center; gap: 8px; height: 18px; }
+  .fill { height: 18px; border-radius: 0 4px 4px 0; min-width: 4px; background: var(--c); }
+  .val { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+  .bar.new .val { color: var(--ink); font-weight: 700; font-size: 13.5px; }
+  .x { text-align: right; font-size: 28px; font-weight: 700; color: var(--new); letter-spacing: -0.02em; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 14.5px; }
+  th { text-align: left; font-size: 12.5px; font-weight: 600; color: var(--ink-3); padding: 0 10px 8px;
+       border-bottom: 1px solid var(--rule); }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.4; }
+  td.c, th.c { text-align: center; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ok { color: var(--yes); font-weight: 700; }
+  .no { color: var(--ink-3); }
+  .warn { color: var(--warn); font-weight: 600; }
+  .small { font-size: 12.5px; color: var(--ink-3); }
+
+  .limits { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 34px; }
+  .limits p { font-size: 14px; color: var(--ink-2); line-height: 1.45; }
+  .limits p b { color: var(--ink); }
+
+  .try { margin-top: 26px; background: var(--tile); border-radius: 10px; padding: 18px 22px; }
+  .try b { font-size: 15px; }
+  .try code { display: inline-block; margin-top: 6px; font-size: 13.5px; }
+  .foot { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--rule);
+          font-size: 12.5px; line-height: 1.5; color: var(--ink-3); }
+</style>
+</head>
+<body>
+
+<h1>Move a Minecraft mod to a new version, and see <em>what actually works</em>.</h1>
+<p class="sub">One command takes a Gradle source project, rewrites it for another Minecraft version, builds it, audits its mixins and then drives the real game for screenshots and assertions. Every run ends with a checked result or a named list of what is left. Beta, published 24 October 2026.</p>
+
+<div class="tiles">
+  <div class="tile"><b>75 s</b><span>first NeoForge port in a fresh repo, 19 API errors repaired on the way (14 s when repeated)</span></div>
+  <div class="tile"><b>2.3 s</b><span>answer after a one-file edit in a 2,102-source Forge repo, against 137 s for its own warm build</span></div>
+  <div class="tile"><b>3 loaders</b><span>Fabric and NeoForge ports end to end; Forge runs the loop and checks</span></div>
+  <div class="tile"><b>3 OS green</b><span>Windows, Linux and macOS portable checks in hosted CI; game checks on Windows</span></div>
+</div>
+
+<section>
+  <h2>Their own build, next to this</h2>
+  <p class="lede">Open-source mods, unchanged. Grey is the mod's own Gradle build with the daemon already warm; blue is the whole <code>modaccel</code> check. Bars are time, capped at 350 s.</p>
+  <div class="key"><span style="--c:var(--old)">their build</span><span style="--c:var(--new)">modaccel</span></div>
+  <div id="rows"></div>
+</section>
+
+<section>
+  <h2>Ports that were actually checked</h2>
+  <p class="lede">A port counts only when the build passes, mixin targets verify, the packaged metadata declares the new game version, and a real client loads the result. Anything less is reported as a stop with the errors that remain.</p>
+  <table>
+    <tr><th>Mod</th><th>Jump</th><th>What the tool did</th><th class="c">Left for a person</th></tr>
+    <tr><td><b>F3Nope</b><div class="small">Fabric</div></td><td class="small">1.21.5 ↔ 1.21.6</td><td>Port and backport, packaged build, mixin audit, real client; a visual gate caught an overlay that was invisible despite a passing build.</td><td class="c ok">0</td></tr>
+    <tr><td><b>AppleSkin</b><div class="small">Fabric</div></td><td class="small">1.21.5 ↔ 1.21.6</td><td>Both directions, plus a save roundtrip proving the world reloads at the same position.</td><td class="c ok">0</td></tr>
+    <tr><td><b>ZombieApocalypseAddon</b><div class="small">NeoForge, 71 files</div></td><td class="small">1.21.1 → 1.21.4</td><td>Loader and game ranges rewritten, 19 API errors repaired by rules, built and audited. The jar loads in a 1.21.4 client and its <code>/za</code> command runs.</td><td class="c ok">0</td></tr>
+    <tr><td><b>ZombieApocalypseAddon</b><div class="small">NeoForge, five minors</div></td><td class="small">1.21.1 → 1.21.6</td><td>38 reported errors reduced to 9 by rules (NBT, UUID codecs, day/night, entity snapping, sound holders).</td><td class="c warn">9</td></tr>
+    <tr><td><b>Jade</b><div class="small">NeoForge</div></td><td class="small">1.21.1 → 1.21.6</td><td>Reaches the target and names the 1.21.6 GUI rewrite instead of shipping a build that would keep the old game.</td><td class="c warn">98</td></tr>
+  </table>
+  <p class="small" style="margin-top:10px">The 9 and 98 are semantic, not missing renames: 1.21.6 replaced <code>SavedData.Factory</code> with a codec per data class, moved owner identity to <code>OwnableEntity</code>, and rewrote the GUI matrix and render pipeline.</p>
+</section>
+
+<section>
+  <h2>Where it sits next to the existing tools</h2>
+  <p class="lede">Each row is a real option a Minecraft modder has today. The columns are the jobs, not the feature lists.</p>
+  <table>
+    <tr><th>Option</th><th>What it is for</th><th class="c">Moves a mod to a new version</th><th class="c">Sees the real game</th><th class="c">Proves behaviour</th><th class="c">Runs in CI</th></tr>
+    <tr><td><b>Fabric / NeoForge GameTest</b></td><td>Official in-game test suites</td><td class="c no">-</td><td class="c ok">yes</td><td class="c ok">yes</td><td class="c ok">yes</td></tr>
+    <tr><td><b>Loom + IDE hotswap</b></td><td>Fast manual dev loop</td><td class="c no">-</td><td class="c no">your eyes</td><td class="c no">-</td><td class="c no">-</td></tr>
+    <tr><td><b>HeadlessMC</b></td><td>Headless client for scripts and CI</td><td class="c no">-</td><td class="c ok">screenshots</td><td class="c no">scripted</td><td class="c ok">yes</td></tr>
+    <tr><td><b>MC-Runtime-Test</b></td><td>Client in CI across versions</td><td class="c no">-</td><td class="c ok">yes</td><td class="c ok">yes</td><td class="c ok">yes</td></tr>
+    <tr><td><b>mc-mod-porter</b></td><td>Rename tables and port notes</td><td class="c ok">manual</td><td class="c no">-</td><td class="c no">-</td><td class="c no">-</td></tr>
+    <tr><td><b>Modding Accelerator</b><div class="small">this beta</div></td><td>Port and verify in one command</td><td class="c ok">yes, source checkout</td><td class="c ok">yes</td><td class="c ok">assertions</td><td class="c ok">green on 3 OS</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>What this does not claim</h2>
+  <div class="limits">
+    <p><b>Loader changes are not supported.</b> Fabric stays Fabric; a port changes the Minecraft version inside one loader.</p>
+    <p><b>Source checkouts only.</b> A compiled mod JAR cannot be ported by this tool.</p>
+    <p><b>No pixel goldens.</b> Frames are captured for a person or an agent to inspect; nothing compares them to last week's.</p>
+    <p><b>Big jumps stop honestly.</b> The 1.21.6 storage and GUI families still need a human; the tool names them.</p>
+    <p><b>First use costs more.</b> The first NeoForge port in a repo pays about 40 s of per-project Minecraft setup.</p>
+    <p><b>Measured on one machine.</b> Ryzen 9 3900X, Windows 11; the numbers are this repo's own, not a third-party head-to-head.</p>
+  </div>
+</section>
+
+<div class="try">
+  <b>Try it on a mod you have.</b><br>
+  <code>Download 0.1.0-beta.1 → github.com/Noisemaker111/modding-accelerator/releases</code><br>
+  <code>./modaccel support</code> &nbsp; <code>./modaccel port --root /path/to/mod --from 1.21.5 --to 1.21.6 --fix</code>
+</div>
+
+<p class="foot">Beta, 24 October 2026. Port and loop numbers come from this repository's receipts (<code>result.json</code> per run); the comparison notes are in <code>bench/alternatives.md</code>. Nothing here is published as a finished product: it is one person's lab that now works across Fabric and NeoForge on real mods.</p>
+
+<script>
+// Their build vs modaccel. Both measured on the same machine; see bench/data.json.
+const ROWS = [
+  { mod: 'MineColonies', what: 'Forge 1.20.1, 2,102 sources', old: 328.3, now: 23.9, note: 'first check; later edits 2.3s' },
+  { mod: "Traveler's Backpack", what: 'Fabric 1.21.5', old: 335.1, now: 6.4, note: 'one-file edit' },
+  { mod: 'Artifacts', what: 'Fabric 1.21.4', old: 567.5, now: 4.2, note: 'one-file edit' },
+  { mod: 'Polymer', what: 'Fabric 1.21.6', old: 474.4, now: 3.8, note: 'one-file edit' },
+  { mod: 'Diorama', what: 'Fabric 26.3, Stonecutter', old: 204.5, now: 2.1, note: 'fast lane' },
+];
+const CAP = 350, fmt = s => s >= 60 ? Math.round(s / 6) / 10 + ' min' : (+s.toFixed(1)) + ' s';
+document.getElementById('rows').innerHTML = ROWS.map(d => `
+  <div class="row">
+    <div class="mod"><b>${d.mod}</b><span>${d.what}</span></div>
+    <div class="bars">
+      <div class="bar"><div class="fill" style="--c:var(--old);width:${Math.min(d.old, CAP) / CAP * 100}%${d.old > CAP ? ';border-right:6px double var(--surface)' : ''}"></div><span class="val">${fmt(d.old)}</span></div>
+      <div class="bar new"><div class="fill" style="--c:var(--new);width:${Math.min(d.now, CAP) / CAP * 100}%"></div><span class="val">${fmt(d.now)} · ${d.note}</span></div>
+    </div>
+    <div class="x">${Math.round(d.old / d.now)}x</div>
+  </div>`).join('');
+</script>
+</body>
+</html>
