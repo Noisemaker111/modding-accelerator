@@ -281,14 +281,25 @@ final class Dependencies {
             }
         }
         Set<Path> files = new TreeSet<>();
+        // A source can name the library without importing it (a fully-qualified @Mixin target, for example),
+        // so a package reference counts as ownership too.
+        Set<String> prefixes = new TreeSet<>();
+        for (String type : classes) {
+            int first = type.indexOf('/'), second = first < 0 ? -1 : type.indexOf('/', first + 1);
+            if (second > 0) prefixes.add(type.substring(0, second).replace('/', '.') + ".");
+        }
         for (Path file : Port.sources(project)) {
             if (!file.toString().endsWith(".java")) continue;
-            Matcher imports = Pattern.compile("(?m)^\\s*import\\s+(?:static\\s+)?([A-Za-z0-9_.$]+)\\s*;").matcher(Files.readString(file));
+            String text = Files.readString(file);
+            boolean owns = false;
+            Matcher imports = Pattern.compile("(?m)^\\s*import\\s+(?:static\\s+)?([A-Za-z0-9_.$]+)\\s*;").matcher(text);
             while (imports.find()) {
                 String name = imports.group(1).replace('.', '/');
                 int owner = name.lastIndexOf('/');
-                if (classes.contains(name) || owner > 0 && classes.contains(name.substring(0, owner))) { files.add(file); break; }
+                if (classes.contains(name) || owner > 0 && classes.contains(name.substring(0, owner))) { owns = true; break; }
             }
+            if (!owns) for (String prefix : prefixes) if (text.contains(prefix)) { owns = true; break; }
+            if (owns) files.add(file);
         }
         return files;
     }

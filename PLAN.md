@@ -120,6 +120,12 @@ errors in six storage/world families (NBT UUID and `SavedData` API, `Level.isDay
 `Entity.moveTo` -> `snapTo`, `isInWaterRainOrBubble`, `SavedData.Factory`, sound holders) —
 the 1.21.6 GUI rewrite that blocks Jade is irrelevant to a server-side mod.
 
+Dependency disable used to look only at imports. AppleSkin's JEI mixin names its target as a
+fully qualified `@Mixin(mezz.jei...)` reference, so the disable refused with "found no importing
+sources". It now also matches a package reference anywhere in the file; on a fresh AppleSkin 1.20.1
+copy the same selection resolves and lists `java/squeek/appleskin/mixin/JEIRenderHelperMixin.java`
+as the removed source (`.runs/appleskin-disable-test.json`).
+
 Jade 1.21.1 -> 1.21.6 (five minors, including the GUI rewrite) reaches the real target and
 then stops honestly: NeoGradle 7.0.192 plus the run-type rename builds against NeoForge
 21.6, and 98 errors remain in the 1.21.6 rendering rework (fine GUI matrix stack instead of
