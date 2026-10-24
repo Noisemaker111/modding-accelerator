@@ -41,9 +41,11 @@ def wrap(s, f, width):
 text(M, 40, "Move a Minecraft mod to a new version,", bold(33))
 text(M, 80, "and see what actually works.", bold(33), NEW)
 
-y = 136
-for line in wrap("Use it to test logic fast, check a screen faster, compile and prove the result, and auto-port a mod to some versions. One command; every run ends in a checked result or a named list of what is left.", regular(17), W - 2 * M):
-    text(M, y, line, regular(17), INK2); y += 25
+y = 132
+text(M, y, "Goal: any Minecraft version to any other, and any loader to any other.", regular(15), INK2)
+y += 30
+for line in wrap("Use it to test logic fast, check a screen faster, compile and prove the result, and auto-port a mod to some versions. One command; every run ends in a checked result or a named list of what is left.", regular(16), W - 2 * M):
+    text(M, y, line, regular(16), INK2); y += 24
 
 # Tiles
 tiles = [
