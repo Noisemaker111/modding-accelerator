@@ -19,7 +19,7 @@ public final class FabricMetadataTest {
             Path manifest = resources.resolve("fabric.mod.json"); Files.writeString(manifest, original);
             Map<String, Object> selected = project(root, resources);
             var edits = Target.manifestEdits(selected, "1.21.6");
-            require(edits.size() == 1 && edits.get(0).file().equals(manifest), "one owned manifest edit");
+            require(edits.size() == 1 && edits.get(0).file().equals(manifest.toRealPath()), "one owned manifest edit");
             var forge = Json.map("dependencies", List.of(Json.map("group", "net.minecraftforge")));
             require(Target.manifestEditsForModel(Json.map("projects", List.of(forge)), "1.21.6").isEmpty(), "prepared Forge port bypasses Fabric manifest setup");
             selected.put("dependencies", List.of(Json.map("group", "net.fabricmc")));
