@@ -137,6 +137,9 @@ final class Game {
         String fingerprint = fingerprint();
         if (current != null && !fingerprint.equals(current.get("fingerprint")))
             throw new IOException("The running game has a different build. Run game-stop, then ui-check; stale game results are refused.");
+        if (current != null && options.values.containsKey("java")
+                && !javaExecutable(options.get("java", "")).toString().equals(current.get("java")))
+            throw new IOException("The running game isn't on the --java runtime. Run game-stop, then start it again with --java.");
         if (current == null) current = start(options, fingerprint);
         Map<String, Object> result;
         List<Object> actions = new ArrayList<>();
@@ -286,22 +289,25 @@ final class Game {
         Path recipe = build.project.state().resolve("launch.json");
         List<String> command; Map<String, String> environment = new HashMap<>(); Path directory; String mode;
         boolean jbr = options.has("jbr");
+        // --java: start on the runtime players actually have (a launcher's bundled Java, one vendor's
+        // build), since some failures only happen on one runtime.
+        Path java = options.values.containsKey("java") ? javaExecutable(options.get("java", "")) : null;
         boolean saved = Files.exists(recipe) && Boolean.TRUE.equals(Json.read(recipe).get("verified")) && fingerprint.equals(Json.read(recipe).get("fingerprint")) && task.equals(Json.read(recipe).get("task"))
                 && jbr == Boolean.TRUE.equals(Json.read(recipe).get("jbr"));
-        if (!saved && jbr) {
+        if (!saved && (jbr || java != null)) {
             Run.Result prepared = build.gradle(List.of("-Dmodaccel.recompile=true", "-Dmodaccel.captureTask=" + task, "-Dmodaccel.agent=" + agent, "-Dmodaccel.fingerprint=" + fingerprint,
-                    "-Dmodaccel.token=" + token, "-Dmodaccel.jbr=true", task), "prepare-jbr-launch");
-            if (prepared.exit() != 0 || !Files.exists(recipe) || Json.read(recipe).get("jbrExecutable") == null)
-                throw new IOException("Could not prepare the JetBrains Runtime launch.\n" + Run.failure(prepared.log()));
+                    "-Dmodaccel.token=" + token, "-Dmodaccel.jbr=" + jbr, "-Dmodaccel.recordOnly=true", task), jbr ? "prepare-jbr-launch" : "prepare-launch");
+            if (prepared.exit() != 0 || !Files.exists(recipe) || jbr && Json.read(recipe).get("jbrExecutable") == null)
+                throw new IOException("Could not prepare the " + (jbr ? "JetBrains Runtime " : "") + "launch.\n" + Run.failure(prepared.log()));
             saved = true;
         }
         if (saved) {
             var launch = Json.read(recipe); command = new ArrayList<>();
-            if (jbr) command.addAll(List.of(launch.get("jbrExecutable").toString(), "-XX:+AllowEnhancedClassRedefinition", "-XX:TieredStopAtLevel=1"));
-            else command.add(launch.get("executable").toString());
+            command.add(java != null ? java.toString() : launch.get(jbr ? "jbrExecutable" : "executable").toString());
+            if (jbr) command.addAll(List.of("-XX:+AllowEnhancedClassRedefinition", "-XX:TieredStopAtLevel=1"));
             for (String argument : ProjectModel.strings(launch.get("arguments"))) command.add(argument.startsWith("-Dmodaccel.token=") ? "-Dmodaccel.token=" + token : argument);
             Json.object(launch.get("environment")).forEach((key, value) -> { if (value != null) environment.put(key, value.toString()); });
-            directory = Path.of(launch.get("directory").toString()); mode = "saved launch; dependencies already prepared";
+            directory = Path.of(launch.get("directory").toString()); mode = "saved launch; dependencies already prepared" + (java != null ? "; runtime " + java : "");
             command = savedCommand(command, build.report.directory.resolve("client-classpath.args"));
         } else {
             command = build.command(List.of("-Dmodaccel.recompile=true", "-Dmodaccel.captureTask=" + task, "-Dmodaccel.agent=" + agent, "-Dmodaccel.fingerprint=" + fingerprint,
@@ -338,10 +344,18 @@ final class Game {
         } finally { watch.close(); }
         long pid = ((Number)value.get("pid")).longValue();
         value.put("processStart", ProcessHandle.of(pid).flatMap(p -> p.info().startInstant()).map(Instant::toString).orElseThrow());
+        if (java != null) value.put("java", java.toString());
         value.put("log", log.toString()); Json.save(build.project.state().resolve("agent.json"), value);
         if (Files.exists(recipe)) { var launch = Json.read(recipe); if (fingerprint.equals(launch.get("fingerprint"))) { launch.put("verified", true); Json.save(recipe, launch); } }
         build.report.stages.add(Json.map("name", "game-start", "seconds", (System.nanoTime() - start) / 1e9, "mode", mode, "log", log.toString()));
         return value;
+    }
+    /** The java executable for --java, given a Java home or the executable itself. */
+    static Path javaExecutable(String value) throws IOException {
+        Path given = Path.of(value).toAbsolutePath().normalize();
+        Path executable = Files.isDirectory(given) ? given.resolve("bin").resolve(Runtimes.WINDOWS ? "java.exe" : "java") : given;
+        if (!Files.isRegularFile(executable)) throw new IOException("--java needs a Java home or a java executable; nothing at " + executable);
+        return executable;
     }
     // Keep existing Loom @files on the command line: Java does not expand nested @files.
     // The captured classpath can exceed Windows' 32767-character process limit by itself.
