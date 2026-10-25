@@ -83,6 +83,33 @@
       "date": "2026-10-24"
     },
     {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.4",
+      "status": "load",
+      "detail": "Hub router, three families in one command (1.21.1 -> hub 1.21.3 -> 1.21.4), fresh copy of upstream 1bb67d4. One map joined across 1.21.1, 1.21.2, 1.21.3 and 1.21.4; rules ran only on the updates their jump covers. 34 errors to 2 to 0, packaged build and mixin audit in 165s (warm Gradle and mapping caches, fresh project). ui-check loaded it in a real 1.21.4 client (NeoForge 21.4.161, 3 mods) in 34s. Behaviour not checked on this run.",
+      "date": "2026-10-25"
+    },
+    {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.6",
+      "status": "stop",
+      "detail": "Hub router (1.21.1 -> 1.21.3 -> 1.21.4 -> 1.21.5 -> 1.21.6), fresh copy of upstream 1bb67d4: 98 errors to 12 to 9 in 78s warm, the same counts as the one-jump path (--direct, 88s). The difference is the report: all 9 are placed on update 1.21.4 -> 1.21.5 by the joined map (SavedData.Factory and SavedData.save removed, OwnableEntity.getOwnerUUID, Saddleable.equipSaddle and Entity.isInWaterOrBubble removed, TamableAnimal.setOwnerUUID renamed).",
+      "date": "2026-10-25"
+    },
+    {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "26.3",
+      "status": "stop",
+      "detail": "Hub router across nine hops (1.21.1 -> 1.21.3 -> 1.21.4 -> 1.21.5 -> 1.21.8 -> 1.21.10 -> 1.21.11 -> 26.1.2 -> 26.2 -> 26.3), fresh copy: one map joined by intermediary ids to 1.21.11, then rules; 100+ errors to 69 in 140s warm. The one-jump path (identity map into 26.3) stops after two rounds at 100+ (93 listed). Of the 69: 4 placed on their update by owner, 24 by name in the 26.x step files, 35 by name only (owner differs, often a supertype such as Entity), 6 unplaced.",
+      "date": "2026-10-25"
+    },
+    {
       "mod": "Jade",
       "loader": "neoforge",
       "from": "1.21.1",

@@ -19,6 +19,7 @@ import com.sun.source.util.*;
  * official mappings, or yarn) through intermediary gives every rename and every signature change.
  *
  *   java tools/VersionMap.java <from> <to> [--names mojmap|yarn] [--out map.json] [--cache dir]
+ *   java tools/VersionMap.java --chain <v1,v2,...> [--names mojmap|yarn] --out map.json   (one map across every update, with history)
  *   java tools/VersionMap.java --map map.json --explain <build log>
  *   java tools/VersionMap.java --map map.json --fix <build log> --repo <dir> [--rules learned.json] [--dry-run]
  *   java tools/VersionMap.java --map map.json --learn <a.diff> [--learn <b.diff>...] --out learned.json
@@ -33,7 +34,7 @@ public final class VersionMap {
 
 	public static void main(String[] args) throws Exception {
 		List<String> pos = new ArrayList<>();
-		String names = "mojmap", out = null, map = null, explain = null, fix = null, repo = ".", rules = null, fromNames = null, toNames = null;
+		String names = "mojmap", out = null, map = null, explain = null, fix = null, repo = ".", rules = null, fromNames = null, toNames = null, chain = null;
 		List<String> learn = new ArrayList<>();
 		boolean dryRun = false;
 		boolean preflight = false;
@@ -52,8 +53,30 @@ public final class VersionMap {
 				case "--preflight" -> preflight = true;
 				case "--rules" -> rules = args[++i];
 				case "--learn" -> learn.add(args[++i]);
+				case "--chain" -> chain = args[++i];
 				default -> pos.add(args[i]);
 			}
+		}
+		if (chain != null) {
+			if (!(names.equals("mojmap") || names.equals("yarn")) || out == null) {
+				System.err.println("usage: java tools/VersionMap.java --chain <v1,v2,...> [--names mojmap|yarn] --out map.json");
+				System.exit(2);
+			}
+			long t0 = System.nanoTime();
+			List<String> versions = List.of(chain.split(","));
+			String n = names;
+			Chain c = Chain.of(versions, v -> Table.load(v, n));
+			Path target = Path.of(out);
+			Files.createDirectories(target.toAbsolutePath().getParent());
+			Files.writeString(target, c.json(names), StandardCharsets.UTF_8);
+			Diff d = c.diff;
+			System.out.printf("chain %s (%s, %d updates): classes %d renamed or moved, %d removed; methods %d renamed, %d moved, "
+					+ "%d signature changes, %d removed; fields %d renamed, %d removed; %d history events (%.1fs)%n",
+					String.join(" -> ", versions), names, versions.size() - 1, d.classRenamed.size(), d.classRemoved.size(), d.methodRenamed.size(),
+					d.methodMoved.size(), d.methodSignature.size(), d.methodRemoved.size(), d.fieldRenamed.size(), d.fieldRemoved.size(),
+					c.history.size(), (System.nanoTime() - t0) / 1e9);
+			System.out.println("        " + target);
+			return;
 		}
 		if (preflight && map != null && fix == null) {
 			Preflight.run(Path.of(map), Path.of(repo).toAbsolutePath().normalize(), dryRun);
@@ -440,6 +463,121 @@ public final class VersionMap {
 				sb.append(" }");
 			}
 			sb.append("\n  ],\n");
+		}
+	}
+
+	// ------------------------------------------------------------------ a chain of updates
+
+	/**
+	 * One map across several updates. Every class, method and field of the first release is followed
+	 * through each neighbouring release by its intermediary id, so A -> B -> C resolves straight to the
+	 * final name, a move follows the member to its new owner, and anything removed on the way is kept
+	 * with the update that removed it instead of disappearing. The history is in the first release's
+	 * names (what the source still says) with the name it had when it changed.
+	 */
+	static final class Chain {
+		record Event(String kind, String owner, String name, String desc, String what, String was, String to, String step) {
+		}
+		interface Loader { Table load(String version) throws Exception; }
+
+		final Diff diff = new Diff();
+		final List<Event> history = new ArrayList<>();
+		final List<String> versions;
+
+		Chain(List<String> versions) { this.versions = versions; }
+
+		static Chain of(List<String> versions, Loader loader) throws Exception {
+			if (versions.size() < 2) { throw new IOException("A chain needs at least two releases"); }
+			Chain c = new Chain(versions);
+			Table first = loader.load(versions.get(0)), prev = first, last = first;
+			Map<String, String> classes = new LinkedHashMap<>(), methods = new LinkedHashMap<>(), fields = new LinkedHashMap<>(); // original key -> current key
+			Set<String> classGone = new HashSet<>(), methodGone = new HashSet<>(), fieldGone = new HashSet<>();
+			for (String k : first.classes.keySet()) { classes.put(k, k); }
+			for (var e : first.methods.entrySet()) { if (!Diff.noise(e.getValue().name())) { methods.put(e.getKey(), e.getKey()); } }
+			for (var e : first.fields.entrySet()) { if (!Diff.noise(e.getValue().name())) { fields.put(e.getKey(), e.getKey()); } }
+			for (int i = 1; i < versions.size(); i++) {
+				Table cur = loader.load(versions.get(i));
+				String step = prev.version + " -> " + cur.version;
+				for (var e : classes.entrySet()) {
+					if (classGone.contains(e.getKey())) { continue; }
+					String was = prev.classes.get(e.getKey()), now = cur.classes.get(e.getKey()), orig = Diff.dots(first.classes.get(e.getKey()));
+					if (now == null) { classGone.add(e.getKey()); c.history.add(new Event("class", null, orig, null, "removed", Diff.dots(was), null, step)); }
+					else if (!now.equals(was)) { c.history.add(new Event("class", null, orig, null, "renamed", Diff.dots(was), Diff.dots(now), step)); }
+				}
+				for (var e : methods.entrySet()) {
+					if (methodGone.contains(e.getKey())) { continue; }
+					Member o = first.methods.get(e.getKey()), mp = prev.methods.get(e.getValue()), mc = cur.methods.get(e.getValue());
+					String was = Diff.dots(mp.owner()) + "." + mp.name();
+					if (mc == null) {
+						String interName = e.getValue().substring(e.getValue().indexOf('.') + 1);
+						List<String> elsewhere = cur.methodsByInterName.getOrDefault(interName, List.of());
+						if (!elsewhere.isEmpty()) {
+							e.setValue(elsewhere.get(0)); mc = cur.methods.get(elsewhere.get(0));
+							c.history.add(new Event("method", Diff.dots(o.owner()), o.name(), o.desc(), "moved", was, Diff.dots(mc.owner()) + "." + mc.name(), step));
+						} else {
+							methodGone.add(e.getKey());
+							c.history.add(new Event("method", Diff.dots(o.owner()), o.name(), o.desc(), "removed", was, null, step));
+							continue;
+						}
+					} else if (!mc.name().equals(mp.name())) {
+						c.history.add(new Event("method", Diff.dots(o.owner()), o.name(), o.desc(), "renamed", was, Diff.dots(mc.owner()) + "." + mc.name(), step));
+					}
+					if (!mc.interDesc().equals(mp.interDesc())) {
+						c.history.add(new Event("method", Diff.dots(o.owner()), o.name(), o.desc(), "signature", was + mp.desc(), Diff.dots(mc.owner()) + "." + mc.name() + mc.desc(), step));
+					}
+				}
+				for (var e : fields.entrySet()) {
+					if (fieldGone.contains(e.getKey())) { continue; }
+					Member o = first.fields.get(e.getKey()), fp = prev.fields.get(e.getValue()), fc = cur.fields.get(e.getValue());
+					String was = Diff.dots(fp.owner()) + "." + fp.name();
+					if (fc == null) { fieldGone.add(e.getKey()); c.history.add(new Event("field", Diff.dots(o.owner()), o.name(), o.desc(), "removed", was, null, step)); }
+					else if (!fc.name().equals(fp.name())) { c.history.add(new Event("field", Diff.dots(o.owner()), o.name(), o.desc(), "renamed", was, Diff.dots(fc.owner()) + "." + fc.name(), step)); }
+				}
+				prev = cur; last = cur;
+			}
+			// The final map compares the first release with the last along the tracked keys. Something removed
+			// on the way and back by the end (same intermediary id) compiles, so it is not reported as removed.
+			Diff d = c.diff;
+			for (var e : classes.entrySet()) {
+				String a = first.classes.get(e.getKey()), b = last.classes.get(e.getKey());
+				if (b == null) { d.classRemoved.add(a); } else if (!b.equals(a)) { d.classRenamed.add(new String[] { a, b }); }
+			}
+			for (var e : methods.entrySet()) {
+				Member ma = first.methods.get(e.getKey());
+				boolean gone = methodGone.contains(e.getKey());
+				String key = gone && last.methods.containsKey(e.getKey()) ? e.getKey() : e.getValue();
+				Member mb = gone && !last.methods.containsKey(e.getKey()) ? null : last.methods.get(key);
+				if (mb == null) { d.methodRemoved.add(new Change(ma.owner(), ma.name(), null, ma.desc(), null, null)); continue; }
+				if (!key.equals(e.getKey())) { d.methodMoved.add(new Change(ma.owner(), ma.name(), mb.name(), ma.desc(), mb.desc(), mb.owner())); }
+				else if (!mb.name().equals(ma.name())) { d.methodRenamed.add(new Change(ma.owner(), ma.name(), mb.name(), ma.desc(), mb.desc(), mb.owner())); }
+				if (!mb.interDesc().equals(ma.interDesc())) { d.methodSignature.add(new Change(ma.owner(), ma.name(), mb.name(), ma.desc(), mb.desc(), mb.owner())); }
+			}
+			for (var e : fields.entrySet()) {
+				Member fa = first.fields.get(e.getKey()), fb = last.fields.get(e.getKey());
+				if (fb == null) { d.fieldRemoved.add(new Change(fa.owner(), fa.name(), null, fa.desc(), null, null)); }
+				else if (!fb.name().equals(fa.name())) { d.fieldRenamed.add(new Change(fa.owner(), fa.name(), fb.name(), fa.desc(), fb.desc(), fb.owner())); }
+			}
+			Comparator<Change> byOwner = Comparator.comparing(Change::owner).thenComparing(Change::from);
+			for (var l : List.of(d.methodRenamed, d.methodMoved, d.methodSignature, d.methodRemoved, d.fieldRenamed, d.fieldRemoved)) { l.sort(byOwner); }
+			d.classRenamed.sort(Comparator.comparing(x -> x[0]));
+			Collections.sort(d.classRemoved);
+			return c;
+		}
+
+		/** The usual map sections, so explain/fix/preflight read it unchanged, plus the chain and its history. */
+		String json(String names) {
+			String body = diff.json(versions.get(0), versions.get(versions.size() - 1), names);
+			StringBuilder sb = new StringBuilder(body.substring(0, body.lastIndexOf("\n}")));
+			sb.append(",\n  \"chain\": [");
+			for (int i = 0; i < versions.size(); i++) { sb.append(i == 0 ? "" : ", ").append(Diff.q(versions.get(i))); }
+			sb.append("],\n  \"history\": [");
+			for (int i = 0; i < history.size(); i++) {
+				Event e = history.get(i);
+				sb.append(i == 0 ? "\n" : ",\n").append("    { \"kind\": ").append(Diff.q(e.kind())).append(", \"owner\": ").append(Diff.q(e.owner()))
+						.append(", \"name\": ").append(Diff.q(e.name())).append(", \"desc\": ").append(Diff.q(e.desc())).append(", \"what\": ").append(Diff.q(e.what()))
+						.append(", \"was\": ").append(Diff.q(e.was())).append(", \"to\": ").append(Diff.q(e.to())).append(", \"step\": ").append(Diff.q(e.step())).append(" }");
+			}
+			return sb.append("\n  ]\n}\n").toString();
 		}
 	}
 
