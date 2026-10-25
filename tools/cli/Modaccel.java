@@ -33,7 +33,7 @@ public final class Modaccel {
                 String key = args[i]; if (!key.startsWith("--")) throw new IllegalArgumentException("Expected --option; got " + key);
                 key = key.substring(2);
                 if (switches.contains(key)) flags.add(key);
-                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java").contains(key)) {
+                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout").contains(key)) {
                     if (++i == args.length || args[i].startsWith("--")) throw new IllegalArgumentException("Missing value for --" + key);
                     values.put(key, args[i]);
                 } else throw new IllegalArgumentException("Unknown option --" + key);
@@ -123,8 +123,7 @@ public final class Modaccel {
                     + "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
             case "dependencies" -> "Report target dependencies without editing: modaccel dependencies --root SOURCE --to 1.21.6 [--selection FILE] --json\nEach non-loader dependency is resolved, explicitly selected, or blocked with the selection entry to add in .modaccel/dependencies.json.";
             case "ui-check" -> "Capture the target client: modaccel ui-check --root SOURCE --screen net.minecraft.client.gui.screen.TitleScreen --json\nInspect the receipt's framebuffer capture; add --assert METHOD for behavior checks, or --expect-change PERCENT to require the action to visibly change the frame.\n"
-                    + "--screen opens a new instance of that screen; leave it out to capture what the running client shows now.
-"
+                    + "--screen opens a new instance of that screen; leave it out to capture what the running client shows now.\n"
                     + "--java JAVA_HOME (ui-check or world-check) starts the client on that runtime instead of the build's, for failures that only happen on one Java build.";
             case "reload" -> "Recompile and swap the changes into the running game: modaccel reload --root SOURCE --project :module\n"
                     + "Changed method bodies swap in place; changed resources reload the resource packs; classes the game hasn't loaded yet\n"
@@ -134,6 +133,8 @@ public final class Modaccel {
             case "eval" -> "Run Java inside the running game: modaccel eval --root SOURCE --code 'mc.player.getX()'\n"
                     + "  --file SNIPPET.java  read the snippet from a file instead\n"
                     + "  --thread control     run off the game thread (for snippets that wait); default is the game thread\n"
+                    + "  --until CONDITION    run CONDITION every 0.25 s until it returns true, e.g. --until 'mc.level != null';\n"
+                    + "                       --timeout SECONDS (default 60, at most 120) fails it if it never does\n"
                     + "An expression is returned; statements return what they return. 'mc' is the Minecraft instance, print(x) adds output,\n"
                     + "vars is a map kept between snippets; call(objectOrClass, \"name\", args...) and field(objectOrClass, \"name\") reach private\n"
                     + "members. Leading import lines are allowed. Start the game first with ui-check or world-check.";

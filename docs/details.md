@@ -226,6 +226,13 @@ members. Leading `import` lines are allowed; compile errors and stack traces poi
 lines. Measured on Diorama (Fabric 26.3, Windows): 0.6–1.5 s per snippet against a running
 client, for example the map tile under the player and its bake state.
 
+`eval --until CONDITION` runs the condition every quarter second, on the game thread unless
+`--thread control`, until it returns `true`, and prints how long that took; `--timeout SECONDS`
+(default 60, at most 120) fails it otherwise, with the last value. An exception fails it at
+once. It replaces the polling loop a snippet would otherwise need to wait for a screen, a
+world or a baked tile: on Diorama 26.3, `--until 'MapSession.get() != null &&
+MapSession.get().map().chunkCount() > 300'` returned after 6.1 s of world loading.
+
 `reload` recompiles the selected project's classes and swaps them into the owned client. The
 agent records a hash of every file in the project's class and resource folders on the game's
 classpath at startup; a reload redefines the changed classes the game has loaded, leaves

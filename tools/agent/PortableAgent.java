@@ -99,17 +99,37 @@ public final class PortableAgent {
             }
         } catch (Throwable error) { System.err.println("MODACCEL_AGENT_ERROR " + cause(error)); }
     }
-    /** Compiles off the game thread, then runs on it unless the snippet asked for the control thread. */
+    /**
+     * Compiles off the game thread, then runs on it unless the snippet asked for the control thread.
+     * With until, runs it every quarter second until it returns true: waiting for a screen, a world
+     * or a baked tile without a polling loop in every snippet.
+     */
     private static Map<String, Object> eval(Map<String, Object> request) {
         try {
             final Console.Snippet snippet = Console.compile(Json.text(request, "code", ""), client.getClass().getClassLoader());
-            if ("control".equals(Json.text(request, "thread", "game"))) return snippet.run();
-            final CompletableFuture<Map<String, Object>> result = new CompletableFuture<Map<String, Object>>();
-            pending.add(new Runnable() { public void run() {
-                try { result.complete(snippet.run()); } catch (Throwable error) { result.complete(evalFailure(error)); }
-            } });
-            return result.get(130, TimeUnit.SECONDS);
+            boolean control = "control".equals(Json.text(request, "thread", "game"));
+            if (!Boolean.TRUE.equals(request.get("until"))) return control ? snippet.run() : onGameThread(snippet);
+            Object limit = request.get("timeout");
+            double timeout = limit instanceof Number ? ((Number) limit).doubleValue() : 60;
+            long start = System.nanoTime();
+            while (true) {
+                Map<String, Object> last = control ? snippet.run() : onGameThread(snippet);
+                double waited = (System.nanoTime() - start) / 1e9;
+                if (!Boolean.TRUE.equals(last.get("ok")) || "java.lang.Boolean".equals(last.get("type")) && "true".equals(last.get("value"))) {
+                    last.put("waitedSeconds", waited);
+                    return last;
+                }
+                if (waited >= timeout) return Json.map("ok", false, "error", "Still not true after " + Math.round(timeout) + " s; last value: " + last.get("value"));
+                Thread.sleep(250);
+            }
         } catch (Throwable error) { return evalFailure(error); }
+    }
+    private static Map<String, Object> onGameThread(final Console.Snippet snippet) throws Exception {
+        final CompletableFuture<Map<String, Object>> result = new CompletableFuture<Map<String, Object>>();
+        pending.add(new Runnable() { public void run() {
+            try { result.complete(snippet.run()); } catch (Throwable error) { result.complete(evalFailure(error)); }
+        } });
+        return result.get(130, TimeUnit.SECONDS);
     }
     private static Map<String, Object> evalFailure(Throwable error) {
         if (error instanceof Console.SnippetFailure) {
