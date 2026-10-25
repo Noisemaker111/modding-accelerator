@@ -105,7 +105,12 @@ public final class Modaccel {
                 var value = Json.map("error", error.getMessage() == null ? error.toString() : error.getMessage());
                 if (report != null) value = report.finish(2, value);
                 if (options != null && options.has("json")) System.out.println(Json.write(value));
-                else if (options != null && options.command.equals("eval")) System.err.println("eval: failed\n" + String.valueOf(error.getMessage()).replaceFirst("^Game action failed: ", "").replaceFirst("\nGame log: .*$", ""));
+                else if (options != null && options.command.equals("eval")) {
+                    // A snippet's own error doesn't need the game log; a game that died does.
+                    String message = String.valueOf(error.getMessage());
+                    if (message.startsWith("Game action failed: ")) message = message.substring("Game action failed: ".length()).replaceFirst("\nGame log: .*$", "");
+                    System.err.println("eval: failed\n" + message);
+                }
                 else System.err.println(Json.write(value));
             } catch (IOException secondary) { System.err.println(error + "; could not save receipt: " + secondary); }
             exit = 2;
