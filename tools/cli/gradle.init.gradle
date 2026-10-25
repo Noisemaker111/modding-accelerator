@@ -171,6 +171,8 @@ gradle.projectsEvaluated {
                 // add and remove methods and fields. Loom fixes runClient's launcher before this runs, so
                 // Gradle only prepares and records the launch here and modaccel starts it.
                 def jbr = System.getProperty('modaccel.jbr', '') == 'true'
+                // --java: the same launch on a runtime the caller names, so recorded and started the same way.
+                def recordOnly = jbr || System.getProperty('modaccel.recordOnly', '') == 'true'
                 def jbrExecutable = null
                 if (jbr) {
                     def version = t.javaLauncher.get().metadata.languageVersion
@@ -181,7 +183,7 @@ gradle.projectsEvaluated {
                     executable: executable, arguments: arguments, directory: directory.absolutePath,
                     environment: environment, fingerprint: fingerprint, jbr: jbr, jbrExecutable: jbrExecutable])
                 println 'MODACCEL_LAUNCH ' + launchFile.absolutePath
-                if (jbr) {
+                if (recordOnly) {
                     // Loom writes the classpath file the launch names (@.../argFiles/runClient) inside
                     // exec(), which this skips, so a checkout that never ran the client has none.
                     def writeArgFile = null
@@ -192,7 +194,7 @@ gradle.projectsEvaluated {
                         writeArgFile.accessible = true
                         writeArgFile.invoke(t)
                     }
-                    throw new StopExecutionException('modaccel starts this launch on JetBrains Runtime')
+                    throw new StopExecutionException('modaccel starts this launch itself')
                 }
             }
         }
