@@ -83,11 +83,17 @@ final class Game {
         String command = options.command; Map<String, Object> current = session();
         if (command.equals("game-status")) return current == null ? Json.map("running", false) : request(current, Json.map("command", "status"));
         if (command.equals("game-stop")) {
-            if (current == null) return Json.map("running", false);
-            var process = ProcessHandle.of(((Number)current.get("pid")).longValue());
-            var result = request(current, Json.map("command", "quit"));
-            if (process.isPresent()) process.get().onExit().get(20, TimeUnit.SECONDS);
-            result.put("stopped", true); return result;
+            Map<String, Object> result;
+            if (current == null) result = Json.map("running", false);
+            else {
+                var process = ProcessHandle.of(((Number)current.get("pid")).longValue());
+                result = request(current, Json.map("command", "quit"));
+                if (process.isPresent()) process.get().onExit().get(20, TimeUnit.SECONDS);
+                result.put("stopped", true);
+            }
+            // The daemons that prepared, launched and recompiled the game hold a gigabyte or more each.
+            Run.Result daemons = build.stopDaemons();
+            result.put("gradleDaemonsStopped", daemons == null || daemons.exit() == 0); return result;
         }
         String fingerprint = fingerprint();
         if (current != null && !fingerprint.equals(current.get("fingerprint")))

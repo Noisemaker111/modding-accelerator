@@ -16,6 +16,16 @@ final class Build {
         report.stages.add(Json.map("name", "java-setup", "seconds", (System.nanoTime() - start) / 1e9,
                 "required", required, "gradleJava", jdk.version(), "home", jdk.home().toString()));
     }
+    static final long DAEMON_IDLE_MS = 30 * 60 * 1000;
+    Path daemons() { return project.state().resolve("gradle-daemons").toAbsolutePath(); }
+    /** Stops the Gradle daemons modaccel started for this checkout; null if it never started any. */
+    Run.Result stopDaemons() throws Exception {
+        if (!Files.isDirectory(daemons())) return null;
+        Path wrapper = project.root.resolve("gradle/wrapper/gradle-wrapper.jar");
+        Run.Result result = Run.command(List.of(jdk.java().toString(), "-cp", wrapper.toString(), "org.gradle.wrapper.GradleWrapperMain", "--stop",
+                "-Dorg.gradle.daemon.registry.base=" + daemons()), project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log("stop-daemons"), 120);
+        report.stage("stop-daemons", result, Json.map("registry", daemons().toString())); return result;
+    }
     Run.Result gradle(List<String> arguments, String stage) throws Exception {
         Run.Result result = Run.command(command(arguments), project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log(stage), 900);
         report.stage(stage, result, Json.map("java", jdk.version(), "gradle", project.wrapperVersion())); return result;
@@ -44,6 +54,10 @@ final class Build {
         // Loom skips dependency source remapping for CLI checks; compiled dependency remapping still runs.
         command.add("-Dfabric.loom.ci=true");
         command.add("-Dmodaccel.runId=" + report.id);
+        // Daemons of modaccel's own, so game-stop can stop them without touching the user's or another
+        // agent's (gradle --stop would end them all), and one left running leaves after half an hour idle.
+        command.add("-Dorg.gradle.daemon.registry.base=" + daemons());
+        command.add("-Dorg.gradle.daemon.idletimeout=" + DAEMON_IDLE_MS);
         command.addAll(arguments);
         return command;
     }
