@@ -22,6 +22,7 @@ public final class PortableAgent {
     public static void premain(String args, Instrumentation instrumentation) {
         // Only JDK classes are referenced by transformed game code. Isolated loaders
         // need neither our jar on their mod path nor access to our implementation classes.
+        HotReload.install(instrumentation);
         System.getProperties().put("modaccel.frame", new Consumer<Object>() { public void accept(Object game) { frame(game); } });
         instrumentation.addTransformer(new ClassFileTransformer() {
             public byte[] transform(ClassLoader loader, String name, Class<?> type, ProtectionDomain domain, byte[] bytes) {
@@ -66,6 +67,7 @@ public final class PortableAgent {
                 originalPauseOnLostFocus = pauseField.getBoolean(pauseOptions);
                 pauseField.setBoolean(pauseOptions, false);
             } catch (Exception error) { pauseControlError = cause(error); System.err.println("MODACCEL_PAUSE_CONTROL_ERROR " + pauseControlError); }
+            HotReload.baseline();
             Thread server = new Thread(new Runnable() { public void run() { serve(); } }, "modaccel-control");
             server.setDaemon(true); server.start();
         }
@@ -88,6 +90,7 @@ public final class PortableAgent {
                     String line = input.readLine(); if (line == null) continue;
                     final Map<String, Object> request = Json.object(Json.parse(line));
                     if (!token.equals(request.get("token"))) { output.println(Json.write(Json.map("ok", false, "error", "Wrong session token"))); continue; }
+                    if ("eval".equals(request.get("command"))) { output.println(Json.write(eval(request))); continue; }
                     final CompletableFuture<Map<String, Object>> result = new CompletableFuture<Map<String, Object>>();
                     pending.add(new Runnable() { public void run() { try { perform(request, result); } catch (Throwable e) { result.complete(Json.map("ok", false, "error", cause(e))); } } });
                     try { output.println(Json.write(result.get(130, TimeUnit.SECONDS))); }
@@ -95,6 +98,25 @@ public final class PortableAgent {
                 } catch (Throwable error) { System.err.println("MODACCEL_CONTROL_ERROR " + cause(error)); }
             }
         } catch (Throwable error) { System.err.println("MODACCEL_AGENT_ERROR " + cause(error)); }
+    }
+    /** Compiles off the game thread, then runs on it unless the snippet asked for the control thread. */
+    private static Map<String, Object> eval(Map<String, Object> request) {
+        try {
+            final Console.Snippet snippet = Console.compile(Json.text(request, "code", ""), client.getClass().getClassLoader());
+            if ("control".equals(Json.text(request, "thread", "game"))) return snippet.run();
+            final CompletableFuture<Map<String, Object>> result = new CompletableFuture<Map<String, Object>>();
+            pending.add(new Runnable() { public void run() {
+                try { result.complete(snippet.run()); } catch (Throwable error) { result.complete(evalFailure(error)); }
+            } });
+            return result.get(130, TimeUnit.SECONDS);
+        } catch (Throwable error) { return evalFailure(error); }
+    }
+    private static Map<String, Object> evalFailure(Throwable error) {
+        if (error instanceof Console.SnippetFailure) {
+            Console.SnippetFailure failure = (Console.SnippetFailure) error;
+            return Json.map("ok", false, "error", "Snippet threw " + failure.getMessage() + (failure.output.isEmpty() ? "" : "\nOutput before it threw:\n" + failure.output));
+        }
+        return Json.map("ok", false, "error", error.getMessage() == null ? cause(error) : error.getMessage());
     }
     private static void perform(Map<String, Object> request, final CompletableFuture<Map<String, Object>> done) throws Exception {
         if (done.isCancelled()) return;
@@ -298,6 +320,8 @@ public final class PortableAgent {
             Object result = method.invoke(null);
             if (method.getReturnType() == boolean.class && !Boolean.TRUE.equals(result)) throw new AssertionError("Assertion returned false: " + request.get("method"));
             done.complete(Json.map("ok", true, "assertion", request.get("method")));
+        } else if (command.equals("reload")) {
+            done.complete(HotReload.reload(client.getClass().getClassLoader()));
         } else if (command.equals("quit")) {
             if (pauseField != null) pauseField.setBoolean(pauseOptions, originalPauseOnLostFocus);
             done.complete(Json.map("ok", true, "stopping", true)); call(client, "scheduleStop", "stop");

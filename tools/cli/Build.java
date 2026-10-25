@@ -39,6 +39,20 @@ final class Build {
         Run.Result result = Run.command(command(arguments), project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log(stage), 900);
         report.stage(stage, result, Json.map("java", jdk.version(), "gradle", project.wrapperVersion())); return result;
     }
+    /**
+     * A compile with nothing of modaccel's in it, so Gradle can reuse its configuration cache:
+     * on a 21-project build that is about 3 s instead of 11 s per reload. A build that can't use
+     * the cache still compiles; Gradle just reports the problem and configures as usual.
+     */
+    Run.Result compileCached(List<String> tasks, String stage) throws Exception {
+        List<String> command = new ArrayList<>(command(tasks));
+        int init = command.indexOf("-I"); if (init >= 0) { command.remove(init + 1); command.remove(init); }
+        command.replaceAll(argument -> argument.equals("--no-configuration-cache") ? "--configuration-cache" : argument);
+        // modaccel's own invocations need every selected project configured; a compile doesn't.
+        command.removeIf(argument -> argument.startsWith("-Dmodaccel.") || argument.equals("-Dfabric.loom.ci=true") || argument.equals("--no-configure-on-demand"));
+        Run.Result result = Run.command(command, project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log(stage), 900);
+        report.stage(stage, result, Json.map("java", jdk.version(), "gradle", project.wrapperVersion(), "configurationCache", true)); return result;
+    }
     List<String> command(List<String> arguments) throws IOException {
         Path wrapper = project.root.resolve("gradle/wrapper/gradle-wrapper.jar");
         if (!Files.isRegularFile(wrapper)) throw new IOException("Missing " + wrapper + "; restore this project's Gradle wrapper jar.");
