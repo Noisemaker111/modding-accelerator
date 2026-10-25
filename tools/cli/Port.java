@@ -419,23 +419,30 @@ final class Port {
             // A routed port runs a rule only when its jump covers an update the route crosses and its names fit.
             List<String> covered = route == null ? List.of() : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null && covered.isEmpty()) continue;
-            var apply = Json.object(rule.get("apply"));
             for (Path file : all) {
                 if (!"repo".equals(rule.get("scope")) && !logged.contains(file)) continue;
-                String original = Files.readString(file), text = original;
-                String when = Json.text(rule, "when", ""); if (!when.isEmpty() && !Pattern.compile(when).matcher(text).find()) continue;
-                if (apply.containsKey("literal")) text = text.replace(apply.get("literal").toString(), Json.text(apply, "replace", ""));
-                else if (apply.containsKey("find")) text = Pattern.compile(apply.get("find").toString()).matcher(text).replaceAll(Json.text(apply, "replace", ""));
+                String original = Files.readString(file), text = rewrite(rule, original);
                 if (!text.equals(original)) {
-                    for (String name : ProjectModel.strings(apply.get("ensureImports"))) if (!text.contains("import " + name + ";")) {
-                        Matcher header = Pattern.compile("(?m)^package [^;]+;").matcher(text);
-                        text = header.find() ? text.substring(0, header.end()) + "\nimport " + name + ";" + text.substring(header.end()) : "import " + name + ";\n" + text;
-                    }
                     Files.writeString(file, text);
                     rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
                 }
             }
         }
+    }
+    /** One knowledge rule on one source text: its `when` gate, the literal or regex rewrite, then any imports it needs. */
+    static String rewrite(Map<String, Object> rule, String original) {
+        var apply = Json.object(rule.get("apply"));
+        String text = original;
+        String when = Json.text(rule, "when", ""); if (!when.isEmpty() && !Pattern.compile(when).matcher(text).find()) return original;
+        if (apply.containsKey("literal")) text = text.replace(apply.get("literal").toString(), Json.text(apply, "replace", ""));
+        else if (apply.containsKey("find")) text = Pattern.compile(apply.get("find").toString()).matcher(text).replaceAll(Json.text(apply, "replace", ""));
+        if (!text.equals(original)) {
+            for (String name : ProjectModel.strings(apply.get("ensureImports"))) if (!text.contains("import " + name + ";")) {
+                Matcher header = Pattern.compile("(?m)^package [^;]+;").matcher(text);
+                text = header.find() ? text.substring(0, header.end()) + "\nimport " + name + ";" + text.substring(header.end()) : "import " + name + ";\n" + text;
+            }
+        }
+        return text;
     }
     static final Pattern ERROR = Pattern.compile("(?m)^\\s*(\\S.*?\\.(?:java|kt)):(\\d+): error: ([^\\r\\n]+)");
     /**

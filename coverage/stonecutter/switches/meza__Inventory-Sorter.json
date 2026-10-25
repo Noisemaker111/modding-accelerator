@@ -1,0 +1,2465 @@
+{
+ "repo": "meza/Inventory-Sorter",
+ "commit": "fbe3e9423ac4739a17d66aaed6ad5d6715c36730",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "1.20.2",
+  "26.1",
+  "26.2",
+  "26.3"
+ ],
+ "files": 36,
+ "switches": 144,
+ "versionSwitches": 24,
+ "rows": [
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/clothconfig/SortPriorityRulesEntry.java",
+   "line": 6,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.api.EnvType;\nimport net.fabricmc.api.Environment;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/clothconfig/SortPriorityRulesEntry.java",
+   "line": 30,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@Environment(EnvType.CLIENT)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/ConfigScreen.java",
+   "line": 65,
+   "method": "openIfConfigKeyPressed",
+   "condition": ">= 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "client.gui.setScreen(getConfigScreen(client.gui.screen()));"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/ConfigScreen.java",
+   "line": 67,
+   "method": "openIfConfigKeyPressed",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "//client.setScreen(getConfigScreen(client.screen));"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/FullWidthTextFieldEntry.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.api.EnvType;\nimport net.fabricmc.api.Environment;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/FullWidthTextFieldEntry.java",
+   "line": 31,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@Environment(EnvType.CLIENT)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/HideButtonUndo.java",
+   "line": 43,
+   "method": "undo",
+   "condition": ">= 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "client.gui.chatListener().handleSystemMessage(restoredMessage(screenId), false);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/HideButtonUndo.java",
+   "line": 45,
+   "method": "undo",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "//client.getChatListener().handleSystemMessage(restoredMessage(screenId), false);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/InventorySorterModClient.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.api.ClientModInitializer;\nimport net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;\nimport net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;\nimport net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;\nimport net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;\nimport net.kyrptonaught.inventorysorter.client.platform.ClientPlatformServices;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/InventorySorterModClient.java",
+   "line": 17,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "implements ClientModInitializer"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/InventorySorterModClient.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@Override\n    public void onInitializeClient() {\n        InventorySorterClientRuntime runtime = initializeClient();\n\n        ClientPlatformServices.KEY_MAPPINGS.register();\n        ClientCommandRegistrationCallback.EVENT.register((dispatcher, buildContext) -> HideButtonUndo.register(dispatcher));\n\n        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {\n            runtime.clientServerSession().join(client);\n        });\n\n        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {\n            runtime.flushSortModeScrollDebounce();\n            runtime.clientServerSession().disconnect();\n        });\n\n        ClientTickEvents.END_CLIENT_TICK.register(ConfigScreen::openIfConfigKeyPressed);\n        ClientTickEvents.END_CLIENT_TICK.register(runtime.clientServerSession()::tick);\n        ClientTickEvents.END_CLIENT_TICK.register(runtime.clientSortRuntime()::tickClickExecutor);\n        ClientTickEvents.END_CLIENT_TICK.register(client -> runtime.tickSortModeScrollDebounce());\n        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> runtime.flushSortModeScrollDebounce());\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/modmenu/ModMenuIntegration.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric && hasModMenu",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric && hasModMenu",
+     "code": "package net.kyrptonaught.inventorysorter.client.modmenu;\n\nimport com.terraformersmc.modmenu.api.ConfigScreenFactory;\nimport com.terraformersmc.modmenu.api.ModMenuApi;\nimport net.fabricmc.api.EnvType;\nimport net.fabricmc.api.Environment;\nimport net.kyrptonaught.inventorysorter.client.ConfigScreen;\n\n/**\n * Not using AutoConfig to maintain the translatable text\n */\n@Environment(EnvType.CLIENT)\npublic class ModMenuIntegration implements ModMenuApi {\n\n    @Override\n    public ConfigScreenFactory<?> getModConfigScreenFactory() {\n        return ConfigScreen::getConfigScreen;\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/platform/ClientPlatformServices.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.kyrptonaught.inventorysorter.client.platform.fabric.FabricClientKeyMappings;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/platform/ClientPlatformServices.java",
+   "line": 6,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import net.kyrptonaught.inventorysorter.client.platform.neoforge.NeoForgeClientKeyMappings;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/platform/ClientPlatformServices.java",
+   "line": 11,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "public static final ClientKeyMappings KEY_MAPPINGS = new FabricClientKeyMappings();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/platform/ClientPlatformServices.java",
+   "line": 14,
+   "method": "(class body)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "public static final NeoForgeClientKeyMappings KEY_MAPPINGS = new NeoForgeClientKeyMappings();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/platform/fabric/FabricClientKeyMappings.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package net.kyrptonaught.inventorysorter.client.platform.fabric;\n\nimport com.mojang.blaze3d.platform.InputConstants;\nimport net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nimport net.kyrptonaught.inventorysorter.InventorySorterMod;\nimport net.kyrptonaught.inventorysorter.client.platform.ClientKeyMappings;\nimport net.minecraft.client.KeyMapping;\nimport net.minecraft.resources.Identifier;\n\npublic class FabricClientKeyMappings implements ClientKeyMappings {\n    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(InventorySorterMod.MOD_ID, \"main\"));\n\n    private final InputConstants.Key modifierKey = InputConstants.Type.KEYBOARD.getOrCreate(InputConstants.KEY_LCONTROL);\n    private final KeyMapping configKeyMapping = new KeyMapping(\n            \"inventorysorter.key.config\",\n            InputConstants.KEY_P,\n            CATEGORY\n    );\n    private final KeyMapping sortKeyMapping = new KeyMapping(\n            \"inventorysorter.key.sort\",\n            InputConstants.KEY_P,\n            CATEGORY\n    );\n\n    @Override\n    public InputConstants.Key modifierKey() {\n        return modifierKey;\n    }\n\n    @Override\n    public KeyMapping configKeyMapping() {\n        return configKeyMapping;\n    }\n\n    @Override\n    public KeyMapping sortKeyMapping() {\n        return sortKeyMapping;\n    }\n\n    @Override\n    public InputConstants.Key boundConfigKey() {\n        return KeyMappingHelper.getBoundKeyOf(configKeyMapping);\n    }\n\n    @Override\n    public InputConstants.Key boundSortKey() {\n        return KeyMappingHelper.getBoundKeyOf(sortKeyMapping);\n    }\n\n    @Override\n    public void register() {\n        KeyMappingHelper.registerKeyMapping(configKeyMapping);\n        KeyMappingHelper.registerKeyMapping(sortKeyMapping);\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/platform/neoforge/NeoForgeClientEvents.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.kyrptonaught.inventorysorter.client.platform.neoforge;\n\nimport net.kyrptonaught.inventorysorter.client.ConfigScreen;\nimport net.kyrptonaught.inventorysorter.client.HideButtonUndo;\nimport net.kyrptonaught.inventorysorter.client.InventorySorterClientRuntime;\nimport net.minecraft.client.Minecraft;\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;\nimport net.neoforged.neoforge.client.event.ClientTickEvent;\nimport net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;\nimport net.neoforged.neoforge.event.GameShuttingDownEvent;\n\nimport static net.kyrptonaught.inventorysorter.InventorySorterMod.MOD_ID;\n\n@EventBusSubscriber(modid = MOD_ID, value = Dist.CLIENT)\npublic final class NeoForgeClientEvents {\n    private static InventorySorterClientRuntime runtime;\n\n    private NeoForgeClientEvents() {\n    }\n\n    static void initialize(InventorySorterClientRuntime clientRuntime) {\n        runtime = clientRuntime;\n    }\n\n    @SubscribeEvent\n    public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {\n        HideButtonUndo.register(event.getDispatcher());\n    }\n\n    @SubscribeEvent\n    public static void onClientJoin(ClientPlayerNetworkEvent.LoggingIn event) {\n        if (runtime != null) {\n            runtime.clientServerSession().join(Minecraft.getInstance());\n        }\n    }\n\n    @SubscribeEvent\n    public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {\n        if (runtime != null) {\n            runtime.flushSortModeScrollDebounce();\n            runtime.clientServerSession().disconnect();\n        }\n    }\n\n    @SubscribeEvent\n    public static void onClientStopping(GameShuttingDownEvent event) {\n        if (runtime != null) {\n            runtime.flushSortModeScrollDebounce();\n        }\n    }\n\n    @SubscribeEvent\n    public static void onClientTick(ClientTickEvent.Post event) {\n        if (runtime == null) {\n            return;\n        }\n\n        Minecraft client = Minecraft.getInstance();\n        ConfigScreen.openIfConfigKeyPressed(client);\n        runtime.clientServerSession().tick(client);\n        runtime.clientSortRuntime().tickClickExecutor(client);\n        runtime.tickSortModeScrollDebounce();\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/platform/neoforge/NeoForgeClientKeyMappings.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.kyrptonaught.inventorysorter.client.platform.neoforge;\n\nimport com.mojang.blaze3d.platform.InputConstants;\nimport net.kyrptonaught.inventorysorter.InventorySorterMod;\nimport net.kyrptonaught.inventorysorter.client.platform.ClientKeyMappings;\nimport net.minecraft.client.KeyMapping;\nimport net.minecraft.resources.Identifier;\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\n\npublic class NeoForgeClientKeyMappings implements ClientKeyMappings {\n    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(InventorySorterMod.MOD_ID, \"main\"));\n\n    private final InputConstants.Key modifierKey = InputConstants.Type.KEYBOARD.getOrCreate(InputConstants.KEY_LCONTROL);\n    private final KeyMapping configKeyMapping = new KeyMapping(\n            \"inventorysorter.key.config\",\n            InputConstants.KEY_P,\n            CATEGORY\n    );\n    private final KeyMapping sortKeyMapping = new KeyMapping(\n            \"inventorysorter.key.sort\",\n            InputConstants.KEY_P,\n            CATEGORY\n    );\n\n    @Override\n    public InputConstants.Key modifierKey() {\n        return modifierKey;\n    }\n\n    @Override\n    public KeyMapping configKeyMapping() {\n        return configKeyMapping;\n    }\n\n    @Override\n    public KeyMapping sortKeyMapping() {\n        return sortKeyMapping;\n    }\n\n    @Override\n    public InputConstants.Key boundConfigKey() {\n        return configKeyMapping.getKey();\n    }\n\n    @Override\n    public InputConstants.Key boundSortKey() {\n        return sortKeyMapping.getKey();\n    }\n\n    @Override\n    public void register() {\n    }\n\n    public void register(RegisterKeyMappingsEvent event) {\n        event.registerCategory(CATEGORY);\n        event.register(configKeyMapping);\n        event.register(sortKeyMapping);\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/platform/neoforge/NeoForgeClientModEvents.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.kyrptonaught.inventorysorter.client.platform.neoforge;\n\nimport net.kyrptonaught.inventorysorter.client.InventorySorterModClient;\nimport net.kyrptonaught.inventorysorter.client.platform.ClientPlatformServices;\nimport net.kyrptonaught.inventorysorter.platform.PlatformServices;\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\n\nimport static net.kyrptonaught.inventorysorter.InventorySorterMod.MOD_ID;\n\n@EventBusSubscriber(modid = MOD_ID, value = Dist.CLIENT)\npublic final class NeoForgeClientModEvents {\n    private NeoForgeClientModEvents() {\n    }\n\n    @SubscribeEvent\n    public static void onClientSetup(FMLClientSetupEvent event) {\n        PlatformServices.COMMANDS.registerCommands();\n        PlatformServices.NETWORK.registerPayloads();\n        NeoForgeClientEvents.initialize(InventorySorterModClient.initializeClient());\n    }\n\n    @SubscribeEvent\n    public static void registerKeyMappings(RegisterKeyMappingsEvent event) {\n        ClientPlatformServices.KEY_MAPPINGS.register(event);\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/platform/neoforge/NeoForgeConfigScreenFactory.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.kyrptonaught.inventorysorter.client.platform.neoforge;\n\nimport net.kyrptonaught.inventorysorter.client.ConfigScreen;\nimport net.minecraft.client.gui.screens.Screen;\nimport net.neoforged.fml.ModContainer;\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;\n\npublic class NeoForgeConfigScreenFactory implements IConfigScreenFactory {\n    @Override\n    public Screen createScreen(ModContainer modContainer, Screen screen) {\n        return ConfigScreen.getConfigScreen(screen);\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/SortButtonWidget.java",
+   "line": 4,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.api.EnvType;\nimport net.fabricmc.api.Environment;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/SortButtonWidget.java",
+   "line": 36,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@Environment(EnvType.CLIENT)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/SortButtonWidget.java",
+   "line": 74,
+   "method": "onPress",
+   "condition": ">= 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "instance.gui.toastManager(),"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/SortButtonWidget.java",
+   "line": 76,
+   "method": "onPress",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "//instance.getToastManager(),"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/SortButtonWidget.java",
+   "line": 84,
+   "method": "onPress",
+   "condition": ">= 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "instance.gui.chatListener().handleSystemMessage(message, false);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/SortButtonWidget.java",
+   "line": 86,
+   "method": "onPress",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "//instance.getChatListener().handleSystemMessage(message, false);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/client/SortButtonWidget.java",
+   "line": 138,
+   "method": "isModifierPressed",
+   "condition": "< 26.3",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 26.3",
+     "code": "//Minecraft.getInstance().getWindow(),"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/commands/CommandRegistry.java",
+   "line": 75,
+   "method": "register",
+   "condition": "fabric | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "registrationEnvironment.includeDedicated"
+    },
+    {
+     "condition": null,
+     "code": "registrationEnvironment.equals(Commands.CommandSelection.DEDICATED) || registrationEnvironment.equals(Commands.CommandSelection.ALL)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.fabric.api.gametest.v1.GameTest;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 21,
+   "method": "(imports)",
+   "condition": ">= 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "import net.minecraft.world.entity.EntityTypes;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 23,
+   "method": "(imports)",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "//import net.minecraft.world.entity.EntityType;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 39,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 61,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 83,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 107,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 134,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 162,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 184,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 209,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 233,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 257,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 281,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 308,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 332,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 354,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 384,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 413,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 444,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 472,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 503,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 528,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 534,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 565,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 595,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 687,
+   "method": "configureTrinketsRingSlot",
+   "condition": ">= 26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "new SlotTypeImpl.Predicates(\n                            new SlotTypeImpl.ConstantCondition(true),\n                            new SlotTypeImpl.ConstantCondition(true),\n                            new SlotTypeImpl.ConstantCondition(true),\n                            new SlotTypeImpl.ConstantCondition(true)\n                    ),"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 695,
+   "method": "configureTrinketsRingSlot",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "new SlotTypeImpl.ConstantCondition(true),\n                    new SlotTypeImpl.ConstantCondition(true),\n                    new SlotTypeImpl.ConstantCondition(true),"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 703,
+   "method": "configureTrinketsRingSlot",
+   "condition": ">= 26.3",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 26.3",
+     "code": "false,"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 711,
+   "method": "configureTrinketsRingSlot",
+   "condition": ">= 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "EntitySlotLoader.SERVER.setGroupsLegacy(Map.of(EntityTypes.PLAYER, Map.of(\"hand\", hand)));"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/BundleSortingTests.java",
+   "line": 713,
+   "method": "configureTrinketsRingSlot",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "//EntitySlotLoader.SERVER.setSlots(Map.of(EntityType.PLAYER, Map.of(\"hand\", hand)));"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/NeoForgeGameTests.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.kyrptonaught.inventorysorter.e2e;\n\nimport net.kyrptonaught.inventorysorter.InventorySorterMod;\nimport net.minecraft.core.Holder;\nimport net.minecraft.core.registries.Registries;\nimport net.minecraft.gametest.framework.FunctionGameTestInstance;\nimport net.minecraft.gametest.framework.GameTestHelper;\nimport net.minecraft.gametest.framework.TestData;\nimport net.minecraft.gametest.framework.TestEnvironmentDefinition;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.resources.ResourceKey;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.RegisterGameTestsEvent;\n\nimport java.util.List;\nimport java.util.function.Consumer;\n\n@EventBusSubscriber(modid = InventorySorterMod.MOD_ID)\npublic final class NeoForgeGameTests {\n    private static final int MAX_TICKS = 400;\n    private static final Identifier EMPTY_STRUCTURE = id(\"gametest/empty\");\n\n    private static final SortingTests SORTING_TESTS = new SortingTests();\n    private static final SortPriorityRuleTests SORT_PRIORITY_RULE_TESTS = new SortPriorityRuleTests();\n    private static final BundleSortingTests BUNDLE_SORTING_TESTS = new BundleSortingTests();\n\n    private static final List<TestCase> TESTS = List.of(\n            test(\"sorting/sort_command_sorts_target_inventory\", SORTING_TESTS::testSortCommandSortsTargetInventory),\n            test(\"sorting/sort_me_command_sorts_player_inventory\", SORTING_TESTS::testSortMeCommandSortsPlayerInventory),\n            test(\"sorting/player_inventory_opt_out_blocks_commands_and_direct_sorts\", SORTING_TESTS::testPlayerInventoryOptOutBlocksCommandsAndDirectSorts),\n            test(\"sorting/player_inventory_opt_out_blocks_double_click_but_keeps_container_sorting\", SORTING_TESTS::testPlayerInventoryOptOutBlocksDoubleClickButKeepsContainerSorting),\n            test(\"sorting/player_data_platform_stores_player_data\", SORTING_TESTS::testPlayerDataPlatformStoresPlayerData),\n            test(\"sorting/simple_stackable\", SORTING_TESTS::testSimpleStackable),\n            test(\"sorting/simple_stackable_with_leftovers\", SORTING_TESTS::testSimpleStackableWithLeftovers),\n            test(\"sorting/spectators_cannot_sort\", SORTING_TESTS::testSpectatorsCannotSort),\n            test(\"sorting/sort_with_stackables\", SORTING_TESTS::testSortWithStackables),\n            test(\"sorting/custom_max_stack_size_sorting\", SORTING_TESTS::testCustomMaxStackSizeSorting),\n            test(\"sorting/same_item_different_name\", SORTING_TESTS::testSameItemDifferentName),\n            test(\"sorting/simple_pickaxes\", SORTING_TESTS::testSimplePickaxes),\n            test(\"sorting/damaged_pickaxes\", SORTING_TESTS::testDamagedPickaxes),\n            test(\"sorting/player_heads\", SORTING_TESTS::testPlayerHeads),\n            test(\"sorting/enchanted_books\", SORTING_TESTS::testEnchantedBooks),\n            test(\"sorting/category_sort\", SORTING_TESTS::testCategorySort),\n            test(\"sorting/ominous_potions\", SORTING_TESTS::testOminousPotions),\n            test(\"sorting/vaults\", SORTING_TESTS::testVaults),\n\n            test(\"priority/server_sort_uses_player_priority_rules\", SORT_PRIORITY_RULE_TESTS::testServerSortUsesPlayerPriorityRules),\n            test(\"priority/sort_command_uses_stored_player_priority_rules\", SORT_PRIORITY_RULE_TESTS::testSortCommandUsesStoredPlayerPriorityRules),\n            test(\"priority/priority_rules_stay_scoped_to_the_player_settings\", SORT_PRIORITY_RULE_TESTS::testPriorityRulesStayScopedToThePlayerSettings),\n            test(\"priority/priority_commands_change_chest_sort_order_on_the_fly\", SORT_PRIORITY_RULE_TESTS::testPriorityCommandsChangeChestSortOrderOnTheFly),\n            test(\"priority/priority_set_command_changes_existing_rule_before_sorting_chest\", SORT_PRIORITY_RULE_TESTS::testPrioritySetCommandChangesExistingRuleBeforeSortingChest),\n            test(\"priority/priority_ignore_command_leaves_matching_chest_slots_in_place\", SORT_PRIORITY_RULE_TESTS::testPriority"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.fabric.api.gametest.v1.GameTest;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 41,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 63,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 87,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 102,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 118,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 142,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 157,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 176,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 197,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 233,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 267,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 295,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 321,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 367,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 411,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 466,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 469,
+   "method": "testCategorySort",
+   "condition": ">= 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "ItemStack coloredBlockStack = new ItemStack(Items.WOOL.white(), 64);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 471,
+   "method": "testCategorySort",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "//ItemStack coloredBlockStack = new ItemStack(Items.WHITE_WOOL, 64);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 515,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortingTests.java",
+   "line": 552,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.fabric.api.gametest.v1.GameTest;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 29,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 55,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 84,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 127,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 174,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 208,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 235,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 260,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 290,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 316,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 346,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 379,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/SortPriorityRuleTests.java",
+   "line": 407,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@GameTest"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/TestUtils.java",
+   "line": 20,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import net.neoforged.neoforge.network.registration.ChannelAttributes;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/TestUtils.java",
+   "line": 80,
+   "method": "setUpScene",
+   "condition": ">= 26.3",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 26.3",
+     "code": "player.randomTeleport(abspos.getX() + 2, abspos.getY(), abspos.getZ() + 2, false, blockState -> false);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/TestUtils.java",
+   "line": 82,
+   "method": "setUpScene",
+   "condition": "< 26.3",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 26.3",
+     "code": "//player.randomTeleport(abspos.getX() + 2, abspos.getY(), abspos.getZ() + 2, false);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/TestUtils.java",
+   "line": 86,
+   "method": "setUpScene",
+   "condition": ">= 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "Vec3.atCenterOf(abspos)"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/TestUtils.java",
+   "line": 88,
+   "method": "setUpScene",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "//abspos.getCenter()"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/TestUtils.java",
+   "line": 98,
+   "method": "setUpScene",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "ctx.useBlock(inventoryPosition, player);"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/TestUtils.java",
+   "line": 105,
+   "method": "setUpScene",
+   "condition": ">= 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "Vec3.atCenterOf(abspos)"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/TestUtils.java",
+   "line": 107,
+   "method": "setUpScene",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "//abspos.getCenter()"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/TestUtils.java",
+   "line": 101,
+   "method": "setUpScene",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "player.snapTo(abspos.getX() + 2.5, abspos.getY(), abspos.getZ() + 2.5, player.getYRot(), player.getXRot());\n        player.lookAt(\n                EntityAnchorArgument.Anchor.EYES,\n                //? >= 26.2\n                Vec3.atCenterOf(abspos)\n                //? < 26.2\n                //abspos.getCenter()\n        );\n        player.openMenu(chest);"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/TestUtils.java",
+   "line": 138,
+   "method": "allowGameTestConnectionPayloads",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "allowGameTestConnectionPayload(clientConnection, \"trinkets\", \"sync_slots\");\n        allowGameTestConnectionPayload(clientConnection, \"trinkets\", \"sync_inventory\");\n        allowGameTestConnectionPayload(clientConnection, \"inventorysorter\", \"server_presence_packet\");\n        allowGameTestConnectionPayload(clientConnection, \"inventorysorter\", \"last_seen_version_packet\");\n        allowGameTestConnectionPayload(clientConnection, \"inventorysorter\", \"sync_hide_button_packet\");\n        allowGameTestConnectionPayload(clientConnection, \"inventorysorter\", \"sync_sort_prevention_packet\");\n        allowGameTestConnectionPayload(clientConnection, \"inventorysorter\", \"sync_settings_packet\");"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/e2e/TestUtils.java",
+   "line": 149,
+   "method": "(class body)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "private static void allowGameTestConnectionPayload(Connection clientConnection, String namespace, String path) {\n        ChannelAttributes.getOrCreateAdHocChannels(clientConnection).add(Identifier.fromNamespaceAndPath(namespace, path));\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/InventorySorterMod.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.api.ModInitializer;\nimport net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;\nimport net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;\n\nimport net.kyrptonaught.inventorysorter.platform.PlatformServices;\nimport net.minecraft.server.MinecraftServer;\nimport net.minecraft.world.item.CreativeModeTab;\nimport net.minecraft.world.item.CreativeModeTabs;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/InventorySorterMod.java",
+   "line": 17,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import net.kyrptonaught.inventorysorter.client.platform.neoforge.NeoForgeConfigScreenFactory;\nimport net.neoforged.fml.ModContainer;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/InventorySorterMod.java",
+   "line": 29,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "//@Mod(InventorySorterMod.MOD_ID)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/InventorySorterMod.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "implements ModInitializer"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/InventorySorterMod.java",
+   "line": 34,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "private final ServerPlayerJoinSync playerJoinSync = new ServerPlayerJoinSync();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/InventorySorterMod.java",
+   "line": 48,
+   "method": "(class body)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "public InventorySorterMod(ModContainer container) {\n        container.registerExtensionPoint(IConfigScreenFactory.class, new NeoForgeConfigScreenFactory());\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/InventorySorterMod.java",
+   "line": 63,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@Override\n    public void onInitialize() {\n        PlatformServices.COMMANDS.registerCommands();\n\n        PlatformServices.NETWORK.registerPayloads();\n\n        ServerLifecycleEvents.SERVER_STARTED.register(this::ensureCreativeSearchTabsBuilt);\n\n        ServerPlayConnectionEvents.JOIN.register((handler, server, client) -> playerJoinSync.syncJoiningPlayer(handler.getPlayer(), client));\n\n    }\n\n    void ensureCreativeSearchTabsBuilt(MinecraftServer server) {\n        var context = new CreativeModeTab.ItemDisplayParameters(server.getWorldData().enabledFeatures(), false, server.registryAccess());\n        CreativeModeTabs.allTabs().forEach(group -> {\n            if (group.getSearchTabDisplayItems().isEmpty()) group.buildContents(context);\n        });\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/mixin/MixinContainerScreen.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.api.EnvType;\nimport net.fabricmc.api.Environment;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/mixin/MixinContainerScreen.java",
+   "line": 41,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@Environment(EnvType.CLIENT)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/mixin/MixinCreativeInventoryScreen.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.api.EnvType;\nimport net.fabricmc.api.Environment;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/mixin/MixinCreativeInventoryScreen.java",
+   "line": 19,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@Environment(EnvType.CLIENT)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/permissions/CommandPermission.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import me.lucko.fabric.api.permissions.v0.Permissions;\nimport java.util.Arrays;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/permissions/CommandPermission.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "//import net.kyrptonaught.inventorysorter.permissions.neoforge.NeoForgePermissions;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/permissions/CommandPermission.java",
+   "line": 24,
+   "method": "require",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "return Permissions.require(getPermissionFor(permission), defaultRequiredLevel);"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/permissions/CommandPermission.java",
+   "line": 28,
+   "method": "require",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "return NeoForgePermissions.require(permission, defaultRequiredLevel);"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/permissions/CommandPermission.java",
+   "line": 34,
+   "method": "hasAny",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "return source -> Arrays.stream(nodes).anyMatch(node -> Permissions.check(source, getPermissionFor(node)));"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/permissions/CommandPermission.java",
+   "line": 38,
+   "method": "hasAny",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "return NeoForgePermissions.hasAny(nodes);"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/permissions/neoforge/NeoForgePermissions.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.kyrptonaught.inventorysorter.permissions.neoforge;\n\nimport net.minecraft.commands.CommandSourceStack;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.server.permissions.Permission;\nimport net.minecraft.server.permissions.PermissionLevel;\n\nimport java.util.Arrays;\nimport java.util.function.Predicate;\n\nimport static net.kyrptonaught.inventorysorter.InventorySorterMod.MOD_ID;\n\npublic final class NeoForgePermissions {\n    private NeoForgePermissions() {\n    }\n\n    public static Predicate<CommandSourceStack> require(String permission, int defaultRequiredLevel) {\n        Permission.Atom atom = permission(permission);\n        Permission.HasCommandLevel fallback = commandLevel(defaultRequiredLevel);\n\n        return source -> source.permissions().hasPermission(atom) || source.permissions().hasPermission(fallback);\n    }\n\n    public static Predicate<CommandSourceStack> hasAny(String... permissions) {\n        return source -> Arrays.stream(permissions).anyMatch(permission -> source.permissions().hasPermission(permission(permission)));\n    }\n\n    private static Permission.Atom permission(String permission) {\n        return Permission.Atom.create(Identifier.fromNamespaceAndPath(MOD_ID, \"command.\" + permission));\n    }\n\n    private static Permission.HasCommandLevel commandLevel(int defaultRequiredLevel) {\n        return new Permission.HasCommandLevel(PermissionLevel.byId(defaultRequiredLevel));\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/fabric/FabricCommandPlatform.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package net.kyrptonaught.inventorysorter.platform.fabric;\n\nimport net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;\nimport net.kyrptonaught.inventorysorter.commands.CommandRegistry;\nimport net.kyrptonaught.inventorysorter.platform.CommandPlatform;\n\npublic class FabricCommandPlatform implements CommandPlatform {\n    @Override\n    public void registerCommands() {\n        CommandRegistrationCallback.EVENT.register(CommandRegistry::register);\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/fabric/FabricInventorySorterPlatform.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package net.kyrptonaught.inventorysorter.platform.fabric;\n\nimport net.fabricmc.loader.api.FabricLoader;\nimport net.kyrptonaught.inventorysorter.platform.InventorySorterPlatform;\nimport net.minecraft.server.MinecraftServer;\n\nimport java.nio.file.Path;\n\npublic class FabricInventorySorterPlatform implements InventorySorterPlatform {\n    @Override\n    public Path getConfigDir() {\n        return FabricLoader.getInstance().getConfigDir();\n    }\n\n    @Override\n    public boolean isDedicatedServer(MinecraftServer server) {\n        return server.isDedicatedServer();\n    }\n\n    @Override\n    public boolean isModLoaded(String modId) {\n        return FabricLoader.getInstance().isModLoaded(modId);\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/fabric/FabricNetworkingPlatform.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package net.kyrptonaught.inventorysorter.platform.fabric;\n\nimport net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;\nimport net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;\nimport net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;\nimport net.kyrptonaught.inventorysorter.inventory.ServerInventorySorter;\nimport net.kyrptonaught.inventorysorter.network.*;\nimport net.kyrptonaught.inventorysorter.platform.NetworkingPlatform;\nimport net.kyrptonaught.inventorysorter.platform.PlatformServices;\nimport net.minecraft.network.protocol.common.custom.CustomPacketPayload;\nimport net.minecraft.server.MinecraftServer;\nimport net.minecraft.server.level.ServerPlayer;\n\nimport java.util.function.Consumer;\n\npublic class FabricNetworkingPlatform implements NetworkingPlatform {\n    @Override\n    @SuppressWarnings(\"UnstableApiUsage\")\n    public void registerPayloads() {\n        PayloadTypeRegistry.serverboundPlay().register(ClientSync.ID, ClientSync.CODEC);\n\n        PayloadTypeRegistry.clientboundPlay().register(LastSeenVersionPacket.ID, LastSeenVersionPacket.CODEC);\n        PayloadTypeRegistry.clientboundPlay().register(ServerPresencePacket.ID, ServerPresencePacket.CODEC);\n\n        PayloadTypeRegistry.clientboundPlay().register(HideButton.ID, HideButton.CODEC);\n        PayloadTypeRegistry.clientboundPlay().register(ReloadConfigPacket.ID, ReloadConfigPacket.CODEC);\n\n        PayloadTypeRegistry.serverboundPlay().register(PlayerSortPrevention.ID, PlayerSortPrevention.CODEC);\n        PayloadTypeRegistry.clientboundPlay().register(PlayerSortPrevention.ID, PlayerSortPrevention.CODEC);\n\n        PayloadTypeRegistry.serverboundPlay().register(SortSettings.ID, SortSettings.CODEC);\n        PayloadTypeRegistry.clientboundPlay().register(SortSettings.ID, SortSettings.CODEC);\n        PayloadTypeRegistry.serverboundPlay().register(PlayerInventorySortingPreference.ID, PlayerInventorySortingPreference.CODEC);\n        PayloadTypeRegistry.clientboundPlay().register(PlayerInventorySortingPreference.ID, PlayerInventorySortingPreference.CODEC);\n        ServerPlayNetworking.registerGlobalReceiver(PlayerInventorySortingPreference.ID, (payload, context) -> {\n            ServerPlayer player = context.player();\n            PlatformServices.PLAYER_DATA.setSortSettings(player, PlatformServices.PLAYER_DATA.getSortSettings(player).withAllowPlayerInventorySorting(payload.allowed()));\n        });\n\n        PayloadTypeRegistry.serverboundPlay().register(InventorySortPacket.ID, InventorySortPacket.CODEC);\n\n        ServerPlayNetworking.registerGlobalReceiver(InventorySortPacket.ID, ((payload, context) -> {\n            ServerPlayer player = context.player();\n            MinecraftServer server = player.level().getServer();\n            server.execute(() -> ServerInventorySorter.sort(\n                    player,\n                    payload.target(),\n                    PlatformServices.PLAYER_DATA.getSortSettings(player).withSortType(payload.sortType())\n            ));\n        }));\n\n        ServerPlayNetworking.registerGlobalReceiver(SortSettings.ID, (payload, context) -> {\n            ServerPlayer player = context.player();\n            PlatformServices.PLAYER_DATA.setSortSettings(player, payload.withAllowPlayerInventorySorting(PlatformServices.PLAYER_DATA.getSortSettings(player).allowPlayerInventorySorting()));\n        });\n\n        ServerPlayNetworking.registerGlobalReceiver(PlayerSortPrevention.ID, (payload, context) -> {\n            PlatformServices.PLAYER_DATA.setPlayerSortPrevention(context.player(), payload);\n        });\n\n        ServerPlayNetworking.registerGlobalReceiver(ClientSync.ID, (payload, context) -> {\n            PlatformServices.PLAYER_DATA.setClientSync(context.player(), new ClientSync(true));\n        });\n    }\n\n    @Override\n    public void registerClientReceivers(\n            Consumer<SortSettings> sortSettingsHandler,\n            Consumer<PlayerSortPrevention> playerSortPreventionHandler,\n            Consumer<HideButton> hideButtonHand"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/fabric/FabricPlayerDataPlatform.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package net.kyrptonaught.inventorysorter.platform.fabric;\n\nimport net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;\nimport net.fabricmc.fabric.api.attachment.v1.AttachmentType;\nimport net.kyrptonaught.inventorysorter.network.ClientSync;\nimport net.kyrptonaught.inventorysorter.network.LastSeenVersionPacket;\nimport net.kyrptonaught.inventorysorter.network.PlayerSortPrevention;\nimport net.kyrptonaught.inventorysorter.network.SortSettings;\nimport net.kyrptonaught.inventorysorter.platform.PlayerDataPlatform;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.server.level.ServerPlayer;\n\nimport static net.kyrptonaught.inventorysorter.InventorySorterMod.MOD_ID;\n\npublic class FabricPlayerDataPlatform implements PlayerDataPlatform {\n    @SuppressWarnings(\"UnstableApiUsage\")\n    private static final AttachmentType<SortSettings> SORT_SETTINGS = AttachmentRegistry.create(\n            Identifier.fromNamespaceAndPath(MOD_ID, \"sort_settings\"),\n            builder -> builder\n                    .initializer(() -> SortSettings.DEFAULT)\n                    .persistent(SortSettings.NBT_CODEC)\n                    .copyOnDeath()\n    );\n\n    @SuppressWarnings(\"UnstableApiUsage\")\n    private static final AttachmentType<PlayerSortPrevention> PLAYER_SORT_PREVENTION = AttachmentRegistry.create(\n            Identifier.fromNamespaceAndPath(MOD_ID, \"player_sort_prevention\"),\n            builder -> builder\n                    .initializer(() -> PlayerSortPrevention.DEFAULT)\n                    .persistent(PlayerSortPrevention.NBT_CODEC)\n                    .copyOnDeath()\n    );\n\n    @SuppressWarnings(\"UnstableApiUsage\")\n    private static final AttachmentType<ClientSync> CLIENT_SYNC = AttachmentRegistry.create(\n            Identifier.fromNamespaceAndPath(MOD_ID, \"client_sync\"),\n            builder -> builder\n                    .initializer(() -> ClientSync.DEFAULT)\n                    .persistent(ClientSync.NBT_CODEC)\n                    .copyOnDeath()\n    );\n\n    @SuppressWarnings(\"UnstableApiUsage\")\n    private static final AttachmentType<LastSeenVersionPacket> LAST_SEEN_VERSION = AttachmentRegistry.create(\n            Identifier.fromNamespaceAndPath(MOD_ID, \"last_seen_version\"),\n            builder -> builder\n                    .initializer(() -> LastSeenVersionPacket.DEFAULT)\n                    .persistent(LastSeenVersionPacket.NBT_CODEC)\n    );\n\n    @Override\n    public SortSettings getSortSettings(ServerPlayer player) {\n        return player.getAttachedOrCreate(SORT_SETTINGS);\n    }\n\n    @Override\n    public void setSortSettings(ServerPlayer player, SortSettings settings) {\n        player.setAttached(SORT_SETTINGS, settings);\n    }\n\n    @Override\n    public PlayerSortPrevention getPlayerSortPrevention(ServerPlayer player) {\n        return player.getAttachedOrCreate(PLAYER_SORT_PREVENTION);\n    }\n\n    @Override\n    public void setPlayerSortPrevention(ServerPlayer player, PlayerSortPrevention value) {\n        player.setAttached(PLAYER_SORT_PREVENTION, value);\n    }\n\n    @Override\n    public ClientSync getClientSync(ServerPlayer player) {\n        return player.getAttachedOrCreate(CLIENT_SYNC);\n    }\n\n    @Override\n    public void setClientSync(ServerPlayer player, ClientSync value) {\n        player.setAttached(CLIENT_SYNC, value);\n    }\n\n    @Override\n    public LastSeenVersionPacket getLastSeenVersion(ServerPlayer player) {\n        return player.getAttachedOrCreate(LAST_SEEN_VERSION);\n    }\n\n    @Override\n    public void setLastSeenVersion(ServerPlayer player, LastSeenVersionPacket value) {\n        player.setAttached(LAST_SEEN_VERSION, value);\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/neoforge/NeoForgeCommandPlatform.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.kyrptonaught.inventorysorter.platform.neoforge;\n\nimport net.kyrptonaught.inventorysorter.commands.CommandRegistry;\nimport net.kyrptonaught.inventorysorter.platform.CommandPlatform;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.RegisterCommandsEvent;\n\nimport static net.kyrptonaught.inventorysorter.InventorySorterMod.MOD_ID;\n\n@EventBusSubscriber(modid = MOD_ID)\npublic class NeoForgeCommandPlatform implements CommandPlatform {\n    @Override\n    public void registerCommands() {\n    }\n\n    @SubscribeEvent\n    public static void registerCommands(RegisterCommandsEvent event) {\n        CommandRegistry.register(event.getDispatcher(), event.getBuildContext(), event.getCommandSelection());\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/neoforge/NeoForgeInventorySorterPlatform.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.kyrptonaught.inventorysorter.platform.neoforge;\n\nimport net.kyrptonaught.inventorysorter.platform.InventorySorterPlatform;\nimport net.minecraft.server.MinecraftServer;\nimport net.neoforged.fml.ModList;\nimport net.neoforged.fml.loading.FMLPaths;\n\nimport java.nio.file.Path;\n\npublic class NeoForgeInventorySorterPlatform implements InventorySorterPlatform {\n    @Override\n    public Path getConfigDir() {\n        return FMLPaths.CONFIGDIR.get();\n    }\n\n    @Override\n    public boolean isDedicatedServer(MinecraftServer server) {\n        return server.isDedicatedServer();\n    }\n\n    @Override\n    public boolean isModLoaded(String modId) {\n        return ModList.get().isLoaded(modId);\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/neoforge/NeoForgeNetworkingPlatform.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.kyrptonaught.inventorysorter.platform.neoforge;\n\nimport net.kyrptonaught.inventorysorter.inventory.ServerInventorySorter;\nimport net.kyrptonaught.inventorysorter.network.*;\nimport net.kyrptonaught.inventorysorter.platform.NetworkingPlatform;\nimport net.kyrptonaught.inventorysorter.platform.PlatformServices;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.client.multiplayer.ClientPacketListener;\nimport net.minecraft.network.protocol.common.custom.CustomPacketPayload;\nimport net.minecraft.server.MinecraftServer;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.minecraft.world.entity.player.Player;\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.common.extensions.ICommonPacketListener;\nimport net.neoforged.neoforge.client.network.ClientPacketDistributor;\nimport net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;\nimport net.neoforged.neoforge.network.PacketDistributor;\nimport net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;\nimport net.neoforged.neoforge.network.registration.PayloadRegistrar;\n\nimport java.util.function.Consumer;\n\nimport static net.kyrptonaught.inventorysorter.InventorySorterMod.MOD_ID;\n\n@EventBusSubscriber(modid = MOD_ID)\npublic class NeoForgeNetworkingPlatform implements NetworkingPlatform {\n    private static Consumer<SortSettings> sortSettingsHandler = payload -> {\n    };\n    private static Consumer<PlayerInventorySortingPreference> playerInventorySortingPreferenceHandler = payload -> {\n    };\n    private static Consumer<PlayerSortPrevention> playerSortPreventionHandler = payload -> {\n    };\n    private static Consumer<HideButton> hideButtonHandler = payload -> {\n    };\n    private static Runnable reloadConfigHandler = () -> {\n    };\n    private static Consumer<LastSeenVersionPacket> lastSeenVersionHandler = payload -> {\n    };\n    private static Runnable serverPresenceHandler = () -> {\n    };\n\n    @Override\n    public void registerPayloads() {\n    }\n\n    @SubscribeEvent\n    public static void registerPayloads(RegisterPayloadHandlersEvent event) {\n        PayloadRegistrar registrar = event.registrar(MOD_ID).optional();\n\n        registrar.playToServer(InventorySortPacket.ID, InventorySortPacket.CODEC, (payload, context) -> {\n            Player contextPlayer = context.player();\n            if (contextPlayer instanceof ServerPlayer player) {\n                MinecraftServer server = player.level().getServer();\n                if (server != null) {\n                    server.execute(() -> ServerInventorySorter.sort(\n                            player,\n                            payload.target(),\n                            PlatformServices.PLAYER_DATA.getSortSettings(player).withSortType(payload.sortType())\n                    ));\n                }\n            }\n        });\n\n        registrar.playBidirectional(SortSettings.ID, SortSettings.CODEC, (payload, context) -> {\n            if (context.player() instanceof ServerPlayer player) {\n                PlatformServices.PLAYER_DATA.setSortSettings(player, payload.withAllowPlayerInventorySorting(PlatformServices.PLAYER_DATA.getSortSettings(player).allowPlayerInventorySorting()));\n            }\n        });\n        registrar.playBidirectional(PlayerInventorySortingPreference.ID, PlayerInventorySortingPreference.CODEC, (payload, context) -> {\n            if (context.player() instanceof ServerPlayer player) {\n                PlatformServices.PLAYER_DATA.setSortSettings(player, PlatformServices.PLAYER_DATA.getSortSettings(player).withAllowPlayerInventorySorting(payload.allowed()));\n            }\n        });\n\n        registrar.playBidirectional(PlayerSortPrevention.ID, PlayerSortPrevention.CODEC, (payload, context) -> {\n            if (context.player() instanceof ServerPlayer player) {\n                PlatformServices.PLAYER_DATA.setPlayerSortPrevention(player, payload);\n      "
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/neoforge/NeoForgePlayerDataPlatform.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.kyrptonaught.inventorysorter.platform.neoforge;\n\nimport net.kyrptonaught.inventorysorter.network.ClientSync;\nimport net.kyrptonaught.inventorysorter.network.LastSeenVersionPacket;\nimport net.kyrptonaught.inventorysorter.network.PlayerSortPrevention;\nimport net.kyrptonaught.inventorysorter.network.SortSettings;\nimport net.kyrptonaught.inventorysorter.platform.PlayerDataPlatform;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.attachment.AttachmentType;\nimport net.neoforged.neoforge.registries.DeferredHolder;\nimport net.neoforged.neoforge.registries.NeoForgeRegistries;\nimport net.neoforged.neoforge.registries.RegisterEvent;\n\nimport static net.kyrptonaught.inventorysorter.InventorySorterMod.MOD_ID;\n\n@EventBusSubscriber(modid = MOD_ID)\npublic class NeoForgePlayerDataPlatform implements PlayerDataPlatform {\n    private static final DeferredHolder<AttachmentType<?>, AttachmentType<SortSettings>> SORT_SETTINGS = attachment(\"sort_settings\");\n    private static final DeferredHolder<AttachmentType<?>, AttachmentType<PlayerSortPrevention>> PLAYER_SORT_PREVENTION = attachment(\"player_sort_prevention\");\n    private static final DeferredHolder<AttachmentType<?>, AttachmentType<ClientSync>> CLIENT_SYNC = attachment(\"client_sync\");\n    private static final DeferredHolder<AttachmentType<?>, AttachmentType<LastSeenVersionPacket>> LAST_SEEN_VERSION = attachment(\"last_seen_version\");\n\n    @SubscribeEvent\n    public static void registerAttachments(RegisterEvent event) {\n        event.register(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, id(\"sort_settings\"), () -> AttachmentType\n                .builder(() -> SortSettings.DEFAULT)\n                .serialize(SortSettings.NBT_CODEC.fieldOf(\"value\"))\n                .copyOnDeath()\n                .build());\n        event.register(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, id(\"player_sort_prevention\"), () -> AttachmentType\n                .builder(() -> PlayerSortPrevention.DEFAULT)\n                .serialize(PlayerSortPrevention.NBT_CODEC.fieldOf(\"value\"))\n                .copyOnDeath()\n                .build());\n        event.register(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, id(\"client_sync\"), () -> AttachmentType\n                .builder(() -> ClientSync.DEFAULT)\n                .serialize(ClientSync.NBT_CODEC.fieldOf(\"value\"))\n                .copyOnDeath()\n                .build());\n        event.register(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, id(\"last_seen_version\"), () -> AttachmentType\n                .builder(() -> LastSeenVersionPacket.DEFAULT)\n                .serialize(LastSeenVersionPacket.NBT_CODEC.fieldOf(\"value\"))\n                .build());\n    }\n\n    @Override\n    public SortSettings getSortSettings(ServerPlayer player) {\n        return player.getData(SORT_SETTINGS);\n    }\n\n    @Override\n    public void setSortSettings(ServerPlayer player, SortSettings settings) {\n        player.setData(SORT_SETTINGS, settings);\n    }\n\n    @Override\n    public PlayerSortPrevention getPlayerSortPrevention(ServerPlayer player) {\n        return player.getData(PLAYER_SORT_PREVENTION);\n    }\n\n    @Override\n    public void setPlayerSortPrevention(ServerPlayer player, PlayerSortPrevention value) {\n        player.setData(PLAYER_SORT_PREVENTION, value);\n    }\n\n    @Override\n    public ClientSync getClientSync(ServerPlayer player) {\n        return player.getData(CLIENT_SYNC);\n    }\n\n    @Override\n    public void setClientSync(ServerPlayer player, ClientSync value) {\n        player.setData(CLIENT_SYNC, value);\n    }\n\n    @Override\n    public LastSeenVersionPacket getLastSeenVersion(ServerPlayer player) {\n        return player.getData(LAST_SEEN_VERSION);\n    }\n\n    @Override\n    public void setLastSeenVersion(ServerPlayer player, LastSeenVersionPacket value) {\n        player.setData(LAST_SEEN_VERSION, value);\n    }\n\n    private static "
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/neoforge/NeoForgeServerEvents.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.kyrptonaught.inventorysorter.platform.neoforge;\n\nimport net.kyrptonaught.inventorysorter.ServerPlayerJoinSync;\nimport net.minecraft.server.MinecraftServer;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.minecraft.world.item.CreativeModeTab;\nimport net.minecraft.world.item.CreativeModeTabs;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.entity.player.PlayerEvent;\nimport net.neoforged.neoforge.event.server.ServerStartedEvent;\n\nimport static net.kyrptonaught.inventorysorter.InventorySorterMod.MOD_ID;\n\n@EventBusSubscriber(modid = MOD_ID)\npublic final class NeoForgeServerEvents {\n    private static final ServerPlayerJoinSync PLAYER_JOIN_SYNC = new ServerPlayerJoinSync();\n\n    private NeoForgeServerEvents() {\n    }\n\n    @SubscribeEvent\n    public static void serverStarted(ServerStartedEvent event) {\n        MinecraftServer server = event.getServer();\n        var context = new CreativeModeTab.ItemDisplayParameters(server.getWorldData().enabledFeatures(), false, server.registryAccess());\n        CreativeModeTabs.allTabs().forEach(group -> {\n            if (group.getSearchTabDisplayItems().isEmpty()) group.buildContents(context);\n        });\n    }\n\n    @SubscribeEvent\n    public static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {\n        if (event.getEntity() instanceof ServerPlayer player) {\n            MinecraftServer server = player.level().getServer();\n            if (server != null) {\n                PLAYER_JOIN_SYNC.syncJoiningPlayer(player, server);\n            }\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/PlatformServices.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.kyrptonaught.inventorysorter.platform.fabric.FabricCommandPlatform;\nimport net.kyrptonaught.inventorysorter.platform.fabric.FabricInventorySorterPlatform;\nimport net.kyrptonaught.inventorysorter.platform.fabric.FabricNetworkingPlatform;\nimport net.kyrptonaught.inventorysorter.platform.fabric.FabricPlayerDataPlatform;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/PlatformServices.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import net.kyrptonaught.inventorysorter.platform.neoforge.NeoForgeCommandPlatform;\nimport net.kyrptonaught.inventorysorter.platform.neoforge.NeoForgeInventorySorterPlatform;\nimport net.kyrptonaught.inventorysorter.platform.neoforge.NeoForgeNetworkingPlatform;\nimport net.kyrptonaught.inventorysorter.platform.neoforge.NeoForgePlayerDataPlatform;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/PlatformServices.java",
+   "line": 17,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "public static final InventorySorterPlatform PLATFORM = new FabricInventorySorterPlatform();\n    public static final CommandPlatform COMMANDS = new FabricCommandPlatform();\n    public static final NetworkingPlatform NETWORK = new FabricNetworkingPlatform();\n    public static final PlayerDataPlatform PLAYER_DATA = new FabricPlayerDataPlatform();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/kyrptonaught/inventorysorter/platform/PlatformServices.java",
+   "line": 24,
+   "method": "(class body)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "public static final InventorySorterPlatform PLATFORM = new NeoForgeInventorySorterPlatform();\n    public static final CommandPlatform COMMANDS = new NeoForgeCommandPlatform();\n    public static final NetworkingPlatform NETWORK = new NeoForgeNetworkingPlatform();\n    public static final PlayerDataPlatform PLAYER_DATA = new NeoForgePlayerDataPlatform();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/test/java/net/kyrptonaught/inventorysorter/client/platform/fabric/FabricClientKeyMappingsTest.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package net.kyrptonaught.inventorysorter.client.platform.fabric;\n\nimport com.mojang.blaze3d.platform.InputConstants;\nimport org.junit.jupiter.api.Assertions;\nimport org.junit.jupiter.api.Test;\n\npublic class FabricClientKeyMappingsTest {\n    @Test\n    void exposesStableKeyMappingInstances() {\n        FabricClientKeyMappings keyMappings = new FabricClientKeyMappings();\n\n        Assertions.assertSame(keyMappings.configKeyMapping(), keyMappings.configKeyMapping());\n        Assertions.assertSame(keyMappings.sortKeyMapping(), keyMappings.sortKeyMapping());\n    }\n\n    @Test\n    void definesExpectedInventorySorterMappings() {\n        FabricClientKeyMappings keyMappings = new FabricClientKeyMappings();\n\n        Assertions.assertEquals(\"inventorysorter.key.config\", keyMappings.configKeyMapping().getName());\n        Assertions.assertEquals(\"inventorysorter.key.sort\", keyMappings.sortKeyMapping().getName());\n        Assertions.assertEquals(InputConstants.KEY_P, keyMappings.configKeyMapping().getDefaultKey().getValue());\n        Assertions.assertEquals(InputConstants.KEY_P, keyMappings.sortKeyMapping().getDefaultKey().getValue());\n    }\n\n    @Test\n    void exposesControlAsModifierKey() {\n        FabricClientKeyMappings keyMappings = new FabricClientKeyMappings();\n\n        Assertions.assertEquals(InputConstants.KEY_LCONTROL, keyMappings.modifierKey().getValue());\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/test/java/net/kyrptonaught/inventorysorter/sort/bundle/BundleTargetSlotsTest.java",
+   "line": 52,
+   "method": "writesAdjustedStacksBackToSlotAccessTargets",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "MutableSlotAccess target = new MutableSlotAccess(targetStack[0]);"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/test/java/net/kyrptonaught/inventorysorter/sort/bundle/BundleTargetSlotsTest.java",
+   "line": 55,
+   "method": "writesAdjustedStacksBackToSlotAccessTargets",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "SlotAccess target = SlotAccess.of(() -> targetStack[0], stack -> targetStack[0] = stack);"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/test/java/net/kyrptonaught/inventorysorter/sort/bundle/BundleTargetSlotsTest.java",
+   "line": 63,
+   "method": "writesAdjustedStacksBackToSlotAccessTargets",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "assertSameLayoutStack(stack(Items.GOLD_INGOT), target.stack);"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/test/java/net/kyrptonaught/inventorysorter/sort/bundle/BundleTargetSlotsTest.java",
+   "line": 66,
+   "method": "writesAdjustedStacksBackToSlotAccessTargets",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "assertSameLayoutStack(stack(Items.GOLD_INGOT), targetStack[0]);"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/test/java/net/kyrptonaught/inventorysorter/sort/bundle/BundleTargetSlotsTest.java",
+   "line": 106,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "private static class MutableSlotAccess implements SlotAccess {\n        private ItemStack stack;\n\n        private MutableSlotAccess(ItemStack stack) {\n            this.stack = stack;\n        }\n\n        @Override\n        public ItemStack get() {\n            return stack;\n        }\n\n        @Override\n        public boolean set(ItemStack stack) {\n            this.stack = stack;\n            return true;\n        }\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  }
+ ]
+}

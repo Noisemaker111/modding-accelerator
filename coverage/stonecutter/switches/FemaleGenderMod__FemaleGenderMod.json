@@ -1,0 +1,314 @@
+{
+ "repo": "FemaleGenderMod/FemaleGenderMod",
+ "commit": "6f6ec1f9760cf56b57f2a1d8f82700cbddf6d2db",
+ "names": "mojmap",
+ "loaders": [
+  "fabric"
+ ],
+ "versions": [],
+ "files": 7,
+ "switches": 9,
+ "versionSwitches": 9,
+ "rows": [
+  {
+   "file": "common/src/main/java/com/wildfire/client/physics/BreastPhysics.java",
+   "line": 417,
+   "method": "getSwingState",
+   "condition": ">26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">26.2",
+     "code": "var swing = entity.swingState;\n        var currentSwing = swing.currentSwing;\n        swingDuration = currentSwing == null ? 6 : currentSwing.durationTicks();\n        swingTime = currentSwing == null ? 0 : swing.ticks;\n        swingingArm = currentSwing == null ? entity.getMainArm() : currentSwing.hand().asArm(entity.getMainArm());"
+    },
+    {
+     "condition": null,
+     "code": "swingDuration = entity.getCurrentSwingDuration();\n        swingTime = entity.swingTime;\n        swingingArm = entity.swingingArm == net.minecraft.world.InteractionHand.MAIN_HAND ? entity.getMainArm() : entity.getMainArm().getOpposite();"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "asArm",
+      "currentSwing",
+      "hand",
+      "swing"
+     ]
+    }
+   ],
+   "older": "swingDuration = entity.getCurrentSwingDuration();\n        swingTime = entity.swingTime;\n        swingingArm = entity.swingingArm == net.minecraft.world.InteractionHand.MAIN_HAND ? entity.getMainArm() : entity.getMainArm().getOpposite();",
+   "newer": "var swing = entity.swingState;\n        var currentSwing = swing.currentSwing;\n        swingDuration = currentSwing == null ? 6 : currentSwing.durationTicks();\n        swingTime = currentSwing == null ? 0 : swing.ticks;\n        swingingArm = currentSwing == null ? entity.getMainArm() : currentSwing.hand().asArm(entity.getMainArm());",
+   "removed": [
+    "InteractionHand",
+    "MAIN_HAND",
+    "getCurrentSwingDuration",
+    "getOpposite",
+    "minecraft",
+    "net",
+    "world"
+   ],
+   "added": [
+    "asArm",
+    "currentSwing",
+    "durationTicks",
+    "hand",
+    "swing",
+    "swingState",
+    "ticks"
+   ]
+  },
+  {
+   "file": "common/src/main/java/com/wildfire/client/render/GenderLayer.java",
+   "line": 201,
+   "method": "setupTransformations",
+   "condition": "<=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=26.2",
+     "code": "matrixStack.mulPose(Axis.YP.rotationDegrees(side.forSide(lPhysBounceRotation, rPhysBounceRotation)));"
+    },
+    {
+     "condition": null,
+     "code": "matrixStack.rotateDegrees(Axis.YP, side.forSide(lPhysBounceRotation, rPhysBounceRotation));"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "mulPose",
+      "rotateDegrees"
+     ]
+    }
+   ],
+   "older": "matrixStack.mulPose(Axis.YP.rotationDegrees(side.forSide(lPhysBounceRotation, rPhysBounceRotation)));",
+   "newer": "matrixStack.rotateDegrees(Axis.YP, side.forSide(lPhysBounceRotation, rPhysBounceRotation));",
+   "removed": [
+    "mulPose",
+    "rotationDegrees"
+   ],
+   "added": [
+    "rotateDegrees"
+   ]
+  },
+  {
+   "file": "common/src/main/java/com/wildfire/client/render/GenderLayer.java",
+   "line": 256,
+   "method": "renderBreast",
+   "condition": "<=26.2 >> ')'",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<=26.2 >> ')'",
+     "code": ""
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "common/src/main/java/com/wildfire/client/render/GenderLayer.java",
+   "line": 262,
+   "method": "renderBreast",
+   "condition": "<=26.2 >> ')'",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<=26.2 >> ')'",
+     "code": "}"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "common/src/main/java/com/wildfire/client/WildfireClientEventHandler.java",
+   "line": 88,
+   "method": "onPlayerNametag",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "//state.distanceToCameraSq,"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "common/src/main/java/com/wildfire/common/WildfireLang.java",
+   "line": 291,
+   "method": "(class body)",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "public MutableComponent translateColored(net.minecraft.ChatFormatting color) {\n        return translate().withStyle(color);\n    }\n    public MutableComponent translateColored(net.minecraft.ChatFormatting color, Object... args) {\n        return translate(args).withStyle(color);\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "fabric/src/main/java/com/wildfire/fabric/client/FabricClientHelper.java",
+   "line": 60,
+   "method": "getSessionUrl",
+   "condition": "<=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=26.2",
+     "code": "baseUrl = accessor.getBaseUrl();"
+    },
+    {
+     "condition": null,
+     "code": "baseUrl = accessor.getDiscoveryService().getUrl(com.mojang.authlib.services.response.discovery.Service.SESSION, \"join\");\n        if (baseUrl.endsWith(\"join\")) {\n            baseUrl = baseUrl.substring(0, baseUrl.length() - 4);\n        }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "length"
+     ]
+    }
+   ],
+   "older": "baseUrl = accessor.getBaseUrl();",
+   "newer": "baseUrl = accessor.getDiscoveryService().getUrl(com.mojang.authlib.services.response.discovery.Service.SESSION, \"join\");\n        if (baseUrl.endsWith(\"join\")) {\n            baseUrl = baseUrl.substring(0, baseUrl.length() - 4);\n        }",
+   "removed": [
+    "getBaseUrl"
+   ],
+   "added": [
+    "SESSION",
+    "Service",
+    "authlib",
+    "com",
+    "discovery",
+    "endsWith",
+    "getDiscoveryService",
+    "getUrl",
+    "length",
+    "mojang",
+    "response",
+    "services",
+    "substring"
+   ]
+  },
+  {
+   "file": "neoforge/src/main/java/com/wildfire/neoforge/client/NeoClientHelper.java",
+   "line": 61,
+   "method": "getSessionUrl",
+   "condition": "<=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=26.2",
+     "code": "baseUrl = ObfuscationReflectionHelper.getPrivateValue(\n            MinecraftServicesSessionService.class,\n            service,\n            \"baseUrl\"\n        );"
+    },
+    {
+     "condition": null,
+     "code": "// TODO change this to use a cached #getField() instead?\n        var discovery = ((com.mojang.authlib.services.MinecraftServicesDiscoveryService) ObfuscationReflectionHelper.getPrivateValue(\n            MinecraftServicesSessionService.class,\n            service,\n            \"discoveryService\"\n        ));\n        assert discovery != null; // we know this can't be null, but just so intellij stops complaining about it\n        baseUrl = discovery.getUrl(com.mojang.authlib.services.response.discovery.Service.SESSION, \"join\");\n        if (baseUrl.endsWith(\"join\")) {\n            baseUrl = baseUrl.substring(0, baseUrl.length() - 4);\n        }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "length"
+     ]
+    }
+   ],
+   "older": "baseUrl = ObfuscationReflectionHelper.getPrivateValue(\n            MinecraftServicesSessionService.class,\n            service,\n            \"baseUrl\"\n        );",
+   "newer": "// TODO change this to use a cached #getField() instead?\n        var discovery = ((com.mojang.authlib.services.MinecraftServicesDiscoveryService) ObfuscationReflectionHelper.getPrivateValue(\n            MinecraftServicesSessionService.class,\n            service,\n            \"discoveryService\"\n        ));\n        assert discovery != null; // we know this can't be null, but just so intellij stops complaining about it\n        baseUrl = discovery.getUrl(com.mojang.authlib.services.response.discovery.Service.SESSION, \"join\");\n        if (baseUrl.endsWith(\"join\")) {\n            baseUrl = baseUrl.substring(0, baseUrl.length() - 4);\n        }",
+   "removed": [],
+   "added": [
+    "MinecraftServicesDiscoveryService",
+    "SESSION",
+    "Service",
+    "assert",
+    "authlib",
+    "com",
+    "discovery",
+    "endsWith",
+    "getUrl",
+    "length",
+    "mojang",
+    "response",
+    "services",
+    "substring"
+   ]
+  },
+  {
+   "file": "neoforge/src/main/java/com/wildfire/neoforge/client/WildfireGenderClientNeo.java",
+   "line": 87,
+   "method": "WildfireGenderClientNeo",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "modContainer.<net.neoforged.neoforge.client.gui.modlist.ModDisplayInfo>registerExtensionPoint(net.neoforged.neoforge.client.gui.modlist.ModDisplayInfo.class, () -> new net.neoforged.neoforge.client.gui.modlist.DefaultModDisplayInfo(modContainer) {\n            @Override\n            public Component displayName() {\n                //Allow translating the display name so that it can display upside down\n                return com.wildfire.common.WildfireLang.MOD_NAME.translate();\n            }\n        });"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  }
+ ]
+}

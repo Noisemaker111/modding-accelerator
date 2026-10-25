@@ -1,0 +1,2048 @@
+{
+ "repo": "North-West-Wind/AutoFish",
+ "commit": "5aed37400a20266bb026ba8ed88b802f72fa98b4",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "1.16.5",
+  "1.17.1",
+  "1.18.2",
+  "1.19.2",
+  "1.19.4",
+  "1.20.1",
+  "1.21.1",
+  "1.21.11",
+  "26.1.2",
+  "26.2"
+ ],
+ "files": 10,
+ "switches": 40,
+ "versionSwitches": 40,
+ "rows": [
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/AutoFish.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": ">=1.21.1 | >=1.19.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.1",
+     "code": "import net.minecraft.network.chat.contents.PlainTextContents;\nimport net.minecraft.network.chat.contents.TranslatableContents;"
+    },
+    {
+     "condition": ">=1.19.2",
+     "code": "import net.minecraft.network.chat.contents.LiteralContents;\nimport net.minecraft.network.chat.contents.TranslatableContents;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.network.chat.TextComponent;\nimport net.minecraft.network.chat.TranslatableComponent;"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1",
+    "1.19.1 -> 1.19.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "LiteralContents",
+      "PlainTextContents"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.network.chat.contents.LiteralContents;\nimport net.minecraft.network.chat.contents.TranslatableContents;",
+   "newer": "import net.minecraft.network.chat.contents.PlainTextContents;\nimport net.minecraft.network.chat.contents.TranslatableContents;",
+   "removed": [
+    "LiteralContents"
+   ],
+   "added": [
+    "PlainTextContents"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.client.input.KeyEvent;\nimport net.minecraft.client.input.MouseButtonEvent;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+   "line": 19,
+   "method": "(imports)",
+   "condition": ">=1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.18.2",
+     "code": "import com.mojang.datafixers.util.Pair;\nimport net.minecraft.core.HolderSet;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.tags.ItemTags;\nimport net.minecraft.tags.Tag;"
+    }
+   ],
+   "boundary": [
+    "1.18.1 -> 1.18.2"
+   ],
+   "window": [
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.18.1 -> 1.18.2",
+     "names": [
+      "HolderSet"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.tags.ItemTags;\nimport net.minecraft.tags.Tag;",
+   "newer": "import com.mojang.datafixers.util.Pair;\nimport net.minecraft.core.HolderSet;",
+   "removed": [
+    "ItemTags",
+    "Tag",
+    "tags"
+   ],
+   "added": [
+    "HolderSet",
+    "Pair",
+    "com",
+    "core",
+    "datafixers",
+    "mojang",
+    "util"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+   "line": 77,
+   "method": "init",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "public boolean mouseClicked(MouseButtonEvent ev, boolean p_430750_) {\n                if (ev.button() == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(ev, p_430750_);\n            }"
+    },
+    {
+     "condition": null,
+     "code": "public boolean mouseClicked(double mouseX, double mouseY, int button) {\n                if (button == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(mouseX, mouseY, button);\n            }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "MouseButtonEvent"
+     ]
+    }
+   ],
+   "older": "public boolean mouseClicked(double mouseX, double mouseY, int button) {\n                if (button == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(mouseX, mouseY, button);\n            }",
+   "newer": "public boolean mouseClicked(MouseButtonEvent ev, boolean p_430750_) {\n                if (ev.button() == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(ev, p_430750_);\n            }",
+   "removed": [
+    "mouseX",
+    "mouseY"
+   ],
+   "added": [
+    "MouseButtonEvent",
+    "p_430750_"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+   "line": 97,
+   "method": "init",
+   "condition": ">=1.21.11 | >=1.19.4 | >=1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "List<HolderSet.Named<Item>> itemTags = BuiltInRegistries.ITEM.getTags().filter(tag -> tags.stream().anyMatch(t -> tag.key().location().getPath().contains(t))).toList();"
+    },
+    {
+     "condition": ">=1.19.4",
+     "code": "//List<HolderSet.Named<Item>> itemTags = BuiltInRegistries.ITEM.getTags().map(Pair::getSecond).filter(tag -> tags.stream().anyMatch(t -> tag.key().location().getPath().contains(t))).toList();"
+    },
+    {
+     "condition": ">=1.18.2",
+     "code": "List<HolderSet.Named<Item>> itemTags = Registry.ITEM.getTags().map(Pair::getSecond).filter(tag -> tags.stream().anyMatch(t -> tag.key().location().getPath().contains(t))).toList();"
+    },
+    {
+     "condition": null,
+     "code": "List<Tag<Item>> itemTags = ItemTags.getAllTags().getAllTags().entrySet().stream()\n                    .filter(entry -> tags.stream().anyMatch(t -> entry.getKey().toString().contains(t)))\n                    .map(Map.Entry::getValue).collect(Collectors.toList());"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.19.3 -> 1.19.4",
+    "1.18.1 -> 1.18.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "contains",
+      "key",
+      "location",
+      "tag"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "contains",
+      "filter",
+      "key",
+      "stream"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "tag"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "Named",
+      "contains"
+     ]
+    },
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "BuiltInRegistries",
+      "contains",
+      "key"
+     ]
+    },
+    {
+     "step": "1.19.3 -> 1.19.4",
+     "names": [
+      "key",
+      "tag"
+     ]
+    },
+    {
+     "step": "1.17.1 -> 1.18",
+     "names": [
+      "key"
+     ]
+    },
+    {
+     "step": "1.18.1 -> 1.18.2",
+     "names": [
+      "HolderSet",
+      "Named",
+      "contains",
+      "getTags",
+      "tag"
+     ]
+    }
+   ],
+   "older": "//List<HolderSet.Named<Item>> itemTags = BuiltInRegistries.ITEM.getTags().map(Pair::getSecond).filter(tag -> tags.stream().anyMatch(t -> tag.key().location().getPath().contains(t))).toList();",
+   "newer": "List<HolderSet.Named<Item>> itemTags = BuiltInRegistries.ITEM.getTags().filter(tag -> tags.stream().anyMatch(t -> tag.key().location().getPath().contains(t))).toList();",
+   "removed": [],
+   "added": [
+    "BuiltInRegistries",
+    "HolderSet",
+    "ITEM",
+    "Item",
+    "List",
+    "Named",
+    "anyMatch",
+    "contains",
+    "filter",
+    "getPath",
+    "getTags",
+    "itemTags",
+    "key",
+    "location",
+    "stream",
+    "tag",
+    "tags",
+    "toList"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+   "line": 109,
+   "method": "init",
+   "condition": ">=1.21.11 | >=1.19.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n                if (opt.isEmpty()) return false;\n                Identifier rl = opt.get().identifier();"
+    },
+    {
+     "condition": ">=1.19.4",
+     "code": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n                if (opt.isEmpty()) return false;\n                Identifier rl = opt.get().location();"
+    },
+    {
+     "condition": null,
+     "code": "Optional<ResourceKey<Item>> opt = Registry.ITEM.getResourceKey(item);\n                if (!opt.isPresent()) return false;\n                Identifier rl = opt.get().location();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "location"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "identifier",
+      "location"
+     ]
+    }
+   ],
+   "older": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n                if (opt.isEmpty()) return false;\n                Identifier rl = opt.get().location();",
+   "newer": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n                if (opt.isEmpty()) return false;\n                Identifier rl = opt.get().identifier();",
+   "removed": [
+    "location"
+   ],
+   "added": [
+    "identifier"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+   "line": 150,
+   "method": "init",
+   "condition": "<=1.16.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.16.5",
+     "code": "this.children.add(search);\n        addButton(add);\n        addButton(done);\n        addButton(previous);\n        addButton(next);"
+    },
+    {
+     "condition": null,
+     "code": "addRenderableWidget(search);\n        addRenderableWidget(add);\n        addRenderableWidget(done);\n        addRenderableWidget(previous);\n        addRenderableWidget(next);"
+    }
+   ],
+   "boundary": [
+    "1.16.5 -> 1.17"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.16.5 -> 1.17",
+     "names": [
+      "addButton",
+      "addRenderableWidget"
+     ]
+    }
+   ],
+   "older": "this.children.add(search);\n        addButton(add);\n        addButton(done);\n        addButton(previous);\n        addButton(next);",
+   "newer": "addRenderableWidget(search);\n        addRenderableWidget(add);\n        addRenderableWidget(done);\n        addRenderableWidget(previous);\n        addRenderableWidget(next);",
+   "removed": [
+    "addButton",
+    "children"
+   ],
+   "added": [
+    "addRenderableWidget"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+   "line": 166,
+   "method": "(class body)",
+   "condition": ">=26.1 | >=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {\n        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n        graphics.centeredText(this.font, this.title, this.width / 2, 20, -1);"
+    },
+    {
+     "condition": ">=1.20.1",
+     "code": "public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, -1);"
+    },
+    {
+     "condition": null,
+     "code": "public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {\n        this.renderBackground(poseStack);\n        super.render(poseStack, mouseX, mouseY, partialTicks);\n        drawCenteredString(poseStack, this.font, this.title, this.width / 2, 20, -1);"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "GuiGraphics",
+      "GuiGraphicsExtractor",
+      "centeredText",
+      "drawCenteredString",
+      "extractRenderState",
+      "render"
+     ]
+    },
+    {
+     "step": "1.19.4 -> 1.20",
+     "names": [
+      "drawCenteredString",
+      "render"
+     ]
+    }
+   ],
+   "older": "public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, -1);",
+   "newer": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {\n        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n        graphics.centeredText(this.font, this.title, this.width / 2, 20, -1);",
+   "removed": [
+    "GuiGraphics",
+    "drawCenteredString",
+    "render"
+   ],
+   "added": [
+    "GuiGraphicsExtractor",
+    "centeredText",
+    "extractRenderState"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+   "line": 182,
+   "method": "extractRenderState",
+   "condition": ">=1.21.11 | >=1.19.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n            if (opt.isEmpty()) return false;\n            Identifier rl = opt.get().identifier();"
+    },
+    {
+     "condition": ">=1.19.4",
+     "code": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n            if (opt.isEmpty()) return false;\n            Identifier rl = opt.get().location();"
+    },
+    {
+     "condition": null,
+     "code": "Optional<ResourceKey<Item>> opt = Registry.ITEM.getResourceKey(item);\n            if (!opt.isPresent()) return false;\n            Identifier rl = opt.get().location();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "location"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "identifier",
+      "location"
+     ]
+    }
+   ],
+   "older": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n            if (opt.isEmpty()) return false;\n            Identifier rl = opt.get().location();",
+   "newer": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n            if (opt.isEmpty()) return false;\n            Identifier rl = opt.get().identifier();",
+   "removed": [
+    "location"
+   ],
+   "added": [
+    "identifier"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+   "line": 222,
+   "method": "extractRenderState",
+   "condition": ">=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.1",
+     "code": "if (selected.contains(item)) graphics.fillGradient(x - 2, y - 2, x + 18, y + 18, 0xFF00FF00, 0xFF00FF00);\n                    else if (isMouseInRange(mouseX, mouseY, x, y,x + 16, y + 16)) graphics.fillGradient(x - 2, y - 2, x + 18, y + 18, 0xFFC0C0C0, 0xFFC0C0C0);"
+    },
+    {
+     "condition": null,
+     "code": "if (selected.contains(item)) fillGradient(poseStack, x - 2, y - 2, x + 18, y + 18, 0xFF00FF00, 0xFF00FF00);\n                    else if (isMouseInRange(mouseX, mouseY, x, y,x + 16, y + 16)) fillGradient(poseStack, x - 2, y - 2, x + 18, y + 18, 0xFFC0C0C0, 0xFFC0C0C0);"
+    }
+   ],
+   "boundary": [
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ],
+   "confirmed": [],
+   "older": "if (selected.contains(item)) fillGradient(poseStack, x - 2, y - 2, x + 18, y + 18, 0xFF00FF00, 0xFF00FF00);\n                    else if (isMouseInRange(mouseX, mouseY, x, y,x + 16, y + 16)) fillGradient(poseStack, x - 2, y - 2, x + 18, y + 18, 0xFFC0C0C0, 0xFFC0C0C0);",
+   "newer": "if (selected.contains(item)) graphics.fillGradient(x - 2, y - 2, x + 18, y + 18, 0xFF00FF00, 0xFF00FF00);\n                    else if (isMouseInRange(mouseX, mouseY, x, y,x + 16, y + 16)) graphics.fillGradient(x - 2, y - 2, x + 18, y + 18, 0xFFC0C0C0, 0xFFC0C0C0);",
+   "removed": [
+    "poseStack"
+   ],
+   "added": [
+    "graphics"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+   "line": 275,
+   "method": "(class body)",
+   "condition": ">=1.19.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.4",
+     "code": "search.setFocused(false);\n                //? } else\n                //search.setFocus(false);\n        }\n        return super.keyPressed(keyCode, scanCode, modifiers);\n    }\n    */"
+    }
+   ],
+   "boundary": [
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+   "line": 285,
+   "method": "(class body)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "public boolean mouseClicked(MouseButtonEvent ev, boolean flag) {\n        clickX = ev.x();\n        clickY = ev.y();\n        clickProcessed = false;\n        return super.mouseClicked(ev, flag);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public boolean mouseClicked(double mouseX, double mouseY, int button) {\n        clickX = mouseX;\n        clickY = mouseY;\n        clickProcessed = false;\n        return super.mouseClicked(mouseX, mouseY, button);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "MouseButtonEvent",
+      "flag"
+     ]
+    }
+   ],
+   "older": "public boolean mouseClicked(double mouseX, double mouseY, int button) {\n        clickX = mouseX;\n        clickY = mouseY;\n        clickProcessed = false;\n        return super.mouseClicked(mouseX, mouseY, button);\n    }",
+   "newer": "public boolean mouseClicked(MouseButtonEvent ev, boolean flag) {\n        clickX = ev.x();\n        clickY = ev.y();\n        clickProcessed = false;\n        return super.mouseClicked(ev, flag);\n    }",
+   "removed": [
+    "button",
+    "mouseX",
+    "mouseY"
+   ],
+   "added": [
+    "MouseButtonEvent",
+    "flag"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/LongSettingScreen.java",
+   "line": 13,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.client.input.KeyEvent;\nimport net.minecraft.client.input.MouseButtonEvent;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/LongSettingScreen.java",
+   "line": 44,
+   "method": "init",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "public boolean mouseClicked(MouseButtonEvent ev, boolean p_430750_) {\n                if (ev.button() == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(ev, p_430750_);\n            }"
+    },
+    {
+     "condition": null,
+     "code": "public boolean mouseClicked(double mouseX, double mouseY, int button) {\n                if (button == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(mouseX, mouseY, button);\n            }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "MouseButtonEvent"
+     ]
+    }
+   ],
+   "older": "public boolean mouseClicked(double mouseX, double mouseY, int button) {\n                if (button == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(mouseX, mouseY, button);\n            }",
+   "newer": "public boolean mouseClicked(MouseButtonEvent ev, boolean p_430750_) {\n                if (ev.button() == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(ev, p_430750_);\n            }",
+   "removed": [
+    "mouseX",
+    "mouseY"
+   ],
+   "added": [
+    "MouseButtonEvent",
+    "p_430750_"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/LongSettingScreen.java",
+   "line": 68,
+   "method": "init",
+   "condition": "<=1.16.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.16.5",
+     "code": "this.children.add(editBox);\n        addButton(save);"
+    },
+    {
+     "condition": null,
+     "code": "addRenderableWidget(editBox);\n        addRenderableWidget(save);"
+    }
+   ],
+   "boundary": [
+    "1.16.5 -> 1.17"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.16.5 -> 1.17",
+     "names": [
+      "add",
+      "addButton",
+      "addRenderableWidget"
+     ]
+    }
+   ],
+   "older": "this.children.add(editBox);\n        addButton(save);",
+   "newer": "addRenderableWidget(editBox);\n        addRenderableWidget(save);",
+   "removed": [
+    "add",
+    "addButton",
+    "children"
+   ],
+   "added": [
+    "addRenderableWidget"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/LongSettingScreen.java",
+   "line": 92,
+   "method": "(class body)",
+   "condition": ">=26.1 | >=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {\n        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n        graphics.centeredText(this.font, this.title, this.width / 2, 20, -1);\n        this.editBox.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n    }"
+    },
+    {
+     "condition": ">=1.20.1",
+     "code": "public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, -1);\n        this.editBox.render(graphics, mouseX, mouseY, partialTicks);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {\n        super.render(poseStack, mouseX, mouseY, partialTicks);\n        drawCenteredString(poseStack, this.font, this.title, this.width / 2, 20, -1);\n        this.editBox.render(poseStack, mouseX, mouseY, partialTicks);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "GuiGraphics",
+      "GuiGraphicsExtractor",
+      "centeredText",
+      "drawCenteredString",
+      "extractRenderState",
+      "render"
+     ]
+    },
+    {
+     "step": "1.19.4 -> 1.20",
+     "names": [
+      "drawCenteredString",
+      "render"
+     ]
+    }
+   ],
+   "older": "public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, -1);\n        this.editBox.render(graphics, mouseX, mouseY, partialTicks);\n    }",
+   "newer": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {\n        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n        graphics.centeredText(this.font, this.title, this.width / 2, 20, -1);\n        this.editBox.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n    }",
+   "removed": [
+    "GuiGraphics",
+    "drawCenteredString",
+    "render"
+   ],
+   "added": [
+    "GuiGraphicsExtractor",
+    "centeredText",
+    "extractRenderState"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/LongSettingScreen.java",
+   "line": 118,
+   "method": "(class body)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "public boolean keyPressed(KeyEvent ev) {\n        if (ev.key() == ScreenHelper.KEY_ESCAPE) ScreenHelper.showScreen(parent);\n        return super.keyPressed(ev);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public boolean keyPressed(int keyCode, int scanCode, int modifiers) {\n        if (keyCode == ScreenHelper.KEY_ESCAPE) ScreenHelper.showScreen(parent);\n        return super.keyPressed(keyCode, scanCode, modifiers);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "key"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "key"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "KeyEvent"
+     ]
+    }
+   ],
+   "older": "public boolean keyPressed(int keyCode, int scanCode, int modifiers) {\n        if (keyCode == ScreenHelper.KEY_ESCAPE) ScreenHelper.showScreen(parent);\n        return super.keyPressed(keyCode, scanCode, modifiers);\n    }",
+   "newer": "public boolean keyPressed(KeyEvent ev) {\n        if (ev.key() == ScreenHelper.KEY_ESCAPE) ScreenHelper.showScreen(parent);\n        return super.keyPressed(ev);\n    }",
+   "removed": [
+    "keyCode",
+    "modifiers",
+    "scanCode"
+   ],
+   "added": [
+    "KeyEvent",
+    "key"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/ScreenHelper.java",
+   "line": 7,
+   "method": "(imports)",
+   "condition": ">=1.19.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.2",
+     "code": "import org.lwjgl.glfw.GLFW;"
+    }
+   ],
+   "boundary": [
+    "1.19.1 -> 1.19.2"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/ScreenHelper.java",
+   "line": 12,
+   "method": "(class body)",
+   "condition": ">=1.19.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.2",
+     "code": "public static final int MOUSE_BUTTON_LEFT = GLFW.GLFW_MOUSE_BUTTON_2;\n    public static final int KEY_ESCAPE = GLFW.GLFW_KEY_ESCAPE;"
+    },
+    {
+     "condition": null,
+     "code": "public static final int MOUSE_BUTTON_LEFT = 1;\n    public static final int KEY_ESCAPE = 256;"
+    }
+   ],
+   "boundary": [
+    "1.19.1 -> 1.19.2"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2"
+   ],
+   "confirmed": [],
+   "older": "public static final int MOUSE_BUTTON_LEFT = 1;\n    public static final int KEY_ESCAPE = 256;",
+   "newer": "public static final int MOUSE_BUTTON_LEFT = GLFW.GLFW_MOUSE_BUTTON_2;\n    public static final int KEY_ESCAPE = GLFW.GLFW_KEY_ESCAPE;",
+   "removed": [],
+   "added": [
+    "GLFW",
+    "GLFW_KEY_ESCAPE",
+    "GLFW_MOUSE_BUTTON_2"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/SettingsScreen.java",
+   "line": 64,
+   "method": "(class body)",
+   "condition": ">=26.1 | >=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {\n        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n        graphics.centeredText(this.font, this.title, this.width / 2, 20, -1);\n    }"
+    },
+    {
+     "condition": ">=1.20.1",
+     "code": "public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, -1);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {\n        super.render(poseStack, mouseX, mouseY, partialTicks);\n        drawCenteredString(poseStack, this.font, this.title, this.width / 2, 20, -1);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "GuiGraphics",
+      "GuiGraphicsExtractor",
+      "centeredText",
+      "drawCenteredString",
+      "extractRenderState",
+      "render"
+     ]
+    },
+    {
+     "step": "1.19.4 -> 1.20",
+     "names": [
+      "drawCenteredString",
+      "render"
+     ]
+    }
+   ],
+   "older": "public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, -1);\n    }",
+   "newer": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {\n        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n        graphics.centeredText(this.font, this.title, this.width / 2, 20, -1);\n    }",
+   "removed": [
+    "GuiGraphics",
+    "drawCenteredString",
+    "render"
+   ],
+   "added": [
+    "GuiGraphicsExtractor",
+    "centeredText",
+    "extractRenderState"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/SuperFilterScreen.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.client.input.KeyEvent;\nimport net.minecraft.client.input.MouseButtonEvent;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/SuperFilterScreen.java",
+   "line": 20,
+   "method": "(imports)",
+   "condition": ">=1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.18.2",
+     "code": "import net.minecraft.core.HolderSet;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.tags.ItemTags;\nimport net.minecraft.tags.Tag;"
+    }
+   ],
+   "boundary": [
+    "1.18.1 -> 1.18.2"
+   ],
+   "window": [
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.18.1 -> 1.18.2",
+     "names": [
+      "HolderSet"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.tags.ItemTags;\nimport net.minecraft.tags.Tag;",
+   "newer": "import net.minecraft.core.HolderSet;",
+   "removed": [
+    "ItemTags",
+    "Tag",
+    "tags"
+   ],
+   "added": [
+    "HolderSet",
+    "core"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/SuperFilterScreen.java",
+   "line": 78,
+   "method": "init",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "public boolean mouseClicked(MouseButtonEvent ev, boolean p_430750_) {\n                if (ev.button() == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(ev, p_430750_);\n            }"
+    },
+    {
+     "condition": null,
+     "code": "public boolean mouseClicked(double mouseX, double mouseY, int button) {\n                if (button == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(mouseX, mouseY, button);\n            }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "MouseButtonEvent"
+     ]
+    }
+   ],
+   "older": "public boolean mouseClicked(double mouseX, double mouseY, int button) {\n                if (button == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(mouseX, mouseY, button);\n            }",
+   "newer": "public boolean mouseClicked(MouseButtonEvent ev, boolean p_430750_) {\n                if (ev.button() == ScreenHelper.MOUSE_BUTTON_LEFT) this.setValue(\"\");\n                return super.mouseClicked(ev, p_430750_);\n            }",
+   "removed": [
+    "mouseX",
+    "mouseY"
+   ],
+   "added": [
+    "MouseButtonEvent",
+    "p_430750_"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/SuperFilterScreen.java",
+   "line": 98,
+   "method": "init",
+   "condition": ">=1.21.11 | >=1.19.4 | >=1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "List<HolderSet.Named<Item>> itemTags = BuiltInRegistries.ITEM.getTags().filter(tag -> tags.stream().anyMatch(t -> tag.key().location().getPath().contains(t))).toList();"
+    },
+    {
+     "condition": ">=1.19.4",
+     "code": "//List<HolderSet.Named<Item>> itemTags = BuiltInRegistries.ITEM.getTags().map(Pair::getSecond).filter(tag -> tags.stream().anyMatch(t -> tag.key().location().getPath().contains(t))).toList();"
+    },
+    {
+     "condition": ">=1.18.2",
+     "code": "List<HolderSet.Named<Item>> itemTags = Registry.ITEM.getTags().map(Pair::getSecond).filter(tag -> tags.stream().anyMatch(t -> tag.key().location().getPath().contains(t))).toList();"
+    },
+    {
+     "condition": null,
+     "code": "List<Tag<Item>> itemTags = ItemTags.getAllTags().getAllTags().entrySet().stream()\n                    .filter(entry -> tags.stream().anyMatch(t -> entry.getKey().toString().contains(t)))\n                    .map(Map.Entry::getValue).collect(Collectors.toList());"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.19.3 -> 1.19.4",
+    "1.18.1 -> 1.18.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "contains",
+      "key",
+      "location",
+      "tag"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "contains",
+      "filter",
+      "key",
+      "stream"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "tag"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "Named",
+      "contains"
+     ]
+    },
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "BuiltInRegistries",
+      "contains",
+      "key"
+     ]
+    },
+    {
+     "step": "1.19.3 -> 1.19.4",
+     "names": [
+      "key",
+      "tag"
+     ]
+    },
+    {
+     "step": "1.17.1 -> 1.18",
+     "names": [
+      "key"
+     ]
+    },
+    {
+     "step": "1.18.1 -> 1.18.2",
+     "names": [
+      "HolderSet",
+      "Named",
+      "contains",
+      "getTags",
+      "tag"
+     ]
+    }
+   ],
+   "older": "//List<HolderSet.Named<Item>> itemTags = BuiltInRegistries.ITEM.getTags().map(Pair::getSecond).filter(tag -> tags.stream().anyMatch(t -> tag.key().location().getPath().contains(t))).toList();",
+   "newer": "List<HolderSet.Named<Item>> itemTags = BuiltInRegistries.ITEM.getTags().filter(tag -> tags.stream().anyMatch(t -> tag.key().location().getPath().contains(t))).toList();",
+   "removed": [],
+   "added": [
+    "BuiltInRegistries",
+    "HolderSet",
+    "ITEM",
+    "Item",
+    "List",
+    "Named",
+    "anyMatch",
+    "contains",
+    "filter",
+    "getPath",
+    "getTags",
+    "itemTags",
+    "key",
+    "location",
+    "stream",
+    "tag",
+    "tags",
+    "toList"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/SuperFilterScreen.java",
+   "line": 110,
+   "method": "init",
+   "condition": ">=1.21.11 | >=1.19.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n                if (opt.isEmpty()) return false;\n                Identifier rl = opt.get().identifier();"
+    },
+    {
+     "condition": ">=1.19.4",
+     "code": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n                if (opt.isEmpty()) return false;\n                Identifier rl = opt.get().location();"
+    },
+    {
+     "condition": null,
+     "code": "Optional<ResourceKey<Item>> opt = Registry.ITEM.getResourceKey(item);\n                if (!opt.isPresent()) return false;\n                Identifier rl = opt.get().location();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "location"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "identifier",
+      "location"
+     ]
+    }
+   ],
+   "older": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n                if (opt.isEmpty()) return false;\n                Identifier rl = opt.get().location();",
+   "newer": "Optional<ResourceKey<Item>> opt = BuiltInRegistries.ITEM.getResourceKey(item);\n                if (opt.isEmpty()) return false;\n                Identifier rl = opt.get().identifier();",
+   "removed": [
+    "location"
+   ],
+   "added": [
+    "identifier"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/SuperFilterScreen.java",
+   "line": 144,
+   "method": "init",
+   "condition": "<=1.16.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.16.5",
+     "code": "this.children.add(search);\n        addButton(add);\n        addButton(done);\n        addButton(previous);\n        addButton(next);"
+    },
+    {
+     "condition": null,
+     "code": "addRenderableWidget(search);\n        addRenderableWidget(add);\n        addRenderableWidget(done);\n        addRenderableWidget(previous);\n        addRenderableWidget(next);"
+    }
+   ],
+   "boundary": [
+    "1.16.5 -> 1.17"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.16.5 -> 1.17",
+     "names": [
+      "addButton",
+      "addRenderableWidget"
+     ]
+    }
+   ],
+   "older": "this.children.add(search);\n        addButton(add);\n        addButton(done);\n        addButton(previous);\n        addButton(next);",
+   "newer": "addRenderableWidget(search);\n        addRenderableWidget(add);\n        addRenderableWidget(done);\n        addRenderableWidget(previous);\n        addRenderableWidget(next);",
+   "removed": [
+    "addButton",
+    "children"
+   ],
+   "added": [
+    "addRenderableWidget"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/SuperFilterScreen.java",
+   "line": 160,
+   "method": "(class body)",
+   "condition": ">=26.1 | >=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {\n        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n        graphics.centeredText(this.font, this.title, this.width / 2, 20, -1);"
+    },
+    {
+     "condition": ">=1.20.1",
+     "code": "public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, -1);"
+    },
+    {
+     "condition": null,
+     "code": "public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {\n        this.renderBackground(poseStack);\n        super.render(poseStack, mouseX, mouseY, partialTicks);\n        drawCenteredString(poseStack, this.font, this.title, this.width / 2, 20, -1);"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "GuiGraphics",
+      "GuiGraphicsExtractor",
+      "centeredText",
+      "drawCenteredString",
+      "extractRenderState",
+      "render"
+     ]
+    },
+    {
+     "step": "1.19.4 -> 1.20",
+     "names": [
+      "drawCenteredString",
+      "render"
+     ]
+    }
+   ],
+   "older": "public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, -1);",
+   "newer": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {\n        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n        graphics.centeredText(this.font, this.title, this.width / 2, 20, -1);",
+   "removed": [
+    "GuiGraphics",
+    "drawCenteredString",
+    "render"
+   ],
+   "added": [
+    "GuiGraphicsExtractor",
+    "centeredText",
+    "extractRenderState"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/SuperFilterScreen.java",
+   "line": 181,
+   "method": "extractRenderState",
+   "condition": ">=26.1 | >=1.20.1 | >=1.19.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "if (!stack.isEmpty()) graphics.item(stack, (reducedWidth * h / 3) + 15, (reducedHeight * k / (max / 3)) + 90);\n            graphics.text(this.font, stack.getDisplayName().getString(), ((reducedWidth * h / 3) + 45), ((reducedHeight * k / (max / 3)) + 95), 0xFFFFFFFF);"
+    },
+    {
+     "condition": ">=1.20.1",
+     "code": "if (!stack.isEmpty()) graphics.renderItem(stack, (reducedWidth * h / 3) + 15, (reducedHeight * k / (max / 3)) + 90);\n            graphics.drawString(this.font, stack.getDisplayName().getString(), ((reducedWidth * h / 3) + 45), ((reducedHeight * k / (max / 3)) + 95), 0xFFFFFFFF);"
+    },
+    {
+     "condition": ">=1.19.4",
+     "code": "if (!stack.isEmpty()) itemRenderer.renderGuiItem(poseStack, stack, (reducedWidth * h / 3) + 15, (reducedHeight * k / (max / 3)) + 90);\n            drawString(poseStack, this.font, stack.getDisplayName().getString(), ((reducedWidth * h / 3) + 45), ((reducedHeight * k / (max / 3)) + 95), 0xFFFFFFFF);"
+    },
+    {
+     "condition": null,
+     "code": "if (!stack.isEmpty()) itemRenderer.renderGuiItem(stack, (reducedWidth * h / 3) + 15, (reducedHeight * k / (max / 3)) + 90);\n            drawString(poseStack, this.font, stack.getDisplayName().getString(), ((reducedWidth * h / 3) + 45), ((reducedHeight * k / (max / 3)) + 95), 0xFFFFFFFF);"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.20 -> 1.20.1",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "drawString",
+      "item",
+      "renderItem",
+      "text"
+     ]
+    },
+    {
+     "step": "1.19.4 -> 1.20",
+     "names": [
+      "drawString",
+      "renderItem"
+     ]
+    },
+    {
+     "step": "1.19.3 -> 1.19.4",
+     "names": [
+      "renderItem"
+     ]
+    }
+   ],
+   "older": "if (!stack.isEmpty()) graphics.renderItem(stack, (reducedWidth * h / 3) + 15, (reducedHeight * k / (max / 3)) + 90);\n            graphics.drawString(this.font, stack.getDisplayName().getString(), ((reducedWidth * h / 3) + 45), ((reducedHeight * k / (max / 3)) + 95), 0xFFFFFFFF);",
+   "newer": "if (!stack.isEmpty()) graphics.item(stack, (reducedWidth * h / 3) + 15, (reducedHeight * k / (max / 3)) + 90);\n            graphics.text(this.font, stack.getDisplayName().getString(), ((reducedWidth * h / 3) + 45), ((reducedHeight * k / (max / 3)) + 95), 0xFFFFFFFF);",
+   "removed": [
+    "drawString",
+    "renderItem"
+   ],
+   "added": [
+    "item",
+    "text"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/config/gui/SuperFilterScreen.java",
+   "line": 209,
+   "method": "(class body)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "public boolean keyPressed(KeyEvent ev) {\n        if (ev.key() == ScreenHelper.KEY_ESCAPE) ScreenHelper.showScreen(parent);\n        return super.keyPressed(ev);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public boolean keyPressed(int keyCode, int scanCode, int modifiers) {\n        if (keyCode == ScreenHelper.KEY_ESCAPE) ScreenHelper.showScreen(parent);\n        return super.keyPressed(keyCode, scanCode, modifiers);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "key"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "key"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "KeyEvent"
+     ]
+    }
+   ],
+   "older": "public boolean keyPressed(int keyCode, int scanCode, int modifiers) {\n        if (keyCode == ScreenHelper.KEY_ESCAPE) ScreenHelper.showScreen(parent);\n        return super.keyPressed(keyCode, scanCode, modifiers);\n    }",
+   "newer": "public boolean keyPressed(KeyEvent ev) {\n        if (ev.key() == ScreenHelper.KEY_ESCAPE) ScreenHelper.showScreen(parent);\n        return super.keyPressed(ev);\n    }",
+   "removed": [
+    "keyCode",
+    "modifiers",
+    "scanCode"
+   ],
+   "added": [
+    "KeyEvent",
+    "key"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/handler/AutoFishHandler.java",
+   "line": 168,
+   "method": "reelIn",
+   "condition": ">=1.21.11 | >=1.17.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "if (i == player.getInventory().getSelectedSlot()) continue;\n                ItemStack stack = player.getInventory().getItem(i);"
+    },
+    {
+     "condition": ">=1.17.1",
+     "code": "if (i == player.getInventory().selected) continue;\n                ItemStack stack = player.getInventory().getItem(i);"
+    },
+    {
+     "condition": null,
+     "code": "if (i == player.inventory.selected) continue;\n                ItemStack stack = player.inventory.getItem(i);"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.17 -> 1.17.1"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "getSelectedSlot"
+     ]
+    }
+   ],
+   "older": "if (i == player.getInventory().selected) continue;\n                ItemStack stack = player.getInventory().getItem(i);",
+   "newer": "if (i == player.getInventory().getSelectedSlot()) continue;\n                ItemStack stack = player.getInventory().getItem(i);",
+   "removed": [
+    "selected"
+   ],
+   "added": [
+    "getSelectedSlot"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/handler/AutoFishHandler.java",
+   "line": 251,
+   "method": "dropItem",
+   "condition": ">=1.21.11 | >=1.17.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "if (!player.getInventory().getItem(ii).getItem().equals(item)) continue;\n            player.getInventory().setSelectedSlot(ii);"
+    },
+    {
+     "condition": ">=1.17.1",
+     "code": "if (!player.getInventory().getItem(ii).getItem().equals(item)) continue;\n            player.getInventory().selected = ii;"
+    },
+    {
+     "condition": null,
+     "code": "if (!player.inventory.getItem(ii).getItem().equals(item)) continue;\n            player.inventory.selected = ii;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.17 -> 1.17.1"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "setSelectedSlot"
+     ]
+    }
+   ],
+   "older": "if (!player.getInventory().getItem(ii).getItem().equals(item)) continue;\n            player.getInventory().selected = ii;",
+   "newer": "if (!player.getInventory().getItem(ii).getItem().equals(item)) continue;\n            player.getInventory().setSelectedSlot(ii);",
+   "removed": [
+    "selected"
+   ],
+   "added": [
+    "setSelectedSlot"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/keybind/KeyBinds.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.resources.Identifier;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/keybind/KeyBinds.java",
+   "line": 8,
+   "method": "(imports)",
+   "condition": ">=1.19.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.2",
+     "code": "import org.lwjgl.glfw.GLFW;"
+    }
+   ],
+   "boundary": [
+    "1.19.1 -> 1.19.2"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2"
+   ]
+  },
+  {
+   "file": "common/src/main/java/in/northwestw/autofish/keybind/KeyBinds.java",
+   "line": 13,
+   "method": "(class body)",
+   "condition": ">=1.19.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.2",
+     "code": "private static final int KEY_MINUS = GLFW.GLFW_KEY_MINUS;\n    private static final int KEY_BACKSLASH = GLFW.GLFW_KEY_BACKSLASH;\n    private static final int KEY_RIGHT_BRACKET = GLFW.GLFW_KEY_RIGHT_BRACKET;\n    private static final int KEY_K = GLFW.GLFW_KEY_K;\n    private static final int KEY_APOSTROPHE = GLFW.GLFW_KEY_APOSTROPHE;"
+    },
+    {
+     "condition": null,
+     "code": "private static final int KEY_MINUS = 45;\n    private static final int KEY_BACKSLASH = 92;\n    private static final int KEY_RIGHT_BRACKET = 93;\n    private static final int KEY_K = 75;\n    private static final int KEY_APOSTROPHE = 39;"
+    }
+   ],
+   "boundary": [
+    "1.19.1 -> 1.19.2"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2"
+   ],
+   "confirmed": [],
+   "older": "private static final int KEY_MINUS = 45;\n    private static final int KEY_BACKSLASH = 92;\n    private static final int KEY_RIGHT_BRACKET = 93;\n    private static final int KEY_K = 75;\n    private static final int KEY_APOSTROPHE = 39;",
+   "newer": "private static final int KEY_MINUS = GLFW.GLFW_KEY_MINUS;\n    private static final int KEY_BACKSLASH = GLFW.GLFW_KEY_BACKSLASH;\n    private static final int KEY_RIGHT_BRACKET = GLFW.GLFW_KEY_RIGHT_BRACKET;\n    private static final int KEY_K = GLFW.GLFW_KEY_K;\n    private static final int KEY_APOSTROPHE = GLFW.GLFW_KEY_APOSTROPHE;",
+   "removed": [],
+   "added": [
+    "GLFW",
+    "GLFW_KEY_APOSTROPHE",
+    "GLFW_KEY_BACKSLASH",
+    "GLFW_KEY_K",
+    "GLFW_KEY_MINUS",
+    "GLFW_KEY_RIGHT_BRACKET"
+   ]
+  },
+  {
+   "file": "fabric/src/main/java/in/northwestw/autofish/AutoFishFabric.java",
+   "line": 16,
+   "method": "onInitialize",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "KeyMappingHelper.registerKeyMapping(KeyBinds.autofish);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.rodprotect);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.autoreplace);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.settings);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.itemfilter);"
+    },
+    {
+     "condition": null,
+     "code": "KeyBindingHelper.registerKeyBinding(KeyBinds.autofish);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.rodprotect);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.autoreplace);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.settings);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.itemfilter);"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [],
+   "older": "KeyBindingHelper.registerKeyBinding(KeyBinds.autofish);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.rodprotect);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.autoreplace);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.settings);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.itemfilter);",
+   "newer": "KeyMappingHelper.registerKeyMapping(KeyBinds.autofish);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.rodprotect);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.autoreplace);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.settings);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.itemfilter);",
+   "removed": [
+    "KeyBindingHelper",
+    "registerKeyBinding"
+   ],
+   "added": [
+    "KeyMappingHelper",
+    "registerKeyMapping"
+   ]
+  },
+  {
+   "file": "forge/src/main/java/in/northwestw/autofish/AutoFishForge.java",
+   "line": 6,
+   "method": "(imports)",
+   "condition": ">=1.19.2 | >=1.18.2 | >=1.17.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.2",
+     "code": "import net.minecraftforge.client.event.RegisterKeyMappingsEvent;"
+    },
+    {
+     "condition": ">=1.18.2",
+     "code": "import net.minecraftforge.client.ClientRegistry;\nimport net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;"
+    },
+    {
+     "condition": ">=1.17.1",
+     "code": "import net.minecraftforge.fmlclient.registry.ClientRegistry;\nimport net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraftforge.fml.client.registry.ClientRegistry;\nimport net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;"
+    }
+   ],
+   "boundary": [
+    "1.19.1 -> 1.19.2",
+    "1.18.1 -> 1.18.2",
+    "1.17 -> 1.17.1"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2",
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraftforge.client.ClientRegistry;\nimport net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;",
+   "newer": "import net.minecraftforge.client.event.RegisterKeyMappingsEvent;",
+   "removed": [
+    "ClientRegistry",
+    "FMLClientSetupEvent",
+    "fml",
+    "lifecycle"
+   ],
+   "added": [
+    "RegisterKeyMappingsEvent"
+   ]
+  },
+  {
+   "file": "forge/src/main/java/in/northwestw/autofish/AutoFishForge.java",
+   "line": 34,
+   "method": "(class body)",
+   "condition": ">=1.19.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.2",
+     "code": "@SubscribeEvent\n        public static void registerKeyMappings(RegisterKeyMappingsEvent event) {\n            event.register(KeyBinds.autofish);\n            event.register(KeyBinds.rodprotect);\n            event.register(KeyBinds.autoreplace);\n            event.register(KeyBinds.settings);\n            event.register(KeyBinds.itemfilter);\n        }"
+    }
+   ],
+   "boundary": [
+    "1.19.1 -> 1.19.2"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2"
+   ]
+  },
+  {
+   "file": "forge/src/main/java/in/northwestw/autofish/AutoFishForge.java",
+   "line": 54,
+   "method": "(class body)",
+   "condition": ">=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.1",
+     "code": "public static void playerTickPre(TickEvent.PlayerTickEvent.Pre event) {"
+    },
+    {
+     "condition": null,
+     "code": "public static void playerTickPre(TickEvent.PlayerTickEvent event) {\n            if (event.phase != TickEvent.Phase.START) return;"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "public static void playerTickPre(TickEvent.PlayerTickEvent event) {\n            if (event.phase != TickEvent.Phase.START) return;",
+   "newer": "public static void playerTickPre(TickEvent.PlayerTickEvent.Pre event) {",
+   "removed": [
+    "Phase",
+    "START",
+    "phase"
+   ],
+   "added": [
+    "Pre"
+   ]
+  },
+  {
+   "file": "forge/src/main/java/in/northwestw/autofish/AutoFishForge.java",
+   "line": 60,
+   "method": "playerTickPre",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "if (event.side() != LogicalSide.CLIENT) return;\n            AutoFishHandler.onPlayerTick(event.player());"
+    },
+    {
+     "condition": null,
+     "code": "if (event.side != LogicalSide.CLIENT) return;\n            AutoFishHandler.onPlayerTick(event.player);"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "if (event.side != LogicalSide.CLIENT) return;\n            AutoFishHandler.onPlayerTick(event.player);",
+   "newer": "if (event.side() != LogicalSide.CLIENT) return;\n            AutoFishHandler.onPlayerTick(event.player());",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "forge/src/main/java/in/northwestw/autofish/AutoFishForge.java",
+   "line": 70,
+   "method": "(class body)",
+   "condition": "<1.19",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.19",
+     "code": "@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)\n    public static class ModEvents {\n        @SubscribeEvent\n        public static void setupClient(FMLClientSetupEvent event) {\n            ClientRegistry.registerKeyBinding(KeyBinds.autofish);\n            ClientRegistry.registerKeyBinding(KeyBinds.rodprotect);\n            ClientRegistry.registerKeyBinding(KeyBinds.autoreplace);\n            ClientRegistry.registerKeyBinding(KeyBinds.settings);\n            ClientRegistry.registerKeyBinding(KeyBinds.itemfilter);\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2"
+   ]
+  }
+ ]
+}

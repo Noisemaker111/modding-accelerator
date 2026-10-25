@@ -1,0 +1,1341 @@
+{
+ "repo": "DeDiamondPro/Resourcify",
+ "commit": "35f2d71eb7e2fa2609d200b48d6a6a8092e1db56",
+ "names": "unknown",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "1.20.1",
+  "1.21.1",
+  "1.21.4",
+  "1.21.5",
+  "1.21.8",
+  "1.21.10",
+  "1.21.11",
+  "26.1.2",
+  "26.2",
+  "26.3"
+ ],
+ "files": 15,
+ "switches": 43,
+ "versionSwitches": 33,
+ "rows": [
+  {
+   "file": "src/main/java/dev/dediamondpro/resourcify/mixins/CreateWorldScreenMixin.java",
+   "line": 23,
+   "method": "(class body)",
+   "condition": "<26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "addTab"
+    },
+    {
+     "condition": null,
+     "code": "addTabs"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "addTab",
+   "newer": "addTabs",
+   "removed": [
+    "addTab"
+   ],
+   "added": [
+    "addTabs"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/config/ModMenuIntegration.kt",
+   "line": 20,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import com.terraformersmc.modmenu.api.ConfigScreenFactory\nimport com.terraformersmc.modmenu.api.ModMenuApi\nimport net.minecraft.client.gui.screens.Screen\n\nclass ModMenuIntegration : ModMenuApi {\n    override fun getModConfigScreenFactory(): ConfigScreenFactory<*> {\n        return SettingsFactory\n    }\n\n    object SettingsFactory : ConfigScreenFactory<Screen?> {\n        override fun create(parent: Screen?): Screen = SettingsPage()\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/elements/Icon.kt",
+   "line": 31,
+   "method": "(class body)",
+   "condition": "<1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "ResourceLocation"
+    },
+    {
+     "condition": null,
+     "code": "Identifier"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Identifier",
+      "ResourceLocation"
+     ]
+    }
+   ],
+   "older": "ResourceLocation",
+   "newer": "Identifier",
+   "removed": [
+    "ResourceLocation"
+   ],
+   "added": [
+    "Identifier"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/elements/Icon.kt",
+   "line": 36,
+   "method": "Icon",
+   "condition": "<1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "ResourceLocation"
+    },
+    {
+     "condition": null,
+     "code": "Identifier"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Identifier",
+      "ResourceLocation"
+     ]
+    }
+   ],
+   "older": "ResourceLocation",
+   "newer": "Identifier",
+   "removed": [
+    "ResourceLocation"
+   ],
+   "added": [
+    "Identifier"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/elements/McImage.kt",
+   "line": 38,
+   "method": "(class body)",
+   "condition": "<1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "ResourceLocation"
+    },
+    {
+     "condition": null,
+     "code": "Identifier"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Identifier",
+      "ResourceLocation"
+     ]
+    }
+   ],
+   "older": "ResourceLocation",
+   "newer": "Identifier",
+   "removed": [
+    "ResourceLocation"
+   ],
+   "added": [
+    "Identifier"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/elements/ShadowImage.kt",
+   "line": 35,
+   "method": "(class body)",
+   "condition": "<1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "ResourceLocation"
+    },
+    {
+     "condition": null,
+     "code": "Identifier"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Identifier",
+      "ResourceLocation"
+     ]
+    }
+   ],
+   "older": "ResourceLocation",
+   "newer": "Identifier",
+   "removed": [
+    "ResourceLocation"
+   ],
+   "added": [
+    "Identifier"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/elements/TextIcon.kt",
+   "line": 38,
+   "method": "(class body)",
+   "condition": "<1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "ResourceLocation"
+    },
+    {
+     "condition": null,
+     "code": "Identifier"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Identifier",
+      "ResourceLocation"
+     ]
+    }
+   ],
+   "older": "ResourceLocation",
+   "newer": "Identifier",
+   "removed": [
+    "ResourceLocation"
+   ],
+   "added": [
+    "Identifier"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/ConfirmLinkScreen.kt",
+   "line": 27,
+   "method": "(imports)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.input.KeyEvent"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/ConfirmLinkScreen.kt",
+   "line": 35,
+   "method": "(class body)",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": ".toURI()"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/ConfirmLinkScreen.kt",
+   "line": 43,
+   "method": "keyPressed",
+   "condition": "<1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.9",
+     "code": "keyCode"
+    },
+    {
+     "condition": null,
+     "code": "keyEvent.key"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [],
+   "older": "keyCode",
+   "newer": "keyEvent.key",
+   "removed": [
+    "keyCode"
+   ],
+   "added": [
+    "key",
+    "keyEvent"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/injections/ImageButton.kt",
+   "line": 25,
+   "method": "(imports)",
+   "condition": ">= 26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.1",
+     "code": "import net.minecraft.client.gui.GuiGraphicsExtractor"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.gui.GuiGraphics"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "GuiGraphics",
+      "GuiGraphicsExtractor"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.gui.GuiGraphics",
+   "newer": "import net.minecraft.client.gui.GuiGraphicsExtractor",
+   "removed": [
+    "GuiGraphics"
+   ],
+   "added": [
+    "GuiGraphicsExtractor"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/injections/ImageButton.kt",
+   "line": 31,
+   "method": "(imports)",
+   "condition": ">= 1.21.6",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 1.21.6",
+     "code": "import net.minecraft.client.renderer.RenderPipelines"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/injections/ImageButton.kt",
+   "line": 42,
+   "method": "(class body)",
+   "condition": "<1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "ResourceLocation"
+    },
+    {
+     "condition": null,
+     "code": "Identifier"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Identifier",
+      "ResourceLocation"
+     ]
+    }
+   ],
+   "older": "ResourceLocation",
+   "newer": "Identifier",
+   "removed": [
+    "ResourceLocation"
+   ],
+   "added": [
+    "Identifier"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/injections/ImageButton.kt",
+   "line": 62,
+   "method": "ImageButton",
+   "condition": "<1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "/*super.renderWidget(context, mouseX, mouseY, delta)*/"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/injections/ImageButton.kt",
+   "line": 65,
+   "method": "ImageButton",
+   "condition": "<= 1.21.5",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<= 1.21.5",
+     "code": "/*RenderSystem.setShaderColor(1f, 1f, 1f, 1f)*/"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/injections/ImageButton.kt",
+   "line": 68,
+   "method": "ImageButton",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "renderDefaultSprite(context)"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/injections/ImageButton.kt",
+   "line": 67,
+   "method": "ImageButton",
+   "condition": ">= 1.21.6 | >= 1.21.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.6",
+     "code": "//? if >=1.21.11\n        renderDefaultSprite(context)\n        context.blit(RenderPipelines.GUI_TEXTURED, image, x + 2, y + 2, 0f, 0f, width - 4, height - 4, 16, 16)"
+    },
+    {
+     "condition": ">= 1.21.2",
+     "code": "/*context.blit(RenderType::guiTextured, image, x + 2, y + 2, 0f, 0f, width - 4, height - 4, 16, 16)\n        *///?} else\n        /*context.blit(image, x + 2, y + 2, 0f, 0f, width - 4, height - 4, 16, 16)*/\n    }\n    */"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6",
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "guiTextured"
+     ]
+    }
+   ],
+   "older": "/*context.blit(RenderType::guiTextured, image, x + 2, y + 2, 0f, 0f, width - 4, height - 4, 16, 16)\n        *///?} else\n        /*context.blit(image, x + 2, y + 2, 0f, 0f, width - 4, height - 4, 16, 16)*/\n    }\n    */",
+   "newer": "//? if >=1.21.11\n        renderDefaultSprite(context)\n        context.blit(RenderPipelines.GUI_TEXTURED, image, x + 2, y + 2, 0f, 0f, width - 4, height - 4, 16, 16)",
+   "removed": [
+    "RenderType",
+    "guiTextured"
+   ],
+   "added": [
+    "GUI_TEXTURED",
+    "RenderPipelines",
+    "renderDefaultSprite"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/injections/ImageButton.kt",
+   "line": 78,
+   "method": "ImageButton",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "override fun extractContents(\n        graphics: GuiGraphicsExtractor,\n        mouseX: Int,\n        mouseY: Int,\n        a: Float\n    ) {\n        this.extractDefaultSprite(graphics)\n        graphics.blit(RenderPipelines.GUI_TEXTURED, image, x + 2, y + 2, 0f, 0f, width - 4, height - 4, 16, 16)\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/update/components/UpdateCard.kt",
+   "line": 291,
+   "method": "downloadUpdate",
+   "condition": "<1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.9",
+     "code": "model.onListChanged.run()"
+    },
+    {
+     "condition": null,
+     "code": "@Suppress(\"UNCHECKED_CAST\")\n                                        (model.onListChanged as Consumer<PackSelectionModel.EntryBase?>).accept(null)"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "accept"
+     ]
+    }
+   ],
+   "older": "model.onListChanged.run()",
+   "newer": "@Suppress(\"UNCHECKED_CAST\")\n                                        (model.onListChanged as Consumer<PackSelectionModel.EntryBase?>).accept(null)",
+   "removed": [
+    "run"
+   ],
+   "added": [
+    "Consumer",
+    "EntryBase",
+    "PackSelectionModel",
+    "Suppress",
+    "accept"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/world/DownloadWorldTab.kt",
+   "line": 30,
+   "method": "(imports)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.client.gui.layouts.Layout\nimport net.minecraft.client.gui.layouts.LinearLayout"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/world/DownloadWorldTab.kt",
+   "line": 41,
+   "method": "(class body)",
+   "condition": ">= 1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.6",
+     "code": "override fun getTabExtraNarration(): Component {\n        return Component.empty()\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/world/DownloadWorldTab.kt",
+   "line": 53,
+   "method": "(class body)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "val layout: LinearLayout = LinearLayout.vertical()\n\n    override fun getLayout(): Layout {\n        return layout\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/world/WorldDownloadingScreen.kt",
+   "line": 37,
+   "method": "(imports)",
+   "condition": ">=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "import net.minecraft.client.gui.screens.GenericMessageScreen"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.gui.screens.GenericDirtMessageScreen\nimport net.minecraft.client.gui.GuiGraphics"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "GenericDirtMessageScreen",
+      "GenericMessageScreen"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.gui.screens.GenericDirtMessageScreen\nimport net.minecraft.client.gui.GuiGraphics",
+   "newer": "import net.minecraft.client.gui.screens.GenericMessageScreen",
+   "removed": [
+    "GenericDirtMessageScreen",
+    "GuiGraphics"
+   ],
+   "added": [
+    "GenericMessageScreen"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/world/WorldDownloadingScreen.kt",
+   "line": 45,
+   "method": "(class body)",
+   "condition": ">=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "GenericMessageScreen"
+    },
+    {
+     "condition": null,
+     "code": "Screen"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "GenericMessageScreen"
+     ]
+    }
+   ],
+   "older": "Screen",
+   "newer": "GenericMessageScreen",
+   "removed": [
+    "Screen"
+   ],
+   "added": [
+    "GenericMessageScreen"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/world/WorldDownloadingScreen.kt",
+   "line": 49,
+   "method": "WorldDownloadingScreen",
+   "condition": "<1.20.5",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.20.5",
+     "code": "private var textWidget: Component = Component.translatable(\"resourcify.world.downloading\", 0)"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/world/WorldDownloadingScreen.kt",
+   "line": 70,
+   "method": "repositionElements",
+   "condition": "<1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "cancelButton?.x = this.width / 2 - width / 2 - 12\n        cancelButton?.y = this.height / 2 + 20\n        cancelButton?.width = width + 24"
+    },
+    {
+     "condition": null,
+     "code": "cancelButton?.x = this.width / 2 - width / 2\n        cancelButton?.y = this.height / 2 + getTextHeight() - 9 / 2 + 2\n        cancelButton?.width = width"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "cancelButton?.x = this.width / 2 - width / 2 - 12\n        cancelButton?.y = this.height / 2 + 20\n        cancelButton?.width = width + 24",
+   "newer": "cancelButton?.x = this.width / 2 - width / 2\n        cancelButton?.y = this.height / 2 + getTextHeight() - 9 / 2 + 2\n        cancelButton?.width = width",
+   "removed": [],
+   "added": [
+    "getTextHeight"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/world/WorldDownloadingScreen.kt",
+   "line": 106,
+   "method": "WorldDownloadingScreen",
+   "condition": "<1.20.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.20.5",
+     "code": "override fun render(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {\n        this.renderDirtBackground(guiGraphics)\n        guiGraphics.drawCenteredString(this.font, this.textWidget, this.width / 2, this.height / 2, 16777215)\n        super.render(guiGraphics, mouseX, mouseY, partialTick)\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/world/WorldDownloadingScreen.kt",
+   "line": 121,
+   "method": "WorldDownloadingScreen",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "private fun getTextHeight(): Int {\n        return this.textWidget!!.height\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/world/WorldDownloadingScreen.kt",
+   "line": 143,
+   "method": "openWorld",
+   "condition": ">=1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21",
+     "code": "minecraft.createWorldOpenFlows().openWorld(name) {\n                            Constants.LOGGER.error(\"Failed to open world $name\")\n                            UScreen.displayScreen(createFailScreen(name))\n                        }"
+    },
+    {
+     "condition": null,
+     "code": "minecraft!!.forceSetScreen(GenericDirtMessageScreen(Component.translatable(\"selectWorld.data_read\")))\n                        minecraft!!.createWorldOpenFlows().loadLevel(createFailScreen(name), name)"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "LOGGER",
+      "error"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "LOGGER",
+      "loadLevel"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "GenericDirtMessageScreen",
+      "LOGGER",
+      "openWorld"
+     ]
+    }
+   ],
+   "older": "minecraft!!.forceSetScreen(GenericDirtMessageScreen(Component.translatable(\"selectWorld.data_read\")))\n                        minecraft!!.createWorldOpenFlows().loadLevel(createFailScreen(name), name)",
+   "newer": "minecraft.createWorldOpenFlows().openWorld(name) {\n                            Constants.LOGGER.error(\"Failed to open world $name\")\n                            UScreen.displayScreen(createFailScreen(name))\n                        }",
+   "removed": [
+    "Component",
+    "GenericDirtMessageScreen",
+    "forceSetScreen",
+    "loadLevel",
+    "translatable"
+   ],
+   "added": [
+    "Constants",
+    "LOGGER",
+    "UScreen",
+    "displayScreen",
+    "error",
+    "openWorld"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/platform/Platform.kt",
+   "line": 38,
+   "method": "getLoader",
+   "condition": "fabric | forge | neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "return \"fabric\""
+    },
+    {
+     "condition": "forge",
+     "code": "return \"forge\""
+    },
+    {
+     "condition": "neoforge",
+     "code": "return \"neoforge\""
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/platform/Platform.kt",
+   "line": 60,
+   "method": "getFileFromPackResourceSupplier",
+   "condition": "<1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21",
+     "code": "resources.open(\"\").use { pack ->\n            if (pack !is FilePackResources) {\n                return null\n            }\n            return pack.file\n        }"
+    },
+    {
+     "condition": null,
+     "code": "if (resources !is FilePackResources.FileResourcesSupplier) {\n            return null\n        }\n        return resources.content"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "FileResourcesSupplier",
+      "open"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "use"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "use"
+     ]
+    }
+   ],
+   "older": "resources.open(\"\").use { pack ->\n            if (pack !is FilePackResources) {\n                return null\n            }\n            return pack.file\n        }",
+   "newer": "if (resources !is FilePackResources.FileResourcesSupplier) {\n            return null\n        }\n        return resources.content",
+   "removed": [
+    "file",
+    "open",
+    "pack",
+    "use"
+   ],
+   "added": [
+    "FileResourcesSupplier",
+    "content"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/platform/ThemeReloadListener.kt",
+   "line": 28,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/platform/ThemeReloadListener.kt",
+   "line": 37,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": ",IdentifiableResourceReloadListener"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/platform/ThemeReloadListener.kt",
+   "line": 56,
+   "method": "(class body)",
+   "condition": "<1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "ResourceLocation"
+    },
+    {
+     "condition": null,
+     "code": "Identifier"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Identifier",
+      "ResourceLocation"
+     ]
+    }
+   ],
+   "older": "ResourceLocation",
+   "newer": "Identifier",
+   "removed": [
+    "ResourceLocation"
+   ],
+   "added": [
+    "Identifier"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/platform/ThemeReloadListener.kt",
+   "line": 55,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "override fun getFabricId(): /*? if <1.21.11 {*/ /*ResourceLocation *//*?} else {*/Identifier /*?}*/ {\n        return Utils.createResourceLocation(\"color-reload-listener\")\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/Resourcify.kt",
+   "line": 32,
+   "method": "(imports)",
+   "condition": ">=1.21.4 | forge",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent\n//?} else\n/*import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent*/\n*/"
+    },
+    {
+     "condition": "forge",
+     "code": "import net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory\nimport net.minecraftforge.client.event.RegisterClientReloadListenersEvent\nimport net.minecraftforge.fml.common.Mod\nimport thedarkcolour.kotlinforforge.forge.LOADING_CONTEXT\nimport thedarkcolour.kotlinforforge.forge.MOD_BUS"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory\nimport net.minecraftforge.client.event.RegisterClientReloadListenersEvent\nimport net.minecraftforge.fml.common.Mod\nimport thedarkcolour.kotlinforforge.forge.LOADING_CONTEXT\nimport thedarkcolour.kotlinforforge.forge.MOD_BUS",
+   "newer": "import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent\n//?} else\n/*import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent*/\n*/",
+   "removed": [
+    "ConfigScreenFactory",
+    "ConfigScreenHandler",
+    "LOADING_CONTEXT",
+    "MOD_BUS",
+    "Mod",
+    "common",
+    "fml",
+    "forge",
+    "kotlinforforge",
+    "minecraftforge",
+    "thedarkcolour"
+   ],
+   "added": [
+    "AddClientReloadListenersEvent",
+    "neoforge",
+    "neoforged"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/Resourcify.kt",
+   "line": 44,
+   "method": "(imports)",
+   "condition": "forgelike",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "forgelike",
+     "code": "@Mod(Constants.ID)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/Resourcify.kt",
+   "line": 46,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": ": ClientModInitializer"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/Resourcify.kt",
+   "line": 48,
+   "method": "(class body)",
+   "condition": "neoforge | forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "LOADING_CONTEXT.registerExtensionPoint(IConfigScreenFactory::class.java) {\n            IConfigScreenFactory { _, _ -> SettingsPage() }\n        }"
+    },
+    {
+     "condition": "forge",
+     "code": "LOADING_CONTEXT.registerExtensionPoint(ConfigScreenFactory::class.java) {\n            ConfigScreenFactory { _, _ -> SettingsPage() }\n        }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/Resourcify.kt",
+   "line": 58,
+   "method": "(class body)",
+   "condition": "forgelike",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "forgelike",
+     "code": "MOD_BUS.addListener(::registerClientReloadListeners)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/Resourcify.kt",
+   "line": 64,
+   "method": "(class body)",
+   "condition": "<1.21.4 || forge",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.4 || forge",
+     "code": "event.registerReloadListener(ThemeReloadListener)\n        //?} else\n        /*event.addListener(ThemeReloadListener.colorsLocation, ThemeReloadListener)*/\n    }\n    */"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/Resourcify.kt",
+   "line": 71,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "override fun onInitializeClient() {\n        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(ThemeReloadListener)\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/dev/dediamondpro/resourcify/util/Utils.kt",
+   "line": 107,
+   "method": "(class body)",
+   "condition": "<1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "ResourceLocation"
+    },
+    {
+     "condition": null,
+     "code": "Identifier"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Identifier",
+      "ResourceLocation"
+     ]
+    }
+   ],
+   "older": "ResourceLocation",
+   "newer": "Identifier",
+   "removed": [
+    "ResourceLocation"
+   ],
+   "added": [
+    "Identifier"
+   ]
+  }
+ ]
+}

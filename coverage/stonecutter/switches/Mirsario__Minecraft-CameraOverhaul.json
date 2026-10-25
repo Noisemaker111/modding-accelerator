@@ -1,0 +1,1125 @@
+{
+ "repo": "Mirsario/Minecraft-CameraOverhaul",
+ "commit": "51bae6f73d4b5efe9e27ed64df5445828e71a6b6",
+ "names": "unknown",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge",
+  "quilt"
+ ],
+ "versions": [
+  "1.14.4",
+  "1.15",
+  "1.16",
+  "1.17",
+  "1.18",
+  "1.19",
+  "1.19.3",
+  "1.20",
+  "1.20.6",
+  "1.21",
+  "1.21.2",
+  "1.21.5",
+  "1.21.9",
+  "1.21.11",
+  "26.1",
+  "26.2",
+  "26.3"
+ ],
+ "files": 12,
+ "switches": 38,
+ "versionSwitches": 31,
+ "rows": [
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/abstractions/MathAbstractions.java",
+   "line": 10,
+   "method": "rotateMatrixByAxis",
+   "condition": ">=26.3 | >=1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "matrix.mulPose(new org.joml.Matrix4f().rotate(new org.joml.Quaternionf().fromAxisAngleDeg((float)axisX, (float)axisY, (float)axisZ, (float)rotation)));"
+    },
+    {
+     "condition": ">=1.19.3",
+     "code": "/*matrix.mulPose(com.mojang.math.Axis.of(new org.joml.Vector3f((float)axisX, (float)axisY, (float)axisZ)).rotationDegrees((float)rotation));*/\n\t\t//?} else\n\t\t\t/*matrix.mulPose(new com.mojang.math.Vector3f((float)axisX, (float)axisY, (float)axisZ).rotationDegrees((float)rotation));*/\n\t}"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3",
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "26.2 -> 26.3",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "rotate"
+     ]
+    },
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "Vector3f",
+      "rotate"
+     ]
+    }
+   ],
+   "older": "/*matrix.mulPose(com.mojang.math.Axis.of(new org.joml.Vector3f((float)axisX, (float)axisY, (float)axisZ)).rotationDegrees((float)rotation));*/\n\t\t//?} else\n\t\t\t/*matrix.mulPose(new com.mojang.math.Vector3f((float)axisX, (float)axisY, (float)axisZ).rotationDegrees((float)rotation));*/\n\t}",
+   "newer": "matrix.mulPose(new org.joml.Matrix4f().rotate(new org.joml.Quaternionf().fromAxisAngleDeg((float)axisX, (float)axisY, (float)axisZ, (float)rotation)));",
+   "removed": [
+    "Axis",
+    "Vector3f",
+    "com",
+    "math",
+    "mojang",
+    "rotationDegrees"
+   ],
+   "added": [
+    "Matrix4f",
+    "Quaternionf",
+    "fromAxisAngleDeg",
+    "rotate"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/abstractions/TextAbstractions.java",
+   "line": 12,
+   "method": "getText",
+   "condition": ">=1.19",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19",
+     "code": "return Component.translatable(key);\n\t\t//?} else\n\t\t\t/*return new TranslatableComponent(key);*/\n\t}\n\n\tpublic static String getTextValue(String key) { return getText(key).getString(); }\n}"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2",
+    "1.18.2 -> 1.19"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/configuration/ConfigScreen.java",
+   "line": 24,
+   "method": "getConfigBuilder",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "parentScreen = Minecraft.getInstance().gui.screen();"
+    },
+    {
+     "condition": null,
+     "code": "parentScreen = Minecraft.getInstance().screen;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "parentScreen = Minecraft.getInstance().screen;",
+   "newer": "parentScreen = Minecraft.getInstance().gui.screen();",
+   "removed": [],
+   "added": [
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/configuration/Configuration.java",
+   "line": 16,
+   "method": "(class body)",
+   "condition": "FABRIC",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "FABRIC",
+     "code": "private static final Path CONFIG_DIR = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/configuration/Configuration.java",
+   "line": 18,
+   "method": "(class body)",
+   "condition": "FORGE",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "FORGE",
+     "code": "private static final Path CONFIG_DIR = net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/configuration/Configuration.java",
+   "line": 20,
+   "method": "(class body)",
+   "condition": "NEOFORGE",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "NEOFORGE",
+     "code": "private static final Path CONFIG_DIR = net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/configuration/ModMenuConfigIntegration.java",
+   "line": 10,
+   "method": "(imports)",
+   "condition": "<=1.17 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.17",
+     "code": "import io.github.prospector.modmenu.api.*;\nimport net.minecraft.client.gui.screens.*;"
+    },
+    {
+     "condition": null,
+     "code": "import com.terraformersmc.modmenu.api.*;"
+    }
+   ],
+   "boundary": [
+    "1.17 -> 1.17.1"
+   ],
+   "window": [
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18"
+   ],
+   "confirmed": [],
+   "older": "import io.github.prospector.modmenu.api.*;\nimport net.minecraft.client.gui.screens.*;",
+   "newer": "import com.terraformersmc.modmenu.api.*;",
+   "removed": [
+    "client",
+    "github",
+    "gui",
+    "minecraft",
+    "net",
+    "prospector",
+    "screens"
+   ],
+   "added": [
+    "com",
+    "terraformersmc"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/configuration/ModMenuConfigIntegration.java",
+   "line": 19,
+   "method": "(class body)",
+   "condition": "<=1.17",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.17",
+     "code": "public String getModId() {\n\t\treturn CameraOverhaul.MOD_ID;\n\t}\n\n\tpublic java.util.function.Function<Screen, ? extends Screen> getConfigScreenFactory() {\n\t\treturn screen -> ConfigScreen.getConfigBuilder(null).build();\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.17 -> 1.17.1"
+   ],
+   "window": [
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/configuration/ModMenuConfigIntegration.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "FABRIC && MC_RELEASE",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "FABRIC && MC_RELEASE",
+     "code": "package mirsario.cameraoverhaul.configuration;\n\nimport mirsario.cameraoverhaul.*;\n// Beyond annoying.\n//? if <=1.17 {\n/*import io.github.prospector.modmenu.api.*;\nimport net.minecraft.client.gui.screens.*;\n*///?} else {\nimport com.terraformersmc.modmenu.api.*;\n//?}\n\n@SuppressWarnings({ \"deprecation\", \"unused\" })\npublic class ModMenuConfigIntegration implements ModMenuApi {\n//? if <=1.17 {\n\t/*public String getModId() {\n\t\treturn CameraOverhaul.MOD_ID;\n\t}\n\n\tpublic java.util.function.Function<Screen, ? extends Screen> getConfigScreenFactory() {\n\t\treturn screen -> ConfigScreen.getConfigBuilder(null).build();\n\t}\n*///?}\n\n\t@Override\n\tpublic ConfigScreenFactory<?> getModConfigScreenFactory() {\n\t\treturn screen -> ConfigScreen.getConfigBuilder(null).build();\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/entrypoints/FabricClientModInitializer.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "FABRIC",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "FABRIC",
+     "code": "package mirsario.cameraoverhaul.entrypoints;\n\nimport mirsario.cameraoverhaul.*;\nimport net.fabricmc.api.*;\n\n@SuppressWarnings(\"unused\")\npublic class FabricClientModInitializer implements ClientModInitializer {\n\t@Override\n\tpublic void onInitializeClient() {\n\t\tCameraOverhaul.onInitializeClient();\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/entrypoints/ForgeInitializer.java",
+   "line": 12,
+   "method": "(imports)",
+   "condition": ">=1.18.0 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.18.0",
+     "code": "import net.minecraftforge.client.*;"
+    },
+    {
+     "condition": null,
+     "code": "/*import net.minecraftforge.fmlclient.*;\n*/"
+    }
+   ],
+   "boundary": [
+    "1.17.1 -> 1.18"
+   ],
+   "window": [
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18"
+   ],
+   "confirmed": [],
+   "older": "/*import net.minecraftforge.fmlclient.*;\n*/",
+   "newer": "import net.minecraftforge.client.*;",
+   "removed": [
+    "fmlclient"
+   ],
+   "added": [
+    "client"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/entrypoints/ForgeInitializer.java",
+   "line": 24,
+   "method": "(imports)",
+   "condition": ">=1.19.0 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.0",
+     "code": "ModLoadingContext.get().registerExtensionPoint(\n\t\t\tConfigScreenHandler.ConfigScreenFactory.class,\n\t\t\t() -> new ConfigScreenHandler.ConfigScreenFactory((mc, parentScreen) -> ConfigScreen.getConfigScreen(parentScreen))\n\t\t);"
+    },
+    {
+     "condition": null,
+     "code": "/*ModLoadingContext.get().registerExtensionPoint(\n\t\t\tConfigGuiHandler.ConfigGuiFactory.class,\n\t\t\t() -> new ConfigGuiHandler.ConfigGuiFactory((mc, parentScreen) -> ConfigScreen.getConfigScreen(parentScreen))\n\t\t);\n\t\t*/"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2",
+    "1.18.2 -> 1.19"
+   ],
+   "confirmed": [],
+   "older": "/*ModLoadingContext.get().registerExtensionPoint(\n\t\t\tConfigGuiHandler.ConfigGuiFactory.class,\n\t\t\t() -> new ConfigGuiHandler.ConfigGuiFactory((mc, parentScreen) -> ConfigScreen.getConfigScreen(parentScreen))\n\t\t);\n\t\t*/",
+   "newer": "ModLoadingContext.get().registerExtensionPoint(\n\t\t\tConfigScreenHandler.ConfigScreenFactory.class,\n\t\t\t() -> new ConfigScreenHandler.ConfigScreenFactory((mc, parentScreen) -> ConfigScreen.getConfigScreen(parentScreen))\n\t\t);",
+   "removed": [
+    "ConfigGuiFactory",
+    "ConfigGuiHandler"
+   ],
+   "added": [
+    "ConfigScreenFactory",
+    "ConfigScreenHandler"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/entrypoints/ForgeInitializer.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "FORGE",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "FORGE",
+     "code": "package mirsario.cameraoverhaul.entrypoints;\n\nimport mirsario.cameraoverhaul.*;\nimport mirsario.cameraoverhaul.configuration.*;\nimport net.minecraftforge.fml.*;\nimport net.minecraftforge.fml.common.*;\n//? if >=1.18.0 {\nimport net.minecraftforge.client.*;\n//?} else {\n/*import net.minecraftforge.fmlclient.*;\n*///?}\n\n@Mod(CameraOverhaul.MOD_ID)\n@SuppressWarnings(\"unused\")\npublic class ForgeInitializer {\n\tpublic ForgeInitializer() {\n\t\tCameraOverhaul.onInitializeClient();\n\n\t\t//? if >=1.19.0 {\n\t\tModLoadingContext.get().registerExtensionPoint(\n\t\t\tConfigScreenHandler.ConfigScreenFactory.class,\n\t\t\t() -> new ConfigScreenHandler.ConfigScreenFactory((mc, parentScreen) -> ConfigScreen.getConfigScreen(parentScreen))\n\t\t);\n\t\t//?} else {\n\t\t/*ModLoadingContext.get().registerExtensionPoint(\n\t\t\tConfigGuiHandler.ConfigGuiFactory.class,\n\t\t\t() -> new ConfigGuiHandler.ConfigGuiFactory((mc, parentScreen) -> ConfigScreen.getConfigScreen(parentScreen))\n\t\t);\n\t\t*///?}\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/entrypoints/NeoForgeInitializer.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "NEOFORGE",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "NEOFORGE",
+     "code": "package mirsario.cameraoverhaul.entrypoints;\n\nimport mirsario.cameraoverhaul.*;\nimport mirsario.cameraoverhaul.configuration.*;\nimport net.neoforged.fml.*;\nimport net.neoforged.fml.common.*;\nimport net.neoforged.neoforge.client.gui.*;\n\n@Mod(CameraOverhaul.MOD_ID)\n@SuppressWarnings(\"unused\")\npublic class NeoForgeInitializer {\n\tpublic NeoForgeInitializer() {\n\t\tCameraOverhaul.onInitializeClient();\n\n        ModLoadingContext.get().registerExtensionPoint(IConfigScreenFactory.class, () -> (mc, p) -> ConfigScreen.getConfigScreen(p));\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 19,
+   "method": "(imports)",
+   "condition": ">=1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.3",
+     "code": "import org.joml.*;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.math.*;"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3"
+   ],
+   "confirmed": [],
+   "older": "import com.mojang.math.*;",
+   "newer": "import org.joml.*;",
+   "removed": [
+    "com",
+    "math",
+    "mojang"
+   ],
+   "added": [
+    "joml",
+    "org"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 25,
+   "method": "(imports)",
+   "condition": "<1.15",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.15",
+     "code": "import org.lwjgl.opengl.*;"
+    }
+   ],
+   "boundary": [
+    "1.14.4 -> 1.15"
+   ],
+   "window": [
+    "1.14.4 -> 1.15"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 32,
+   "method": "(class body)",
+   "condition": ">=1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21",
+     "code": "private static final Vector3f FORWARDS = new Vector3f(0, 0, -1);\n\tprivate static final Vector3f UP = new Vector3f(0, 1, 0);\n\tprivate static final Vector3f LEFT = new Vector3f(-1, 0, 0);"
+    },
+    {
+     "condition": null,
+     "code": "private static final Vector3f FORWARDS = new Vector3f(0, 0, 1);\n\tprivate static final Vector3f UP = new Vector3f(0, 1, 0);\n\tprivate static final Vector3f LEFT = new Vector3f(1, 0, 0);"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.6 -> 1.21"
+   ],
+   "confirmed": [],
+   "older": "private static final Vector3f FORWARDS = new Vector3f(0, 0, 1);\n\tprivate static final Vector3f UP = new Vector3f(0, 1, 0);\n\tprivate static final Vector3f LEFT = new Vector3f(1, 0, 0);",
+   "newer": "private static final Vector3f FORWARDS = new Vector3f(0, 0, -1);\n\tprivate static final Vector3f UP = new Vector3f(0, 1, 0);\n\tprivate static final Vector3f LEFT = new Vector3f(-1, 0, 0);",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 44,
+   "method": "(class body)",
+   "condition": ">=1.15",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.15",
+     "code": "@Shadow private Vector3f forwards;\n\t@Shadow private Vector3f up;\n\t@Shadow private Vector3f left;"
+    }
+   ],
+   "boundary": [
+    "1.14.4 -> 1.15"
+   ],
+   "window": [
+    "1.14.4 -> 1.15"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 49,
+   "method": "(class body)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "@Shadow private int matrixPropertiesDirty;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 52,
+   "method": "(class body)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "@Shadow public abstract Entity entity();"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 54,
+   "method": "(class body)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "@Shadow public abstract float xRot();\n\t@Shadow public abstract float yRot();\n\t@Shadow public abstract Vec3 position();"
+    },
+    {
+     "condition": null,
+     "code": "@Shadow public abstract float getXRot();\n\t@Shadow public abstract float getYRot();\n\t@Shadow public abstract Vec3 getPosition();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "getPosition",
+      "getXRot",
+      "getYRot",
+      "position",
+      "xRot",
+      "yRot"
+     ]
+    }
+   ],
+   "older": "@Shadow public abstract float getXRot();\n\t@Shadow public abstract float getYRot();\n\t@Shadow public abstract Vec3 getPosition();",
+   "newer": "@Shadow public abstract float xRot();\n\t@Shadow public abstract float yRot();\n\t@Shadow public abstract Vec3 position();",
+   "removed": [
+    "getPosition",
+    "getXRot",
+    "getYRot"
+   ],
+   "added": [
+    "position",
+    "xRot",
+    "yRot"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 71,
+   "method": "(class body)",
+   "condition": ">=26.1 | >=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "@Inject(method = \"alignWithEntity\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/Camera;getMaxZoom(F)F\"))\n\tprivate void thirdPersonUpdate(float tickDelta, CallbackInfo ci)"
+    },
+    {
+     "condition": ">=1.21.11",
+     "code": "@Inject(method = \"setup\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/Camera;getMaxZoom(F)F\"))\n\tprivate void thirdPersonUpdate(Level area, Entity entity, boolean thirdPerson, boolean inverseView, float tickDelta, CallbackInfo ci)"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"setup\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/Camera;getMaxZoom(D)D\"))\n\tprivate void thirdPersonUpdate(BlockGetter area, Entity entity, boolean thirdPerson, boolean inverseView, float tickDelta, CallbackInfo ci)"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "@Inject(method = \"setup\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/Camera;getMaxZoom(F)F\"))\n\tprivate void thirdPersonUpdate(Level area, Entity entity, boolean thirdPerson, boolean inverseView, float tickDelta, CallbackInfo ci)",
+   "newer": "@Inject(method = \"alignWithEntity\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/Camera;getMaxZoom(F)F\"))\n\tprivate void thirdPersonUpdate(float tickDelta, CallbackInfo ci)",
+   "removed": [
+    "Entity",
+    "Level",
+    "area",
+    "entity",
+    "inverseView",
+    "thirdPerson"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 82,
+   "method": "thirdPersonUpdate",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "var entity = entity();\n\t\tvar thirdPerson = !Minecraft.getInstance().options.getCameraType().isFirstPerson();\n\t\tvar inverseView = Minecraft.getInstance().options.getCameraType().isMirrored();"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 93,
+   "method": "(class body)",
+   "condition": ">=26.1 | >=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "@Inject(method = \"alignWithEntity\", at = @At(\"RETURN\"))\n\tprivate void firstPersonUpdate(float tickDelta, CallbackInfo ci)"
+    },
+    {
+     "condition": ">=1.21.11",
+     "code": "@Inject(method = \"setup\", at = @At(\"RETURN\"))\n\tprivate void firstPersonUpdate(Level area, Entity entity, boolean thirdPerson, boolean inverseView, float tickDelta, CallbackInfo ci)"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"setup\", at = @At(\"RETURN\"))\n\tprivate void firstPersonUpdate(BlockGetter area, Entity entity, boolean thirdPerson, boolean inverseView, float tickDelta, CallbackInfo ci)"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "@Inject(method = \"setup\", at = @At(\"RETURN\"))\n\tprivate void firstPersonUpdate(Level area, Entity entity, boolean thirdPerson, boolean inverseView, float tickDelta, CallbackInfo ci)",
+   "newer": "@Inject(method = \"alignWithEntity\", at = @At(\"RETURN\"))\n\tprivate void firstPersonUpdate(float tickDelta, CallbackInfo ci)",
+   "removed": [
+    "Entity",
+    "Level",
+    "area",
+    "entity",
+    "inverseView",
+    "thirdPerson"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 104,
+   "method": "firstPersonUpdate",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "var entity = entity();\n\t\tvar thirdPerson = !Minecraft.getInstance().options.getCameraType().isFirstPerson();\n\t\tvar inverseView = Minecraft.getInstance().options.getCameraType().isMirrored();"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 114,
+   "method": "firstPersonUpdate",
+   "condition": "<1.15",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.15",
+     "code": "GL11.glRotatef(getYRot() + 180.0f, 0f, -1f, 0f);\n\t\tGL11.glRotatef(getXRot(), -1f, 0f, 0f);\n\t\tvar transform = applyCameraEffects(entity, thirdPerson, inverseView);"
+    }
+   ],
+   "boundary": [
+    "1.14.4 -> 1.15"
+   ],
+   "window": [
+    "1.14.4 -> 1.15"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 120,
+   "method": "firstPersonUpdate",
+   "condition": ">=1.15",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.15",
+     "code": "applyCameraEffects(entity, thirdPerson, inverseView);"
+    }
+   ],
+   "boundary": [
+    "1.14.4 -> 1.15"
+   ],
+   "window": [
+    "1.14.4 -> 1.15"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 124,
+   "method": "firstPersonUpdate",
+   "condition": "<1.15",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.15",
+     "code": "GL11.glRotatef((float)transform.eulerRot.z, 0f, 0f, 1f);\n\t\tGL11.glRotatef((float)transform.eulerRot.x, 1f, 0f, 0f);\n\t\tGL11.glRotatef((float)transform.eulerRot.y + 180f, 0f, 1f, 0f);"
+    }
+   ],
+   "boundary": [
+    "1.14.4 -> 1.15"
+   ],
+   "window": [
+    "1.14.4 -> 1.15"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 145,
+   "method": "applyCameraEffects",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "var oldXRot = xRot();\n\t\tvar oldYRot = yRot();\n\t\tvar oldPos = position();"
+    },
+    {
+     "condition": null,
+     "code": "var oldXRot = getXRot();\n\t\tvar oldYRot = getYRot();\n\t\tvar oldPos = getPosition();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "getPosition",
+      "getXRot",
+      "getYRot",
+      "position",
+      "xRot",
+      "yRot"
+     ]
+    }
+   ],
+   "older": "var oldXRot = getXRot();\n\t\tvar oldYRot = getYRot();\n\t\tvar oldPos = getPosition();",
+   "newer": "var oldXRot = xRot();\n\t\tvar oldYRot = yRot();\n\t\tvar oldPos = position();",
+   "removed": [
+    "getPosition",
+    "getXRot",
+    "getYRot"
+   ],
+   "added": [
+    "position",
+    "xRot",
+    "yRot"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 193,
+   "method": "addRotation",
+   "condition": ">=1.21",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21",
+     "code": "quat.rotateAxis(pitch * MathUtils.DEG_TO_RAD, -1, 0, 0);"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.6 -> 1.21"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 196,
+   "method": "addRotation",
+   "condition": "<1.21",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.21",
+     "code": "quat.rotateAxis(pitch * MathUtils.DEG_TO_RAD, 1, 0, 0);"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.6 -> 1.21"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 190,
+   "method": "addRotation",
+   "condition": ">=1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.3",
+     "code": "quat.premul(new Quaternionf().rotationAxis(yaw * MathUtils.DEG_TO_RAD, 0, -1, 0));\n\n\t\t//? if >=1.21\n\t\tquat.rotateAxis(pitch * MathUtils.DEG_TO_RAD, -1, 0, 0);\n\n\t\t//? if <1.21\n\t\t/*quat.rotateAxis(pitch * MathUtils.DEG_TO_RAD, 1, 0, 0);*/\n\n\t\tFORWARDS.rotate(quat, forwards);\n\t\tUP.rotate(quat, up);\n\t\tLEFT.rotate(quat, left);"
+    },
+    {
+     "condition": null,
+     "code": "var yawQuat = com.mojang.math.Vector3f.YP.rotationDegrees(-yaw);\n\t\tyawQuat.mul(quat);\n\t\tquat.set(yawQuat.i(), yawQuat.j(), yawQuat.k(), yawQuat.r());\n\t\tquat.mul(com.mojang.math.Vector3f.XP.rotationDegrees(-pitch));\n\t\tforwards.set(0, 0, 1);\n        forwards.transform(quat);\n        up.set(0, 1, 0);\n        up.transform(quat);\n        left.set(1, 0, 0);\n        left.transform(quat);"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "Vector3f",
+      "rotate",
+      "set"
+     ]
+    }
+   ],
+   "older": "var yawQuat = com.mojang.math.Vector3f.YP.rotationDegrees(-yaw);\n\t\tyawQuat.mul(quat);\n\t\tquat.set(yawQuat.i(), yawQuat.j(), yawQuat.k(), yawQuat.r());\n\t\tquat.mul(com.mojang.math.Vector3f.XP.rotationDegrees(-pitch));\n\t\tforwards.set(0, 0, 1);\n        forwards.transform(quat);\n        up.set(0, 1, 0);\n        up.transform(quat);\n        left.set(1, 0, 0);\n        left.transform(quat);",
+   "newer": "quat.premul(new Quaternionf().rotationAxis(yaw * MathUtils.DEG_TO_RAD, 0, -1, 0));\n\n\t\t//? if >=1.21\n\t\tquat.rotateAxis(pitch * MathUtils.DEG_TO_RAD, -1, 0, 0);\n\n\t\t//? if <1.21\n\t\t/*quat.rotateAxis(pitch * MathUtils.DEG_TO_RAD, 1, 0, 0);*/\n\n\t\tFORWARDS.rotate(quat, forwards);\n\t\tUP.rotate(quat, up);\n\t\tLEFT.rotate(quat, left);",
+   "removed": [
+    "Vector3f",
+    "com",
+    "math",
+    "mojang",
+    "mul",
+    "rotationDegrees",
+    "set",
+    "transform",
+    "yawQuat"
+   ],
+   "added": [
+    "DEG_TO_RAD",
+    "FORWARDS",
+    "LEFT",
+    "MathUtils",
+    "Quaternionf",
+    "premul",
+    "rotate",
+    "rotateAxis",
+    "rotationAxis"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 215,
+   "method": "addRotation",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "matrixPropertiesDirty |= 3;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/CameraMixin.java",
+   "line": 183,
+   "method": "(class body)",
+   "condition": ">=1.15",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.15",
+     "code": "private void addRotation(float pitch, float yaw) {\n\t\txRot += pitch;\n\t\tyRot += yaw;\n\n\t\tvar quat = rotation();\n\n\t\t//? if >=1.19.3 {\n\t\tquat.premul(new Quaternionf().rotationAxis(yaw * MathUtils.DEG_TO_RAD, 0, -1, 0));\n\n\t\t//? if >=1.21\n\t\tquat.rotateAxis(pitch * MathUtils.DEG_TO_RAD, -1, 0, 0);\n\n\t\t//? if <1.21\n\t\t/*quat.rotateAxis(pitch * MathUtils.DEG_TO_RAD, 1, 0, 0);*/\n\n\t\tFORWARDS.rotate(quat, forwards);\n\t\tUP.rotate(quat, up);\n\t\tLEFT.rotate(quat, left);\n\t\t//?} else {\n\t\t/*var yawQuat = com.mojang.math.Vector3f.YP.rotationDegrees(-yaw);\n\t\tyawQuat.mul(quat);\n\t\tquat.set(yawQuat.i(), yawQuat.j(), yawQuat.k(), yawQuat.r());\n\t\tquat.mul(com.mojang.math.Vector3f.XP.rotationDegrees(-pitch));\n\t\tforwards.set(0, 0, 1);\n        forwards.transform(quat);\n        up.set(0, 1, 0);\n        up.transform(quat);\n        left.set(1, 0, 0);\n        left.transform(quat);\n\t\t*///?}\n\n\t\t//? if >=26.1\n\t\tmatrixPropertiesDirty |= 3;\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.14.4 -> 1.15"
+   ],
+   "window": [
+    "1.14.4 -> 1.15"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/ExplosionMixin.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": ">=1.21.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.2",
+     "code": "import net.minecraft.client.multiplayer.*;\nimport net.minecraft.network.protocol.game.*;\n\n@Mixin(ClientPacketListener.class)\n@SuppressWarnings(\"UnusedMixin\")\npublic abstract class ExplosionMixin {\n\t@Inject(method = \"handleExplosion\", at = @At(\"RETURN\"))\n\tprivate void handleExplosion(ClientboundExplodePacket packet, CallbackInfo ci) {\n\t\tvar pos = packet.center();\n\t\tvar shake = ScreenShakes.createDirect();\n\t\tshake.position.set(pos.x, pos.y, pos.z);\n\t\tshake.radius = 32f;\n\t\tshake.trauma = (float)Configuration.get().general.explosionTrauma;\n\t\tshake.lengthInSeconds = 2f;\n\t}\n}"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.world.level.*;\n\n@Mixin(Explosion.class)\n@SuppressWarnings(\"UnusedMixin\")\npublic abstract class ExplosionMixin {\n\t@Shadow @Final private double x;\n\t@Shadow @Final private double y;\n\t@Shadow @Final private double z;\n\t@Shadow @Final private float radius;\n\n\t@Inject(method = \"finalizeExplosion\", at = @At(\"RETURN\"))\n\tprivate void finalizeExplosion(boolean spawnParticles, CallbackInfo ci) {\n\t\tvar shake = ScreenShakes.createDirect();\n\t\tshake.position.set(this.x, this.y, this.z);\n\t\tshake.radius = this.radius * 10f;\n\t\tshake.trauma = (float)Configuration.get().general.explosionTrauma;\n\t\tshake.lengthInSeconds = 2f;\n\t}\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "center",
+      "finalizeExplosion",
+      "level",
+      "pos"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.world.level.*;\n\n@Mixin(Explosion.class)\n@SuppressWarnings(\"UnusedMixin\")\npublic abstract class ExplosionMixin {\n\t@Shadow @Final private double x;\n\t@Shadow @Final private double y;\n\t@Shadow @Final private double z;\n\t@Shadow @Final private float radius;\n\n\t@Inject(method = \"finalizeExplosion\", at = @At(\"RETURN\"))\n\tprivate void finalizeExplosion(boolean spawnParticles, CallbackInfo ci) {\n\t\tvar shake = ScreenShakes.createDirect();\n\t\tshake.position.set(this.x, this.y, this.z);\n\t\tshake.radius = this.radius * 10f;\n\t\tshake.trauma = (float)Configuration.get().general.explosionTrauma;\n\t\tshake.lengthInSeconds = 2f;\n\t}\n}",
+   "newer": "import net.minecraft.client.multiplayer.*;\nimport net.minecraft.network.protocol.game.*;\n\n@Mixin(ClientPacketListener.class)\n@SuppressWarnings(\"UnusedMixin\")\npublic abstract class ExplosionMixin {\n\t@Inject(method = \"handleExplosion\", at = @At(\"RETURN\"))\n\tprivate void handleExplosion(ClientboundExplodePacket packet, CallbackInfo ci) {\n\t\tvar pos = packet.center();\n\t\tvar shake = ScreenShakes.createDirect();\n\t\tshake.position.set(pos.x, pos.y, pos.z);\n\t\tshake.radius = 32f;\n\t\tshake.trauma = (float)Configuration.get().general.explosionTrauma;\n\t\tshake.lengthInSeconds = 2f;\n\t}\n}",
+   "removed": [
+    "Explosion",
+    "Final",
+    "Shadow",
+    "finalizeExplosion",
+    "level",
+    "spawnParticles",
+    "world"
+   ],
+   "added": [
+    "ClientPacketListener",
+    "ClientboundExplodePacket",
+    "center",
+    "client",
+    "game",
+    "handleExplosion",
+    "multiplayer",
+    "network",
+    "packet",
+    "pos",
+    "protocol"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/GameRendererMixin.java",
+   "line": 13,
+   "method": "(imports)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "import net.minecraft.client.renderer.state.level.*;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/GameRendererMixin.java",
+   "line": 33,
+   "method": "postCameraUpdate",
+   "condition": ">=26.1 | >=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "Transform cameraTransform = new Transform(VectorUtils.toJoml(cameraState.pos), new Vector3d(cameraState.xRot, cameraState.yRot, 0));"
+    },
+    {
+     "condition": ">=1.21.11",
+     "code": "/*Transform cameraTransform = new Transform(VectorUtils.toJoml(mainCamera.position()), new Vector3d(mainCamera.xRot(), mainCamera.yRot(), 0));\n\t\t*///?} else\n\t\t//Transform cameraTransform = new Transform(VectorUtils.toJoml(mainCamera.getPosition()), new Vector3d(mainCamera.getXRot(), mainCamera.getYRot(), 0));\n\n\t\tCameraOverhaul.camera.modifyCameraTransform(cameraTransform);\n\n\t\tMathAbstractions.rotateMatrixByAxis(matrices, 0f, 0f, 1f, cameraTransform.eulerRot.z);\n\t}\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "/*Transform cameraTransform = new Transform(VectorUtils.toJoml(mainCamera.position()), new Vector3d(mainCamera.xRot(), mainCamera.yRot(), 0));\n\t\t*///?} else\n\t\t//Transform cameraTransform = new Transform(VectorUtils.toJoml(mainCamera.getPosition()), new Vector3d(mainCamera.getXRot(), mainCamera.getYRot(), 0));\n\n\t\tCameraOverhaul.camera.modifyCameraTransform(cameraTransform);\n\n\t\tMathAbstractions.rotateMatrixByAxis(matrices, 0f, 0f, 1f, cameraTransform.eulerRot.z);\n\t}\n}",
+   "newer": "Transform cameraTransform = new Transform(VectorUtils.toJoml(cameraState.pos), new Vector3d(cameraState.xRot, cameraState.yRot, 0));",
+   "removed": [
+    "CameraOverhaul",
+    "MathAbstractions",
+    "camera",
+    "eulerRot",
+    "mainCamera",
+    "matrices",
+    "modifyCameraTransform",
+    "position",
+    "rotateMatrixByAxis"
+   ],
+   "added": [
+    "cameraState",
+    "pos"
+   ]
+  },
+  {
+   "file": "src/main/java/mirsario/cameraoverhaul/mixins/LightningBoltMixin.java",
+   "line": 13,
+   "method": "(imports)",
+   "condition": ">=1.16 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.16",
+     "code": "import net.minecraft.world.entity.LightningBolt;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.world.entity.global.LightningBolt;"
+    }
+   ],
+   "boundary": [
+    "1.15.2 -> 1.16"
+   ],
+   "window": [
+    "1.15 -> 1.15.1",
+    "1.15.1 -> 1.15.2",
+    "1.15.2 -> 1.16"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraft.world.entity.global.LightningBolt;",
+   "newer": "import net.minecraft.world.entity.LightningBolt;",
+   "removed": [
+    "global"
+   ],
+   "added": []
+  }
+ ]
+}

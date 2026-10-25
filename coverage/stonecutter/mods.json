@@ -1,0 +1,865 @@
+{
+ "note": "Stonecutter mods mined for version switches. Each is pinned to one commit; `python bench/stonecutter_mine.py fetch` checks that commit out under .runs/stonecutter-src and `extract` writes the switches. Chosen from a GitHub code search for the Stonecutter plugin in settings.gradle(.kts): public, open-source licence, pushed to in 2026. names, loaders and versions are filled in by extract from the checkout.",
+ "mods": [
+  {
+   "repo": "SunkenInTime/diorama",
+   "branch": "master",
+   "commit": "8d490b41faf1256f2c9619d7a29d079806da3e5a",
+   "license": "MIT",
+   "stars": 65,
+   "pushed": "2026-10-25",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.21",
+    "1.21.1",
+    "1.21.3",
+    "1.21.4",
+    "1.21.5",
+    "1.21.6",
+    "1.21.8",
+    "1.21.9",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "isXander/Controlify",
+   "branch": "main",
+   "commit": "f756225fcf94970458589cb5122b97671f450a75",
+   "license": "LGPL-3.0",
+   "stars": 355,
+   "pushed": "2026-10-25",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge",
+    "quilt"
+   ]
+  },
+  {
+   "repo": "isXander/Zoomify",
+   "branch": "main",
+   "commit": "4abaf61b97e9615b98de57c5171393b8f8ef5bb0",
+   "license": "LGPL-3.0",
+   "stars": 138,
+   "pushed": "2026-10-21",
+   "language": "Kotlin",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "26.1",
+    "26.2",
+    "26.3",
+    "26.4"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "isXander/YetAnotherConfigLib",
+   "branch": "main",
+   "commit": "97f89e5bd0eff3811324680b6dec9e0e1009b8c0",
+   "license": "LGPL-3.0",
+   "stars": 159,
+   "pushed": "2026-10-06",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "Faboslav/friends-and-foes",
+   "branch": "master",
+   "commit": "ede6ba999e4b0edf0932b74a6165cb6917c76530",
+   "license": "NOASSERTION",
+   "stars": 133,
+   "pushed": "2026-10-22",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.4",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "FemaleGenderMod/FemaleGenderMod",
+   "branch": "multiloader",
+   "commit": "6f6ec1f9760cf56b57f2a1d8f82700cbddf6d2db",
+   "license": "LGPL-3.0",
+   "stars": 39,
+   "pushed": "2026-10-04",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [],
+   "loaders": [
+    "fabric"
+   ]
+  },
+  {
+   "repo": "Leawind/Third-Person",
+   "branch": "main",
+   "commit": "7c9ba2a54d41acd3e32eec773b928b1fe76e5ec4",
+   "license": "MIT",
+   "stars": 73,
+   "pushed": "2026-09-09",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.20.1",
+    "1.20.4",
+    "1.21",
+    "1.21.11",
+    "26.1",
+    "26.2"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "Mirsario/Minecraft-CameraOverhaul",
+   "branch": "dev",
+   "commit": "51bae6f73d4b5efe9e27ed64df5445828e71a6b6",
+   "license": "GPL-3.0",
+   "stars": 60,
+   "pushed": "2026-09-26",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "unknown",
+   "versions": [
+    "1.14.4",
+    "1.15",
+    "1.16",
+    "1.17",
+    "1.18",
+    "1.19",
+    "1.19.3",
+    "1.20",
+    "1.20.6",
+    "1.21",
+    "1.21.2",
+    "1.21.5",
+    "1.21.9",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge",
+    "quilt"
+   ]
+  },
+  {
+   "repo": "MinecraftFreecam/Freecam",
+   "branch": "main",
+   "commit": "aad378b5a30c438a9ba9de3b7856f8457b070f0e",
+   "license": "MIT",
+   "stars": 127,
+   "pushed": "2026-10-20",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.17.1",
+    "1.18.2",
+    "1.19.4",
+    "1.20.6",
+    "1.21.11",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "TeamMidnightDust/MidnightLib",
+   "branch": "multiversion",
+   "commit": "bd2aa72c2862c67ff5b72ba49b152a3a69d1f9a9",
+   "license": "MIT",
+   "stars": 102,
+   "pushed": "2026-10-14",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.21.1",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "TeamMidnightDust/MidnightControls",
+   "branch": "multiversion",
+   "commit": "719dfdfe9f137b55d7314c9ed87b94c95c170292",
+   "license": "MIT",
+   "stars": 215,
+   "pushed": "2026-08-02",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.21.11",
+    "26.1",
+    "26.2"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "chrrs/scribble",
+   "branch": "main",
+   "commit": "bf88a49b43cee3486e5389adb3bf89b21895226c",
+   "license": "MIT",
+   "stars": 17,
+   "pushed": "2026-10-09",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "Bawnorton/Neruina",
+   "branch": "stonecutter",
+   "commit": "61c3f8f4c3dbdfc7e74a5809aa6b426c12e96ae0",
+   "license": "MIT",
+   "stars": 50,
+   "pushed": "2026-10-17",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.5",
+    "1.21.6",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "IMB11-Mods/SkinShuffle",
+   "branch": "main",
+   "commit": "1930d54f6af334f0c18ac95fbdb517c5ee22d0bd",
+   "license": "NOASSERTION",
+   "stars": 35,
+   "pushed": "2026-09-15",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "26.1"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "Skidamek/AutoModpack",
+   "branch": "main",
+   "commit": "dcedad1da8f2028fb17e53ee6a39d088a1e17f93",
+   "license": "LGPL-3.0",
+   "stars": 227,
+   "pushed": "2026-10-25",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.18.2",
+    "1.19.2",
+    "1.20.1",
+    "1.21.1",
+    "1.21.4",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "mrbuilder1961/ChatPatches",
+   "branch": "omnivers",
+   "commit": "987cf24502ad737c83959fd5f1297a2fd42165d7",
+   "license": "LGPL-3.0",
+   "stars": 68,
+   "pushed": "2026-10-04",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1.2",
+    "26.2",
+    "26.3",
+    "26.4"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "NikitaCartes/EasyAuth",
+   "branch": "stonecutter",
+   "commit": "89e473a150eecf748f603d1c71228fae196e4321",
+   "license": "MIT",
+   "stars": 234,
+   "pushed": "2026-10-23",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.19.4",
+    "1.20",
+    "1.20.2",
+    "1.20.3",
+    "1.20.5",
+    "1.21",
+    "1.21.2",
+    "1.21.5",
+    "1.21.6",
+    "1.21.9",
+    "1.21.11",
+    "26.1",
+    "26.2"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "Octol1ttle/FlightAssistant",
+   "branch": "dev",
+   "commit": "266e2f2f14592737c529956273312b1dcfcfa043",
+   "license": "LGPL-3.0",
+   "stars": 65,
+   "pushed": "2026-10-14",
+   "language": "Kotlin",
+   "pinned": "2026-10-25",
+   "names": "unknown",
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.6",
+    "1.21.9",
+    "1.21.11"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge",
+    "quilt"
+   ]
+  },
+  {
+   "repo": "PigCart/particle-rain",
+   "branch": "main",
+   "commit": "c01178778bb0200139b80587ee69fa60bff3560f",
+   "license": "MIT",
+   "stars": 70,
+   "pushed": "2026-10-20",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.9",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "The-Fireplace-Minecraft-Mods/In-Game-Account-Switcher",
+   "branch": "main",
+   "commit": "e2716598866b0aba93a595517b5225e88a9674b2",
+   "license": "LGPL-3.0",
+   "stars": 131,
+   "pushed": "2026-10-20",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.20.1"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "Wilyicaro/Legacy-Minecraft",
+   "branch": "main",
+   "commit": "f49505dab97480f687025f8a54208d2caa3ff86c",
+   "license": "LGPL-3.0",
+   "stars": 247,
+   "pushed": "2026-10-20",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.21.11",
+    "26.1.2"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "Trainguy9512/locomotion",
+   "branch": "master",
+   "commit": "d1cab66e949dcfcd98481bc31eb42111edeeceac",
+   "license": "NOASSERTION",
+   "stars": 819,
+   "pushed": "2026-06-17",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.21.5",
+    "1.21.11"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "meza/Inventory-Sorter",
+   "branch": "main",
+   "commit": "fbe3e9423ac4739a17d66aaed6ad5d6715c36730",
+   "license": "MIT",
+   "stars": 51,
+   "pushed": "2026-10-23",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.20.2",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "yurisuika/Raised",
+   "skip": "Uses Stonecutter only to build: each version keeps its own copy under versions/<v>/src, so there are no switches to mine.",
+   "branch": "master",
+   "commit": "f8f80b755c348a636e271542edd823c313173ebf",
+   "license": "LGPL-3.0",
+   "stars": 25,
+   "pushed": "2026-10-21",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.16.5",
+    "1.17.1",
+    "1.18.2",
+    "1.19",
+    "1.19.2",
+    "1.19.3",
+    "1.19.4",
+    "1.20.1",
+    "1.20.2",
+    "1.20.4",
+    "1.20.6",
+    "1.21.1",
+    "1.21.3",
+    "1.21.4",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1.2",
+    "26.2",
+    "26.3",
+    "26.4"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "DrexHD/Vanish",
+   "branch": "main",
+   "commit": "7a30b8c6c7edc8faef14c8cf86896ab9e67359fb",
+   "license": "MIT",
+   "stars": 29,
+   "pushed": "2026-09-27",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.21.1",
+    "1.21.4",
+    "1.21.5",
+    "1.21.8",
+    "1.21.9",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "quilt"
+   ]
+  },
+  {
+   "repo": "Clickism/ClickVillagers",
+   "branch": "master",
+   "commit": "1e3b1859e6c50145e8ef3aa0222366157d237817",
+   "license": "GPL-3.0",
+   "stars": 17,
+   "pushed": "2026-09-20",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.21.1",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "North-West-Wind/AutoFish",
+   "branch": "master",
+   "commit": "5aed37400a20266bb026ba8ed88b802f72fa98b4",
+   "license": "GPL-3.0",
+   "stars": 22,
+   "pushed": "2026-07-06",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.16.5",
+    "1.17.1",
+    "1.18.2",
+    "1.19.2",
+    "1.19.4",
+    "1.20.1",
+    "1.21.1",
+    "1.21.11",
+    "26.1.2",
+    "26.2"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "Polyfrost/OverflowAnimationsV2",
+   "branch": "stonecutter",
+   "commit": "352231fe7c170714220a62063ab77a0154943190",
+   "license": "GPL-3.0",
+   "stars": 41,
+   "pushed": "2026-10-23",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.8.9",
+    "1.21.4",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric"
+   ]
+  },
+  {
+   "repo": "TeamMidnightDust/CullLeaves",
+   "branch": "multiversion",
+   "commit": "c2ed2b6503ff89f2c7a84367ffca31efe5a7f8d6",
+   "license": "MIT",
+   "stars": 69,
+   "pushed": "2026-10-10",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "godemperoroftheworld/strawgolem",
+   "branch": "main",
+   "commit": "d54940ebecabb9126f6714c085de81dfc66c1b26",
+   "license": "AGPL-3.0",
+   "stars": 21,
+   "pushed": "2026-01-22",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.19.2",
+    "1.19.4",
+    "1.20.1",
+    "1.20.4",
+    "1.20.6",
+    "1.21.1",
+    "1.21.2",
+    "1.21.4",
+    "1.21.5",
+    "1.21.6"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "decce6/Ixeris",
+   "branch": "master",
+   "commit": "98f5e507bb2a25dfb9f927f5b3614e6d3b8cbf43",
+   "license": "LGPL-3.0",
+   "stars": 41,
+   "pushed": "2026-10-19",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "unknown",
+   "versions": [
+    "1.16.5",
+    "1.18.2",
+    "1.19.2",
+    "1.20.1",
+    "1.20.4",
+    "1.21.1",
+    "1.21.8",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "Zolo101/RenderScale",
+   "branch": "stonecutter",
+   "commit": "0cf43868636048efb45aeebc88acebc90848fe14",
+   "license": "MIT",
+   "stars": 29,
+   "pushed": "2026-10-17",
+   "language": "GLSL",
+   "pinned": "2026-10-25",
+   "names": "mojmap",
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.3",
+    "1.21.4",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "DeDiamondPro/Resourcify",
+   "branch": "master",
+   "commit": "35f2d71eb7e2fa2609d200b48d6a6a8092e1db56",
+   "license": "GPL-3.0",
+   "stars": 49,
+   "pushed": "2026-10-24",
+   "language": "Kotlin",
+   "pinned": "2026-10-25",
+   "names": "unknown",
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.4",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ]
+  },
+  {
+   "repo": "not-coded/WayFix",
+   "branch": "multiloader",
+   "commit": "7e926f0c6b4bc57d1532a39c135999fd7485451e",
+   "license": "LGPL-2.1",
+   "stars": 28,
+   "pushed": "2026-03-27",
+   "language": "Java",
+   "pinned": "2026-10-25",
+   "names": "yarn",
+   "versions": [
+    "1.16.5",
+    "1.17.1",
+    "1.18.2",
+    "1.19",
+    "1.19.2",
+    "1.19.3",
+    "1.20.1",
+    "1.20.4",
+    "1.20.6",
+    "1.21",
+    "1.21.9"
+   ],
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge",
+    "quilt"
+   ]
+  }
+ ]
+}

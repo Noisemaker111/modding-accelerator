@@ -270,8 +270,24 @@ def main():
                                     "exact": exact, "date": h.get("date")})
         return best[1] if best else None
 
+    # Stonecutter switches mined from real multi-version mods (bench/stonecutter_mine.py), and the
+    # rules learned from them, per update. A rule is attached to an update when its jump is exactly
+    # that update, in either direction.
+    sc_path = ROOT / "coverage" / "stonecutter" / "index.json"
+    sc_steps = load(sc_path)["steps"] if sc_path.is_file() else {}
+    learned = [r for r in load(KNOWLEDGE / "fixes.json")["rules"] if r.get("source") == "stonecutter"]
+
+    def mined(s):
+        key = f"{s['from']} -> {s['to']}"
+        row = sc_steps.get(key, {"switches": 0, "mods": 0, "confirmed": 0})
+        span = (order[s["from"]], order[s["to"]])
+        fwd = [r["id"] for r in learned if jump_range(r.get("jump")) == span]
+        back = [r["id"] for r in learned if jump_range(r.get("jump")) == span[::-1]]
+        return {**row, "rules": fwd, "backRules": back}
+
     for s in steps:
         s["coverage"] = cover(s)
+        s["stonecutter"] = mined(s)
         s["bestRun"] = best_run(s["from"], s["to"])
         s["backportRun"] = best_run(s["to"], s["from"])
 

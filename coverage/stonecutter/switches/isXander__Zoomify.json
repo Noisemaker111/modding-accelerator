@@ -1,0 +1,209 @@
+{
+ "repo": "isXander/Zoomify",
+ "commit": "4abaf61b97e9615b98de57c5171393b8f8ef5bb0",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "26.1",
+  "26.2",
+  "26.3",
+  "26.4"
+ ],
+ "files": 5,
+ "switches": 6,
+ "versionSwitches": 5,
+ "rows": [
+  {
+   "file": "src/main/java/dev/isxander/zoomify/mixins/spyglass/HudMixin.java",
+   "line": 17,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Mixin(net.minecraft.client.gui.Hud.class)"
+    },
+    {
+     "condition": null,
+     "code": "@Mixin(net.minecraft.client.gui.Gui.class)"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "Hud"
+     ]
+    }
+   ],
+   "older": "@Mixin(net.minecraft.client.gui.Gui.class)",
+   "newer": "@Mixin(net.minecraft.client.gui.Hud.class)",
+   "removed": [
+    "Gui"
+   ],
+   "added": [
+    "Hud"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/zoomify/mixins/zoom/secondary/HudMixin.java",
+   "line": 17,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Mixin(net.minecraft.client.gui.Hud.class)"
+    },
+    {
+     "condition": null,
+     "code": "@Mixin(net.minecraft.client.gui.Gui.class)"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "Hud"
+     ]
+    }
+   ],
+   "older": "@Mixin(net.minecraft.client.gui.Gui.class)",
+   "newer": "@Mixin(net.minecraft.client.gui.Hud.class)",
+   "removed": [
+    "Gui"
+   ],
+   "added": [
+    "Hud"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/isxander/zoomify/config/SettingsGuiFactory.kt",
+   "line": 275,
+   "method": "createSettingsGui",
+   "condition": "<1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "minecraft,"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/isxander/zoomify/integrations/ControlifyIntegration.kt",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "controlify",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "controlify",
+     "code": "import dev.isxander.controlify.api.ControlifyApi\nimport dev.isxander.controlify.api.entrypoint.ControlifyEntrypoint\nimport dev.isxander.controlify.api.entrypoint.InitContext\nimport dev.isxander.controlify.api.entrypoint.PreInitContext\nimport dev.isxander.controlify.api.event.ControlifyEvents\nimport dev.isxander.yacl3.config.v3.value\nimport dev.isxander.zoomify.Zoomify\nimport dev.isxander.zoomify.config.ZoomifySettings\nimport net.minecraft.util.Mth\n\nobject ControlifyIntegration : ControlifyEntrypoint {\n\toverride fun onControllersDiscovered(controlify: ControlifyApi) {\n\n\t}\n\n\n\toverride fun onControlifyInit(context: InitContext) {\n\t\tControlifyEvents.LOOK_INPUT_MODIFIER.register {\n\t\t\tit.lookInput.x /= Mth.lerp(ZoomifySettings.relativeSensitivity.value / 100.0, 1.0, Zoomify.previousZoomDivisor).toFloat()\n\t\t\tit.lookInput.y /= Mth.lerp(ZoomifySettings.relativeSensitivity.value / 100.0, 1.0, Zoomify.previousZoomDivisor).toFloat()\n\t\t}\n\t}\n\n\toverride fun onControlifyPreInit(context: PreInitContext) {\n\n\t}\n\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/dev/isxander/zoomify/utils/MinecraftExt.kt",
+   "line": 25,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "SystemToast.add(\n\t\tminecraft.gui.toastManager(),\n\t\ttoastId,\n\t\ttitle,\n\t\tdescription\n\t)"
+    },
+    {
+     "condition": null,
+     "code": "minecraft.toastManager.addToast(\n\t\tSystemToast.multiline(\n\t\t\tminecraft,\n\t\t\ttoastId,\n\t\t\ttitle,\n\t\t\tdescription\n\t\t)\n\t)"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "add",
+      "multiline"
+     ]
+    }
+   ],
+   "older": "minecraft.toastManager.addToast(\n\t\tSystemToast.multiline(\n\t\t\tminecraft,\n\t\t\ttoastId,\n\t\t\ttitle,\n\t\t\tdescription\n\t\t)\n\t)",
+   "newer": "SystemToast.add(\n\t\tminecraft.gui.toastManager(),\n\t\ttoastId,\n\t\ttitle,\n\t\tdescription\n\t)",
+   "removed": [
+    "addToast",
+    "multiline"
+   ],
+   "added": [
+    "add",
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/dev/isxander/zoomify/utils/MinecraftExt.kt",
+   "line": 47,
+   "method": "(imports)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "fun Minecraft.setScreen(screen: Screen?) =\n\tgui.setScreen(screen)\n\nval Minecraft.screen: Screen?\n\tget() = gui.screen()"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  }
+ ]
+}

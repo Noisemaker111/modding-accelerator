@@ -1,0 +1,883 @@
+{
+ "repo": "TeamMidnightDust/CullLeaves",
+ "commit": "c2ed2b6503ff89f2c7a84367ffca31efe5a7f8d6",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "neoforge"
+ ],
+ "versions": [
+  "1.20.1",
+  "1.21.1",
+  "1.21.5",
+  "1.21.8",
+  "1.21.10",
+  "1.21.11",
+  "26.1",
+  "26.2",
+  "26.3"
+ ],
+ "files": 5,
+ "switches": 22,
+ "versionSwitches": 17,
+ "rows": [
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/config/SodiumConfigEntryPoint.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">= 1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": "import net.caffeinemc.mods.sodium.api.config.ConfigEntryPoint;\nimport net.caffeinemc.mods.sodium.api.config.option.OptionFlag;\nimport net.caffeinemc.mods.sodium.api.config.option.OptionImpact;\nimport net.caffeinemc.mods.sodium.api.config.structure.ConfigBuilder;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.resources.Identifier;\n\nimport static eu.midnightdust.cullleaves.CullLeavesClient.MOD_ID;\n\npublic class SodiumConfigEntryPoint implements ConfigEntryPoint {\n    @Override\n    public void registerConfigLate(ConfigBuilder builder) {\n        builder.registerOwnModOptions().setName(\"Cull Leaves\").setColorTheme(builder.createColorTheme().setBaseThemeRGB(0xFF55AA55))\n                .addPage(builder.createOptionPage().setName(Component.translatable(\"sodium.options.pages.performance\")).addOptionGroup(builder.createOptionGroup()\n                .addOption(\n                        builder.createBooleanOption(Identifier.fromNamespaceAndPath(MOD_ID, \"enabled\"))\n                                .setDefaultValue(true)\n                                .setName(Component.translatable(\"cullleaves.midnightconfig.enabled\"))\n                                .setTooltip(Component.translatable(\"cullleaves.midnightconfig.enabled.tooltip\"))\n                                .setBinding(value -> CullLeavesConfig.enabled = value,\n                                        () -> CullLeavesConfig.enabled)\n                                .setStorageHandler(() -> CullLeavesConfig.write(MOD_ID))\n                                .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)\n                                .setImpact(OptionImpact.MEDIUM)\n                )\n                .addOption(\n                        builder.createBooleanOption(Identifier.fromNamespaceAndPath(MOD_ID, \"cull_roots\"))\n                                .setDefaultValue(true)\n                                .setName(Component.translatable(\"cullleaves.midnightconfig.cullRoots\"))\n                                .setTooltip(Component.translatable(\"cullleaves.midnightconfig.cullRoots.tooltip\"))\n                                .setBinding(value -> CullLeavesConfig.cullRoots = value,\n                                        () -> CullLeavesConfig.cullRoots)\n                                .setStorageHandler(() -> CullLeavesConfig.write(MOD_ID))\n                                .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)\n                                .setImpact(OptionImpact.MEDIUM)\n                )\n        ));\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/CullLeavesClient.java",
+   "line": 27,
+   "method": "(imports)",
+   "condition": ">= 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": "import net.fabricmc.fabric.api.resource.v1.pack.PackActivationType;"
+    },
+    {
+     "condition": null,
+     "code": "import net.fabricmc.fabric.api.resource.ResourceManagerHelper;\nimport net.fabricmc.fabric.api.resource.ResourcePackActivationType;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "pack"
+     ]
+    }
+   ],
+   "older": "import net.fabricmc.fabric.api.resource.ResourceManagerHelper;\nimport net.fabricmc.fabric.api.resource.ResourcePackActivationType;",
+   "newer": "import net.fabricmc.fabric.api.resource.v1.pack.PackActivationType;",
+   "removed": [
+    "ResourceManagerHelper",
+    "ResourcePackActivationType"
+   ],
+   "added": [
+    "PackActivationType",
+    "pack"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/CullLeavesClient.java",
+   "line": 33,
+   "method": "(imports)",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "import net.fabricmc.fabric.api.resource.v1.ResourceLoader;"
+    },
+    {
+     "condition": null,
+     "code": "import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [],
+   "older": "import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;",
+   "newer": "import net.fabricmc.fabric.api.resource.v1.ResourceLoader;",
+   "removed": [
+    "SimpleSynchronousResourceReloadListener"
+   ],
+   "added": [
+    "ResourceLoader"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/CullLeavesClient.java",
+   "line": 48,
+   "method": "(imports)",
+   "condition": ">= 1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.4",
+     "code": "import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;"
+    },
+    {
+     "condition": null,
+     "code": "/*import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;\n    */"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [],
+   "older": "/*import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;\n    */",
+   "newer": "import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;",
+   "removed": [
+    "RegisterClientReloadListenersEvent"
+   ],
+   "added": [
+    "AddClientReloadListenersEvent"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/CullLeavesClient.java",
+   "line": 39,
+   "method": "(imports)",
+   "condition": "} neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "} neoforge",
+     "code": "import net.minecraft.network.chat.Component;\nimport net.minecraft.server.packs.repository.Pack;\nimport net.minecraft.server.packs.repository.PackSource;\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.neoforge.event.AddPackFindersEvent;\n    //? if >= 1.21.4 {\n    import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;\n    //?} else {\n    /*import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;\n    *///?}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/CullLeavesClient.java",
+   "line": 55,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "import net.minecraft.network.chat.Component;\nimport net.minecraft.server.packs.repository.Pack;\nimport net.minecraft.server.packs.repository.PackSource;\n\nimport net.minecraftforge.api.distmarker.Dist;\nimport net.minecraftforge.client.ConfigScreenHandler;\nimport net.minecraftforge.common.MinecraftForge;\nimport net.minecraftforge.event.AddPackFindersEvent;\nimport net.minecraftforge.eventbus.api.SubscribeEvent;\nimport net.minecraftforge.fml.IExtensionPoint;\nimport net.minecraftforge.fml.ModList;\nimport net.minecraftforge.fml.ModLoadingContext;\nimport net.minecraftforge.fml.common.Mod;\nimport net.minecraftforge.forgespi.locating.IModFile;\nimport net.minecraftforge.network.NetworkConstants;\nimport net.minecraftforge.resource.PathPackResources;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/CullLeavesClient.java",
+   "line": 76,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "implements ModInitializer"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/CullLeavesClient.java",
+   "line": 144,
+   "method": "onInitialize",
+   "condition": ">= 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": "ResourceLoader.registerBuiltinPack(Identifier.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"smartleaves\"), modContainer, PackActivationType.NORMAL);"
+    },
+    {
+     "condition": null,
+     "code": "//ResourceManagerHelper.registerBuiltinResourcePack(ResourceLocation.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"smartleaves\"), modContainer, ResourcePackActivationType.NORMAL);"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Identifier"
+     ]
+    }
+   ],
+   "older": "//ResourceManagerHelper.registerBuiltinResourcePack(ResourceLocation.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"smartleaves\"), modContainer, ResourcePackActivationType.NORMAL);",
+   "newer": "ResourceLoader.registerBuiltinPack(Identifier.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"smartleaves\"), modContainer, PackActivationType.NORMAL);",
+   "removed": [],
+   "added": [
+    "CullLeavesClient",
+    "Identifier",
+    "MOD_ID",
+    "NORMAL",
+    "PackActivationType",
+    "ResourceLoader",
+    "fromNamespaceAndPath",
+    "modContainer",
+    "registerBuiltinPack"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/CullLeavesClient.java",
+   "line": 150,
+   "method": "onInitialize",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "//~ if >= 26.1 '.registerReloader' -> '.registerReloadListener'\n        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(Identifier.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"resourcepack_options\"), CullLeavesClient.ReloadListener.INSTANCE);"
+    },
+    {
+     "condition": null,
+     "code": "ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {\n            @Override\n            public Identifier getFabricId() {\n                return ResourceLocation.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"resourcepack_options\");\n            }\n            @Override\n            public void onResourceManagerReload(ResourceManager manager) {\n                CullLeavesClient.ReloadListener.INSTANCE.onResourceManagerReload(manager);\n            }\n        });"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [],
+   "older": "ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {\n            @Override\n            public Identifier getFabricId() {\n                return ResourceLocation.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"resourcepack_options\");\n            }\n            @Override\n            public void onResourceManagerReload(ResourceManager manager) {\n                CullLeavesClient.ReloadListener.INSTANCE.onResourceManagerReload(manager);\n            }\n        });",
+   "newer": "//~ if >= 26.1 '.registerReloader' -> '.registerReloadListener'\n        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(Identifier.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"resourcepack_options\"), CullLeavesClient.ReloadListener.INSTANCE);",
+   "removed": [
+    "Override",
+    "ResourceLocation",
+    "ResourceManager",
+    "ResourceManagerHelper",
+    "SimpleSynchronousResourceReloadListener",
+    "getFabricId",
+    "manager",
+    "onResourceManagerReload"
+   ],
+   "added": [
+    "ResourceLoader"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/CullLeavesClient.java",
+   "line": 139,
+   "method": "(class body)",
+   "condition": "fabric | neoforge | forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@Override\n    public void onInitialize() {\n        MidnightConfig.init(CullLeavesClient.MOD_ID, CullLeavesConfig.class);\n        FabricLoader.getInstance().getModContainer(\"cullleaves\").ifPresent(modContainer -> {\n            //? if >= 1.21.11 {\n            ResourceLoader.registerBuiltinPack(Identifier.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"smartleaves\"), modContainer, PackActivationType.NORMAL);\n            //?} else {\n            //ResourceManagerHelper.registerBuiltinResourcePack(ResourceLocation.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"smartleaves\"), modContainer, ResourcePackActivationType.NORMAL);\n            //?}\n        });\n        //? if >= 1.21.9 {\n        //~ if >= 26.1 '.registerReloader' -> '.registerReloadListener'\n        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(Identifier.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"resourcepack_options\"), CullLeavesClient.ReloadListener.INSTANCE);\n        //?} else {\n        /*ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {\n            @Override\n            public Identifier getFabricId() {\n                return ResourceLocation.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"resourcepack_options\");\n            }\n            @Override\n            public void onResourceManagerReload(ResourceManager manager) {\n                CullLeavesClient.ReloadListener.INSTANCE.onResourceManagerReload(manager);\n            }\n        });\n        *///?}\n    }"
+    },
+    {
+     "condition": "neoforge",
+     "code": "public CullLeavesClient() {\n        MidnightConfig.init(CullLeavesClient.MOD_ID, CullLeavesConfig.class);\n    }\n\n    @EventBusSubscriber(modid = CullLeavesClient.MOD_ID, value = Dist.CLIENT/*? if <=1.21.5 {*/, bus = EventBusSubscriber.Bus.MOD /*?}*/)\n    public static class CullLeavesClientEvents {\n        @SubscribeEvent\n        public static void addPackFinders(AddPackFindersEvent event) {\n            if (event.getPackType() == PackType.CLIENT_RESOURCES) {\n                event.addPackFinders(Identifier.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"resourcepacks/smartleaves\"), PackType.CLIENT_RESOURCES, Component.literal(\"cullleaves/smartleaves\"), PackSource.BUILT_IN, false, Pack.Position.TOP);\n            }\n        }\n        @SubscribeEvent\n        public static void onResourceReload(/*? if >= 1.21.4 {*/ AddClientReloadListenersEvent /*?} else {*//*RegisterClientReloadListenersEvent *//*?}*/ event) {\n            event. /*? if >= 1.21.4 {*/ addListener(Identifier.fromNamespaceAndPath(CullLeavesClient.MOD_ID, \"resourcepack_options\"), /*?} else {*/ /*registerReloadListener( *//*?}*/ CullLeavesClient.ReloadListener.INSTANCE);\n        }\n    }"
+    },
+    {
+     "condition": "forge",
+     "code": "public CullLeavesClient() {\n        MidnightConfig.init(MOD_ID, CullLeavesConfig.class);\n        ModLoadingContext.get().registerExtensionPoint(IExtensionPoint.DisplayTest.class, () -> new IExtensionPoint.DisplayTest(() -> NetworkConstants.IGNORESERVERONLY, (remote, server) -> true));\n        ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () ->\n                new ConfigScreenHandler.ConfigScreenFactory((client, parent) -> MidnightConfig.getScreen(parent, \"cullleaves\")));\n        //MinecraftForge.EVENT_BUS.register(new CullLeavesClientEvents());\n    }\n\n    @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)\n    public static class CullLeavesClientEvents {\n        @SubscribeEvent\n        public static void addPackFinders(AddPackFindersEvent event) {\n            if (event.getPackType() == PackType.CLIENT_RESOURCES) {\n                registerResourcePack(event, ResourceLocation.fromNamespaceAndPath(MOD_ID, \"smartleaves\"), false);\n            }\n        }\n        private static void registerResourcePack(AddPackFindersEvent event, Identifier id, boolean alwaysEnabled) {\n            event.addRepositorySource((profileAdder -> {\n                IModFile file = ModList.get().getModFileById(id.getNamespace()).getFile();\n                try (PathPackResources pack = new PathPackResources(id.toString(), true, file.findResource(\"resourcepacks/\"+id.getPath()))) {\n                    profileAdder.accept(Pack.readMetaAndCreate(id.toString(), Component.literal(id.getNamespace()+\"/\"+id.getPath()), alwaysEnabled, a -> pack, PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN));\n                } catch (NullPointerException e) {e.printStackTrace();}\n            }));\n        }\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/MixinBlockModelRenderer.java",
+   "line": 20,
+   "method": "(imports)",
+   "condition": ">= 1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.4",
+     "code": "import net.minecraft.client.renderer.block.model.BlockModelPart;\nimport java.util.List;"
+    },
+    {
+     "condition": null,
+     "code": "/*import net.minecraft.client.resources.model.BakedModel;\nimport net.minecraft.util.RandomSource;\n*/"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "BakedModel",
+      "BlockModelPart",
+      "block"
+     ]
+    }
+   ],
+   "older": "/*import net.minecraft.client.resources.model.BakedModel;\nimport net.minecraft.util.RandomSource;\n*/",
+   "newer": "import net.minecraft.client.renderer.block.model.BlockModelPart;\nimport java.util.List;",
+   "removed": [
+    "BakedModel",
+    "RandomSource",
+    "resources"
+   ],
+   "added": [
+    "BlockModelPart",
+    "List",
+    "block",
+    "java",
+    "renderer"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/MixinBlockModelRenderer.java",
+   "line": 14,
+   "method": "(imports)",
+   "condition": ">= 26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.1",
+     "code": "import net.minecraft.client.renderer.block.BlockQuadOutput;\nimport net.minecraft.client.renderer.block.dispatch.BlockStateModel;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.blaze3d.vertex.PoseStack;\nimport com.mojang.blaze3d.vertex.VertexConsumer;\n//? if >= 1.21.4 {\nimport net.minecraft.client.renderer.block.model.BlockModelPart;\nimport java.util.List;\n//?} else {\n/*import net.minecraft.client.resources.model.BakedModel;\nimport net.minecraft.util.RandomSource;\n*///?}"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "BlockModelPart",
+      "BlockQuadOutput",
+      "BlockStateModel",
+      "model"
+     ]
+    }
+   ],
+   "older": "import com.mojang.blaze3d.vertex.PoseStack;\nimport com.mojang.blaze3d.vertex.VertexConsumer;\n//? if >= 1.21.4 {\nimport net.minecraft.client.renderer.block.model.BlockModelPart;\nimport java.util.List;\n//?} else {\n/*import net.minecraft.client.resources.model.BakedModel;\nimport net.minecraft.util.RandomSource;\n*///?}",
+   "newer": "import net.minecraft.client.renderer.block.BlockQuadOutput;\nimport net.minecraft.client.renderer.block.dispatch.BlockStateModel;",
+   "removed": [
+    "BakedModel",
+    "BlockModelPart",
+    "List",
+    "PoseStack",
+    "RandomSource",
+    "VertexConsumer",
+    "blaze3d",
+    "com",
+    "java",
+    "model",
+    "mojang",
+    "resources",
+    "util",
+    "vertex"
+   ],
+   "added": [
+    "BlockQuadOutput",
+    "BlockStateModel",
+    "dispatch"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/MixinBlockModelRenderer.java",
+   "line": 32,
+   "method": "(class body)",
+   "condition": ">= 26.1 | >= 1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.1",
+     "code": "private void cullleaves$cancelRendering(BlockQuadOutput output, float x, float y, float z, BlockAndTintGetter world, BlockPos pos, BlockState state, BlockStateModel model, long seed, CallbackInfo ci) {"
+    },
+    {
+     "condition": ">= 1.21.4",
+     "code": "private void cullleaves$cancelRendering(BlockAndTintGetter world, List<BlockModelPart> parts, BlockState state, BlockPos pos, PoseStack matrices, VertexConsumer vertexConsumer, boolean cull, int overlay, CallbackInfo ci) {"
+    },
+    {
+     "condition": null,
+     "code": "private void cullleaves$cancelRendering(BlockAndTintGetter world, BakedModel bakedModel, BlockState state, BlockPos pos, PoseStack matrices, VertexConsumer vertexConsumer, boolean cull, RandomSource randomSource, long l, int overlay, CallbackInfo ci) {"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "BlockModelPart",
+      "BlockQuadOutput",
+      "BlockStateModel",
+      "parts"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "model",
+      "output",
+      "parts"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "model"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "BlockStateModel"
+     ]
+    }
+   ],
+   "older": "private void cullleaves$cancelRendering(BlockAndTintGetter world, List<BlockModelPart> parts, BlockState state, BlockPos pos, PoseStack matrices, VertexConsumer vertexConsumer, boolean cull, int overlay, CallbackInfo ci) {",
+   "newer": "private void cullleaves$cancelRendering(BlockQuadOutput output, float x, float y, float z, BlockAndTintGetter world, BlockPos pos, BlockState state, BlockStateModel model, long seed, CallbackInfo ci) {",
+   "removed": [
+    "BlockModelPart",
+    "List",
+    "PoseStack",
+    "VertexConsumer",
+    "cull",
+    "matrices",
+    "overlay",
+    "parts",
+    "vertexConsumer"
+   ],
+   "added": [
+    "BlockQuadOutput",
+    "BlockStateModel",
+    "model",
+    "output",
+    "seed"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/sodium/MixinBlockRenderer.java",
+   "line": 10,
+   "method": "(imports)",
+   "condition": ">= 1.21.4 | >= 1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.4",
+     "code": "import net.minecraft.client.renderer.block.dispatch.BlockStateModel;\nimport net.minecraft.world.level.block.state.BlockState;\nimport net.minecraft.core.BlockPos;"
+    },
+    {
+     "condition": ">= 1.21",
+     "code": "import net.minecraft.core.BlockPos;\nimport net.minecraft.client.resources.model.BakedModel;\nimport net.minecraft.world.level.block.state.BlockState;"
+    },
+    {
+     "condition": null,
+     "code": "import net.caffeinemc.mods.sodium.client.render.chunk.compile.ChunkBuildBuffers;\nimport net.caffeinemc.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderContext;"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4",
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "model"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "model"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "BakedModel",
+      "BlockStateModel",
+      "dispatch",
+      "model"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.core.BlockPos;\nimport net.minecraft.client.resources.model.BakedModel;\nimport net.minecraft.world.level.block.state.BlockState;",
+   "newer": "import net.minecraft.client.renderer.block.dispatch.BlockStateModel;\nimport net.minecraft.world.level.block.state.BlockState;\nimport net.minecraft.core.BlockPos;",
+   "removed": [
+    "BakedModel",
+    "model",
+    "resources"
+   ],
+   "added": [
+    "BlockStateModel",
+    "dispatch",
+    "renderer"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/sodium/MixinBlockRenderer.java",
+   "line": 24,
+   "method": "(imports)",
+   "condition": "< 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.21.11",
+     "code": "import net.caffeinemc.mods.sodium.client.render.frapi.render.AbstractBlockRenderContext"
+    },
+    {
+     "condition": null,
+     "code": "import net.caffeinemc.mods.sodium.client.render.model.AbstractBlockRenderContext;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "import net.caffeinemc.mods.sodium.client.render.frapi.render.AbstractBlockRenderContext",
+   "newer": "import net.caffeinemc.mods.sodium.client.render.model.AbstractBlockRenderContext;",
+   "removed": [
+    "frapi"
+   ],
+   "added": [
+    "model"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/sodium/MixinBlockRenderer.java",
+   "line": 23,
+   "method": "(imports)",
+   "condition": "fabric && >= 1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric && >= 1.21",
+     "code": "/*? if < 1.21.11 {*/ /*import net.caffeinemc.mods.sodium.client.render.frapi.render.AbstractBlockRenderContext *//*?} else {*/ import net.caffeinemc.mods.sodium.client.render.model.AbstractBlockRenderContext; /*?}*/;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.Minecraft;\nimport org.spongepowered.asm.mixin.Unique;"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/sodium/MixinBlockRenderer.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": "fabric && >= 1.21",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric && >= 1.21",
+     "code": "extends AbstractBlockRenderContext"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/sodium/MixinBlockRenderer.java",
+   "line": 32,
+   "method": "(class body)",
+   "condition": "neoforge || < 1.21",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge || < 1.21",
+     "code": "@Unique\n    private static final Minecraft cullleaves$client = Minecraft.getInstance();"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/sodium/MixinBlockRenderer.java",
+   "line": 37,
+   "method": "(class body)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": ", remap = false"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/sodium/MixinBlockRenderer.java",
+   "line": 38,
+   "method": "(class body)",
+   "condition": ">= 1.21.4 | >= 1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.4",
+     "code": "public void cullleaves$cancelRendering(BlockStateModel model, BlockState state, BlockPos pos, BlockPos origin, CallbackInfo ci) {"
+    },
+    {
+     "condition": ">= 1.21",
+     "code": "public void cullleaves$cancelRendering(BakedModel model, BlockState state, BlockPos pos, BlockPos origin, CallbackInfo ci) {"
+    },
+    {
+     "condition": null,
+     "code": "public void cullleaves$cancelRendering(BlockRenderContext ctx, ChunkBuildBuffers buffers, CallbackInfo ci) {\n        var state = ctx.state();\n        var pos = ctx.pos();"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4",
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "BakedModel",
+      "BlockStateModel"
+     ]
+    }
+   ],
+   "older": "public void cullleaves$cancelRendering(BakedModel model, BlockState state, BlockPos pos, BlockPos origin, CallbackInfo ci) {",
+   "newer": "public void cullleaves$cancelRendering(BlockStateModel model, BlockState state, BlockPos pos, BlockPos origin, CallbackInfo ci) {",
+   "removed": [
+    "BakedModel"
+   ],
+   "added": [
+    "BlockStateModel"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/sodium/MixinBlockRenderer.java",
+   "line": 47,
+   "method": "(class body)",
+   "condition": "fabric && >= 1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric && >= 1.21",
+     "code": "this.level"
+    },
+    {
+     "condition": null,
+     "code": "cullleaves$client.level"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/cullleaves/mixin/sodium/MixinSodiumGameOptionPages.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "< 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.21.11",
+     "code": "import eu.midnightdust.cullleaves.config.CullLeavesConfig;\nimport net.caffeinemc.mods.sodium.client.gui.SodiumGameOptionPages;\nimport net.caffeinemc.mods.sodium.client.gui.options.OptionFlag;\nimport net.caffeinemc.mods.sodium.client.gui.options.OptionGroup;\nimport net.caffeinemc.mods.sodium.client.gui.options.OptionImpact;\nimport net.caffeinemc.mods.sodium.client.gui.options.OptionImpl;\nimport net.caffeinemc.mods.sodium.client.gui.options.control.TickBoxControl;\nimport net.caffeinemc.mods.sodium.client.gui.options.storage.SodiumOptionsStorage;\nimport net.minecraft.network.chat.Component;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.ModifyVariable;\n\nimport java.util.List;\n\n@Mixin(value = SodiumGameOptionPages.class, remap = false)\npublic class MixinSodiumGameOptionPages {\n\n    @Shadow @Final private static SodiumOptionsStorage sodiumOpts;\n\n    @ModifyVariable(method = \"performance\", at = @At(value = \"INVOKE\", target = \"Lcom/google/common/collect/ImmutableList;copyOf(Ljava/util/Collection;)Lcom/google/common/collect/ImmutableList;\"))\n    private static List<OptionGroup> cullleaves$addCullLeavesOption(List<OptionGroup> groups) {\n        groups.add(OptionGroup.createBuilder()\n                .add(OptionImpl.createBuilder(boolean.class, sodiumOpts)\n                        .setName(Component.translatable(\"cullleaves.midnightconfig.enabled\"))\n                        .setTooltip(Component.translatable(\"cullleaves.midnightconfig.enabled.tooltip\"))\n                        .setControl(TickBoxControl::new)\n                        .setBinding((opts, value) -> {\n                            CullLeavesConfig.enabled = value;\n                            CullLeavesConfig.write(\"cullleaves\");\n                        }, opts -> CullLeavesConfig.enabled)\n                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)\n                        .setImpact(OptionImpact.MEDIUM)\n                        .build()\n                ).add(OptionImpl.createBuilder(boolean.class, sodiumOpts)\n                        .setName(Component.translatable(\"cullleaves.midnightconfig.cullRoots\"))\n                        .setTooltip(Component.translatable(\"cullleaves.midnightconfig.cullRoots.tooltip\"))\n                        .setControl(TickBoxControl::new)\n                        .setBinding((opts, value) -> {\n                            CullLeavesConfig.cullRoots = value;\n                            CullLeavesConfig.write(\"cullleaves\");\n                        }, opts -> CullLeavesConfig.cullRoots)\n                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)\n                        .setImpact(OptionImpact.MEDIUM)\n                        .build()\n                )\n                .build()\n        );\n\n        return groups;\n    }\n}"
+    },
+    {
+     "condition": null,
+     "code": "import eu.midnightdust.core.MidnightLib;\nimport org.spongepowered.asm.mixin.Mixin;\n\n@Mixin(value = MidnightLib.class)\npublic class MixinSodiumGameOptionPages {\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "method",
+      "setName",
+      "storage",
+      "write"
+     ]
+    }
+   ],
+   "older": "import eu.midnightdust.cullleaves.config.CullLeavesConfig;\nimport net.caffeinemc.mods.sodium.client.gui.SodiumGameOptionPages;\nimport net.caffeinemc.mods.sodium.client.gui.options.OptionFlag;\nimport net.caffeinemc.mods.sodium.client.gui.options.OptionGroup;\nimport net.caffeinemc.mods.sodium.client.gui.options.OptionImpact;\nimport net.caffeinemc.mods.sodium.client.gui.options.OptionImpl;\nimport net.caffeinemc.mods.sodium.client.gui.options.control.TickBoxControl;\nimport net.caffeinemc.mods.sodium.client.gui.options.storage.SodiumOptionsStorage;\nimport net.minecraft.network.chat.Component;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.ModifyVariable;\n\nimport java.util.List;\n\n@Mixin(value = SodiumGameOptionPages.class, remap = false)\npublic class MixinSodiumGameOptionPages {\n\n    @Shadow @Final private static SodiumOptionsStorage sodiumOpts;\n\n    @ModifyVariable(method = \"performance\", at = @At(value = \"INVOKE\", target = \"Lcom/google/common/collect/ImmutableList;copyOf(Ljava/util/Collection;)Lcom/google/common/collect/ImmutableList;\"))\n    private static List<OptionGroup> cullleaves$addCullLeavesOption(List<OptionGroup> groups) {\n        groups.add(OptionGroup.createBuilder()\n                .add(OptionImpl.createBuilder(boolean.class, sodiumOpts)\n                        .setName(Component.translatable(\"cullleaves.midnightconfig.enabled\"))\n                        .setTooltip(Component.translatable(\"cullleaves.midnightconfig.enabled.tooltip\"))\n                        .setControl(TickBoxControl::new)\n                        .setBinding((opts, value) -> {\n                            CullLeavesConfig.enabled = value;\n                            CullLeavesConfig.write(\"cullleaves\");\n                        }, opts -> CullLeavesConfig.enabled)\n                        .setFlags(OptionFlag.REQUIRES_RENDER",
+   "newer": "import eu.midnightdust.core.MidnightLib;\nimport org.spongepowered.asm.mixin.Mixin;\n\n@Mixin(value = MidnightLib.class)\npublic class MixinSodiumGameOptionPages {\n}",
+   "removed": [
+    "Component",
+    "CullLeavesConfig",
+    "Final",
+    "List",
+    "MEDIUM",
+    "ModifyVariable",
+    "OptionFlag",
+    "OptionGroup",
+    "OptionImpact",
+    "OptionImpl",
+    "REQUIRES_RENDERER_RELOAD",
+    "Shadow",
+    "SodiumGameOptionPages",
+    "SodiumOptionsStorage",
+    "TickBoxControl",
+    "add",
+    "addCullLeavesOption",
+    "build",
+    "caffeinemc",
+    "chat",
+    "client",
+    "config",
+    "control",
+    "createBuilder",
+    "cullRoots",
+    "cullleaves",
+    "enabled",
+    "groups",
+    "gui",
+    "injection",
+    "java",
+    "method",
+    "minecraft",
+    "mods",
+    "net",
+    "network",
+    "options",
+    "opts",
+    "remap",
+    "setBinding"
+   ],
+   "added": [
+    "MidnightLib",
+    "core"
+   ]
+  }
+ ]
+}

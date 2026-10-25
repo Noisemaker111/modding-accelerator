@@ -135,6 +135,60 @@
       "status": "build",
       "detail": "Its own 26.3-fabric checkout compiled through the tool in 14s (Loom 1.17, Java 25, no mappings). The build path reaches the newest game; porting into 26.3 still needs a name bridge from yarn to the unobfuscated names.",
       "date": "2026-10-24"
+    },
+    {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "26.3",
+      "status": "stop",
+      "detail": "Routed port with learned rules: 69 errors before, 50 after (130s / 123s). Five learned rules fired: entity type constants to EntityTypes (26.2), GameProfile.getName to name() (1.21.9), command and player permission levels (1.21.11), registry lookups (1.21.2). 26 errors went away; 7 that the missing names had hidden surfaced (EntityType.create and convertTo take more arguments now). Warm Gradle and mapping caches, fresh upstream copy each run; before = rules as of the hub router, after = plus the 38 rules learned from Stonecutter switches (bench/stonecutter_rules.py).",
+      "date": "2026-10-25"
+    },
+    {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.6",
+      "status": "stop",
+      "detail": "Routed port with learned rules: 9 errors before and after (126s / 84s), all on 1.21.4 -> 1.21.5 (SavedData factory, isInWaterOrBubble, owner UUID, saddle). The switches show those in one mod or none, so no rule was learned for them. Warm Gradle and mapping caches, fresh upstream copy each run; before = rules as of the hub router, after = plus the 38 rules learned from Stonecutter switches (bench/stonecutter_rules.py).",
+      "date": "2026-10-25"
+    },
+    {
+      "mod": "Notes (MattCzyr)",
+      "loader": "neoforge",
+      "from": "1.21",
+      "to": "1.21.6",
+      "status": "stop",
+      "detail": "Untouched mod, neoforge-1.21.1 branch @d1e9c39, no third-party dependencies: 14 errors before and after (366s / 253s). No learned rule matched: its errors are the HUD layer API (LayeredDraw), float drawString, scroll bar position and RegistryAccess.registry, which the mined switches show in one mod or none. Warm Gradle and mapping caches, fresh upstream copy each run; before = rules as of the hub router, after = plus the 38 rules learned from Stonecutter switches (bench/stonecutter_rules.py).",
+      "date": "2026-10-25"
+    },
+    {
+      "mod": "AppleSkin",
+      "loader": "fabric",
+      "from": "1.20.1",
+      "to": "1.21.6",
+      "status": "stop",
+      "detail": "Re-run through the router (Loom 1.10 and Gradle 8.13 by hand, JEI disabled as in step 7). Without help javac stops at one import, com.mojang.blaze3d.platform.GlStateManager, which moved to com.mojang.blaze3d.opengl in 1.21.5; --direct stops at the same 1, and so did step 7's first run, whose 61 came after that import was moved by hand. With the new glstatemanager-opengl rule the real count shows: 37 errors, 10 rules applied (87s), same with and without the learned Stonecutter rules (99s), which are mojmap-only. Left: render pipeline (setShaderColor x9, blend and depth state, texture ids), the exhaustion getter, food component effects, tooltip component, networking receivers. Warm Gradle and mapping caches, fresh copies.",
+      "date": "2026-10-25"
+    },
+    {
+      "mod": "Reactive (hjake123)",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.4",
+      "status": "stop",
+      "detail": "Untouched mod, branch 1.21 @e2ca3d6: stopped before compiling. Build discovery fails on flywheel-neoforge-1.21.4:1.0.0-9, which does not exist; the mod compiles against Create, which has no 1.21.4 release. A real dependency blocker, but it is reported as a Gradle failure, not a named dependency blocker.",
+      "date": "2026-10-25"
+    },
+    {
+      "mod": "PrettyPipes",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.4",
+      "status": "stop",
+      "detail": "Untouched mod, branch 1.21 @8ae52f0: stopped before compiling. Its JEI coordinates are built from ${minecraft_version}, so the target step moves the name to jei-1.21.4-* but keeps version 19.64.0.453, which does not exist, and a selection to JEI 20.0.0.4 was not picked up. Tool gap: dependency setup does not follow property-built NeoForge coordinates.",
+      "date": "2026-10-25"
     }
   ],
   "loader_pairs": [

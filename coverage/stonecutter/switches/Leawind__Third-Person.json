@@ -1,0 +1,2041 @@
+{
+ "repo": "Leawind/Third-Person",
+ "commit": "7c9ba2a54d41acd3e32eec773b928b1fe76e5ec4",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "1.20.1",
+  "1.20.4",
+  "1.21",
+  "1.21.11",
+  "26.1",
+  "26.2"
+ ],
+ "files": 23,
+ "switches": 52,
+ "versionSwitches": 41,
+ "rows": [
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": ">=1.20.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "import net.minecraft.core.component.DataComponents;"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 12,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.resources.Identifier;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": "!neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "!neoforge",
+     "code": "import net.minecraft.server.packs.resources.ReloadableResourceManager;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 24,
+   "method": "(class body)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "private static final KeyMapping.Category KEY_MAPPING_CATEGORY =\n      KeyMapping.Category.register(\n          Identifier.fromNamespaceAndPath(ThirdPerson.MOD_ID, \"keybinds\"));"
+    },
+    {
+     "condition": null,
+     "code": "private static final String KEY_MAPPING_CATEGORY =\n      \"key.categories.\" + ThirdPerson.MOD_ID;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "register"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "register"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "register"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "Category"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Identifier"
+     ]
+    }
+   ],
+   "older": "private static final String KEY_MAPPING_CATEGORY =\n      \"key.categories.\" + ThirdPerson.MOD_ID;",
+   "newer": "private static final KeyMapping.Category KEY_MAPPING_CATEGORY =\n      KeyMapping.Category.register(\n          Identifier.fromNamespaceAndPath(ThirdPerson.MOD_ID, \"keybinds\"));",
+   "removed": [
+    "String"
+   ],
+   "added": [
+    "Category",
+    "Identifier",
+    "KeyMapping",
+    "fromNamespaceAndPath",
+    "register"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 33,
+   "method": "(class body)",
+   "condition": "!neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "!neoforge",
+     "code": "private static ReloadableResourceManager registeredResourceManager;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 44,
+   "method": "isScreenOpen",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "return minecraft.gui.screen() != null;"
+    },
+    {
+     "condition": null,
+     "code": "return minecraft.screen != null;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "return minecraft.screen != null;",
+   "newer": "return minecraft.gui.screen() != null;",
+   "removed": [],
+   "added": [
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 55,
+   "method": "isEating",
+   "condition": ">=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "return player.getUseItem().get(DataComponents.FOOD) != null;"
+    },
+    {
+     "condition": null,
+     "code": "return player.getUseItem().isEdible();"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "DataComponents",
+      "get",
+      "isEdible"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "get"
+     ]
+    }
+   ],
+   "older": "return player.getUseItem().isEdible();",
+   "newer": "return player.getUseItem().get(DataComponents.FOOD) != null;",
+   "removed": [
+    "isEdible"
+   ],
+   "added": [
+    "DataComponents",
+    "FOOD",
+    "get"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 63,
+   "method": "blockInteractionRange",
+   "condition": ">=1.20.5 | fabric | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "return minecraft.player.blockInteractionRange();"
+    },
+    {
+     "condition": "fabric",
+     "code": "return minecraft.gameMode.getPickRange();"
+    },
+    {
+     "condition": null,
+     "code": "return minecraft.player.getBlockReach();"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "blockInteractionRange",
+      "getPickRange"
+     ]
+    }
+   ],
+   "older": "return minecraft.gameMode.getPickRange();",
+   "newer": "return minecraft.player.blockInteractionRange();",
+   "removed": [
+    "gameMode",
+    "getPickRange"
+   ],
+   "added": [
+    "blockInteractionRange",
+    "player"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 73,
+   "method": "entityInteractionRange",
+   "condition": ">=1.20.5 | fabric | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "return minecraft.player.entityInteractionRange();"
+    },
+    {
+     "condition": "fabric",
+     "code": "return minecraft.gameMode.hasFarPickRange() ? 6.0 : 3.0;"
+    },
+    {
+     "condition": null,
+     "code": "return minecraft.player.getEntityReach();"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "entityInteractionRange",
+      "hasFarPickRange"
+     ]
+    }
+   ],
+   "older": "return minecraft.gameMode.hasFarPickRange() ? 6.0 : 3.0;",
+   "newer": "return minecraft.player.entityInteractionRange();",
+   "removed": [
+    "gameMode",
+    "hasFarPickRange"
+   ],
+   "added": [
+    "entityInteractionRange",
+    "player"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 84,
+   "method": "sendPlayerRotation",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "player.connection.send(\n        new ServerboundMovePlayerPacket.Rot(\n            player.getYRot(),\n            player.getXRot(),\n            player.onGround(),\n            player.horizontalCollision));"
+    },
+    {
+     "condition": null,
+     "code": "player.connection.send(\n        new ServerboundMovePlayerPacket.Rot(\n            player.getYRot(), player.getXRot(), player.onGround()));"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "horizontalCollision"
+     ]
+    }
+   ],
+   "older": "player.connection.send(\n        new ServerboundMovePlayerPacket.Rot(\n            player.getYRot(), player.getXRot(), player.onGround()));",
+   "newer": "player.connection.send(\n        new ServerboundMovePlayerPacket.Rot(\n            player.getYRot(),\n            player.getXRot(),\n            player.onGround(),\n            player.horizontalCollision));",
+   "removed": [],
+   "added": [
+    "horizontalCollision"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 101,
+   "method": "vanillaPickFollowsCameraUpdate",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "return true;"
+    },
+    {
+     "condition": null,
+     "code": "return false;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "return false;",
+   "newer": "return true;",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+   "line": 112,
+   "method": "registerReloadListener",
+   "condition": "!neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "!neoforge",
+     "code": "var resourceManager = minecraft.getResourceManager();\n    if (resourceManager instanceof ReloadableResourceManager reloadable\n        && reloadable != registeredResourceManager) {\n      registeredResourceManager = reloadable;\n      reloadable.registerReloadListener(listener);\n      initialLoad.accept(reloadable);\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/MinecraftAttackRangePicking.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.core.component.DataComponents;\nimport net.minecraft.world.item.component.AttackRange;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/MinecraftAttackRangePicking.java",
+   "line": 17,
+   "method": "parameters",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "AttackRange attackRange = player.getActiveItem().get(DataComponents.ATTACK_RANGE);\n    if (attackRange == null) {\n      return Optional.empty();\n    }\n    return Optional.of(\n        new Parameters(\n            attackRange.effectiveMinRange(player),\n            attackRange.effectiveMaxRange(player),\n            attackRange.hitboxMargin(),\n            Math.max(0.0, player.getKnownMovement().dot(direction))));"
+    },
+    {
+     "condition": null,
+     "code": "return Optional.empty();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "get",
+      "getKnownMovement"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "get"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "direction",
+      "get"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "direction",
+      "get",
+      "max"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "ATTACK_RANGE",
+      "AttackRange",
+      "Parameters",
+      "get",
+      "getActiveItem"
+     ]
+    }
+   ],
+   "older": "return Optional.empty();",
+   "newer": "AttackRange attackRange = player.getActiveItem().get(DataComponents.ATTACK_RANGE);\n    if (attackRange == null) {\n      return Optional.empty();\n    }\n    return Optional.of(\n        new Parameters(\n            attackRange.effectiveMinRange(player),\n            attackRange.effectiveMaxRange(player),\n            attackRange.hitboxMargin(),\n            Math.max(0.0, player.getKnownMovement().dot(direction))));",
+   "removed": [],
+   "added": [
+    "ATTACK_RANGE",
+    "AttackRange",
+    "DataComponents",
+    "Math",
+    "Parameters",
+    "attackRange",
+    "direction",
+    "dot",
+    "effectiveMaxRange",
+    "effectiveMinRange",
+    "get",
+    "getActiveItem",
+    "getKnownMovement",
+    "hitboxMargin",
+    "max",
+    "player"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/MinecraftSpatialQuerying.java",
+   "line": 140,
+   "method": "collectCandidates",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "Vec3 entityRayStart = limitRayEnd(from, from.add(direction.scale(minimumCandidateDistance)));\n    Vec3 rayEnd = limitRayEnd(from, from.add(direction.scale(candidateRange)));\n    BlockHitResult blockHit =\n        player\n            .level()\n            .clipIncludingBorder(\n                new ClipContext(\n                    from, rayEnd, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));\n    Vec3 blockWorldLocation = SpatialQueryHitLocation.resolve(player.level(), blockHit);\n    Vec3 entityRayEnd =\n        limitRayEnd(\n            from, blockHit.getType() == HitResult.Type.MISS ? rayEnd : blockHit.getLocation());\n    if (blockHit.getType() != HitResult.Type.MISS\n        && blockHit.getLocation().distanceToSqr(from) < entityRayStart.distanceToSqr(from)) {\n      return new RaycastCandidates(new SpatialHit(blockHit, blockWorldLocation), List.of());\n    }\n    AABB searchArea =\n        AABB.ofSize(entityRayStart, hitboxMargin, hitboxMargin, hitboxMargin)\n            .expandTowards(entityRayEnd.subtract(entityRayStart))\n            .inflate(1.0);\n    List<SpatialHit> entityHits = new ArrayList<>();\n    for (EntityHitResult candidate :\n        ProjectileUtil.getManyEntityHitResult(\n            player.level(),\n            player,\n            entityRayStart,\n            entityRayEnd,\n            searchArea,\n            net.minecraft.world.entity.EntitySelector.CAN_BE_PICKED,\n            (float) hitboxMargin,\n            ClipContext.Block.OUTLINE,\n            true)) {\n      Vec3 worldLocation = SpatialQueryHitLocation.resolve(player.level(), candidate);\n      entityHits.add(new SpatialHit(candidate, worldLocation));\n    }\n    return new RaycastCandidates(\n        new SpatialHit(blockHit, blockWorldLocation), List.copyOf(entityHits));"
+    },
+    {
+     "condition": null,
+     "code": "return new RaycastCandidates(new SpatialHit(missAt(from, from), from), List.of());"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "CAN_BE_PICKED",
+      "Type",
+      "add",
+      "clipIncludingBorder",
+      "copyOf",
+      "getType",
+      "level",
+      "resolve",
+      "scale",
+      "subtract"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "Type",
+      "getType"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "NONE",
+      "Type",
+      "add",
+      "direction",
+      "getType",
+      "level",
+      "resolve",
+      "scale"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "NONE",
+      "Type",
+      "add",
+      "distanceToSqr",
+      "level",
+      "minecraft"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "add",
+      "direction",
+      "getType",
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "entity",
+      "getManyEntityHitResult",
+      "level"
+     ]
+    }
+   ],
+   "older": "return new RaycastCandidates(new SpatialHit(missAt(from, from), from), List.of());",
+   "newer": "Vec3 entityRayStart = limitRayEnd(from, from.add(direction.scale(minimumCandidateDistance)));\n    Vec3 rayEnd = limitRayEnd(from, from.add(direction.scale(candidateRange)));\n    BlockHitResult blockHit =\n        player\n            .level()\n            .clipIncludingBorder(\n                new ClipContext(\n                    from, rayEnd, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));\n    Vec3 blockWorldLocation = SpatialQueryHitLocation.resolve(player.level(), blockHit);\n    Vec3 entityRayEnd =\n        limitRayEnd(\n            from, blockHit.getType() == HitResult.Type.MISS ? rayEnd : blockHit.getLocation());\n    if (blockHit.getType() != HitResult.Type.MISS\n        && blockHit.getLocation().distanceToSqr(from) < entityRayStart.distanceToSqr(from)) {\n      return new RaycastCandidates(new SpatialHit(blockHit, blockWorldLocation), List.of());\n    }\n    AABB searchArea =\n        AABB.ofSize(entityRayStart, hitboxMargin, hitboxMargin, hitboxMargin)\n            .expandTowards(entityRayEnd.subtract(entityRayStart))\n            .inflate(1.0);\n    List<SpatialHit> entityHits = new ArrayList<>();\n    for (EntityHitResult candidate :\n        ProjectileUtil.getManyEntityHitResult(\n            player.level(),\n            player,\n            entityRayStart,\n            entityRayEnd,\n            searchArea,\n            net.minecraft.world.entity.EntitySelector.CAN_BE_PICKED,\n            (float) hitboxMargin,\n            ClipContext.Block.OUTLINE,\n            true)) {\n      Vec3 worldLocation = SpatialQueryHitLocation.resolve(player.level(), candidate);\n      entityHits.add(new SpatialHit(candidate, worldLocation));\n    }\n    return new RaycastCandidates(\n        new SpatialHit(blockHit, blockWorldLocation), List.copyOf(entityHits));",
+   "removed": [
+    "missAt"
+   ],
+   "added": [
+    "AABB",
+    "ArrayList",
+    "Block",
+    "BlockHitResult",
+    "CAN_BE_PICKED",
+    "ClipContext",
+    "EntityHitResult",
+    "EntitySelector",
+    "Fluid",
+    "HitResult",
+    "MISS",
+    "NONE",
+    "OUTLINE",
+    "ProjectileUtil",
+    "SpatialQueryHitLocation",
+    "Type",
+    "Vec3",
+    "add",
+    "blockHit",
+    "blockWorldLocation",
+    "candidate",
+    "candidateRange",
+    "clipIncludingBorder",
+    "copyOf",
+    "direction",
+    "distanceToSqr",
+    "entity",
+    "entityHits",
+    "entityRayEnd",
+    "entityRayStart",
+    "expandTowards",
+    "getLocation",
+    "getManyEntityHitResult",
+    "getType",
+    "hitboxMargin",
+    "inflate",
+    "level",
+    "limitRayEnd",
+    "minecraft",
+    "minimumCandidateDistance"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/MinecraftSpatialQuerying.java",
+   "line": 198,
+   "method": "missAt",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "Direction direction = Direction.getApproximateNearest(offset.x, offset.y, offset.z);"
+    },
+    {
+     "condition": null,
+     "code": "Direction direction = Direction.getNearest(offset.x, offset.y, offset.z);"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "getApproximateNearest",
+      "getNearest"
+     ]
+    }
+   ],
+   "older": "Direction direction = Direction.getNearest(offset.x, offset.y, offset.z);",
+   "newer": "Direction direction = Direction.getApproximateNearest(offset.x, offset.y, offset.z);",
+   "removed": [
+    "getNearest"
+   ],
+   "added": [
+    "getApproximateNearest"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/hud/CrosshairMixin.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.client.gui.Hud;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.gui.Gui;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "Hud"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.gui.Gui;",
+   "newer": "import net.minecraft.client.gui.Hud;",
+   "removed": [
+    "Gui"
+   ],
+   "added": [
+    "Hud"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/hud/CrosshairMixin.java",
+   "line": 13,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Mixin(Hud.class)"
+    },
+    {
+     "condition": null,
+     "code": "@Mixin(Gui.class)"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "Hud"
+     ]
+    }
+   ],
+   "older": "@Mixin(Gui.class)",
+   "newer": "@Mixin(Hud.class)",
+   "removed": [
+    "Gui"
+   ],
+   "added": [
+    "Hud"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/hud/CrosshairMixin.java",
+   "line": 20,
+   "method": "(class body)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "method = \"extractCrosshair\","
+    },
+    {
+     "condition": null,
+     "code": "method = \"renderCrosshair\","
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "method = \"renderCrosshair\",",
+   "newer": "method = \"extractCrosshair\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/input/LocalPlayerMovementMixin.java",
+   "line": 21,
+   "method": "(class body)",
+   "condition": ">1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21",
+     "code": "@Shadow private ClientInput input;"
+    },
+    {
+     "condition": null,
+     "code": "@Shadow public Input input;"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "ClientInput",
+      "Input"
+     ]
+    }
+   ],
+   "older": "@Shadow public Input input;",
+   "newer": "@Shadow private ClientInput input;",
+   "removed": [
+    "Input"
+   ],
+   "added": [
+    "ClientInput"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/input/LocalPlayerMovementMixin.java",
+   "line": 27,
+   "method": "(class body)",
+   "condition": ">1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21",
+     "code": "@Inject(\n      method = \"aiStep\",\n      at =\n          @At(\n              value = \"INVOKE\",\n              target = \"Lnet/minecraft/client/player/ClientInput;tick()V\",\n              shift = Shift.AFTER))\n  private void afterMovementInputUpdated(CallbackInfo ci) {\n    Vec2 movement = input.getMoveVector();\n    var modified =\n        LocalPlayerMovementInputEvent.emit(\n            (LocalPlayer) (Object) this, movement.x, movement.y);\n    ((MovementInputAccessor) input)\n        .setMoveVector(new Vec2(modified.leftImpulse(), modified.forwardImpulse()));\n  }"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(\n      method = \"aiStep\",\n      at =\n          @At(\n              value = \"INVOKE\",\n              target = \"Lnet/minecraft/client/player/Input;tick(ZF)V\",\n              shift = Shift.AFTER))\n  private void afterMovementInputUpdated(CallbackInfo ci) {\n    var modified =\n        LocalPlayerMovementInputEvent.emit(\n            (LocalPlayer) (Object) this, input.leftImpulse, input.forwardImpulse);\n    var accessor = (MovementInputAccessor) input;\n    accessor.setLeftImpulse(modified.leftImpulse());\n    accessor.setForwardImpulse(modified.forwardImpulse());\n  }"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "@Inject(\n      method = \"aiStep\",\n      at =\n          @At(\n              value = \"INVOKE\",\n              target = \"Lnet/minecraft/client/player/Input;tick(ZF)V\",\n              shift = Shift.AFTER))\n  private void afterMovementInputUpdated(CallbackInfo ci) {\n    var modified =\n        LocalPlayerMovementInputEvent.emit(\n            (LocalPlayer) (Object) this, input.leftImpulse, input.forwardImpulse);\n    var accessor = (MovementInputAccessor) input;\n    accessor.setLeftImpulse(modified.leftImpulse());\n    accessor.setForwardImpulse(modified.forwardImpulse());\n  }",
+   "newer": "@Inject(\n      method = \"aiStep\",\n      at =\n          @At(\n              value = \"INVOKE\",\n              target = \"Lnet/minecraft/client/player/ClientInput;tick()V\",\n              shift = Shift.AFTER))\n  private void afterMovementInputUpdated(CallbackInfo ci) {\n    Vec2 movement = input.getMoveVector();\n    var modified =\n        LocalPlayerMovementInputEvent.emit(\n            (LocalPlayer) (Object) this, movement.x, movement.y);\n    ((MovementInputAccessor) input)\n        .setMoveVector(new Vec2(modified.leftImpulse(), modified.forwardImpulse()));\n  }",
+   "removed": [
+    "accessor",
+    "setForwardImpulse",
+    "setLeftImpulse"
+   ],
+   "added": [
+    "Vec2",
+    "getMoveVector",
+    "movement",
+    "setMoveVector"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/input/LocalPlayerMovementMixin.java",
+   "line": 61,
+   "method": "(class body)",
+   "condition": ">1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21",
+     "code": "@ModifyExpressionValue(\n      method = {\"canStartSprinting\", \"shouldStopRunSprinting\", \"shouldStopSwimSprinting\"},\n      at =\n          @At(\n              value = \"INVOKE\",\n              target =\n                  \"Lnet/minecraft/client/player/ClientInput;hasForwardImpulse()Z\"))\n  private boolean useDirectionalSprintInput(boolean vanillaResult) {\n    return modifyForwardImpulse(input, vanillaResult, MOVING_THRESHOLD);\n  }\n\n  /// Keeps vanilla's pre-tick trigger history on the same predicate as start eligibility.\n  @ModifyExpressionValue(\n      method = \"aiStep\",\n      at =\n          @At(\n              value = \"INVOKE\",\n              target =\n                  \"Lnet/minecraft/client/player/ClientInput;hasForwardImpulse()Z\"))\n  private boolean useDirectionalSprintTriggerHistory(boolean vanillaResult) {\n    return modifyForwardImpulse(input, vanillaResult, MOVING_THRESHOLD);\n  }\n\n  private boolean modifyForwardImpulse(\n      ClientInput input, boolean vanillaResult, double minimumMagnitude) {\n    LocalPlayer player = (LocalPlayer) (Object) this;\n    Vec2 movement = input.getMoveVector();\n    return LocalPlayerSprintImpulseEvent.emit(\n        player, vanillaResult, movement.x, movement.y, minimumMagnitude);\n  }"
+    },
+    {
+     "condition": null,
+     "code": "@com.llamalad7.mixinextras.injector.ModifyReturnValue(\n      method = \"hasEnoughImpulseToStartSprinting\",\n      at = @At(\"RETURN\"))\n  private boolean useDirectionalStartingImpulse(boolean vanillaResult) {\n    LocalPlayer player = (LocalPlayer) (Object) this;\n    double minimumMagnitude = player.isUnderWater() ? MOVING_THRESHOLD : 0.8;\n    return modifyForwardImpulse(input, vanillaResult, minimumMagnitude);\n  }\n\n  @ModifyExpressionValue(\n      method = \"aiStep\",\n      at =\n          @At(\n              value = \"INVOKE\",\n              target = \"Lnet/minecraft/client/player/Input;hasForwardImpulse()Z\"))\n  private boolean keepSprintingWithDirectionalInput(boolean vanillaResult) {\n    return modifyForwardImpulse(input, vanillaResult, MOVING_THRESHOLD);\n  }\n\n  private boolean modifyForwardImpulse(\n      Input input, boolean vanillaResult, double minimumMagnitude) {\n    LocalPlayer player = (LocalPlayer) (Object) this;\n    Vec2 movement = input.getMoveVector();\n    return LocalPlayerSprintImpulseEvent.emit(\n        player, vanillaResult, movement.x, movement.y, minimumMagnitude);\n  }"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "ClientInput",
+      "Input",
+      "isUnderWater"
+     ]
+    }
+   ],
+   "older": "@com.llamalad7.mixinextras.injector.ModifyReturnValue(\n      method = \"hasEnoughImpulseToStartSprinting\",\n      at = @At(\"RETURN\"))\n  private boolean useDirectionalStartingImpulse(boolean vanillaResult) {\n    LocalPlayer player = (LocalPlayer) (Object) this;\n    double minimumMagnitude = player.isUnderWater() ? MOVING_THRESHOLD : 0.8;\n    return modifyForwardImpulse(input, vanillaResult, minimumMagnitude);\n  }\n\n  @ModifyExpressionValue(\n      method = \"aiStep\",\n      at =\n          @At(\n              value = \"INVOKE\",\n              target = \"Lnet/minecraft/client/player/Input;hasForwardImpulse()Z\"))\n  private boolean keepSprintingWithDirectionalInput(boolean vanillaResult) {\n    return modifyForwardImpulse(input, vanillaResult, MOVING_THRESHOLD);\n  }\n\n  private boolean modifyForwardImpulse(\n      Input input, boolean vanillaResult, double minimumMagnitude) {\n    LocalPlayer player = (LocalPlayer) (Object) this;\n    Vec2 movement = input.getMoveVector();\n    return LocalPlayerSprintImpulseEvent.emit(\n        player, vanillaResult, movement.x, movement.y, minimumMagnitude);\n  }",
+   "newer": "@ModifyExpressionValue(\n      method = {\"canStartSprinting\", \"shouldStopRunSprinting\", \"shouldStopSwimSprinting\"},\n      at =\n          @At(\n              value = \"INVOKE\",\n              target =\n                  \"Lnet/minecraft/client/player/ClientInput;hasForwardImpulse()Z\"))\n  private boolean useDirectionalSprintInput(boolean vanillaResult) {\n    return modifyForwardImpulse(input, vanillaResult, MOVING_THRESHOLD);\n  }\n\n  /// Keeps vanilla's pre-tick trigger history on the same predicate as start eligibility.\n  @ModifyExpressionValue(\n      method = \"aiStep\",\n      at =\n          @At(\n              value = \"INVOKE\",\n              target =\n                  \"Lnet/minecraft/client/player/ClientInput;hasForwardImpulse()Z\"))\n  private boolean useDirectionalSprintTriggerHistory(boolean vanillaResult) {\n    return modifyForwardImpulse(input, vanillaResult, MOVING_THRESHOLD);\n  }\n\n  private boolean modifyForwardImpulse(\n      ClientInput input, boolean vanillaResult, double minimumMagnitude) {\n    LocalPlayer player = (LocalPlayer) (Object) this;\n    Vec2 movement = input.getMoveVector();\n    return LocalPlayerSprintImpulseEvent.emit(\n        player, vanillaResult, movement.x, movement.y, minimumMagnitude);\n  }",
+   "removed": [
+    "Input",
+    "ModifyReturnValue",
+    "com",
+    "injector",
+    "isUnderWater",
+    "keepSprintingWithDirectionalInput",
+    "llamalad7",
+    "mixinextras",
+    "useDirectionalStartingImpulse"
+   ],
+   "added": [
+    "ClientInput",
+    "useDirectionalSprintInput",
+    "useDirectionalSprintTriggerHistory"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/input/MovementInputAccessor.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21",
+     "code": "import net.minecraft.client.player.ClientInput;\nimport net.minecraft.world.phys.Vec2;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.player.ClientInput;"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraft.client.player.ClientInput;",
+   "newer": "import net.minecraft.client.player.ClientInput;\nimport net.minecraft.world.phys.Vec2;",
+   "removed": [],
+   "added": [
+    "Vec2",
+    "phys",
+    "world"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/input/MovementInputAccessor.java",
+   "line": 12,
+   "method": "(imports)",
+   "condition": ">1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21",
+     "code": "@Mixin(ClientInput.class)"
+    },
+    {
+     "condition": null,
+     "code": "@Mixin(Input.class)"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "ClientInput",
+      "Input"
+     ]
+    }
+   ],
+   "older": "@Mixin(Input.class)",
+   "newer": "@Mixin(ClientInput.class)",
+   "removed": [
+    "Input"
+   ],
+   "added": [
+    "ClientInput"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/input/MovementInputAccessor.java",
+   "line": 18,
+   "method": "(class body)",
+   "condition": ">1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21",
+     "code": "@Accessor\n  void setMoveVector(Vec2 movement);"
+    },
+    {
+     "condition": null,
+     "code": "@Accessor\n  void setLeftImpulse(float value);\n\n  @Accessor\n  void setForwardImpulse(float value);"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "value"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "value"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "value"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "value"
+     ]
+    }
+   ],
+   "older": "@Accessor\n  void setLeftImpulse(float value);\n\n  @Accessor\n  void setForwardImpulse(float value);",
+   "newer": "@Accessor\n  void setMoveVector(Vec2 movement);",
+   "removed": [
+    "setForwardImpulse",
+    "setLeftImpulse",
+    "value"
+   ],
+   "added": [
+    "Vec2",
+    "movement",
+    "setMoveVector"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/interaction/GameRendererPickingMixin.java",
+   "line": 12,
+   "method": "(class body)",
+   "condition": "<26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.1",
+     "code": "@Inject(method = \"pick\", at = @At(\"RETURN\"))\n  private void afterVanillaPick(float partialTick, CallbackInfo ci) {\n    AfterVanillaPickEvent.emit(partialTick);\n  }"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/interaction/MinecraftInteractionMixin.java",
+   "line": 15,
+   "method": "(class body)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "@Inject(method = \"pick\", at = @At(\"RETURN\"))\n  private void afterVanillaPick(float partialTick, CallbackInfo ci) {\n    AfterVanillaPickEvent.emit(partialTick);\n  }"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/interaction/MinecraftInteractionMixin.java",
+   "line": 39,
+   "method": "(class body)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "@Inject(method = \"pickBlockOrEntity\", at = @At(\"HEAD\"))\n  private void beforePickBlockOrEntity(CallbackInfo ci) {\n    prepareInteraction();\n  }"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"pickBlock\", at = @At(\"HEAD\"))\n  private void beforePickBlock(CallbackInfo ci) {\n    prepareInteraction();\n  }"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "@Inject(method = \"pickBlock\", at = @At(\"HEAD\"))\n  private void beforePickBlock(CallbackInfo ci) {\n    prepareInteraction();\n  }",
+   "newer": "@Inject(method = \"pickBlockOrEntity\", at = @At(\"HEAD\"))\n  private void beforePickBlockOrEntity(CallbackInfo ci) {\n    prepareInteraction();\n  }",
+   "removed": [
+    "beforePickBlock"
+   ],
+   "added": [
+    "beforePickBlockOrEntity"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/render/GameRendererFrameMixin.java",
+   "line": 4,
+   "method": "(imports)",
+   "condition": ">=1.21",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21",
+     "code": "import net.minecraft.client.DeltaTracker;"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/mixin/render/GameRendererFrameMixin.java",
+   "line": 15,
+   "method": "(class body)",
+   "condition": ">=26.2 | >=1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Inject(method = \"update\", at = @At(\"HEAD\"))\n  private void beforeFrameExtraction(DeltaTracker deltaTracker, CallbackInfo ci) {\n    RenderFrameEvent.emit(deltaTracker.getGameTimeDeltaPartialTick(false));\n  }"
+    },
+    {
+     "condition": ">=1.21",
+     "code": "@Inject(method = \"render\", at = @At(\"HEAD\"))\n  private void beforeRender(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo ci) {\n    RenderFrameEvent.emit(deltaTracker.getGameTimeDeltaPartialTick(false));\n  }"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"render\", at = @At(\"HEAD\"))\n  private void beforeRender(\n      float partialTick, long frameStartNanos, boolean renderLevel, CallbackInfo ci) {\n    RenderFrameEvent.emit(partialTick);\n  }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2",
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "renderLevel"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "renderLevel"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "renderLevel"
+     ]
+    }
+   ],
+   "older": "@Inject(method = \"render\", at = @At(\"HEAD\"))\n  private void beforeRender(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo ci) {\n    RenderFrameEvent.emit(deltaTracker.getGameTimeDeltaPartialTick(false));\n  }",
+   "newer": "@Inject(method = \"update\", at = @At(\"HEAD\"))\n  private void beforeFrameExtraction(DeltaTracker deltaTracker, CallbackInfo ci) {\n    RenderFrameEvent.emit(deltaTracker.getGameTimeDeltaPartialTick(false));\n  }",
+   "removed": [
+    "beforeRender",
+    "renderLevel"
+   ],
+   "added": [
+    "beforeFrameExtraction"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableAvailability.java",
+   "line": 24,
+   "method": "isCompatibleVersion",
+   "condition": ">=1.21 && <1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "return true;"
+    },
+    {
+     "condition": null,
+     "code": "return false;"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableCameraSubjectBoundsResolver.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">=1.21 && <1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "import dev.ryanhcode.sable.companion.SableCompanion;"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableCameraSubjectBoundsResolver.java",
+   "line": 17,
+   "method": "createIfAvailable",
+   "condition": ">=1.21 && <1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "return SableAvailability.isAvailableAndCompatible()\n        ? Optional.of(Active.INSTANCE)\n        : Optional.empty();"
+    },
+    {
+     "condition": null,
+     "code": "return Optional.empty();"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableCameraSubjectBoundsResolver.java",
+   "line": 26,
+   "method": "(class body)",
+   "condition": ">=1.21 && <1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "private enum Active implements CameraSubjectBoundsResolver {\n    INSTANCE;\n\n    @Override\n    public ExtensionResult<AABB> resolveBounds(Entity entity) {\n      org.joml.Vector3d feetPosition = SableCompanion.INSTANCE.getFeetPos(entity, 0.0f);\n      SableCompanion.INSTANCE.projectOutOfSubLevel(entity.level(), feetPosition);\n      return ExtensionResult.handled(\n          entity\n              .getBoundingBox()\n              .move(\n                  feetPosition.x - entity.getX(),\n                  feetPosition.y - entity.getY(),\n                  feetPosition.z - entity.getZ()));\n    }\n  }"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableEntityReferencePoseResolver.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">=1.21 && <1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "import dev.ryanhcode.sable.companion.ClientSubLevelAccess;\nimport dev.ryanhcode.sable.companion.SableCompanion;"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableEntityReferencePoseResolver.java",
+   "line": 22,
+   "method": "createIfAvailable",
+   "condition": ">=1.21 && <1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "return SableAvailability.isAvailableAndCompatible()\n        ? Optional.of(Active.INSTANCE)\n        : Optional.empty();"
+    },
+    {
+     "condition": null,
+     "code": "return Optional.empty();"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableEntityReferencePoseResolver.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": ">=1.21 && <1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "private enum Active implements EntityReferencePoseResolver {\n    INSTANCE;\n\n    @Override\n    public ExtensionResult<EntityReferencePose> resolve(EntityReferencePoseContext context) {\n      Entity entity = context.entity();\n      float partialTick = context.partialTick();\n      ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(entity);\n      if (subLevel == null) {\n        return ExtensionResult.pass();\n      }\n      Vec3 eye = SableCompanion.INSTANCE.getEyePositionInterpolated(entity, partialTick);\n      var rotation = new Quaternionf(subLevel.renderPose(partialTick).orientation());\n      return EntityReferencePose.tryCreate(new Vector3d(eye.x, eye.y, eye.z), rotation)\n          .map(ExtensionResult::handled)\n          .orElseGet(ExtensionResult::pass);\n    }\n  }"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableMovementInputMapper.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">=1.21 && <1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "import dev.ryanhcode.sable.companion.ClientSubLevelAccess;\nimport dev.ryanhcode.sable.companion.SableCompanion;"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableMovementInputMapper.java",
+   "line": 22,
+   "method": "createIfAvailable",
+   "condition": ">=1.21 && <1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "return SableAvailability.isAvailableAndCompatible()\n        ? Optional.of(Active.INSTANCE)\n        : Optional.empty();"
+    },
+    {
+     "condition": null,
+     "code": "return Optional.empty();"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableMovementInputMapper.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": ">=1.21 && <1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "private enum Active implements MovementInputMapper {\n    INSTANCE;\n\n    @Override\n    public ExtensionResult<MovementInput> map(LocalPlayer player, MovementIntent intent) {\n      ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(player);\n      if (subLevel == null) {\n        return ExtensionResult.pass();\n      }\n      var pivotFromHeading =\n          PerspectiveMath.eulerDegToQuat(0.0f, player.getYRot(), 0.0f, new Quaternionf());\n      var worldFromInput =\n          new Quaternionf(subLevel.renderPose(1.0f).orientation())\n              .normalize()\n              .mul(pivotFromHeading);\n      return MinecraftMovementInputMapping.mapToBasis(intent, worldFromInput);\n    }\n  }"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableSpatialQueryHitLocationResolver.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">=1.21 && <1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "import dev.ryanhcode.sable.companion.SableCompanion;"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableSpatialQueryHitLocationResolver.java",
+   "line": 18,
+   "method": "createIfAvailable",
+   "condition": ">=1.21 && <1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "return SableAvailability.isAvailableAndCompatible()\n        ? Optional.of(Active.INSTANCE)\n        : Optional.empty();"
+    },
+    {
+     "condition": null,
+     "code": "return Optional.empty();"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/internal/extension/sable/SableSpatialQueryHitLocationResolver.java",
+   "line": 27,
+   "method": "(class body)",
+   "condition": ">=1.21 && <1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.11",
+     "code": "private enum Active implements SpatialQueryHitLocationResolver {\n    INSTANCE;\n\n    @Override\n    public ExtensionResult<Vec3> resolveWorldLocation(Level level, HitResult hit) {\n      if (hit.getType() == HitResult.Type.MISS) {\n        return ExtensionResult.handled(hit.getLocation());\n      }\n      return ExtensionResult.handled(\n          SableCompanion.INSTANCE.projectOutOfSubLevel(\n              level, (net.minecraft.core.Position) hit.getLocation()));\n    }\n  }"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/platform/api/PlatformHelper.java",
+   "line": 12,
+   "method": "getDataVersion",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "return SharedConstants.getCurrentVersion().dataVersion().version();"
+    },
+    {
+     "condition": null,
+     "code": "return SharedConstants.getCurrentVersion().getDataVersion().getVersion();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "dataVersion",
+      "getDataVersion",
+      "getVersion",
+      "version"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "getVersion"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "getVersion",
+      "version"
+     ]
+    }
+   ],
+   "older": "return SharedConstants.getCurrentVersion().getDataVersion().getVersion();",
+   "newer": "return SharedConstants.getCurrentVersion().dataVersion().version();",
+   "removed": [
+    "getDataVersion",
+    "getVersion"
+   ],
+   "added": [
+    "dataVersion",
+    "version"
+   ]
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/platform/fabric/Entrypoint.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package io.github.leawind.thirdperson.platform.fabric;\n\nimport io.github.leawind.thirdperson.internal.logic.ModEntrypoint;\nimport io.github.leawind.thirdperson.internal.logic.scheduler.input.MinecraftKeyIntegration;\nimport net.fabricmc.api.ClientModInitializer;\n\n@SuppressWarnings(\"unused\")\npublic final class Entrypoint implements ClientModInitializer {\n  public void onInitializeClient() {\n    ModEntrypoint.initialize();\n    MinecraftKeyIntegration.registerKeyMappings(\n        net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper::registerKeyMapping);\n  }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/platform/fabric/ModMenuEntry.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import com.terraformersmc.modmenu.api.ConfigScreenFactory;\nimport com.terraformersmc.modmenu.api.ModMenuApi;\nimport io.github.leawind.thirdperson.internal.logic.scheduler.config.ConfigScreenManager;\n\n@SuppressWarnings(\"unused\")\npublic final class ModMenuEntry implements ModMenuApi {\n  @Override\n  public ConfigScreenFactory<?> getModConfigScreenFactory() {\n    return ConfigScreenManager.isAvailable()\n        ? ConfigScreenManager::build\n        : parent -> null;\n  }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/platform/fabric/PlatformHelperImpl.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import com.google.auto.service.AutoService;\nimport io.github.leawind.thirdperson.platform.api.PlatformHelper;\nimport net.fabricmc.loader.api.FabricLoader;\n\n@AutoService(PlatformHelper.class)\npublic class PlatformHelperImpl implements PlatformHelper {\n\n  @Override\n  public boolean isDevelopmentEnvironment() {\n    return FabricLoader.getInstance().isDevelopmentEnvironment();\n  }\n\n  @Override\n  public boolean isModLoaded(String modId) {\n    return FabricLoader.getInstance().isModLoaded(modId);\n  }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/platform/forge/Entrypoint.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "import io.github.leawind.thirdperson.ThirdPerson;\nimport io.github.leawind.thirdperson.internal.logic.ModEntrypoint;\nimport io.github.leawind.thirdperson.internal.logic.scheduler.config.ConfigScreenManager;\nimport io.github.leawind.thirdperson.internal.logic.scheduler.input.MinecraftKeyIntegration;\nimport net.minecraftforge.client.event.RegisterKeyMappingsEvent;\nimport net.minecraftforge.client.ConfigScreenHandler;\nimport net.minecraftforge.api.distmarker.Dist;\nimport net.minecraftforge.fml.ModList;\nimport net.minecraftforge.fml.common.Mod;\nimport net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;\nimport net.minecraftforge.fml.loading.FMLEnvironment;\n\n@Mod(ThirdPerson.MOD_ID)\npublic class Entrypoint {\n  public Entrypoint(final FMLJavaModLoadingContext context) {\n    if(FMLEnvironment.dist != Dist.CLIENT) {\n      return;\n    }\n    ModEntrypoint.initialize();\n    registerConfigScreen();\n    context.getModEventBus().addListener(Entrypoint::registerKeyMappings);\n  }\n\n  private static void registerConfigScreen() {\n    if (!ConfigScreenManager.isAvailable()) {\n      return;\n    }\n    ModList.get()\n        .getModContainerById(ThirdPerson.MOD_ID)\n        .ifPresent(\n            container ->\n                container.registerExtensionPoint(\n                    ConfigScreenHandler.ConfigScreenFactory.class,\n                    () ->\n                        new ConfigScreenHandler.ConfigScreenFactory(\n                            (minecraft, screen) -> ConfigScreenManager.build(screen))));\n  }\n\n  private static void registerKeyMappings(RegisterKeyMappingsEvent event) {\n    MinecraftKeyIntegration.registerKeyMappings(event::register);\n  }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/platform/forge/PlatformHelperImpl.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "import com.google.auto.service.AutoService;\nimport io.github.leawind.thirdperson.platform.api.PlatformHelper;\nimport net.minecraftforge.fml.ModList;\nimport net.minecraftforge.fml.loading.FMLLoader;\n\n@AutoService(PlatformHelper.class)\npublic class PlatformHelperImpl implements PlatformHelper {\n  @Override\n  public boolean isDevelopmentEnvironment() {\n    return !FMLLoader.isProduction();\n  }\n\n  @Override\n  public boolean isModLoaded(String modId) {\n    return ModList.get().isLoaded(modId);\n  }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/platform/neoforge/Entrypoint.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import io.github.leawind.thirdperson.ThirdPerson;\nimport io.github.leawind.thirdperson.internal.logic.ModEntrypoint;\nimport io.github.leawind.thirdperson.internal.logic.scheduler.input.MinecraftKeyIntegration;\nimport io.github.leawind.thirdperson.internal.logic.scheduler.aiming.MinecraftItemPredicateIntegration;\nimport net.minecraft.resources.Identifier;\n/*?   if >=1.21.11 {*/\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\n\n@Mod(value = ThirdPerson.MOD_ID, dist = Dist.CLIENT)\npublic final class Entrypoint {\n  public Entrypoint(IEventBus modBus) {\n    ModEntrypoint.initialize();\n    NeoForgeConfigScreenIntegration.register();\n    modBus.addListener(Entrypoint::registerKeyMappings);\n    modBus.addListener(Entrypoint::registerReloadListeners);\n  }\n\n  private static void registerKeyMappings(RegisterKeyMappingsEvent event) {\n    MinecraftKeyIntegration.registerKeyMappings(event::register);\n  }\n\n  private static void registerReloadListeners(AddClientReloadListenersEvent event) {\n    event.addListener(\n        Identifier.fromNamespaceAndPath(ThirdPerson.MOD_ID, \"item_patterns\"),\n        MinecraftItemPredicateIntegration.reloadListener());\n  }\n}\n\n/*?   } else {*/\n/*import net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.fml.loading.FMLEnvironment;\nimport net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\n\n@Mod(value = ThirdPerson.MOD_ID)\npublic final class Entrypoint {\n  public Entrypoint(IEventBus modBus) {\n    if (FMLEnvironment.dist != Dist.CLIENT) {\n      return;\n    }\n    ModEntrypoint.initialize();\n    NeoForgeConfigScreenIntegration.register();\n    modBus.addListener(Entrypoint::registerKeyMappings);\n    modBus.addListener(Entrypoint::registerReloadListeners);\n  }\n\n  private static void registerKeyMappings(RegisterKeyMappingsEvent event) {\n    MinecraftKeyIntegration.registerKeyMappings(event::register);\n  }\n\n  private static void registerReloadListeners(RegisterClientReloadListenersEvent event) {\n    event.registerReloadListener(MinecraftItemPredicateIntegration.reloadListener());\n  }\n}\n*//*?   }*/"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/platform/neoforge/NeoForgeConfigScreenIntegration.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import io.github.leawind.thirdperson.ThirdPerson;\nimport io.github.leawind.thirdperson.internal.logic.scheduler.config.ConfigScreenManager;\nimport net.neoforged.fml.ModList;\n\nfinal class NeoForgeConfigScreenIntegration {\n  private NeoForgeConfigScreenIntegration() {}\n\n  static void register() {\n    if (!ConfigScreenManager.isAvailable()) {\n      return;\n    }\n    /*? if >=1.20.6 {*/\n    ModList.get()\n        .getModContainerById(ThirdPerson.MOD_ID)\n        .ifPresent(\n            container ->\n                container.registerExtensionPoint(\n                    net.neoforged.neoforge.client.gui.IConfigScreenFactory.class,\n                    (ignored, screen) -> ConfigScreenManager.build(screen)));\n    /*? } else {*/\n    /*ModList.get()\n        .getModContainerById(ThirdPerson.MOD_ID)\n        .ifPresent(\n            container ->\n                container.registerExtensionPoint(\n                    net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory.class,\n                    () ->\n                        new net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory(\n                            (minecraft, screen) -> ConfigScreenManager.build(screen))));\n    *//*? }*/\n  }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/io/github/leawind/thirdperson/platform/neoforge/PlatformHelperImpl.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import com.google.auto.service.AutoService;\nimport io.github.leawind.thirdperson.platform.api.PlatformHelper;\nimport net.neoforged.fml.ModList;\nimport net.neoforged.fml.loading.FMLLoader;\n\n@AutoService(PlatformHelper.class)\npublic class PlatformHelperImpl implements PlatformHelper {\n  @Override\n  public boolean isDevelopmentEnvironment() {\n/*?   if >=1.21.11 {*/\n    return !FMLLoader.getCurrent().isProduction();\n/*?   } else {*/\n/*return !FMLLoader.isProduction();\n*//*?   }*/\n  }\n\n  @Override\n  public boolean isModLoaded(String modId) {\n    return ModList.get().isLoaded(modId);\n  }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  }
+ ]
+}

@@ -1,0 +1,1098 @@
+{
+ "repo": "isXander/YetAnotherConfigLib",
+ "commit": "97f89e5bd0eff3811324680b6dec9e0e1009b8c0",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "neoforge"
+ ],
+ "versions": [
+  "26.1",
+  "26.2",
+  "26.3"
+ ],
+ "files": 16,
+ "switches": 34,
+ "versionSwitches": 28,
+ "rows": [
+  {
+   "file": "src/main/java/dev/isxander/yacl3/api/OptionFlag.java",
+   "line": 20,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "client -> client.levelExtractor.allChanged();"
+    },
+    {
+     "condition": null,
+     "code": "client -> client.levelRenderer.allChanged();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "levelExtractor",
+      "levelRenderer"
+     ]
+    }
+   ],
+   "older": "client -> client.levelRenderer.allChanged();",
+   "newer": "client -> client.levelExtractor.allChanged();",
+   "removed": [
+    "levelRenderer"
+   ],
+   "added": [
+    "levelExtractor"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/api/OptionFlag.java",
+   "line": 28,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "RELOAD_CHUNKS;"
+    },
+    {
+     "condition": null,
+     "code": "client -> client.levelRenderer.needsUpdate();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "levelRenderer",
+      "needsUpdate"
+     ]
+    }
+   ],
+   "older": "client -> client.levelRenderer.needsUpdate();",
+   "newer": "RELOAD_CHUNKS;",
+   "removed": [
+    "client",
+    "levelRenderer",
+    "needsUpdate"
+   ],
+   "added": [
+    "RELOAD_CHUNKS"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/controllers/string/StringControllerElement.java",
+   "line": 450,
+   "method": "updateTextInputFocus",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "Minecraft.getInstance().onTextInputFocusChange(this, focused);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/render/BaseRenderState.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.renderpearl.api.pipeline.RenderPipeline;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.blaze3d.pipeline.RenderPipeline;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "import com.mojang.blaze3d.pipeline.RenderPipeline;",
+   "newer": "import com.mojang.renderpearl.api.pipeline.RenderPipeline;",
+   "removed": [
+    "blaze3d"
+   ],
+   "added": [
+    "api",
+    "renderpearl"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/render/YACLGuiElementRenderState.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.renderpearl.api.pipeline.RenderPipeline;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.blaze3d.pipeline.RenderPipeline;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "import com.mojang.blaze3d.pipeline.RenderPipeline;",
+   "newer": "import com.mojang.renderpearl.api.pipeline.RenderPipeline;",
+   "removed": [
+    "blaze3d"
+   ],
+   "added": [
+    "api",
+    "renderpearl"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 12,
+   "method": "(imports)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.client.gui.components.tabs.MenuTabBar;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "//import net.minecraft.client.gui.components.tabs.TabNavigationBar;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 24,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "MenuTabBar"
+    },
+    {
+     "condition": null,
+     "code": "TabNavigationBar"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "MenuTabBar"
+     ]
+    }
+   ],
+   "older": "TabNavigationBar",
+   "newer": "MenuTabBar",
+   "removed": [
+    "TabNavigationBar"
+   ],
+   "added": [
+    "MenuTabBar"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 35,
+   "method": "ScrollableNavigationBar",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "var tabsList = ImmutableList.<Tab>copyOf(tabs);\n        var tabButtonsList = ImmutableList.copyOf(tabsList.stream()\n                .<TabButton>map(tab -> new MenuTabButton(tabManager, tab, 0, 24))\n                .toList());\n        super(0, 0, width, 24, tabManager, tabButtonsList, tabsList);"
+    },
+    {
+     "condition": null,
+     "code": "super(width, tabManager, ImmutableList.copyOf(tabs));"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "MenuTabButton",
+      "map"
+     ]
+    }
+   ],
+   "older": "super(width, tabManager, ImmutableList.copyOf(tabs));",
+   "newer": "var tabsList = ImmutableList.<Tab>copyOf(tabs);\n        var tabButtonsList = ImmutableList.copyOf(tabsList.stream()\n                .<TabButton>map(tab -> new MenuTabButton(tabManager, tab, 0, 24))\n                .toList());\n        super(0, 0, width, 24, tabManager, tabButtonsList, tabsList);",
+   "removed": [],
+   "added": [
+    "MenuTabButton",
+    "Tab",
+    "TabButton",
+    "map",
+    "stream",
+    "tab",
+    "tabButtonsList",
+    "tabsList",
+    "toList"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 55,
+   "method": "(class body)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "final int pWidth"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 56,
+   "method": "arrangeElements",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "pWidth;"
+    },
+    {
+     "condition": null,
+     "code": "accessor.yacl$getWidth();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "accessor.yacl$getWidth();",
+   "newer": "pWidth;",
+   "removed": [
+    "accessor",
+    "getWidth",
+    "yacl"
+   ],
+   "added": [
+    "pWidth"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 57,
+   "method": "arrangeElements",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "this.layout;"
+    },
+    {
+     "condition": null,
+     "code": "accessor.yacl$getLayout();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "accessor.yacl$getLayout();",
+   "newer": "this.layout;",
+   "removed": [
+    "accessor",
+    "getLayout",
+    "yacl"
+   ],
+   "added": [
+    "layout"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 92,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {"
+    },
+    {
+     "condition": null,
+     "code": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "extractRenderState",
+      "extractWidgetRenderState"
+     ]
+    }
+   ],
+   "older": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {",
+   "newer": "public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {",
+   "removed": [
+    "extractRenderState"
+   ],
+   "added": [
+    "extractWidgetRenderState"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 100,
+   "method": "extractWidgetRenderState",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "super.extractWidgetRenderState(graphics, mouseX, mouseY, a);"
+    },
+    {
+     "condition": null,
+     "code": "super.extractRenderState(graphics, mouseX, mouseY, a);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "extractRenderState",
+      "extractWidgetRenderState"
+     ]
+    }
+   ],
+   "older": "super.extractRenderState(graphics, mouseX, mouseY, a);",
+   "newer": "super.extractWidgetRenderState(graphics, mouseX, mouseY, a);",
+   "removed": [
+    "extractRenderState"
+   ],
+   "added": [
+    "extractWidgetRenderState"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 106,
+   "method": "extractWidgetRenderState",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "this.layout;"
+    },
+    {
+     "condition": null,
+     "code": "accessor.yacl$getLayout();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "accessor.yacl$getLayout();",
+   "newer": "this.layout;",
+   "removed": [
+    "accessor",
+    "getLayout",
+    "yacl"
+   ],
+   "added": [
+    "layout"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 107,
+   "method": "extractWidgetRenderState",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "this.getWidth();"
+    },
+    {
+     "condition": null,
+     "code": "accessor.yacl$getWidth();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "accessor.yacl$getWidth();",
+   "newer": "this.getWidth();",
+   "removed": [
+    "accessor",
+    "yacl"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 152,
+   "method": "setScrollOffset",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "this.layout;"
+    },
+    {
+     "condition": null,
+     "code": "accessor.yacl$getLayout();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "accessor.yacl$getLayout();",
+   "newer": "this.layout;",
+   "removed": [
+    "accessor",
+    "getLayout",
+    "yacl"
+   ],
+   "added": [
+    "layout"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/ScrollableNavigationBar.java",
+   "line": 172,
+   "method": "ensureVisible",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "this.getWidth();"
+    },
+    {
+     "condition": null,
+     "code": "accessor.yacl$getWidth();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "accessor.yacl$getWidth();",
+   "newer": "this.getWidth();",
+   "removed": [
+    "accessor",
+    "yacl"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/tab/TabExt.java",
+   "line": 25,
+   "method": "(class body)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Override\n    default @NonNull Layout getLayout() {\n        return new FrameLayout();\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/utils/GuiUtils.java",
+   "line": 54,
+   "method": "setScreen",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "((GuiAccessor) Minecraft.getInstance().gui).yacl$setScreen(screen);"
+    },
+    {
+     "condition": null,
+     "code": "Minecraft.getInstance().screen = screen;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "setScreen"
+     ]
+    }
+   ],
+   "older": "Minecraft.getInstance().screen = screen;",
+   "newer": "((GuiAccessor) Minecraft.getInstance().gui).yacl$setScreen(screen);",
+   "removed": [],
+   "added": [
+    "GuiAccessor",
+    "gui",
+    "setScreen",
+    "yacl"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/utils/GuiUtils.java",
+   "line": 60,
+   "method": "setScreen",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "Minecraft.getInstance().gui.setScreen(screen);"
+    },
+    {
+     "condition": null,
+     "code": "Minecraft.getInstance().setScreen(screen);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "Minecraft.getInstance().setScreen(screen);",
+   "newer": "Minecraft.getInstance().gui.setScreen(screen);",
+   "removed": [],
+   "added": [
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/utils/GuiUtils.java",
+   "line": 73,
+   "method": "getCurrentScreen",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "return Minecraft.getInstance().gui.screen();"
+    },
+    {
+     "condition": null,
+     "code": "return Minecraft.getInstance().screen;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "return Minecraft.getInstance().screen;",
+   "newer": "return Minecraft.getInstance().gui.screen();",
+   "removed": [],
+   "added": [
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/utils/KeyUtils.java",
+   "line": 19,
+   "method": "isKeyDown",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "return InputConstants.isKeyDown(key);"
+    },
+    {
+     "condition": null,
+     "code": "return InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), key);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "return InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), key);",
+   "newer": "return InputConstants.isKeyDown(key);",
+   "removed": [
+    "Minecraft",
+    "getInstance",
+    "getWindow"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/gui/YACLScreen.java",
+   "line": 98,
+   "method": "init",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "tabNavigationBar.arrangeElements(tabArea.width());"
+    },
+    {
+     "condition": null,
+     "code": "tabNavigationBar.arrangeElements();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "tabNavigationBar.arrangeElements();",
+   "newer": "tabNavigationBar.arrangeElements(tabArea.width());",
+   "removed": [],
+   "added": [
+    "tabArea",
+    "width"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/mixin/GuiAccessor.java",
+   "line": 10,
+   "method": "(class body)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Accessor(\"screen\")\n    void yacl$setScreen(Screen screen);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/mixin/MinecraftMixin.java",
+   "line": 13,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "method = \"exitWorldAndClose\","
+    },
+    {
+     "condition": null,
+     "code": "method = \"destroy\","
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "method = \"destroy\",",
+   "newer": "method = \"exitWorldAndClose\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/mixin/TabNavigationBarAccessor.java",
+   "line": 14,
+   "method": "(class body)",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "@Accessor(\"layout\")\n    LinearLayout yacl$getLayout();\n\n    @Accessor(\"width\")\n    int yacl$getWidth();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/platform/PlatformEntrypoint.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "fabric | neoforge | forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.api.ClientModInitializer;\nimport net.fabricmc.fabric.api.resource.v1.ResourceLoader;\nimport net.minecraft.server.packs.PackType;\n\npublic class PlatformEntrypoint implements ClientModInitializer {\n    @Override\n    public void onInitializeClient() {\n        YACLConfig.HANDLER.load();\n        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(YACLImageReloadListener.getId(), new YACLImageReloadListener());\n    }\n}"
+    },
+    {
+     "condition": "neoforge",
+     "code": "import net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.neoforge.client.event.*;\n\n@Mod(\"yet_another_config_lib_v3\")\npublic class PlatformEntrypoint {\n    public PlatformEntrypoint(IEventBus modEventBus) {\n        YACLConfig.HANDLER.load();\n        modEventBus.addListener(AddClientReloadListenersEvent.class, event -> {\n            event.addListener(YACLImageReloadListener.getId(), new YACLImageReloadListener());\n        });\n    }\n}"
+    },
+    {
+     "condition": "forge",
+     "code": "import net.minecraftforge.fml.common.Mod;\nimport net.minecraftforge.client.event.RegisterClientReloadListenersEvent;\nimport net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;\n\n@Mod(\"yet_another_config_lib_v3\")\npublic class PlatformEntrypoint {\n    public PlatformEntrypoint() {\n        YACLConfig.HANDLER.load();\n        // noinspection removal we will never support lexforge past 1.20.1\n        FMLJavaModLoadingContext.get().getModEventBus().<RegisterClientReloadListenersEvent>addListener(event -> {\n            event.registerReloadListener(new YACLImageReloadListener());\n        });\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/platform/YACLPlatform.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric | neoforge | forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.loader.api.FabricLoader;"
+    },
+    {
+     "condition": "neoforge",
+     "code": "import net.neoforged.fml.loading.FMLEnvironment;\nimport net.neoforged.fml.loading.FMLPaths;"
+    },
+    {
+     "condition": "forge",
+     "code": "import net.minecraftforge.fml.loading.FMLEnvironment;\nimport net.minecraftforge.fml.loading.FMLPaths;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/platform/YACLPlatform.java",
+   "line": 34,
+   "method": "getEnvironment",
+   "condition": "fabric | forgelike",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "return switch (FabricLoader.getInstance().getEnvironmentType()) {\n            case CLIENT -> Env.CLIENT;\n            case SERVER -> Env.SERVER;\n        };"
+    },
+    {
+     "condition": "forgelike",
+     "code": "var dist = FMLEnvironment.getDist();\n        return switch (dist) {\n            case CLIENT -> Env.CLIENT;\n            case DEDICATED_SERVER -> Env.SERVER;\n        };"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/platform/YACLPlatform.java",
+   "line": 49,
+   "method": "getConfigDir",
+   "condition": "fabric | forgelike",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "return FabricLoader.getInstance().getConfigDir();"
+    },
+    {
+     "condition": "forgelike",
+     "code": "return FMLPaths.CONFIGDIR.get();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/yacl3/platform/YACLPlatform.java",
+   "line": 57,
+   "method": "isDevelopmentEnv",
+   "condition": "fabric | forgelike",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "return FabricLoader.getInstance().isDevelopmentEnvironment();"
+    },
+    {
+     "condition": "forgelike",
+     "code": "return !FMLEnvironment.isProduction();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/testmod/java/dev/isxander/yacl3/test/Entrypoint.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric | neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.api.ClientModInitializer;\n\npublic class Entrypoint implements ClientModInitializer {\n\t@Override\n\tpublic void onInitializeClient() {\n\n\t}\n}"
+    },
+    {
+     "condition": "neoforge",
+     "code": "import net.neoforged.fml.common.Mod;\n\n@Mod(\"yacl_test\")\npublic class Entrypoint {\n    public Entrypoint() {\n\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/testmod/java/dev/isxander/yacl3/test/GuiTest.java",
+   "line": 296,
+   "method": "getFullTestSuite",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "formatting.name()"
+    },
+    {
+     "condition": null,
+     "code": "formatting.getName()"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "getName",
+      "name"
+     ]
+    }
+   ],
+   "older": "formatting.getName()",
+   "newer": "formatting.name()",
+   "removed": [
+    "getName"
+   ],
+   "added": [
+    "name"
+   ]
+  }
+ ]
+}

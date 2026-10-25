@@ -1,0 +1,5209 @@
+{
+ "repo": "mrbuilder1961/ChatPatches",
+ "commit": "987cf24502ad737c83959fd5f1297a2fd42165d7",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "neoforge"
+ ],
+ "versions": [
+  "1.20.1",
+  "1.21.1",
+  "1.21.5",
+  "1.21.8",
+  "1.21.10",
+  "1.21.11",
+  "26.1.2",
+  "26.2",
+  "26.3",
+  "26.4"
+ ],
+ "files": 17,
+ "switches": 167,
+ "versionSwitches": 164,
+ "rows": [
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 48,
+   "method": "(imports)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "import net.minecraft.client.multiplayer.chat.GuiMessageSource;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 76,
+   "method": "(class body)",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "int addedTime,"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 77,
+   "method": "(class body)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "GuiMessageSource source,"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 79,
+   "method": "(class body)",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": ", boolean refreshing"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 151,
+   "method": "(class body)",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "int addedTime,"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 152,
+   "method": "(class body)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "GuiMessageSource source,"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 154,
+   "method": "(class body)",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": ", boolean refreshing"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 164,
+   "method": "queueMessage",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "addedTime,"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 165,
+   "method": "queueMessage",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "source,"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 167,
+   "method": "queueMessage",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": ", refreshing"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 448,
+   "method": "restore",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "RenderSystem.assertOnRenderThread();"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 454,
+   "method": "restore",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "GuiMessageSource.SYSTEM_CLIENT,"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 513,
+   "method": "drainPendingMessages",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "pending.addedTime(),"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 514,
+   "method": "drainPendingMessages",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "pending.source(),"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 516,
+   "method": "drainPendingMessages",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": ", pending.refreshing()"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 538,
+   "method": "hideRecentMessages",
+   "condition": ">26.1.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">26.1.2",
+     "code": "hud."
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 547,
+   "method": "hideRecentMessages",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "var lp = l.parent();"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 549,
+   "method": "hideRecentMessages",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "new GuiMessage(newTime, lp.content(), lp.signature(), lp.source(), lp.tag())"
+    },
+    {
+     "condition": null,
+     "code": "newTime"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "GuiMessage",
+      "source",
+      "tag"
+     ]
+    }
+   ],
+   "older": "newTime",
+   "newer": "new GuiMessage(newTime, lp.content(), lp.signature(), lp.source(), lp.tag())",
+   "removed": [],
+   "added": [
+    "GuiMessage",
+    "content",
+    "signature",
+    "source",
+    "tag"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatLog.java",
+   "line": 551,
+   "method": "hideRecentMessages",
+   "condition": "<=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.11",
+     "code": "l.tag(),"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatPatches.java",
+   "line": 48,
+   "method": "onInitializeClient",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "END_LEVEL_TICK"
+    },
+    {
+     "condition": null,
+     "code": "END_WORLD_TICK"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [],
+   "older": "END_WORLD_TICK",
+   "newer": "END_LEVEL_TICK",
+   "removed": [
+    "END_WORLD_TICK"
+   ],
+   "added": [
+    "END_LEVEL_TICK"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatPatches.java",
+   "line": 55,
+   "method": "onInitializeClient",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "try {\n\t\t\t\t// provides a consistent value when accessing the config, and avoids #327\n\t\t\t\t// has to be done here because options isn't initialized at any earlier point :/\n\t\t\t\tboolean saveChatDrafts = Minecraft.getInstance().options.saveChatDrafts().get();\n\t\t\t\t// todo if there is any sort of onChanged callback i can register that'd be perfect\n\t\t\t\tif(config.onlyInvasiveDrafting != saveChatDrafts) {\n\t\t\t\t\tconfig.onlyInvasiveDrafting = saveChatDrafts;\n\t\t\t\t}\n\t\t\t} catch(Exception e) {\n\t\t\t\t//LOGGER.warn(\"Couldn't access options.saveChatDrafts:\", e); // it's not that important\n\t\t\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/ChatPatches.java",
+   "line": 209,
+   "method": "pushToast",
+   "condition": ">26.1.2 | >=1.21.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">26.1.2",
+     "code": "gui.toastManager"
+    },
+    {
+     "condition": ">=1.21.2",
+     "code": "getToastManager"
+    },
+    {
+     "condition": null,
+     "code": "getToasts"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2",
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "26.1.2 -> 26.2",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "getToastManager",
+      "toastManager"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "gui"
+     ]
+    }
+   ],
+   "older": "getToastManager",
+   "newer": "gui.toastManager",
+   "removed": [
+    "getToastManager"
+   ],
+   "added": [
+    "gui",
+    "toastManager"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 51,
+   "method": "(imports)",
+   "condition": ">1.20.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.2",
+     "code": "PlainTextContents"
+    },
+    {
+     "condition": null,
+     "code": "LiteralContents"
+    }
+   ],
+   "boundary": [
+    "1.20.2 -> 1.20.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "LiteralContents",
+      "PlainTextContents"
+     ]
+    }
+   ],
+   "older": "LiteralContents",
+   "newer": "PlainTextContents",
+   "removed": [
+    "LiteralContents"
+   ],
+   "added": [
+    "PlainTextContents"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 52,
+   "method": "(imports)",
+   "condition": "<1.21.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.5",
+     "code": "//import net.minecraft.client.multiplayer.PlayerInfo;"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 55,
+   "method": "(imports)",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "//import net.minecraft.util.ExtraCodecs;"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 58,
+   "method": "(imports)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import obro1961.chatpatches.integration.ChatHeadsIntegration;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 61,
+   "method": "(imports)",
+   "condition": "<=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "//import obro1961.chatpatches.util.VersionUtil;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 206,
+   "method": "getConfigScreen",
+   "condition": "config: =yacl | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "config: =yacl",
+     "code": "\"yacl\""
+    },
+    {
+     "condition": null,
+     "code": "\"cloth-config\""
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 208,
+   "method": "getConfigScreen",
+   "condition": "config: =yacl | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "config: =yacl",
+     "code": "\"YACL\""
+    },
+    {
+     "condition": null,
+     "code": "\"Cloth Config\""
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 213,
+   "method": "getConfigScreen",
+   "condition": ">1.20.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.2",
+     "code": "parent, link"
+    },
+    {
+     "condition": null,
+     "code": "str, parent, true"
+    }
+   ],
+   "boundary": [
+    "1.20.2 -> 1.20.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "str, parent, true",
+   "newer": "parent, link",
+   "removed": [
+    "str"
+   ],
+   "added": [
+    "link"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 232,
+   "method": "makeText",
+   "condition": ">1.20.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.2",
+     "code": "withColor(rgbColor)"
+    },
+    {
+     "condition": null,
+     "code": "setStyle(Style.EMPTY.withColor(rgbColor))"
+    }
+   ],
+   "boundary": [
+    "1.20.2 -> 1.20.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "EMPTY"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "EMPTY"
+     ]
+    }
+   ],
+   "older": "setStyle(Style.EMPTY.withColor(rgbColor))",
+   "newer": "withColor(rgbColor)",
+   "removed": [
+    "EMPTY",
+    "Style",
+    "setStyle"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 295,
+   "method": "formatPlayername",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "name"
+    },
+    {
+     "condition": null,
+     "code": "getName"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "name"
+     ]
+    }
+   ],
+   "older": "getName",
+   "newer": "name",
+   "removed": [
+    "getName"
+   ],
+   "added": [
+    "name"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 309,
+   "method": "formatPlayername",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "if(ChatHeadsIntegration.usingBeforeName()) {\n\t\t\t\t// adds a pre-existing head from the message to the playername!\n\t\t\t\t// see #297 and ChatHeads#83 for why it's easier for Chat Patches to do this going forward\n\t\t\t\theadComponent.ifPresent(head -> components.set(1, head.append(components.get(1))));\n\t\t\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 323,
+   "method": "formatPlayername",
+   "condition": ">1.20.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.2",
+     "code": "PlainTextContents"
+    },
+    {
+     "condition": null,
+     "code": "LiteralContents"
+    }
+   ],
+   "boundary": [
+    "1.20.2 -> 1.20.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "LiteralContents",
+      "PlainTextContents"
+     ]
+    }
+   ],
+   "older": "LiteralContents",
+   "newer": "PlainTextContents",
+   "removed": [
+    "LiteralContents"
+   ],
+   "added": [
+    "PlainTextContents"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 373,
+   "method": "sendBoundaryLine",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "addClientSystemMessage"
+    },
+    {
+     "condition": null,
+     "code": "addMessage"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "addClientSystemMessage",
+      "addMessage"
+     ]
+    }
+   ],
+   "older": "addMessage",
+   "newer": "addClientSystemMessage",
+   "removed": [
+    "addMessage"
+   ],
+   "added": [
+    "addClientSystemMessage"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 403,
+   "method": "calcDynamicChatShift",
+   "condition": ">=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "if(player.gameMode() == null || !player.gameMode().isSurvival()) {"
+    },
+    {
+     "condition": null,
+     "code": "if((Object)mc().getConnection().getPlayerInfo(player.getUUID()) instanceof PlayerInfo entry && !entry.getGameMode().isSurvival()) {"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "gameMode"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "gameMode",
+      "getUUID"
+     ]
+    }
+   ],
+   "older": "if((Object)mc().getConnection().getPlayerInfo(player.getUUID()) instanceof PlayerInfo entry && !entry.getGameMode().isSurvival()) {",
+   "newer": "if(player.gameMode() == null || !player.gameMode().isSurvival()) {",
+   "removed": [
+    "Object",
+    "PlayerInfo",
+    "entry",
+    "getConnection",
+    "getGameMode",
+    "getPlayerInfo",
+    "getUUID"
+   ],
+   "added": [
+    "gameMode"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+   "line": 813,
+   "method": "getTypeCodec",
+   "condition": ">1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.4",
+     "code": ", false"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/YaclConfig.java",
+   "line": 40,
+   "method": "(imports)",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "import net.minecraft.util.NullOps;"
+    },
+    {
+     "condition": null,
+     "code": "//import com.mojang.serialization.JsonOps;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "minecraft"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "NullOps"
+     ]
+    }
+   ],
+   "older": "//import com.mojang.serialization.JsonOps;",
+   "newer": "import net.minecraft.util.NullOps;",
+   "removed": [],
+   "added": [
+    "NullOps",
+    "minecraft",
+    "net",
+    "util"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/YaclConfig.java",
+   "line": 45,
+   "method": "(imports)",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.blaze3d.Blaze3D;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/YaclConfig.java",
+   "line": 128,
+   "method": "getConfigScreen",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": ".available( !key.equals(\"onlyInvasiveDrafting\") )"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/YaclConfig.java",
+   "line": 304,
+   "method": "getAction",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "Blaze3D.openPath(ChatLog.PATH.getParent());"
+    },
+    {
+     "condition": null,
+     "code": "//Util.getPlatform().openFile(ChatLog.PATH.getParent().toFile());"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "openPath"
+     ]
+    }
+   ],
+   "older": "//Util.getPlatform().openFile(ChatLog.PATH.getParent().toFile());",
+   "newer": "Blaze3D.openPath(ChatLog.PATH.getParent());",
+   "removed": [],
+   "added": [
+    "Blaze3D",
+    "ChatLog",
+    "PATH",
+    "getParent",
+    "openPath"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/YaclConfig.java",
+   "line": 336,
+   "method": "getBinding",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "NullOps"
+    },
+    {
+     "condition": null,
+     "code": "JsonOps"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "NullOps"
+     ]
+    }
+   ],
+   "older": "JsonOps",
+   "newer": "NullOps",
+   "removed": [
+    "JsonOps"
+   ],
+   "added": [
+    "NullOps"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/config/YaclConfig.java",
+   "line": 339,
+   "method": "getBinding",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "isSuccess"
+    },
+    {
+     "condition": null,
+     "code": "result().isPresent"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "result().isPresent",
+   "newer": "isSuccess",
+   "removed": [
+    "isPresent",
+    "result"
+   ],
+   "added": [
+    "isSuccess"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 61,
+   "method": "(imports)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.input.KeyEvent;\nimport net.minecraft.client.input.MouseButtonEvent;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 65,
+   "method": "(imports)",
+   "condition": "<1.20.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.20.2",
+     "code": "//import net.minecraft.resources.ResourceLocation;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 68,
+   "method": "(imports)",
+   "condition": ">=1.21.9 | >=1.20.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.world.entity.player.PlayerSkin;"
+    },
+    {
+     "condition": ">=1.20.2",
+     "code": "import net.minecraft.client.resources.PlayerSkin;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9",
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "entity",
+      "player"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.resources.PlayerSkin;",
+   "newer": "import net.minecraft.world.entity.player.PlayerSkin;",
+   "removed": [
+    "client",
+    "resources"
+   ],
+   "added": [
+    "entity",
+    "player",
+    "world"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 269,
+   "method": "registerButton",
+   "condition": ">=1.21.11 >> '('",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.11 >> '('",
+     "code": "* Render replacements shouldn't be kept when applied to the versioned\n* out comments; unfortunately, this is atrocious to do automatically."
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 275,
+   "method": "registerButton",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "extractContents"
+    },
+    {
+     "condition": null,
+     "code": "extractWidget"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "extractWidget",
+   "newer": "extractContents",
+   "removed": [
+    "extractWidget"
+   ],
+   "added": [
+    "extractContents"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 276,
+   "method": "extractContents",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "// both lines pulled from Button.Plain\n\t\t\t\t\textractDefaultSprite(graphics);\n\t\t\t\t\textractDefaultLabel(graphics.textRendererForWidget(this, GuiGraphicsExtractor.HoveredTextEffects.NONE));"
+    },
+    {
+     "condition": null,
+     "code": "super.renderWidget(graphics, mX, mY, delta);"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "HoveredTextEffects",
+      "renderWidget",
+      "textRendererForWidget"
+     ]
+    }
+   ],
+   "older": "super.renderWidget(graphics, mX, mY, delta);",
+   "newer": "// both lines pulled from Button.Plain\n\t\t\t\t\textractDefaultSprite(graphics);\n\t\t\t\t\textractDefaultLabel(graphics.textRendererForWidget(this, GuiGraphicsExtractor.HoveredTextEffects.NONE));",
+   "removed": [
+    "delta",
+    "renderWidget"
+   ],
+   "added": [
+    "GuiGraphicsExtractor",
+    "HoveredTextEffects",
+    "NONE",
+    "extractDefaultLabel",
+    "extractDefaultSprite",
+    "textRendererForWidget"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 285,
+   "method": "extractContents",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "fakeItem"
+    },
+    {
+     "condition": null,
+     "code": "renderFakeItem"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "fakeItem",
+      "renderFakeItem"
+     ]
+    }
+   ],
+   "older": "renderFakeItem",
+   "newer": "fakeItem",
+   "removed": [
+    "renderFakeItem"
+   ],
+   "added": [
+    "fakeItem"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 286,
+   "method": "extractContents",
+   "condition": ">=1.20.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.2",
+     "code": "PlayerSkin"
+    },
+    {
+     "condition": null,
+     "code": "ResourceLocation"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "PlayerSkin"
+     ]
+    }
+   ],
+   "older": "ResourceLocation",
+   "newer": "PlayerSkin",
+   "removed": [
+    "ResourceLocation"
+   ],
+   "added": [
+    "PlayerSkin"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 287,
+   "method": "extractContents",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "PlayerFaceExtractor.extractRenderState"
+    },
+    {
+     "condition": null,
+     "code": "PlayerFaceRenderer.draw"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "PlayerFaceExtractor",
+      "PlayerFaceRenderer",
+      "draw",
+      "extractRenderState"
+     ]
+    }
+   ],
+   "older": "PlayerFaceRenderer.draw",
+   "newer": "PlayerFaceExtractor.extractRenderState",
+   "removed": [
+    "PlayerFaceRenderer",
+    "draw"
+   ],
+   "added": [
+    "PlayerFaceExtractor",
+    "extractRenderState"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 326,
+   "method": "registerProxyButton",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "null"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 441,
+   "method": "init",
+   "condition": ">=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "event instanceof HoverEvent.ShowText(Component value)\n\t\t\t\t\t\t? Optional.of(value)"
+    },
+    {
+     "condition": null,
+     "code": "event != null\n\t\t\t\t\t\t? Optional.of(event.getValue(HoverEvent.Action.SHOW_TEXT))"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "getValue",
+      "value"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "ShowText",
+      "getValue",
+      "value"
+     ]
+    }
+   ],
+   "older": "event != null\n\t\t\t\t\t\t? Optional.of(event.getValue(HoverEvent.Action.SHOW_TEXT))",
+   "newer": "event instanceof HoverEvent.ShowText(Component value)\n\t\t\t\t\t\t? Optional.of(value)",
+   "removed": [
+    "Action",
+    "SHOW_TEXT",
+    "getValue"
+   ],
+   "added": [
+    "Component",
+    "ShowText",
+    "value"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 484,
+   "method": "init",
+   "condition": ">=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "if(style.getClickEvent() instanceof ClickEvent ce && (ce instanceof ClickEvent.OpenUrl || ce instanceof ClickEvent.OpenFile)) {\n\t\t\t\t\tboolean isUrl = ce instanceof ClickEvent.OpenUrl;\n\t\t\t\t\tString link = isUrl ? ((ClickEvent.OpenUrl)ce).uri().toString() : ((ClickEvent.OpenFile)ce).path();\n\t\t\t\t\tif(link != null && !link.isBlank()) {\n\t\t\t\t\t\tif(isUrl && !webLinks.contains(link)) {\n\t\t\t\t\t\t\twebLinks.add(link);\n\t\t\t\t\t\t} else if(!isUrl && !l.contains(link)) {\n\t\t\t\t\t\t\tl.add(link);\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}"
+    },
+    {
+     "condition": null,
+     "code": "if((Object)style.getClickEvent() instanceof ClickEvent ce && (Object)ce.getValue() instanceof String v && !v.isBlank()) {\n\t\t\t\t\tif(ce.getAction() == ClickEvent.Action.OPEN_URL && !webLinks.contains(v)) {\n\t\t\t\t\t\twebLinks.add(v);\n\t\t\t\t\t} else if(ce.getAction() == ClickEvent.Action.OPEN_FILE && !l.contains(v)) {\n\t\t\t\t\t\tl.add(v);\n\t\t\t\t\t}\n\t\t\t\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "getValue",
+      "link",
+      "toString"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "toString"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "OpenFile",
+      "OpenUrl",
+      "getAction",
+      "getValue",
+      "link",
+      "toString"
+     ]
+    }
+   ],
+   "older": "if((Object)style.getClickEvent() instanceof ClickEvent ce && (Object)ce.getValue() instanceof String v && !v.isBlank()) {\n\t\t\t\t\tif(ce.getAction() == ClickEvent.Action.OPEN_URL && !webLinks.contains(v)) {\n\t\t\t\t\t\twebLinks.add(v);\n\t\t\t\t\t} else if(ce.getAction() == ClickEvent.Action.OPEN_FILE && !l.contains(v)) {\n\t\t\t\t\t\tl.add(v);\n\t\t\t\t\t}\n\t\t\t\t}",
+   "newer": "if(style.getClickEvent() instanceof ClickEvent ce && (ce instanceof ClickEvent.OpenUrl || ce instanceof ClickEvent.OpenFile)) {\n\t\t\t\t\tboolean isUrl = ce instanceof ClickEvent.OpenUrl;\n\t\t\t\t\tString link = isUrl ? ((ClickEvent.OpenUrl)ce).uri().toString() : ((ClickEvent.OpenFile)ce).path();\n\t\t\t\t\tif(link != null && !link.isBlank()) {\n\t\t\t\t\t\tif(isUrl && !webLinks.contains(link)) {\n\t\t\t\t\t\t\twebLinks.add(link);\n\t\t\t\t\t\t} else if(!isUrl && !l.contains(link)) {\n\t\t\t\t\t\t\tl.add(link);\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}",
+   "removed": [
+    "Action",
+    "OPEN_FILE",
+    "OPEN_URL",
+    "Object",
+    "getAction",
+    "getValue"
+   ],
+   "added": [
+    "OpenFile",
+    "OpenUrl",
+    "isUrl",
+    "link",
+    "path",
+    "toString",
+    "uri"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 508,
+   "method": "init",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "IRON_CHAIN"
+    },
+    {
+     "condition": null,
+     "code": "CHAIN"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "CHAIN",
+      "IRON_CHAIN"
+     ]
+    }
+   ],
+   "older": "CHAIN",
+   "newer": "IRON_CHAIN",
+   "removed": [
+    "CHAIN"
+   ],
+   "added": [
+    "IRON_CHAIN"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 523,
+   "method": "init",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "name"
+    },
+    {
+     "condition": null,
+     "code": "getName"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "name"
+     ]
+    }
+   ],
+   "older": "getName",
+   "newer": "name",
+   "removed": [
+    "getName"
+   ],
+   "added": [
+    "name"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 524,
+   "method": "init",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "id"
+    },
+    {
+     "condition": null,
+     "code": "getId"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "getId"
+     ]
+    }
+   ],
+   "older": "getId",
+   "newer": "id",
+   "removed": [
+    "getId"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 532,
+   "method": "init",
+   "condition": ">=1.20.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.2",
+     "code": "getSkin"
+    },
+    {
+     "condition": null,
+     "code": "getSkinLocation"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "getSkin",
+      "getSkinLocation"
+     ]
+    }
+   ],
+   "older": "getSkinLocation",
+   "newer": "getSkin",
+   "removed": [
+    "getSkinLocation"
+   ],
+   "added": [
+    "getSkin"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 587,
+   "method": "extractSelectionOutline",
+   "condition": "<=1.21.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.5",
+     "code": ", 1.0f"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 597,
+   "method": "extractSelectionOutline",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "outline"
+    },
+    {
+     "condition": null,
+     "code": "renderOutline"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "outline",
+      "renderOutline"
+     ]
+    }
+   ],
+   "older": "renderOutline",
+   "newer": "outline",
+   "removed": [
+    "renderOutline"
+   ],
+   "added": [
+    "outline"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 629,
+   "method": "keyPressed",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "key.key()"
+    },
+    {
+     "condition": null,
+     "code": "keyCode"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [],
+   "older": "keyCode",
+   "newer": "key.key()",
+   "removed": [
+    "keyCode"
+   ],
+   "added": [
+    "key"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 651,
+   "method": "mouseClicked",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "double mX = mouse.x(), mY = mouse.y();\n\t\tint button = mouse.button();"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 802,
+   "method": "updateButtons",
+   "condition": "java: <21",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "java: <21",
+     "code": "(Object)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/ContextMenu.java",
+   "line": 955,
+   "method": "buttons",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": ".stream().map(wrapper -> wrapper.child).toList()"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/DeletionWarningScreen.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import org.jspecify.annotations.NonNull;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/DeletionWarningScreen.java",
+   "line": 59,
+   "method": "(class body)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "@NonNull"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/DeletionWarningScreen.java",
+   "line": 60,
+   "method": "(class body)",
+   "condition": ">1.20.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.4",
+     "code": "Layout addFooterButtons()"
+    },
+    {
+     "condition": null,
+     "code": "void initButtons(int yOffset)"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "addFooterButtons",
+      "initButtons"
+     ]
+    }
+   ],
+   "older": "void initButtons(int yOffset)",
+   "newer": "Layout addFooterButtons()",
+   "removed": [
+    "initButtons",
+    "yOffset"
+   ],
+   "added": [
+    "Layout",
+    "addFooterButtons"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/DeletionWarningScreen.java",
+   "line": 70,
+   "method": "addFooterButtons",
+   "condition": ">1.20.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.4",
+     "code": "var layout = LinearLayout.horizontal().spacing(8);\n\n\t\tlayout.addChild(proceedButton.build());\n\t\tlayout.addChild(cancelButton.build());\n\n\t\treturn layout;"
+    },
+    {
+     "condition": null,
+     "code": "addRenderableWidget(proceedButton.pos(width / 2 - 155, 120 + yOffset).build());\n      addRenderableWidget(cancelButton.pos(width / 2 - 155 + 160, 120 + yOffset).build());"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "LinearLayout",
+      "addChild",
+      "horizontal",
+      "layout"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "width"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "layout",
+      "pos",
+      "width"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "layout",
+      "pos",
+      "width"
+     ]
+    }
+   ],
+   "older": "addRenderableWidget(proceedButton.pos(width / 2 - 155, 120 + yOffset).build());\n      addRenderableWidget(cancelButton.pos(width / 2 - 155 + 160, 120 + yOffset).build());",
+   "newer": "var layout = LinearLayout.horizontal().spacing(8);\n\n\t\tlayout.addChild(proceedButton.build());\n\t\tlayout.addChild(cancelButton.build());\n\n\t\treturn layout;",
+   "removed": [
+    "addRenderableWidget",
+    "pos",
+    "width",
+    "yOffset"
+   ],
+   "added": [
+    "LinearLayout",
+    "addChild",
+    "horizontal",
+    "layout",
+    "spacing"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/SearchButton.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": ">=1.20.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.2",
+     "code": "import net.minecraft.client.gui.components.WidgetSprites;"
+    },
+    {
+     "condition": null,
+     "code": "//import net.minecraft.resources.ResourceLocation;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "WidgetSprites"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "minecraft"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "components"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "components"
+     ]
+    }
+   ],
+   "older": "//import net.minecraft.resources.ResourceLocation;",
+   "newer": "import net.minecraft.client.gui.components.WidgetSprites;",
+   "removed": [],
+   "added": [
+    "WidgetSprites",
+    "client",
+    "components",
+    "gui",
+    "minecraft",
+    "net"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/SearchButton.java",
+   "line": 14,
+   "method": "(imports)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.input.MouseButtonEvent;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/SearchButton.java",
+   "line": 19,
+   "method": "(class body)",
+   "condition": ">=1.20.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.2",
+     "code": "public static final WidgetSprites TEXTURES = new WidgetSprites(id(\"search_button_unfocused\"), id(\"search_button_focused\"));"
+    },
+    {
+     "condition": null,
+     "code": "public static final ResourceLocation FOCUSED_TEXTURE = id(\"textures/gui/sprites/search_button_focused.png\");\n    public static final ResourceLocation UNFOCUSED_TEXTURE = id(\"textures/gui/sprites/search_button_unfocused.png\");"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "WidgetSprites"
+     ]
+    }
+   ],
+   "older": "public static final ResourceLocation FOCUSED_TEXTURE = id(\"textures/gui/sprites/search_button_focused.png\");\n    public static final ResourceLocation UNFOCUSED_TEXTURE = id(\"textures/gui/sprites/search_button_unfocused.png\");",
+   "newer": "public static final WidgetSprites TEXTURES = new WidgetSprites(id(\"search_button_unfocused\"), id(\"search_button_focused\"));",
+   "removed": [
+    "FOCUSED_TEXTURE",
+    "ResourceLocation",
+    "UNFOCUSED_TEXTURE"
+   ],
+   "added": [
+    "TEXTURES",
+    "WidgetSprites"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/SearchButton.java",
+   "line": 29,
+   "method": "SearchButton",
+   "condition": ">=1.20.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.2",
+     "code": "super(x, y, 16, 16, TEXTURES, leftAction);"
+    },
+    {
+     "condition": null,
+     "code": "super(x, y, 16, 16, 0, 0, null, leftAction);"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "super(x, y, 16, 16, 0, 0, null, leftAction);",
+   "newer": "super(x, y, 16, 16, TEXTURES, leftAction);",
+   "removed": [],
+   "added": [
+    "TEXTURES"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/SearchButton.java",
+   "line": 40,
+   "method": "mouseClicked",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "double mX = mouse.x(), mY = mouse.y();\n        int button = mouse.button();"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/SearchButton.java",
+   "line": 45,
+   "method": "mouseClicked",
+   "condition": "<1.21.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.2",
+     "code": "clicked"
+    },
+    {
+     "condition": null,
+     "code": "isMouseOver"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "clicked",
+      "isMouseOver"
+     ]
+    }
+   ],
+   "older": "clicked",
+   "newer": "isMouseOver",
+   "removed": [
+    "clicked"
+   ],
+   "added": [
+    "isMouseOver"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/gui/SearchButton.java",
+   "line": 59,
+   "method": "(class body)",
+   "condition": "<=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "@Override\n    public void renderWidget(net.minecraft.client.gui.GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {\n        ResourceLocation sprite = isHoveredOrFocused() ? FOCUSED_TEXTURE : UNFOCUSED_TEXTURE;\n        guiGraphics.blit(sprite, getX(), getY(), 0, 0, 0, getWidth(), getHeight(), getWidth(), getHeight()); // might need to be the really long method call to specify the texture size\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/integration/ChatHeadsIntegration.java",
+   "line": 99,
+   "method": "extractHeadComponent",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": ", _"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/integration/ChatHeadsIntegration.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "package obro1961.chatpatches.integration;\n\nimport net.fabricmc.loader.api.FabricLoader;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.network.chat.MutableComponent;\nimport net.minecraft.network.chat.contents.ObjectContents;\nimport net.minecraft.network.chat.contents.TranslatableContents;\nimport net.minecraft.network.chat.contents.objects.PlayerSprite;\nimport obro1961.chatpatches.mixin.gui.ChatComponentMixin;\nimport org.spongepowered.asm.mixin.injection.points.MethodHead;\n\nimport java.lang.reflect.Field;\nimport java.lang.reflect.InvocationTargetException;\nimport java.lang.reflect.Method;\nimport java.util.Optional;\nimport java.util.regex.Matcher;\n\nimport static obro1961.chatpatches.ChatPatches.LOGGER;\n\npublic class ChatHeadsIntegration {\n\tprivate static final String CLASS_CHAT_HEADS = \"dzwdz.chat_heads.ChatHeads\";\n\tprivate static final String FIELD_CONFIG = \"CONFIG\";\n\t/**\n\t * (ChatHeadsConfig) ChatHeads.CONFIG\n\t */\n\tprivate static final Field CONFIG;\n\n\tprivate static final String CLASS_CHAT_HEADS_CONFIG = \"dzwdz.chat_heads.config.ChatHeadsConfig\";\n\tprivate static final String METHOD_RENDER_POSITION = \"renderPosition\";\n\t/**\n\t * (RenderPosition) ChatHeadsConfig.renderPosition()\n\t */\n\tprivate static final Method renderPosition;\n\n\tstatic {\n\t\tenabled = true;\n\n\t\tMethod m1 = null; Field f1 = null; // java sometimes i really hate you.\n\t\tif(isActive()) {\n\t\t\ttry {\n\t\t\t\tf1 = Class.forName(CLASS_CHAT_HEADS).getDeclaredField(FIELD_CONFIG);\n\t\t\t\tm1 = Class.forName(CLASS_CHAT_HEADS_CONFIG).getDeclaredMethod(METHOD_RENDER_POSITION);\n\t\t\t} catch(ClassNotFoundException | NoSuchMethodException | NoSuchFieldException e) {\n\t\t\t\tLOGGER.error(\"Failed to reflectively access Chat Heads' data, disabling further interoperability:\", e);\n\t\t\t\tenabled = false;\n\t\t\t}\n\t\t}\n\n\t\tCONFIG = f1;\n\t\trenderPosition = m1;\n\t}\n\n\tprivate static boolean enabled;\n\n\n\tpublic static boolean isActive() {\n\t\tboolean installed = FabricLoader.getInstance().isModLoaded(\"chat_heads\");\n\t\tif(enabled && !installed) {\n\t\t\tLOGGER.info(\"Chat Heads not installed, disabling interoperability\");\n\t\t\tenabled = false;\n\t\t}\n\t\treturn enabled;\n\t}\n\n\tpublic static boolean usingBeforeName() {\n\t\tif(enabled) {\n\t\t\ttry {\n\t\t\t\t// ChatHeads.CONFIG is static, but ConfigData.renderPosition is not\n\t\t\t\treturn renderPosition.invoke( CONFIG.get(null) ).toString().equalsIgnoreCase(\"BEFORE_NAME\");\n\t\t\t} catch(IllegalAccessException | InvocationTargetException e) {\n\t\t\t\tLOGGER.error(\"Failed to access Chat Heads' renderPosition config field:\", e);\n\t\t\t}\n\t\t}\n\n\t\treturn false; // assumes not installed or broken - aka do nothing\n\t}\n\n\t/**\n\t * Custom method created by one of the authors of Chat Heads!\n\t * @author <a href=\"https://github.com/Fourmisain\">Fourmisain</a>!\n\t *\n\t * @return An {@link Optional} enclosing the component containing the head\n\t * object, or an empty Optional if none was found.\n\t *\n\t * @param message The Component in which to look for a head component aka\n\t * {@link PlayerSprite} object. At the time of writing, Chat Heads adds such\n\t * a head after {@link MethodHead} of addMessage(...) but before the\n\t * {@link ChatComponentMixin#modifyMessage(Component)} injector is called.\n\t * Servers can add such head as they wish too - whether Chat Patches should\n\t * handle that is up for debate, but if the format complies with this system,\n\t * it should work fine.\n\t *\n\t * @see <a href=\"https://github.com/dzwdz/chat_heads/issues/83\">ChatHeads#83</a>\n\t * and <a href=\"https://github.com/mrbuilder1961/ChatPatches/issues/285\">#285</a>.\n\t */\n\tpublic static Optional<MutableComponent> extractHeadComponent(Component message) {\n\t\t// in 26.1+ that comma and underscore is needed for whatever reason - some new J25 feature ig\n\t\tif(message.getContents() instanceof ObjectContents(PlayerSprite ignored /*? if >=26.1 {*/, _/*?}*/)) {\n\t\t\treturn Optional.of((MutableComponent) message);\n\t\t}\n\n\t\tif(message.getContents() instanceof TranslatableContents translatable) {\n\t\t\tfor(var arg : translatable.getArgs()) {\n\t\t\t\tif(arg instanceof Com"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/codec/ExtraCodecsMixin.java",
+   "line": 16,
+   "method": "(class body)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "\"lambda$static$63\""
+    },
+    {
+     "condition": null,
+     "code": "\"method_66032\""
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [],
+   "older": "\"method_66032\"",
+   "newer": "\"lambda$static$63\"",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/codec/ExtraCodecsMixin.java",
+   "line": 18,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "\"I\""
+    },
+    {
+     "condition": null,
+     "code": "\"C\""
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [],
+   "older": "\"C\"",
+   "newer": "\"I\"",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/codec/ExtraCodecsMixin.java",
+   "line": 15,
+   "method": "(class body)",
+   "condition": ">=1.21.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "@Unique private static final String LAMBDA_METHOD_NAME = /*? if >=26.1 {*/\"lambda$static$63\"/*?} else {*//*\"method_66032\"*//*?}*/;\n\t@Unique private static final String LAMBDA_METHOD_SIGNATURE = \"(Ljava/lang/String;)Lcom/mojang/serialization/DataResult;\";\n\t@Unique private static final String TARGET_METHOD_SIGNATURE = \"Lnet/minecraft/util/StringUtil;isAllowedChatCharacter(\" + /*? if >=1.21.9 {*/\"I\"/*?} else {*//*\"C\"*//*?}*/ + \")Z\";\n\n\t/**\n\t * Allows all chat strings to be serialized despite any section signs present.\n\t * Unfortunately, a sole check to {@link TextUtil#safeCodec} will still break\n\t * context menu clicks on said messages, so a more comprehensive check is\n\t * required. Fixes\n\t * <a href=\"https://github.com/mrbuilder1961/ChatPatches/issues/246\">#246</a>,\n\t * which seems to only affect 1.21.5+.\n\t * <p>\n\t * Since 1.21.9, {@link StringUtil#isAllowedChatCharacter(int)} takes an int\n\t * instead of a char.\n\t *\n\t * @implNote Targets the synthetic method corresponding to the lambda in {@link\n\t * ExtraCodecs#CHAT_STRING}'s initializer.\n\t */\n\t@SuppressWarnings(\"LocalMayUseName\") // only one char instance; specifying name might break other version targets\n\t@ModifyExpressionValue(\n\t\tmethod = LAMBDA_METHOD_NAME + LAMBDA_METHOD_SIGNATURE,\n\t\tat = @At(value = \"INVOKE\", target = TARGET_METHOD_SIGNATURE)\n\t)\n\tprivate static boolean allowSectionSigns(boolean isValidChatCharacter, @Local char c) {\n\t\treturn isValidChatCharacter || c == '§';\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/CommandHistoryMixin.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": ">=1.20.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.2",
+     "code": "package obro1961.chatpatches.mixin;\n\nimport com.llamalad7.mixinextras.injector.ModifyExpressionValue;\nimport dev.kikugie.fletching_table.mixin.MixinEnvironment;\nimport net.minecraft.client.CommandHistory;\nimport obro1961.chatpatches.ChatPatches;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\n\n@MixinEnvironment(type = MixinEnvironment.Env.CLIENT)\n@Mixin(CommandHistory.class)\npublic abstract class CommandHistoryMixin {\n\t/**\n\t * Prevents {@value CommandHistory#PERSISTED_COMMANDS_FILE_NAME} from being\n\t * parsed if the chat log is enabled. This prevents a weird melding of the two\n\t * (<a href=\"https://github.com/mrbuilder1961/ChatPatches/issues/300\">#300</a>).\n\t *\n\t * @return {@code true} if the chat log is disabled and the file exists (should\n\t * be parsed), {@code false} otherwise\n\t *\n\t * @since Minecraft 1.20.2\n\t */\n\t@ModifyExpressionValue(method = \"<init>\", at = @At(value = \"INVOKE\", target = \"Ljava/nio/file/Files;exists(Ljava/nio/file/Path;[Ljava/nio/file/LinkOption;)Z\"))\n\tprivate boolean cancelCommandRestoration(boolean commandHistoryFileExists) {\n\t\treturn !ChatPatches.config.chatlog && commandHistoryFileExists;\n\t}\n}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 28,
+   "method": "(imports)",
+   "condition": ">=1.20.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.2",
+     "code": "import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 31,
+   "method": "(imports)",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "//import com.llamalad7.mixinextras.sugar.Local;"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 34,
+   "method": "(imports)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "import net.minecraft.client.multiplayer.chat.GuiMessageSource;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 37,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import obro1961.chatpatches.util.VersionUtil;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 55,
+   "method": "(class body)",
+   "condition": "<=1.20.4 | >=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "\"I\" +"
+    },
+    {
+     "condition": ">=26.1",
+     "code": "\"Lnet/minecraft/client/multiplayer/chat/GuiMessageSource;\" +"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5",
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [],
+   "older": "\"I\" +",
+   "newer": "\"Lnet/minecraft/client/multiplayer/chat/GuiMessageSource;\" +",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 55,
+   "method": "(class body)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "\"multiplayer/chat/\" +"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 56,
+   "method": "(class body)",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "\"Z\" +"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 61,
+   "method": "(class body)",
+   "condition": "!= 1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "!= 1.21.11",
+     "code": "private"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 64,
+   "method": "(class body)",
+   "condition": "<1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "@Shadow protected abstract double screenToChatX(double x);\n    @Shadow protected abstract double screenToChatY(double y);\n    @Shadow protected abstract int getMessageEndIndexAt(double chatLineX, double chatLineY);"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 111,
+   "method": "getEoEIndex",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "VersionUtil.getEoEIndex(mouseX, mouseY)"
+    },
+    {
+     "condition": null,
+     "code": "getMessageEndIndexAt(screenToChatX(mouseX), screenToChatY(mouseY))"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "getMessageEndIndexAt(screenToChatX(mouseX), screenToChatY(mouseY))",
+   "newer": "VersionUtil.getEoEIndex(mouseX, mouseY)",
+   "removed": [
+    "getMessageEndIndexAt",
+    "screenToChatX",
+    "screenToChatY"
+   ],
+   "added": [
+    "VersionUtil",
+    "getEoEIndex"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 136,
+   "method": "clear",
+   "condition": ">26.1.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">26.1.2",
+     "code": "gui.chatListener"
+    },
+    {
+     "condition": null,
+     "code": "getChatListener"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "chatListener",
+      "getChatListener"
+     ]
+    }
+   ],
+   "older": "getChatListener",
+   "newer": "gui.chatListener",
+   "removed": [
+    "getChatListener"
+   ],
+   "added": [
+    "chatListener",
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 136,
+   "method": "clear",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "flushQueue"
+    },
+    {
+     "condition": null,
+     "code": "clearQueue"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "clearQueue",
+      "flushQueue"
+     ]
+    }
+   ],
+   "older": "clearQueue",
+   "newer": "flushQueue",
+   "removed": [
+    "clearQueue"
+   ],
+   "added": [
+    "flushQueue"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 152,
+   "method": "(class body)",
+   "condition": ">=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "\"addMessageToQueue\", \"addMessageToDisplayQueue\" // actual messages"
+    },
+    {
+     "condition": null,
+     "code": "\"addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;ILnet/minecraft/client/GuiMessageTag;Z)V\""
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "\"addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;ILnet/minecraft/client/GuiMessageTag;Z)V\"",
+   "newer": "\"addMessageToQueue\", \"addMessageToDisplayQueue\" // actual messages",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 193,
+   "method": "(class body)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "+\n            /*~ if >=26.1 'Z' -> 'Lnet/minecraft/client/gui/components/ChatComponent$DisplayMode;' {*/\"(Lnet/minecraft/client/gui/components/ChatComponent$ChatGraphicsAccess;IILnet/minecraft/client/gui/components/ChatComponent$DisplayMode;)V\"/*~}*/"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 197,
+   "method": "(class body)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "4"
+    },
+    {
+     "condition": null,
+     "code": "7"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "7",
+   "newer": "4",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 215,
+   "method": "(class body)",
+   "condition": "<1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "@ModifyVariable(method = \"screenToChatY\", argsOnly = true, at = @At(\"HEAD\"))\n    private double moveChatLineY(double y) {\n        return y + config.calcDynamicChatShift();\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 238,
+   "method": "(class body)",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "int addedTime,"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 239,
+   "method": "(class body)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "GuiMessageSource source,"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 241,
+   "method": "(class body)",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": ", boolean refreshing"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 247,
+   "method": "queueMessageWhileLoading",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "addedTime,"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 248,
+   "method": "queueMessageWhileLoading",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "source,"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 250,
+   "method": "queueMessageWhileLoading",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": ", refreshing"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 257,
+   "method": "(class body)",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": ", @Local(argsOnly = true) boolean refreshing"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 258,
+   "method": "modifyMessage",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "|| refreshing"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 265,
+   "method": "(class body)",
+   "condition": ">=1.20.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.2",
+     "code": "\"Lnet/minecraft/util/ArrayListDeque;size()I\""
+    },
+    {
+     "condition": null,
+     "code": "\"Ljava/util/List;add(Ljava/lang/Object;)Z\""
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "\"Ljava/util/List;add(Ljava/lang/Object;)Z\"",
+   "newer": "\"Lnet/minecraft/util/ArrayListDeque;size()I\"",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 272,
+   "method": "(class body)",
+   "condition": ">=1.20.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.2",
+     "code": "/**\n     * Disables the vanilla command log, a feature added in 1.20.2 that logs up to\n     * 50 commands only, if the chat log is already enabled.\n     *\n     * @since 1.20.2, mod WHEN\n     */\n    @WrapWithCondition(method = \"addRecentChat\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/CommandHistory;addCommand(Ljava/lang/String;)V\"))\n    private boolean toggleCommandLog(net.minecraft.client.CommandHistory manager, String message) {\n        return !config.chatlog;\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 290,
+   "method": "(class body)",
+   "condition": "<=1.20.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "private void ignoreRestoredMessages(Component message, net.minecraft.client.GuiMessageTag tag, CallbackInfo ci) {"
+    },
+    {
+     "condition": null,
+     "code": "private void ignoreRestoredMessages(GuiMessage message, CallbackInfo ci) {"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "tag"
+     ]
+    }
+   ],
+   "older": "private void ignoreRestoredMessages(Component message, net.minecraft.client.GuiMessageTag tag, CallbackInfo ci) {",
+   "newer": "private void ignoreRestoredMessages(GuiMessage message, CallbackInfo ci) {",
+   "removed": [
+    "Component",
+    "GuiMessageTag",
+    "client",
+    "minecraft",
+    "net",
+    "tag"
+   ],
+   "added": [
+    "GuiMessage"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatComponentMixin.java",
+   "line": 295,
+   "method": "ignoreRestoredMessages",
+   "condition": "<=1.20.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "tag"
+    },
+    {
+     "condition": null,
+     "code": "message.tag()"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "message"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "message"
+     ]
+    }
+   ],
+   "older": "tag",
+   "newer": "message.tag()",
+   "removed": [],
+   "added": [
+    "message"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 49,
+   "method": "(imports)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import com.llamalad7.mixinextras.injector.ModifyReturnValue;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 52,
+   "method": "(imports)",
+   "condition": "<=1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.10",
+     "code": "//import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 55,
+   "method": "(imports)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.client.gui.ActiveTextCollector;"
+    },
+    {
+     "condition": null,
+     "code": "//import net.minecraft.client.gui.Font;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "ActiveTextCollector"
+     ]
+    }
+   ],
+   "older": "//import net.minecraft.client.gui.Font;",
+   "newer": "import net.minecraft.client.gui.ActiveTextCollector;",
+   "removed": [],
+   "added": [
+    "ActiveTextCollector",
+    "client",
+    "gui",
+    "minecraft",
+    "net"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 60,
+   "method": "(imports)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.input.CharacterEvent;\nimport net.minecraft.client.input.KeyEvent;\nimport net.minecraft.client.input.MouseButtonEvent;"
+    },
+    {
+     "condition": null,
+     "code": "//import net.minecraft.client.gui.navigation.CommonInputs;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "CharacterEvent",
+      "KeyEvent",
+      "MouseButtonEvent"
+     ]
+    }
+   ],
+   "older": "//import net.minecraft.client.gui.navigation.CommonInputs;",
+   "newer": "import net.minecraft.client.input.CharacterEvent;\nimport net.minecraft.client.input.KeyEvent;\nimport net.minecraft.client.input.MouseButtonEvent;",
+   "removed": [],
+   "added": [
+    "CharacterEvent",
+    "KeyEvent",
+    "MouseButtonEvent",
+    "client",
+    "input",
+    "minecraft",
+    "net"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 67,
+   "method": "(imports)",
+   "condition": ">=1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.6",
+     "code": "import net.minecraft.client.renderer.RenderPipelines;"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 70,
+   "method": "(imports)",
+   "condition": "<=1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.10",
+     "code": "//import net.minecraft.network.chat.Style;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 73,
+   "method": "(imports)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "Strings"
+    },
+    {
+     "condition": null,
+     "code": "StringUtils"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "StringUtils",
+   "newer": "Strings",
+   "removed": [
+    "StringUtils"
+   ],
+   "added": [
+    "Strings"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 89,
+   "method": "(class body)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "/**\n\t * <li>True -> ChatScreen (InBed is always false)</li>\n\t * <li>False -> InBedChatScreen, ChatScreen</li>\n\t */\n\t@Shadow\t@Final private boolean closeOnSubmit;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 161,
+   "method": "(class body)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "boolean isDraft,"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 178,
+   "method": "chatScreenInit",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "&& isDraft && this.closeOnSubmit"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 177,
+   "method": "chatScreenInit",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "else if(!config.messageDrafting && !saveChatDrafts() /*? if >=26.1 {*/&& isDraft && this.closeOnSubmit/*?}*/) {\n\t\t\t// ATTENTION: don't mess with this shit. at all. it makes no sense. if you're going to, please\n\t\t\t// just rewrite the whole system and document how it all works. thanks!\n\n\t\t\t// finally, if message drafting is disabled and save unsent messages is too, delete the draft\n\t\t\tthis.initial = \"\"; // except on 26.1+ where the chat doesn't close on send (closeOnSubmit = false) so don't delete their drafts\n\t\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 270,
+   "method": "renderCustomWidgets",
+   "condition": "<1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.6",
+     "code": "graphics.pose().translate(0, 0, -1); // easiest fix to render everything effectively under the ChatInputSuggestor (#186) - and 1.21.6+ kinda automatically does this"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 282,
+   "method": "renderCustomWidgets",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "text"
+    },
+    {
+     "condition": null,
+     "code": "drawString"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "drawString",
+      "text"
+     ]
+    }
+   ],
+   "older": "drawString",
+   "newer": "text",
+   "removed": [
+    "drawString"
+   ],
+   "added": [
+    "text"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 290,
+   "method": "renderCustomWidgets",
+   "condition": ">=1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.6",
+     "code": "RenderPipelines.GUI_TEXTURED,"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 312,
+   "method": "(class body)",
+   "condition": "<=1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.10",
+     "code": "@WrapWithCondition(method = \"render\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/gui/GuiGraphics;renderComponentHoverEffect(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Style;II)V\"))\n\tpublic boolean renderTooltipSmartly(GuiGraphics graphics, Font textRenderer, Style style, int mX, int mY) {\n\t\treturn !isMouseOverSettingsMenu(mX, mY) && !contextMenu.isMouseOver(mX, mY);\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 326,
+   "method": "onScreenClose",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "minecraft.gui.hud.getChat().discardDraft(); // un-fucks the vanilla system"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 348,
+   "method": "(class body)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "@ModifyReturnValue(method = \"shouldDiscardDraft\", at = @At(\"RETURN\"))\n\tprotected boolean allowMessageDrafting(boolean vanillaCheck) {\n\t\treturn !config.messageDrafting && vanillaCheck; // if regular drafting is enabled, never discard the draft - we fix the side effects from this in #chatScreenInit and #emptyInvasive/SentDraft\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 368,
+   "method": "(class body)",
+   "condition": "<=1.21.8 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.8",
+     "code": "\"III\""
+    },
+    {
+     "condition": null,
+     "code": "\"Lnet/minecraft/client/input/KeyEvent;\""
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [],
+   "older": "\"III\"",
+   "newer": "\"Lnet/minecraft/client/input/KeyEvent;\"",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 376,
+   "method": "emptyManualDrafts",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "key.isEscape()"
+    },
+    {
+     "condition": null,
+     "code": "keyCode == GLFW.GLFW_KEY_ESCAPE"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [],
+   "older": "keyCode == GLFW.GLFW_KEY_ESCAPE",
+   "newer": "key.isEscape()",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_ESCAPE",
+    "keyCode"
+   ],
+   "added": [
+    "isEscape",
+    "key"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 392,
+   "method": "(class body)",
+   "condition": ">26.1.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">26.1.2",
+     "code": "\"gui/Gui\""
+    },
+    {
+     "condition": null,
+     "code": "\"Minecraft\""
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "\"Minecraft\"",
+   "newer": "\"gui/Gui\"",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 393,
+   "method": "(class body)",
+   "condition": "<=1.21.8",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.8",
+     "code": ", ordinal = 1, // post 1.21.9 partial drafting feature, only one call exists\n\t\t\tshift = At.Shift.AFTER // not important post 1.21.9 either"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 401,
+   "method": "emptySentDrafts",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "input.setValue(\"\");"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 416,
+   "method": "(class body)",
+   "condition": "<=1.21.8",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.8",
+     "code": "@WrapOperation(method = \"mouseClicked\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/gui/components/EditBox;mouseClicked(DDI)Z\"))\n\tprivate boolean disableChatFieldFocus(EditBox chatField, double mX, double mY, int button, Operation<Boolean> mouseClicked) {\n\t\t// return false (not clicked) if the search field is showing, otherwise delegate to input\n\t\treturn (!config.search || !showSearchBar) && mouseClicked.call(chatField, mX, mY, button);\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 424,
+   "method": "(class body)",
+   "condition": "<=1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.10",
+     "code": "@WrapOperation(method = \"mouseClicked\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/gui/components/ChatComponent;handleChatQueueClicked(DD)Z\"))\n\tprivate boolean fixMenuClickthroughClick(ChatComponent chat, double mX, double mY, Operation<Boolean> mouseClicked) {\n\t\t// return false (not clicked) if the context menu is showing and the mouse is over it, otherwise delegate to chat\n\t\treturn !isMouseOverSettingsMenu(mX, mY) && !contextMenu.isMouseOver(mX, mY) && mouseClicked.call(chat, mX, mY);\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 437,
+   "method": "(class body)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "/*~ if >=26.1 'Z' -> 'Lnet/minecraft/client/gui/components/ChatComponent$DisplayMode;' {*/\n\t\t\t\t\"Lnet/minecraft/client/gui/components/ChatComponent;captureClickableText(Lnet/minecraft/client/gui/ActiveTextCollector;IILnet/minecraft/client/gui/components/ChatComponent$DisplayMode;)V\"\n\t\t\t\t//~}"
+    },
+    {
+     "condition": null,
+     "code": "\"Lnet/minecraft/client/gui/screens/ChatScreen;getComponentStyleAt(DD)Lnet/minecraft/network/chat/Style;\""
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "\"Lnet/minecraft/client/gui/screens/ChatScreen;getComponentStyleAt(DD)Lnet/minecraft/network/chat/Style;\"",
+   "newer": "/*~ if >=26.1 'Z' -> 'Lnet/minecraft/client/gui/components/ChatComponent$DisplayMode;' {*/\n\t\t\t\t\"Lnet/minecraft/client/gui/components/ChatComponent;captureClickableText(Lnet/minecraft/client/gui/ActiveTextCollector;IILnet/minecraft/client/gui/components/ChatComponent$DisplayMode;)V\"\n\t\t\t\t//~}",
+   "removed": [],
+   "added": [
+    "ChatComponent",
+    "DisplayMode",
+    "Lnet",
+    "client",
+    "components",
+    "gui",
+    "minecraft"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 449,
+   "method": "(class body)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "ChatComponent.DisplayMode"
+    },
+    {
+     "condition": null,
+     "code": "boolean"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "DisplayMode"
+     ]
+    }
+   ],
+   "older": "boolean",
+   "newer": "ChatComponent.DisplayMode",
+   "removed": [],
+   "added": [
+    "ChatComponent",
+    "DisplayMode"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 446,
+   "method": "(class body)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "private void fixStyleClickthrough(\n\t\tChatComponent chat,\n\t\tActiveTextCollector styleFinder, int h, int ticks, /*? if >=26.1 {*/ChatComponent.DisplayMode/*?} else {*//*boolean*//*?}*/ focused,\n\t\tOperation<Void> captureClickableText, MouseButtonEvent mouse, boolean doubleClick\n\t) {\n\t\tif(!isMouseOverSettingsMenu(mouse.x(), mouse.y()) && !contextMenu.isMouseOver(mouse.x(), mouse.y())) {\n\t\t\tcaptureClickableText.call(chat, styleFinder, h, ticks, focused);\n\t\t}"
+    },
+    {
+     "condition": null,
+     "code": "private Style fixStyleClickthrough(ChatScreen screen, double mX, double mY, Operation<Style> getTextStyleAt) {\n\t\treturn (isMouseOverSettingsMenu(mX, mY) || contextMenu.isMouseOver(mX, mY)) ? null : getTextStyleAt.call(screen, mX, mY);"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "ActiveTextCollector",
+      "captureClickableText"
+     ]
+    }
+   ],
+   "older": "private Style fixStyleClickthrough(ChatScreen screen, double mX, double mY, Operation<Style> getTextStyleAt) {\n\t\treturn (isMouseOverSettingsMenu(mX, mY) || contextMenu.isMouseOver(mX, mY)) ? null : getTextStyleAt.call(screen, mX, mY);",
+   "newer": "private void fixStyleClickthrough(\n\t\tChatComponent chat,\n\t\tActiveTextCollector styleFinder, int h, int ticks, /*? if >=26.1 {*/ChatComponent.DisplayMode/*?} else {*//*boolean*//*?}*/ focused,\n\t\tOperation<Void> captureClickableText, MouseButtonEvent mouse, boolean doubleClick\n\t) {\n\t\tif(!isMouseOverSettingsMenu(mouse.x(), mouse.y()) && !contextMenu.isMouseOver(mouse.x(), mouse.y())) {\n\t\t\tcaptureClickableText.call(chat, styleFinder, h, ticks, focused);\n\t\t}",
+   "removed": [
+    "ChatScreen",
+    "Style",
+    "getTextStyleAt",
+    "screen"
+   ],
+   "added": [
+    "ActiveTextCollector",
+    "ChatComponent",
+    "DisplayMode",
+    "MouseButtonEvent",
+    "Void",
+    "captureClickableText",
+    "chat",
+    "doubleClick",
+    "focused",
+    "mouse",
+    "styleFinder",
+    "ticks"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 473,
+   "method": "fixContextMenuNotClosing",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "mouse.button()"
+    },
+    {
+     "condition": null,
+     "code": "button"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [],
+   "older": "button",
+   "newer": "mouse.button()",
+   "removed": [],
+   "added": [
+    "mouse"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 511,
+   "method": "mouseClickedEvents",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "double mX = mouse.x(), mY = mouse.y();\n\t\tint button = mouse.button();"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 559,
+   "method": "allowContextMenuKeyPressing",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "key.isSelection()"
+    },
+    {
+     "condition": null,
+     "code": "CommonInputs.selected(keyCode)"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "CommonInputs"
+     ]
+    }
+   ],
+   "older": "CommonInputs.selected(keyCode)",
+   "newer": "key.isSelection()",
+   "removed": [
+    "CommonInputs",
+    "keyCode",
+    "selected"
+   ],
+   "added": [
+    "isSelection",
+    "key"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 577,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "CharacterEvent chr"
+    },
+    {
+     "condition": null,
+     "code": "char chr, int mods"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "CharacterEvent"
+     ]
+    }
+   ],
+   "older": "char chr, int mods",
+   "newer": "CharacterEvent chr",
+   "removed": [
+    "mods"
+   ],
+   "added": [
+    "CharacterEvent"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 578,
+   "method": "charTyped",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": ".codepoint()"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 578,
+   "method": "charTyped",
+   "condition": "<=1.21.8",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.8",
+     "code": ", mods"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 655,
+   "method": "saveChatDrafts",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "minecraft.options.saveChatDrafts().get()"
+    },
+    {
+     "condition": null,
+     "code": "config.onlyInvasiveDrafting"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "get",
+      "saveChatDrafts"
+     ]
+    }
+   ],
+   "older": "config.onlyInvasiveDrafting",
+   "newer": "minecraft.options.saveChatDrafts().get()",
+   "removed": [
+    "config",
+    "onlyInvasiveDrafting"
+   ],
+   "added": [
+    "get",
+    "minecraft",
+    "options",
+    "saveChatDrafts"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ChatScreenMixin.java",
+   "line": 727,
+   "method": "onSearchFieldUpdate",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "Strings.CI.contains"
+    },
+    {
+     "condition": null,
+     "code": "StringUtils.containsIgnoreCase"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "StringUtils.containsIgnoreCase",
+   "newer": "Strings.CI.contains",
+   "removed": [
+    "StringUtils",
+    "containsIgnoreCase"
+   ],
+   "added": [
+    "Strings",
+    "contains"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ScreenMixin.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.input.KeyEvent;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ScreenMixin.java",
+   "line": 25,
+   "method": "(class body)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "+ \"IIF\""
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ScreenMixin.java",
+   "line": 35,
+   "method": "cancelChatSwitchFocus",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "int keyCode = key.key();"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ScreenMixin.java",
+   "line": 41,
+   "method": "(class body)",
+   "condition": "1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "1.21.11",
+     "code": "GuiGraphicsExtractor receiver,"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/gui/ScreenMixin.java",
+   "line": 39,
+   "method": "(class body)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "@WrapWithCondition(method = FIX_CLICKTHROUGH_TARGET_METHOD, at = @At(value = \"INVOKE\", target = FIX_CLICKTHROUGH_TARGET_REFERENCE))\n    private boolean fixFuckassTooltipAndClickthrough(/*? if 1.21.11 {*//*GuiGraphicsExtractor receiver,*//*?}*/ GuiGraphicsExtractor graphics, int mX, int mY, float partialTick) {\n        if(((Screen) (Object) this) instanceof ChatScreen chatScreen) {\n            ChatScreenAccess access = (ChatScreenAccess) chatScreen;\n            ContextMenu menu = access.getContextMenu();\n\n            boolean mouseOverMenu = access.isMouseOverSettingsMenu(mX, mY) || menu.isMouseOver(mX, mY);\n            if(mouseOverMenu && graphics.deferredTooltip != null) {\n                graphics.hoveredTextStyle = null; // delete the source of the chat tooltip (menu button tooltips are only deferred, as experimentally determined)\n                return true; // approve rendering (now just the deferred tooltip)\n            } else {\n                // otherwise just prevent hovering through the menus\n                return !mouseOverMenu;\n            }\n        }\n\n        return true;\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/mixin/listener/ChatListenerMixin.java",
+   "line": 51,
+   "method": "cacheChatData",
+   "condition": ">=1.20.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": ".value()"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/ChatUtil.java",
+   "line": 37,
+   "method": "(imports)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "import net.minecraft.client.multiplayer.chat.GuiMessageSource;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/ChatUtil.java",
+   "line": 40,
+   "method": "(imports)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import obro1961.chatpatches.integration.ChatHeadsIntegration;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/ChatUtil.java",
+   "line": 46,
+   "method": "(class body)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "GuiMessageSource.SYSTEM_CLIENT,"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/ChatUtil.java",
+   "line": 131,
+   "method": "(class body)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "ChatHeadsIntegration.isActive() ? CHAT_HEADS_FORMAT :"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/ChatUtil.java",
+   "line": 382,
+   "method": "extractMessageSender",
+   "condition": ">=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "if(style.getHoverEvent() instanceof HoverEvent.ShowEntity(HoverEvent.EntityTooltipInfo info)) {"
+    },
+    {
+     "condition": null,
+     "code": "if(style.getHoverEvent() != null && (Object)style.getHoverEvent().getValue(HoverEvent.Action.SHOW_ENTITY) instanceof HoverEvent.EntityTooltipInfo info) {"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "getValue"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "ShowEntity",
+      "getValue"
+     ]
+    }
+   ],
+   "older": "if(style.getHoverEvent() != null && (Object)style.getHoverEvent().getValue(HoverEvent.Action.SHOW_ENTITY) instanceof HoverEvent.EntityTooltipInfo info) {",
+   "newer": "if(style.getHoverEvent() instanceof HoverEvent.ShowEntity(HoverEvent.EntityTooltipInfo info)) {",
+   "removed": [
+    "Action",
+    "Object",
+    "SHOW_ENTITY",
+    "getValue"
+   ],
+   "added": [
+    "ShowEntity"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/ChatUtil.java",
+   "line": 387,
+   "method": "extractMessageSender",
+   "condition": "<=1.20.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.2",
+     "code": "Optional.ofNullable"
+    }
+   ],
+   "boundary": [
+    "1.20.2 -> 1.20.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/ChatUtil.java",
+   "line": 388,
+   "method": "extractMessageSender",
+   "condition": ">=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "uuid"
+    },
+    {
+     "condition": null,
+     "code": "id"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "uuid"
+     ]
+    }
+   ],
+   "older": "id",
+   "newer": "uuid",
+   "removed": [],
+   "added": [
+    "uuid"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/ChatUtil.java",
+   "line": 487,
+   "method": "modifyMessage",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "head = ChatHeadsIntegration.getHeadIfEnabled(m, matcher);"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/RenderUtil.java",
+   "line": 30,
+   "method": "smartOpaque",
+   "condition": ">=1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.6",
+     "code": "opaque(xrgb)"
+    },
+    {
+     "condition": null,
+     "code": "xrgb & NO_ALPHA_CHANNEL"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ],
+   "confirmed": [],
+   "older": "xrgb & NO_ALPHA_CHANNEL",
+   "newer": "opaque(xrgb)",
+   "removed": [
+    "NO_ALPHA_CHANNEL"
+   ],
+   "added": [
+    "opaque"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/VersionUtil.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": "<=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "//import com.mojang.datafixers.util.Either;\n//import com.mojang.serialization.Codec;\n//import java.util.function.Function;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/VersionUtil.java",
+   "line": 40,
+   "method": "(class body)",
+   "condition": ">=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "RegistryOps"
+    },
+    {
+     "condition": null,
+     "code": "DynamicOps"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "DynamicOps",
+   "newer": "RegistryOps",
+   "removed": [
+    "DynamicOps"
+   ],
+   "added": [
+    "RegistryOps"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/VersionUtil.java",
+   "line": 41,
+   "method": "backedJsonOps",
+   "condition": ">=1.20.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "addSerializationContext"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/VersionUtil.java",
+   "line": 52,
+   "method": "(class body)",
+   "condition": ">=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "RegistryOps"
+    },
+    {
+     "condition": null,
+     "code": "DynamicOps"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "DynamicOps",
+   "newer": "RegistryOps",
+   "removed": [
+    "DynamicOps"
+   ],
+   "added": [
+    "RegistryOps"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/VersionUtil.java",
+   "line": 53,
+   "method": "addSerializationContext",
+   "condition": ">=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "var world = Minecraft.getInstance().level instanceof ClientLevel current ? current : backup;\n\t\tif(world != null) {\n\t\t\tbackup = world;\n\t\t\treturn world.registryAccess().createSerializationContext(ops);\n\t\t} else {\n\t\t\tChatPatches.LOGGER.warn(\"Sometimes this can be triggered if the game was closed too abruptly.\");\n\t\t\tthrow new IllegalStateException(\"Existing ClientLevel not found; fallback not present\");\n\t\t}"
+    },
+    {
+     "condition": null,
+     "code": "return ops;"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "LOGGER",
+      "level",
+      "registryAccess"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "LOGGER",
+      "level"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "LOGGER",
+      "createSerializationContext",
+      "level",
+      "registryAccess"
+     ]
+    }
+   ],
+   "older": "return ops;",
+   "newer": "var world = Minecraft.getInstance().level instanceof ClientLevel current ? current : backup;\n\t\tif(world != null) {\n\t\t\tbackup = world;\n\t\t\treturn world.registryAccess().createSerializationContext(ops);\n\t\t} else {\n\t\t\tChatPatches.LOGGER.warn(\"Sometimes this can be triggered if the game was closed too abruptly.\");\n\t\t\tthrow new IllegalStateException(\"Existing ClientLevel not found; fallback not present\");\n\t\t}",
+   "removed": [],
+   "added": [
+    "ChatPatches",
+    "ClientLevel",
+    "IllegalStateException",
+    "LOGGER",
+    "Minecraft",
+    "backup",
+    "createSerializationContext",
+    "current",
+    "getInstance",
+    "level",
+    "registryAccess",
+    "warn",
+    "world"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/VersionUtil.java",
+   "line": 67,
+   "method": "(class body)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "public static double screenToChatX(double x) {\n\t\treturn x / chat().getScale() - 4.0;\n\t}\n\n\t/**\n\t * Code taken from Minecraft 1.21.10's {@link ChatComponent}{@code #screenToChatY}\n\t * method, with code \"injected\" by Chat Patches. The description of that code is\n\t * as follows:\n\t *\n\t * <p>\n\t * Moves the chat line by {@link Config#chatShift} to\n\t * correctly shift the chat with the other components.\n\t * Used by the {@link ChatComponent} to correctly render\n\t * message indicators and chat hover tooltips when\n\t * needed in the shifted position.\n\t *\n\t * <p>Target: {@code double d = this.minecraft.getWindow().getScaledHeight() - y - 40.0;}\n\t *\n\t * @see Config#calcDynamicChatShift()\n\t *\n\t * @since Minecraft 1.21.11 gutted {@link ChatComponent} again.\n\t *\n\t * @implNote For whatever reason, in 1.21.11+, the shift value needs to be\n\t * subtracted instead of added to the base y shift - I couldn't tell you\n\t * what changed or why though.\n\t */\n\tpublic static double screenToChatY(double y) {\n\t\tdouble d = (double)mc().getWindow().getGuiScaledHeight() - y - 40.0;\n\t\t// -- ChatPatches' code - previously injected via ChatComponentMixin#moveChatLineY --\n\t\td -= ChatPatches.config.calcDynamicChatShift(); // negative instead of positive now...?!\n\t\t// -- ChatPatches' code --\n\t\treturn d / (chat().getScale() * (double)chat().getLineHeight());\n\t}\n\n\t/**\n\t * Inlined {@link ChatComponent#getMessageLineIndexAt(double, double)} into\n\t * {@link ChatComponent#getMessageEndIndexAt(double, double)}.\n\t */\n\tpublic static int getMessageEndIndexAt(double chatLineX, double chatLineY) {\n\t\tif(!chat().isChatFocused() || mc().options.chatVisibility().get() == ChatVisiblity.HIDDEN) {\n\t\t\treturn -1;\n\t\t}\n\t\tif(chatLineX < -4.0 || chatLineX > (double) Mth.floor((double) chat().getWidth() / chat().getScale())) {\n\t\t\treturn -1;\n\t\t}\n\n\t\tint i,\n\t\t\tlinesOnScreen = Math.min(chat().getLinesPerPage(), chat().trimmedMessages.size());\n\t\tif(chatLineY >= 0.0\n\t\t\t&& chatLineY < (double) linesOnScreen\n\t\t\t&& (i = Mth.floor(chatLineY + (double) chat().chatScrollbarPos)) >= 0\n\t\t\t&& i < chat().trimmedMessages.size()\n\t\t) {\n\t\t\t//return i;\n\t\t\t// getMessageLine ends ... getMessage begins\n\t\t\t//i = chat().getMessageLineIndexAt(chatLineX, chatLineY);\n\n\t\t\twhile(i >= 0) {\n\t\t\t\tif(chat().trimmedMessages.get(i).endOfEntry()) {\n\t\t\t\t\treturn i;\n\t\t\t\t}\n\t\t\t\t--i;\n\t\t\t}\n\t\t}\n\n\t\treturn -1;\n\t}\n\n\t/**\n\t * Technically a custom method although it's only uses vanilla methods.\n\t *\n\t * @see ChatComponentMixin#getEoEIndex(double, double)\n\t */\n\tpublic static int getEoEIndex(double mX, double mY) {\n\t\treturn getMessageEndIndexAt(screenToChatX(mX), screenToChatY(mY));\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/obro1961/chatpatches/util/VersionUtil.java",
+   "line": 146,
+   "method": "(class body)",
+   "condition": "<=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "public static <T> Codec<T> withAlternative(Codec<T> codec, Codec<? extends T> alternative) {\n\t\treturn Codec.either(codec, alternative).xmap(either -> either.map(Function.identity(), Function.identity()), Either::left);\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  }
+ ]
+}

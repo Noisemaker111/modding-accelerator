@@ -1,0 +1,2241 @@
+{
+ "repo": "decce6/Ixeris",
+ "commit": "98f5e507bb2a25dfb9f927f5b3614e6d3b8cbf43",
+ "names": "unknown",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "1.16.5",
+  "1.18.2",
+  "1.19.2",
+  "1.20.1",
+  "1.20.4",
+  "1.21.1",
+  "1.21.8",
+  "1.21.11",
+  "26.1",
+  "26.2",
+  "26.3"
+ ],
+ "files": 39,
+ "switches": 77,
+ "versionSwitches": 53,
+ "rows": [
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/ForgeClassLoaderHandler.java",
+   "line": 20,
+   "method": "(imports)",
+   "condition": ">=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.1",
+     "code": "// At this point our classes are already loaded on the MC-BOOTSTRAP classloader, but we need to do this here\n            // to prevent the TRANSFORMER classloader from loading them again (out Mixin plugin needs to use them to\n            // decide whether to apply mixins)\n            var packageToOurModulesGetter = unreflectGetter(() -> net.minecraftforge.securemodules.SecureModuleClassLoader.class.getDeclaredField(\"packageToOurModules\"));\n            var packageToOurModules = (Map<String, ResolvedModule>) packageToOurModulesGetter.invoke(this.modClassLoader);\n            packageToOurModules.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));\n\n            // If we don't do this the TRANSFORMER classloader will keep asking itself to load our class, eventually\n            // causing a StackOverflowException\n            var packageToParentLoaderGetter = unreflectGetter(() -> net.minecraftforge.securemodules.SecureModuleClassLoader.class.getDeclaredField(\"packageToParentLoader\"));\n            var packageToParentLoader = (Map<String, ClassLoader>) packageToParentLoaderGetter.invoke(this.modClassLoader);\n            packageToParentLoader.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));"
+    },
+    {
+     "condition": null,
+     "code": "/*// At this point our classes are already loaded on the MC-BOOTSTRAP classloader, but we need to do this here\n            // to prevent the LAYER SERVICE classloader from loading them again (out Mixin plugin needs to use them to\n            // decide whether to apply mixins)\n            var packageLookupGetter = unreflectGetter(() -> cpw.mods.cl.ModuleClassLoader.class.getDeclaredField(\"packageLookup\"));\n            var packageLookup = (Map<String, ResolvedModule>) packageLookupGetter.invoke(this.modClassLoader);\n            packageLookup.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));\n\n            // If we don't do this the LAYER SERVICE classloader will keep asking itself to load our class, eventually\n            // causing a StackOverflowException\n            var parentLoadersGetter = unreflectGetter(() -> cpw.mods.cl.ModuleClassLoader.class.getDeclaredField(\"parentLoaders\"));\n            var parentLoaders = (Map<String, ClassLoader>) parentLoadersGetter.invoke(this.modClassLoader);\n            parentLoaders.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));\n            */"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "/*// At this point our classes are already loaded on the MC-BOOTSTRAP classloader, but we need to do this here\n            // to prevent the LAYER SERVICE classloader from loading them again (out Mixin plugin needs to use them to\n            // decide whether to apply mixins)\n            var packageLookupGetter = unreflectGetter(() -> cpw.mods.cl.ModuleClassLoader.class.getDeclaredField(\"packageLookup\"));\n            var packageLookup = (Map<String, ResolvedModule>) packageLookupGetter.invoke(this.modClassLoader);\n            packageLookup.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));\n\n            // If we don't do this the LAYER SERVICE classloader will keep asking itself to load our class, eventually\n            // causing a StackOverflowException\n            var parentLoadersGetter = unreflectGetter(() -> cpw.mods.cl.ModuleClassLoader.class.getDeclaredField(\"parentLoaders\"));\n            var parentLoaders = (Map<String, ClassLoader>) parentLoadersGetter.invoke(this.modClassLoader);\n            parentLoaders.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));\n            */",
+   "newer": "// At this point our classes are already loaded on the MC-BOOTSTRAP classloader, but we need to do this here\n            // to prevent the TRANSFORMER classloader from loading them again (out Mixin plugin needs to use them to\n            // decide whether to apply mixins)\n            var packageToOurModulesGetter = unreflectGetter(() -> net.minecraftforge.securemodules.SecureModuleClassLoader.class.getDeclaredField(\"packageToOurModules\"));\n            var packageToOurModules = (Map<String, ResolvedModule>) packageToOurModulesGetter.invoke(this.modClassLoader);\n            packageToOurModules.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));\n\n            // If we don't do this the TRANSFORMER classloader will keep asking itself to load our class, eventually\n            // causing a StackOverflowException\n            var packageToParentLoaderGetter = unreflectGetter(() -> net.minecraftforge.securemodules.SecureModuleClassLoader.class.getDeclaredField(\"packageToParentLoader\"));\n            var packageToParentLoader = (Map<String, ClassLoader>) packageToParentLoaderGetter.invoke(this.modClassLoader);\n            packageToParentLoader.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));",
+   "removed": [
+    "ModuleClassLoader",
+    "cpw",
+    "mods",
+    "packageLookup",
+    "packageLookupGetter",
+    "parentLoaders",
+    "parentLoadersGetter"
+   ],
+   "added": [
+    "SecureModuleClassLoader",
+    "minecraftforge",
+    "net",
+    "packageToOurModules",
+    "packageToOurModulesGetter",
+    "packageToParentLoader",
+    "packageToParentLoaderGetter",
+    "securemodules"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/ForgeClassLoaderHandler.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge && >=1.18.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge && >=1.18.2",
+     "code": "package me.decce.ixeris.forge;\n\nimport me.decce.ixeris.core.transform.ClassLoaderHandler;\n\nimport java.lang.module.ResolvedModule;\nimport java.util.Map;\n\nimport static me.decce.ixeris.core.util.ReflectionHelper.unreflectGetter;\n\npublic class ForgeClassLoaderHandler extends ClassLoaderHandler {\n    public ForgeClassLoaderHandler(ClassLoader bootstrapClassLoader, ClassLoader modClassLoader) {\n        super(bootstrapClassLoader, modClassLoader);\n    }\n\n    @SuppressWarnings({\"unchecked\", \"removal\"})\n    @Override\n    public void removeModClassesFromServiceLayer() {\n        try {\n            //? if >=1.21.1 {\n            // At this point our classes are already loaded on the MC-BOOTSTRAP classloader, but we need to do this here\n            // to prevent the TRANSFORMER classloader from loading them again (out Mixin plugin needs to use them to\n            // decide whether to apply mixins)\n            var packageToOurModulesGetter = unreflectGetter(() -> net.minecraftforge.securemodules.SecureModuleClassLoader.class.getDeclaredField(\"packageToOurModules\"));\n            var packageToOurModules = (Map<String, ResolvedModule>) packageToOurModulesGetter.invoke(this.modClassLoader);\n            packageToOurModules.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));\n\n            // If we don't do this the TRANSFORMER classloader will keep asking itself to load our class, eventually\n            // causing a StackOverflowException\n            var packageToParentLoaderGetter = unreflectGetter(() -> net.minecraftforge.securemodules.SecureModuleClassLoader.class.getDeclaredField(\"packageToParentLoader\"));\n            var packageToParentLoader = (Map<String, ClassLoader>) packageToParentLoaderGetter.invoke(this.modClassLoader);\n            packageToParentLoader.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));\n            //?} else {\n            /*// At this point our classes are already loaded on the MC-BOOTSTRAP classloader, but we need to do this here\n            // to prevent the LAYER SERVICE classloader from loading them again (out Mixin plugin needs to use them to\n            // decide whether to apply mixins)\n            var packageLookupGetter = unreflectGetter(() -> cpw.mods.cl.ModuleClassLoader.class.getDeclaredField(\"packageLookup\"));\n            var packageLookup = (Map<String, ResolvedModule>) packageLookupGetter.invoke(this.modClassLoader);\n            packageLookup.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));\n\n            // If we don't do this the LAYER SERVICE classloader will keep asking itself to load our class, eventually\n            // causing a StackOverflowException\n            var parentLoadersGetter = unreflectGetter(() -> cpw.mods.cl.ModuleClassLoader.class.getDeclaredField(\"parentLoaders\"));\n            var parentLoaders = (Map<String, ClassLoader>) parentLoadersGetter.invoke(this.modClassLoader);\n            parentLoaders.entrySet().removeIf(e -> e.getKey().startsWith(\"me.decce.ixeris.core\"));\n            *///?}\n        } catch (Throwable e) {\n            throw new RuntimeException(e);\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "1.18.1 -> 1.18.2"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/ForgeTransformationHelper.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "package me.decce.ixeris.forge;\n\nimport me.decce.ixeris.core.Constants;\nimport me.decce.ixeris.core.transform.TransformationHelper;\n\npublic class ForgeTransformationHelper extends TransformationHelper {\n    public ForgeTransformationHelper(ClassLoader modClassLoader) {\n        super(modClassLoader);\n    }\n\n    @Override\n    protected Class<?>[] getTransformers() {\n        return Constants.getForgeTransformerClasses(modClassLoader);\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/IxerisTransformer.java",
+   "line": 26,
+   "method": "(imports)",
+   "condition": ">=1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.18.2",
+     "code": "var classLoaderHandler = new ForgeClassLoaderHandler(Logger.class.getClassLoader(), this.getClass().getClassLoader());"
+    },
+    {
+     "condition": null,
+     "code": "/*var classLoaderHandler = new LegacyForgeClassLoaderHandler(Logger.class.getClassLoader(), this.getClass().getClassLoader());\n        */"
+    }
+   ],
+   "boundary": [
+    "1.18.1 -> 1.18.2"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ],
+   "confirmed": [],
+   "older": "/*var classLoaderHandler = new LegacyForgeClassLoaderHandler(Logger.class.getClassLoader(), this.getClass().getClassLoader());\n        */",
+   "newer": "var classLoaderHandler = new ForgeClassLoaderHandler(Logger.class.getClassLoader(), this.getClass().getClassLoader());",
+   "removed": [
+    "LegacyForgeClassLoaderHandler"
+   ],
+   "added": [
+    "ForgeClassLoaderHandler"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/IxerisTransformer.java",
+   "line": 41,
+   "method": "(imports)",
+   "condition": ">=1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.18.2",
+     "code": "var helper = new ForgeTransformationHelper(classLoaderHandler.modClassLoader);"
+    },
+    {
+     "condition": null,
+     "code": "/*var helper = new LegacyForgeTransformationHelper(classLoaderHandler.modClassLoader);\n        */"
+    }
+   ],
+   "boundary": [
+    "1.18.1 -> 1.18.2"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ],
+   "confirmed": [],
+   "older": "/*var helper = new LegacyForgeTransformationHelper(classLoaderHandler.modClassLoader);\n        */",
+   "newer": "var helper = new ForgeTransformationHelper(classLoaderHandler.modClassLoader);",
+   "removed": [
+    "LegacyForgeTransformationHelper"
+   ],
+   "added": [
+    "ForgeTransformationHelper"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/IxerisTransformer.java",
+   "line": 59,
+   "method": "(imports)",
+   "condition": "<=1.16.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.16.5",
+     "code": "/*try {\n            classLoaderHandler.close();\n        } catch (IOException ignored) {}\n        */"
+    }
+   ],
+   "boundary": [
+    "1.16.5 -> 1.17"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/IxerisTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "package me.decce.ixeris.forge;\n\nimport me.decce.ixeris.core.Ixeris;\nimport net.lenni0451.reflect.Agents;\nimport net.minecraftforge.fml.loading.FMLLoader;\nimport org.apache.logging.log4j.LogManager;\nimport org.apache.logging.log4j.Logger;\nimport org.lwjgl.glfw.GLFW;\n\nimport java.io.IOException;\nimport java.lang.instrument.ClassDefinition;\nimport java.lang.instrument.Instrumentation;\nimport java.lang.instrument.UnmodifiableClassException;\nimport java.util.Objects;\n\npublic class IxerisTransformer {\n    private final Logger LOGGER = LogManager.getLogger();\n\n    public void run() {\n        if (!isOnClient()) {\n            LOGGER.info(\"Skipped Ixeris bootstrapping because: on dedicated server\");\n            return;\n        }\n\n        //? if >=1.18.2 {\n        var classLoaderHandler = new ForgeClassLoaderHandler(Logger.class.getClassLoader(), this.getClass().getClassLoader());\n        //?} else {\n        /*var classLoaderHandler = new LegacyForgeClassLoaderHandler(Logger.class.getClassLoader(), this.getClass().getClassLoader());\n        *///?}\n        classLoaderHandler.loadCoreClasses(this.getClass());\n        classLoaderHandler.removeModClassesFromServiceLayer();\n\n        if (!Ixeris.getConfig().isEnabled()) {\n            LOGGER.info(\"Skipped Ixeris bootstrapping because: disabled by config\");\n            return;\n        }\n\n        LOGGER.debug(\"Attempting to transform org.lwjgl.glfw.GLFW\");\n\n        //? if >=1.18.2 {\n        var helper = new ForgeTransformationHelper(classLoaderHandler.modClassLoader);\n        //?} else {\n        /*var helper = new LegacyForgeTransformationHelper(classLoaderHandler.modClassLoader);\n        *///?}\n\n        helper.expandGlfwModuleReads();\n\n        var bytes = helper.doTransformation(\"org.lwjgl.glfw.GLFW\", classLoaderHandler.readClassBytes(\"org/lwjgl/glfw/GLFW.class\"), false);\n\n        try {\n            this.redefineGlfw(bytes);\n        } catch (UnmodifiableClassException | ClassNotFoundException e) {\n            throw new RuntimeException(e);\n        }\n\n        Ixeris.inEarlyDisplay = true;\n\n        //? if <=1.16.5 {\n        /*try {\n            classLoaderHandler.close();\n        } catch (IOException ignored) {}\n        *///?}\n    }\n\n    private Instrumentation getInstrumentation() {\n        try {\n            return Objects.requireNonNull(Agents.getInstrumentation());\n        }\n        catch (Throwable e) {\n            throw new RuntimeException(e);\n        }\n    }\n\n    private void redefineGlfw(byte[] bytes) throws UnmodifiableClassException, ClassNotFoundException {\n        var instrumentation = getInstrumentation();\n        instrumentation.redefineClasses(new ClassDefinition(GLFW.class, bytes));\n    }\n\n    public static boolean isOnClient() {\n        return FMLLoader.getDist().isClient();\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/LegacyForgeClassLoaderHandler.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge && <=1.16.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge && <=1.16.5",
+     "code": "package me.decce.ixeris.forge;\n\nimport cpw.mods.modlauncher.TransformingClassLoader;\nimport me.decce.ixeris.core.transform.ClassLoaderHandler;\nimport net.minecraftforge.fml.loading.FMLLoader;\n\nimport java.io.IOException;\nimport java.nio.file.FileSystem;\nimport java.nio.file.FileSystems;\nimport java.nio.file.Files;\nimport java.nio.file.Path;\nimport java.util.stream.Stream;\n\npublic class LegacyForgeClassLoaderHandler extends ClassLoaderHandler {\n    // ClassLoader#getName was added in Java 9, so in 1.16 if you call this method it returns null\n    public static final String LEGACY_FORGE_MOD_CLASSLOADER = \"cpw.mods.modlauncher.TransformingClassLoader\";\n\n    private FileSystem fileSystem;\n\n    public LegacyForgeClassLoaderHandler(ClassLoader bootstrapClassLoader, ClassLoader modClassLoader) {\n        super(bootstrapClassLoader, modClassLoader);\n    }\n\n    @Override\n    public void verifyClassLoaders() {\n        if (!LEGACY_FORGE_MOD_CLASSLOADER.equals(modClassLoader.getClass().getName())) {\n            super.verifyClassLoaders();\n        }\n    }\n\n    @Override\n    public void removeModClassesFromServiceLayer() {\n        ((TransformingClassLoader)modClassLoader).addTargetPackageFilter(s -> !s.startsWith(\"me.decce.ixeris.core\"));\n    }\n\n    @Override\n    protected Stream<Path> getClassesStream(Class<?> modClass) {\n        var path = FMLLoader.getLoadingModList().getModFileById(\"ixeris\").getFile().getFilePath();\n        try {\n            fileSystem = FileSystems.newFileSystem(path);\n            return Files.walk(fileSystem.getPath(\"/me/decce/ixeris/core\"));\n        } catch (IOException e) {\n            throw new RuntimeException(e);\n        }\n    }\n\n    public void close() throws IOException {\n        if (fileSystem != null) {\n            fileSystem.close();\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "1.16.5 -> 1.17"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/LegacyForgeTransformationHelper.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge && <=1.16.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge && <=1.16.5",
+     "code": "package me.decce.ixeris.forge;\n\npublic class LegacyForgeTransformationHelper extends ForgeTransformationHelper {\n    public LegacyForgeTransformationHelper(ClassLoader modClassLoader) {\n        super(modClassLoader);\n    }\n\n    @Override\n    public void expandGlfwModuleReads() {\n        // no-op: 1.16.5- is on Java 8 with no concept of modules\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "1.16.5 -> 1.17"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/glfw/callback_dispatcher/GLFWTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\n/*\nAuto-generated. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.glfw.callback_dispatcher;\n\nimport me.decce.ixeris.core.glfw.callback_dispatcher.*;\nimport org.lwjgl.glfw.*;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = GLFW.class)\npublic class GLFWTransformer {\n    @CInline @CInject(method = \"glfwSetCharCallback\", target = @CTarget(\"HEAD\"))\n    private static void ixeris$glfwSetCharCallback(long window, GLFWCharCallbackI cbfun, InjectionCallback cir) {\n        var dispatcher = CharCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        dispatcher.update(cbfun);\n    }\n\n    @CInline @CInject(method = \"nglfwSetCharCallback\", target = @CTarget(\"RETURN\"), cancellable = true)\n    private static void ixeris$nglfwSetCharCallback(long window, long cbfun, InjectionCallback cir) {\n        var dispatcher = CharCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        if (cbfun != CommonCallbacks.charCallback.address()) {\n            cir.setReturnValue(dispatcher.update(cbfun));\n        }\n    }\n\n    // GENERATED CODE BELOW\n\n    @CInline @CInject(method = \"glfwSetCharModsCallback\", target = @CTarget(\"HEAD\"))\n    private static void ixeris$glfwSetCharModsCallback(long window, GLFWCharModsCallbackI cbfun, InjectionCallback cir) {\n        var dispatcher = CharModsCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        dispatcher.update(cbfun);\n    }\n\n    @CInline @CInject(method = \"nglfwSetCharModsCallback\", target = @CTarget(\"RETURN\"), cancellable = true)\n    private static void ixeris$nglfwSetCharModsCallback(long window, long cbfun, InjectionCallback cir) {\n        var dispatcher = CharModsCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        if (cbfun != CommonCallbacks.charModsCallback.address()) {\n            cir.setReturnValue(dispatcher.update(cbfun));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwSetCursorEnterCallback\", target = @CTarget(\"HEAD\"))\n    private static void ixeris$glfwSetCursorEnterCallback(long window, GLFWCursorEnterCallbackI cbfun, InjectionCallback cir) {\n        var dispatcher = CursorEnterCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        dispatcher.update(cbfun);\n    }\n\n    @CInline @CInject(method = \"nglfwSetCursorEnterCallback\", target = @CTarget(\"RETURN\"), cancellable = true)\n    private static void ixeris$nglfwSetCursorEnterCallback(long window, long cbfun, InjectionCallback cir) {\n        var dispatcher = CursorEnterCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        if (cbfun != CommonCallbacks.cursorEnterCallback.address()) {\n            cir.setReturnValue(dispatcher.update(cbfun));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwSetCursorPosCallback\", target = @CTarget(\"HEAD\"))\n    private static void ixeris$glfwSetCursorPosCallback(long window, GLFWCursorPosCallbackI cbfun, InjectionCallback cir) {\n        var dispatcher = CursorPosCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        dispatcher.update(cbfun);\n    }\n\n    @CInline @CInject(method = \"nglfwSetCursorPosCallback\", target = @CTarget(\"RETURN\"), cancellable = true)\n    private static void ixeris$nglfwSetCursorPosCallback(long window, long cbfun, InjectionCallback cir) {\n        var dispatcher = Cu"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/glfw/callback_dispatcher_334/GLFWTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\n/*\nAuto-generated. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.glfw.callback_dispatcher_334;\n\nimport me.decce.ixeris.core.glfw.callback_dispatcher._334.*;\nimport org.lwjgl.glfw.*;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = GLFW.class)\npublic class GLFWTransformer {\n\n    // GENERATED CODE BELOW\n\n    @CInline @CInject(method = \"glfwSetIMEStatusCallback\", target = @CTarget(\"HEAD\"))\n    private static void ixeris$glfwSetIMEStatusCallback(long window, GLFWIMEStatusCallbackI cbfun, InjectionCallback cir) {\n        var dispatcher = IMEStatusCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        dispatcher.update(cbfun);\n    }\n\n    @CInline @CInject(method = \"nglfwSetIMEStatusCallback\", target = @CTarget(\"RETURN\"), cancellable = true)\n    private static void ixeris$nglfwSetIMEStatusCallback(long window, long cbfun, InjectionCallback cir) {\n        var dispatcher = IMEStatusCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        if (cbfun != CommonCallbacks_334.iMEStatusCallback.address()) {\n            cir.setReturnValue(dispatcher.update(cbfun));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwSetPreeditCallback\", target = @CTarget(\"HEAD\"))\n    private static void ixeris$glfwSetPreeditCallback(long window, GLFWPreeditCallbackI cbfun, InjectionCallback cir) {\n        var dispatcher = PreeditCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        dispatcher.update(cbfun);\n    }\n\n    @CInline @CInject(method = \"nglfwSetPreeditCallback\", target = @CTarget(\"RETURN\"), cancellable = true)\n    private static void ixeris$nglfwSetPreeditCallback(long window, long cbfun, InjectionCallback cir) {\n        var dispatcher = PreeditCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        if (cbfun != CommonCallbacks_334.preeditCallback.address()) {\n            cir.setReturnValue(dispatcher.update(cbfun));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwSetPreeditCandidateCallback\", target = @CTarget(\"HEAD\"))\n    private static void ixeris$glfwSetPreeditCandidateCallback(long window, GLFWPreeditCandidateCallbackI cbfun, InjectionCallback cir) {\n        var dispatcher = PreeditCandidateCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        dispatcher.update(cbfun);\n    }\n\n    @CInline @CInject(method = \"nglfwSetPreeditCandidateCallback\", target = @CTarget(\"RETURN\"), cancellable = true)\n    private static void ixeris$nglfwSetPreeditCandidateCallback(long window, long cbfun, InjectionCallback cir) {\n        var dispatcher = PreeditCandidateCallbackDispatcher.get(window);\n        if (dispatcher.suppressChecks) {\n            return;\n        }\n        if (cbfun != CommonCallbacks_334.preeditCandidateCallback.address()) {\n            cir.setReturnValue(dispatcher.update(cbfun));\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/glfw/flexible_threading/GLFWTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.glfw.flexible_threading;\n\nimport me.decce.ixeris.core.FlexibleThreadingManager;\nimport org.lwjgl.glfw.GLFW;\nimport org.lwjgl.system.JNI;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CRedirect;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = GLFW.class)\npublic class GLFWTransformer {\n    // require=0 and expect=0 are needed for BlazeSDL mod compatibility\n    @CInline @CRedirect(method = \"nglfwGetClipboardString\", target = @CTarget(value = \"INVOKE\", target = \"Lorg/lwjgl/system/JNI;invokePP(JJ)J\"))\n    private static long ixeris$nglfwGetClipboardString(long window, long functionAddress) {\n        if (FlexibleThreadingManager.canUseFlexibleClipboard()) {\n            synchronized (FlexibleThreadingManager.CLIPBOARD_LOCK) {\n                return JNI.invokePP(window, functionAddress);\n            }\n        }\n        return JNI.invokePP(window, functionAddress);\n    }\n\n    @CInline @CRedirect(method = \"nglfwSetClipboardString\", target = @CTarget(value = \"INVOKE\", target = \"Lorg/lwjgl/system/JNI;invokePPV(JJJ)V\"))\n    private static void ixeris$nglfwSetClipboardString(long window, long string, long functionAddress) {\n        synchronized (FlexibleThreadingManager.CLIPBOARD_LOCK) {\n            JNI.invokePPV(window, string, functionAddress);\n        }\n    }\n\n    @CInline @CRedirect(method = \"glfwGetPrimaryMonitor\", target = @CTarget(value = \"INVOKE\", target = \"Lorg/lwjgl/system/JNI;invokeP(J)J\"))\n    private static long ixeris$glfwGetPrimaryMonitors(long functionAddress) {\n        synchronized (FlexibleThreadingManager.MONITOR_LOCK) {\n            return JNI.invokeP(functionAddress);\n        }\n    }\n\n    @CInline @CRedirect(method = \"nglfwGetMonitors\", target = @CTarget(value = \"INVOKE\", target = \"Lorg/lwjgl/system/JNI;invokePP(JJ)J\"))\n    private static long ixeris$nglfwGetMonitors(long count, long functionAddress) {\n        synchronized (FlexibleThreadingManager.MONITOR_LOCK) {\n            return JNI.invokePP(count, functionAddress);\n        }\n    }\n\n    @CInline @CRedirect(method = \"nglfwGetMonitorName\", target = @CTarget(value = \"INVOKE\", target = \"Lorg/lwjgl/system/JNI;invokePP(JJ)J\"))\n    private static long ixeris$nglfwGetMonitorName(long monitor, long functionAddress) {\n        synchronized (FlexibleThreadingManager.MONITOR_LOCK) {\n            return JNI.invokePP(monitor, functionAddress);\n        }\n    }\n\n    @CInline @CRedirect(method = \"nglfwGetMonitorContentScale\", target = @CTarget(value = \"INVOKE\", target = \"Lorg/lwjgl/system/JNI;invokePPPV(JJJJ)V\"))\n    private static void ixeris$nglfwGetMonitorName(long monitor, long xscale, long yscale, long functionAddress) {\n        synchronized (FlexibleThreadingManager.MONITOR_LOCK) {\n            JNI.invokePPPV(monitor, xscale, yscale, functionAddress);\n        }\n    }\n\n    @CInline @CRedirect(method = \"nglfwGetMonitorPhysicalSize\", target = @CTarget(value = \"INVOKE\", target = \"Lorg/lwjgl/system/JNI;invokePPPV(JJJJ)V\"))\n    private static void ixeris$nglfwGetMonitorPhysicalSize(long monitor, long widthMM, long heightMM, long functionAddress) {\n        synchronized (FlexibleThreadingManager.MONITOR_LOCK) {\n            JNI.invokePPPV(monitor, widthMM, heightMM, functionAddress);\n        }\n    }\n\n    @CInline @CRedirect(method = \"nglfwGetMonitorPos\", target = @CTarget(value = \"INVOKE\", target = \"Lorg/lwjgl/system/JNI;invokePPPV(JJJJ)V\"))\n    private static void ixeris$nglfwGetMonitorPos(long monitor, long xpos, long ypos, long functionAddress) {\n        synchronized (FlexibleThreadingManager.MONITOR_LOCK) {\n            JNI.invokePPPV(monitor, xpos, ypos, functionAddress);\n        }\n    }\n\n    @CInline @CRedirect(method = \"nglfwGetMonitorWorkarea\", t"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/glfw/glfw_state_caching/GLFWTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.glfw.glfw_state_caching;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.glfw.state_caching.GlfwCacheManager;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport org.lwjgl.glfw.GLFW;\nimport org.lwjgl.glfw.GLFWImage;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport java.nio.DoubleBuffer;\nimport java.nio.FloatBuffer;\nimport java.nio.IntBuffer;\n\nimport static me.decce.ixeris.core.glfw.state_caching.util.BufferHelper.check;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = GLFW.class)\npublic class GLFWTransformer {\n    @CInline @CInject(method = \"glfwSetInputMode\", target = @CTarget(\"TAIL\"))\n    private static void ixeris$glfwSetInputMode(long window, int mode, int value, InjectionCallback ci) {\n        if (GlfwCacheManager.hasWindowCache(window)) {\n            GlfwCacheManager.getWindowCache(window).inputMode().set(mode, value);\n        }\n    }\n\n    @CInline @CInject(method = \"glfwGetInputMode\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwGetInputMode(long window, int mode, InjectionCallback cir) {\n        if (Ixeris.isOnMainThread()) {\n            return;\n        }\n        if (mode == GLFW.GLFW_IME && Ixeris.getConfig().useFlexibleThreading()) {\n            return;\n        }\n        if (mode == GLFW.GLFW_RAW_MOUSE_MOTION && Ixeris.getConfig().isBufferedRawMouse()) {\n            cir.setReturnValue(Ixeris.input().isRawInputEnabled() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);\n            return;\n        }\n        if (GlfwCacheManager.hasWindowCache(window)) {\n            var cache = GlfwCacheManager.getWindowCache(window).inputMode();\n            if (cache.isCacheEnabled()) {\n                cir.setReturnValue(cache.get(mode));\n                return;\n            }\n        }\n        cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(GLFW::glfwGetInputMode, window, mode)));\n    }\n\n    @CInline @CInject(method = \"glfwGetKey\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwGetKey(long window, int key, InjectionCallback cir) {\n        if (Ixeris.isOnMainThread()) {\n            return;\n        }\n        if (Ixeris.sdlInitialized) {\n            // Will not be hit on 26.3+\n            // On 26.2- with BlazeSDL: no need to dispatch to main thread, improves performance\n            return;\n        }\n        if (GlfwCacheManager.hasWindowCache(window)) {\n            var cache = GlfwCacheManager.getWindowCache(window).keys();\n            if (cache.isCacheEnabled()) {\n                var ret = cache.get(key);\n                if (ret == GLFW.GLFW_REPEAT) {\n                    ret = GLFW.GLFW_PRESS;\n                }\n                cir.setReturnValue(ret);\n                return;\n            }\n        }\n        cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(GLFW::glfwGetKey, window, key)));\n    }\n\n    @CInline @CInject(method = \"glfwGetKeyName\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwGetKeyName(int key, int scancode, InjectionCallback cir) {\n        var cache = GlfwCacheManager.getGlobalCache().keyNames();\n        if (cache.isCacheEnabled()) {\n            cir.setReturnValue(cache.get(key, scancode));\n        }\n        else if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(GLFW::glfwGetKeyName, key, scancode)));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwGetMouseButton\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwGetMouseButton(lon"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/glfw/glfw_threading/GLFWTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.glfw.glfw_threading;\n\nimport me.decce.ixeris.core.FlexibleThreadingManager;\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport org.lwjgl.PointerBuffer;\nimport org.lwjgl.glfw.GLFW;\nimport org.lwjgl.glfw.GLFWGamepadState;\nimport org.lwjgl.glfw.GLFWGammaRamp;\nimport org.lwjgl.glfw.GLFWImage;\nimport org.lwjgl.glfw.GLFWVidMode;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport java.nio.ByteBuffer;\nimport java.nio.FloatBuffer;\nimport java.nio.IntBuffer;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = GLFW.class)\npublic class GLFWTransformer {\n    @CInline @CInject(method = \"glfwCreateWindow(IILjava/lang/CharSequence;JJ)J\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwCreateWindow(int width, int height, CharSequence title, long monitor, long share, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(GLFW::glfwCreateWindow, width, height, title, monitor, share)));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwCreateWindow(IILjava/nio/ByteBuffer;JJ)J\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwCreateWindow(int width, int height, ByteBuffer title, long monitor, long share, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(GLFW::glfwCreateWindow, width, height, title, monitor, share)));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwDefaultWindowHints\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwDefaultWindowHints(InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true);\n            MainThreadDispatcher.run(makeRunnable(GLFW::glfwDefaultWindowHints));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwFocusWindow\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwFocusWindow(long window, InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true);\n            MainThreadDispatcher.run(makeRunnable(GLFW::glfwFocusWindow, window));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwGetClipboardString\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwGetClipboardString(long window, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread() && (!Ixeris.getConfig().useFlexibleThreading() || !FlexibleThreadingManager.canUseFlexibleClipboard())) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(GLFW::glfwGetClipboardString, window)));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwGetGamepadName\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwGetGamepadName(int jid, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(GLFW::glfwGetGamepadName, jid)));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwGetGamepadState\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwGetGamepadState(int jid, GLFWGamepadState state, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(GLFW::glfwGetGamepadState, jid, state)));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwGetGammaRamp\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private "
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/glfw/glfw_threading_330/GLFWTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.glfw.glfw_threading_330;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport org.lwjgl.glfw.GLFW;\nimport org.lwjgl.glfw.GLFWAllocator;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\n\n// This mixins houses functions that are added GLFW 3.3.4 (LWJGL 3.3.0) and do not exist in older versions of Minecraft\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = GLFW.class)\npublic class GLFWTransformer {\n    @CInline @CInject(method = \"glfwInitAllocator\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwInitAllocator(GLFWAllocator allocator, InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true);\n            MainThreadDispatcher.runNow(makeRunnable(GLFW::glfwInitAllocator, allocator));\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/glfw/glfw_threading_334/GLFWTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.glfw.glfw_threading_334;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport org.lwjgl.glfw.GLFW;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport java.nio.IntBuffer;\n\n// This mixins houses functions that are added in LWJGL 3.3.4.\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = GLFW.class)\npublic class GLFWTransformer {\n    @CInline @CInject(method = \"glfwGetPreeditCursorRectangle(J[I[I[I[I)V\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwGetPreeditCursorRectangle(long window, int[] x, int[] y, int[] w, int[] h, InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true);\n            MainThreadDispatcher.runNow(makeRunnable(GLFW::glfwGetPreeditCursorRectangle, window, x, y, w, h));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwGetPreeditCursorRectangle(JLjava/nio/IntBuffer;Ljava/nio/IntBuffer;Ljava/nio/IntBuffer;Ljava/nio/IntBuffer;)V\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwGetPreeditCursorRectangle(long window, IntBuffer x, IntBuffer y, IntBuffer w, IntBuffer h, InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true);\n            MainThreadDispatcher.runNow(makeRunnable(GLFW::glfwGetPreeditCursorRectangle, window, x, y, w, h));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwSetPreeditCursorRectangle\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwSetPreeditCursorRectangle(long window, int x, int y, int w, int h, InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true);\n            MainThreadDispatcher.run(makeRunnable(GLFW::glfwSetPreeditCursorRectangle, window, x, y, w, h));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwResetPreeditText\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwResetPreeditText(long window, InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true);\n            MainThreadDispatcher.run(makeRunnable(GLFW::glfwResetPreeditText, window));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwGetPreeditCandidate\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwGetPreeditCandidate(long window, int index, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(GLFW::glfwGetPreeditCandidate, window, index)));\n        }\n    }\n\n    @CInline @CInject(method = \"glfwGetWindowTitle\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwGetWindowTitle(long window, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(GLFW::glfwGetWindowTitle, window)));\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/glfw/GLFWTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.glfw;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.PollingException;\nimport me.decce.ixeris.core.glfw.state_caching.GlfwCacheManager;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport me.decce.ixeris.core.threading.RenderThreadDispatcher;\nimport org.lwjgl.glfw.GLFW;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport java.util.concurrent.locks.LockSupport;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = GLFW.class)\npublic class GLFWTransformer {\n    @CInline @CInject(method = \"glfwWaitEventsTimeout\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$waitEventsTimeout(double timeout, InjectionCallback ci) {\n        if (Ixeris.isOnMainThread()) {\n            return;\n        }\n        ci.setCancelled(true);\n        if (!Ixeris.inEarlyDisplay && Ixeris.getConfig().shouldLogPollingCalls() && Ixeris.suppressPollingWarning.get() == 0) {\n            Ixeris.LOGGER.warn(\"\", new PollingException());\n        }\n        timeout = Math.min(timeout, 1.0d);\n        if (Ixeris.accessor.isOnRenderThread()) {\n            if (timeout > 0.002d) {\n                LockSupport.parkNanos((long) ((timeout - 0.001d) * 1_000_000_000));\n            } else {\n                Thread.onSpinWait();\n            }\n        }\n    }\n\n    @CInline @CInject(method = { \"glfwPollEvents\", \"glfwWaitEvents\" }, target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$pollOrWaitEvents(InjectionCallback ci) {\n        if (Ixeris.isOnMainThread()) {\n            return;\n        }\n        ci.setCancelled(true);\n        MainThreadDispatcher.requestPollEvents();\n        if (!Ixeris.inEarlyDisplay && Ixeris.getConfig().shouldLogPollingCalls() && Ixeris.suppressPollingWarning.get() == 0) {\n            Ixeris.LOGGER.warn(\"\", new PollingException());\n        }\n    }\n\n    @CInline @CInject(method = \"glfwInit\", target = @CTarget(\"TAIL\"))\n    private static void ixeris$glfwInit(InjectionCallback cir) {\n        Ixeris.glfwInitialized = true;\n    }\n\n    @CInline @CInject(method = \"glfwTerminate\", target = @CTarget(\"TAIL\"))\n    private static void ixeris$glfwTerminate(InjectionCallback ci) {\n        Ixeris.glfwInitialized = false;\n    }\n\n    @CInline @CInject(method = \"glfwDestroyWindow\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwDestroyWindow(long window, InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true);\n\n            // Release the context if it is on the current thread\n            if (window == GLFW.glfwGetCurrentContext()) {\n                GLFW.glfwMakeContextCurrent(0L);\n\n                // Make the context of the window current on the main thread before destruction, fixing crash on specific drivers (https://github.com/decce6/Ixeris/issues/114)\n                // No need to detach the context afterward because glfwDestroyWindow does that: https://www.glfw.org/docs/latest/group__window.html#gacdf43e51376051d2c091662e9fe3d7b2\n                MainThreadDispatcher.run(makeRunnable(GLFW::glfwMakeContextCurrent, window));\n            }\n\n            MainThreadDispatcher.run(makeRunnable(GLFW::glfwDestroyWindow, window));\n\n            return;\n        }\n\n        GlfwCacheManager.destroyWindowCache(window);\n    }\n\n    @CInline @CInject(method = \"glfwSetInputMode\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$glfwSetInputMode(long window, int mode, int value, InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.s"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/sdl/SDLEventsTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.sdl;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.sdl.SdlEventHandler;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport org.lwjgl.sdl.SDLEvents;\nimport org.lwjgl.sdl.SDL_Event;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = SDLEvents.class)\npublic class SDLEventsTransformer {\n    @CInline @CInject(method = \"nSDL_PollEvent\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_PollEvent(long event, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            if (Ixeris.getEventHandler() instanceof SdlEventHandler sdlEventHandler) {\n                cir.setReturnValue(sdlEventHandler.readEvents(event));\n            }\n            else {\n                throw new IllegalStateException();\n            }\n        }\n    }\n\n    @CInline @CInject(method = \"nSDL_PeepEvents\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_PeepEvent(long events, int numevents, int action, int minType, int maxType, InjectionCallback cir) {\n        if (action == SDLEvents.SDL_GETEVENT && Ixeris.getEventHandler() instanceof SdlEventHandler sdlEventHandler) {\n            if (minType != SDLEvents.SDL_EVENT_FIRST || maxType != SDLEvents.SDL_EVENT_LAST) {\n                throw new RuntimeException(\"Unsupported arguments for SDL_PeepEvents: minType=\" + minType + \", maxType=\" + maxType);\n            }\n            int i;\n            for (i = 0; i < numevents; i++) {\n                if (!sdlEventHandler.readEvents(events + (long)(SDL_Event.SIZEOF) * i)) {\n                    break;\n                }\n            }\n            cir.setReturnValue(i);\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/sdl/SDLInitTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.sdl;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.sdl.state_caching.SdlStateCache;\nimport org.lwjgl.sdl.SDLInit;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = SDLInit.class)\npublic final class SDLInitTransformer {\n    @CInline @CInject(method = \"SDL_Init\", target = @CTarget(\"TAIL\"))\n    private static void ixeris$SDL_Init(InjectionCallback cir) {\n        Ixeris.sdlInitialized = true;\n    }\n\n    @CInline @CInject(method = \"SDL_Quit\", target = @CTarget(\"TAIL\"))\n    private static void ixeris$SDL_Quit(InjectionCallback ci) {\n        Ixeris.sdlInitialized = false;\n        SdlStateCache.onQuit();\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/sdl/threading/SDLErrorTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.sdl.threading;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport org.lwjgl.sdl.SDLError;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = SDLError.class)\npublic final class SDLErrorTransformer {\n    @CInline @CInject(method = \"nSDL_GetError\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetError(InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLError::nSDL_GetError)));\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/sdl/threading/SDLEventsTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.sdl.threading;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.sdl.SdlEventHandler;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport org.lwjgl.PointerBuffer;\nimport org.lwjgl.sdl.*;\nimport java.nio.*;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = SDLEvents.class)\npublic final class SDLEventsTransformer {    \n    @CInline @CInject(method = \"SDL_PumpEvents\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_PumpEvents(InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true); MainThreadDispatcher.run(makeRunnable(SDLEvents::SDL_PumpEvents));\n        }\n    }\n\n    @CInline @CInject(method = \"nSDL_WaitEvent\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_WaitEvent(long event, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLEvents::nSDL_WaitEvent, event)));\n        }\n    }\n    \n    @CInline @CInject(method = \"nSDL_WaitEventTimeout\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_WaitEventTimeout(long event, int timeoutMS, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLEvents::nSDL_WaitEventTimeout, event, timeoutMS)));\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/sdl/threading/SDLInitTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.sdl.threading;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport org.lwjgl.sdl.*;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = SDLInit.class)\npublic final class SDLInitTransformer {\n    @CInline @CInject(method = \"SDL_Init\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_Init(int flags, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLInit::SDL_Init, flags)));\n        }\n    }\n\n    @CInline @CInject(method = \"SDL_InitSubSystem\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_InitSubSystem(int flags, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLInit::SDL_InitSubSystem, flags)));\n        }\n    }\n\n    @CInline @CInject(method = \"SDL_Quit\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_Quit(InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true); MainThreadDispatcher.run(makeRunnable(SDLInit::SDL_Quit));\n        }\n    }\n\n    @CInline @CInject(method = \"SDL_QuitSubSystem\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_QuitSubSystem(int flags, InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true); MainThreadDispatcher.runNow(makeRunnable(SDLInit::SDL_QuitSubSystem, flags));\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/sdl/threading/SDLKeyboardTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.sdl.threading;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.sdl.SdlEventHandler;\nimport me.decce.ixeris.core.sdl.SdlMemoryHelper;\nimport me.decce.ixeris.core.sdl.state_caching.SdlStateCache;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport org.lwjgl.sdl.*;\nimport org.lwjgl.system.MemoryUtil;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = SDLKeyboard.class)\npublic final class SDLKeyboardTransformer {    \n    @CInline @CInject(method = \"SDL_HasKeyboard\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_HasKeyboard(InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLKeyboard::SDL_HasKeyboard)));\n        }\n    }\n    \n    @CInline @CInject(method = \"nSDL_GetKeyboards\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetKeyboards(long count, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLKeyboard::nSDL_GetKeyboards, count)));\n        }\n    }\n    \n    @CInline @CInject(method = \"nSDL_GetKeyboardNameForID\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetKeyboardNameForID(int instance_id, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLKeyboard::nSDL_GetKeyboardNameForID, instance_id)));\n        }\n    }\n    \n    @CInline @CInject(method = \"SDL_GetKeyboardFocus\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_GetKeyboardFocus(InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(SdlStateCache.global().keyboardFocus.get());\n        }\n    }\n    \n    @CInline @CInject(method = \"SDL_ResetKeyboard\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_ResetKeyboard(InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true); MainThreadDispatcher.run(makeRunnable(SDLKeyboard::SDL_ResetKeyboard));\n        }\n    }\n    \n    @CInline @CInject(method = \"SDL_StartTextInput\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_StartTextInput(long window, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLKeyboard::SDL_StartTextInput, window)));\n        }\n    }\n    \n    @CInline @CInject(method = \"SDL_StartTextInputWithProperties\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_StartTextInputWithProperties(long window, int props, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLKeyboard::SDL_StartTextInputWithProperties, window, props)));\n        }\n    }\n    \n    @CInline @CInject(method = \"SDL_TextInputActive\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_TextInputActive(long window, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLKeyboard::SDL_TextInputActive, window)));\n        }\n    }\n    \n    @CInline @CInject(method = \"SDL_StopTextInput\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_StopTextInput("
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/sdl/threading/SDLMessageBoxTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.sdl.threading;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport org.lwjgl.sdl.*;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = SDLMessageBox.class)\npublic final class SDLMessageBoxTransformer {\n    @CInline @CInject(method = \"nSDL_ShowMessageBox\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_ShowMessageBox(long messageboxdata, long buttonid, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLMessageBox::nSDL_ShowMessageBox, messageboxdata, buttonid)));\n        }\n    }\n\n    @CInline @CInject(method = \"nSDL_ShowSimpleMessageBox\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_ShowSimpleMessageBox(int flags, long title, long message, long window, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLMessageBox::nSDL_ShowSimpleMessageBox, flags, title, message, window)));\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/sdl/threading/SDLMouseTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.sdl.threading;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport org.lwjgl.PointerBuffer;\nimport org.lwjgl.sdl.*;\nimport java.nio.*;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = SDLMouse.class)\npublic final class SDLMouseTransformer {    \n    @CInline @CInject(method = \"SDL_HasMouse\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_HasMouse(InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLMouse::SDL_HasMouse)));\n        }\n    }\n    \n    @CInline @CInject(method = \"nSDL_GetMice\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetMice(long count, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLMouse::nSDL_GetMice, count)));\n        }\n    }\n    \n    @CInline @CInject(method = \"nSDL_GetMouseNameForID\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetMouseNameForID(int instance_id, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLMouse::nSDL_GetMouseNameForID, instance_id)));\n        }\n    }\n    \n    @CInline @CInject(method = \"SDL_GetMouseFocus\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_GetMouseFocus(InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLMouse::SDL_GetMouseFocus)));\n        }\n    }\n    \n    @CInline @CInject(method = \"nSDL_GetMouseState\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetMouseState(long x, long y, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLMouse::nSDL_GetMouseState, x, y)));\n        }\n    }\n    \n    @CInline @CInject(method = \"nSDL_GetGlobalMouseState\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetGlobalMouseState(long x, long y, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLMouse::nSDL_GetGlobalMouseState, x, y)));\n        }\n    }\n    \n    @CInline @CInject(method = \"nSDL_GetRelativeMouseState\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetRelativeMouseState(long x, long y, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLMouse::nSDL_GetRelativeMouseState, x, y)));\n        }\n    }\n    \n    @CInline @CInject(method = \"SDL_WarpMouseInWindow\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_WarpMouseInWindow(long window, float x, float y, InjectionCallback ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.setCancelled(true); MainThreadDispatcher.run(makeRunnable(SDLMouse::SDL_WarpMouseInWindow, window, x, y));\n        }\n    }\n    \n    @CInline @CInject(method = \"SDL_WarpMouseGlobal\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_WarpMouseGlobal(float x, float y, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/forge/transformers/sdl/threading/SDLVideoTransformer.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*\nAuto-translated from Mixin. See the generator directory in project root.\n*/\n\npackage me.decce.ixeris.forge.transformers.sdl.threading;\n\nimport me.decce.ixeris.core.Ixeris;\nimport me.decce.ixeris.core.sdl.SdlHelper;\nimport me.decce.ixeris.core.sdl.state_caching.SdlStateCache;\nimport me.decce.ixeris.core.threading.MainThreadDispatcher;\nimport me.decce.ixeris.core.util.MemoryHelper;\nimport org.lwjgl.sdl.*;\nimport net.lenni0451.classtransform.annotations.CTransformer;\nimport net.lenni0451.classtransform.annotations.CTarget;\nimport net.lenni0451.classtransform.annotations.injection.CInject;\nimport net.lenni0451.classtransform.InjectionCallback;\nimport net.lenni0451.classtransform.InjectionCallback;\n\nimport net.lenni0451.classtransform.annotations.CInline;\nimport static me.decce.ixeris.core.util.LambdaHelper.*;\n\n@CTransformer(value = SDLVideo.class)\npublic final class SDLVideoTransformer {\n    @CInline @CInject(method = \"SDL_GetNumVideoDrivers\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_GetNumVideoDrivers(InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLVideo::SDL_GetNumVideoDrivers)));\n        }\n    }\n\n    @CInline @CInject(method = \"nSDL_GetVideoDriver\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetVideoDriver(int index, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLVideo::nSDL_GetVideoDriver, index)));\n        }\n    }\n\n    @CInline @CInject(method = \"nSDL_GetCurrentVideoDriver\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetCurrentVideoDriver(InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLVideo::nSDL_GetCurrentVideoDriver)));\n        }\n    }\n\n    @CInline @CInject(method = \"SDL_GetSystemTheme\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_GetSystemTheme(InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLVideo::SDL_GetSystemTheme)));\n        }\n    }\n\n    @CInline @CInject(method = \"nSDL_GetDisplays\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetDisplays(long count, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLVideo::nSDL_GetDisplays, count)));\n        }\n    }\n\n    @CInline @CInject(method = \"SDL_GetPrimaryDisplay\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_GetPrimaryDisplay(InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLVideo::SDL_GetPrimaryDisplay)));\n        }\n    }\n\n    @CInline @CInject(method = \"SDL_GetDisplayProperties\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$SDL_GetDisplayProperties(int displayID, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLVideo::SDL_GetDisplayProperties, displayID)));\n        }\n    }\n\n    @CInline @CInject(method = \"nSDL_GetDisplayName\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetDisplayName(int displayID, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(makeSupplier(SDLVideo::nSDL_GetDisplayName, displayID)));\n        }\n    }\n\n    @CInline @CInject(method = \"nSDL_GetDisplayBounds\", target = @CTarget(\"HEAD\"), cancellable = true)\n    private static void ixeris$nSDL_GetDisplayBounds(int displayID, long rect, InjectionCallback cir) {\n        if (!Ixeris.isOnMainThread()) {\n            c"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/IxerisMinecraftAccessorImpl.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import me.decce.ixeris.core.sdl.SdlEventHandler;"
+    },
+    {
+     "condition": null,
+     "code": "import me.decce.ixeris.core.glfw.GlfwEventHandler;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "import me.decce.ixeris.core.glfw.GlfwEventHandler;",
+   "newer": "import me.decce.ixeris.core.sdl.SdlEventHandler;",
+   "removed": [
+    "GlfwEventHandler",
+    "glfw"
+   ],
+   "added": [
+    "SdlEventHandler",
+    "sdl"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/enhanced_fps_limiter/RenderSystemMixin.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": ">=1.19.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.4",
+     "code": ", remap = false"
+    }
+   ],
+   "boundary": [
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/enhanced_fps_limiter/RenderSystemMixin.java",
+   "line": 21,
+   "method": "(class body)",
+   "condition": "<26",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26",
+     "code": "@Unique private static final long NANOS_IN_A_SEC = 1_000_000_000L;\n    @Unique private static final double MICROSECOND = 0.000001d;\n    @Unique private static final double PERIOD = 1000 * MICROSECOND;\n    @Unique private static final double SLEEP_THRESHOLD = PERIOD + 100 * MICROSECOND;\n    @Unique private static final double AHEAD_THRESHOLD = 10 * MICROSECOND;\n    @Shadow private static double lastDrawTime;\n\n    /**\n     * @author decce\n     * @reason Reimplement FPS limiter without using glfwWaitEventsTimeout, which cannot be called on the render thread.\n     * Calling it on the main thread is unrealistic due to the massive overhead of synchronizing states between\n     * threads. It also has the problem of possibly returning too late due to processing events.\n     */\n    @Overwrite\n    public static void limitDisplayFPS(int i) {\n        double frameTime = 1.0D / (double) i;\n        double target = lastDrawTime + frameTime;\n        double now = GLFW.glfwGetTime();\n\n        double threshold = Ixeris.getConfig().isBusyWaitAllowedInFramerateLimiter() ? SLEEP_THRESHOLD : 0;\n        while (target - now > threshold) {\n            long nanos = Math.min(NANOS_IN_A_SEC, (long) ((target - now - threshold) * NANOS_IN_A_SEC));\n            // use parkNanos instead of Thread.sleep - the latter keeps sleeping until the slept time is greater than\n            // requested (as reported by System.nanoTime()), which is not ideal as it would then require another\n            // scheduler period to finish\n            // See: https://github.com/openjdk/jdk/blob/161aa5d52865295059f9506b2ba4ffc4b98324de/src/hotspot/share/runtime/javaThread.cpp#L2052-L2083\n            LockSupport.parkNanos(nanos);\n            now = GLFW.glfwGetTime();\n        }\n\n        now = ixeris$busyWait(now, target);\n\n        lastDrawTime = now - target > frameTime ? now : target;\n    }\n\n    @Unique\n    private static double ixeris$busyWait(double now, double target) {\n        while (target - now > AHEAD_THRESHOLD) {\n            Thread.onSpinWait();\n            now = GLFW.glfwGetTime();\n        }\n        return now;\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/macos/MacosUtilMixin.java",
+   "line": 18,
+   "method": "(class body)",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "private static void toggleNativeFullscreen(final NSObject nsWindow) {"
+    },
+    {
+     "condition": null,
+     "code": "private static void toggleFullscreen(final NSObject nsWindow) {"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "toggleFullscreen"
+     ]
+    }
+   ],
+   "older": "private static void toggleFullscreen(final NSObject nsWindow) {",
+   "newer": "private static void toggleNativeFullscreen(final NSObject nsWindow) {",
+   "removed": [
+    "toggleFullscreen"
+   ],
+   "added": [
+    "toggleNativeFullscreen"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/macos/MacosUtilMixin.java",
+   "line": 26,
+   "method": "(class body)",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "@Shadow\n     private static long getStyleMask(NSObject nSObject) {\n         throw new AssertionError();\n     }"
+    },
+    {
+     "condition": null,
+     "code": "@Shadow\n    private static boolean isInKioskMode(NSObject nSObject) {\n        throw new AssertionError();\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4"
+   ],
+   "confirmed": [],
+   "older": "@Shadow\n    private static boolean isInKioskMode(NSObject nSObject) {\n        throw new AssertionError();\n    }",
+   "newer": "@Shadow\n     private static long getStyleMask(NSObject nSObject) {\n         throw new AssertionError();\n     }",
+   "removed": [
+    "isInKioskMode"
+   ],
+   "added": [
+    "getStyleMask"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/macos/MacosUtilMixin.java",
+   "line": 40,
+   "method": "(class body)",
+   "condition": ">1.21.8 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21.8",
+     "code": "Window"
+    },
+    {
+     "condition": null,
+     "code": "long"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "long",
+   "newer": "Window",
+   "removed": [],
+   "added": [
+    "Window"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/macos/MacosUtilMixin.java",
+   "line": 38,
+   "method": "(class body)",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "@Inject(method = \"clearResizableBit\", at = @At(\"HEAD\"), cancellable = true, require = 0, expect = 0)\n     private static void ixeris$clearResizableBit(/*? if >1.21.8 {*/ Window /*?} else {*/ /*long *//*?}*/ window, CallbackInfo ci) {\n         if (!Ixeris.isOnMainThread()) {\n             ci.cancel();\n             MainThreadDispatcher.runNow(() -> {\n                 com.mojang.blaze3d.platform.MacosUtil.clearResizableBit(window);\n             });\n         }\n     }\n    \n     @Inject(method = \"getStyleMask\", at = @At(\"HEAD\"), cancellable = true, require = 0, expect = 0)\n     private static void ixeris$getStyleMask(NSObject nsWindow, CallbackInfoReturnable<Long> cir) {\n         if (!Ixeris.isOnMainThread()) {\n             cir.setReturnValue(MainThreadDispatcher.query(() -> getStyleMask(nsWindow)));\n         }\n     }"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"isInKioskMode\", at = @At(\"HEAD\"), cancellable = true, require = 0)\n    private static void ixeris$isInKioskMode(NSObject nsWindow, CallbackInfoReturnable<Boolean> cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(() -> isInKioskMode(nsWindow)));\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "cancel"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "clearResizableBit"
+     ]
+    }
+   ],
+   "older": "@Inject(method = \"isInKioskMode\", at = @At(\"HEAD\"), cancellable = true, require = 0)\n    private static void ixeris$isInKioskMode(NSObject nsWindow, CallbackInfoReturnable<Boolean> cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(() -> isInKioskMode(nsWindow)));\n        }\n    }",
+   "newer": "@Inject(method = \"clearResizableBit\", at = @At(\"HEAD\"), cancellable = true, require = 0, expect = 0)\n     private static void ixeris$clearResizableBit(/*? if >1.21.8 {*/ Window /*?} else {*/ /*long *//*?}*/ window, CallbackInfo ci) {\n         if (!Ixeris.isOnMainThread()) {\n             ci.cancel();\n             MainThreadDispatcher.runNow(() -> {\n                 com.mojang.blaze3d.platform.MacosUtil.clearResizableBit(window);\n             });\n         }\n     }\n    \n     @Inject(method = \"getStyleMask\", at = @At(\"HEAD\"), cancellable = true, require = 0, expect = 0)\n     private static void ixeris$getStyleMask(NSObject nsWindow, CallbackInfoReturnable<Long> cir) {\n         if (!Ixeris.isOnMainThread()) {\n             cir.setReturnValue(MainThreadDispatcher.query(() -> getStyleMask(nsWindow)));\n         }\n     }",
+   "removed": [
+    "Boolean",
+    "isInKioskMode"
+   ],
+   "added": [
+    "Long",
+    "MacosUtil",
+    "Window",
+    "blaze3d",
+    "cancel",
+    "clearResizableBit",
+    "com",
+    "expect",
+    "getStyleMask",
+    "mojang",
+    "platform",
+    "runNow",
+    "window"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/macos/MacosUtilMixin.java",
+   "line": 63,
+   "method": "(class body)",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "@Inject(method = \"toggleNativeFullscreen\", at = @At(\"HEAD\"), cancellable = true, require = 0, expect = 0)"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"toggleFullscreen(Lca/weblite/objc/NSObject;)V\", at = @At(\"HEAD\"), cancellable = true, require = 0)"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4"
+   ],
+   "confirmed": [],
+   "older": "@Inject(method = \"toggleFullscreen(Lca/weblite/objc/NSObject;)V\", at = @At(\"HEAD\"), cancellable = true, require = 0)",
+   "newer": "@Inject(method = \"toggleNativeFullscreen\", at = @At(\"HEAD\"), cancellable = true, require = 0, expect = 0)",
+   "removed": [],
+   "added": [
+    "expect"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/macos/MacosUtilMixin.java",
+   "line": 71,
+   "method": "(class body)",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "MainThreadDispatcher.runNow(() -> toggleNativeFullscreen(nsWindow));"
+    },
+    {
+     "condition": null,
+     "code": "MainThreadDispatcher.runNow(() -> toggleFullscreen(nsWindow));"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "toggleFullscreen"
+     ]
+    }
+   ],
+   "older": "MainThreadDispatcher.runNow(() -> toggleFullscreen(nsWindow));",
+   "newer": "MainThreadDispatcher.runNow(() -> toggleNativeFullscreen(nsWindow));",
+   "removed": [
+    "toggleFullscreen"
+   ],
+   "added": [
+    "toggleNativeFullscreen"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/macos/MacosUtilMixin.java",
+   "line": 14,
+   "method": "(imports)",
+   "condition": ">=1.18 && <=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.18 && <=26.2",
+     "code": "@Mixin(value = com.mojang.blaze3d.platform.MacosUtil.class, remap = false)\npublic class MacosUtilMixin {\n    @Shadow\n    //? if >1.20.1 {\n    private static void toggleNativeFullscreen(final NSObject nsWindow) {\n    //?} else {\n    /*private static void toggleFullscreen(final NSObject nsWindow) {\n    *///?}\n        throw new AssertionError();\n    }\n\n    //? if >1.20.1 {\n     @Shadow\n     private static long getStyleMask(NSObject nSObject) {\n         throw new AssertionError();\n     }\n    //?} else {\n    /*@Shadow\n    private static boolean isInKioskMode(NSObject nSObject) {\n        throw new AssertionError();\n    }\n    *///?}\n\n    //? if >1.20.1 {\n     @Inject(method = \"clearResizableBit\", at = @At(\"HEAD\"), cancellable = true, require = 0, expect = 0)\n     private static void ixeris$clearResizableBit(/*? if >1.21.8 {*/ Window /*?} else {*/ /*long *//*?}*/ window, CallbackInfo ci) {\n         if (!Ixeris.isOnMainThread()) {\n             ci.cancel();\n             MainThreadDispatcher.runNow(() -> {\n                 com.mojang.blaze3d.platform.MacosUtil.clearResizableBit(window);\n             });\n         }\n     }\n    \n     @Inject(method = \"getStyleMask\", at = @At(\"HEAD\"), cancellable = true, require = 0, expect = 0)\n     private static void ixeris$getStyleMask(NSObject nsWindow, CallbackInfoReturnable<Long> cir) {\n         if (!Ixeris.isOnMainThread()) {\n             cir.setReturnValue(MainThreadDispatcher.query(() -> getStyleMask(nsWindow)));\n         }\n     }\n    //?} else {\n    /*@Inject(method = \"isInKioskMode\", at = @At(\"HEAD\"), cancellable = true, require = 0)\n    private static void ixeris$isInKioskMode(NSObject nsWindow, CallbackInfoReturnable<Boolean> cir) {\n        if (!Ixeris.isOnMainThread()) {\n            cir.setReturnValue(MainThreadDispatcher.query(() -> isInKioskMode(nsWindow)));\n        }\n    }\n    *///?}\n    //? if >1.20.1 {\n     @Inject(method = \"toggleNativeFullscreen\", at = @At(\"HEAD\"), cancellable = true, require = 0, expect = 0)\n    //?} else {\n    /*@Inject(method = \"toggleFullscreen(Lca/weblite/objc/NSObject;)V\", at = @At(\"HEAD\"), cancellable = true, require = 0)\n    *///?}\n    private static void ixeris$toggleNativeFullscreen(NSObject nsWindow, CallbackInfo ci) {\n        if (!Ixeris.isOnMainThread()) {\n            ci.cancel();\n            //? if >1.20.1 {\n            MainThreadDispatcher.runNow(() -> toggleNativeFullscreen(nsWindow));\n            //?} else {\n            /*MainThreadDispatcher.runNow(() -> toggleFullscreen(nsWindow));\n            *///?}\n        }\n    }\n}"
+    },
+    {
+     "condition": null,
+     "code": "// No need for this Mixin; cannot comment out the entire class as it is still present in the mixin json\n@Mixin(value = com.mojang.blaze3d.platform.Window.class, remap = false)\npublic class MacosUtilMixin {}"
+    }
+   ],
+   "boundary": [
+    "1.17.1 -> 1.18",
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2",
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/macos/MinecraftMixin.java",
+   "line": 27,
+   "method": "(class body)",
+   "condition": ">=26 | >=1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26",
+     "code": "@Inject(method = \"renderFrame\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/platform/Window;updateDisplay(Lcom/mojang/blaze3d/TracyFrameCapture;)V\", shift = At.Shift.AFTER))"
+    },
+    {
+     "condition": ">=1.21.4",
+     "code": "@Inject(method = \"runTick\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/platform/Window;updateDisplay(Lcom/mojang/blaze3d/TracyFrameCapture;)V\", shift = At.Shift.AFTER))"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"runTick\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/platform/Window;updateDisplay()V\", shift = At.Shift.AFTER))"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/MainMixin.java",
+   "line": 26,
+   "method": "(class body)",
+   "condition": "<=1.20.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.6",
+     "code": "@org.spongepowered.asm.mixin.Shadow @org.spongepowered.asm.mixin.Final\n     static org.slf4j.Logger LOGGER;"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/MainMixin.java",
+   "line": 32,
+   "method": "(class body)",
+   "condition": ">=1.19.4 || <=1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.4 || <=1.18.2",
+     "code": "@Inject(method = \"main\", at = @At(value = \"INVOKE\", target = \"Ljava/lang/Thread;setName(Ljava/lang/String;)V\", shift = At.Shift.AFTER), cancellable = true, remap = false)"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"run\", at = @At(value = \"INVOKE\", target = \"Ljava/lang/Thread;setName(Ljava/lang/String;)V\", shift = At.Shift.AFTER), cancellable = true, remap = true)"
+    }
+   ],
+   "boundary": [
+    "1.19.3 -> 1.19.4",
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/MainMixin.java",
+   "line": 37,
+   "method": "(class body)",
+   "condition": ">=1.21.1 | >=1.19.4 || <=1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.1",
+     "code": "private static void ixeris$main(String[] strings, CallbackInfo ci, @Local GameConfig gameConfig, @Local org.slf4j.Logger logger) {"
+    },
+    {
+     "condition": ">=1.19.4 || <=1.18.2",
+     "code": "private static void ixeris$main(String[] strings, CallbackInfo ci, @Local GameConfig gameConfig) {"
+    },
+    {
+     "condition": null,
+     "code": "private static void ixeris$main(String[] strings, boolean bl, CallbackInfo ci, @Local GameConfig gameConfig) {"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1",
+    "1.19.3 -> 1.19.4",
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2"
+   ],
+   "confirmed": [],
+   "older": "private static void ixeris$main(String[] strings, CallbackInfo ci, @Local GameConfig gameConfig) {",
+   "newer": "private static void ixeris$main(String[] strings, CallbackInfo ci, @Local GameConfig gameConfig, @Local org.slf4j.Logger logger) {",
+   "removed": [],
+   "added": [
+    "Logger",
+    "logger",
+    "org",
+    "slf4j"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/MainMixin.java",
+   "line": 49,
+   "method": "(class body)",
+   "condition": ">=1.21",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21",
+     "code": "var LOGGER = logger;"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/MinecraftMixin.java",
+   "line": 18,
+   "method": "(imports)",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.blaze3d.platform.SDLEventHandler;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/MinecraftMixin.java",
+   "line": 24,
+   "method": "(class body)",
+   "condition": ">=26.3 | >=26.2 | >=26 | >=1.21.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "@Inject(method = \"runTick\", at = @At(\"HEAD\"))"
+    },
+    {
+     "condition": ">=26.2",
+     "code": "@Inject(method = \"renderFrame\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/CommandEncoder;submit()V\"))"
+    },
+    {
+     "condition": ">=26",
+     "code": "@Inject(method = \"renderFrame\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/RenderSystem;flipFrame(Lcom/mojang/blaze3d/TracyFrameCapture;)V\"))"
+    },
+    {
+     "condition": ">=1.21.2",
+     "code": "@Inject(method = \"runTick\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/platform/Window;updateDisplay(Lcom/mojang/blaze3d/TracyFrameCapture;)V\"))"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"runTick\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/platform/Window;updateDisplay()V\"))"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3",
+    "26.1.2 -> 26.2",
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "26.2 -> 26.3",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "target",
+      "value"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "value"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "value"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "value"
+     ]
+    }
+   ],
+   "older": "@Inject(method = \"renderFrame\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/CommandEncoder;submit()V\"))",
+   "newer": "@Inject(method = \"runTick\", at = @At(\"HEAD\"))",
+   "removed": [
+    "target",
+    "value"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/MinecraftMixin.java",
+   "line": 39,
+   "method": "(class body)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "@Inject(method = \"renderFrame\", at = @At(value = \"CONSTANT\", args = \"stringValue=present\"))"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"runTick\", at = @At(value = \"CONSTANT\", args = \"stringValue=updateDisplay\"))"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "@Inject(method = \"runTick\", at = @At(value = \"CONSTANT\", args = \"stringValue=updateDisplay\"))",
+   "newer": "@Inject(method = \"renderFrame\", at = @At(value = \"CONSTANT\", args = \"stringValue=present\"))",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/MinecraftMixin.java",
+   "line": 50,
+   "method": "(class body)",
+   "condition": ">=26.3 | >=26 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "@Inject(method = \"run\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/RenderSystem;pollEvents(Lcom/mojang/blaze3d/platform/SDLEventHandler;)V\"))\n    private void ixeris$replayQueue(CallbackInfo ci)\n    {\n        VersionCompatUtils.profilerPush(\"dispatchedCalls\");\n        RenderThreadDispatcher.replayQueue();\n        VersionCompatUtils.profilerPop();\n    }"
+    },
+    {
+     "condition": ">=26",
+     "code": "@Inject(method = \"run\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/RenderSystem;pollEvents()V\"))\n    private void ixeris$replayQueue(CallbackInfo ci)\n    {\n        VersionCompatUtils.profilerPush(\"callback\");\n        RenderThreadDispatcher.replayQueue();\n        if (Ixeris.getEventHandler() instanceof GlfwEventHandler glfwEventHandler) {\n            glfwEventHandler.replayErrorQueue();\n        }\n        VersionCompatUtils.profilerPop();\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"runTick\", at = @At(value = \"INVOKE\", target = \"Ljava/lang/Thread;yield()V\", shift = At.Shift.AFTER))\n    private void ixeris$replayQueue(boolean tick, CallbackInfo ci) {\n        VersionCompatUtils.profilerPopPush(\"callback\"); // Pop the \"yield\" section and push ours\n        RenderThreadDispatcher.replayQueue();\n        if (Ixeris.getEventHandler() instanceof GlfwEventHandler glfwEventHandler) {\n            glfwEventHandler.replayErrorQueue();\n        }\n        // We injected before the \"pop\" call for the \"yield\" section, do not pop here\n    }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "@Inject(method = \"run\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/RenderSystem;pollEvents()V\"))\n    private void ixeris$replayQueue(CallbackInfo ci)\n    {\n        VersionCompatUtils.profilerPush(\"callback\");\n        RenderThreadDispatcher.replayQueue();\n        if (Ixeris.getEventHandler() instanceof GlfwEventHandler glfwEventHandler) {\n            glfwEventHandler.replayErrorQueue();\n        }\n        VersionCompatUtils.profilerPop();\n    }",
+   "newer": "@Inject(method = \"run\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/RenderSystem;pollEvents(Lcom/mojang/blaze3d/platform/SDLEventHandler;)V\"))\n    private void ixeris$replayQueue(CallbackInfo ci)\n    {\n        VersionCompatUtils.profilerPush(\"dispatchedCalls\");\n        RenderThreadDispatcher.replayQueue();\n        VersionCompatUtils.profilerPop();\n    }",
+   "removed": [
+    "GlfwEventHandler",
+    "Ixeris",
+    "getEventHandler",
+    "glfwEventHandler",
+    "replayErrorQueue"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/MinecraftMixin.java",
+   "line": 81,
+   "method": "(class body)",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "@Inject(method = \"destroy\", at = @At(value = \"INVOKE\", target = \"Ljava/lang/System;exit(I)V\"))\n    private void ixeris$destroy(CallbackInfo ci) {\n        Ixeris.shouldExit = true;\n        if (!Ixeris.getConfig().isFullyBlockingMode()) {\n            try {\n                Ixeris.mainThread.join(); // wait for the queued GLFW commands to finish\n            } catch (InterruptedException ignored) {\n            }\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/MinecraftMixin.java",
+   "line": 100,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "/*@Inject(method = \"renderFrame\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/renderpearl/api/device/GpuSurface;configure(Lcom/mojang/renderpearl/api/device/GpuSurface$Configuration;)V\", shift = At.Shift.AFTER))\n    */"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"renderFrame\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/GpuSurface;configure(Lcom/mojang/blaze3d/systems/GpuSurface$Configuration;)V\", shift = At.Shift.AFTER))"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "@Inject(method = \"renderFrame\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/GpuSurface;configure(Lcom/mojang/blaze3d/systems/GpuSurface$Configuration;)V\", shift = At.Shift.AFTER))",
+   "newer": "/*@Inject(method = \"renderFrame\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/renderpearl/api/device/GpuSurface;configure(Lcom/mojang/renderpearl/api/device/GpuSurface$Configuration;)V\", shift = At.Shift.AFTER))\n    */",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/MinecraftMixin.java",
+   "line": 94,
+   "method": "(class body)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@ModifyExpressionValue(method = \"renderFrame\", at = @At(value = \"FIELD\", target = \"Lnet/minecraft/client/Minecraft;windowSurfaceNeedsReconfiguring:Z\", opcode = Opcodes.GETFIELD))\n    private boolean ixeris$reconfigureSurfaceWhenNeeded(boolean original) {\n        return original || Ixeris.forceReconfigureSwapchain;\n    }\n\n    //? >=26.3 {\n    /*@Inject(method = \"renderFrame\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/renderpearl/api/device/GpuSurface;configure(Lcom/mojang/renderpearl/api/device/GpuSurface$Configuration;)V\", shift = At.Shift.AFTER))\n    *///? } else {\n    @Inject(method = \"renderFrame\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/GpuSurface;configure(Lcom/mojang/blaze3d/systems/GpuSurface$Configuration;)V\", shift = At.Shift.AFTER))\n    //? }\n    private void ixeris$postSurfaceConfiguration(CallbackInfo ci) {\n        Ixeris.forceReconfigureSwapchain = false;\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/RenderSystemMixin.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": ">=1.19.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.4",
+     "code": ", remap = false"
+    }
+   ],
+   "boundary": [
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/RenderSystemMixin.java",
+   "line": 21,
+   "method": "(class body)",
+   "condition": ">=1.19.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.4",
+     "code": "@WrapMethod(method = \"pollEvents\")\n    private static void ixeris$suppressPollEventsWarnings(Operation<Void> original) {\n        Ixeris.suppressPollingWarning.getAndIncrement();\n        original.call();\n        Ixeris.suppressPollingWarning.getAndDecrement();\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@WrapOperation(method = \"flipFrame\", at = @At(value = \"INVOKE\", target = \"Lorg/lwjgl/glfw/GLFW;glfwPollEvents()V\", remap = false))\n    private static void ixeris$suppressPollEventsWarnings(Operation<Void> original) {\n        Ixeris.suppressPollingWarning.getAndIncrement();\n        original.call();\n        Ixeris.suppressPollingWarning.getAndDecrement();\n    }"
+    }
+   ],
+   "boundary": [
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "target",
+      "value"
+     ]
+    }
+   ],
+   "older": "@WrapOperation(method = \"flipFrame\", at = @At(value = \"INVOKE\", target = \"Lorg/lwjgl/glfw/GLFW;glfwPollEvents()V\", remap = false))\n    private static void ixeris$suppressPollEventsWarnings(Operation<Void> original) {\n        Ixeris.suppressPollingWarning.getAndIncrement();\n        original.call();\n        Ixeris.suppressPollingWarning.getAndDecrement();\n    }",
+   "newer": "@WrapMethod(method = \"pollEvents\")\n    private static void ixeris$suppressPollEventsWarnings(Operation<Void> original) {\n        Ixeris.suppressPollingWarning.getAndIncrement();\n        original.call();\n        Ixeris.suppressPollingWarning.getAndDecrement();\n    }",
+   "removed": [
+    "WrapOperation",
+    "remap",
+    "target",
+    "value"
+   ],
+   "added": [
+    "WrapMethod"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/RenderSystemMixin.java",
+   "line": 20,
+   "method": "(class body)",
+   "condition": "<=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=26.2",
+     "code": "//? if >=1.19.4 {\n    @WrapMethod(method = \"pollEvents\")\n    private static void ixeris$suppressPollEventsWarnings(Operation<Void> original) {\n        Ixeris.suppressPollingWarning.getAndIncrement();\n        original.call();\n        Ixeris.suppressPollingWarning.getAndDecrement();\n    }\n    //?} else {\n    /*@WrapOperation(method = \"flipFrame\", at = @At(value = \"INVOKE\", target = \"Lorg/lwjgl/glfw/GLFW;glfwPollEvents()V\", remap = false))\n    private static void ixeris$suppressPollEventsWarnings(Operation<Void> original) {\n        Ixeris.suppressPollingWarning.getAndIncrement();\n        original.call();\n        Ixeris.suppressPollingWarning.getAndDecrement();\n    }\n    *///?}"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/WindowMixin.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": "<=26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<=26.2",
+     "code": "import org.lwjgl.glfw.GLFW;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/WindowMixin.java",
+   "line": 22,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "private long handle;"
+    },
+    {
+     "condition": null,
+     "code": "private long window;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "handle"
+     ]
+    }
+   ],
+   "older": "private long window;",
+   "newer": "private long handle;",
+   "removed": [
+    "window"
+   ],
+   "added": [
+    "handle"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/WindowMixin.java",
+   "line": 38,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "var handle = this.handle;"
+    },
+    {
+     "condition": null,
+     "code": "var handle = this.window;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "var handle = this.window;",
+   "newer": "var handle = this.handle;",
+   "removed": [
+    "window"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/WindowMixin.java",
+   "line": 28,
+   "method": "(class body)",
+   "condition": "<=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=26.2",
+     "code": "// Re-create our callbacks after Minecraft frees them\n    // This is required on 26.2+ where Minecraft does free callbacks when the preferred GPU backend fails\n    @Inject(method = \"close\", at = @At(value = \"INVOKE\", target = \"Lorg/lwjgl/glfw/Callbacks;glfwFreeCallbacks(J)V\", shift = At.Shift.AFTER, remap = false), remap = false)\n    private void ixeris$recreateCallbacks(CallbackInfo ci) {\n        // Unset callbacks that are not unset by glfwFreeCallbacks, so that our CallbackDispatchers validation works correctly\n        // TODO: this must be verified for each GLFW release\n        GLFW.glfwSetErrorCallback(null);\n        GLFW.glfwSetMonitorCallback(null);\n\n        //? if >=1.21.9 {\n        var handle = this.handle;\n        //? } else {\n        /*var handle = this.window;\n        *///? }\n\n        CommonCallbacks.initCallbacks();\n        CallbackDispatchers.validateAll(handle);\n        if (LWJGLVersionHelper.is334OrGreater()) {\n            CommonCallbacks_334.initCallbacks();\n            CallbackDispatchers_334.validateAll(handle);\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/workarounds/WindowAccessor.java",
+   "line": 10,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "@Accessor(\"iconified\")"
+    },
+    {
+     "condition": null,
+     "code": "@Accessor"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "@Accessor",
+   "newer": "@Accessor(\"iconified\")",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/mixins/workarounds/WindowAccessor.java",
+   "line": 9,
+   "method": "(class body)",
+   "condition": ">=1.21.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "//? if >=26.3 {\n    /*@Accessor(\"iconified\")\n    *///? } else {\n    @Accessor\n    //? }\n    void setMinimized(boolean value);"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/neoforge/IxerisModNeoForge.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import me.decce.ixeris.IxerisMod;\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.fml.common.Mod;\n\n@Mod(value = IxerisMod.MOD_ID, dist = Dist.CLIENT)\npublic class IxerisModNeoForge {\n    public IxerisModNeoForge() {\n        IxerisMod.init();\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/RenderThreadStarter.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": "<1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "import net.minecraft.Util;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.util.Util;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraft.Util;",
+   "newer": "import net.minecraft.util.Util;",
+   "removed": [],
+   "added": [
+    "util"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/RenderThreadStarter.java",
+   "line": 20,
+   "method": "(imports)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import com.mojang.blaze3d.platform.ClientShutdownWatchdog;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/RenderThreadStarter.java",
+   "line": 41,
+   "method": "run",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "try {\n                minecraft.exitWorldAndClose();\n            } catch (Throwable var69) {\n                CrashReport report = CrashReport.forThrowable(var69, \"Game shutdown\");\n                Minecraft.fillReport(null, null, gameConfig.game.launchVersion, null, report);\n                Minecraft.crash(null, gameConfig.location.gameDirectory, report, -6);\n                return;\n            }\n            ClientShutdownWatchdog.startShutdownWatchdog(\"post-main\", true, null, gameConfig, Thread.currentThread().threadId());"
+    },
+    {
+     "condition": null,
+     "code": "try {\n                minecraft.stop();\n            } finally {\n                minecraft.destroy();\n            }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "crash",
+      "destroy",
+      "exitWorldAndClose",
+      "startShutdownWatchdog"
+     ]
+    }
+   ],
+   "older": "try {\n                minecraft.stop();\n            } finally {\n                minecraft.destroy();\n            }",
+   "newer": "try {\n                minecraft.exitWorldAndClose();\n            } catch (Throwable var69) {\n                CrashReport report = CrashReport.forThrowable(var69, \"Game shutdown\");\n                Minecraft.fillReport(null, null, gameConfig.game.launchVersion, null, report);\n                Minecraft.crash(null, gameConfig.location.gameDirectory, report, -6);\n                return;\n            }\n            ClientShutdownWatchdog.startShutdownWatchdog(\"post-main\", true, null, gameConfig, Thread.currentThread().threadId());",
+   "removed": [
+    "destroy",
+    "stop"
+   ],
+   "added": [
+    "ClientShutdownWatchdog",
+    "CrashReport",
+    "Minecraft",
+    "Thread",
+    "Throwable",
+    "crash",
+    "currentThread",
+    "exitWorldAndClose",
+    "fillReport",
+    "forThrowable",
+    "game",
+    "gameConfig",
+    "gameDirectory",
+    "launchVersion",
+    "location",
+    "report",
+    "startShutdownWatchdog",
+    "threadId",
+    "var69"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/RenderThreadStarter.java",
+   "line": 85,
+   "method": "tryCreateMinecraft",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "Minecraft.crash(minecraft, gameConfig.location.gameDirectory, crashReport2, -1);"
+    },
+    {
+     "condition": null,
+     "code": "Minecraft.crash(minecraft, gameConfig.location.gameDirectory, crashReport2);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "Minecraft.crash(minecraft, gameConfig.location.gameDirectory, crashReport2);",
+   "newer": "Minecraft.crash(minecraft, gameConfig.location.gameDirectory, crashReport2, -1);",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/RenderThreadStarter.java",
+   "line": 80,
+   "method": "tryCreateMinecraft",
+   "condition": ">=1.20.4 | >= 1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.4",
+     "code": "CrashReport crashReport2 = CrashReport.forThrowable(throwable, \"Initializing game\");\n            CrashReportCategory crashReportCategory2 = crashReport2.addCategory(\"Initialization\");\n            net.minecraft.util.NativeModuleLister.addCrashSection(crashReportCategory2);\n            Minecraft.fillReport(minecraft, null, gameConfig.game.launchVersion, null, crashReport2);\n            //? if >=26.2 {\n            /*Minecraft.crash(minecraft, gameConfig.location.gameDirectory, crashReport2, -1);\n            *///?} else {\n            Minecraft.crash(minecraft, gameConfig.location.gameDirectory, crashReport2);\n            //?}"
+    },
+    {
+     "condition": ">= 1.18.2",
+     "code": "CrashReport crashReport = CrashReport.forThrowable(throwable, \"Initializing game\");\n             CrashReportCategory crashReportCategory = crashReport.addCategory(\"Initialization\");\n             net.minecraft.util.NativeModuleLister.addCrashSection(crashReportCategory);\n             Minecraft.fillReport(null, null, gameConfig.game.launchVersion, null, crashReport);\n             Minecraft.crash(crashReport);"
+    },
+    {
+     "condition": null,
+     "code": "CrashReport crashReport = CrashReport.forThrowable(throwable, \"Initializing game\");\n            crashReport.addCategory(\"Initialization\");\n            Minecraft.fillReport(null, gameConfig.game.launchVersion, null, crashReport);\n            Minecraft.crash(crashReport);"
+    }
+   ],
+   "boundary": [
+    "1.20.3 -> 1.20.4",
+    "1.18.1 -> 1.18.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "location"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "location"
+     ]
+    }
+   ],
+   "older": "CrashReport crashReport = CrashReport.forThrowable(throwable, \"Initializing game\");\n             CrashReportCategory crashReportCategory = crashReport.addCategory(\"Initialization\");\n             net.minecraft.util.NativeModuleLister.addCrashSection(crashReportCategory);\n             Minecraft.fillReport(null, null, gameConfig.game.launchVersion, null, crashReport);\n             Minecraft.crash(crashReport);",
+   "newer": "CrashReport crashReport2 = CrashReport.forThrowable(throwable, \"Initializing game\");\n            CrashReportCategory crashReportCategory2 = crashReport2.addCategory(\"Initialization\");\n            net.minecraft.util.NativeModuleLister.addCrashSection(crashReportCategory2);\n            Minecraft.fillReport(minecraft, null, gameConfig.game.launchVersion, null, crashReport2);\n            //? if >=26.2 {\n            /*Minecraft.crash(minecraft, gameConfig.location.gameDirectory, crashReport2, -1);\n            *///?} else {\n            Minecraft.crash(minecraft, gameConfig.location.gameDirectory, crashReport2);\n            //?}",
+   "removed": [
+    "crashReport",
+    "crashReportCategory"
+   ],
+   "added": [
+    "crashReport2",
+    "crashReportCategory2",
+    "gameDirectory",
+    "location"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/RenderThreadStarter.java",
+   "line": 109,
+   "method": "initGameThread",
+   "condition": "<=1.20.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.4",
+     "code": "RenderSystem.initGameThread(false);"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/RenderThreadStarter.java",
+   "line": 115,
+   "method": "beginInitialization",
+   "condition": "=1.21.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "=1.21.1",
+     "code": "RenderSystem.beginInitialization();"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/RenderThreadStarter.java",
+   "line": 121,
+   "method": "finishInitialization",
+   "condition": "=1.21.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "=1.21.1",
+     "code": "RenderSystem.finishInitialization();"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/VersionCompatUtils.java",
+   "line": 7,
+   "method": "profilerPush",
+   "condition": ">1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21.1",
+     "code": "net.minecraft.util.profiling.Profiler.get().push(str);"
+    },
+    {
+     "condition": null,
+     "code": "Minecraft.getInstance().getProfiler().push(str);"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "Profiler",
+      "get",
+      "getProfiler"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "get"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "get"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "minecraft"
+     ]
+    }
+   ],
+   "older": "Minecraft.getInstance().getProfiler().push(str);",
+   "newer": "net.minecraft.util.profiling.Profiler.get().push(str);",
+   "removed": [
+    "Minecraft",
+    "getInstance",
+    "getProfiler"
+   ],
+   "added": [
+    "Profiler",
+    "get",
+    "minecraft",
+    "net",
+    "profiling",
+    "util"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/VersionCompatUtils.java",
+   "line": 15,
+   "method": "profilerPop",
+   "condition": ">1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21.1",
+     "code": "net.minecraft.util.profiling.Profiler.get().pop();"
+    },
+    {
+     "condition": null,
+     "code": "Minecraft.getInstance().getProfiler().pop();"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "Profiler",
+      "get",
+      "getProfiler"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "get"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "get"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "minecraft"
+     ]
+    }
+   ],
+   "older": "Minecraft.getInstance().getProfiler().pop();",
+   "newer": "net.minecraft.util.profiling.Profiler.get().pop();",
+   "removed": [
+    "Minecraft",
+    "getInstance",
+    "getProfiler"
+   ],
+   "added": [
+    "Profiler",
+    "get",
+    "minecraft",
+    "net",
+    "profiling",
+    "util"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/VersionCompatUtils.java",
+   "line": 33,
+   "method": "getMinecraftWindow",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "return window.handle();"
+    },
+    {
+     "condition": null,
+     "code": "return window.getWindow();"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "getWindow",
+      "handle"
+     ]
+    }
+   ],
+   "older": "return window.getWindow();",
+   "newer": "return window.handle();",
+   "removed": [
+    "getWindow"
+   ],
+   "added": [
+    "handle"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/workarounds/VulkanSwapchainValidityWorkaround.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "26.2",
+     "code": "//import me.decce.ixeris.core.glfw.callback_dispatcher.FramebufferSizeCallbackDispatcher;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/workarounds/VulkanSwapchainValidityWorkaround.java",
+   "line": 12,
+   "method": "init",
+   "condition": "26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "26.2",
+     "code": "long window = VersionCompatUtils.getMinecraftWindow();\n        FramebufferSizeCallbackDispatcher.get(window).registerMainThreadCallback(VulkanSwapchainValidityWorkaround::onFramebufferSizeCallback);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/workarounds/WindowMinimizedStateWorkaround.java",
+   "line": 12,
+   "method": "init",
+   "condition": ">=1.21.4 && <=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4 && <=26.2",
+     "code": "if (PlatformHelper.isWindows()) {\n            long window = VersionCompatUtils.getMinecraftWindow();\n            FramebufferSizeCallbackDispatcher.get(window).registerMainThreadCallback(WindowMinimizedStateWorkaround::onFramebufferSizeCallback);\n        }"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4",
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/ixeris/java/me/decce/ixeris/workarounds/WindowMinimizedStateWorkaround.java",
+   "line": 20,
+   "method": "(class body)",
+   "condition": ">=1.21.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "private static void onFramebufferSizeCallback(long window, int width, int height) {\n        if (window == VersionCompatUtils.getMinecraftWindow()) {\n            /*\n             * Minecraft uses the minimized field in the Window to decide whether to blit the framebuffer to screen.\n             * This seems to be a workaround for an Intel driver bug where glBlitFramebuffer crashes when the window is\n             * minimized. The minimized field is updated by the GLFW framebuffer size callback.\n             *\n             * Because we queue callbacks and execute them later on the render thread, it so happens the callbacks are\n             * executed *after* the game checks the minimized state of the window. Thus, we update the minimized state\n             * manually here, to make sure the game can get the actual state of the window.\n             *\n             * This is not a complete fix for the vanilla bug, but should make the crash less frequent than vanilla.\n             */\n            Window minecraftWindow = Minecraft.getInstance().getWindow();\n            ((WindowAccessor)(Object)minecraftWindow).setMinimized(width == 0 || height == 0);\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/java8/java/me/decce/ixeris/fabric/IxerisModFabric.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import me.decce.ixeris.IxerisMod;\nimport me.decce.ixeris.JavaHelper;\nimport net.fabricmc.api.ClientModInitializer;\n\npublic class IxerisModFabric implements ClientModInitializer {\n    @Override\n    public void onInitializeClient() {\n        if (JavaHelper.JAVA_SUPPORTED) {\n            IxerisMod.init();\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/java8/java/me/decce/ixeris/forge/IxerisModForge.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "import me.decce.ixeris.IxerisMod;\nimport me.decce.ixeris.JavaHelper;\nimport net.minecraftforge.fml.common.Mod;\n\n@Mod(IxerisMod.MOD_ID)\npublic class IxerisModForge {\n    public IxerisModForge() {\n        if (JavaHelper.JAVA_SUPPORTED) {\n            IxerisMod.init();\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/java8/java/me/decce/ixeris/IxerisMixinPlugin.java",
+   "line": 28,
+   "method": "(class body)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "if (JavaHelper.JAVA_SUPPORTED) {\n            new me.decce.ixeris.forge.IxerisTransformer().run();\n        }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/java8/java/me/decce/ixeris/IxerisMixinPlugin.java",
+   "line": 46,
+   "method": "onLoad",
+   "condition": "forge && <=1.16.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge && <=1.16.5",
+     "code": "if (JavaHelper.JAVA_SUPPORTED) {\n            com.llamalad7.mixinextras.MixinExtrasBootstrap.init();\n        }"
+    }
+   ],
+   "boundary": [
+    "1.16.5 -> 1.17"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ]
+  }
+ ]
+}

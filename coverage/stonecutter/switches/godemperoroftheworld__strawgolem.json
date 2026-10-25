@@ -1,0 +1,1373 @@
+{
+ "repo": "godemperoroftheworld/strawgolem",
+ "commit": "d54940ebecabb9126f6714c085de81dfc66c1b26",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "1.19.2",
+  "1.19.4",
+  "1.20.1",
+  "1.20.4",
+  "1.20.6",
+  "1.21.1",
+  "1.21.2",
+  "1.21.4",
+  "1.21.5",
+  "1.21.6"
+ ],
+ "files": 23,
+ "switches": 38,
+ "versionSwitches": 29,
+ "rows": [
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/client/model/StrawgolemGeoModel.java",
+   "line": 13,
+   "method": "(imports)",
+   "condition": "< 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "import software.bernie.geckolib3.core.event.predicate.AnimationEvent;\nimport software.bernie.geckolib3.geo.render.built.GeoBone;\nimport software.bernie.geckolib3.model.AnimatedGeoModel;\nimport software.bernie.geckolib3.model.provider.data.EntityModelData;\nimport software.bernie.geckolib3.util.RenderUtils;"
+    },
+    {
+     "condition": null,
+     "code": "import software.bernie.geckolib.constant.DataTickets;\nimport software.bernie.geckolib.model.GeoModel;\nimport software.bernie.geckolib.model.data.EntityModelData;"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "predicate",
+      "render"
+     ]
+    },
+    {
+     "step": "1.19.3 -> 1.19.4",
+     "names": [
+      "render"
+     ]
+    }
+   ],
+   "older": "import software.bernie.geckolib3.core.event.predicate.AnimationEvent;\nimport software.bernie.geckolib3.geo.render.built.GeoBone;\nimport software.bernie.geckolib3.model.AnimatedGeoModel;\nimport software.bernie.geckolib3.model.provider.data.EntityModelData;\nimport software.bernie.geckolib3.util.RenderUtils;",
+   "newer": "import software.bernie.geckolib.constant.DataTickets;\nimport software.bernie.geckolib.model.GeoModel;\nimport software.bernie.geckolib.model.data.EntityModelData;",
+   "removed": [
+    "AnimatedGeoModel",
+    "AnimationEvent",
+    "GeoBone",
+    "RenderUtils",
+    "built",
+    "core",
+    "event",
+    "geckolib3",
+    "geo",
+    "predicate",
+    "provider",
+    "render",
+    "util"
+   ],
+   "added": [
+    "DataTickets",
+    "GeoModel",
+    "constant",
+    "geckolib"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/client/model/StrawgolemGeoModel.java",
+   "line": 25,
+   "method": "(imports)",
+   "condition": ">= 1.20.6 | >= 1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.20.6",
+     "code": "import software.bernie.geckolib.animation.AnimationState;\nimport software.bernie.geckolib.util.RenderUtil;"
+    },
+    {
+     "condition": ">= 1.19.3",
+     "code": "import software.bernie.geckolib.core.animation.AnimationState;\nimport software.bernie.geckolib.util.RenderUtils;"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6",
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [],
+   "older": "import software.bernie.geckolib.core.animation.AnimationState;\nimport software.bernie.geckolib.util.RenderUtils;",
+   "newer": "import software.bernie.geckolib.animation.AnimationState;\nimport software.bernie.geckolib.util.RenderUtil;",
+   "removed": [
+    "RenderUtils",
+    "core"
+   ],
+   "added": [
+    "RenderUtil"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/client/model/StrawgolemGeoModel.java",
+   "line": 84,
+   "method": "setCustomAnimations",
+   "condition": "< 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "EntityModelData extraData = (EntityModelData) animationEvent.getExtraDataOfType(EntityModelData.class).get(0);\n        if (head != null) {\n            head.setRotationX(extraData.headPitch * (float) Math.PI / 180);\n            head.setRotationY(extraData.netHeadYaw * (float) Math.PI / 180);\n        }"
+    },
+    {
+     "condition": null,
+     "code": "EntityModelData extraData = animationEvent.getData(DataTickets.ENTITY_MODEL_DATA);\n        if (head != null) {\n            head.setRotX(extraData.headPitch() * (float) Math.PI / 180);\n            head.setRotY(extraData.netHeadYaw() * (float) Math.PI / 180);\n        }"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "get"
+     ]
+    }
+   ],
+   "older": "EntityModelData extraData = (EntityModelData) animationEvent.getExtraDataOfType(EntityModelData.class).get(0);\n        if (head != null) {\n            head.setRotationX(extraData.headPitch * (float) Math.PI / 180);\n            head.setRotationY(extraData.netHeadYaw * (float) Math.PI / 180);\n        }",
+   "newer": "EntityModelData extraData = animationEvent.getData(DataTickets.ENTITY_MODEL_DATA);\n        if (head != null) {\n            head.setRotX(extraData.headPitch() * (float) Math.PI / 180);\n            head.setRotY(extraData.netHeadYaw() * (float) Math.PI / 180);\n        }",
+   "removed": [
+    "get",
+    "getExtraDataOfType",
+    "setRotationX",
+    "setRotationY"
+   ],
+   "added": [
+    "DataTickets",
+    "ENTITY_MODEL_DATA",
+    "getData",
+    "setRotX",
+    "setRotY"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/client/model/StrawgolemGeoModel.java",
+   "line": 101,
+   "method": "translateToHand",
+   "condition": "< 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "var arms = (GeoBone) getBone(\"arms\");\n        var upper = (GeoBone) getBone(\"upper\");"
+    },
+    {
+     "condition": null,
+     "code": "var arms = getBone(\"arms\").orElseThrow();\n        var upper = getBone(\"upper\").orElseThrow();"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [],
+   "older": "var arms = (GeoBone) getBone(\"arms\");\n        var upper = (GeoBone) getBone(\"upper\");",
+   "newer": "var arms = getBone(\"arms\").orElseThrow();\n        var upper = getBone(\"upper\").orElseThrow();",
+   "removed": [
+    "GeoBone"
+   ],
+   "added": [
+    "orElseThrow"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/client/model/StrawgolemGeoModel.java",
+   "line": 109,
+   "method": "translateToHand",
+   "condition": ">= 1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.20.6",
+     "code": "RenderUtil.prepMatrixForBone(poseStack, upper);\n        RenderUtil.translateAndRotateMatrixForBone(poseStack, upper);\n        RenderUtil.prepMatrixForBone(poseStack, arms);\n        RenderUtil.translateAndRotateMatrixForBone(poseStack, arms);"
+    },
+    {
+     "condition": null,
+     "code": "RenderUtils.prepMatrixForBone(poseStack, upper);\n        RenderUtils.translateAndRotateMatrixForBone(poseStack, upper);\n        RenderUtils.prepMatrixForBone(poseStack, arms);\n        RenderUtils.translateAndRotateMatrixForBone(poseStack, arms);"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ],
+   "confirmed": [],
+   "older": "RenderUtils.prepMatrixForBone(poseStack, upper);\n        RenderUtils.translateAndRotateMatrixForBone(poseStack, upper);\n        RenderUtils.prepMatrixForBone(poseStack, arms);\n        RenderUtils.translateAndRotateMatrixForBone(poseStack, arms);",
+   "newer": "RenderUtil.prepMatrixForBone(poseStack, upper);\n        RenderUtil.translateAndRotateMatrixForBone(poseStack, upper);\n        RenderUtil.prepMatrixForBone(poseStack, arms);\n        RenderUtil.translateAndRotateMatrixForBone(poseStack, arms);",
+   "removed": [
+    "RenderUtils"
+   ],
+   "added": [
+    "RenderUtil"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/client/renderer/layers/StrawgolemItemLayer.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "< 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "import software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;\nimport software.bernie.geckolib3.renderers.geo.GeoLayerRenderer;\nimport com.mojang.math.Quaternion;\nimport com.mojang.math.Vector3f;\nimport net.minecraft.client.renderer.block.model.ItemTransforms;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.world.item.ItemDisplayContext;\nimport org.joml.Quaternionf;\nimport software.bernie.geckolib.cache.object.BakedGeoModel;\nimport software.bernie.geckolib.renderer.GeoEntityRenderer;\nimport software.bernie.geckolib.renderer.layer.GeoRenderLayer;\nimport com.mojang.math.Axis;\nimport com.mojang.blaze3d.vertex.VertexConsumer;\nimport net.minecraft.client.renderer.RenderType;"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "Axis",
+      "Quaternion",
+      "Vector3f",
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.19.3 -> 1.19.4",
+     "names": [
+      "ItemDisplayContext"
+     ]
+    }
+   ],
+   "older": "import software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;\nimport software.bernie.geckolib3.renderers.geo.GeoLayerRenderer;\nimport com.mojang.math.Quaternion;\nimport com.mojang.math.Vector3f;\nimport net.minecraft.client.renderer.block.model.ItemTransforms;",
+   "newer": "import net.minecraft.world.item.ItemDisplayContext;\nimport org.joml.Quaternionf;\nimport software.bernie.geckolib.cache.object.BakedGeoModel;\nimport software.bernie.geckolib.renderer.GeoEntityRenderer;\nimport software.bernie.geckolib.renderer.layer.GeoRenderLayer;\nimport com.mojang.math.Axis;\nimport com.mojang.blaze3d.vertex.VertexConsumer;\nimport net.minecraft.client.renderer.RenderType;",
+   "removed": [
+    "GeoLayerRenderer",
+    "ItemTransforms",
+    "Quaternion",
+    "Vector3f",
+    "block",
+    "geckolib3",
+    "geo",
+    "model",
+    "renderers"
+   ],
+   "added": [
+    "Axis",
+    "BakedGeoModel",
+    "GeoRenderLayer",
+    "ItemDisplayContext",
+    "Quaternionf",
+    "RenderType",
+    "VertexConsumer",
+    "blaze3d",
+    "cache",
+    "geckolib",
+    "item",
+    "joml",
+    "layer",
+    "object",
+    "org",
+    "vertex",
+    "world"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/client/renderer/layers/StrawgolemItemLayer.java",
+   "line": 52,
+   "method": "render",
+   "condition": "> 1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.19.3",
+     "code": "// Above 1.19.3 we are no longer implicitly rotating to the body rotation, must apply manually.\n            matrixStackIn.mulPose(Axis.YP.rotationDegrees(180.0F - golem.yBodyRot));"
+    }
+   ],
+   "boundary": [
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/client/renderer/StrawGolemRenderer.java",
+   "line": 10,
+   "method": "(imports)",
+   "condition": "< 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "import org.jetbrains.annotations.Nullable;\nimport net.minecraft.client.renderer.RenderType;\nimport software.bernie.geckolib3.geo.render.built.GeoBone;\nimport software.bernie.geckolib3.geo.render.built.GeoModel;\nimport software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;\nimport com.mojang.blaze3d.vertex.VertexConsumer;"
+    },
+    {
+     "condition": null,
+     "code": "import org.jetbrains.annotations.NotNull;\nimport software.bernie.geckolib.renderer.GeoEntityRenderer;"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "render",
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.19.3 -> 1.19.4",
+     "names": [
+      "render"
+     ]
+    }
+   ],
+   "older": "import org.jetbrains.annotations.Nullable;\nimport net.minecraft.client.renderer.RenderType;\nimport software.bernie.geckolib3.geo.render.built.GeoBone;\nimport software.bernie.geckolib3.geo.render.built.GeoModel;\nimport software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;\nimport com.mojang.blaze3d.vertex.VertexConsumer;",
+   "newer": "import org.jetbrains.annotations.NotNull;\nimport software.bernie.geckolib.renderer.GeoEntityRenderer;",
+   "removed": [
+    "GeoBone",
+    "GeoModel",
+    "Nullable",
+    "RenderType",
+    "VertexConsumer",
+    "blaze3d",
+    "built",
+    "client",
+    "com",
+    "geckolib3",
+    "geo",
+    "minecraft",
+    "mojang",
+    "net",
+    "render",
+    "renderers",
+    "vertex"
+   ],
+   "added": [
+    "NotNull",
+    "geckolib"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/client/renderer/StrawGolemRenderer.java",
+   "line": 45,
+   "method": "(class body)",
+   "condition": "< 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "private void hideBone(String name, boolean hidden) {\n        GeoBone bone = (GeoBone) getModelProvider().getBone(name);\n        bone.setHidden(hidden);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "private void hideBone(String name, boolean hidden) {\n        getModelProvider().getBone(name).ifPresent(geoBone -> {\n            geoBone.setHidden(hidden);\n        });\n    }"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [],
+   "older": "private void hideBone(String name, boolean hidden) {\n        GeoBone bone = (GeoBone) getModelProvider().getBone(name);\n        bone.setHidden(hidden);\n    }",
+   "newer": "private void hideBone(String name, boolean hidden) {\n        getModelProvider().getBone(name).ifPresent(geoBone -> {\n            geoBone.setHidden(hidden);\n        });\n    }",
+   "removed": [
+    "GeoBone",
+    "bone"
+   ],
+   "added": [
+    "geoBone",
+    "ifPresent"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/animations/StrawgolemAnimationController.java",
+   "line": 6,
+   "method": "(imports)",
+   "condition": "< 1.19.3 | < 1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "import software.bernie.geckolib3.core.builder.RawAnimation;\nimport software.bernie.geckolib3.core.builder.ILoopType;\nimport software.bernie.geckolib3.core.controller.AnimationController;"
+    },
+    {
+     "condition": "< 1.20.6",
+     "code": "import software.bernie.geckolib.core.animation.Animation;\nimport software.bernie.geckolib.core.animation.AnimationController;\nimport software.bernie.geckolib.core.animation.RawAnimation;"
+    },
+    {
+     "condition": null,
+     "code": "import software.bernie.geckolib.animation.Animation;\nimport software.bernie.geckolib.animation.AnimationController;\nimport software.bernie.geckolib.animation.RawAnimation;"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3",
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "animation"
+     ]
+    }
+   ],
+   "older": "import software.bernie.geckolib3.core.builder.RawAnimation;\nimport software.bernie.geckolib3.core.builder.ILoopType;\nimport software.bernie.geckolib3.core.controller.AnimationController;",
+   "newer": "import software.bernie.geckolib.core.animation.Animation;\nimport software.bernie.geckolib.core.animation.AnimationController;\nimport software.bernie.geckolib.core.animation.RawAnimation;",
+   "removed": [
+    "ILoopType",
+    "builder",
+    "controller",
+    "geckolib3"
+   ],
+   "added": [
+    "Animation",
+    "animation",
+    "geckolib"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/animations/StrawgolemAnimationController.java",
+   "line": 34,
+   "method": "setAnimation",
+   "condition": "> 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.19.3",
+     "code": "var loopTypeLoop = Animation.LoopType.LOOP;"
+    },
+    {
+     "condition": null,
+     "code": "var loopTypeLoop = ILoopType.EDefaultLoopTypes.LOOP;"
+    }
+   ],
+   "boundary": [
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [],
+   "older": "var loopTypeLoop = ILoopType.EDefaultLoopTypes.LOOP;",
+   "newer": "var loopTypeLoop = Animation.LoopType.LOOP;",
+   "removed": [
+    "EDefaultLoopTypes",
+    "ILoopType"
+   ],
+   "added": [
+    "Animation",
+    "LoopType"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/animations/StrawgolemArmsController.java",
+   "line": 7,
+   "method": "(imports)",
+   "condition": ">= 1.20.6 | >= 1.19.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.20.6",
+     "code": "import software.bernie.geckolib.animation.AnimationController;\nimport software.bernie.geckolib.animation.RawAnimation;\nimport software.bernie.geckolib.animation.PlayState;"
+    },
+    {
+     "condition": ">= 1.19.4",
+     "code": "import software.bernie.geckolib.core.animation.AnimationController;\nimport software.bernie.geckolib.core.animation.RawAnimation;\nimport software.bernie.geckolib.core.object.PlayState;"
+    },
+    {
+     "condition": null,
+     "code": "import software.bernie.geckolib3.core.PlayState;\nimport software.bernie.geckolib3.core.builder.RawAnimation;\nimport software.bernie.geckolib3.core.controller.AnimationController;"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [],
+   "older": "import software.bernie.geckolib.core.animation.AnimationController;\nimport software.bernie.geckolib.core.animation.RawAnimation;\nimport software.bernie.geckolib.core.object.PlayState;",
+   "newer": "import software.bernie.geckolib.animation.AnimationController;\nimport software.bernie.geckolib.animation.RawAnimation;\nimport software.bernie.geckolib.animation.PlayState;",
+   "removed": [
+    "core",
+    "object"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/animations/StrawgolemHarvestController.java",
+   "line": 6,
+   "method": "(imports)",
+   "condition": "< 1.19.3 | < 1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "import software.bernie.geckolib3.core.PlayState;\nimport software.bernie.geckolib3.core.builder.RawAnimation;\nimport software.bernie.geckolib3.core.event.predicate.AnimationEvent;"
+    },
+    {
+     "condition": "< 1.20.6",
+     "code": "import software.bernie.geckolib.core.animation.AnimationState;\nimport software.bernie.geckolib.core.animation.RawAnimation;\nimport software.bernie.geckolib.core.object.PlayState;"
+    },
+    {
+     "condition": null,
+     "code": "import software.bernie.geckolib.animation.AnimationState;\nimport software.bernie.geckolib.animation.RawAnimation;\nimport software.bernie.geckolib.animation.PlayState;"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3",
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "animation",
+      "predicate"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "object",
+      "predicate"
+     ]
+    }
+   ],
+   "older": "import software.bernie.geckolib3.core.PlayState;\nimport software.bernie.geckolib3.core.builder.RawAnimation;\nimport software.bernie.geckolib3.core.event.predicate.AnimationEvent;",
+   "newer": "import software.bernie.geckolib.core.animation.AnimationState;\nimport software.bernie.geckolib.core.animation.RawAnimation;\nimport software.bernie.geckolib.core.object.PlayState;",
+   "removed": [
+    "AnimationEvent",
+    "builder",
+    "event",
+    "geckolib3",
+    "predicate"
+   ],
+   "added": [
+    "AnimationState",
+    "animation",
+    "geckolib",
+    "object"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/animations/StrawgolemHarvestController.java",
+   "line": 41,
+   "method": "predicate",
+   "condition": "< 1.19.3",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "event.getController().markNeedsReload();"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/animations/StrawgolemHarvestController.java",
+   "line": 48,
+   "method": "StrawgolemHarvestController",
+   "condition": "< 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "registerCustomInstructionListener(event -> {\n            if (event.instructions.equals(\"completeHarvest\")) {"
+    },
+    {
+     "condition": null,
+     "code": "setCustomInstructionKeyframeHandler(event -> {\n            if (event.getKeyframeData().getInstructions().equals(\"completeHarvest\")) {"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [],
+   "older": "registerCustomInstructionListener(event -> {\n            if (event.instructions.equals(\"completeHarvest\")) {",
+   "newer": "setCustomInstructionKeyframeHandler(event -> {\n            if (event.getKeyframeData().getInstructions().equals(\"completeHarvest\")) {",
+   "removed": [
+    "instructions",
+    "registerCustomInstructionListener"
+   ],
+   "added": [
+    "getInstructions",
+    "getKeyframeData",
+    "setCustomInstructionKeyframeHandler"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/animations/StrawgolemMovementController.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "< 1.19.3 | < 1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "import software.bernie.geckolib3.core.PlayState;\nimport software.bernie.geckolib3.core.builder.RawAnimation;\nimport software.bernie.geckolib3.core.controller.AnimationController;"
+    },
+    {
+     "condition": "< 1.20.6",
+     "code": "import software.bernie.geckolib.core.animation.AnimationController;\nimport software.bernie.geckolib.core.animation.RawAnimation;\nimport software.bernie.geckolib.core.object.PlayState;"
+    },
+    {
+     "condition": null,
+     "code": "import software.bernie.geckolib.animation.AnimationController;\nimport software.bernie.geckolib.animation.RawAnimation;\nimport software.bernie.geckolib.animation.PlayState;"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3",
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "animation"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "object"
+     ]
+    }
+   ],
+   "older": "import software.bernie.geckolib3.core.PlayState;\nimport software.bernie.geckolib3.core.builder.RawAnimation;\nimport software.bernie.geckolib3.core.controller.AnimationController;",
+   "newer": "import software.bernie.geckolib.core.animation.AnimationController;\nimport software.bernie.geckolib.core.animation.RawAnimation;\nimport software.bernie.geckolib.core.object.PlayState;",
+   "removed": [
+    "builder",
+    "controller",
+    "geckolib3"
+   ],
+   "added": [
+    "animation",
+    "geckolib",
+    "object"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/capabilities/deliverer/DelivererImpl.java",
+   "line": 136,
+   "method": "readTag",
+   "condition": "< 1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.20.6",
+     "code": "CompoundTag priority = deliverTag.getCompound(\"priority\");\n            if (!priority.isEmpty()) {\n                priorityContainer = NbtUtils.readBlockPos(priority);\n            }"
+    },
+    {
+     "condition": null,
+     "code": "NbtUtils.readBlockPos(deliverTag, \"priority\").ifPresent(blockPos -> priorityContainer = blockPos);"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "isEmpty"
+     ]
+    }
+   ],
+   "older": "CompoundTag priority = deliverTag.getCompound(\"priority\");\n            if (!priority.isEmpty()) {\n                priorityContainer = NbtUtils.readBlockPos(priority);\n            }",
+   "newer": "NbtUtils.readBlockPos(deliverTag, \"priority\").ifPresent(blockPos -> priorityContainer = blockPos);",
+   "removed": [
+    "CompoundTag",
+    "getCompound",
+    "isEmpty",
+    "priority"
+   ],
+   "added": [
+    "blockPos",
+    "ifPresent"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/capabilities/harvester/Harvester.java",
+   "line": 17,
+   "method": "(class body)",
+   "condition": ">= 1.20.6",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 1.20.6",
+     "code": "EquipmentUser"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/capabilities/harvester/HarvesterImpl.java",
+   "line": 28,
+   "method": "(imports)",
+   "condition": ">= 1.20.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.20.6",
+     "code": "import net.minecraft.core.component.DataComponents;"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/capabilities/harvester/HarvesterImpl.java",
+   "line": 32,
+   "method": "(imports)",
+   "condition": "< 1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.20.1",
+     "code": "import net.minecraft.world.level.storage.loot.LootContext;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.world.level.storage.loot.LootParams;"
+    }
+   ],
+   "boundary": [
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.4 -> 1.20",
+     "names": [
+      "LootParams"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.world.level.storage.loot.LootContext;",
+   "newer": "import net.minecraft.world.level.storage.loot.LootParams;",
+   "removed": [
+    "LootContext"
+   ],
+   "added": [
+    "LootParams"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/capabilities/tether/TetherImpl.java",
+   "line": 59,
+   "method": "readTag",
+   "condition": "< 1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.20.6",
+     "code": "CompoundTag posTag = compoundTag.getCompound(\"pos\");\n        if (!posTag.isEmpty()) {\n            pos = NbtUtils.readBlockPos(posTag);\n        } else pos = null;"
+    },
+    {
+     "condition": null,
+     "code": "pos = NbtUtils.readBlockPos(compoundTag, \"pos\").orElse(null);"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "isEmpty"
+     ]
+    }
+   ],
+   "older": "CompoundTag posTag = compoundTag.getCompound(\"pos\");\n        if (!posTag.isEmpty()) {\n            pos = NbtUtils.readBlockPos(posTag);\n        } else pos = null;",
+   "newer": "pos = NbtUtils.readBlockPos(compoundTag, \"pos\").orElse(null);",
+   "removed": [
+    "CompoundTag",
+    "getCompound",
+    "isEmpty",
+    "posTag"
+   ],
+   "added": [
+    "orElse"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/StrawGolem.java",
+   "line": 55,
+   "method": "(imports)",
+   "condition": ">= 1.20.6 | > 1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.20.6",
+     "code": "import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;\nimport software.bernie.geckolib.animation.AnimatableManager;"
+    },
+    {
+     "condition": "> 1.19.3",
+     "code": "import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;\nimport software.bernie.geckolib.core.animation.AnimatableManager;"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [],
+   "older": "import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;\nimport software.bernie.geckolib.core.animation.AnimatableManager;",
+   "newer": "import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;\nimport software.bernie.geckolib.animation.AnimatableManager;",
+   "removed": [
+    "core"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/StrawGolem.java",
+   "line": 63,
+   "method": "(imports)",
+   "condition": "> 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.19.3",
+     "code": "import software.bernie.geckolib.animatable.GeoEntity;\nimport software.bernie.geckolib.util.GeckoLibUtil;\nimport net.minecraft.world.damagesource.DamageTypes;"
+    },
+    {
+     "condition": null,
+     "code": "import software.bernie.geckolib3.core.IAnimatable;\nimport software.bernie.geckolib3.core.manager.AnimationData;\nimport software.bernie.geckolib3.core.manager.AnimationFactory;\nimport software.bernie.geckolib3.util.GeckoLibUtil;"
+    }
+   ],
+   "boundary": [
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.3 -> 1.19.4",
+     "names": [
+      "DamageTypes"
+     ]
+    }
+   ],
+   "older": "import software.bernie.geckolib3.core.IAnimatable;\nimport software.bernie.geckolib3.core.manager.AnimationData;\nimport software.bernie.geckolib3.core.manager.AnimationFactory;\nimport software.bernie.geckolib3.util.GeckoLibUtil;",
+   "newer": "import software.bernie.geckolib.animatable.GeoEntity;\nimport software.bernie.geckolib.util.GeckoLibUtil;\nimport net.minecraft.world.damagesource.DamageTypes;",
+   "removed": [
+    "AnimationData",
+    "AnimationFactory",
+    "IAnimatable",
+    "core",
+    "geckolib3",
+    "manager"
+   ],
+   "added": [
+    "DamageTypes",
+    "GeoEntity",
+    "animatable",
+    "damagesource",
+    "geckolib",
+    "minecraft",
+    "net",
+    "world"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/StrawGolem.java",
+   "line": 126,
+   "method": "(class body)",
+   "condition": ">= 1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.20.6",
+     "code": "@Override\n    protected void defineSynchedData(SynchedEntityData.Builder builder) {\n        super.defineSynchedData(builder);\n        builder.define(IS_SCARED, false);\n        builder.define(HAS_HAT, false);\n        builder.define(BARREL_HEALTH, 0);\n        builder.define(HARVESTING_ITEM, false);\n        builder.define(HARVESTING_BLOCK, false);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@Override\n    protected void defineSynchedData() {\n        super.defineSynchedData();\n        this.entityData.define(IS_SCARED, false);\n        this.entityData.define(HAS_HAT, false);\n        this.entityData.define(BARREL_HEALTH, 0);\n        this.entityData.define(HARVESTING_ITEM, false);\n        this.entityData.define(HARVESTING_BLOCK, false);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "Builder",
+      "entityData"
+     ]
+    }
+   ],
+   "older": "@Override\n    protected void defineSynchedData() {\n        super.defineSynchedData();\n        this.entityData.define(IS_SCARED, false);\n        this.entityData.define(HAS_HAT, false);\n        this.entityData.define(BARREL_HEALTH, 0);\n        this.entityData.define(HARVESTING_ITEM, false);\n        this.entityData.define(HARVESTING_BLOCK, false);\n    }",
+   "newer": "@Override\n    protected void defineSynchedData(SynchedEntityData.Builder builder) {\n        super.defineSynchedData(builder);\n        builder.define(IS_SCARED, false);\n        builder.define(HAS_HAT, false);\n        builder.define(BARREL_HEALTH, 0);\n        builder.define(HARVESTING_ITEM, false);\n        builder.define(HARVESTING_BLOCK, false);\n    }",
+   "removed": [
+    "entityData"
+   ],
+   "added": [
+    "Builder",
+    "SynchedEntityData",
+    "builder"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/entity/StrawGolem.java",
+   "line": 322,
+   "method": "(class body)",
+   "condition": "< 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "public void registerControllers(AnimationData data) {\n        data.addAnimationController(new StrawgolemMovementController(this));\n        data.addAnimationController(new StrawgolemArmsController(this));\n        data.addAnimationController(new StrawgolemHarvestController(this));\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public void registerControllers(AnimatableManager.ControllerRegistrar data) {\n        data.add(new StrawgolemMovementController(this));\n        data.add(new StrawgolemArmsController(this));\n        data.add(new StrawgolemHarvestController(this));\n    }"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "add"
+     ]
+    }
+   ],
+   "older": "public void registerControllers(AnimationData data) {\n        data.addAnimationController(new StrawgolemMovementController(this));\n        data.addAnimationController(new StrawgolemArmsController(this));\n        data.addAnimationController(new StrawgolemHarvestController(this));\n    }",
+   "newer": "public void registerControllers(AnimatableManager.ControllerRegistrar data) {\n        data.add(new StrawgolemMovementController(this));\n        data.add(new StrawgolemArmsController(this));\n        data.add(new StrawgolemHarvestController(this));\n    }",
+   "removed": [
+    "AnimationData",
+    "addAnimationController"
+   ],
+   "added": [
+    "AnimatableManager",
+    "ControllerRegistrar",
+    "add"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/util/VersionSafeGeckolib.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">= 1.20.6 | > 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.20.6",
+     "code": "import software.bernie.geckolib.animation.RawAnimation;\nimport software.bernie.geckolib.animation.Animation;"
+    },
+    {
+     "condition": "> 1.19.3",
+     "code": "import software.bernie.geckolib.core.animation.Animation;\nimport software.bernie.geckolib.core.animation.RawAnimation;"
+    },
+    {
+     "condition": null,
+     "code": "import software.bernie.geckolib3.core.builder.RawAnimation;\nimport software.bernie.geckolib3.core.builder.ILoopType;"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [],
+   "older": "import software.bernie.geckolib.core.animation.Animation;\nimport software.bernie.geckolib.core.animation.RawAnimation;",
+   "newer": "import software.bernie.geckolib.animation.RawAnimation;\nimport software.bernie.geckolib.animation.Animation;",
+   "removed": [
+    "core"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/util/VersionSafeGeckolib.java",
+   "line": 18,
+   "method": "(class body)",
+   "condition": "< 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "public static RawAnimation createLoop(String name) {\n        return new RawAnimation().loop(name);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public static RawAnimation createLoop(String name) {\n        return RawAnimation.begin().thenLoop(name);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [],
+   "older": "public static RawAnimation createLoop(String name) {\n        return new RawAnimation().loop(name);\n    }",
+   "newer": "public static RawAnimation createLoop(String name) {\n        return RawAnimation.begin().thenLoop(name);\n    }",
+   "removed": [
+    "loop"
+   ],
+   "added": [
+    "begin",
+    "thenLoop"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/util/VersionSafeGeckolib.java",
+   "line": 28,
+   "method": "(class body)",
+   "condition": "< 1.19.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.19.3",
+     "code": "public static RawAnimation createAnimation(String name, ILoopType loopType) {\n        return new RawAnimation().addAnimation(name, loopType);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public static RawAnimation createAnimation(String name, Animation.LoopType loopType) {\n        return RawAnimation.begin().then(name, loopType);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [],
+   "older": "public static RawAnimation createAnimation(String name, ILoopType loopType) {\n        return new RawAnimation().addAnimation(name, loopType);\n    }",
+   "newer": "public static RawAnimation createAnimation(String name, Animation.LoopType loopType) {\n        return RawAnimation.begin().then(name, loopType);\n    }",
+   "removed": [
+    "ILoopType",
+    "addAnimation"
+   ],
+   "added": [
+    "Animation",
+    "LoopType",
+    "begin",
+    "then"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/common/util/VersionSafeRegistries.java",
+   "line": 8,
+   "method": "(imports)",
+   "condition": ">= 1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.19.3",
+     "code": "import net.minecraft.core.registries.BuiltInRegistries;\nimport net.minecraft.core.registries.Registries;"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ]
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/fabric/events/CropGrowthCallback.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package com.t2pellet.strawgolem.fabric.events;\n\nimport net.fabricmc.fabric.api.event.Event;\nimport net.fabricmc.fabric.api.event.EventFactory;\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.server.level.ServerLevel;\n\npublic interface CropGrowthCallback {\n\n    Event<CropGrowthCallback> EVENT = EventFactory.createArrayBacked(CropGrowthCallback.class,\n            listeners -> (world, pos) -> {\n                for (CropGrowthCallback listener : listeners) {\n                    listener.grow(world, pos);\n                }\n            });\n\n    void grow(ServerLevel world, BlockPos pos);\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/fabric/mixin/GrowthMixin.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package com.t2pellet.strawgolem.fabric.mixin;\n\nimport com.t2pellet.strawgolem.Constants;\nimport com.t2pellet.strawgolem.common.util.crop.CropUtil;\nimport com.t2pellet.strawgolem.fabric.events.CropGrowthCallback;\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.Level;\nimport net.minecraft.world.level.block.AttachedStemBlock;\nimport net.minecraft.world.level.block.Block;\nimport net.minecraft.world.level.block.state.BlockState;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;\n\n@Mixin(Level.class)\npublic class GrowthMixin {\n\n    @Inject(method = \"setBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;I)Z\", at = @At(\"TAIL\"))\n    public void grow(BlockPos pos, BlockState newState, int i, CallbackInfoReturnable<Boolean> info) {\n        if ((Object) this instanceof ServerLevel level) {\n            BlockPos cropPos = pos;\n            Block block = newState.getBlock();\n            if (block instanceof AttachedStemBlock) {\n                cropPos = pos.offset(newState.getValue(AttachedStemBlock.FACING).getNormal());\n            }\n            if (CropUtil.isGrownCrop(level, pos)) {\n                Constants.LOG.debug(\"Crop grown in world: {}, at pos: {}\", level.toString(), pos.toShortString());\n                BlockPos finalCropPos = cropPos;\n                level.getServer().execute(() -> CropGrowthCallback.EVENT.invoker().grow(level, finalCropPos));\n            }\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/fabric/StrawgolemFabric.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package com.t2pellet.strawgolem.fabric;\n\nimport com.t2pellet.haybale.HaybaleMod;\nimport com.t2pellet.haybale.client.HaybaleModClient;\nimport com.t2pellet.haybale.fabric.HaybaleFabricMod;\nimport com.t2pellet.strawgolem.Constants;\nimport com.t2pellet.strawgolem.StrawgolemCommon;\nimport com.t2pellet.strawgolem.client.StrawgolemClient;\nimport com.t2pellet.strawgolem.common.events.ContainerClickHandler;\nimport com.t2pellet.strawgolem.common.events.CropGrowthHandler;\nimport com.t2pellet.strawgolem.common.util.container.ContainerUtil;\nimport com.t2pellet.strawgolem.fabric.events.CropGrowthCallback;\nimport net.fabricmc.fabric.api.event.player.UseBlockCallback;\nimport net.minecraft.world.InteractionResult;\n\n@HaybaleMod.IMod(Constants.MOD_ID)\npublic class StrawgolemFabric extends HaybaleFabricMod {\n\n    @Override\n    protected HaybaleMod getCommonMod() {\n        return StrawgolemCommon.INSTANCE;\n    }\n\n    @Override\n    protected HaybaleModClient getClientMod() {\n        return StrawgolemClient.INSTANCE;\n    }\n\n    @Override\n    protected void registerEvents() {\n        CropGrowthCallback.EVENT.register(CropGrowthHandler::onCropGrowth);\n        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {\n            if (ContainerUtil.isContainer(world, hitResult.getBlockPos())) {\n                return ContainerClickHandler.onContainerClicked(player, hitResult.getBlockPos());\n            }\n            return InteractionResult.PASS;\n        });\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/forge/events/CropGrowthEvent.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "package com.t2pellet.strawgolem.forge.events;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.world.level.LevelAccessor;\nimport net.minecraft.world.level.block.state.BlockState;\nimport net.minecraftforge.common.MinecraftForge;\nimport net.minecraftforge.event.level.BlockEvent;\n\npublic class CropGrowthEvent extends BlockEvent {\n\n    public CropGrowthEvent(LevelAccessor world, BlockPos pos, BlockState state) {\n            super(world, pos, state);\n        }\n\n    public static void onCropGrowth(LevelAccessor world, BlockPos pos, BlockState state) {\n        CropGrowthEvent event = new CropGrowthEvent(world, pos, state);\n        if (!world.isClientSide()) {\n            MinecraftForge.EVENT_BUS.post(event);\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/forge/mixin/GrowthMixin.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "package com.t2pellet.strawgolem.forge.mixin;\n\nimport com.t2pellet.strawgolem.Constants;\nimport com.t2pellet.strawgolem.common.util.crop.CropUtil;\nimport com.t2pellet.strawgolem.forge.events.CropGrowthEvent;\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.Level;\nimport net.minecraft.world.level.block.AttachedStemBlock;\nimport net.minecraft.world.level.block.Block;\nimport net.minecraft.world.level.block.state.BlockState;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;\n\n@Mixin(Level.class)\npublic class GrowthMixin {\n\n    @Inject(method = \"setBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;I)Z\", at = @At(\"TAIL\"))\n    public void grow(BlockPos pos, BlockState newState, int i, CallbackInfoReturnable<Boolean> info) {\n        if ((Object) this instanceof ServerLevel level) {\n            BlockPos cropPos = pos;\n            Block block = newState.getBlock();\n            if (block instanceof AttachedStemBlock) {\n                cropPos = pos.offset(newState.getValue(AttachedStemBlock.FACING).getNormal());\n            }\n            if (CropUtil.isGrownCrop(level, pos)) {\n                Constants.LOG.debug(\"Crop grown in world: {}, at pos: {}\", level.toString(), pos.toShortString());\n                BlockPos finalCropPos = cropPos;\n                level.getServer().execute(() -> CropGrowthEvent.onCropGrowth(level, finalCropPos, newState));\n            }\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/forge/StrawgolemForge.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "package com.t2pellet.strawgolem.forge;\n\nimport com.t2pellet.haybale.HaybaleMod;\nimport com.t2pellet.haybale.client.HaybaleModClient;\nimport com.t2pellet.haybale.forge.HaybaleForgeMod;\nimport com.t2pellet.strawgolem.Constants;\nimport com.t2pellet.strawgolem.StrawgolemCommon;\nimport com.t2pellet.strawgolem.client.StrawgolemClient;\nimport com.t2pellet.strawgolem.common.events.ContainerClickHandler;\nimport com.t2pellet.strawgolem.common.events.CropGrowthHandler;\nimport com.t2pellet.strawgolem.common.util.container.ContainerUtil;\nimport com.t2pellet.strawgolem.forge.events.CropGrowthEvent;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraftforge.common.MinecraftForge;\nimport net.minecraftforge.event.entity.player.PlayerInteractEvent;\nimport net.minecraftforge.event.level.BlockEvent;\nimport net.minecraftforge.fml.common.Mod;\n\nimport java.util.function.Consumer;\n\n\n@Mod(Constants.MOD_ID)\n@HaybaleMod.IMod(Constants.MOD_ID)\npublic class StrawgolemForge extends HaybaleForgeMod {\n\n    @Override\n    protected HaybaleMod getCommonMod() {\n        return StrawgolemCommon.INSTANCE;\n    }\n\n    @Override\n    protected HaybaleModClient getClientMod() {\n        return StrawgolemClient.INSTANCE;\n    }\n\n    @Override\n    protected void registerEvents() {\n        MinecraftForge.EVENT_BUS.addListener((Consumer<CropGrowthEvent>) event -> {\n            if (event.getLevel() instanceof ServerLevel serverLevel) {\n                CropGrowthHandler.onCropGrowth(serverLevel, event.getPos());\n            }\n        });\n        MinecraftForge.EVENT_BUS.addListener((Consumer<PlayerInteractEvent.RightClickBlock>) event -> {\n            if (ContainerUtil.isContainer(event.getLevel(), event.getPos())) {\n                ContainerClickHandler.onContainerClicked(event.getEntity(), event.getPos());\n            }\n        });\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/neoforge/events/CropGrowthEvent.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package com.t2pellet.strawgolem.neoforge.events;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.world.level.LevelAccessor;\nimport net.minecraft.world.level.block.state.BlockState;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.level.BlockEvent;\n\npublic class CropGrowthEvent extends BlockEvent {\n\n    public CropGrowthEvent(LevelAccessor world, BlockPos pos, BlockState state) {\n            super(world, pos, state);\n        }\n\n    public static void onCropGrowth(LevelAccessor world, BlockPos pos, BlockState state) {\n        CropGrowthEvent event = new CropGrowthEvent(world, pos, state);\n        if (!world.isClientSide()) {\n            NeoForge.EVENT_BUS.post(event);\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/neoforge/mixin/GrowthMixin.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package com.t2pellet.strawgolem.neoforge.mixin;\n\nimport com.t2pellet.strawgolem.Constants;\nimport com.t2pellet.strawgolem.common.util.crop.CropUtil;\nimport com.t2pellet.strawgolem.neoforge.events.CropGrowthEvent;\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.Level;\nimport net.minecraft.world.level.block.AttachedStemBlock;\nimport net.minecraft.world.level.block.Block;\nimport net.minecraft.world.level.block.state.BlockState;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;\n\n@Mixin(Level.class)\npublic class GrowthMixin {\n\n    @Inject(method = \"setBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;I)Z\", at = @At(\"TAIL\"))\n    public void grow(BlockPos pos, BlockState newState, int i, CallbackInfoReturnable<Boolean> info) {\n        if ((Object) this instanceof ServerLevel level) {\n            BlockPos cropPos = pos;\n            Block block = newState.getBlock();\n            if (block instanceof AttachedStemBlock) {\n                cropPos = pos.offset(newState.getValue(AttachedStemBlock.FACING).getNormal());\n            }\n            if (CropUtil.isGrownCrop(level, pos)) {\n                Constants.LOG.debug(\"Crop grown in world: {}, at pos: {}\", level.toString(), pos.toShortString());\n                BlockPos finalCropPos = cropPos;\n                level.getServer().execute(() -> CropGrowthEvent.onCropGrowth(level, finalCropPos, newState));\n            }\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/t2pellet/strawgolem/neoforge/StrawgolemNeoforge.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package com.t2pellet.strawgolem.neoforge;\n\nimport com.t2pellet.haybale.HaybaleMod;\nimport com.t2pellet.haybale.client.HaybaleModClient;\nimport com.t2pellet.haybale.neoforge.HaybaleNeoforgeMod;\nimport com.t2pellet.strawgolem.Constants;\nimport com.t2pellet.strawgolem.StrawgolemCommon;\nimport com.t2pellet.strawgolem.client.StrawgolemClient;\nimport com.t2pellet.strawgolem.common.events.ContainerClickHandler;\nimport com.t2pellet.strawgolem.common.events.CropGrowthHandler;\nimport com.t2pellet.strawgolem.common.util.container.ContainerUtil;\nimport net.minecraft.server.level.ServerLevel;\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;\nimport net.neoforged.neoforge.event.level.BlockEvent;\n\nimport java.util.function.Consumer;\n\n@Mod(Constants.MOD_ID)\n@HaybaleMod.IMod(Constants.MOD_ID)\npublic class StrawgolemNeoforge extends HaybaleNeoforgeMod {\n\n    private static StrawgolemNeoforge instance;\n\n    public static StrawgolemNeoforge getInstance() {\n        return instance;\n    }\n\n    public StrawgolemNeoforge(IEventBus modBus) {\n        super(modBus);\n    }\n\n    @Override\n    protected HaybaleMod getCommonMod() {\n        return StrawgolemCommon.INSTANCE;\n    }\n\n    @Override\n    protected HaybaleModClient getClientMod() {\n        return StrawgolemClient.INSTANCE;\n    }\n\n    @Override\n    protected void registerEvents(IEventBus modBus) {\n        NeoForge.EVENT_BUS.addListener((Consumer<BlockEvent.CropGrowEvent.Post>) event -> {\n            if (event.getLevel() instanceof ServerLevel serverLevel) {\n                CropGrowthHandler.onCropGrowth(serverLevel, event.getPos());\n            }\n        });\n        NeoForge.EVENT_BUS.addListener((Consumer<PlayerInteractEvent.RightClickBlock>) event -> {\n            if (ContainerUtil.isContainer(event.getLevel(), event.getPos())) {\n                ContainerClickHandler.onContainerClicked(event.getEntity(), event.getPos());\n            }\n        });\n        super.registerEvents(modBus);\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  }
+ ]
+}

@@ -42,6 +42,58 @@ public final class PortableTests {
         var second = Json.object(named.get(1));
         check(Json.array(second.get("changedIn")).isEmpty() && second.get("why") != null, "an error the history cannot place is still listed, with the reason");
     }
+    /**
+     * Rules learned from Stonecutter switches (bench/stonecutter_rules.py): each one names switches that exist in
+     * coverage/stonecutter/switches in two or more mods, its match finds its own compiler error, Port's rewrite
+     * turns its test source into the recorded result, and its jump lands on an update a route in that direction crosses.
+     */
+    static void learnedRuleChecks(Path home) throws Exception {
+        int learned = 0;
+        Map<String, Map<String, Object>> switches = new HashMap<>();
+        for (Object item : Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules"))) {
+            var rule = Json.object(item);
+            if (!"stonecutter".equals(rule.get("source"))) continue;
+            String id = Json.text(rule, "id", "?");
+            Set<String> mods = new HashSet<>();
+            for (Object e : Json.array(rule.get("examples"))) {
+                var example = Json.object(e); String mod = Json.text(example, "mod", "");
+                // The packaged jar ships knowledge/ but not the mined switch data; there only the rewrites are checked.
+                Path mined = home.resolve("coverage/stonecutter/switches/" + mod.replace("/", "__") + ".json");
+                if (!Files.isRegularFile(mined)) { mods.add(mod); continue; }
+                var data = switches.computeIfAbsent(mod, m -> {
+                    try { return Json.read(mined); }
+                    catch (IOException failure) { throw new UncheckedIOException(failure); }
+                });
+                boolean found = false;
+                for (Object r : Json.array(data.get("rows"))) {
+                    var row = Json.object(r);
+                    if (row.get("file").equals(example.get("file")) && ((Number) row.get("line")).intValue() == ((Number) example.get("line")).intValue()) found = true;
+                }
+                if (!found) throw new AssertionError(id + ": example " + mod + " " + example.get("file") + ":" + example.get("line") + " is not a mined switch");
+                mods.add(mod);
+            }
+            if (mods.size() < 2) throw new AssertionError(id + ": a learned rule needs the same change in two or more mods, has " + mods);
+            var test = Json.object(rule.get("test"));
+            if (!java.util.regex.Pattern.compile(rule.get("match").toString()).matcher(test.get("error").toString()).find()) throw new AssertionError(id + ": match misses its test error");
+            String after = Port.rewrite(rule, test.get("before").toString());
+            if (after.equals(test.get("before")) || !after.equals(test.get("after"))) throw new AssertionError(id + ": rewrite gave\n" + after + "\nexpected\n" + test.get("after"));
+            String[] range = Json.text(rule, "jump", "").replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
+            String names = Json.text(rule, "jump", "").contains("yarn") ? "yarn" : "mojmap";
+            Route route = Route.plan(home, range[0], range[1]);
+            if (route == null || route.stepsCovered(Json.text(rule, "jump", ""), names).isEmpty()) throw new AssertionError(id + ": no route " + Json.text(rule, "jump", "") + " runs it");
+            learned++;
+        }
+        for (Object item : Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules"))) {
+            var rule = Json.object(item); if (!"glstatemanager-opengl".equals(rule.get("id"))) continue;
+            String log = "HUD.java:3: error: cannot find symbol\nimport com.mojang.blaze3d.platform.GlStateManager;\n  symbol:   class GlStateManager\n  location: package com.mojang.blaze3d.platform\n";
+            check(java.util.regex.Pattern.compile(rule.get("match").toString()).matcher(log).find()
+                    && Port.rewrite(rule, "import com.mojang.blaze3d.platform.GlStateManager;\nimport com.mojang.blaze3d.platform.NativeImage;\n")
+                        .equals("import com.mojang.blaze3d.opengl.GlStateManager;\nimport com.mojang.blaze3d.platform.NativeImage;\n")
+                    && !Route.plan(home, "1.20.1", "1.21.6").stepsCovered(Json.text(rule, "jump", ""), "yarn").isEmpty(),
+                    "GlStateManager's 1.21.5 package move is rewritten in yarn and mojmap sources, so javac no longer stops at the import");
+        }
+        check(learned >= 30, learned +" rules learned from Stonecutter switches name real switches in two or more mods, match their error, rewrite their example and run on their update");
+    }
     public static void main(String[] args) throws Exception {
         Path home = Path.of(args[0]), scratch = Path.of(args[1]); Files.createDirectories(scratch);
         Path existingArgs = scratch.resolve("existing loom args.txt");
@@ -93,6 +145,7 @@ public final class PortableTests {
         Build build = new Build(project, home, "", new Modaccel.Report(root, "test")); Port port = new Port(build, model);
         Build portBuild = new Build(project, home, "", new Modaccel.Report(root, "port"));
         routeChecks(home, new Port(portBuild, model), scratch);
+        learnedRuleChecks(home);
         for (var groups : List.of(List.of("net.minecraftforge"), List.of("net.fabricmc", "net.neoforged"), List.<String>of())) {
             var dependencies = groups.stream().map(group -> Json.map("group", group)).toList();
             try {

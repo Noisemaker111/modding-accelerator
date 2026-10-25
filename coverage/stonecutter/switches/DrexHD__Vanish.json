@@ -1,0 +1,1518 @@
+{
+ "repo": "DrexHD/Vanish",
+ "commit": "7a30b8c6c7edc8faef14c8cf86896ab9e67359fb",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "quilt"
+ ],
+ "versions": [
+  "1.21.1",
+  "1.21.4",
+  "1.21.5",
+  "1.21.8",
+  "1.21.9",
+  "1.21.10",
+  "1.21.11",
+  "26.1",
+  "26.2",
+  "26.3"
+ ],
+ "files": 21,
+ "switches": 44,
+ "versionSwitches": 44,
+ "rows": [
+  {
+   "file": "src/main/java/me/drex/vanish/command/VanishCommand.java",
+   "line": 78,
+   "method": "vanish",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "name()"
+    },
+    {
+     "condition": null,
+     "code": "getName()"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "name"
+     ]
+    }
+   ],
+   "older": "getName()",
+   "newer": "name()",
+   "removed": [
+    "getName"
+   ],
+   "added": [
+    "name"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/compat/DynmapCompat.java",
+   "line": 17,
+   "method": "apiEnabled",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "server.services().nameToIdCache().get(player).ifPresent(nameAndId -> {\n                        dynmapCommonAPI.setPlayerVisiblity(nameAndId.name(), !vanish);\n                    });"
+    },
+    {
+     "condition": null,
+     "code": "server.getProfileCache().get(player).ifPresent(gameProfile -> {\n                        dynmapCommonAPI.setPlayerVisiblity(gameProfile.getName(), !vanish);\n                    });"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "gameProfile",
+      "getProfileCache",
+      "name",
+      "nameAndId",
+      "nameToIdCache",
+      "services"
+     ]
+    }
+   ],
+   "older": "server.getProfileCache().get(player).ifPresent(gameProfile -> {\n                        dynmapCommonAPI.setPlayerVisiblity(gameProfile.getName(), !vanish);\n                    });",
+   "newer": "server.services().nameToIdCache().get(player).ifPresent(nameAndId -> {\n                        dynmapCommonAPI.setPlayerVisiblity(nameAndId.name(), !vanish);\n                    });",
+   "removed": [
+    "gameProfile",
+    "getName",
+    "getProfileCache"
+   ],
+   "added": [
+    "name",
+    "nameAndId",
+    "nameToIdCache",
+    "services"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/ContainerMixin.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "import net.minecraft.world.entity.ContainerUser;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.world.entity.player.Player;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "ContainerUser"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.world.entity.player.Player;",
+   "newer": "import net.minecraft.world.entity.ContainerUser;",
+   "removed": [
+    "Player",
+    "player"
+   ],
+   "added": [
+    "ContainerUser"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/ContainerMixin.java",
+   "line": 23,
+   "method": "(class body)",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "ContainerUser"
+    },
+    {
+     "condition": null,
+     "code": "Player"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "ContainerUser"
+     ]
+    }
+   ],
+   "older": "Player",
+   "newer": "ContainerUser",
+   "removed": [
+    "Player"
+   ],
+   "added": [
+    "ContainerUser"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/ContainerMixin.java",
+   "line": 30,
+   "method": "(class body)",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "ContainerUser"
+    },
+    {
+     "condition": null,
+     "code": "Player"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "ContainerUser"
+     ]
+    }
+   ],
+   "older": "Player",
+   "newer": "ContainerUser",
+   "removed": [
+    "Player"
+   ],
+   "added": [
+    "ContainerUser"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/ContainerOpenersCountMixin.java",
+   "line": 15,
+   "method": "(class body)",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "method = \"getEntitiesWithContainerOpen\","
+    },
+    {
+     "condition": null,
+     "code": "method = \"getPlayersWithContainerOpen\","
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [],
+   "older": "method = \"getPlayersWithContainerOpen\",",
+   "newer": "method = \"getEntitiesWithContainerOpen\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/ContainerOpenersCountMixin.java",
+   "line": 22,
+   "method": "(class body)",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "target = \"Lnet/minecraft/world/level/Level;getEntities(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/AABB;Ljava/util/function/Predicate;)Ljava/util/List;\""
+    },
+    {
+     "condition": null,
+     "code": "target = \"Lnet/minecraft/world/level/Level;getEntities(Lnet/minecraft/world/level/entity/EntityTypeTest;Lnet/minecraft/world/phys/AABB;Ljava/util/function/Predicate;)Ljava/util/List;\""
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [],
+   "older": "target = \"Lnet/minecraft/world/level/Level;getEntities(Lnet/minecraft/world/level/entity/EntityTypeTest;Lnet/minecraft/world/phys/AABB;Ljava/util/function/Predicate;)Ljava/util/List;\"",
+   "newer": "target = \"Lnet/minecraft/world/level/Level;getEntities(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/AABB;Ljava/util/function/Predicate;)Ljava/util/List;\"",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/FallOnBlockMixin.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": "> 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.11",
+     "code": "FarmlandBlock"
+    },
+    {
+     "condition": null,
+     "code": "FarmBlock"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "FarmBlock",
+      "FarmlandBlock"
+     ]
+    }
+   ],
+   "older": "FarmBlock",
+   "newer": "FarmlandBlock",
+   "removed": [
+    "FarmBlock"
+   ],
+   "added": [
+    "FarmlandBlock"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/FallOnBlockMixin.java",
+   "line": 19,
+   "method": "(class body)",
+   "condition": ">= 1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.5",
+     "code": "double"
+    },
+    {
+     "condition": null,
+     "code": "float"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [],
+   "older": "float",
+   "newer": "double",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/InsideBlockMixin.java",
+   "line": 7,
+   "method": "(imports)",
+   "condition": ">= 1.21.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.5",
+     "code": "import net.minecraft.world.entity.InsideBlockEffectApplier;"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.4 -> 1.21.5"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/InsideBlockMixin.java",
+   "line": 26,
+   "method": "(class body)",
+   "condition": ">= 1.21.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.5",
+     "code": "InsideBlockEffectApplier insideBlockEffectApplier,"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.4 -> 1.21.5"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/InsideBlockMixin.java",
+   "line": 27,
+   "method": "(class body)",
+   "condition": ">= 1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.10",
+     "code": "boolean bl,"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/LivingEntityMixin.java",
+   "line": 29,
+   "method": "(class body)",
+   "condition": ">= 1.21.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.2",
+     "code": "@WrapOperation(\n        method = \"canEquipWithDispenser\",\n        at = @At(\n            value = \"INVOKE\",\n            target = \"Lnet/minecraft/world/entity/LivingEntity;isSpectator()Z\"\n        )\n    )\n    public boolean preventArmorItemEquip(LivingEntity entity, Operation<Boolean> original) {\n        return original.call(entity) || (ConfigManager.vanish().interaction.entityPickup && VanishAPI.isVanished(entity));\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/PlayerDetectorMixin.java",
+   "line": 16,
+   "method": "(class body)",
+   "condition": "> 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.11",
+     "code": "method = \"lambda$static$1\","
+    },
+    {
+     "condition": null,
+     "code": "method = \"method_56723\","
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "method = \"method_56723\",",
+   "newer": "method = \"lambda$static$1\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/PlayerDetectorMixin.java",
+   "line": 33,
+   "method": "(class body)",
+   "condition": "> 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.11",
+     "code": "method = \"lambda$static$4\","
+    },
+    {
+     "condition": null,
+     "code": "method = \"method_56721\","
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "method = \"method_56721\",",
+   "newer": "method = \"lambda$static$4\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/PlayerMixin.java",
+   "line": 27,
+   "method": "(class body)",
+   "condition": "> 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.11",
+     "code": "method = \"isPickable\","
+    },
+    {
+     "condition": null,
+     "code": "method = \"canBeHitByProjectile\","
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "method = \"canBeHitByProjectile\",",
+   "newer": "method = \"isPickable\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/SimpleCriterionTriggerMixin.java",
+   "line": 7,
+   "method": "(imports)",
+   "condition": "> 26.1 | >= 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 26.1",
+     "code": "import net.minecraft.advancements.triggers.SimpleCriterionTrigger;"
+    },
+    {
+     "condition": ">= 1.21.11",
+     "code": "import net.minecraft.advancements.criterion.SimpleCriterionTrigger;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.advancements.critereon.SimpleCriterionTrigger;"
+    }
+   ],
+   "boundary": [
+    "26.1 -> 26.1.1",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraft.advancements.criterion.SimpleCriterionTrigger;",
+   "newer": "import net.minecraft.advancements.triggers.SimpleCriterionTrigger;",
+   "removed": [
+    "criterion"
+   ],
+   "added": [
+    "triggers"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/VanishEntitySelector.java",
+   "line": 13,
+   "method": "(imports)",
+   "condition": ">= 1.21.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.2",
+     "code": "import net.minecraft.world.entity.vehicle.minecart.NewMinecartBehavior;\nimport net.minecraft.world.entity.vehicle.minecart.OldMinecartBehavior;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "NewMinecartBehavior",
+      "OldMinecartBehavior"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;",
+   "newer": "import net.minecraft.world.entity.vehicle.minecart.NewMinecartBehavior;\nimport net.minecraft.world.entity.vehicle.minecart.OldMinecartBehavior;",
+   "removed": [
+    "AbstractMinecart"
+   ],
+   "added": [
+    "NewMinecartBehavior",
+    "OldMinecartBehavior"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/VanishEntitySelector.java",
+   "line": 78,
+   "method": "(class body)",
+   "condition": ">= 1.21.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.2",
+     "code": "@Mixin(OldMinecartBehavior.class)\n    public abstract static class OldMinecartBehaviorMixin {\n        @WrapOperation(\n            method = \"pushAndPickupEntities\",\n            at = @At(\n                value = \"INVOKE\",\n                target = \"Lnet/minecraft/world/level/Level;getEntities(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/AABB;)Ljava/util/List;\"\n            )\n        )\n        private List<Entity> preventMinecartColision(Level instance, Entity entity, AABB aABB, Operation<List<Entity>> original) {\n            return ConfigManager.vanish().interaction.entityCollisions ? instance.getEntities(entity, aABB, VanishMod.NO_SPECTATORS_AND_NO_VANISH) : original.call(instance, entity, aABB);\n        }\n    }\n\n    @Mixin(NewMinecartBehavior.class)\n    public abstract static class NewMinecartBehaviorMixin {\n        @WrapOperation(\n            method = \"pushEntities\",\n            at = @At(\n                value = \"INVOKE\",\n                target = \"Lnet/minecraft/world/level/Level;getEntities(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/AABB;)Ljava/util/List;\"\n            )\n        )\n        private List<Entity> preventMinecartColision(Level instance, Entity entity, AABB aABB, Operation<List<Entity>> original) {\n            return ConfigManager.vanish().interaction.entityCollisions ? instance.getEntities(entity, aABB, VanishMod.NO_SPECTATORS_AND_NO_VANISH) : original.call(instance, entity, aABB);\n        }\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@Mixin(AbstractMinecart.class)\n    public abstract static class OldMinecartBehaviorMixin {\n        @WrapOperation(\n            method = \"tick\",\n            at = @At(\n                value = \"INVOKE\",\n                target = \"Lnet/minecraft/world/level/Level;getEntities(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/AABB;)Ljava/util/List;\"\n            )\n        )\n        private List<Entity> preventMinecartColision(Level instance, Entity entity, AABB aABB, Operation<List<Entity>> original) {\n            return ConfigManager.vanish().interaction.entityCollisions ? instance.getEntities(entity, aABB, VanishMod.NO_SPECTATORS_AND_NO_VANISH) : original.call(instance, entity, aABB);\n        }\n    }\n\n    @Mixin(MinecraftServer.class)\n    public abstract static class NewMinecartBehaviorMixin {\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "NewMinecartBehavior",
+      "OldMinecartBehavior"
+     ]
+    }
+   ],
+   "older": "@Mixin(AbstractMinecart.class)\n    public abstract static class OldMinecartBehaviorMixin {\n        @WrapOperation(\n            method = \"tick\",\n            at = @At(\n                value = \"INVOKE\",\n                target = \"Lnet/minecraft/world/level/Level;getEntities(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/AABB;)Ljava/util/List;\"\n            )\n        )\n        private List<Entity> preventMinecartColision(Level instance, Entity entity, AABB aABB, Operation<List<Entity>> original) {\n            return ConfigManager.vanish().interaction.entityCollisions ? instance.getEntities(entity, aABB, VanishMod.NO_SPECTATORS_AND_NO_VANISH) : original.call(instance, entity, aABB);\n        }\n    }\n\n    @Mixin(MinecraftServer.class)\n    public abstract static class NewMinecartBehaviorMixin {\n    }",
+   "newer": "@Mixin(OldMinecartBehavior.class)\n    public abstract static class OldMinecartBehaviorMixin {\n        @WrapOperation(\n            method = \"pushAndPickupEntities\",\n            at = @At(\n                value = \"INVOKE\",\n                target = \"Lnet/minecraft/world/level/Level;getEntities(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/AABB;)Ljava/util/List;\"\n            )\n        )\n        private List<Entity> preventMinecartColision(Level instance, Entity entity, AABB aABB, Operation<List<Entity>> original) {\n            return ConfigManager.vanish().interaction.entityCollisions ? instance.getEntities(entity, aABB, VanishMod.NO_SPECTATORS_AND_NO_VANISH) : original.call(instance, entity, aABB);\n        }\n    }\n\n    @Mixin(NewMinecartBehavior.class)\n    public abstract static class NewMinecartBehaviorMixin {\n        @WrapOperation(\n            method = \"pushEntities\",\n            at = @At(\n                value = \"INVOKE\",\n                target = \"Lnet/minecraft/world/level/Level;getEntities(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/AABB;)Ljava/util/List;\"\n            )\n        )\n        private List<Entity> preventMinecartColision(Level instance, Entity entity, AABB aABB, Operation<List<Entity>> original) {\n            return ConfigManager.vanish().interaction.entityCollisions ? instance.getEntities(entity, aABB, VanishMod.NO_SPECTATORS_AND_NO_VANISH) : original.call(instance, entity, aABB);\n        }\n    }",
+   "removed": [
+    "AbstractMinecart",
+    "MinecraftServer"
+   ],
+   "added": [
+    "NewMinecartBehavior",
+    "OldMinecartBehavior"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/interaction/VanishEntitySelector.java",
+   "line": 130,
+   "method": "(class body)",
+   "condition": "> 1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.10",
+     "code": "method = \"doSweepAttack\","
+    },
+    {
+     "condition": null,
+     "code": "method = \"attack\","
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "method = \"attack\",",
+   "newer": "method = \"doSweepAttack\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/MinecraftServerMixin.java",
+   "line": 8,
+   "method": "(imports)",
+   "condition": "> 1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.10",
+     "code": "import net.minecraft.server.permissions.PermissionSet;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/MinecraftServerMixin.java",
+   "line": 32,
+   "method": "getNonVanishedPlayerCount",
+   "condition": "> 1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.10",
+     "code": "PermissionSet.NO_PERMISSIONS"
+    },
+    {
+     "condition": null,
+     "code": "0"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "PermissionSet"
+     ]
+    }
+   ],
+   "older": "0",
+   "newer": "PermissionSet.NO_PERMISSIONS",
+   "removed": [],
+   "added": [
+    "NO_PERMISSIONS",
+    "PermissionSet"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/MinecraftServerMixin.java",
+   "line": 43,
+   "method": "getNonVanishedPlayer",
+   "condition": "> 1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.10",
+     "code": "PermissionSet.NO_PERMISSIONS"
+    },
+    {
+     "condition": null,
+     "code": "0"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "PermissionSet"
+     ]
+    }
+   ],
+   "older": "0",
+   "newer": "PermissionSet.NO_PERMISSIONS",
+   "removed": [],
+   "added": [
+    "NO_PERMISSIONS",
+    "PermissionSet"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/MinecraftServerMixin.java",
+   "line": 52,
+   "method": "getPlayerCount",
+   "condition": "> 1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.10",
+     "code": "PermissionSet.NO_PERMISSIONS"
+    },
+    {
+     "condition": null,
+     "code": "0"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "PermissionSet"
+     ]
+    }
+   ],
+   "older": "0",
+   "newer": "PermissionSet.NO_PERMISSIONS",
+   "removed": [],
+   "added": [
+    "NO_PERMISSIONS",
+    "PermissionSet"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/PlayerAdvancementsMixin.java",
+   "line": 21,
+   "method": "(class body)",
+   "condition": "> 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.11",
+     "code": "method = \"lambda$award$0\","
+    },
+    {
+     "condition": null,
+     "code": "method = \"method_53637\","
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "method = \"method_53637\",",
+   "newer": "method = \"lambda$award$0\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/PlayerListMixin.java",
+   "line": 23,
+   "method": "(imports)",
+   "condition": "> 1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.10",
+     "code": "import net.minecraft.server.permissions.PermissionSet;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/PlayerListMixin.java",
+   "line": 112,
+   "method": "getNonVanishedPlayerCount",
+   "condition": "> 1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.10",
+     "code": "PermissionSet.NO_PERMISSIONS"
+    },
+    {
+     "condition": null,
+     "code": "0"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "PermissionSet"
+     ]
+    }
+   ],
+   "older": "0",
+   "newer": "PermissionSet.NO_PERMISSIONS",
+   "removed": [],
+   "added": [
+    "NO_PERMISSIONS",
+    "PermissionSet"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/predicate/EntityFlagsFlagsPredicateMixin.java",
+   "line": 11,
+   "method": "(imports)",
+   "condition": ">= 26.2 | >= 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "import net.minecraft.advancements.predicates.entity.EntityFlagsPredicate;"
+    },
+    {
+     "condition": ">= 1.21.11",
+     "code": "import net.minecraft.advancements.criterion.EntityFlagsPredicate;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.advancements.critereon.EntityFlagsPredicate;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "entity"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "entity"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.advancements.criterion.EntityFlagsPredicate;",
+   "newer": "import net.minecraft.advancements.predicates.entity.EntityFlagsPredicate;",
+   "removed": [
+    "criterion"
+   ],
+   "added": [
+    "entity",
+    "predicates"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/predicate/EntityFlagsFlagsPredicateMixin.java",
+   "line": 53,
+   "method": "(class body)",
+   "condition": ">= 26.2 | >= 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "target = \"Lnet/minecraft/advancements/predicates/entity/EntityFlagsPredicate;CODEC:Lcom/mojang/serialization/Codec;\","
+    },
+    {
+     "condition": ">= 1.21.11",
+     "code": "target = \"Lnet/minecraft/advancements/criterion/EntityFlagsPredicate;CODEC:Lcom/mojang/serialization/Codec;\","
+    },
+    {
+     "condition": null,
+     "code": "target = \"Lnet/minecraft/advancements/critereon/EntityFlagsPredicate;CODEC:Lcom/mojang/serialization/Codec;\","
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "target = \"Lnet/minecraft/advancements/criterion/EntityFlagsPredicate;CODEC:Lcom/mojang/serialization/Codec;\",",
+   "newer": "target = \"Lnet/minecraft/advancements/predicates/entity/EntityFlagsPredicate;CODEC:Lcom/mojang/serialization/Codec;\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/ServerCommonPacketListenerImplMixin.java",
+   "line": 8,
+   "method": "(imports)",
+   "condition": "< 1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.21.6",
+     "code": "import net.minecraft.network.PacketSendListener;"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/ServerCommonPacketListenerImplMixin.java",
+   "line": 39,
+   "method": "(class body)",
+   "condition": ">= 1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.6",
+     "code": "method = \"send(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;)V\","
+    },
+    {
+     "condition": null,
+     "code": "method = \"send(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketSendListener;)V\","
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ],
+   "confirmed": [],
+   "older": "method = \"send(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketSendListener;)V\",",
+   "newer": "method = \"send(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;)V\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/ServerCommonPacketListenerImplMixin.java",
+   "line": 47,
+   "method": "(class body)",
+   "condition": ">= 1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.6",
+     "code": "ChannelFutureListener"
+    },
+    {
+     "condition": null,
+     "code": "PacketSendListener"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ],
+   "confirmed": [],
+   "older": "PacketSendListener",
+   "newer": "ChannelFutureListener",
+   "removed": [
+    "PacketSendListener"
+   ],
+   "added": [
+    "ChannelFutureListener"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/ServerCommonPacketListenerImplMixin.java",
+   "line": 78,
+   "method": "modifyPackets",
+   "condition": ">= 1.21.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.2",
+     "code": "playerUpdate.showHat(),\n                            playerUpdate.listOrder(),"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/ServerGamePacketListenerImplMixin.java",
+   "line": 44,
+   "method": "(class body)",
+   "condition": "> 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.11",
+     "code": "@WrapOperation(\n        method = \"handleInteract\",\n        at = @At(\n            value = \"INVOKE\",\n            target = \"Lnet/minecraft/server/level/ServerLevel;getEntityOrPart(I)Lnet/minecraft/world/entity/Entity;\"\n        )\n    )\n    public Entity preventInteraction(ServerLevel serverLevel, int i, Operation<Entity> original) {\n        Entity entity = original.call(serverLevel, i);\n        if (entity instanceof ServerPlayer actor && !VanishAPI.canSeePlayer(actor, this.player)) {\n            return null;\n        }\n        return entity;\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@WrapOperation(\n        method = \"handleInteract\",\n        at = @At(\n            value = \"INVOKE\",\n            target = \"Lnet/minecraft/network/protocol/game/ServerboundInteractPacket;getTarget(Lnet/minecraft/server/level/ServerLevel;)Lnet/minecraft/world/entity/Entity;\"\n        )\n    )\n    public Entity preventInteraction(ServerboundInteractPacket instance, ServerLevel serverLevel, Operation<Entity> original) {\n        Entity entity = original.call(instance, serverLevel);\n        if (entity instanceof ServerPlayer actor && !VanishAPI.canSeePlayer(actor, this.player)) {\n            return null;\n        }\n        return entity;\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "@WrapOperation(\n        method = \"handleInteract\",\n        at = @At(\n            value = \"INVOKE\",\n            target = \"Lnet/minecraft/network/protocol/game/ServerboundInteractPacket;getTarget(Lnet/minecraft/server/level/ServerLevel;)Lnet/minecraft/world/entity/Entity;\"\n        )\n    )\n    public Entity preventInteraction(ServerboundInteractPacket instance, ServerLevel serverLevel, Operation<Entity> original) {\n        Entity entity = original.call(instance, serverLevel);\n        if (entity instanceof ServerPlayer actor && !VanishAPI.canSeePlayer(actor, this.player)) {\n            return null;\n        }\n        return entity;\n    }",
+   "newer": "@WrapOperation(\n        method = \"handleInteract\",\n        at = @At(\n            value = \"INVOKE\",\n            target = \"Lnet/minecraft/server/level/ServerLevel;getEntityOrPart(I)Lnet/minecraft/world/entity/Entity;\"\n        )\n    )\n    public Entity preventInteraction(ServerLevel serverLevel, int i, Operation<Entity> original) {\n        Entity entity = original.call(serverLevel, i);\n        if (entity instanceof ServerPlayer actor && !VanishAPI.canSeePlayer(actor, this.player)) {\n            return null;\n        }\n        return entity;\n    }",
+   "removed": [
+    "ServerboundInteractPacket",
+    "instance"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/VanishedServerPlayerMixin.java",
+   "line": 8,
+   "method": "(imports)",
+   "condition": "< 1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.21.6",
+     "code": "import net.minecraft.core.BlockPos;"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/VanishedServerPlayerMixin.java",
+   "line": 37,
+   "method": "(class body)",
+   "condition": ">= 1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.6",
+     "code": "public VanishedServerPlayerMixin(Level level, GameProfile gameProfile) {\n        super(level, gameProfile);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public VanishedServerPlayerMixin(Level level, BlockPos blockPos, float f, GameProfile gameProfile) {\n        super(level, blockPos, f, gameProfile);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ],
+   "confirmed": [],
+   "older": "public VanishedServerPlayerMixin(Level level, BlockPos blockPos, float f, GameProfile gameProfile) {\n        super(level, blockPos, f, gameProfile);\n    }",
+   "newer": "public VanishedServerPlayerMixin(Level level, GameProfile gameProfile) {\n        super(level, gameProfile);\n    }",
+   "removed": [
+    "BlockPos",
+    "blockPos"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/mixin/WaypointTransmitterMixin.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">= 1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.6",
+     "code": "import me.drex.vanish.api.VanishAPI;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.minecraft.world.entity.LivingEntity;\nimport net.minecraft.world.waypoints.WaypointTransmitter;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;\n\n@Mixin(WaypointTransmitter.class)\npublic interface WaypointTransmitterMixin {\n    @Inject(method = \"doesSourceIgnoreReceiver\", at = @At(\"HEAD\"), cancellable = true)\n    private static void hideWaypoints(LivingEntity livingEntity, ServerPlayer serverPlayer, CallbackInfoReturnable<Boolean> cir) {\n        if (livingEntity instanceof ServerPlayer actor && !VanishAPI.canSeePlayer(actor, serverPlayer)) {\n            cir.setReturnValue(true);\n        }\n    }\n}"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.server.MinecraftServer;\nimport org.spongepowered.asm.mixin.Mixin;\n\n@Mixin(MinecraftServer.class)\npublic abstract class WaypointTransmitterMixin {\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "WaypointTransmitter",
+      "level"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.server.MinecraftServer;\nimport org.spongepowered.asm.mixin.Mixin;\n\n@Mixin(MinecraftServer.class)\npublic abstract class WaypointTransmitterMixin {\n}",
+   "newer": "import me.drex.vanish.api.VanishAPI;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.minecraft.world.entity.LivingEntity;\nimport net.minecraft.world.waypoints.WaypointTransmitter;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;\n\n@Mixin(WaypointTransmitter.class)\npublic interface WaypointTransmitterMixin {\n    @Inject(method = \"doesSourceIgnoreReceiver\", at = @At(\"HEAD\"), cancellable = true)\n    private static void hideWaypoints(LivingEntity livingEntity, ServerPlayer serverPlayer, CallbackInfoReturnable<Boolean> cir) {\n        if (livingEntity instanceof ServerPlayer actor && !VanishAPI.canSeePlayer(actor, serverPlayer)) {\n            cir.setReturnValue(true);\n        }\n    }\n}",
+   "removed": [
+    "MinecraftServer"
+   ],
+   "added": [
+    "Boolean",
+    "CallbackInfoReturnable",
+    "Inject",
+    "LivingEntity",
+    "ServerPlayer",
+    "VanishAPI",
+    "WaypointTransmitter",
+    "actor",
+    "api",
+    "callback",
+    "canSeePlayer",
+    "cancellable",
+    "cir",
+    "drex",
+    "entity",
+    "hideWaypoints",
+    "injection",
+    "level",
+    "livingEntity",
+    "method",
+    "serverPlayer",
+    "setReturnValue",
+    "vanish",
+    "waypoints",
+    "world"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/util/VanishManager.java",
+   "line": 140,
+   "method": "setVanished",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "var uuid = profile.id();"
+    },
+    {
+     "condition": null,
+     "code": "var uuid = profile.getId();"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "getId"
+     ]
+    }
+   ],
+   "older": "var uuid = profile.getId();",
+   "newer": "var uuid = profile.id();",
+   "removed": [
+    "getId"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/util/VanishPlaceHolders.java",
+   "line": 10,
+   "method": "(imports)",
+   "condition": "> 1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.10",
+     "code": "import net.minecraft.server.permissions.PermissionSet;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/util/VanishPlaceHolders.java",
+   "line": 27,
+   "method": "register",
+   "condition": "> 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.11",
+     "code": "registerServer"
+    },
+    {
+     "condition": null,
+     "code": "register"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "register"
+     ]
+    }
+   ],
+   "older": "register",
+   "newer": "registerServer",
+   "removed": [
+    "register"
+   ],
+   "added": [
+    "registerServer"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/util/VanishPlaceHolders.java",
+   "line": 29,
+   "method": "registerServer",
+   "condition": "> 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.11",
+     "code": "parseComponent"
+    },
+    {
+     "condition": null,
+     "code": "parseText"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "parseText",
+   "newer": "parseComponent",
+   "removed": [
+    "parseText"
+   ],
+   "added": [
+    "parseComponent"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/util/VanishPlaceHolders.java",
+   "line": 33,
+   "method": "register",
+   "condition": "> 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.11",
+     "code": "registerServer"
+    },
+    {
+     "condition": null,
+     "code": "register"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "register"
+     ]
+    }
+   ],
+   "older": "register",
+   "newer": "registerServer",
+   "removed": [
+    "register"
+   ],
+   "added": [
+    "registerServer"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/util/VanishPlaceHolders.java",
+   "line": 35,
+   "method": "registerServer",
+   "condition": "> 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.11",
+     "code": "serverPlayer"
+    },
+    {
+     "condition": null,
+     "code": "player"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "player",
+   "newer": "serverPlayer",
+   "removed": [
+    "player"
+   ],
+   "added": [
+    "serverPlayer"
+   ]
+  },
+  {
+   "file": "src/main/java/me/drex/vanish/util/VanishPlaceHolders.java",
+   "line": 37,
+   "method": "registerServer",
+   "condition": "> 1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.21.10",
+     "code": "PermissionSet.NO_PERMISSIONS"
+    },
+    {
+     "condition": null,
+     "code": "0"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "PermissionSet"
+     ]
+    }
+   ],
+   "older": "0",
+   "newer": "PermissionSet.NO_PERMISSIONS",
+   "removed": [],
+   "added": [
+    "NO_PERMISSIONS",
+    "PermissionSet"
+   ]
+  }
+ ]
+}

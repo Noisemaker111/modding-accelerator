@@ -1113,6 +1113,1705 @@
       "when": "",
       "note": "About a hundred SoundEvents constants became Holder.Reference in 1.21.2 while the rest stayed plain SoundEvent, so the rule carries the exact holder list read from the target SoundEvents class and only rewrites a playSound argument in a file javac already reported. A constant outside the list is left alone, which is what keeps a plain SoundEvent argument compiling.",
       "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+    },
+    {
+      "id": "glstatemanager-opengl",
+      "jump": "1.21.4 -> 1.21.5",
+      "match": "symbol:\\s+class GlStateManager\\s+location: package com\\.mojang\\.blaze3d\\.platform",
+      "apply": {
+        "find": "\\bcom\\.mojang\\.blaze3d\\.platform\\.GlStateManager\\b",
+        "replace": "com.mojang.blaze3d.opengl.GlStateManager"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.5 moved GlStateManager from com.mojang.blaze3d.platform to com.mojang.blaze3d.opengl (coverage/changes/1.21.4__1.21.5.json lists it removed and added, so no mapping links the two). com.mojang names are the same in every mapping set. Only the import moves: members it lost (SrcFactor, DstFactor) stay as named errors. Before this, javac stopped at the import and hid every other error.",
+      "verified": null
+    },
+    {
+      "id": "glstatemanager-opengl-back",
+      "jump": "1.21.5 -> 1.21.4",
+      "match": "symbol:\\s+class GlStateManager\\s+location: package com\\.mojang\\.blaze3d\\.opengl|package com\\.mojang\\.blaze3d\\.opengl does not exist",
+      "apply": {
+        "find": "\\bcom\\.mojang\\.blaze3d\\.opengl\\.GlStateManager\\b",
+        "replace": "com.mojang.blaze3d.platform.GlStateManager"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of glstatemanager-opengl.",
+      "verified": null
+    },
+    {
+      "id": "sc-permissions-source-level",
+      "source": "stonecutter",
+      "jump": "1.21.10 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+method hasPermission\\(int\\)",
+      "apply": {
+        "find": "\\.hasPermission\\((\\d+)\\)",
+        "replace": ".permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId($1)))",
+        "ensureImports": [
+          "net.minecraft.server.permissions.Permission",
+          "net.minecraft.server.permissions.PermissionLevel"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.11 removed CommandSourceStack.hasPermission(int); the level is now a check against permissions(). The number keeps its meaning through PermissionLevel.byId, as Neruina writes it.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "NikitaCartes/EasyAuth",
+          "commit": "89e473a150ee",
+          "file": "src/main/java/xyz/nikitacartes/easyauth/integrations/EasyAuthPermissions.java",
+          "line": 63,
+          "condition": ">= 1.21.11 | else",
+          "older": "return source.hasPermission(level);",
+          "newer": "return source.permissions().hasPermission(permissionLevelFromInt(level));"
+        },
+        {
+          "mod": "TeamMidnightDust/MidnightLib",
+          "commit": "bd2aa72c2862",
+          "file": "src/main/java/eu/midnightdust/lib/config/AutoCommand.java",
+          "line": 48,
+          "condition": ">= 1.21.11 | else",
+          "older": ".hasPermission(2)",
+          "newer": ".permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS))"
+        },
+        {
+          "mod": "Bawnorton/Neruina",
+          "commit": "61c3f8f4c3db",
+          "file": "src/main/java/com/bawnorton/neruina/version/PermissionWrapper.java",
+          "line": 12,
+          "condition": ">=1.21.11 | else",
+          "older": "static boolean hasPermission(Player player, int permission) {\n\t\treturn player.hasPermissions(permission);\n\t}\n\n\tstatic boolean hasPermission(CommandSourceStack sourceStack, int permission) {\n\t\treturn sourceStack.hasPermission(permission);\n\t}",
+          "newer": "static boolean hasPermission(Player player, int permission) {\n\t\treturn player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(permission)));\n\t}\n\n\tstatic boolean hasPermission(CommandSourceStack sourceStack, int permission) {\n\t\treturn sourceStack.permissions().hasPermi"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        return source.hasPermission(2);\n        ^\n  symbol:   method hasPermission(int)\n  location: variable source of type CommandSourceStack\n",
+        "before": "package a;\nclass C { boolean f(CommandSourceStack source) { return source.hasPermission(2); } }\n",
+        "after": "package a;\nimport net.minecraft.server.permissions.PermissionLevel;\nimport net.minecraft.server.permissions.Permission;\nclass C { boolean f(CommandSourceStack source) { return source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(2))); } }\n"
+      }
+    },
+    {
+      "id": "sc-permissions-player-level",
+      "source": "stonecutter",
+      "jump": "1.21.10 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+method hasPermissions\\(int\\)",
+      "apply": {
+        "find": "\\.hasPermissions\\((\\d+)\\)",
+        "replace": ".permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId($1)))",
+        "ensureImports": [
+          "net.minecraft.server.permissions.Permission",
+          "net.minecraft.server.permissions.PermissionLevel"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.11 removed Player.hasPermissions(int); players answer the same check through permissions().",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/main/java/dev/diorama/waypoint/WaypointListScreen.java",
+          "line": 228,
+          "condition": ">=1.21.11 | else",
+          "older": "// Permission level 2 is the game master level /tp needs.\n\t\tthis.canTeleport = player != null && player.hasPermissions(2);",
+          "newer": "this.canTeleport = player != null && player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);"
+        },
+        {
+          "mod": "Bawnorton/Neruina",
+          "commit": "61c3f8f4c3db",
+          "file": "src/main/java/com/bawnorton/neruina/version/PermissionWrapper.java",
+          "line": 12,
+          "condition": ">=1.21.11 | else",
+          "older": "static boolean hasPermission(Player player, int permission) {\n\t\treturn player.hasPermissions(permission);\n\t}\n\n\tstatic boolean hasPermission(CommandSourceStack sourceStack, int permission) {\n\t\treturn sourceStack.hasPermission(permission);\n\t}",
+          "newer": "static boolean hasPermission(Player player, int permission) {\n\t\treturn player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(permission)));\n\t}\n\n\tstatic boolean hasPermission(CommandSourceStack sourceStack, int permission) {\n\t\treturn sourceStack.permissions().hasPermi"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        if (player.hasPermissions(2)) {\n        ^\n  symbol:   method hasPermissions(int)\n  location: variable player of type ServerPlayer\n",
+        "before": "package a;\nclass C { void f(ServerPlayer player) { if (player.hasPermissions(2)) { } } }\n",
+        "after": "package a;\nimport net.minecraft.server.permissions.PermissionLevel;\nimport net.minecraft.server.permissions.Permission;\nclass C { void f(ServerPlayer player) { if (player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(2)))) { } } }\n"
+      }
+    },
+    {
+      "id": "sc-gameprofile-name",
+      "source": "stonecutter",
+      "jump": "1.21.8 -> 1.21.9 (mojmap)",
+      "match": "symbol:\\s+method getName\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:com\\.mojang\\.authlib\\.)?GameProfile\\b",
+      "apply": {
+        "find": "(\\b\\w*[Pp]rofile(?:\\(\\))?)\\.getName\\(\\)",
+        "replace": "$1.name()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.9 ships authlib with GameProfile as a record: getName() is name().",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/modpack/GameHelpers.java",
+          "line": 55,
+          "condition": ">= 1.21.9 | else",
+          "older": "return profile.getName();",
+          "newer": "return profile.name();"
+        },
+        {
+          "mod": "NikitaCartes/EasyAuth",
+          "commit": "89e473a150ee",
+          "file": "src/main/java/xyz/nikitacartes/easyauth/utils/StoneCutterUtils.java",
+          "line": 127,
+          "condition": ">= 1.21.9 | else",
+          "older": "return profile.getName();",
+          "newer": "return profile.name();"
+        },
+        {
+          "mod": "mrbuilder1961/ChatPatches",
+          "commit": "987cf24502ad",
+          "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+          "line": 295,
+          "condition": ">=1.21.9 | else",
+          "older": "getName",
+          "newer": "name"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        log(player.getGameProfile().getName());\n        ^\n  symbol:   method getName()\n  location: class GameProfile\n",
+        "before": "class C { void f(ServerPlayer player, GameProfile profile) { log(player.getGameProfile().getName()); log(profile.getName()); } }\n",
+        "after": "class C { void f(ServerPlayer player, GameProfile profile) { log(player.getGameProfile().name()); log(profile.name()); } }\n"
+      }
+    },
+    {
+      "id": "sc-gameprofile-id",
+      "source": "stonecutter",
+      "jump": "1.21.8 -> 1.21.9 (mojmap)",
+      "match": "symbol:\\s+method getId\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:com\\.mojang\\.authlib\\.)?GameProfile\\b",
+      "apply": {
+        "find": "(\\b\\w*[Pp]rofile(?:\\(\\))?)\\.getId\\(\\)",
+        "replace": "$1.id()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.9 ships authlib with GameProfile as a record: getId() is id().",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/modpack/GameHelpers.java",
+          "line": 63,
+          "condition": ">= 1.21.9 | else",
+          "older": "return profile.getId();",
+          "newer": "return profile.id();"
+        },
+        {
+          "mod": "NikitaCartes/EasyAuth",
+          "commit": "89e473a150ee",
+          "file": "src/main/java/xyz/nikitacartes/easyauth/utils/StoneCutterUtils.java",
+          "line": 145,
+          "condition": ">= 1.21.9 | else",
+          "older": "return profile.getId();",
+          "newer": "return profile.id();"
+        },
+        {
+          "mod": "Bawnorton/Neruina",
+          "commit": "61c3f8f4c3db",
+          "file": "src/main/java/com/bawnorton/neruina/command/NeruinaCommandHandler.java",
+          "line": 331,
+          "condition": ">=1.21.10 | else",
+          "older": "if(!player.getGameProfile().getId().equals(UUID.fromString(\"17c06cab-bf05-4ade-a8d6-ed14aaf70545\"))) {",
+          "newer": "if (!player.getGameProfile().id().equals(UUID.fromString(\"17c06cab-bf05-4ade-a8d6-ed14aaf70545\"))) {"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        UUID id = profile.getId();\n        ^\n  symbol:   method getId()\n  location: variable profile of type GameProfile\n",
+        "before": "class C { UUID f(GameProfile profile) { return profile.getId(); } }\n",
+        "after": "class C { UUID f(GameProfile profile) { return profile.id(); } }\n"
+      }
+    },
+    {
+      "id": "sc-gameprofile-name-back",
+      "source": "stonecutter",
+      "jump": "1.21.9 -> 1.21.8 (mojmap)",
+      "match": "symbol:\\s+method name\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:com\\.mojang\\.authlib\\.)?GameProfile\\b",
+      "apply": {
+        "find": "(\\b\\w*[Pp]rofile(?:\\(\\))?)\\.name\\(\\)",
+        "replace": "$1.getName()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-gameprofile-name: before 1.21.9 GameProfile is a class with getName().",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/modpack/GameHelpers.java",
+          "line": 55,
+          "condition": ">= 1.21.9 | else",
+          "older": "return profile.getName();",
+          "newer": "return profile.name();"
+        },
+        {
+          "mod": "NikitaCartes/EasyAuth",
+          "commit": "89e473a150ee",
+          "file": "src/main/java/xyz/nikitacartes/easyauth/utils/StoneCutterUtils.java",
+          "line": 127,
+          "condition": ">= 1.21.9 | else",
+          "older": "return profile.getName();",
+          "newer": "return profile.name();"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        return profile.name();\n        ^\n  symbol:   method name()\n  location: variable profile of type GameProfile\n",
+        "before": "class C { String f(GameProfile profile) { return profile.name(); } }\n",
+        "after": "class C { String f(GameProfile profile) { return profile.getName(); } }\n"
+      }
+    },
+    {
+      "id": "sc-gameprofile-id-back",
+      "source": "stonecutter",
+      "jump": "1.21.9 -> 1.21.8 (mojmap)",
+      "match": "symbol:\\s+method id\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:com\\.mojang\\.authlib\\.)?GameProfile\\b",
+      "apply": {
+        "find": "(\\b\\w*[Pp]rofile(?:\\(\\))?)\\.id\\(\\)",
+        "replace": "$1.getId()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-gameprofile-id: before 1.21.9 GameProfile is a class with getId().",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/modpack/GameHelpers.java",
+          "line": 63,
+          "condition": ">= 1.21.9 | else",
+          "older": "return profile.getId();",
+          "newer": "return profile.id();"
+        },
+        {
+          "mod": "NikitaCartes/EasyAuth",
+          "commit": "89e473a150ee",
+          "file": "src/main/java/xyz/nikitacartes/easyauth/utils/StoneCutterUtils.java",
+          "line": 145,
+          "condition": ">= 1.21.9 | else",
+          "older": "return profile.getId();",
+          "newer": "return profile.id();"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        return profile.id();\n        ^\n  symbol:   method id()\n  location: variable profile of type GameProfile\n",
+        "before": "class C { UUID f(GameProfile profile) { return profile.id(); } }\n",
+        "after": "class C { UUID f(GameProfile profile) { return profile.getId(); } }\n"
+      }
+    },
+    {
+      "id": "sc-gui-set-screen",
+      "source": "stonecutter",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+method setScreen\\([^)]*\\)\\s+location: (?:variable \\w+ of type|class) (?:net\\.minecraft\\.client\\.)?Minecraft\\b",
+      "apply": {
+        "find": "(Minecraft\\.getInstance\\(\\)|\\b(?:this\\.)?(?:minecraft|mc|client))\\.setScreen\\(",
+        "replace": "$1.gui.setScreen("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.2 moved screen handling from Minecraft to its gui field: minecraft.setScreen(s) is minecraft.gui.setScreen(s).",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "isXander/Controlify",
+          "commit": "f756225fcf94",
+          "file": "src/main/java/dev/isxander/controlify/utils/MinecraftUtil.java",
+          "line": 26,
+          "condition": ">=26.2 | else",
+          "older": "minecraft.setScreen(screen);",
+          "newer": "minecraft.gui.setScreen(screen);"
+        },
+        {
+          "mod": "isXander/YetAnotherConfigLib",
+          "commit": "97f89e5bd0ef",
+          "file": "src/main/java/dev/isxander/yacl3/gui/utils/GuiUtils.java",
+          "line": 60,
+          "condition": ">=26.2 | else",
+          "older": "Minecraft.getInstance().setScreen(screen);",
+          "newer": "Minecraft.getInstance().gui.setScreen(screen);"
+        },
+        {
+          "mod": "NikitaCartes/EasyAuth",
+          "commit": "89e473a150ee",
+          "file": "src/client/java/xyz/nikitacartes/easyauth/client/screen/ConfigScreen.java",
+          "line": 55,
+          "condition": ">=26.2 | else",
+          "older": "Minecraft.getInstance().setScreen(screen);",
+          "newer": "Minecraft.getInstance().gui.setScreen(screen);"
+        },
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/ScreenImpl.java",
+          "line": 259,
+          "condition": ">=26.2 | else",
+          "older": "Minecraft.getInstance().setScreen(screen);",
+          "newer": "Minecraft.getInstance().gui.setScreen(screen);"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        Minecraft.getInstance().setScreen(screen);\n        ^\n  symbol:   method setScreen(Screen)\n  location: class Minecraft\n",
+        "before": "class C { void f(Screen screen) { Minecraft.getInstance().setScreen(screen); this.minecraft.setScreen(null); } }\n",
+        "after": "class C { void f(Screen screen) { Minecraft.getInstance().gui.setScreen(screen); this.minecraft.gui.setScreen(null); } }\n"
+      }
+    },
+    {
+      "id": "sc-gui-screen",
+      "source": "stonecutter",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+variable screen\\s+location: (?:variable \\w+ of type|class) (?:net\\.minecraft\\.client\\.)?Minecraft\\b",
+      "apply": {
+        "find": "(Minecraft\\.getInstance\\(\\)|\\b(?:this\\.)?(?:minecraft|mc|client))\\.screen\\b(?!\\s*=[^=])",
+        "replace": "$1.gui.screen()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.2 reads the open screen through gui.screen(). Assignments to the old field are left for a human: the mods that wrote it went through an accessor of their own.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "isXander/YetAnotherConfigLib",
+          "commit": "97f89e5bd0ef",
+          "file": "src/main/java/dev/isxander/yacl3/gui/utils/GuiUtils.java",
+          "line": 73,
+          "condition": ">=26.2 | else",
+          "older": "return Minecraft.getInstance().screen;",
+          "newer": "return Minecraft.getInstance().gui.screen();"
+        },
+        {
+          "mod": "Leawind/Third-Person",
+          "commit": "7c9ba2a54d41",
+          "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+          "line": 44,
+          "condition": ">=26.2 | else",
+          "older": "return minecraft.screen != null;",
+          "newer": "return minecraft.gui.screen() != null;"
+        },
+        {
+          "mod": "Mirsario/Minecraft-CameraOverhaul",
+          "commit": "51bae6f73d4b",
+          "file": "src/main/java/mirsario/cameraoverhaul/configuration/ConfigScreen.java",
+          "line": 24,
+          "condition": ">=26.2 | else",
+          "older": "parentScreen = Minecraft.getInstance().screen;",
+          "newer": "parentScreen = Minecraft.getInstance().gui.screen();"
+        },
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/ScreenImpl.java",
+          "line": 226,
+          "condition": ">=26.2 | else",
+          "older": "return Minecraft.getInstance().screen;",
+          "newer": "return Minecraft.getInstance().gui.screen();"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        return minecraft.screen != null;\n        ^\n  symbol:   variable screen\n  location: variable minecraft of type Minecraft\n",
+        "before": "class C { boolean f() { return minecraft.screen != null; } void g(Screen s) { minecraft.screen = s; } }\n",
+        "after": "class C { boolean f() { return minecraft.gui.screen() != null; } void g(Screen s) { minecraft.screen = s; } }\n"
+      }
+    },
+    {
+      "id": "sc-gui-overlay",
+      "source": "stonecutter",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+method getOverlay\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:net\\.minecraft\\.client\\.)?Minecraft\\b",
+      "apply": {
+        "find": "(Minecraft\\.getInstance\\(\\)|\\b(?:this\\.)?(?:minecraft|mc|client))\\.getOverlay\\(\\)",
+        "replace": "$1.gui.overlay()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.2: the loading overlay belongs to gui.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/gameshim/java/dev/diorama/gameshim/GameShim.java",
+          "line": 52,
+          "condition": ">=26.2 | else",
+          "older": "boolean loaded = minecraft.getOverlay() == null;",
+          "newer": "boolean loaded = minecraft.gui.overlay() == null;"
+        },
+        {
+          "mod": "isXander/Controlify",
+          "commit": "f756225fcf94",
+          "file": "src/main/java/dev/isxander/controlify/utils/MinecraftUtil.java",
+          "line": 52,
+          "condition": ">=26.2 | else",
+          "older": "return minecraft.getOverlay();",
+          "newer": "return minecraft.gui.overlay();"
+        },
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/autotest/AutoTestBridge.java",
+          "line": 387,
+          "condition": ">=26.2 | else",
+          "older": "return new ScreenshotSettler.Frame(currentScreen(), minecraft.getOverlay() != null);",
+          "newer": "// Since 26.2 Gui owns the render overlay; sample it after GameRenderer rendered the frame.\n\t\treturn new ScreenshotSettler.Frame(currentScreen(), minecraft.gui.overlay() != null);"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        boolean loaded = minecraft.getOverlay() == null;\n        ^\n  symbol:   method getOverlay()\n  location: variable minecraft of type Minecraft\n",
+        "before": "class C { boolean f() { return minecraft.getOverlay() == null; } }\n",
+        "after": "class C { boolean f() { return minecraft.gui.overlay() == null; } }\n"
+      }
+    },
+    {
+      "id": "sc-gui-toast-manager",
+      "source": "stonecutter",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+method getToastManager\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:net\\.minecraft\\.client\\.)?Minecraft\\b",
+      "apply": {
+        "find": "(Minecraft\\.getInstance\\(\\)|\\b(?:this\\.)?(?:minecraft|mc|client))\\.getToastManager\\(\\)",
+        "replace": "$1.gui.toastManager()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.2: toasts belong to gui.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "isXander/Controlify",
+          "commit": "f756225fcf94",
+          "file": "src/gametest/java/dev/isxander/controlify/gametest/framework/CTestUtil.java",
+          "line": 155,
+          "condition": ">=26.2 | else",
+          "older": "minecraft.getToastManager().clear();",
+          "newer": "minecraft.gui.toastManager().clear();"
+        },
+        {
+          "mod": "The-Fireplace-Minecraft-Mods/In-Game-Account-Switcher",
+          "commit": "e2716598866b",
+          "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+          "line": 284,
+          "condition": ">=26.2 | else",
+          "older": "ToastManager manager = minecraft.getToastManager();",
+          "newer": "ToastManager manager = minecraft.gui.toastManager();"
+        },
+        {
+          "mod": "mrbuilder1961/ChatPatches",
+          "commit": "987cf24502ad",
+          "file": "src/main/java/obro1961/chatpatches/ChatPatches.java",
+          "line": 209,
+          "condition": ">26.1.2 | >=1.21.2 | else",
+          "older": "getToastManager",
+          "newer": "gui.toastManager"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        minecraft.getToastManager().clear();\n        ^\n  symbol:   method getToastManager()\n  location: variable minecraft of type Minecraft\n",
+        "before": "class C { void f() { minecraft.getToastManager().clear(); } }\n",
+        "after": "class C { void f() { minecraft.gui.toastManager().clear(); } }\n"
+      }
+    },
+    {
+      "id": "sc-main-render-target",
+      "source": "stonecutter",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+method getMainRenderTarget\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:net\\.minecraft\\.client\\.)?Minecraft\\b",
+      "apply": {
+        "find": "(Minecraft\\.getInstance\\(\\)|\\b(?:this\\.)?(?:minecraft|mc|client))\\.getMainRenderTarget\\(\\)",
+        "replace": "$1.gameRenderer.mainRenderTarget()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.2: the main render target belongs to the game renderer.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/gameshim/java/dev/diorama/gameshim/ShimContext.java",
+          "line": 154,
+          "condition": ">=26.2 | else",
+          "older": "RenderTarget target = minecraft.getMainRenderTarget();",
+          "newer": "RenderTarget target = minecraft.gameRenderer.mainRenderTarget();"
+        },
+        {
+          "mod": "isXander/Controlify",
+          "commit": "f756225fcf94",
+          "file": "src/main/java/dev/isxander/controlify/ingame/InGameInputHandler.java",
+          "line": 242,
+          "condition": ">=26.2 | else",
+          "older": "this.minecraft.getMainRenderTarget(),",
+          "newer": "this.minecraft.gameRenderer.mainRenderTarget(),"
+        },
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/autotest/AutoTestBridge.java",
+          "line": 327,
+          "condition": ">=26.2 | >=1.21.6 | >=1.21.5 | else",
+          "older": "Screenshot.takeScreenshot(minecraft.getMainRenderTarget(), 1, image -> completeScreenshot(pending.captured(), pending.path(), image));",
+          "newer": "Screenshot.takeScreenshot(minecraft.gameRenderer.mainRenderTarget(), 1, image -> completeScreenshot(pending.captured(), pending.path(), image));"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        RenderTarget target = minecraft.getMainRenderTarget();\n        ^\n  symbol:   method getMainRenderTarget()\n  location: variable minecraft of type Minecraft\n",
+        "before": "class C { RenderTarget f() { return minecraft.getMainRenderTarget(); } }\n",
+        "after": "class C { RenderTarget f() { return minecraft.gameRenderer.mainRenderTarget(); } }\n"
+      }
+    },
+    {
+      "id": "sc-gui-set-screen-back",
+      "source": "stonecutter",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+method setScreen\\([^)]*\\)\\s+location: variable gui of type Gui\\b",
+      "apply": {
+        "find": "\\.gui\\.setScreen\\(",
+        "replace": ".setScreen("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-gui-set-screen: before 26.2 gui is the HUD and Minecraft opens screens itself.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "isXander/Controlify",
+          "commit": "f756225fcf94",
+          "file": "src/main/java/dev/isxander/controlify/utils/MinecraftUtil.java",
+          "line": 26,
+          "condition": ">=26.2 | else",
+          "older": "minecraft.setScreen(screen);",
+          "newer": "minecraft.gui.setScreen(screen);"
+        },
+        {
+          "mod": "isXander/YetAnotherConfigLib",
+          "commit": "97f89e5bd0ef",
+          "file": "src/main/java/dev/isxander/yacl3/gui/utils/GuiUtils.java",
+          "line": 60,
+          "condition": ">=26.2 | else",
+          "older": "Minecraft.getInstance().setScreen(screen);",
+          "newer": "Minecraft.getInstance().gui.setScreen(screen);"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        minecraft.gui.setScreen(screen);\n        ^\n  symbol:   method setScreen(Screen)\n  location: variable gui of type Gui\n",
+        "before": "class C { void f(Screen screen) { minecraft.gui.setScreen(screen); } }\n",
+        "after": "class C { void f(Screen screen) { minecraft.setScreen(screen); } }\n"
+      }
+    },
+    {
+      "id": "sc-gui-screen-back",
+      "source": "stonecutter",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+method screen\\(\\)\\s+location: variable gui of type Gui\\b",
+      "apply": {
+        "find": "\\.gui\\.screen\\(\\)",
+        "replace": ".screen"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-gui-screen.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "isXander/YetAnotherConfigLib",
+          "commit": "97f89e5bd0ef",
+          "file": "src/main/java/dev/isxander/yacl3/gui/utils/GuiUtils.java",
+          "line": 73,
+          "condition": ">=26.2 | else",
+          "older": "return Minecraft.getInstance().screen;",
+          "newer": "return Minecraft.getInstance().gui.screen();"
+        },
+        {
+          "mod": "Leawind/Third-Person",
+          "commit": "7c9ba2a54d41",
+          "file": "src/main/java/io/github/leawind/thirdperson/internal/bridge/Bridge.java",
+          "line": 44,
+          "condition": ">=26.2 | else",
+          "older": "return minecraft.screen != null;",
+          "newer": "return minecraft.gui.screen() != null;"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        return minecraft.gui.screen() != null;\n        ^\n  symbol:   method screen()\n  location: variable gui of type Gui\n",
+        "before": "class C { boolean f() { return minecraft.gui.screen() != null; } }\n",
+        "after": "class C { boolean f() { return minecraft.screen != null; } }\n"
+      }
+    },
+    {
+      "id": "sc-gui-overlay-back",
+      "source": "stonecutter",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+method overlay\\(\\)\\s+location: variable gui of type Gui\\b",
+      "apply": {
+        "find": "\\.gui\\.overlay\\(\\)",
+        "replace": ".getOverlay()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-gui-overlay.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/gameshim/java/dev/diorama/gameshim/GameShim.java",
+          "line": 52,
+          "condition": ">=26.2 | else",
+          "older": "boolean loaded = minecraft.getOverlay() == null;",
+          "newer": "boolean loaded = minecraft.gui.overlay() == null;"
+        },
+        {
+          "mod": "isXander/Controlify",
+          "commit": "f756225fcf94",
+          "file": "src/main/java/dev/isxander/controlify/utils/MinecraftUtil.java",
+          "line": 52,
+          "condition": ">=26.2 | else",
+          "older": "return minecraft.getOverlay();",
+          "newer": "return minecraft.gui.overlay();"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        return minecraft.gui.overlay();\n        ^\n  symbol:   method overlay()\n  location: variable gui of type Gui\n",
+        "before": "class C { Overlay f() { return minecraft.gui.overlay(); } }\n",
+        "after": "class C { Overlay f() { return minecraft.getOverlay(); } }\n"
+      }
+    },
+    {
+      "id": "sc-gui-toast-manager-back",
+      "source": "stonecutter",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+method toastManager\\(\\)\\s+location: variable gui of type Gui\\b",
+      "apply": {
+        "find": "\\.gui\\.toastManager\\(\\)",
+        "replace": ".getToastManager()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-gui-toast-manager.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "isXander/Controlify",
+          "commit": "f756225fcf94",
+          "file": "src/gametest/java/dev/isxander/controlify/gametest/framework/CTestUtil.java",
+          "line": 155,
+          "condition": ">=26.2 | else",
+          "older": "minecraft.getToastManager().clear();",
+          "newer": "minecraft.gui.toastManager().clear();"
+        },
+        {
+          "mod": "The-Fireplace-Minecraft-Mods/In-Game-Account-Switcher",
+          "commit": "e2716598866b",
+          "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+          "line": 284,
+          "condition": ">=26.2 | else",
+          "older": "ToastManager manager = minecraft.getToastManager();",
+          "newer": "ToastManager manager = minecraft.gui.toastManager();"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        minecraft.gui.toastManager().clear();\n        ^\n  symbol:   method toastManager()\n  location: variable gui of type Gui\n",
+        "before": "class C { void f() { minecraft.gui.toastManager().clear(); } }\n",
+        "after": "class C { void f() { minecraft.getToastManager().clear(); } }\n"
+      }
+    },
+    {
+      "id": "sc-main-render-target-back",
+      "source": "stonecutter",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+method mainRenderTarget\\(\\)\\s+location: variable gameRenderer of type GameRenderer\\b",
+      "apply": {
+        "find": "\\.gameRenderer\\.mainRenderTarget\\(\\)",
+        "replace": ".getMainRenderTarget()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-main-render-target.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/gameshim/java/dev/diorama/gameshim/ShimContext.java",
+          "line": 154,
+          "condition": ">=26.2 | else",
+          "older": "RenderTarget target = minecraft.getMainRenderTarget();",
+          "newer": "RenderTarget target = minecraft.gameRenderer.mainRenderTarget();"
+        },
+        {
+          "mod": "isXander/Controlify",
+          "commit": "f756225fcf94",
+          "file": "src/main/java/dev/isxander/controlify/ingame/InGameInputHandler.java",
+          "line": 242,
+          "condition": ">=26.2 | else",
+          "older": "this.minecraft.getMainRenderTarget(),",
+          "newer": "this.minecraft.gameRenderer.mainRenderTarget(),"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        return minecraft.gameRenderer.mainRenderTarget();\n        ^\n  symbol:   method mainRenderTarget()\n  location: variable gameRenderer of type GameRenderer\n",
+        "before": "class C { RenderTarget f() { return minecraft.gameRenderer.mainRenderTarget(); } }\n",
+        "after": "class C { RenderTarget f() { return minecraft.getMainRenderTarget(); } }\n"
+      }
+    },
+    {
+      "id": "sc-entity-types-holder",
+      "source": "stonecutter",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+variable [A-Z][A-Z0-9_]*\\s+location: (?:class|interface) (?:net\\.minecraft\\.world\\.entity\\.)?EntityType\\b",
+      "apply": {
+        "find": "\\bEntityType\\.([A-Z][A-Z0-9_]*)\\b",
+        "replace": "EntityTypes.$1",
+        "ensureImports": [
+          "net.minecraft.world.entity.EntityTypes"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.2 moved the vanilla entity type constants from EntityType to a new EntityTypes holder; the type itself stays EntityType. Only all-capitals names move, so EntityType.Builder is left alone.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Faboslav/friends-and-foes",
+          "commit": "ede6ba999e4b",
+          "file": "common/src/main/java/com/faboslav/friendsandfoes/common/versions/VersionedEntityType.java",
+          "line": 24,
+          "condition": ">= 26.2 | else",
+          "older": "public static final EntityType<Cow> COW = EntityType.COW;\n\tpublic static final EntityType<ZombieHorse> ZOMBIE_HORSE = EntityType.ZOMBIE_HORSE;\n\tpublic static final EntityType<LightningBolt> LIGHTNING_BOLT = EntityType.LIGHTNING_BOLT;\n\tpublic static final EntityType<SmallFireball> SMALL_FIREBALL = En",
+          "newer": "public static final EntityType<Cow> COW = EntityTypes.COW;\n\tpublic static final EntityType<ZombieHorse> ZOMBIE_HORSE = EntityTypes.ZOMBIE_HORSE;\n\tpublic static final EntityType<LightningBolt> LIGHTNING_BOLT = EntityTypes.LIGHTNING_BOLT;\n\tpublic static final EntityType<SmallFireball> SMALL_FIREBALL ="
+        },
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/main/java/dev/diorama/render/MobFaces.java",
+          "line": 147,
+          "condition": ">=26.1 | else",
+          "older": "// The rabbit model before 26.1: head box at texOffs(32, 0), 5 x 4 x 5, in a 64 x 32 texture.\n\t\tFACES.put(EntityType.RABBIT, new Faces(new Face(64, 32, 37, 5, 5, 4), null));",
+          "newer": "FACES.put(EntityTypes.RABBIT, new Faces(new Face(64, 64, 5, 21, 5, 5), new Face(32, 32, 4, 4, 5, 4)));"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        Zombie zombie = EntityType.ZOMBIE.create(level);\n        ^\n  symbol:   variable ZOMBIE\n  location: class EntityType\n",
+        "before": "package a;\nclass C { EntityType<?> t = EntityType.ZOMBIE; EntityType.Builder<?> b; boolean f(EntityType<?> x) { return x == EntityType.ZOMBIE_HORSE; } }\n",
+        "after": "package a;\nimport net.minecraft.world.entity.EntityTypes;\nclass C { EntityType<?> t = EntityTypes.ZOMBIE; EntityType.Builder<?> b; boolean f(EntityType<?> x) { return x == EntityTypes.ZOMBIE_HORSE; } }\n"
+      }
+    },
+    {
+      "id": "sc-entity-types-holder-back",
+      "source": "stonecutter",
+      "jump": "26.2 -> 26.1.2 (mojmap)",
+      "match": "symbol:\\s+class EntityTypes\\b|cannot find symbol\\s+import net\\.minecraft\\.world\\.entity\\.EntityTypes;",
+      "apply": {
+        "find": "\\bEntityTypes\\b",
+        "replace": "EntityType"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-entity-types-holder: before 26.2 the constants live on EntityType (the import line becomes a harmless duplicate).",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Faboslav/friends-and-foes",
+          "commit": "ede6ba999e4b",
+          "file": "common/src/main/java/com/faboslav/friendsandfoes/common/versions/VersionedEntityType.java",
+          "line": 24,
+          "condition": ">= 26.2 | else",
+          "older": "public static final EntityType<Cow> COW = EntityType.COW;\n\tpublic static final EntityType<ZombieHorse> ZOMBIE_HORSE = EntityType.ZOMBIE_HORSE;\n\tpublic static final EntityType<LightningBolt> LIGHTNING_BOLT = EntityType.LIGHTNING_BOLT;\n\tpublic static final EntityType<SmallFireball> SMALL_FIREBALL = En",
+          "newer": "public static final EntityType<Cow> COW = EntityTypes.COW;\n\tpublic static final EntityType<ZombieHorse> ZOMBIE_HORSE = EntityTypes.ZOMBIE_HORSE;\n\tpublic static final EntityType<LightningBolt> LIGHTNING_BOLT = EntityTypes.LIGHTNING_BOLT;\n\tpublic static final EntityType<SmallFireball> SMALL_FIREBALL ="
+        },
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/main/java/dev/diorama/render/MobFaces.java",
+          "line": 147,
+          "condition": ">=26.1 | else",
+          "older": "// The rabbit model before 26.1: head box at texOffs(32, 0), 5 x 4 x 5, in a 64 x 32 texture.\n\t\tFACES.put(EntityType.RABBIT, new Faces(new Face(64, 32, 37, 5, 5, 4), null));",
+          "newer": "FACES.put(EntityTypes.RABBIT, new Faces(new Face(64, 64, 5, 21, 5, 5), new Face(32, 32, 4, 4, 5, 4)));"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        EntityType<?> t = EntityTypes.ZOMBIE;\n        ^\n  symbol:   class EntityTypes\n  location: class C\n",
+        "before": "class C { EntityType<?> t = EntityTypes.ZOMBIE; }\n",
+        "after": "class C { EntityType<?> t = EntityType.ZOMBIE; }\n"
+      }
+    },
+    {
+      "id": "sc-chat-client-system-message",
+      "source": "stonecutter",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "symbol:\\s+method addMessage\\(Component\\)",
+      "apply": {
+        "find": "(\\.getChat\\(\\)|\\.chat)\\.addMessage\\(",
+        "replace": "$1.addClientSystemMessage("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.1 removed ChatComponent.addMessage(Component); a message the client shows itself is addClientSystemMessage.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "mrbuilder1961/ChatPatches",
+          "commit": "987cf24502ad",
+          "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+          "line": 373,
+          "condition": ">=26.1 | else",
+          "older": "addMessage",
+          "newer": "addClientSystemMessage"
+        },
+        {
+          "mod": "Polyfrost/OverflowAnimationsV2",
+          "commit": "352231fe7c17",
+          "file": "src/main/kotlin/org/polyfrost/overflowanimations/handler/screen/PresetsScreen.kt",
+          "line": 70,
+          "condition": "<26.1 | 26.1 | else",
+          "older": "this.minecraft!!.gui.chat.addMessage(",
+          "newer": "this.minecraft.gui.chat.addClientSystemMessage("
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        mc.gui.getChat().addMessage(text);\n        ^\n  symbol:   method addMessage(Component)\n  location: class ChatComponent\n",
+        "before": "class C { void f(Component text) { mc.gui.getChat().addMessage(text); } }\n",
+        "after": "class C { void f(Component text) { mc.gui.getChat().addClientSystemMessage(text); } }\n"
+      }
+    },
+    {
+      "id": "sc-chat-client-system-message-back",
+      "source": "stonecutter",
+      "jump": "26.1 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+method addClientSystemMessage\\(Component\\)",
+      "apply": {
+        "find": "(\\.getChat\\(\\)|\\.chat)\\.addClientSystemMessage\\(",
+        "replace": "$1.addMessage("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-chat-client-system-message.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "mrbuilder1961/ChatPatches",
+          "commit": "987cf24502ad",
+          "file": "src/main/java/obro1961/chatpatches/config/Config.java",
+          "line": 373,
+          "condition": ">=26.1 | else",
+          "older": "addMessage",
+          "newer": "addClientSystemMessage"
+        },
+        {
+          "mod": "Polyfrost/OverflowAnimationsV2",
+          "commit": "352231fe7c17",
+          "file": "src/main/kotlin/org/polyfrost/overflowanimations/handler/screen/PresetsScreen.kt",
+          "line": 70,
+          "condition": "<26.1 | 26.1 | else",
+          "older": "this.minecraft!!.gui.chat.addMessage(",
+          "newer": "this.minecraft.gui.chat.addClientSystemMessage("
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        mc.gui.getChat().addClientSystemMessage(text);\n        ^\n  symbol:   method addClientSystemMessage(Component)\n  location: class ChatComponent\n",
+        "before": "class C { void f(Component text) { mc.gui.getChat().addClientSystemMessage(text); } }\n",
+        "after": "class C { void f(Component text) { mc.gui.getChat().addMessage(text); } }\n"
+      }
+    },
+    {
+      "id": "sc-player-system-message",
+      "source": "stonecutter",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "symbol:\\s+method displayClientMessage\\(Component,boolean\\)",
+      "apply": {
+        "find": "\\.displayClientMessage\\(((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))*?)\\s*,\\s*false\\s*\\)",
+        "replace": ".sendSystemMessage($1)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.1 removed Player.displayClientMessage. A chat-line message (overlay false) is sendSystemMessage(message); action-bar calls (overlay true) are left for a human because the switches show no shared answer.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Bawnorton/Neruina",
+          "commit": "61c3f8f4c3db",
+          "file": "src/main/java/com/bawnorton/neruina/handler/MessageHandler.java",
+          "line": 71,
+          "condition": ">=26.1 | else",
+          "older": "player.displayClientMessage(pad ? Texter.pad(message) : message, false);",
+          "newer": "player.sendSystemMessage(pad ? Texter.pad(message) : message);"
+        },
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/modpack/GameHelpers.java",
+          "line": 79,
+          "condition": ">=26.1 | else",
+          "older": "player.displayClientMessage(nagText, false);\n\t\tplayer.displayClientMessage(nagClickableText, false);",
+          "newer": "player.sendSystemMessage(nagText, false);\n\t\tplayer.sendSystemMessage(nagClickableText, false);"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        player.displayClientMessage(pad ? Texter.pad(message) : message, false);\n        ^\n  symbol:   method displayClientMessage(Component,boolean)\n  location: variable player of type ServerPlayer\n",
+        "before": "class C { void f() { player.displayClientMessage(pad ? Texter.pad(message) : message, false); player.displayClientMessage(bar, true); } }\n",
+        "after": "class C { void f() { player.sendSystemMessage(pad ? Texter.pad(message) : message); player.displayClientMessage(bar, true); } }\n"
+      }
+    },
+    {
+      "id": "sc-graphics-draw-string-text",
+      "source": "stonecutter",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "symbol:\\s+method drawString\\(Font,",
+      "apply": {
+        "find": "\\.drawString\\(",
+        "replace": ".text("
+      },
+      "scope": "log",
+      "when": "\\bGuiGraphics",
+      "note": "26.1 renamed GuiGraphics.drawString to text, with the same five- and six-argument forms.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/ui/versioned/VersionedScreen.java",
+          "line": 254,
+          "condition": ">=26.1 | else",
+          "older": "matrices.getContext().drawString(textRenderer, text, x, y, color, true);",
+          "newer": "matrices.getContext().text(textRenderer, text, x, y, color, true);"
+        },
+        {
+          "mod": "NikitaCartes/EasyAuth",
+          "commit": "89e473a150ee",
+          "file": "src/client/java/xyz/nikitacartes/easyauth/client/screen/ConfigScreen.java",
+          "line": 194,
+          "condition": ">=26.1 | >=1.21.9 | >=1.20 | else",
+          "older": "@Override\n            public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean hovered, float a) {\n                int y = this.getContentYMiddle() - 9 / 2;\n                graphics.drawString(ConfigScreen.this.font, address, this.getContentX(), y, -1);\n                graphic",
+          "newer": "@Override\n            public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {\n                int y = this.getContentYMiddle() - 9 / 2;\n                graphics.text(ConfigScreen.this.font, address, this.getContentX(), y, -1);\n                gra"
+        },
+        {
+          "mod": "Polyfrost/OverflowAnimationsV2",
+          "commit": "352231fe7c17",
+          "file": "src/main/java/org/polyfrost/overflowanimations/mixins/v1/gui/MixinPlayerTabOverlay_TabListStyle.java",
+          "line": 175,
+          "condition": "<26.1 | else",
+          "older": "private void overflowanimations$text(final GuiGraphics graphics, final Font font, final FormattedCharSequence text, final int x, final int y, final int color) {\n        graphics.drawString(font, text, x, y, color);",
+          "newer": "private void overflowanimations$text(final GuiGraphicsExtractor graphics, final Font font, final FormattedCharSequence text, final int x, final int y, final int color) {\n        graphics.text(font, text, x, y, color);"
+        },
+        {
+          "mod": "North-West-Wind/AutoFish",
+          "commit": "5aed37400a20",
+          "file": "common/src/main/java/in/northwestw/autofish/config/gui/SuperFilterScreen.java",
+          "line": 181,
+          "condition": ">=26.1 | >=1.20.1 | >=1.19.4 | else",
+          "older": "if (!stack.isEmpty()) graphics.renderItem(stack, (reducedWidth * h / 3) + 15, (reducedHeight * k / (max / 3)) + 90);\n            graphics.drawString(this.font, stack.getDisplayName().getString(), ((reducedWidth * h / 3) + 45), ((reducedHeight * k / (max / 3)) + 95), 0xFFFFFFFF);",
+          "newer": "if (!stack.isEmpty()) graphics.item(stack, (reducedWidth * h / 3) + 15, (reducedHeight * k / (max / 3)) + 90);\n            graphics.text(this.font, stack.getDisplayName().getString(), ((reducedWidth * h / 3) + 45), ((reducedHeight * k / (max / 3)) + 95), 0xFFFFFFFF);"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        graphics.drawString(font, text, x, y, color);\n        ^\n  symbol:   method drawString(Font,String,int,int,int)\n  location: variable graphics of type GuiGraphicsExtractor\n",
+        "before": "class C { void f(GuiGraphicsExtractor graphics) { graphics.drawString(font, text, x, y, color); graphics.drawString(font, text, x, y, color, true); } }\n",
+        "after": "class C { void f(GuiGraphicsExtractor graphics) { graphics.text(font, text, x, y, color); graphics.text(font, text, x, y, color, true); } }\n"
+      }
+    },
+    {
+      "id": "sc-widget-extract-render-state",
+      "source": "stonecutter",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "method does not override or implement a method from a supertype|symbol:\\s+method render\\(GuiGraphics(?:Extractor)?,int,int,float\\)",
+      "apply": {
+        "find": "\\b(public|protected) void render\\(GuiGraphics(?:Extractor)? (\\w+), int (\\w+), int (\\w+), float (\\w+)\\)",
+        "replace": "$1 void extractRenderState(GuiGraphicsExtractor $2, int $3, int $4, float $5)",
+        "ensureImports": [
+          "net.minecraft.client.gui.GuiGraphicsExtractor"
+        ]
+      },
+      "scope": "log",
+      "when": "void render\\(GuiGraphics(?:Extractor)? \\w+, int \\w+, int \\w+, float \\w+\\)",
+      "note": "26.1 renamed Renderable.render(graphics, mouseX, mouseY, partialTick) to extractRenderState with a GuiGraphicsExtractor; an override keeps its body and parameter names.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "North-West-Wind/AutoFish",
+          "commit": "5aed37400a20",
+          "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+          "line": 166,
+          "condition": ">=26.1 | >=1.20.1 | else",
+          "older": "public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, -1);",
+          "newer": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {\n        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n        graphics.centeredText(this.font, this.title, this.width / 2, 20, -1);"
+        },
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/ui/versioned/VersionedScreen.java",
+          "line": 122,
+          "condition": "<1.20 | >=26.1 | <1.20.2 | <1.21.8 | else",
+          "older": "@Override\n\tpublic void render(PoseStack matrix, int mouseX, int mouseY, float delta) {\n\t\tVersionedMatrices matrices = new VersionedMatrices();\n\t\tsuper.renderBackground(matrix);\n\t\tthis.renderWidgets(matrix, mouseX, mouseY, delta);",
+          "newer": "@Override\n\tpublic void extractRenderState(GuiGraphicsExtractor matrix, int mouseX, int mouseY, float delta) {\n\t\tVersionedMatrices matrices = new VersionedMatrices(matrix);\n\t\tsuper.extractRenderState(matrix, mouseX, mouseY, delta);"
+        },
+        {
+          "mod": "Polyfrost/OverflowAnimationsV2",
+          "commit": "352231fe7c17",
+          "file": "src/main/kotlin/org/polyfrost/overflowanimations/handler/screen/PresetsScreen.kt",
+          "line": 145,
+          "condition": "<26.1 | else",
+          "older": "super.render(graphics, mouseX, mouseY, tickDelta)",
+          "newer": "super.extractRenderState(graphics, mouseX, mouseY, tickDelta)"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: method does not override or implement a method from a supertype\n        @Override\n        ^\n",
+        "before": "package a;\nclass C extends Screen {\n    @Override\n    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n    }\n}\n",
+        "after": "package a;\nimport net.minecraft.client.gui.GuiGraphicsExtractor;\nclass C extends Screen {\n    @Override\n    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n    }\n}\n"
+      }
+    },
+    {
+      "id": "sc-widget-super-extract-render-state",
+      "source": "stonecutter",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "symbol:\\s+method render\\(GuiGraphics(?:Extractor)?,int,int,float\\)",
+      "apply": {
+        "find": "\\bsuper\\.render\\((\\w+), (\\w+), (\\w+), (\\w+)\\)",
+        "replace": "super.extractRenderState($1, $2, $3, $4)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The super call inside an override renamed by sc-widget-extract-render-state.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "North-West-Wind/AutoFish",
+          "commit": "5aed37400a20",
+          "file": "common/src/main/java/in/northwestw/autofish/config/gui/FilterSelectionScreen.java",
+          "line": 166,
+          "condition": ">=26.1 | >=1.20.1 | else",
+          "older": "public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {\n        super.render(graphics, mouseX, mouseY, partialTicks);\n        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, -1);",
+          "newer": "public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {\n        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);\n        graphics.centeredText(this.font, this.title, this.width / 2, 20, -1);"
+        },
+        {
+          "mod": "Polyfrost/OverflowAnimationsV2",
+          "commit": "352231fe7c17",
+          "file": "src/main/kotlin/org/polyfrost/overflowanimations/handler/screen/PresetsScreen.kt",
+          "line": 145,
+          "condition": "<26.1 | else",
+          "older": "super.render(graphics, mouseX, mouseY, tickDelta)",
+          "newer": "super.extractRenderState(graphics, mouseX, mouseY, tickDelta)"
+        },
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/ui/versioned/VersionedScreen.java",
+          "line": 122,
+          "condition": "<1.20 | >=26.1 | <1.20.2 | <1.21.8 | else",
+          "older": "@Override\n\tpublic void render(PoseStack matrix, int mouseX, int mouseY, float delta) {\n\t\tVersionedMatrices matrices = new VersionedMatrices();\n\t\tsuper.renderBackground(matrix);\n\t\tthis.renderWidgets(matrix, mouseX, mouseY, delta);",
+          "newer": "@Override\n\tpublic void extractRenderState(GuiGraphicsExtractor matrix, int mouseX, int mouseY, float delta) {\n\t\tVersionedMatrices matrices = new VersionedMatrices(matrix);\n\t\tsuper.extractRenderState(matrix, mouseX, mouseY, delta);"
+        }
+      ],
+      "test": {
+        "error": "C.java:5: error: cannot find symbol\n        super.render(graphics, mouseX, mouseY, partialTicks);\n        ^\n  symbol:   method render(GuiGraphicsExtractor,int,int,float)\n  location: class Screen\n",
+        "before": "class C extends Screen { public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) { super.render(graphics, mouseX, mouseY, partialTicks); } }\n",
+        "after": "class C extends Screen { public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) { super.extractRenderState(graphics, mouseX, mouseY, partialTicks); } }\n"
+      }
+    },
+    {
+      "id": "sc-fabric-key-mapping-helper",
+      "source": "stonecutter",
+      "jump": "1.21.11 -> 26.1 (fabric-api)",
+      "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keybinding\\.v1 does not exist|symbol:\\s+variable KeyBindingHelper",
+      "apply": {
+        "find": "\\bKeyBindingHelper\\.registerKeyBinding\\(",
+        "replace": "KeyMappingHelper.registerKeyMapping(",
+        "ensureImports": [
+          "net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Fabric API for 26.1 renamed KeyBindingHelper.registerKeyBinding to KeyMappingHelper.registerKeyMapping (package keymapping.v1). Same call, same argument; any names.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "North-West-Wind/AutoFish",
+          "commit": "5aed37400a20",
+          "file": "fabric/src/main/java/in/northwestw/autofish/AutoFishFabric.java",
+          "line": 16,
+          "condition": ">=26.1 | else",
+          "older": "KeyBindingHelper.registerKeyBinding(KeyBinds.autofish);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.rodprotect);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.autoreplace);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.settings);\n        KeyBindingHelper.registerKeyBinding(Key",
+          "newer": "KeyMappingHelper.registerKeyMapping(KeyBinds.autofish);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.rodprotect);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.autoreplace);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.settings);\n        KeyMappingHelper.registerKeyMapping(Key"
+        },
+        {
+          "mod": "Zolo101/RenderScale",
+          "commit": "0cf438686360",
+          "file": "src/main/java/dev/zelo/renderscale/platform/fabric/FabricClientEntrypoint.java",
+          "line": 12,
+          "condition": ">= 26.1 | else",
+          "older": "import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;",
+          "newer": "import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;"
+        },
+        {
+          "mod": "Polyfrost/OverflowAnimationsV2",
+          "commit": "352231fe7c17",
+          "file": "src/main/kotlin/org/polyfrost/overflowanimations/handler/OverflowAnimationsKeybinds.kt",
+          "line": 30,
+          "condition": "<26.1 | else",
+          "older": "import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper",
+          "newer": "import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper"
+        }
+      ],
+      "test": {
+        "error": "C.java:1: error: package net.fabricmc.fabric.api.client.keybinding.v1 does not exist\n        import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;\n        ^\n",
+        "before": "package a;\nimport net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;\nclass C { void f() { KeyBindingHelper.registerKeyBinding(KEY); } }\n",
+        "after": "package a;\nimport net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nimport net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;\nclass C { void f() { KeyMappingHelper.registerKeyMapping(KEY); } }\n"
+      }
+    },
+    {
+      "id": "sc-fabric-key-mapping-import",
+      "source": "stonecutter",
+      "jump": "1.21.11 -> 26.1 (fabric-api)",
+      "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keybinding\\.v1 does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.fabricmc\\.fabric\\.api\\.client\\.keybinding\\.v1\\.KeyBindingHelper;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Drops the old import line once sc-fabric-key-mapping-helper has added the new one.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Zolo101/RenderScale",
+          "commit": "0cf438686360",
+          "file": "src/main/java/dev/zelo/renderscale/platform/fabric/FabricClientEntrypoint.java",
+          "line": 12,
+          "condition": ">= 26.1 | else",
+          "older": "import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;",
+          "newer": "import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;"
+        },
+        {
+          "mod": "Polyfrost/OverflowAnimationsV2",
+          "commit": "352231fe7c17",
+          "file": "src/main/kotlin/org/polyfrost/overflowanimations/handler/OverflowAnimationsKeybinds.kt",
+          "line": 30,
+          "condition": "<26.1 | else",
+          "older": "import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper",
+          "newer": "import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper"
+        }
+      ],
+      "test": {
+        "error": "C.java:1: error: package net.fabricmc.fabric.api.client.keybinding.v1 does not exist\n        import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;\n        ^\n",
+        "before": "package a;\nimport net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nimport net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;\nclass C { }\n",
+        "after": "package a;\nimport net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nclass C { }\n"
+      }
+    },
+    {
+      "id": "sc-fabric-key-mapping-helper-back",
+      "source": "stonecutter",
+      "jump": "26.1 -> 1.21.11 (fabric-api)",
+      "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keymapping\\.v1 does not exist|symbol:\\s+variable KeyMappingHelper",
+      "apply": {
+        "find": "\\bKeyMappingHelper\\.registerKeyMapping\\(",
+        "replace": "KeyBindingHelper.registerKeyBinding(",
+        "ensureImports": [
+          "net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-fabric-key-mapping-helper.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "North-West-Wind/AutoFish",
+          "commit": "5aed37400a20",
+          "file": "fabric/src/main/java/in/northwestw/autofish/AutoFishFabric.java",
+          "line": 16,
+          "condition": ">=26.1 | else",
+          "older": "KeyBindingHelper.registerKeyBinding(KeyBinds.autofish);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.rodprotect);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.autoreplace);\n        KeyBindingHelper.registerKeyBinding(KeyBinds.settings);\n        KeyBindingHelper.registerKeyBinding(Key",
+          "newer": "KeyMappingHelper.registerKeyMapping(KeyBinds.autofish);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.rodprotect);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.autoreplace);\n        KeyMappingHelper.registerKeyMapping(KeyBinds.settings);\n        KeyMappingHelper.registerKeyMapping(Key"
+        },
+        {
+          "mod": "Zolo101/RenderScale",
+          "commit": "0cf438686360",
+          "file": "src/main/java/dev/zelo/renderscale/platform/fabric/FabricClientEntrypoint.java",
+          "line": 12,
+          "condition": ">= 26.1 | else",
+          "older": "import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;",
+          "newer": "import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;"
+        }
+      ],
+      "test": {
+        "error": "C.java:1: error: package net.fabricmc.fabric.api.client.keymapping.v1 does not exist\n        import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\n        ^\n",
+        "before": "package a;\nimport net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nclass C { void f() { KeyMappingHelper.registerKeyMapping(KEY); } }\n",
+        "after": "package a;\nimport net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;\nimport net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nclass C { void f() { KeyBindingHelper.registerKeyBinding(KEY); } }\n"
+      }
+    },
+    {
+      "id": "sc-fabric-key-mapping-import-back",
+      "source": "stonecutter",
+      "jump": "26.1 -> 1.21.11 (fabric-api)",
+      "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keymapping\\.v1 does not exist",
+      "apply": {
+        "find": "(?m)^import net\\.fabricmc\\.fabric\\.api\\.client\\.keymapping\\.v1\\.KeyMappingHelper;\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-fabric-key-mapping-import.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Zolo101/RenderScale",
+          "commit": "0cf438686360",
+          "file": "src/main/java/dev/zelo/renderscale/platform/fabric/FabricClientEntrypoint.java",
+          "line": 12,
+          "condition": ">= 26.1 | else",
+          "older": "import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;",
+          "newer": "import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;"
+        },
+        {
+          "mod": "Polyfrost/OverflowAnimationsV2",
+          "commit": "352231fe7c17",
+          "file": "src/main/kotlin/org/polyfrost/overflowanimations/handler/OverflowAnimationsKeybinds.kt",
+          "line": 30,
+          "condition": "<26.1 | else",
+          "older": "import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper",
+          "newer": "import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper"
+        }
+      ],
+      "test": {
+        "error": "C.java:1: error: package net.fabricmc.fabric.api.client.keymapping.v1 does not exist\n        import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\n        ^\n",
+        "before": "package a;\nimport net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;\nimport net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nclass C { }\n",
+        "after": "package a;\nimport net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;\nclass C { }\n"
+      }
+    },
+    {
+      "id": "sc-posestack-rotate-degrees",
+      "source": "stonecutter",
+      "jump": "26.2 -> 26.3 (mojmap)",
+      "match": "symbol:\\s+method mulPose\\(",
+      "apply": {
+        "find": "\\.mulPose\\(\\s*([\\w.]+)\\.rotationDegrees\\(((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))*?)\\)\\s*\\)",
+        "replace": ".rotateDegrees($1, $2)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.3 dropped PoseStack.mulPose; a rotation by degrees about an axis is rotateDegrees(axis, degrees).",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "FemaleGenderMod/FemaleGenderMod",
+          "commit": "6f6ec1f9760c",
+          "file": "common/src/main/java/com/wildfire/client/render/GenderLayer.java",
+          "line": 201,
+          "condition": "<=26.2 | else",
+          "older": "matrixStack.mulPose(Axis.YP.rotationDegrees(side.forSide(lPhysBounceRotation, rPhysBounceRotation)));",
+          "newer": "matrixStack.rotateDegrees(Axis.YP, side.forSide(lPhysBounceRotation, rPhysBounceRotation));"
+        },
+        {
+          "mod": "Polyfrost/OverflowAnimationsV2",
+          "commit": "352231fe7c17",
+          "file": "src/main/kotlin/org/polyfrost/overflowanimations/util/FirstPersonUtil.kt",
+          "line": 39,
+          "condition": "<26.3 | else",
+          "older": "poseStack.mulPose(axis.rotationDegrees(degrees))",
+          "newer": "poseStack.rotateDegrees(axis, degrees)"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        matrixStack.mulPose(Axis.YP.rotationDegrees(side.forSide(l, r)));\n        ^\n  symbol:   method mulPose(Quaternionf)\n  location: variable matrixStack of type PoseStack\n",
+        "before": "class C { void f() { matrixStack.mulPose(Axis.YP.rotationDegrees(side.forSide(l, r))); } }\n",
+        "after": "class C { void f() { matrixStack.rotateDegrees(Axis.YP, side.forSide(l, r)); } }\n"
+      }
+    },
+    {
+      "id": "sc-posestack-rotate-degrees-back",
+      "source": "stonecutter",
+      "jump": "26.3 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+method rotateDegrees\\(",
+      "apply": {
+        "find": "\\.rotateDegrees\\(\\s*([\\w.]+)\\s*,\\s*((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))*?)\\)(?=\\s*;)",
+        "replace": ".mulPose($1.rotationDegrees($2))"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-posestack-rotate-degrees.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "FemaleGenderMod/FemaleGenderMod",
+          "commit": "6f6ec1f9760c",
+          "file": "common/src/main/java/com/wildfire/client/render/GenderLayer.java",
+          "line": 201,
+          "condition": "<=26.2 | else",
+          "older": "matrixStack.mulPose(Axis.YP.rotationDegrees(side.forSide(lPhysBounceRotation, rPhysBounceRotation)));",
+          "newer": "matrixStack.rotateDegrees(Axis.YP, side.forSide(lPhysBounceRotation, rPhysBounceRotation));"
+        },
+        {
+          "mod": "Polyfrost/OverflowAnimationsV2",
+          "commit": "352231fe7c17",
+          "file": "src/main/kotlin/org/polyfrost/overflowanimations/util/FirstPersonUtil.kt",
+          "line": 39,
+          "condition": "<26.3 | else",
+          "older": "poseStack.mulPose(axis.rotationDegrees(degrees))",
+          "newer": "poseStack.rotateDegrees(axis, degrees)"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        matrixStack.rotateDegrees(Axis.YP, side.forSide(l, r));\n        ^\n  symbol:   method rotateDegrees(Axis,float)\n  location: variable matrixStack of type PoseStack\n",
+        "before": "class C { void f() { matrixStack.rotateDegrees(Axis.YP, side.forSide(l, r)); } }\n",
+        "after": "class C { void f() { matrixStack.mulPose(Axis.YP.rotationDegrees(side.forSide(l, r))); } }\n"
+      }
+    },
+    {
+      "id": "sc-blit-render-type",
+      "source": "stonecutter",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "no suitable method found for blit\\((?:ResourceLocation|Identifier),int,int,(?:int|float),(?:int|float),int,int,int,int\\)",
+      "apply": {
+        "find": "\\.blit\\(\\s*(?!RenderType|RenderPipelines|net\\.minecraft)((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*,\\s*((?:[^;(),]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\s*\\)",
+        "replace": ".blit(RenderType::guiTextured, $1, $2, $3, $4, $5, $6, $7, $8, $9)",
+        "ensureImports": [
+          "net.minecraft.client.renderer.RenderType"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 gave GuiGraphics.blit a render type first: the nine-argument texture call (texture, x, y, u, v, width, height, texture width, texture height) gains RenderType::guiTextured and keeps every argument.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/main/java/dev/diorama/SettingsScreen.java",
+          "line": 337,
+          "condition": ">=1.21.6 | >=1.21.2 | else",
+          "older": "graphics.blit(net.minecraft.client.renderer.RenderType::guiTextured, LIST_BACKGROUND, 0, TAB_BAR_HEIGHT, 0, 0, this.side, this.listBottom() - TAB_BAR_HEIGHT, 32, 32);\n\t\tgraphics.blit(net.minecraft.client.renderer.RenderType::guiTextured, Screen.INWORLD_FOOTER_SEPARATOR, 0, this.listBottom(), 0, 0, t",
+          "newer": "graphics.nextStratum();\n\t\tgraphics.blit(RenderPipelines.GUI_TEXTURED, LIST_BACKGROUND, 0, TAB_BAR_HEIGHT, 0, 0, this.side, this.listBottom() - TAB_BAR_HEIGHT, 32, 32);\n\t\tgraphics.blit(RenderPipelines.GUI_TEXTURED, Screen.INWORLD_FOOTER_SEPARATOR, 0, this.listBottom(), 0, 0, this.side, 2, 32, 2);"
+        },
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/main/java/dev/diorama/waypoint/ScreenArt.java",
+          "line": 44,
+          "condition": ">=1.21.6 | >=1.21.2 | else",
+          "older": "graphics.blit(net.minecraft.client.renderer.RenderType::guiTextured, LIST_BACKGROUND, x0, y0, x1, y1, w, h, 32, 32);\n\t\tgraphics.blit(net.minecraft.client.renderer.RenderType::guiTextured, Screen.INWORLD_HEADER_SEPARATOR, x0, y0 - 2, 0, 0, w, 2, 32, 2);\n\t\tgraphics.blit(net.minecraft.client.renderer.R",
+          "newer": "graphics.blit(RenderPipelines.GUI_TEXTURED, LIST_BACKGROUND, x0, y0, x1, y1, w, h, 32, 32);\n\t\tgraphics.blit(RenderPipelines.GUI_TEXTURED, Screen.INWORLD_HEADER_SEPARATOR, x0, y0 - 2, 0, 0, w, 2, 32, 2);\n\t\tgraphics.blit(RenderPipelines.GUI_TEXTURED, Screen.INWORLD_FOOTER_SEPARATOR, x0, y1, 0, 0, w, 2"
+        },
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/ui/versioned/VersionedScreen.java",
+          "line": 704,
+          "condition": ">=1.21.6 | >=1.21.2 | else",
+          "older": "Function<Identifier, RenderType> RenderTypes = RenderType::guiTextured;\n\t\tmatrices.getContext().blit(RenderTypes, textureID, x, y, u, v, width, height, textureWidth, textureHeight);",
+          "newer": "matrices.getContext().blit(RenderPipelines.GUI_TEXTURED, textureID, x, y, u, v, width, height, textureWidth, textureHeight);"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: no suitable method found for blit(ResourceLocation,int,int,int,int,int,int,int,int)\n        graphics.blit(LIST_BACKGROUND, 0, TAB_BAR_HEIGHT, 0, 0, this.side, this.listBottom() - TAB_BAR_HEIGHT, 32, 32);\n        ^\n",
+        "before": "package a;\nclass C { void f() { graphics.blit(LIST_BACKGROUND, 0, TAB_BAR_HEIGHT, 0, 0, this.side, this.listBottom() - TAB_BAR_HEIGHT, 32, 32); graphics.blit(TEX, x, y, 0, 0, w, h); } }\n",
+        "after": "package a;\nimport net.minecraft.client.renderer.RenderType;\nclass C { void f() { graphics.blit(RenderType::guiTextured, LIST_BACKGROUND, 0, TAB_BAR_HEIGHT, 0, 0, this.side, this.listBottom() - TAB_BAR_HEIGHT, 32, 32); graphics.blit(TEX, x, y, 0, 0, w, h); } }\n"
+      }
+    },
+    {
+      "id": "sc-blit-render-type-back",
+      "source": "stonecutter",
+      "jump": "1.21.2 -> 1.21.1 (mojmap)",
+      "match": "guiTextured",
+      "apply": {
+        "find": "\\.(blit|blitSprite)\\(\\s*(?:net\\.minecraft\\.client\\.renderer\\.)?RenderType::guiTextured\\s*,\\s*",
+        "replace": ".$1("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-blit-render-type: before 1.21.2 blit takes the texture first.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/main/java/dev/diorama/MapScreen.java",
+          "line": 784,
+          "condition": ">=1.21.6 | >=1.21.2 | else",
+          "older": "graphics.blitSprite(RenderType::guiTextured, sprite, x, y, w, h);",
+          "newer": "graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, w, h);"
+        },
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/ui/versioned/VersionedScreen.java",
+          "line": 704,
+          "condition": ">=1.21.6 | >=1.21.2 | else",
+          "older": "Function<Identifier, RenderType> RenderTypes = RenderType::guiTextured;\n\t\tmatrices.getContext().blit(RenderTypes, textureID, x, y, u, v, width, height, textureWidth, textureHeight);",
+          "newer": "matrices.getContext().blit(RenderPipelines.GUI_TEXTURED, textureID, x, y, u, v, width, height, textureWidth, textureHeight);"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: invalid method reference\n        graphics.blitSprite(RenderType::guiTextured, sprite, x, y, w, h);\n        ^\n  symbol:   method guiTextured(ResourceLocation)\n  location: class RenderType\n",
+        "before": "class C { void f() { graphics.blitSprite(RenderType::guiTextured, sprite, x, y, w, h); graphics.blit(net.minecraft.client.renderer.RenderType::guiTextured, TEX, x, y, 0, 0, w, h, 32, 32); } }\n",
+        "after": "class C { void f() { graphics.blitSprite(sprite, x, y, w, h); graphics.blit(TEX, x, y, 0, 0, w, h, 32, 32); } }\n"
+      }
+    },
+    {
+      "id": "sc-gui-textured-pipeline",
+      "source": "stonecutter",
+      "jump": "1.21.5 -> 1.21.6 (mojmap)",
+      "match": "guiTextured",
+      "apply": {
+        "find": "(?:net\\.minecraft\\.client\\.renderer\\.)?RenderType::guiTextured\\b",
+        "replace": "RenderPipelines.GUI_TEXTURED",
+        "ensureImports": [
+          "net.minecraft.client.renderer.RenderPipelines"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.6 draws GUI textures with a render pipeline: RenderType::guiTextured is RenderPipelines.GUI_TEXTURED in blit and blitSprite, every other argument unchanged.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/main/java/dev/diorama/MapScreen.java",
+          "line": 784,
+          "condition": ">=1.21.6 | >=1.21.2 | else",
+          "older": "graphics.blitSprite(RenderType::guiTextured, sprite, x, y, w, h);",
+          "newer": "graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, w, h);"
+        },
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/ui/versioned/VersionedScreen.java",
+          "line": 704,
+          "condition": ">=1.21.6 | >=1.21.2 | else",
+          "older": "Function<Identifier, RenderType> RenderTypes = RenderType::guiTextured;\n\t\tmatrices.getContext().blit(RenderTypes, textureID, x, y, u, v, width, height, textureWidth, textureHeight);",
+          "newer": "matrices.getContext().blit(RenderPipelines.GUI_TEXTURED, textureID, x, y, u, v, width, height, textureWidth, textureHeight);"
+        },
+        {
+          "mod": "TeamMidnightDust/MidnightLib",
+          "commit": "bd2aa72c2862",
+          "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigListWidget.java",
+          "line": 36,
+          "condition": ">= 1.21.6 | >= 1.21.4",
+          "older": "RenderType::guiTextured,",
+          "newer": "RenderPipelines.GUI_TEXTURED,"
+        },
+        {
+          "mod": "DeDiamondPro/Resourcify",
+          "commit": "35f2d71eb7e2",
+          "file": "src/main/kotlin/dev/dediamondpro/resourcify/gui/injections/ImageButton.kt",
+          "line": 67,
+          "condition": ">= 1.21.6 | >= 1.21.2",
+          "older": "/*context.blit(RenderType::guiTextured, image, x + 2, y + 2, 0f, 0f, width - 4, height - 4, 16, 16)\n        *///?} else\n        /*context.blit(image, x + 2, y + 2, 0f, 0f, width - 4, height - 4, 16, 16)*/\n    }\n    */",
+          "newer": "//? if >=1.21.11\n        renderDefaultSprite(context)\n        context.blit(RenderPipelines.GUI_TEXTURED, image, x + 2, y + 2, 0f, 0f, width - 4, height - 4, 16, 16)"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: invalid method reference\n        graphics.blitSprite(RenderType::guiTextured, sprite, x, y, w, h);\n        ^\n  symbol:   method guiTextured(ResourceLocation)\n  location: class RenderType\n",
+        "before": "package a;\nclass C { void f() { graphics.blitSprite(RenderType::guiTextured, sprite, x, y, w, h); graphics.blit(net.minecraft.client.renderer.RenderType::guiTextured, TEX, x, y, 0, 0, w, h, 32, 32); } }\n",
+        "after": "package a;\nimport net.minecraft.client.renderer.RenderPipelines;\nclass C { void f() { graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, w, h); graphics.blit(RenderPipelines.GUI_TEXTURED, TEX, x, y, 0, 0, w, h, 32, 32); } }\n"
+      }
+    },
+    {
+      "id": "sc-gui-textured-pipeline-back",
+      "source": "stonecutter",
+      "jump": "1.21.6 -> 1.21.5 (mojmap)",
+      "match": "no suitable method found for blit(?:Sprite)?\\(RenderPipeline,",
+      "apply": {
+        "find": "\\bRenderPipelines\\.GUI_TEXTURED\\b",
+        "replace": "RenderType::guiTextured",
+        "ensureImports": [
+          "net.minecraft.client.renderer.RenderType"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-gui-textured-pipeline.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "SunkenInTime/diorama",
+          "commit": "8d490b41faf1",
+          "file": "src/main/java/dev/diorama/MapScreen.java",
+          "line": 784,
+          "condition": ">=1.21.6 | >=1.21.2 | else",
+          "older": "graphics.blitSprite(RenderType::guiTextured, sprite, x, y, w, h);",
+          "newer": "graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, w, h);"
+        },
+        {
+          "mod": "TeamMidnightDust/MidnightLib",
+          "commit": "bd2aa72c2862",
+          "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigListWidget.java",
+          "line": 36,
+          "condition": ">= 1.21.6 | >= 1.21.4",
+          "older": "RenderType::guiTextured,",
+          "newer": "RenderPipelines.GUI_TEXTURED,"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: no suitable method found for blitSprite(RenderPipeline,ResourceLocation,int,int,int,int)\n        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, w, h);\n        ^\n",
+        "before": "package a;\nclass C { void f() { graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, w, h); } }\n",
+        "after": "package a;\nimport net.minecraft.client.renderer.RenderType;\nclass C { void f() { graphics.blitSprite(RenderType::guiTextured, sprite, x, y, w, h); } }\n"
+      }
+    },
+    {
+      "id": "sc-registry-lookup-or-throw",
+      "source": "stonecutter",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method registryOrThrow\\(",
+      "apply": {
+        "find": "\\.registryOrThrow\\(",
+        "replace": ".lookupOrThrow("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 renamed RegistryAccess.registryOrThrow(key) to lookupOrThrow(key); same key, same throwing behaviour.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Faboslav/friends-and-foes",
+          "commit": "ede6ba999e4b",
+          "file": "common/src/main/java/com/faboslav/friendsandfoes/common/init/FriendsAndFoesStructurePoolElements.java",
+          "line": 18,
+          "condition": ">=1.21.3 | else",
+          "older": "templatePoolRegistry = server.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);",
+          "newer": "templatePoolRegistry = server.registryAccess().lookupOrThrow(Registries.TEMPLATE_POOL);"
+        },
+        {
+          "mod": "Zolo101/RenderScale",
+          "commit": "0cf438686360",
+          "file": "src/main/java/dev/zelo/renderscale/gametest/RenderScaleAutoTest.java",
+          "line": 247,
+          "condition": ">=1.21.2 | else",
+          "older": "/*access -> access.registryOrThrow(Registries.WORLD_PRESET)\n                        .getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions()\n                */",
+          "newer": "WorldPresets::createFlatWorldDimensions"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        var pools = server.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);\n        ^\n  symbol:   method registryOrThrow(ResourceKey<Registry<StructureTemplatePool>>)\n  location: interface RegistryAccess\n",
+        "before": "class C { void f() { var pools = server.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL); } }\n",
+        "after": "class C { void f() { var pools = server.registryAccess().lookupOrThrow(Registries.TEMPLATE_POOL); } }\n"
+      }
+    },
+    {
+      "id": "sc-registry-lookup-or-throw-back",
+      "source": "stonecutter",
+      "jump": "1.21.2 -> 1.21.1 (mojmap)",
+      "match": "symbol:\\s+method lookupOrThrow\\(",
+      "apply": {
+        "find": "\\.lookupOrThrow\\(",
+        "replace": ".registryOrThrow("
+      },
+      "scope": "log",
+      "when": "registryAccess\\(\\)",
+      "note": "Backport of sc-registry-lookup-or-throw.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Faboslav/friends-and-foes",
+          "commit": "ede6ba999e4b",
+          "file": "common/src/main/java/com/faboslav/friendsandfoes/common/init/FriendsAndFoesStructurePoolElements.java",
+          "line": 18,
+          "condition": ">=1.21.3 | else",
+          "older": "templatePoolRegistry = server.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);",
+          "newer": "templatePoolRegistry = server.registryAccess().lookupOrThrow(Registries.TEMPLATE_POOL);"
+        },
+        {
+          "mod": "Zolo101/RenderScale",
+          "commit": "0cf438686360",
+          "file": "src/main/java/dev/zelo/renderscale/gametest/RenderScaleAutoTest.java",
+          "line": 247,
+          "condition": ">=1.21.2 | else",
+          "older": "/*access -> access.registryOrThrow(Registries.WORLD_PRESET)\n                        .getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions()\n                */",
+          "newer": "WorldPresets::createFlatWorldDimensions"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        var pools = server.registryAccess().lookupOrThrow(Registries.TEMPLATE_POOL);\n        ^\n  symbol:   method lookupOrThrow(ResourceKey<Registry<StructureTemplatePool>>)\n  location: interface RegistryAccess\n",
+        "before": "class C { void f() { var pools = server.registryAccess().lookupOrThrow(Registries.TEMPLATE_POOL); } }\n",
+        "after": "class C { void f() { var pools = server.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL); } }\n"
+      }
+    },
+    {
+      "id": "sc-scroll-amount",
+      "source": "stonecutter",
+      "jump": "1.21.3 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+method getScrollAmount\\(\\)",
+      "apply": {
+        "find": "\\bgetScrollAmount\\(\\)",
+        "replace": "scrollAmount()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.4 moved selection lists onto AbstractScrollArea, whose getter is scrollAmount().",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/ui/widget/ChangeBrowserWidget.java",
+          "line": 61,
+          "condition": ">=1.21.4 | else",
+          "older": "return this.getScrollAmount();",
+          "newer": "return this.scrollAmount();"
+        },
+        {
+          "mod": "TeamMidnightDust/MidnightLib",
+          "commit": "bd2aa72c2862",
+          "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigScreen.java",
+          "line": 89,
+          "condition": "< 1.21.4 | else",
+          "older": "list.getScrollAmount()",
+          "newer": "list.scrollAmount()"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        double s = list.getScrollAmount();\n        ^\n  symbol:   method getScrollAmount()\n  location: variable list of type ConfigList\n",
+        "before": "class C { double f() { return list.getScrollAmount() + this.getScrollAmount(); } }\n",
+        "after": "class C { double f() { return list.scrollAmount() + this.scrollAmount(); } }\n"
+      }
+    },
+    {
+      "id": "sc-scroll-amount-back",
+      "source": "stonecutter",
+      "jump": "1.21.4 -> 1.21.3 (mojmap)",
+      "match": "symbol:\\s+method scrollAmount\\(\\)",
+      "apply": {
+        "find": "\\bscrollAmount\\(\\)",
+        "replace": "getScrollAmount()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of sc-scroll-amount.",
+      "verified": null,
+      "examples": [
+        {
+          "mod": "Skidamek/AutoModpack",
+          "commit": "dcedad1da8f2",
+          "file": "src/main/java/pl/skidam/automodpack/client/ui/widget/ChangeBrowserWidget.java",
+          "line": 61,
+          "condition": ">=1.21.4 | else",
+          "older": "return this.getScrollAmount();",
+          "newer": "return this.scrollAmount();"
+        },
+        {
+          "mod": "TeamMidnightDust/MidnightLib",
+          "commit": "bd2aa72c2862",
+          "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigScreen.java",
+          "line": 89,
+          "condition": "< 1.21.4 | else",
+          "older": "list.getScrollAmount()",
+          "newer": "list.scrollAmount()"
+        }
+      ],
+      "test": {
+        "error": "C.java:3: error: cannot find symbol\n        double s = list.scrollAmount();\n        ^\n  symbol:   method scrollAmount()\n  location: variable list of type ConfigList\n",
+        "before": "class C { double f() { return list.scrollAmount(); } }\n",
+        "after": "class C { double f() { return list.getScrollAmount(); } }\n"
+      }
     }
   ]
 }

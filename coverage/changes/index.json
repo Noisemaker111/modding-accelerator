@@ -3386,6 +3386,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 6,
+    "mods": 1,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": null,
    "backportRun": null
   },
@@ -3433,6 +3440,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 0,
+    "mods": 0,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": null,
    "backportRun": null
@@ -3488,6 +3502,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 0,
+    "mods": 0,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": null,
    "backportRun": null
@@ -3547,6 +3568,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 1,
+    "mods": 1,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": null,
    "backportRun": null
   },
@@ -3593,6 +3621,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 0,
+    "mods": 0,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": null,
    "backportRun": null
@@ -3652,6 +3687,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 0,
+    "mods": 0,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": null,
    "backportRun": null
   },
@@ -3699,6 +3741,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 0,
+    "mods": 0,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": null,
    "backportRun": null
@@ -3753,6 +3802,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 0,
+    "mods": 0,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": null,
    "backportRun": null
   },
@@ -3800,6 +3856,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 4,
+    "mods": 1,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": null,
    "backportRun": null
@@ -3859,6 +3922,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 15,
+    "mods": 3,
+    "confirmed": 3,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": null,
    "backportRun": null
   },
@@ -3915,6 +3985,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 7,
+    "mods": 4,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": null,
    "backportRun": null
@@ -3974,6 +4051,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 4,
+    "mods": 4,
+    "confirmed": 2,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": null,
    "backportRun": null
   },
@@ -4026,6 +4110,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 0,
+    "mods": 0,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": null,
    "backportRun": null
@@ -4085,6 +4176,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 14,
+    "mods": 4,
+    "confirmed": 4,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": null,
    "backportRun": null
   },
@@ -4142,6 +4240,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 22,
+    "mods": 5,
+    "confirmed": 7,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": null,
    "backportRun": null
@@ -4201,6 +4306,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 0,
+    "mods": 0,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": null,
    "backportRun": null
   },
@@ -4253,6 +4365,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 21,
+    "mods": 4,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": null,
    "backportRun": null
@@ -4312,6 +4431,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 28,
+    "mods": 4,
+    "confirmed": 42,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": null,
    "backportRun": null
   },
@@ -4369,6 +4495,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 45,
+    "mods": 6,
+    "confirmed": 20,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": null,
    "backportRun": null
@@ -4428,6 +4561,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 36,
+    "mods": 3,
+    "confirmed": 29,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": null,
    "backportRun": null
   },
@@ -4476,6 +4616,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 43,
+    "mods": 7,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": null,
    "backportRun": null
@@ -4534,6 +4681,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 246,
+    "mods": 10,
+    "confirmed": 162,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": {
     "mod": "AppleSkin",
@@ -4601,6 +4755,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 53,
+    "mods": 5,
+    "confirmed": 150,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": {
     "mod": "AppleSkin",
     "loader": "fabric",
@@ -4655,6 +4816,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 13,
+    "mods": 3,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": {
     "mod": "AppleSkin",
@@ -4722,6 +4890,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 277,
+    "mods": 10,
+    "confirmed": 286,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": {
     "mod": "AppleSkin",
     "loader": "fabric",
@@ -4778,6 +4953,13 @@
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 29,
+    "mods": 6,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": {
     "mod": "AppleSkin",
@@ -4845,6 +5027,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 78,
+    "mods": 11,
+    "confirmed": 166,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": {
     "mod": "AppleSkin",
     "loader": "fabric",
@@ -4903,14 +5092,21 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 355,
+    "mods": 9,
+    "confirmed": 1,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": {
-    "mod": "AppleSkin",
-    "loader": "fabric",
-    "from": "1.20.1",
+    "mod": "Notes (MattCzyr)",
+    "loader": "neoforge",
+    "from": "1.21",
     "to": "1.21.6",
     "status": "stop",
     "exact": false,
-    "date": "2026-10-24"
+    "date": "2026-10-25"
    },
    "backportRun": null
   },
@@ -4950,13 +5146,13 @@
    "coverage": {
     "listed": 3233,
     "listedWithPrivate": 4501,
-    "mappings": 132,
-    "rule": 35,
+    "mappings": 131,
+    "rule": 36,
     "note": 326,
     "left": 2740,
     "withPrivate": {
-     "mappings": 183,
-     "rule": 37,
+     "mappings": 182,
+     "rule": 38,
      "note": 340,
      "left": 3941
     },
@@ -4965,7 +5161,7 @@
      "left": 4107,
      "listed": 4242
     },
-    "rulesInRange": 73,
+    "rulesInRange": 75,
     "ruleHits": [
      {
       "rule": "version-changes.json: signature: EntityRenderer.render(T entity, float yaw, float partialTick",
@@ -5105,6 +5301,10 @@
      },
      {
       "rule": "version-changes.json: signature: EntityRenderer#render(T entity, float yaw, float partialTick",
+      "changes": 1
+     },
+     {
+      "rule": "fixes.json: sc-registry-lookup-or-throw",
       "changes": 1
      },
      {
@@ -7096,6 +7296,13 @@
       "version-changes.json: signature: Registry.get(ResourceLocation) returning T; RegistryAccess.r"
      ],
      [
+      "methodsRenamed",
+      "net.minecraft.core.RegistryAccess",
+      "registryOrThrow(ResourceKey)Registry -> lookupOrThrow(ResourceKey)Registry",
+      "rule",
+      "fixes.json: sc-registry-lookup-or-throw"
+     ],
+     [
       "methodsRemoved",
       "net.minecraft.core.RegistryAccess",
       "registry(ResourceKey)Optional",
@@ -7762,6 +7969,19 @@
      ]
     ]
    },
+   "stonecutter": {
+    "switches": 274,
+    "mods": 15,
+    "confirmed": 415,
+    "rules": [
+     "sc-blit-render-type",
+     "sc-registry-lookup-or-throw"
+    ],
+    "backRules": [
+     "sc-blit-render-type-back",
+     "sc-registry-lookup-or-throw-back"
+    ]
+   },
    "bestRun": {
     "mod": "ZombieApocalypseAddon",
     "loader": "neoforge",
@@ -7818,6 +8038,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 441,
+    "mods": 3,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": {
     "mod": "ZombieApocalypseAddon",
     "loader": "neoforge",
@@ -7866,21 +8093,21 @@
     "listed": 678,
     "listedWithPrivate": 936,
     "mappings": 81,
-    "rule": 0,
+    "rule": 1,
     "note": 19,
-    "left": 578,
+    "left": 577,
     "withPrivate": {
      "mappings": 96,
-     "rule": 0,
+     "rule": 1,
      "note": 36,
-     "left": 804
+     "left": 803
     },
     "back": {
      "mappings": 81,
      "left": 965,
      "listed": 1046
     },
-    "rulesInRange": 77,
+    "rulesInRange": 78,
     "ruleHits": [
      {
       "rule": "structural.json: item-model",
@@ -7896,6 +8123,10 @@
      },
      {
       "rule": "version-changes.json: signature: TargetingConditions.selector(Predicate<LivingEntity>)",
+      "changes": 1
+     },
+     {
+      "rule": "fixes.json: sc-scroll-amount",
       "changes": 1
      },
      {
@@ -7945,6 +8176,13 @@
       "net.minecraft.client.resources.model.ItemModel$BakedModelWithOverrides",
       "note",
       "structural.json: item-model"
+     ],
+     [
+      "methodsRemoved",
+      "net.minecraft.client.gui.components.AbstractSelectionList",
+      "getScrollAmount()double",
+      "rule",
+      "fixes.json: sc-scroll-amount"
      ],
      [
       "fieldsRemoved",
@@ -8158,6 +8396,17 @@
      ]
     ]
    },
+   "stonecutter": {
+    "switches": 110,
+    "mods": 12,
+    "confirmed": 183,
+    "rules": [
+     "sc-scroll-amount"
+    ],
+    "backRules": [
+     "sc-scroll-amount-back"
+    ]
+   },
    "bestRun": {
     "mod": "ZombieApocalypseAddon",
     "loader": "neoforge",
@@ -8206,21 +8455,21 @@
     "listed": 2559,
     "listedWithPrivate": 3533,
     "mappings": 179,
-    "rule": 78,
+    "rule": 79,
     "note": 127,
-    "left": 2175,
+    "left": 2174,
     "withPrivate": {
      "mappings": 226,
-     "rule": 80,
+     "rule": 81,
      "note": 152,
-     "left": 3075
+     "left": 3074
     },
     "back": {
      "mappings": 187,
      "left": 2694,
      "listed": 2881
     },
-    "rulesInRange": 79,
+    "rulesInRange": 80,
     "ruleHits": [
      {
       "rule": "structural.json: item-model",
@@ -8315,6 +8564,10 @@
       "changes": 2
      },
      {
+      "rule": "fixes.json: glstatemanager-opengl",
+      "changes": 1
+     },
+     {
       "rule": "version-changes.json: moved: CoreShaders, BakedModel, ThrownPotion",
       "changes": 1
      },
@@ -8384,6 +8637,13 @@
      }
     ],
     "matched": [
+     [
+      "class removed",
+      "com.mojang.blaze3d.platform.GlStateManager",
+      "com.mojang.blaze3d.platform.GlStateManager",
+      "rule",
+      "fixes.json: glstatemanager-opengl"
+     ],
      [
       "class removed",
       "com.mojang.blaze3d.shaders.CompiledShader$Type",
@@ -10010,6 +10270,13 @@
      ]
     ]
    },
+   "stonecutter": {
+    "switches": 288,
+    "mods": 13,
+    "confirmed": 252,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": {
     "mod": "ZombieApocalypseAddon",
     "loader": "neoforge",
@@ -10058,21 +10325,21 @@
     "listed": 1091,
     "listedWithPrivate": 1588,
     "mappings": 62,
-    "rule": 0,
+    "rule": 1,
     "note": 332,
-    "left": 697,
+    "left": 696,
     "withPrivate": {
      "mappings": 79,
-     "rule": 0,
+     "rule": 1,
      "note": 336,
-     "left": 1173
+     "left": 1172
     },
     "back": {
      "mappings": 62,
      "left": 1812,
      "listed": 1874
     },
-    "rulesInRange": 44,
+    "rulesInRange": 45,
     "ruleHits": [
      {
       "rule": "version-changes.json: signature: Entity#readAdditionalSaveData(CompoundTag) and Entity#addAdd",
@@ -10093,6 +10360,10 @@
      {
       "rule": "structural.json: item-model",
       "changes": 2
+     },
+     {
+      "rule": "fixes.json: sc-gui-textured-pipeline",
+      "changes": 1
      },
      {
       "rule": "version-changes.json: signature: EntityRenderer#render(T entity, float yaw, float partialTick",
@@ -10212,6 +10483,13 @@
       "private scratchItemStackRenderState:ItemStackRenderState",
       "note",
       "structural.json: item-model"
+     ],
+     [
+      "methodsRemoved",
+      "net.minecraft.client.renderer.RenderType",
+      "guiTextured(ResourceLocation)RenderType",
+      "rule",
+      "fixes.json: sc-gui-textured-pipeline"
      ],
      [
       "methodsChanged",
@@ -12462,6 +12740,17 @@
      ]
     ]
    },
+   "stonecutter": {
+    "switches": 297,
+    "mods": 14,
+    "confirmed": 210,
+    "rules": [
+     "sc-gui-textured-pipeline"
+    ],
+    "backRules": [
+     "sc-gui-textured-pipeline-back"
+    ]
+   },
    "bestRun": {
     "mod": "F3Nope",
     "loader": "fabric",
@@ -12557,6 +12846,13 @@
      ]
     ]
    },
+   "stonecutter": {
+    "switches": 7,
+    "mods": 3,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": {
     "mod": "AppleSkin",
     "loader": "neoforge",
@@ -12612,6 +12908,13 @@
     "rulesInRange": 55,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 12,
+    "mods": 4,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": {
     "mod": "AppleSkin",
@@ -12675,7 +12978,7 @@
      "left": 2799,
      "listed": 3017
     },
-    "rulesInRange": 55,
+    "rulesInRange": 57,
     "ruleHits": [
      {
       "rule": "structural.json: item-model",
@@ -12946,6 +13249,19 @@
      ]
     ]
    },
+   "stonecutter": {
+    "switches": 536,
+    "mods": 17,
+    "confirmed": 333,
+    "rules": [
+     "sc-gameprofile-name",
+     "sc-gameprofile-id"
+    ],
+    "backRules": [
+     "sc-gameprofile-name-back",
+     "sc-gameprofile-id-back"
+    ]
+   },
    "bestRun": {
     "mod": "AppleSkin",
     "loader": "neoforge",
@@ -13198,6 +13514,13 @@
      ]
     ]
    },
+   "stonecutter": {
+    "switches": 50,
+    "mods": 6,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": {
     "mod": "AppleSkin",
     "loader": "neoforge",
@@ -13246,21 +13569,21 @@
     "listed": 1944,
     "listedWithPrivate": 2553,
     "mappings": 692,
-    "rule": 9,
+    "rule": 13,
     "note": 3,
-    "left": 1240,
+    "left": 1236,
     "withPrivate": {
      "mappings": 720,
-     "rule": 12,
+     "rule": 16,
      "note": 7,
-     "left": 1814
+     "left": 1810
     },
     "back": {
      "mappings": 696,
      "left": 1929,
      "listed": 2625
     },
-    "rulesInRange": 55,
+    "rulesInRange": 57,
     "ruleHits": [
      {
       "rule": "structural.json: item-model",
@@ -13272,6 +13595,10 @@
      },
      {
       "rule": "fixes.json: neo263-gamerule-name",
+      "changes": 3
+     },
+     {
+      "rule": "fixes.json: sc-permissions-source-level",
       "changes": 3
      },
      {
@@ -13292,6 +13619,10 @@
      },
      {
       "rule": "structural.json: gui-shader",
+      "changes": 1
+     },
+     {
+      "rule": "fixes.json: sc-permissions-player-level",
       "changes": 1
      },
      {
@@ -13357,6 +13688,13 @@
       "fixes.json: neo263-hud-hidden"
      ],
      [
+      "methodsRemoved",
+      "net.minecraft.client.multiplayer.ClientSuggestionProvider",
+      "hasPermission(int)boolean",
+      "rule",
+      "fixes.json: sc-permissions-source-level"
+     ],
+     [
       "methodsChanged",
       "net.minecraft.client.renderer.block.model.ItemModelGenerator",
       "private bake(TextureSlots,SpriteGetter,ModelState,ModelDebugName)QuadCollection -> private bake(TextureSlots,ModelBaker,ModelState,ModelDebugName)QuadCollection",
@@ -13383,6 +13721,20 @@
       "private createOrExpandSpan(List,ItemModelGenerator.SpanFacing,int,int)void",
       "note",
       "structural.json: item-model"
+     ],
+     [
+      "methodsRemoved",
+      "net.minecraft.commands.CommandSourceStack",
+      "hasPermission(int)boolean",
+      "rule",
+      "fixes.json: sc-permissions-source-level"
+     ],
+     [
+      "methodsChanged",
+      "net.minecraft.commands.Commands",
+      "hasPermission(int)PermissionCheck -> hasPermission(PermissionCheck)PermissionProviderCheck",
+      "rule",
+      "fixes.json: sc-permissions-source-level"
      ],
      [
       "methodsChanged",
@@ -13413,6 +13765,13 @@
       "fixes.json: neo263-iskeydown-window-argument"
      ],
      [
+      "methodsRemoved",
+      "net.minecraft.world.entity.player.Player",
+      "hasPermissions(int)boolean",
+      "rule",
+      "fixes.json: sc-permissions-player-level"
+     ],
+     [
       "fieldsRenamed",
       "net.minecraft.world.level.GameRules",
       "RULE_NATURAL_REGENERATION:GameRules.Key -> NATURAL_HEALTH_REGENERATION:GameRule",
@@ -13434,6 +13793,16 @@
       "fixes.json: neo263-hud-hidden"
      ]
     ]
+   },
+   "stonecutter": {
+    "switches": 330,
+    "mods": 24,
+    "confirmed": 174,
+    "rules": [
+     "sc-permissions-source-level",
+     "sc-permissions-player-level"
+    ],
+    "backRules": []
    },
    "bestRun": {
     "mod": "AppleSkin",
@@ -13483,24 +13852,24 @@
     "listed": 2883,
     "listedWithPrivate": 3892,
     "mappings": 0,
-    "rule": 12,
-    "note": 127,
-    "left": 2744,
+    "rule": 81,
+    "note": 62,
+    "left": 2740,
     "withPrivate": {
      "mappings": 0,
-     "rule": 14,
-     "note": 143,
-     "left": 3735
+     "rule": 83,
+     "note": 78,
+     "left": 3731
     },
     "back": {
      "mappings": 0,
      "left": 3855,
      "listed": 3855
     },
-    "rulesInRange": 55,
+    "rulesInRange": 62,
     "ruleHits": [
      {
-      "rule": "version-changes.json: rename: Renderable#render",
+      "rule": "fixes.json: sc-widget-extract-render-state",
       "changes": 65
      },
      {
@@ -13536,6 +13905,10 @@
       "changes": 3
      },
      {
+      "rule": "fixes.json: sc-player-system-message",
+      "changes": 3
+     },
+     {
       "rule": "version-changes.json: removed: BlockRenderDispatcher and ItemRenderer",
       "changes": 2
      },
@@ -13557,6 +13930,10 @@
      },
      {
       "rule": "version-changes.json: rename: net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRe",
+      "changes": 1
+     },
+     {
+      "rule": "fixes.json: sc-chat-client-system-message",
       "changes": 1
      },
      {
@@ -13611,85 +13988,85 @@
       "methodsRenamed",
       "com.mojang.realmsclient.RealmsMainScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "com.mojang.realmsclient.gui.screens.RealmsBrokenWorldScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "com.mojang.realmsclient.gui.screens.RealmsConfirmScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "com.mojang.realmsclient.gui.screens.RealmsDownloadLatestWorldScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "com.mojang.realmsclient.gui.screens.RealmsGenericErrorScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "com.mojang.realmsclient.gui.screens.RealmsPendingInvitesScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "com.mojang.realmsclient.gui.screens.RealmsSelectWorldTemplateScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "com.mojang.realmsclient.gui.screens.RealmsTermsScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "com.mojang.realmsclient.gui.screens.RealmsUploadScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "com.mojang.realmsclient.gui.screens.configuration.RealmsBackupScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "com.mojang.realmsclient.gui.screens.configuration.RealmsConfigureWorldScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "com.mojang.realmsclient.gui.screens.configuration.RealmsInviteScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
@@ -13821,29 +14198,36 @@
       "methodsRenamed",
       "net.minecraft.client.gui.components.BossHealthOverlay",
       "render(GuiGraphics)void -> extractRenderState(GuiGraphicsExtractor)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
+     ],
+     [
+      "methodsRemoved",
+      "net.minecraft.client.gui.components.ChatComponent",
+      "addMessage(Component)void",
+      "rule",
+      "fixes.json: sc-chat-client-system-message"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.CommandSuggestions",
       "render(GuiGraphics,int,int)void -> extractRenderState(GuiGraphicsExtractor,int,int)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.CommandSuggestions$SuggestionsList",
       "render(GuiGraphics,int,int)void -> extractRenderState(GuiGraphicsExtractor,int,int)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.DebugScreenOverlay",
       "render(GuiGraphics)void -> extractRenderState(GuiGraphicsExtractor)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
@@ -13898,15 +14282,15 @@
       "methodsRenamed",
       "net.minecraft.client.gui.components.PlayerTabOverlay",
       "render(GuiGraphics,int,Scoreboard,Objective)void -> extractRenderState(GuiGraphicsExtractor,int,Scoreboard,Objective)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.Renderable",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
@@ -13919,15 +14303,15 @@
       "methodsRenamed",
       "net.minecraft.client.gui.components.SplashRenderer",
       "render(GuiGraphics,int,Font,float)void -> extractRenderState(GuiGraphicsExtractor,int,Font,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.SubtitleOverlay",
       "render(GuiGraphics)void -> extractRenderState(GuiGraphicsExtractor)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
@@ -13940,169 +14324,169 @@
       "methodsRenamed",
       "net.minecraft.client.gui.components.debugchart.ProfilerPieChart",
       "render(GuiGraphics)void -> extractRenderState(GuiGraphicsExtractor)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.tabs.TabNavigationBar",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.toasts.AdvancementToast",
       "render(GuiGraphics,Font,long)void -> extractRenderState(GuiGraphicsExtractor,Font,long)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.toasts.NowPlayingToast",
       "render(GuiGraphics,Font,long)void -> extractRenderState(GuiGraphicsExtractor,Font,long)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.toasts.RecipeToast",
       "render(GuiGraphics,Font,long)void -> extractRenderState(GuiGraphicsExtractor,Font,long)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.toasts.SystemToast",
       "render(GuiGraphics,Font,long)void -> extractRenderState(GuiGraphicsExtractor,Font,long)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.toasts.Toast",
       "render(GuiGraphics,Font,long)void -> extractRenderState(GuiGraphicsExtractor,Font,long)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.toasts.ToastManager",
       "render(GuiGraphics)void -> extractRenderState(GuiGraphicsExtractor)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.toasts.ToastManager$ToastInstance",
       "render(GuiGraphics,int)void -> extractRenderState(GuiGraphicsExtractor,int)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.toasts.TutorialToast",
       "render(GuiGraphics,Font,long)void -> extractRenderState(GuiGraphicsExtractor,Font,long)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.components.toasts.TutorialToast$Icons",
       "render(GuiGraphics,int,int)void -> extractRenderState(GuiGraphicsExtractor,int,int)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.AccessibilityOnboardingScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.AlertScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.BackupConfirmScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.ConnectScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.DatapackLoadFailureScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.DirectJoinServerScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.GenericWaitingScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.LoadingOverlay",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.ManageServerScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.PresetFlatWorldScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.ProgressScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.ShareToLanScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.achievement.StatsScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
@@ -14115,8 +14499,8 @@
       "methodsRenamed",
       "net.minecraft.client.gui.screens.advancements.AdvancementsScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
@@ -14136,8 +14520,8 @@
       "methodsRenamed",
       "net.minecraft.client.gui.screens.inventory.AbstractCommandBlockEditScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRemoved",
@@ -14164,15 +14548,15 @@
       "methodsRenamed",
       "net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRemoved",
@@ -14234,8 +14618,8 @@
       "methodsRenamed",
       "net.minecraft.client.gui.screens.inventory.CyclingSlotBackground",
       "render(AbstractContainerMenu,GuiGraphics,float,int,int)void -> extractRenderState(AbstractContainerMenu,GuiGraphicsExtractor,float,int,int)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRemoved",
@@ -14248,8 +14632,8 @@
       "methodsRenamed",
       "net.minecraft.client.gui.screens.inventory.EffectsInInventory",
       "render(GuiGraphics,int,int)void -> extractRenderState(GuiGraphicsExtractor,int,int)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
@@ -14297,8 +14681,8 @@
       "methodsRenamed",
       "net.minecraft.client.gui.screens.inventory.JigsawBlockEditScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRemoved",
@@ -14339,22 +14723,22 @@
       "methodsRenamed",
       "net.minecraft.client.gui.screens.inventory.StructureBlockEditScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.inventory.TestBlockEditScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.inventory.TestInstanceBlockEditScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
@@ -14395,29 +14779,29 @@
       "methodsRenamed",
       "net.minecraft.client.gui.screens.options.UnsupportedGraphicsWarningScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.options.controls.KeyBindsScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.recipebook.GhostSlots",
       "render(GuiGraphics,Minecraft,boolean)void -> extractRenderState(GuiGraphicsExtractor,Minecraft,boolean)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.recipebook.OverlayRecipeComponent",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
@@ -14430,15 +14814,15 @@
       "methodsRenamed",
       "net.minecraft.client.gui.screens.recipebook.RecipeBookComponent",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.recipebook.RecipeBookPage",
       "render(GuiGraphics,int,int,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
@@ -14451,36 +14835,36 @@
       "methodsRenamed",
       "net.minecraft.client.gui.screens.reporting.ChatSelectionScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.reporting.ReportReasonSelectionScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.worldselection.CreateWorldScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.worldselection.EditWorldScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
       "net.minecraft.client.gui.screens.worldselection.OptimizeWorldScreen",
       "render(GuiGraphics,int,int,float)void -> extractRenderState(GuiGraphicsExtractor,int,int,float)void",
-      "note",
-      "version-changes.json: rename: Renderable#render"
+      "rule",
+      "fixes.json: sc-widget-extract-render-state"
      ],
      [
       "methodsRenamed",
@@ -14495,6 +14879,13 @@
       "interactAt(Player,Entity,EntityHitResult,InteractionHand)InteractionResult",
       "note",
       "version-changes.json: removed: Entity#interactAt(Player, Vec3, InteractionHand)"
+     ],
+     [
+      "methodsRemoved",
+      "net.minecraft.client.player.LocalPlayer",
+      "displayClientMessage(Component,boolean)void",
+      "rule",
+      "fixes.json: sc-player-system-message"
      ],
      [
       "methodsRemoved",
@@ -14589,6 +14980,13 @@
      ],
      [
       "methodsRemoved",
+      "net.minecraft.server.level.ServerPlayer",
+      "displayClientMessage(Component,boolean)void",
+      "rule",
+      "fixes.json: sc-player-system-message"
+     ],
+     [
+      "methodsRemoved",
       "net.minecraft.world.entity.Entity",
       "interactAt(Player,Vec3,InteractionHand)InteractionResult",
       "note",
@@ -14600,6 +14998,13 @@
       "interactAt(Player,Vec3,InteractionHand)InteractionResult",
       "note",
       "version-changes.json: removed: Entity#interactAt(Player, Vec3, InteractionHand)"
+     ],
+     [
+      "methodsRemoved",
+      "net.minecraft.world.entity.player.Player",
+      "displayClientMessage(Component,boolean)void",
+      "rule",
+      "fixes.json: sc-player-system-message"
      ],
      [
       "fieldsChanged",
@@ -14666,6 +15071,25 @@
      ]
     ]
    },
+   "stonecutter": {
+    "switches": 598,
+    "mods": 22,
+    "confirmed": 268,
+    "rules": [
+     "sc-chat-client-system-message",
+     "sc-player-system-message",
+     "sc-graphics-draw-string-text",
+     "sc-widget-extract-render-state",
+     "sc-widget-super-extract-render-state",
+     "sc-fabric-key-mapping-helper",
+     "sc-fabric-key-mapping-import"
+    ],
+    "backRules": [
+     "sc-chat-client-system-message-back",
+     "sc-fabric-key-mapping-helper-back",
+     "sc-fabric-key-mapping-import-back"
+    ]
+   },
    "bestRun": {
     "mod": "AppleSkin",
     "loader": "neoforge",
@@ -14720,6 +15144,13 @@
     "rulesInRange": 49,
     "ruleHits": [],
     "matched": []
+   },
+   "stonecutter": {
+    "switches": 21,
+    "mods": 4,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
    },
    "bestRun": {
     "mod": "AppleSkin",
@@ -14776,6 +15207,13 @@
     "ruleHits": [],
     "matched": []
    },
+   "stonecutter": {
+    "switches": 1,
+    "mods": 1,
+    "confirmed": 0,
+    "rules": [],
+    "backRules": []
+   },
    "bestRun": {
     "mod": "AppleSkin",
     "loader": "neoforge",
@@ -14824,21 +15262,21 @@
     "listed": 2490,
     "listedWithPrivate": 3316,
     "mappings": 0,
-    "rule": 5,
+    "rule": 11,
     "note": 37,
-    "left": 2448,
+    "left": 2442,
     "withPrivate": {
      "mappings": 0,
-     "rule": 9,
+     "rule": 16,
      "note": 37,
-     "left": 3270
+     "left": 3263
     },
     "back": {
      "mappings": 0,
      "left": 2845,
      "listed": 2845
     },
-    "rulesInRange": 49,
+    "rulesInRange": 55,
     "ruleHits": [
      {
       "rule": "version-changes.json: removed: StructureProcessorType, with StructureProcessor#getType",
@@ -14858,6 +15296,10 @@
      },
      {
       "rule": "version-changes.json: removed: HolderTagProvider, IntrinsicHolderTagsProvider and KeyTagPro",
+      "changes": 3
+     },
+     {
+      "rule": "fixes.json: sc-gui-set-screen",
       "changes": 3
      },
      {
@@ -14881,6 +15323,18 @@
       "changes": 1
      },
      {
+      "rule": "fixes.json: sc-main-render-target",
+      "changes": 1
+     },
+     {
+      "rule": "fixes.json: sc-gui-toast-manager",
+      "changes": 1
+     },
+     {
+      "rule": "fixes.json: sc-gui-overlay",
+      "changes": 1
+     },
+     {
       "rule": "fixes.json: neo263-current-screen",
       "changes": 1
      },
@@ -14890,6 +15344,10 @@
      },
      {
       "rule": "fixes.json: neo263-hud-ticks",
+      "changes": 1
+     },
+     {
+      "rule": "fixes.json: sc-entity-types-holder",
       "changes": 1
      },
      {
@@ -15002,6 +15460,48 @@
       "fixes.json: neo263-drop-window-handle"
      ],
      [
+      "methodsRemoved",
+      "net.minecraft.advancements.criterion.EntityPredicate",
+      "location()EntityPredicate.LocationWrapper",
+      "rule",
+      "fixes.json: sc-gui-set-screen"
+     ],
+     [
+      "fieldsRemoved",
+      "net.minecraft.advancements.criterion.EntityPredicate",
+      "private location:EntityPredicate.LocationWrapper",
+      "rule",
+      "fixes.json: sc-gui-set-screen"
+     ],
+     [
+      "methodsRemoved",
+      "net.minecraft.client.Minecraft",
+      "getMainRenderTarget()RenderTarget",
+      "rule",
+      "fixes.json: sc-main-render-target"
+     ],
+     [
+      "methodsRemoved",
+      "net.minecraft.client.Minecraft",
+      "setScreen(Screen)void",
+      "rule",
+      "fixes.json: sc-gui-set-screen"
+     ],
+     [
+      "methodsRemoved",
+      "net.minecraft.client.Minecraft",
+      "getToastManager()ToastManager",
+      "rule",
+      "fixes.json: sc-gui-toast-manager"
+     ],
+     [
+      "methodsRemoved",
+      "net.minecraft.client.Minecraft",
+      "getOverlay()Overlay",
+      "rule",
+      "fixes.json: sc-gui-overlay"
+     ],
+     [
       "fieldsRemoved",
       "net.minecraft.client.Minecraft",
       "screen:Screen",
@@ -15028,6 +15528,13 @@
       "getGuiTicks()int",
       "rule",
       "fixes.json: neo263-hud-ticks"
+     ],
+     [
+      "methodsChanged",
+      "net.minecraft.client.gui.GuiGraphicsExtractor",
+      "entity(EntityRenderState,float,Vector3f,Quaternionf,Quaternionf,int,int,int,int)void -> entity(EntityRenderState,float,Vector3fc,Quaternionfc,Quaternionfc,int,int,int,int)void",
+      "rule",
+      "fixes.json: sc-entity-types-holder"
      ],
      [
       "methodsChanged",
@@ -15234,6 +15741,27 @@
      ]
     ]
    },
+   "stonecutter": {
+    "switches": 397,
+    "mods": 24,
+    "confirmed": 137,
+    "rules": [
+     "sc-gui-set-screen",
+     "sc-gui-screen",
+     "sc-gui-overlay",
+     "sc-gui-toast-manager",
+     "sc-main-render-target",
+     "sc-entity-types-holder"
+    ],
+    "backRules": [
+     "sc-gui-set-screen-back",
+     "sc-gui-screen-back",
+     "sc-gui-overlay-back",
+     "sc-gui-toast-manager-back",
+     "sc-main-render-target-back",
+     "sc-entity-types-holder-back"
+    ]
+   },
    "bestRun": {
     "mod": "AppleSkin",
     "loader": "neoforge",
@@ -15296,7 +15824,7 @@
      "left": 4823,
      "listed": 4823
     },
-    "rulesInRange": 47,
+    "rulesInRange": 48,
     "ruleHits": [
      {
       "rule": "version-changes.json: data-format: loot tables, advancements and recipes loaded as non-reloadab",
@@ -15730,6 +16258,17 @@
       "note",
       "version-changes.json: data-format: loot tables, advancements and recipes loaded as non-reloadab"
      ]
+    ]
+   },
+   "stonecutter": {
+    "switches": 531,
+    "mods": 20,
+    "confirmed": 135,
+    "rules": [
+     "sc-posestack-rotate-degrees"
+    ],
+    "backRules": [
+     "sc-posestack-rotate-degrees-back"
     ]
    },
    "bestRun": {
@@ -16587,8 +17126,8 @@
    "broken": 3818,
    "coverage": {
     "listed": 3233,
-    "mappings": 132,
-    "rule": 35,
+    "mappings": 131,
+    "rule": 36,
     "note": 326,
     "left": 2740
    },
@@ -16625,9 +17164,9 @@
    "coverage": {
     "listed": 678,
     "mappings": 81,
-    "rule": 0,
+    "rule": 1,
     "note": 19,
-    "left": 578
+    "left": 577
    },
    "bestRun": {
     "mod": "ZombieApocalypseAddon",
@@ -16662,9 +17201,9 @@
    "coverage": {
     "listed": 2559,
     "mappings": 179,
-    "rule": 78,
+    "rule": 79,
     "note": 127,
-    "left": 2175
+    "left": 2174
    },
    "bestRun": {
     "mod": "ZombieApocalypseAddon",
@@ -16701,11 +17240,19 @@
    "coverage": {
     "listed": 1095,
     "mappings": 62,
-    "rule": 0,
+    "rule": 1,
     "note": 334,
-    "left": 699
+    "left": 698
    },
-   "bestRun": null,
+   "bestRun": {
+    "mod": "ZombieApocalypseAddon",
+    "loader": "neoforge",
+    "from": "1.21.1",
+    "to": "26.3",
+    "status": "stop",
+    "exact": false,
+    "date": "2026-10-25"
+   },
    "backportRun": null,
    "measured": true,
    "status": {
@@ -16767,9 +17314,9 @@
    "coverage": {
     "listed": 1944,
     "mappings": 692,
-    "rule": 9,
+    "rule": 13,
     "note": 3,
-    "left": 1240
+    "left": 1236
    },
    "bestRun": {
     "mod": "AppleSkin",
@@ -16806,9 +17353,9 @@
    "coverage": {
     "listed": 2883,
     "mappings": 0,
-    "rule": 12,
-    "note": 127,
-    "left": 2744
+    "rule": 81,
+    "note": 62,
+    "left": 2740
    },
    "bestRun": {
     "mod": "AppleSkin",
@@ -16843,9 +17390,9 @@
    "coverage": {
     "listed": 2490,
     "mappings": 0,
-    "rule": 5,
+    "rule": 11,
     "note": 37,
-    "left": 2448
+    "left": 2442
    },
    "bestRun": {
     "mod": "AppleSkin",
@@ -16966,6 +17513,30 @@
    "date": "2026-10-24"
   },
   {
+   "mod": "ZombieApocalypseAddon",
+   "loader": "neoforge",
+   "from": "1.21.1",
+   "to": "1.21.4",
+   "status": "load",
+   "date": "2026-10-25"
+  },
+  {
+   "mod": "ZombieApocalypseAddon",
+   "loader": "neoforge",
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "status": "stop",
+   "date": "2026-10-25"
+  },
+  {
+   "mod": "ZombieApocalypseAddon",
+   "loader": "neoforge",
+   "from": "1.21.1",
+   "to": "26.3",
+   "status": "stop",
+   "date": "2026-10-25"
+  },
+  {
    "mod": "Jade",
    "loader": "neoforge",
    "from": "1.21.1",
@@ -16988,6 +17559,54 @@
    "to": "26.3",
    "status": "build",
    "date": "2026-10-24"
+  },
+  {
+   "mod": "ZombieApocalypseAddon",
+   "loader": "neoforge",
+   "from": "1.21.1",
+   "to": "26.3",
+   "status": "stop",
+   "date": "2026-10-25"
+  },
+  {
+   "mod": "ZombieApocalypseAddon",
+   "loader": "neoforge",
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "status": "stop",
+   "date": "2026-10-25"
+  },
+  {
+   "mod": "Notes (MattCzyr)",
+   "loader": "neoforge",
+   "from": "1.21",
+   "to": "1.21.6",
+   "status": "stop",
+   "date": "2026-10-25"
+  },
+  {
+   "mod": "AppleSkin",
+   "loader": "fabric",
+   "from": "1.20.1",
+   "to": "1.21.6",
+   "status": "stop",
+   "date": "2026-10-25"
+  },
+  {
+   "mod": "Reactive (hjake123)",
+   "loader": "neoforge",
+   "from": "1.21.1",
+   "to": "1.21.4",
+   "status": "stop",
+   "date": "2026-10-25"
+  },
+  {
+   "mod": "PrettyPipes",
+   "loader": "neoforge",
+   "from": "1.21.1",
+   "to": "1.21.4",
+   "status": "stop",
+   "date": "2026-10-25"
   }
  ]
 }
