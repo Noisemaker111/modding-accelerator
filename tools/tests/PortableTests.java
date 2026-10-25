@@ -57,8 +57,11 @@ public final class PortableTests {
             Set<String> mods = new HashSet<>();
             for (Object e : Json.array(rule.get("examples"))) {
                 var example = Json.object(e); String mod = Json.text(example, "mod", "");
+                // The packaged jar ships knowledge/ but not the mined switch data; there only the rewrites are checked.
+                Path mined = home.resolve("coverage/stonecutter/switches/" + mod.replace("/", "__") + ".json");
+                if (!Files.isRegularFile(mined)) { mods.add(mod); continue; }
                 var data = switches.computeIfAbsent(mod, m -> {
-                    try { return Json.read(home.resolve("coverage/stonecutter/switches/" + m.replace("/", "__") + ".json")); }
+                    try { return Json.read(mined); }
                     catch (IOException failure) { throw new UncheckedIOException(failure); }
                 });
                 boolean found = false;
