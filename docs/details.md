@@ -245,6 +245,14 @@ the recorded command on JBR, which Gradle's toolchain resolution provides. With 
 swaps added and removed methods and fields: on Diorama an added static method and field were
 callable after a 3.4 s reload, and the field kept its value across the next reload.
 
+`--java JAVA_HOME` on `ui-check`/`world-check` starts the client on that runtime instead of the
+build's, the same way: Gradle prepares and records the launch, and modaccel starts it with the
+given `java`. Some failures only happen on one runtime: Mojang's launcher ships Java 21.0.7 for
+Minecraft 1.20.5 to 1.21.11, whose C2 compiler crashes on some code (JDK-8358534). With
+`--java` pointing at Microsoft's 21.0.7, a Diorama 1.21.1 build from before its fix died 8 s
+into world creation with that crash, and the fixed build ran 3.5 minutes without it. A running
+client on another runtime is refused rather than reused.
+
 Local checks cover Windows PowerShell/Git Bash, Fabric 1.21.5/1.21.6/26.3 and NeoForge 1.21.1.
 An isolated Linux VPS passed source/packaged core checks and real Gradle/JUnit checks
 from paths with spaces. A deliberately failing test failed twice; after restoration,
