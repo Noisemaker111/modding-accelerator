@@ -8455,21 +8455,21 @@
     "listed": 2559,
     "listedWithPrivate": 3533,
     "mappings": 179,
-    "rule": 78,
+    "rule": 79,
     "note": 127,
-    "left": 2175,
+    "left": 2174,
     "withPrivate": {
      "mappings": 226,
-     "rule": 80,
+     "rule": 81,
      "note": 152,
-     "left": 3075
+     "left": 3074
     },
     "back": {
      "mappings": 187,
      "left": 2694,
      "listed": 2881
     },
-    "rulesInRange": 79,
+    "rulesInRange": 80,
     "ruleHits": [
      {
       "rule": "structural.json: item-model",
@@ -8564,6 +8564,10 @@
       "changes": 2
      },
      {
+      "rule": "fixes.json: glstatemanager-opengl",
+      "changes": 1
+     },
+     {
       "rule": "version-changes.json: moved: CoreShaders, BakedModel, ThrownPotion",
       "changes": 1
      },
@@ -8633,6 +8637,13 @@
      }
     ],
     "matched": [
+     [
+      "class removed",
+      "com.mojang.blaze3d.platform.GlStateManager",
+      "com.mojang.blaze3d.platform.GlStateManager",
+      "rule",
+      "fixes.json: glstatemanager-opengl"
+     ],
      [
       "class removed",
       "com.mojang.blaze3d.shaders.CompiledShader$Type",
@@ -17190,9 +17201,9 @@
    "coverage": {
     "listed": 2559,
     "mappings": 179,
-    "rule": 78,
+    "rule": 79,
     "note": 127,
-    "left": 2175
+    "left": 2174
    },
    "bestRun": {
     "mod": "ZombieApocalypseAddon",

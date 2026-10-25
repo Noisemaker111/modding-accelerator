@@ -80,7 +80,16 @@ public final class PortableTests {
             if (route == null || route.stepsCovered(Json.text(rule, "jump", ""), names).isEmpty()) throw new AssertionError(id + ": no route " + Json.text(rule, "jump", "") + " runs it");
             learned++;
         }
-        check(learned >= 30, learned + " rules learned from Stonecutter switches name real switches in two or more mods, match their error, rewrite their example and run on their update");
+        for (Object item : Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules"))) {
+            var rule = Json.object(item); if (!"glstatemanager-opengl".equals(rule.get("id"))) continue;
+            String log = "HUD.java:3: error: cannot find symbol\nimport com.mojang.blaze3d.platform.GlStateManager;\n  symbol:   class GlStateManager\n  location: package com.mojang.blaze3d.platform\n";
+            check(java.util.regex.Pattern.compile(rule.get("match").toString()).matcher(log).find()
+                    && Port.rewrite(rule, "import com.mojang.blaze3d.platform.GlStateManager;\nimport com.mojang.blaze3d.platform.NativeImage;\n")
+                        .equals("import com.mojang.blaze3d.opengl.GlStateManager;\nimport com.mojang.blaze3d.platform.NativeImage;\n")
+                    && !Route.plan(home, "1.20.1", "1.21.6").stepsCovered(Json.text(rule, "jump", ""), "yarn").isEmpty(),
+                    "GlStateManager's 1.21.5 package move is rewritten in yarn and mojmap sources, so javac no longer stops at the import");
+        }
+        check(learned >= 30, learned +" rules learned from Stonecutter switches name real switches in two or more mods, match their error, rewrite their example and run on their update");
     }
     public static void main(String[] args) throws Exception {
         Path home = Path.of(args[0]), scratch = Path.of(args[1]); Files.createDirectories(scratch);

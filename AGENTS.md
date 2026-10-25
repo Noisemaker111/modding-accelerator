@@ -41,8 +41,9 @@ Live board: `docs/index.html` (the bench page; `docs/progress.html` now points t
 
 - Phase 2 step 11c (done): rules learned from 33 Stonecutter mods (5,045 switches) are the
   `source: "stonecutter"` rules in knowledge/fixes.json; regenerate with `python bench/stonecutter_mine.py
-  extract` then `python bench/stonecutter_rules.py`. Zombie → 26.3 went 69 → 50 errors. Re-run through the
-  router, AppleSkin 1.20.1 → 1.21.6 shows 1 error because javac stops at the GlStateManager import first.
+  extract` then `python bench/stonecutter_rules.py`. Zombie → 26.3 went 69 → 50 errors. AppleSkin 1.20.1 → 1.21.6
+  used to stop at one GlStateManager import (router and --direct alike; step 7 moved it by hand); the
+  `glstatemanager-opengl` rule moves it and the port now shows 37 errors through the router.
 
 Read README.md for the public goal/support table and PLAN.md for the evidence
 behind the steps above. Finish the pending final game check before claiming

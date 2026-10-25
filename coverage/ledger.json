@@ -169,7 +169,7 @@
       "from": "1.20.1",
       "to": "1.21.6",
       "status": "stop",
-      "detail": "Re-run through the router (Loom 1.10 and Gradle 8.13 by hand, JEI disabled as in step 7): javac stops at 1 import error (GlStateManager) before it reaches the rest, so before and after both show 1 (99s / 66s). The source uses yarn names, so the learned mojmap rules do not apply. Warm Gradle and mapping caches, fresh upstream copy each run; before = rules as of the hub router, after = plus the 38 rules learned from Stonecutter switches (bench/stonecutter_rules.py).",
+      "detail": "Re-run through the router (Loom 1.10 and Gradle 8.13 by hand, JEI disabled as in step 7). Without help javac stops at one import, com.mojang.blaze3d.platform.GlStateManager, which moved to com.mojang.blaze3d.opengl in 1.21.5; --direct stops at the same 1, and so did step 7's first run, whose 61 came after that import was moved by hand. With the new glstatemanager-opengl rule the real count shows: 37 errors, 10 rules applied (87s), same with and without the learned Stonecutter rules (99s), which are mojmap-only. Left: render pipeline (setShaderColor x9, blend and depth state, texture ids), the exhaustion getter, food component effects, tooltip component, networking receivers. Warm Gradle and mapping caches, fresh copies.",
       "date": "2026-10-25"
     },
     {

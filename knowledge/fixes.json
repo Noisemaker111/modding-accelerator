@@ -1115,6 +1115,32 @@
       "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
     },
     {
+      "id": "glstatemanager-opengl",
+      "jump": "1.21.4 -> 1.21.5",
+      "match": "symbol:\\s+class GlStateManager\\s+location: package com\\.mojang\\.blaze3d\\.platform",
+      "apply": {
+        "find": "\\bcom\\.mojang\\.blaze3d\\.platform\\.GlStateManager\\b",
+        "replace": "com.mojang.blaze3d.opengl.GlStateManager"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.5 moved GlStateManager from com.mojang.blaze3d.platform to com.mojang.blaze3d.opengl (coverage/changes/1.21.4__1.21.5.json lists it removed and added, so no mapping links the two). com.mojang names are the same in every mapping set. Only the import moves: members it lost (SrcFactor, DstFactor) stay as named errors. Before this, javac stopped at the import and hid every other error.",
+      "verified": null
+    },
+    {
+      "id": "glstatemanager-opengl-back",
+      "jump": "1.21.5 -> 1.21.4",
+      "match": "symbol:\\s+class GlStateManager\\s+location: package com\\.mojang\\.blaze3d\\.opengl|package com\\.mojang\\.blaze3d\\.opengl does not exist",
+      "apply": {
+        "find": "\\bcom\\.mojang\\.blaze3d\\.opengl\\.GlStateManager\\b",
+        "replace": "com.mojang.blaze3d.platform.GlStateManager"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Backport of glstatemanager-opengl.",
+      "verified": null
+    },
+    {
       "id": "sc-permissions-source-level",
       "source": "stonecutter",
       "jump": "1.21.10 -> 1.21.11 (mojmap)",
