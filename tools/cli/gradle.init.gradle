@@ -181,7 +181,19 @@ gradle.projectsEvaluated {
                     executable: executable, arguments: arguments, directory: directory.absolutePath,
                     environment: environment, fingerprint: fingerprint, jbr: jbr, jbrExecutable: jbrExecutable])
                 println 'MODACCEL_LAUNCH ' + launchFile.absolutePath
-                if (jbr) throw new StopExecutionException('modaccel starts this launch on JetBrains Runtime')
+                if (jbr) {
+                    // Loom writes the classpath file the launch names (@.../argFiles/runClient) inside
+                    // exec(), which this skips, so a checkout that never ran the client has none.
+                    def writeArgFile = null
+                    for (def c = t.class; c != null && writeArgFile == null; c = c.superclass) {
+                        writeArgFile = c.declaredMethods.find { it.name == 'writeArgFile' && it.parameterCount == 0 }
+                    }
+                    if (writeArgFile != null && t.hasProperty('useArgFile') && t.useArgFile.get()) {
+                        writeArgFile.accessible = true
+                        writeArgFile.invoke(t)
+                    }
+                    throw new StopExecutionException('modaccel starts this launch on JetBrains Runtime')
+                }
             }
         }
     }
