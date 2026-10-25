@@ -67,6 +67,7 @@ source: `java tools/cli/Bootstrap.java . package --json` with a JDK 17+.
 
 ## Details and evidence
 
+- [**Porting map**](https://noisemaker111.github.io/modding-accelerator/porting-map.html) — pick a from and to version: the route through family hubs, how big each step is, every class, method and field that changed between neighbouring releases (1.14.4 to 26.3, Mojang names), and how much the tool already handles. Data in [`coverage/changes/`](coverage/changes/).
 - [**Porting coverage**](https://noisemaker111.github.io/modding-accelerator/progress.html) — the version map, every hop that was run, and the loader grid. Generated from [`coverage/ledger.json`](coverage/ledger.json).
 - [`docs/details.md`](docs/details.md) — portable command internals, older Windows lanes, scenarios, multiplayer, the porting toolbox, measurements.
 - [`bench/alternatives.md`](bench/alternatives.md) — sourced comparison with Loom, GameTest, HeadlessMC, MC-Runtime-Test, mc-mod-porter and others, including where they win.

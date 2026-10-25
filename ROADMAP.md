@@ -27,6 +27,13 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/pro
 
 ## Phase 2 — Big jumps across families (1.16.5, 1.18.2, 1.20.1 → 1.21.x)
 
+11a. Change index and hub-and-spoke families: every release from 1.14.4 to 26.3 diffed against the
+    next in Mojang's names (`coverage/changes/`, `tools/ChangeIndex.java`), 24 families cut where an
+    update breaks 1% or more of the game's names, each with a hub picked by Modrinth mod count, rule
+    coverage and the best ledger run per step, shown at `docs/porting-map.html`. Releases before
+    1.14.4 are listed as blocked (no official mappings). **done**
+11b. Router: `port` chains hops X → family hub → hub → … → Y from `coverage/changes/index.json`, one
+    record per hop; renames inside a family applied from the index. **next**
 11. Chain mappings across more than one family in a single port, with one record per hop. **later**
 12. Prove one untouched mod from 1.20.1 (or older) to 1.21.6 to a build, then to a loaded client. **later**
 13. Publish the family list each jump still needs, so a stop is a shopping list. **later**

@@ -1,0 +1,14 @@
+{
+  "from": "1.20.5", "to": "1.20.6",
+  "names": "official",
+  "linked": "exact",
+  "oldSize": 72619, "broken": 0, "breakingShare": 0.0000,
+  "counts": {"classesAdded": 1, "classesRemoved": 0, "classesRenamed": 0, "methodsAdded": 1, "methodsRemoved": 0, "methodsRenamed": 0, "methodsChanged": 0, "fieldsAdded": 1, "fieldsRemoved": 0, "fieldsRenamed": 0, "fieldsChanged": 0, "classesAddedApi": 1, "methodsAddedApi": 1},
+  "classesAdded": ["net.minecraft.util.datafix.schemas.V3808_2"],
+  "classesRemoved": [],
+  "classesRenamed": [],
+  "members": {
+    "net.minecraft.world.item.component.CustomData": {"fieldsAdded": ["private LOGGER:Logger"]},
+    "net.minecraft.world.level.block.entity.BlockEntity": {"methodsAdded": ["parseCustomNameSafe(String,HolderLookup.Provider)Component"]}
+  }
+}

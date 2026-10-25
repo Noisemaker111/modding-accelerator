@@ -1,0 +1,12 @@
+{
+  "from": "1.21.7", "to": "1.21.8",
+  "names": "official",
+  "linked": "exact",
+  "oldSize": 83988, "broken": 0, "breakingShare": 0.0000,
+  "counts": {"classesAdded": 1, "classesRemoved": 0, "classesRenamed": 0, "methodsAdded": 0, "methodsRemoved": 0, "methodsRenamed": 0, "methodsChanged": 0, "fieldsAdded": 0, "fieldsRemoved": 0, "fieldsRenamed": 0, "fieldsChanged": 0, "classesAddedApi": 1},
+  "classesAdded": ["com.mojang.blaze3d.GraphicsWorkarounds"],
+  "classesRemoved": [],
+  "classesRenamed": [],
+  "members": {
+  }
+}

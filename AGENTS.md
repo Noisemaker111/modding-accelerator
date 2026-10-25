@@ -31,6 +31,11 @@ Live board: `docs/progress.html`, rendered from `coverage/ledger.json` by
   version's names (1.21.6: 9,357 classes); applying it to a whole tree is still missing. A 26.3
   build of AppleSkin's own 26.3-fabric checkout compiles in 14s.
 
+- Phase 2 step 11a (done) / 11b (next): the change index. `coverage/changes/` holds every
+  neighbouring-release diff 1.14.4 → 26.3 in Mojang names plus `index.json` (families, hubs, rule
+  coverage, best ledger run); `docs/porting-map.html` shows it. Refresh: `java tools/ChangeIndex.java`,
+  `python bench/change_routes.py`, `python bench/porting_map.py`. Next: the router that chains hops.
+
 Read README.md for the public goal/support table and PLAN.md for the evidence
 behind the steps above. Finish the pending final game check before claiming
 the current automatic semantic port works. Do not treat a passing build, mixin
