@@ -1,5 +1,5 @@
 {
-  "note": "Real mods the runner puts through the whole modaccel loop on fresh clones. commit pins the run; --latest uses the head of branch instead. project selects a Gradle module (Stonecutter node). edit_file is the source file the stale-game check appends a comment to; empty picks the first Java file under src/main/java. setup_only entries stop after setup (no client: no --project on a multi-project build); nodes lists Gradle projects that each compile on their own (--project NODE).",
+  "note": "Real mods the runner puts through the whole modaccel loop on fresh clones. commit pins the run; --latest uses the head of branch instead. project selects a Gradle module (Stonecutter node). edit_file is the source file the stale-game check appends a comment to; empty picks the first Java file under src/main/java. setup_only entries stop after setup (no client: no --project on a multi-project build); nodes lists Gradle projects that each compile on their own (--project NODE). known_failures records an upstream failure by node with the exact error text it must show; a different error, or the node passing, is reported.",
   "mods": [
     {
       "id": "appleskin",
@@ -153,7 +153,17 @@
         ":26.1.2-neoforge",
         ":26.2-neoforge",
         ":26.3-neoforge"
-      ]
+      ],
+      "known_failures": {
+        ":1.21.6": {
+          "signature": "getPackVersion(PackType)",
+          "reason": "Upstream Diorama at this commit: src/gametest/java/dev/diorama/test/DioramaClientTest.java calls WorldVersion.getPackVersion(PackType), which this node's game does not have, so :compileGametestJava fails. Same error on Windows, Linux and macOS in CI; not a modaccel failure."
+        },
+        ":1.21.8-neoforge": {
+          "signature": "getPackVersion(PackType)",
+          "reason": "Upstream Diorama at this commit: src/gametest/java/dev/diorama/test/DioramaClientTest.java calls WorldVersion.getPackVersion(PackType), which this node's game does not have, so :compileGametestJava fails. Same error on Windows, Linux and macOS in CI; not a modaccel failure."
+        }
+      }
     },
     {
       "id": "architectury-all",

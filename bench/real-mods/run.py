@@ -117,6 +117,30 @@ def find_png(value):
     return None
 
 
+def known(mod, node, error):
+    """An upstream failure the manifest records with its exact error text; anything else is a real failure."""
+    entry = (mod.get("known_failures") or {}).get(node)
+    return entry if entry and entry["signature"] in (error or "") else None
+
+
+def classify(mod, results):
+    """Marks recorded upstream failures; returns the nodes that really failed."""
+    failed = []
+    for node, entry in results.items():
+        for record in entry.values() if "status" not in entry else [entry]:
+            if record["status"] == "fail":
+                reason = known(mod, node, record.get("fullError", record.get("error", "")))
+                if reason:
+                    record["status"] = "known-failure"
+                    record["upstream"] = reason["reason"]
+                elif node not in failed:
+                    failed.append(node)
+            elif record["status"] == "pass" and node in (mod.get("known_failures") or {}):
+                record["knownFailureNowPasses"] = "remove this node from known_failures in manifest.json"
+            record.pop("fullError", None)
+    return failed
+
+
 class ModRun:
     def __init__(self, mod, cache, logs, latest):
         self.mod, self.latest = mod, latest
@@ -289,7 +313,12 @@ class ModRun:
 
     def game_directory(self):
         # Where the running game really keeps its saves: Mojang names call it gameDirectory, Yarn runDirectory.
-        code = ("Object d;\ntry { d = field(mc, \"gameDirectory\"); } catch (Throwable mojang) { d = field(mc, \"runDirectory\"); }\n"
+        # Reflection only, so this helper works whether or not eval offers mc on this mapping.
+        code = ("Class<?> type;\n"
+                "try { type = Class.forName(\"net.minecraft.client.Minecraft\", true, getClass().getClassLoader()); }\n"
+                "catch (ClassNotFoundException yarn) { type = Class.forName(\"net.minecraft.client.MinecraftClient\", true, getClass().getClassLoader()); }\n"
+                "Object game = call(type, \"getInstance\");\n"
+                "Object d;\ntry { d = field(game, \"gameDirectory\"); } catch (NoSuchFieldException yarn) { d = field(game, \"runDirectory\"); }\n"
                 "return ((java.io.File) d).getAbsolutePath();\n")
         call = self.modaccel("game-directory", "eval", self.snippet("game-directory", code), timeout=300)
         value = call["result"].get("value")
@@ -357,8 +386,9 @@ class ModRun:
             results[node] = {"status": "pass" if call["exit"] == 0 else "fail", "seconds": call["seconds"]}
             if call["exit"] != 0:
                 results[node]["error"] = short(call["error"], 400)
+                results[node]["fullError"] = str(call["error"])
         self.modaccel("nodes-stop", "game-stop", timeout=300)  # the node compiles' Gradle daemons
-        failed = [n for n, r in results.items() if r["status"] != "pass"]
+        failed = classify(self.mod, results)
         self.put("nodes-compile", "fail" if failed else "pass", now() - start,
                  ("; ".join(f"{n}: {results[n].get('error', '')[:200]}" for n in failed)) if failed else "",
                  nodes=results, passed=f"{len(nodes) - len(failed)}/{len(nodes)}")
@@ -375,13 +405,14 @@ class ModRun:
                 entry[verb] = {"status": "pass" if call["exit"] == 0 else "fail", "seconds": call["seconds"]}
                 if call["exit"] != 0:
                     entry[verb]["error"] = short(call["error"], 600)
+                    entry[verb]["fullError"] = str(call["error"])
                     break
             results[node] = entry
             print(f"   {node:22} " + "  ".join(f"{v} {r['status']} {r['seconds']:.1f}s" for v, r in entry.items()), flush=True)
         self.modaccel("nodes-stop", "game-stop", timeout=300)
-        failed = [n for n, e in results.items() if any(r["status"] != "pass" for r in e.values())]
+        failed = classify(self.mod, results)
         self.put("nodes-compile", "fail" if failed else "pass", now() - start,
-                 "; ".join(f"{n}: " + next(r.get("error", "") for r in results[n].values() if r["status"] != "pass")[:300] for n in failed),
+                 "; ".join(f"{n}: " + next(r.get("error", "") for r in results[n].values() if r["status"] == "fail")[:300] for n in failed),
                  nodes=results, passed=f"{len(results) - len(failed)}/{len(results)}")
         for name in STEPS:
             if name not in self.steps and name != "no-leftovers":

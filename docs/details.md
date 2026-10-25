@@ -272,6 +272,32 @@ empty-cache setup speed and Forge framebuffer checks remain unfinished.
 SHA-256 checksums locally; nothing is published. The older Windows lanes described below remain available through their
 existing verbs (`ui`, `node`, `world`, `mp`, and single-dash `port` options).
 
+### Real-mods test (the merge gate)
+
+`bench/real-mods/` puts real mods through the whole loop on fresh clones, so a regression shows
+up on someone else's code before a user finds it. `manifest.json` pins each mod (repo, commit,
+`--project`, loader); `--latest` uses each branch head instead.
+
+```sh
+python bench/real-mods/run.py                         # every mod, this checkout's modaccel
+python bench/real-mods/run.py --only diorama-26.3,jade
+python bench/real-mods/run.py --modaccel ../other-worktree --label pr --out bench/real-mods/results/ab
+python bench/real-mods/compare.py bench/real-mods/results/ab/main.json bench/real-mods/results/ab/pr.json --names main,PR
+python bench/real-mods/run.py --compile-nodes --only diorama-all   # no game: setup + compile on every node (CI)
+```
+
+Each mod is cloned fresh into `%LOCALAPPDATA%\modaccel-real-mods` (`~/.cache/modaccel-real-mods`
+elsewhere), then only modaccel runs: doctor, setup, compile, test where the checkout has tests,
+ui-check twice, the stale-game check (a comment appended to a source file must make ui-check
+refuse the running game; the revert must pass), eval, world-check on a shipped flat save,
+eval --until, reload of a real class change (ui-check must then accept the reloaded game),
+game-stop, a restart of the unchanged project, ui-check --java, game-stop, compile on every
+listed Stonecutter node, and a scan for game or Gradle daemon processes left behind. A failed
+step never stops the run; `results/REPORT.md` lists each failure with its error and log, and the
+exit code is 1. The CI job `stonecutter-nodes` runs the compile-only mode for Diorama and
+In-Game Account Switcher on Windows, Linux and macOS. Nothing merges unless the runner passes on
+main and on the branch.
+
 > **Not a finished product, and not the only option:** what is still missing is in
 > [`ROADMAP.md`](ROADMAP.md), and how it compares to existing tools (including where they win) is
 > in [`bench/alternatives.md`](bench/alternatives.md).

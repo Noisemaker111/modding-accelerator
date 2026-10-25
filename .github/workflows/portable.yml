@@ -81,17 +81,28 @@ jobs:
         with:
           python-version: '3.12'
       - name: Gradle and JDK caches
-        uses: actions/cache@v4
+        id: cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
             .modaccel/jdks
-          key: stonecutter-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
+          key: stonecutter-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}-${{ github.run_id }}
           restore-keys: stonecutter-${{ runner.os }}-${{ matrix.mod }}-
       - name: Setup and compile every node
         run: python bench/real-mods/run.py --compile-nodes --only ${{ matrix.mod }} --cache "${{ runner.temp }}/real-mods" --out "${{ runner.temp }}/real-mods-results" --label ${{ matrix.mod }}
+      - name: Save caches even when a node fails
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+            .modaccel/jdks
+          key: stonecutter-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}-${{ github.run_id }}
       - name: Node results
         if: always()
         uses: actions/upload-artifact@v4
