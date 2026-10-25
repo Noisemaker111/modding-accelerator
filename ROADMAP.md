@@ -33,8 +33,15 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/ (b
     coverage and the best ledger run per step, shown at `docs/porting-map.html`. Releases before
     1.14.4 are listed as blocked (no official mappings). **done**
 11b. Router: `port` chains hops X → family hub → hub → … → Y from `coverage/changes/index.json`, one
-    record per hop; renames inside a family applied from the index. **next**
-11. Chain mappings across more than one family in a single port, with one record per hop. **later**
+    record per hop; renames inside a family applied from the index. **done** — `port --from A --to B
+    --fix` walks the hubs, joins every update's renames and moves into one map by intermediary ids
+    (`VersionMap --chain`), runs only the rules whose jump covers an update it crosses, builds once,
+    and names the update behind each error left. Releases before 1.14.4 are refused. ZombieApocalypseAddon
+    1.21.1 → 1.21.4 (three families) builds and loads; → 1.21.6 stops at the same 9 errors as the
+    one-jump path, all placed on 1.21.4 → 1.21.5; → 26.3 stops at 69 instead of 100+.
+11. Chain mappings across more than one family in a single port, with one record per hop. **done**
+    with 11b up to 1.21.11; updates into 26.x have no shared ids, so there the router relies on
+    rules and names errors from the step files by name only.
 12. Prove one untouched mod from 1.20.1 (or older) to 1.21.6 to a build, then to a loaded client. **later**
 13. Publish the family list each jump still needs, so a stop is a shopping list. **later**
 

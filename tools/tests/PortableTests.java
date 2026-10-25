@@ -9,6 +9,39 @@ import javax.imageio.ImageIO;
 public final class PortableTests {
     static int count;
     static void check(boolean condition, String message) { if (!condition) throw new AssertionError(message); count++; System.out.println("PASS " + message); }
+    /** Hub routing from the change index, rule ranges, the pre-1.14.4 refusal and errors named by update. */
+    static void routeChecks(Path home, Port port, Path scratch) throws Exception {
+        Route forward = Route.plan(home, "1.20.1", "1.21.6");
+        check(forward != null && forward.waypoints.equals(List.of("1.20.1", "1.20.2", "1.20.4", "1.20.6", "1.21.1", "1.21.3", "1.21.4", "1.21.5", "1.21.6"))
+                && forward.steps().size() == 12 && forward.hops.size() == 8, "1.20.1 -> 1.21.6 routes through every family hub between, one hop each: " + (forward == null ? null : forward.waypoints));
+        Route back = Route.plan(home, "1.21.6", "1.21.1");
+        check(back.waypoints.equals(List.of("1.21.6", "1.21.5", "1.21.4", "1.21.3", "1.21.1")) && back.steps().get(0).equals("1.21.6 -> 1.21.5"), "a backport walks the same hubs in reverse");
+        Route late = Route.plan(home, "1.21.6", "26.3");
+        check(late.mappedChain().get(late.mappedChain().size() - 1).equals("1.21.11") && late.linkOf("1.21.11 -> 26.1").equals("by-name"),
+                "a route into 26.x joins ids only up to 1.21.11 and marks the rest by-name");
+        Route zombie = Route.plan(home, "1.21.1", "1.21.6");
+        check(zombie.stepsCovered("1.21.1 -> 1.21.4 (mojmap)", "mojmap").equals(List.of("1.21.1 -> 1.21.2", "1.21.2 -> 1.21.3", "1.21.3 -> 1.21.4")),
+                "a rule runs on the updates its jump covers");
+        check(zombie.stepsCovered("1.21.1 -> 1.21.4 (mojmap)", "yarn").isEmpty() && back.stepsCovered("1.21.1 -> 1.21.4 (mojmap)", "mojmap").isEmpty()
+                && forward.stepsCovered("1.21.6 -> 26.3 (official names)", "mojmap").isEmpty(), "a rule for other names, the other direction or updates not crossed does not run");
+        Map<String, Object> refused = Route.blocked(home, "1.12.2", "1.20.1");
+        check(refused != null && "blocked".equals(refused.get("tier")) && String.valueOf(refused.get("details")).contains("1.14.4") && Route.blocked(home, "1.20.1", "1.21.6") == null,
+                "releases before 1.14.4 are refused with the reason; later ones are not: " + (refused == null ? null : refused.get("details")));
+        check(Route.plan(home, "1.21.1-rc1", "1.21.6") == null, "a release outside the index falls back to the one-jump map");
+        port.route = zombie;
+        Path log = scratch.resolve("route errors.log");
+        Files.writeString(log, "C:\\mod\\src\\A.java:10: error: cannot find symbol\n        int y = level.getMinBuildHeight();\n                     ^\n"
+                + "  symbol:   method getMinBuildHeight()\n  location: variable level of type Level\n"
+                + "C:\\mod\\src\\B.java:5: error: incompatible types: int cannot be converted to String\n");
+        Map<String, Object> history = Json.map("history", List.of(Json.map("kind", "method", "owner", "net.minecraft.world.level.Level", "name", "getMinBuildHeight", "desc", "()I",
+                "what", "removed", "was", "net.minecraft.world.level.Level.getMinBuildHeight", "to", null, "step", "1.21.1 -> 1.21.2")));
+        List<Object> named = port.namedErrors(log, history);
+        var first = Json.object(named.get(0)); var placed = Json.object(Json.array(first.get("changedIn")).get(0));
+        check(named.size() == 2 && "1.21.1 -> 1.21.2".equals(placed.get("step")) && "1.21.1 -> 1.21.3".equals(placed.get("hop")) && String.valueOf(placed.get("change")).contains("removed"),
+                "a remaining error names the update and hop that removed its symbol");
+        var second = Json.object(named.get(1));
+        check(Json.array(second.get("changedIn")).isEmpty() && second.get("why") != null, "an error the history cannot place is still listed, with the reason");
+    }
     public static void main(String[] args) throws Exception {
         Path home = Path.of(args[0]), scratch = Path.of(args[1]); Files.createDirectories(scratch);
         Path existingArgs = scratch.resolve("existing loom args.txt");
@@ -59,6 +92,7 @@ public final class PortableTests {
         check(((Number)TestResults.read(model, "modaccelPure", "fresh-run").get("executed")).intValue() == 0, "old successful XML cannot make an empty run pass");
         Build build = new Build(project, home, "", new Modaccel.Report(root, "test")); Port port = new Port(build, model);
         Build portBuild = new Build(project, home, "", new Modaccel.Report(root, "port"));
+        routeChecks(home, new Port(portBuild, model), scratch);
         for (var groups : List.of(List.of("net.minecraftforge"), List.of("net.fabricmc", "net.neoforged"), List.<String>of())) {
             var dependencies = groups.stream().map(group -> Json.map("group", group)).toList();
             try {

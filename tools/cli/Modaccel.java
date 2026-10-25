@@ -26,7 +26,7 @@ public final class Modaccel {
     static final class Options {
         final Map<String, String> values = new LinkedHashMap<>(); final Set<String> flags = new HashSet<>(); String command = "fast";
         Options(String[] args) {
-            Set<String> switches = Set.of("json", "refresh", "help", "dry-run", "fix", "expect-world", "save-roundtrip", "jbr");
+            Set<String> switches = Set.of("json", "refresh", "help", "dry-run", "fix", "direct", "expect-world", "save-roundtrip", "jbr");
             int i = 0; if (args.length > 0 && !args[0].startsWith("-")) command = args[i++];
             if (command.equals("help") && i < args.length && !args[i].startsWith("-")) values.put("command", args[i++]);
             for (; i < args.length; i++) {
@@ -64,6 +64,10 @@ public final class Modaccel {
             else if (options.command.equals("doctor")) {
                 result = project.discover(); result.put("support", Support.discovered(result)); result.put("jdks", Runtimes.installed(home).stream().map(j -> Json.map("home", j.home().toString(), "version", j.version())).toList());
                 result.put("selectedJava", Runtimes.forGradle(home, project.wrapperVersion()).home().toString()); exit = 0;
+            } else if (options.command.equals("port") && !options.values.containsKey("undo")
+                    && (result = Route.blocked(home, options.get("from", ""), options.get("to", ""))) != null) {
+                // Refuse before evaluating a build that predates official names; nothing is changed.
+                exit = 1;
             } else {
                 Build build = new Build(project, home, options.get("project", ""), report);
                 Map<String, Object> model = Set.of("game-status", "game-stop", "eval").contains(options.command) || options.command.equals("port") && options.values.containsKey("undo") ? Json.map()
@@ -120,6 +124,7 @@ public final class Modaccel {
                     + "  modaccel dependencies --root SOURCE --to 1.21.6 --json\n"
                     + "  modaccel port --root SOURCE --from 1.21.5 --to 1.21.6 --fix --json\n"
                     + "  modaccel port --root SOURCE --undo TRANSACTION\n"
+                    + "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n"
                     + "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
             case "dependencies" -> "Report target dependencies without editing: modaccel dependencies --root SOURCE --to 1.21.6 [--selection FILE] --json\nEach non-loader dependency is resolved, explicitly selected, or blocked with the selection entry to add in .modaccel/dependencies.json.";
             case "ui-check" -> "Capture the target client: modaccel ui-check --root SOURCE --screen net.minecraft.client.gui.screen.TitleScreen --json\nInspect the receipt's framebuffer capture; add --assert METHOD for behavior checks, or --expect-change PERCENT to require the action to visibly change the frame.\n"

@@ -31,10 +31,13 @@ Live board: `docs/index.html` (the bench page; `docs/progress.html` now points t
   version's names (1.21.6: 9,357 classes); applying it to a whole tree is still missing. A 26.3
   build of AppleSkin's own 26.3-fabric checkout compiles in 14s.
 
-- Phase 2 step 11a (done) / 11b (next): the change index. `coverage/changes/` holds every
+- Phase 2 step 11a/11b (done): the change index and the router. `coverage/changes/` holds every
   neighbouring-release diff 1.14.4 → 26.3 in Mojang names plus `index.json` (families, hubs, rule
   coverage, best ledger run); `docs/porting-map.html` shows it. Refresh: `java tools/ChangeIndex.java`,
-  `python bench/change_routes.py`, `python bench/porting_map.py`. Next: the router that chains hops.
+  `python bench/change_routes.py`, `python bench/porting_map.py`. `port` now routes A → hubs → B
+  (`tools/cli/Route.java`), joins one map across every update (`VersionMap --chain`), filters rules by
+  the updates crossed and names each remaining error's update; `--direct` keeps the one-jump map.
+  Next: step 12 (an untouched 1.20.1 mod to 1.21.6, loaded) and a behaviour check on a routed port.
 
 Read README.md for the public goal/support table and PLAN.md for the evidence
 behind the steps above. Finish the pending final game check before claiming
