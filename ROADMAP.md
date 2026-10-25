@@ -76,3 +76,6 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/ (b
 | Are version and loader changes the same job? | No; separate records, separate claims | 2026-10-24 |
 | Does a passing build prove a port? | No; loader-refused jars, invisible UI and unloaded mods all passed builds | 2026-10-24 |
 | What counts as progress? | A row in `coverage/ledger.json` with a receipt, shown on the progress page | 2026-10-24 |
+| What do we support, and how does a new kind of project get in? | `SCOPE.md`: platforms by side, a six-rung support ladder, intake through the `bench-new-mod` skill | 2026-10-25 |
+| Plugin ↔ mod conversion? | Not for now; it's a rewrite, not a port, and hybrid servers already exist | 2026-10-25 |
+| Ports between Paper versions? | Yes, as rung 5 for Paper once rungs 2–3 land | 2026-10-25 |
