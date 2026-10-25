@@ -83,15 +83,23 @@ final class Game {
         String command = options.command; Map<String, Object> current = session();
         if (command.equals("eval")) {
             if (current == null) throw new IOException("No running game for this project. Start one with ui-check or world-check, then eval against it.");
-            String code = options.values.containsKey("file") ? Files.readString(Path.of(options.get("file", ""))) : options.get("code", "");
-            if (code.isBlank()) throw new IllegalArgumentException("eval needs --code SNIPPET or --file PATH");
+            boolean until = options.values.containsKey("until");
+            String code = until ? options.get("until", "") : options.values.containsKey("file") ? Files.readString(Path.of(options.get("file", ""))) : options.get("code", "");
+            if (code.isBlank()) throw new IllegalArgumentException("eval needs --code SNIPPET, --file PATH or --until CONDITION");
             String thread = options.get("thread", "game");
             if (!thread.equals("game") && !thread.equals("control")) throw new IllegalArgumentException("--thread is game or control");
+            double timeout;
+            try { timeout = Double.parseDouble(options.get("timeout", "60")); } catch (NumberFormatException error) { throw new IllegalArgumentException("--timeout is a number of seconds"); }
+            // The control connection gives up on an answer after 135 s.
+            if (timeout <= 0 || timeout > 120) throw new IllegalArgumentException("--timeout is more than 0 and at most 120 seconds");
             long start = System.nanoTime();
-            Map<String, Object> answer = request(current, Json.map("command", "eval", "code", code, "thread", thread));
+            Map<String, Object> request = Json.map("command", "eval", "code", code, "thread", thread);
+            if (until) { request.put("until", true); request.put("timeout", timeout); }
+            Map<String, Object> answer = request(current, request);
             build.report.stages.add(Json.map("name", "eval", "seconds", (System.nanoTime() - start) / 1e9));
             String output = Json.text(answer, "output", "");
-            answer.put("details", (output.isEmpty() ? "" : output + (output.endsWith("\n") ? "" : "\n")) + "=> " + answer.get("value"));
+            answer.put("details", (output.isEmpty() ? "" : output + (output.endsWith("\n") ? "" : "\n")) + "=> " + answer.get("value")
+                    + (until ? String.format(Locale.ROOT, " after %.1f s", ((Number) answer.get("waitedSeconds")).doubleValue()) : ""));
             return answer;
         }
         if (command.equals("reload")) {
