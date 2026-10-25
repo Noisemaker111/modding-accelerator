@@ -260,6 +260,13 @@ Minecraft 1.20.5 to 1.21.11, whose C2 compiler crashes on some code (JDK-8358534
 into world creation with that crash, and the fixed build ran 3.5 minutes without it. A running
 client on another runtime is refused rather than reused.
 
+When the client dies, the command that was talking to it and every later `eval`, `reload`,
+`game-status` and `game-stop` say how: a JVM crash with its error, problematic frame, crashing
+thread, the method being compiled if a JIT compiler crashed, and the hs_err file; a Minecraft
+crash with its description, exception and crash report; or, with neither, the last lines of
+the game log. Only those lines are read from the hs_err file, whose command line can hold an
+access token. `game-stop` forgets the session, so a stopped game isn't reported as exited.
+
 Local checks cover Windows PowerShell/Git Bash, Fabric 1.21.5/1.21.6/26.3 and NeoForge 1.21.1.
 An isolated Linux VPS passed source/packaged core checks and real Gradle/JUnit checks
 from paths with spaces. A deliberately failing test failed twice; after restoration,
