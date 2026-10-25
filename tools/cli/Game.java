@@ -81,6 +81,45 @@ final class Game {
             }
         }
         String command = options.command; Map<String, Object> current = session();
+        if (command.equals("eval")) {
+            if (current == null) throw new IOException("No running game for this project. Start one with ui-check or world-check, then eval against it.");
+            String code = options.values.containsKey("file") ? Files.readString(Path.of(options.get("file", ""))) : options.get("code", "");
+            if (code.isBlank()) throw new IllegalArgumentException("eval needs --code SNIPPET or --file PATH");
+            String thread = options.get("thread", "game");
+            if (!thread.equals("game") && !thread.equals("control")) throw new IllegalArgumentException("--thread is game or control");
+            long start = System.nanoTime();
+            Map<String, Object> answer = request(current, Json.map("command", "eval", "code", code, "thread", thread));
+            build.report.stages.add(Json.map("name", "eval", "seconds", (System.nanoTime() - start) / 1e9));
+            String output = Json.text(answer, "output", "");
+            answer.put("details", (output.isEmpty() ? "" : output + (output.endsWith("\n") ? "" : "\n")) + "=> " + answer.get("value"));
+            return answer;
+        }
+        if (command.equals("reload")) {
+            if (current == null) throw new IOException("No running game for this project. Start one with ui-check or world-check, then reload into it.");
+            List<String> tasks = options.values.containsKey("task") ? List.of(options.get("task", "")) : build.tasks(model, "classes");
+            if (tasks.isEmpty()) throw new IOException("No classes task in the selected project. Select --project :module.");
+            Run.Result compiled = build.compileCached(tasks, "compile");
+            if (compiled.exit() != 0) throw new IOException("Compile failed; the game still runs the previous build.\n" + Run.failure(compiled.log()));
+            long start = System.nanoTime();
+            Map<String, Object> answer = request(current, Json.map("command", "reload"));
+            build.report.stages.add(Json.map("name", "redefine", "seconds", (System.nanoTime() - start) / 1e9));
+            List<Object> restart = Json.array(answer.get("needsRestart"));
+            if (restart.isEmpty()) {
+                // The game now runs this build, so later checks against it are not stale.
+                Map<String, Object> session = Json.read(build.project.state().resolve("agent.json"));
+                session.put("fingerprint", fingerprint());
+                Json.save(build.project.state().resolve("agent.json"), session);
+            }
+            List<Object> redefined = Json.array(answer.get("redefined")), later = Json.array(answer.get("loadOnFirstUse"));
+            StringBuilder details = new StringBuilder();
+            details.append("Swapped ").append(redefined.size()).append(redefined.size() == 1 ? " class" : " classes").append(redefined.isEmpty() ? "" : ": " + String.join(", ", redefined.stream().map(String::valueOf).toList()));
+            if (!later.isEmpty()) details.append("\n").append(later.size()).append(" changed but not loaded yet; the game reads them on first use");
+            if (Boolean.TRUE.equals(answer.get("resourcesReloaded"))) details.append("\nReloaded resource packs (").append(answer.get("changedResources")).append(" changed files)");
+            if (!restart.isEmpty()) details.append("\nNEEDS RESTART (game-stop, then start again): ").append(String.join("; ", restart.stream().map(String::valueOf).toList()));
+            answer.put("details", details.toString());
+            answer.put("restartNeeded", !restart.isEmpty());
+            return answer;
+        }
         if (command.equals("game-status")) return current == null ? Json.map("running", false) : request(current, Json.map("command", "status"));
         if (command.equals("game-stop")) {
             if (current == null) return Json.map("running", false);
@@ -203,7 +242,7 @@ final class Game {
     }
     String fingerprint() throws Exception {
         return Fingerprints.bytes((Fingerprints.build(model, build.project, build.init) + Fingerprints.files(List.of(
-                build.harness.resolve("tools/agent/PortableAgent.java"), build.harness.resolve("tools/cli/Json.java"),
+                build.harness.resolve("tools/agent/PortableAgent.java"), build.harness.resolve("tools/agent/Console.java"), build.harness.resolve("tools/agent/HotReload.java"), build.harness.resolve("tools/cli/Json.java"),
                 build.harness.resolve("tools/cli/Relocate.java")))).getBytes(StandardCharsets.UTF_8));
     }
     private static void verifyWorld(Map<String, Object> status, Path expected) throws Exception {
@@ -240,15 +279,27 @@ final class Game {
         }
         Path recipe = build.project.state().resolve("launch.json");
         List<String> command; Map<String, String> environment = new HashMap<>(); Path directory; String mode;
-        if (Files.exists(recipe) && Boolean.TRUE.equals(Json.read(recipe).get("verified")) && fingerprint.equals(Json.read(recipe).get("fingerprint")) && task.equals(Json.read(recipe).get("task"))) {
-            var launch = Json.read(recipe); command = new ArrayList<>(); command.add(launch.get("executable").toString());
+        boolean jbr = options.has("jbr");
+        boolean saved = Files.exists(recipe) && Boolean.TRUE.equals(Json.read(recipe).get("verified")) && fingerprint.equals(Json.read(recipe).get("fingerprint")) && task.equals(Json.read(recipe).get("task"))
+                && jbr == Boolean.TRUE.equals(Json.read(recipe).get("jbr"));
+        if (!saved && jbr) {
+            Run.Result prepared = build.gradle(List.of("-Dmodaccel.recompile=true", "-Dmodaccel.captureTask=" + task, "-Dmodaccel.agent=" + agent, "-Dmodaccel.fingerprint=" + fingerprint,
+                    "-Dmodaccel.token=" + token, "-Dmodaccel.jbr=true", task), "prepare-jbr-launch");
+            if (prepared.exit() != 0 || !Files.exists(recipe) || Json.read(recipe).get("jbrExecutable") == null)
+                throw new IOException("Could not prepare the JetBrains Runtime launch.\n" + Run.failure(prepared.log()));
+            saved = true;
+        }
+        if (saved) {
+            var launch = Json.read(recipe); command = new ArrayList<>();
+            if (jbr) command.addAll(List.of(launch.get("jbrExecutable").toString(), "-XX:+AllowEnhancedClassRedefinition", "-XX:TieredStopAtLevel=1"));
+            else command.add(launch.get("executable").toString());
             for (String argument : ProjectModel.strings(launch.get("arguments"))) command.add(argument.startsWith("-Dmodaccel.token=") ? "-Dmodaccel.token=" + token : argument);
             Json.object(launch.get("environment")).forEach((key, value) -> { if (value != null) environment.put(key, value.toString()); });
             directory = Path.of(launch.get("directory").toString()); mode = "saved launch; dependencies already prepared";
             command = savedCommand(command, build.report.directory.resolve("client-classpath.args"));
         } else {
             command = build.command(List.of("-Dmodaccel.recompile=true", "-Dmodaccel.captureTask=" + task, "-Dmodaccel.agent=" + agent, "-Dmodaccel.fingerprint=" + fingerprint,
-                    "-Dmodaccel.token=" + token, task));
+                    "-Dmodaccel.token=" + token, "-Dmodaccel.jbr=" + jbr, task));
             environment.put("JAVA_HOME", build.jdk.home().toString()); directory = build.project.root; mode = "Gradle prepares and launches the actual client";
         }
         Path log = build.report.log("game"); Files.createDirectories(log.getParent()); Files.createDirectories(build.project.state());
@@ -312,16 +363,18 @@ final class Game {
         Path asm = null;
         for (String path : jars) if (Path.of(path).getFileName().toString().matches("asm-[0-9].*\\.jar")) { asm = Path.of(path); break; }
         if (asm == null) throw new IOException("No ASM library in the actual build classpath; this client cannot use the portable agent yet.");
-        Path source = build.harness.resolve("tools/agent/PortableAgent.java"), json = build.harness.resolve("tools/cli/Json.java");
-        String key = Fingerprints.files(List.of(source, json, asm, build.harness.resolve("tools/cli/Relocate.java"))) + "-private-asm";
+        Path source = build.harness.resolve("tools/agent/PortableAgent.java"), console = build.harness.resolve("tools/agent/Console.java"), reload = build.harness.resolve("tools/agent/HotReload.java"), json = build.harness.resolve("tools/cli/Json.java");
+        String key = Fingerprints.files(List.of(source, console, reload, json, asm, build.harness.resolve("tools/cli/Relocate.java"))) + "-private-asm-redefine";
         Path dir = build.project.state().resolve("agent/" + key); Files.createDirectories(dir);
         Path jar = dir.resolve("modaccel-agent.jar"); if (Files.exists(jar)) return jar;
         Path classes = dir.resolve("classes"); Files.createDirectories(classes);
         var result = Run.command(List.of(Runtimes.ensureAtLeast(build.harness, 17).home().resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
-                "--release", "8", "-cp", asm.toString(), "-d", classes.toString(), source.toString(), json.toString()), build.project.root, Map.of(), build.report.log("agent-compile"), 120);
+                "--release", "8", "-cp", asm.toString(), "-d", classes.toString(), source.toString(), console.toString(), reload.toString(), json.toString()), build.project.root, Map.of(), build.report.log("agent-compile"), 120);
         build.report.stage("agent-compile", result, Map.of());
         if (result.exit() != 0) throw new IOException("Could not build client control: " + Run.tail(result.log()));
         Manifest manifest = new Manifest(); manifest.getMainAttributes().putValue("Manifest-Version", "1.0"); manifest.getMainAttributes().putValue("Premain-Class", "PortableAgent");
+        // reload swaps recompiled classes into the running game.
+        manifest.getMainAttributes().putValue("Can-Redefine-Classes", "true");
         Path temporary = dir.resolve("agent.tmp"); Set<String> entries = new HashSet<>();
         try (JarOutputStream output = new JarOutputStream(Files.newOutputStream(temporary), manifest); var input = new ZipFile(asm.toFile()); var walk = Files.walk(classes)) {
             for (Path file : walk.filter(Files::isRegularFile).toList()) {

@@ -167,10 +167,21 @@ gradle.projectsEvaluated {
                 if (t.hasProperty('environmentProperty')) environment.putAll(t.environmentProperty.get())
                 def launchFile = new File(System.getProperty('modaccel.launchFile', new File(state, 'launch.json').absolutePath))
                 launchFile.parentFile.mkdirs()
+                // --jbr: the same launch on JetBrains Runtime of the same Java version, so reload can also
+                // add and remove methods and fields. Loom fixes runClient's launcher before this runs, so
+                // Gradle only prepares and records the launch here and modaccel starts it.
+                def jbr = System.getProperty('modaccel.jbr', '') == 'true'
+                def jbrExecutable = null
+                if (jbr) {
+                    def version = t.javaLauncher.get().metadata.languageVersion
+                    jbrExecutable = p.extensions.getByType(JavaToolchainService)
+                            .launcherFor { languageVersion = version; vendor = JvmVendorSpec.JETBRAINS }.get().executablePath.asFile.absolutePath
+                }
                 launchFile.text = JsonOutput.toJson([schema: 1, task: t.path,
                     executable: executable, arguments: arguments, directory: directory.absolutePath,
-                    environment: environment, fingerprint: fingerprint])
+                    environment: environment, fingerprint: fingerprint, jbr: jbr, jbrExecutable: jbrExecutable])
                 println 'MODACCEL_LAUNCH ' + launchFile.absolutePath
+                if (jbr) throw new StopExecutionException('modaccel starts this launch on JetBrains Runtime')
             }
         }
     }

@@ -26,14 +26,14 @@ public final class Modaccel {
     static final class Options {
         final Map<String, String> values = new LinkedHashMap<>(); final Set<String> flags = new HashSet<>(); String command = "fast";
         Options(String[] args) {
-            Set<String> switches = Set.of("json", "refresh", "help", "dry-run", "fix", "expect-world", "save-roundtrip");
+            Set<String> switches = Set.of("json", "refresh", "help", "dry-run", "fix", "expect-world", "save-roundtrip", "jbr");
             int i = 0; if (args.length > 0 && !args[0].startsWith("-")) command = args[i++];
             if (command.equals("help") && i < args.length && !args[i].startsWith("-")) values.put("command", args[i++]);
             for (; i < args.length; i++) {
                 String key = args[i]; if (!key.startsWith("--")) throw new IllegalArgumentException("Expected --option; got " + key);
                 key = key.substring(2);
                 if (switches.contains(key)) flags.add(key);
-                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection").contains(key)) {
+                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread").contains(key)) {
                     if (++i == args.length || args[i].startsWith("--")) throw new IllegalArgumentException("Missing value for --" + key);
                     values.put(key, args[i]);
                 } else throw new IllegalArgumentException("Unknown option --" + key);
@@ -66,12 +66,12 @@ public final class Modaccel {
                 result.put("selectedJava", Runtimes.forGradle(home, project.wrapperVersion()).home().toString()); exit = 0;
             } else {
                 Build build = new Build(project, home, options.get("project", ""), report);
-                Map<String, Object> model = Set.of("game-status", "game-stop").contains(options.command) || options.command.equals("port") && options.values.containsKey("undo") ? Json.map()
+                Map<String, Object> model = Set.of("game-status", "game-stop", "eval").contains(options.command) || options.command.equals("port") && options.values.containsKey("undo") ? Json.map()
                         : build.model(options.has("refresh"), options.command.equals("port"));
                 switch (options.command) {
                     case "setup" -> { result = summary(model, project); exit = 0; }
                     case "fast" -> { result = FastLane.run(build, model, options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
-                    case "ui-check", "world-check", "mp-check", "game-status", "game-stop" -> { result = new Game(build, model).run(options); exit = 0; }
+                    case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload" -> { result = new Game(build, model).run(options); exit = "reload".equals(options.command) && Boolean.TRUE.equals(result.get("restartNeeded")) ? 1 : 0; }
                     case "port" -> { result = new Port(build, model).run(options); if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model)); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "dependencies" -> { result = new Port(build, model).dependencies(options); exit = Boolean.TRUE.equals(result.get("ready")) ? 0 : 1; }
                     case "compile", "test" -> {
@@ -104,7 +104,9 @@ public final class Modaccel {
             try {
                 var value = Json.map("error", error.getMessage() == null ? error.toString() : error.getMessage());
                 if (report != null) value = report.finish(2, value);
-                if (options != null && options.has("json")) System.out.println(Json.write(value)); else System.err.println(Json.write(value));
+                if (options != null && options.has("json")) System.out.println(Json.write(value));
+                else if (options != null && options.command.equals("eval")) System.err.println("eval: failed\n" + String.valueOf(error.getMessage()).replaceFirst("^Game action failed: ", "").replaceFirst("\nGame log: .*$", ""));
+                else System.err.println(Json.write(value));
             } catch (IOException secondary) { System.err.println(error + "; could not save receipt: " + secondary); }
             exit = 2;
         }
@@ -121,8 +123,19 @@ public final class Modaccel {
                     + "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
             case "dependencies" -> "Report target dependencies without editing: modaccel dependencies --root SOURCE --to 1.21.6 [--selection FILE] --json\nEach non-loader dependency is resolved, explicitly selected, or blocked with the selection entry to add in .modaccel/dependencies.json.";
             case "ui-check" -> "Capture the target client: modaccel ui-check --root SOURCE --screen net.minecraft.client.gui.screen.TitleScreen --json\nInspect the receipt's framebuffer capture; add --assert METHOD for behavior checks, or --expect-change PERCENT to require the action to visibly change the frame.";
+            case "reload" -> "Recompile and swap the changes into the running game: modaccel reload --root SOURCE --project :module\n"
+                    + "Changed method bodies swap in place; changed resources reload the resource packs; classes the game hasn't loaded yet\n"
+                    + "are read on first use. A changed class shape (added or removed methods or fields) on a stock JVM, a mixin, or mod\n"
+                    + "metadata needs a restart: the command says so and exits 1. Objects keep their field values and static initializers do not rerun.\n"
+                    + "Start the game with --jbr (ui-check or world-check) to run it on JetBrains Runtime, which also swaps added or removed methods and fields.";
+            case "eval" -> "Run Java inside the running game: modaccel eval --root SOURCE --code 'mc.player.getX()'\n"
+                    + "  --file SNIPPET.java  read the snippet from a file instead\n"
+                    + "  --thread control     run off the game thread (for snippets that wait); default is the game thread\n"
+                    + "An expression is returned; statements return what they return. 'mc' is the Minecraft instance, print(x) adds output,\n"
+                    + "vars is a map kept between snippets; call(objectOrClass, \"name\", args...) and field(objectOrClass, \"name\") reach private\n"
+                    + "members. Leading import lines are allowed. Start the game first with ui-check or world-check.";
             case "world-check" -> "Check a loaded save: modaccel world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.";
-            default -> "modaccel <support|discover|doctor|setup|compile|fast|test|port|dependencies|ui-check|world-check|mp-check|game-status|game-stop|package|self-test> [--root SOURCE] [--project :module] [--task :task] [--refresh] [--json]\n"
+            default -> "modaccel <support|discover|doctor|setup|compile|fast|test|port|dependencies|ui-check|world-check|mp-check|eval|reload|game-status|game-stop|package|self-test> [--root SOURCE] [--project :module] [--task :task] [--refresh] [--json]\n"
                     + "Use modaccel help port or modaccel port --help for port, undo and client examples. Input is a Gradle source checkout with a wrapper.";
         };
     }
