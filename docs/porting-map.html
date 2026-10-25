@@ -190,7 +190,7 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
   <li>Lines between versions in a row: one update at a time.</li>
   <li>Lines on the left: go straight from one boxed version to another. Hover a version to see where it can jump to.</li>
   <li><b>Thick line</b> = on your route. Thin line = everything else.</li>
-  <li><b>A dot</b> = the route stops at that version. A line with no dots is one jump straight there, which isn't built yet.</li>
+  <li><b>A dot</b> = the route stops at that version. A line with no dots is the whole trip in one <code>port</code> command.</li>
 </ul>
 <div id="hopinfo" class="small"></div>
 <div id="map"></div>
@@ -328,7 +328,7 @@ function render() {
   let html = `<h2>${esc(x)} → ${esc(y)}${back ? " (backport)" : ""}</h2>
   <p class="summary">${hops.length} hop${hops.length === 1 ? "" : "s"}: ${[["green", "work"], ["yellow", "being worked on"], ["red", "not working yet or blocked"]].filter(([c]) => n(c)).map(([c, w]) => `<span class="dot st-${c}"></span>${n(c)} ${w}`).join(" &nbsp; ")}</p>
   ${blocked.length ? `<div class="notice"><b>Blocked: no official mappings for ${esc([...new Set(blocked.flatMap(h => [h.a, h.b]).filter(v => !MEASURED(v)))].slice(0, 4).join(", "))}${blocked.length > 0 ? "" : ""} yet.</b> Mojang's names start at 1.14.4. Those hops can't be measured or ported by modaccel today; they would need MCP or other legacy community mappings.</div>` : ""}
-  ${(() => { const on = HUBS.filter(h => POS[h] >= Math.min(POS[x], POS[y]) && POS[h] <= Math.max(POS[x], POS[y])); return on.length > 2 ? `<p class="small">Jumping straight from ${esc(back ? on[on.length - 1] : on[0])} to ${esc(back ? on[0] : on[on.length - 1])} in one go isn't built yet (the thick line with no dots on the map), so today it's ${hops.length} hops, one at a time.</p>` : ""; })()}
+  ${(() => { const on = HUBS.filter(h => POS[h] >= Math.min(POS[x], POS[y]) && POS[h] <= Math.max(POS[x], POS[y])); return on.length > 2 ? `<p class="small">One <code>port</code> command does the whole trip from ${esc(back ? on[on.length - 1] : on[0])} to ${esc(back ? on[0] : on[on.length - 1])} (the thick line with no dots on the map), passing the ${hops.length} hops below. Each hop's colour says what has been seen working.</p>` : ""; })()}
   ${back ? `<p class="small">Backport: rules are written for forward ports, so only renames from the mappings count as handled. What the newer game added is missing on the way back.</p>` : ""}
   <div class="plat"><span class="small">Commands for</span><button type="button" data-plat="win" class="${PLAT === "win" ? "on" : ""}">Windows</button><button type="button" data-plat="nix" class="${PLAT === "nix" ? "on" : ""}">macOS / Linux</button></div>
   <p class="small">One command walks the whole route: it goes hub to hub, joins every update's renames into one map, runs only the rules for the updates it crosses, and names the update behind each error left. The rows below are the same route, hop by hop, if you would rather check each hop builds and loads before the next.</p>
@@ -401,12 +401,12 @@ function info(html) { $("#hopinfo").innerHTML = html; }
 let ROUTE = null, PICK = [], HOVER = null;
 // Every hub-to-hub jump, as a bracket in the gutter on the left: out of one hub's row, down a lane,
 // into the other's. The lane is set by how many hubs the jump spans, so one hub's jumps nest and
-// never cross each other. A jump is coloured by the worst update inside it; jumping in one go is not
-// built yet, so a jump longer than one hub hop is never shown better than yellow.
+// never cross each other. A jump is coloured by the worst update inside it; a jump longer than one hub hop
+// is never shown better than yellow until a single port run has covered the whole jump.
 function jumpStatus(a, b) {
   const st = status(a, b), span = Math.abs(HUBS.indexOf(b) - HUBS.indexOf(a));
   if (span < 2) return st;
-  return { c: st.c === "green" ? "yellow" : st.c, word: st.c === "red" ? st.word : "One-step jump not built yet", why: "One-step jump not built yet: today you port hub by hub. Along the way: " + st.why };
+  return { c: st.c === "green" ? "yellow" : st.c, word: st.c === "red" ? st.word : "Not run end to end yet", why: "One port command does this jump, but no single run has covered all of it yet. Along the way: " + st.why };
 }
 function drawLinks() {
   const box = $("#map"), svg = $("#jumps");
@@ -476,7 +476,7 @@ function drawLinks() {
   lab.hidden = !ends;
   if (ends) {
     const back = POS[$("#to").value] < POS[$("#from").value], [a, b] = back ? [ends[1], ends[0]] : ends;
-    lab.innerHTML = `${esc(a)} → ${esc(b)} in one jump <span>(not built yet)</span>`;
+    lab.innerHTML = `${esc(a)} → ${esc(b)} in one command`;
     const x = laneX(ends[0], ends[1]), mid = (y[ends[0]] + y[ends[1]]) / 2;
     lab.style.top = (mid - lab.offsetHeight / 2) + "px";
     if (x - 8 >= 110) { lab.style.left = ""; lab.style.right = `calc(100% - ${x - 8}px)`; lab.style.maxWidth = (x - 8) + "px"; }
