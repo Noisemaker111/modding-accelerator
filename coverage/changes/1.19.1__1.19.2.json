@@ -1,0 +1,16 @@
+{
+  "from": "1.19.1", "to": "1.19.2",
+  "names": "official",
+  "linked": "exact",
+  "oldSize": 59774, "broken": 6, "breakingShare": 0.0001,
+  "counts": {"classesAdded": 2, "classesRemoved": 1, "classesRenamed": 0, "methodsAdded": 2, "methodsRemoved": 2, "methodsRenamed": 0, "methodsChanged": 2, "fieldsAdded": 6, "fieldsRemoved": 5, "fieldsRenamed": 0, "fieldsChanged": 0, "classesRemovedApi": 1, "classesAddedApi": 2, "methodsRemovedApi": 2, "methodsAddedApi": 2, "methodsChangedApi": 1, "fieldsAddedApi": 3},
+  "classesAdded": ["net.minecraft.client.multiplayer.ProfileKeyPairManager$Result", "net.minecraft.world.entity.player.ProfilePublicKey$ValidationException"],
+  "classesRemoved": ["net.minecraft.server.network.ServerLoginPacketListenerImpl$PublicKeyValidationException"],
+  "classesRenamed": [],
+  "members": {
+    "net.minecraft.client.multiplayer.ProfileKeyPairManager": {"fieldsAdded": ["private userApiService:UserApiService", "private keyPair:CompletableFuture"], "fieldsRemoved": ["private publicKey:CompletableFuture", "private signer:CompletableFuture"], "methodsAdded": ["preparePublicKey()CompletableFuture"], "methodsChanged": ["private readOrFetchProfileKeyPair(UserApiService)CompletableFuture -> private readOrFetchProfileKeyPair(Optional)CompletableFuture"], "methodsRemoved": ["profilePublicKeyData()Optional"]},
+    "net.minecraft.server.network.ServerLoginPacketListenerImpl": {"fieldsRemoved": ["private MISSING_PROFILE_PUBLIC_KEY:Component", "private INVALID_SIGNATURE:Component", "private INVALID_PUBLIC_KEY:Component"]},
+    "net.minecraft.world.entity.player.ProfilePublicKey": {"fieldsAdded": ["MISSING_PROFILE_PUBLIC_KEY:Component", "EXPIRED_PROFILE_PUBLIC_KEY:Component", "private INVALID_SIGNATURE:Component", "EXPIRY_GRACE_PERIOD:Duration"], "methodsChanged": ["createValidated(SignatureValidator,UUID,ProfilePublicKey.Data)ProfilePublicKey -> createValidated(SignatureValidator,UUID,ProfilePublicKey.Data,Duration)ProfilePublicKey"], "methodsRemoved": ["createTrusted(ProfilePublicKey.Data)ProfilePublicKey"]},
+    "net.minecraft.world.entity.player.ProfilePublicKey$Data": {"methodsAdded": ["hasExpired(Duration)boolean"]}
+  }
+}

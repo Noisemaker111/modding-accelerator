@@ -67,7 +67,8 @@ source: `java tools/cli/Bootstrap.java . package --json` with a JDK 17+.
 
 ## Details and evidence
 
-- [**Porting coverage**](https://noisemaker111.github.io/modding-accelerator/progress.html) — the version map, every hop that was run, and the loader grid. Generated from [`coverage/ledger.json`](coverage/ledger.json).
+- [**Porting map**](https://noisemaker111.github.io/modding-accelerator/porting-map.html) — every Java release from 1.0 to 26.3 with hub-to-hub lines coloured by what was really run; pick a from and to version for the route, each hop's size, what modaccel handles, what is left and the command to run. Data in [`coverage/changes/`](coverage/changes/).
+- [**Bench**](https://noisemaker111.github.io/modding-accelerator/) — the mods and versions we test, every port run, earlier runs, and speed over time. Generated from [`coverage/ledger.json`](coverage/ledger.json) and `bench/` data by `bench/bench_page.py`.
 - [`docs/details.md`](docs/details.md) — portable command internals, older Windows lanes, scenarios, multiplayer, the porting toolbox, measurements.
 - [`bench/alternatives.md`](bench/alternatives.md) — sourced comparison with Loom, GameTest, HeadlessMC, MC-Runtime-Test, mc-mod-porter and others, including where they win.
 - [`PLAN.md`](PLAN.md) — dated evidence and the current resume point.

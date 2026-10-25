@@ -1,0 +1,27 @@
+{
+  "from": "1.18", "to": "1.18.1",
+  "names": "official",
+  "linked": "exact",
+  "oldSize": 54717, "broken": 8, "breakingShare": 0.0001,
+  "counts": {"classesAdded": 0, "classesRemoved": 0, "classesRenamed": 0, "methodsAdded": 11, "methodsRemoved": 7, "methodsRenamed": 2, "methodsChanged": 6, "fieldsAdded": 8, "fieldsRemoved": 5, "fieldsRenamed": 0, "fieldsChanged": 0, "fieldsAddedApi": 4, "methodsChangedApi": 2, "methodsAddedApi": 9, "fieldsRemovedApi": 3, "methodsRenamedApi": 2, "methodsRemovedApi": 2},
+  "classesAdded": [],
+  "classesRemoved": [],
+  "classesRenamed": [],
+  "members": {
+    "com.mojang.blaze3d.shaders.AbstractUniform": {"methodsAdded": ["set(Matrix3f)void"]},
+    "com.mojang.blaze3d.shaders.Uniform": {"methodsAdded": ["set(Matrix3f)void"]},
+    "com.mojang.blaze3d.systems.RenderSystem": {"fieldsAdded": ["private inverseViewRotationMatrix:Matrix3f"], "methodsAdded": ["setInverseViewRotationMatrix(Matrix3f)void", "getInverseViewRotationMatrix()Matrix3f"]},
+    "com.mojang.realmsclient.client.RealmsClient": {"methodsAdded": ["private getHttpCodeDescription(int)String"]},
+    "com.mojang.realmsclient.client.RealmsError": {"methodsRenamed": ["create(String)RealmsError -> parse(String)RealmsError"]},
+    "com.mojang.realmsclient.exception.RealmsServiceException": {"fieldsAdded": ["rawResponse:String", "realmsError:RealmsError"], "fieldsRemoved": ["httpResponseContent:String", "errorCode:int", "errorMsg:String"], "methodsAdded": ["realmsErrorCodeOrDefault(int)int"], "methodsChanged": ["<init>(int,String,int,String)void -> <init>(int,String)void"]},
+    "com.mojang.realmsclient.gui.screens.RealmsGenericErrorScreen": {"fieldsAdded": ["private lines:Pair", "private line2Split:MultiLineLabel"], "fieldsRemoved": ["private line1:Component", "private line2:Component"], "methodsChanged": ["private errorMessage(Component)void -> private errorMessage(Component)Pair", "private errorMessage(Component,Component)void -> private errorMessage(Component,Component)Pair", "private errorMessage(RealmsServiceException)void -> private errorMessage(RealmsServiceException)Pair"]},
+    "net.minecraft.Util": {"methodsAdded": ["preInitLog4j()void", "logAndPauseIfInIde(String,Throwable)void"]},
+    "net.minecraft.client.renderer.ShaderInstance": {"fieldsAdded": ["INVERSE_VIEW_ROTATION_MATRIX:Uniform"]},
+    "net.minecraft.core.IdMap": {"methodsAdded": ["byIdOrThrow(int)Object"]},
+    "net.minecraft.server.level.ChunkMap": {"methodsAdded": ["isChunkInRange(int,int,int,int,int)boolean", "private isChunkOnRangeBorder(int,int,int,int,int)boolean"], "methodsRemoved": ["private isChunkInEuclideanRange(ChunkPos,ServerPlayer,boolean,int)boolean", "private isChunkInEuclideanRange(ChunkPos,int,int,int)boolean", "isChunkInEuclideanRange(int,int,int,int,int)boolean", "private isChunkOnEuclideanBorder(ChunkPos,ServerPlayer,boolean,int)boolean", "private isChunkOnEuclideanBorder(int,int,int,int,int)boolean"]},
+    "net.minecraft.server.level.ServerLevel": {"fieldsAdded": ["isUpdatingNavigations:boolean"]},
+    "net.minecraft.server.network.TextFilterClient": {"fieldsAdded": ["private roomId:String"], "methodsChanged": ["private <init>(URI,String,int,String,TextFilterClient.IgnoreStrategy,int)void -> private <init>(URI,String,int,String,String,TextFilterClient.IgnoreStrategy,int)void"]},
+    "net.minecraft.util.datafix.fixes.ChunkToProtochunkFix": {"methodsRemoved": ["private createEmptyChunk(Dynamic)Dynamic"]},
+    "net.minecraft.world.entity.ai.navigation.PathNavigation": {"methodsRemoved": ["hasDelayedRecomputation()boolean"], "methodsRenamed": ["recomputePath(BlockPos)void -> shouldRecomputePath(BlockPos)boolean"]}
+  }
+}

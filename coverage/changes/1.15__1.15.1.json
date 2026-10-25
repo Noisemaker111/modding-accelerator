@@ -1,0 +1,14 @@
+{
+  "from": "1.15", "to": "1.15.1",
+  "names": "official",
+  "linked": "exact",
+  "oldSize": 40833, "broken": 2, "breakingShare": 0.0000,
+  "counts": {"classesAdded": 0, "classesRemoved": 0, "classesRenamed": 0, "methodsAdded": 0, "methodsRemoved": 2, "methodsRenamed": 0, "methodsChanged": 0, "fieldsAdded": 1, "fieldsRemoved": 1, "fieldsRenamed": 0, "fieldsChanged": 0, "methodsRemovedApi": 2},
+  "classesAdded": [],
+  "classesRemoved": [],
+  "classesRenamed": [],
+  "members": {
+    "net.minecraft.world.level.block.state.AbstractStateHolder": {"fieldsRemoved": ["private hashCode:int"], "methodsRemoved": ["equals(Object)boolean", "hashCode()int"]},
+    "net.minecraft.world.level.chunk.ChunkBiomeContainer": {"fieldsAdded": ["private LOGGER:Logger"]}
+  }
+}

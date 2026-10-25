@@ -1,0 +1,17 @@
+{
+  "from": "1.20", "to": "1.20.1",
+  "names": "official",
+  "linked": "exact",
+  "oldSize": 64502, "broken": 0, "breakingShare": 0.0000,
+  "counts": {"classesAdded": 0, "classesRemoved": 0, "classesRenamed": 0, "methodsAdded": 1, "methodsRemoved": 0, "methodsRenamed": 0, "methodsChanged": 3, "fieldsAdded": 3, "fieldsRemoved": 0, "fieldsRenamed": 0, "fieldsChanged": 0, "fieldsAddedApi": 2, "methodsAddedApi": 1},
+  "classesAdded": [],
+  "classesRemoved": [],
+  "classesRenamed": [],
+  "members": {
+    "com.mojang.realmsclient.RealmsMainScreen": {"methodsChanged": ["private drawPopup(GuiGraphics)void -> private drawPopup(GuiGraphics,int,int,float)void"]},
+    "com.mojang.realmsclient.gui.screens.RealmsNotificationsScreen": {"methodsChanged": ["private drawIcons(GuiGraphics,int,int)void -> private drawIcons(GuiGraphics)void"]},
+    "com.mojang.realmsclient.util.RealmsPersistence": {"methodsChanged": ["private getPathToData()File -> private getPathToData()Path"]},
+    "net.minecraft.client.gui.screens.ConnectScreen": {"fieldsAdded": ["ABORT_CONNECTION:Component", "channelFuture:ChannelFuture"]},
+    "net.minecraft.network.Connection": {"fieldsAdded": ["private delayedDisconnect:Component"], "methodsAdded": ["connect(InetSocketAddress,boolean,Connection)ChannelFuture"]}
+  }
+}
