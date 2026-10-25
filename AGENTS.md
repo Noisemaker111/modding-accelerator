@@ -13,6 +13,9 @@ The limited Fabric beta is a starting point, not the finished scope.
 ROADMAP.md holds the phases and numbered steps; only statuses there are claims.
 Live board: `docs/index.html` (the bench page; `docs/progress.html` now points there), rendered from `coverage/ledger.json` by
 `python bench/progress.py`. A port run that is not in the ledger did not happen.
+After any port run, or any change to the rules or the router, record it in the ledger and regenerate
+`docs/index.html` and `docs/porting-map.html` in the same change, so a hop turns green only once a port
+on it has been seen working.
 
 - Phase 1 step 7 (doing): AppleSkin 1.20.1 → 1.21.6. Loom 1.8→1.10 and Gradle
   8.10→8.13 done by hand, JEI dropped (upstream 1.21.6 has none), mappings went
