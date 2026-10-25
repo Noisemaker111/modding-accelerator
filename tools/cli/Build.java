@@ -16,6 +16,25 @@ final class Build {
         report.stages.add(Json.map("name", "java-setup", "seconds", (System.nanoTime() - start) / 1e9,
                 "required", required, "gradleJava", jdk.version(), "home", jdk.home().toString()));
     }
+    static final long DAEMON_IDLE_MS = 30 * 60 * 1000;
+    /** True when the user's Gradle home, the build, or GRADLE_OPTS already sets the daemon idle timeout. */
+    boolean userSetsIdleTimeout() throws IOException {
+        String key = "org.gradle.daemon.idletimeout";
+        if (System.getenv().getOrDefault("GRADLE_OPTS", "").contains(key)) return true;
+        Path gradleHome = Path.of(System.getenv().getOrDefault("GRADLE_USER_HOME", Path.of(System.getProperty("user.home"), ".gradle").toString()));
+        for (Path properties : List.of(gradleHome.resolve("gradle.properties"), project.root.resolve("gradle.properties")))
+            if (!ProjectModel.properties(properties).getProperty(key, "").isBlank()) return true;
+        return false;
+    }
+    Path daemons() { return project.state().resolve("gradle-daemons").toAbsolutePath(); }
+    /** Stops the Gradle daemons modaccel started for this checkout; null if it never started any. */
+    Run.Result stopDaemons() throws Exception {
+        if (!Files.isDirectory(daemons())) return null;
+        Path wrapper = project.root.resolve("gradle/wrapper/gradle-wrapper.jar");
+        Run.Result result = Run.command(List.of(jdk.java().toString(), "-cp", wrapper.toString(), "org.gradle.wrapper.GradleWrapperMain", "--stop",
+                "-Dorg.gradle.daemon.registry.base=" + daemons()), project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log("stop-daemons"), 120);
+        report.stage("stop-daemons", result, Json.map("registry", daemons().toString())); return result;
+    }
     Run.Result gradle(List<String> arguments, String stage) throws Exception {
         Run.Result result = Run.command(command(arguments), project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log(stage), 900);
         report.stage(stage, result, Json.map("java", jdk.version(), "gradle", project.wrapperVersion())); return result;
@@ -47,6 +66,11 @@ final class Build {
         // Loom skips dependency source remapping for CLI checks; compiled dependency remapping still runs.
         command.add("-Dfabric.loom.ci=true");
         command.add("-Dmodaccel.runId=" + report.id);
+        // Daemons of modaccel's own, so game-stop can stop them without touching the user's or another
+        // agent's (gradle --stop would end them all), and one left running leaves after half an hour idle.
+        command.add("-Dorg.gradle.daemon.registry.base=" + daemons());
+        // A command-line value would override one the user set, so only fill in a default.
+        if (!userSetsIdleTimeout()) command.add("-Dorg.gradle.daemon.idletimeout=" + DAEMON_IDLE_MS);
         command.addAll(arguments);
         return command;
     }
