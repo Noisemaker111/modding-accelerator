@@ -41,7 +41,7 @@ def main():
         total += out.stat().st_size
         cov = {k: v for k, v in s["coverage"].items() if k != "matched"}
         slim_steps.append({**{k: v for k, v in s.items() if k != "coverage"}, "coverage": cov})
-    slim = {k: index[k] for k in ("generated", "allVersions", "blocked", "runs", "doing")}
+    slim = {k: index[k] for k in ("generated", "allVersions", "blocked", "runs", "doing", "stepStatus")}
     slim["families"] = [{k: f[k] for k in ("id", "versions", "hub") if k in f} | {"estimated": f.get("estimated", False)} for f in index["families"]["list"]]
     slim["steps"] = slim_steps
     payload = json.dumps(slim, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
@@ -98,7 +98,14 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 .chip.old { color:var(--ink2); font-weight:500 }
 .seg { border:0; padding:10px 0; background:none; width:26px; cursor:pointer }
 .seg i { display:block; height:5px; border-radius:3px }
-.seg.on i { height:9px }
+#map { position:relative }
+#links { position:absolute; left:0; top:0; pointer-events:none; overflow:visible }
+#links path { fill:none; stroke-width:4; stroke-linejoin:round; pointer-events:stroke; cursor:pointer }
+#links path.g { stroke:var(--green) } #links path.y { stroke:var(--yellow) } #links path.r { stroke:var(--red) }
+#map.route .seg:not(.in), #map.route #links path:not(.in) { opacity:.25 }
+#map.route .seg.in i { height:9px } #map.route #links path.in { stroke-width:7 }
+.ready { font-size:14px; font-weight:600; margin:2px 0 6px }
+.ready.ready { color:var(--green) } .ready.warn { color:var(--red) } .ready.blocked { color:var(--ink3); font-weight:500 }
 .seg.g i { background:var(--green) } .seg.y i { background:var(--yellow) } .seg.r i { background:var(--red) }
 .filters { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px }
 .filters button { font-size:14px; padding:5px 10px; border-radius:999px }
@@ -145,13 +152,13 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 
 <h2>Every release</h2>
 <div class="legend">
-  <span><span class="ln st-green"></span>ported and checked in the game</span>
-  <span><span class="ln st-yellow"></span>being worked on</span>
+  <span><span class="ln st-green"></span>a port loaded or passed a check in the game</span>
+  <span><span class="ln st-yellow"></span>builds, or being worked on</span>
   <span><span class="ln st-red"></span>not working yet, or blocked</span>
   <span><b style="border:2px solid var(--ink);border-radius:5px;padding:0 4px">1.20.1</b> hub</span>
   <span><b style="border:2px dashed var(--ink);border-radius:5px;padding:0 4px">1.12.2</b> hub of an estimated family</span>
 </div>
-<div id="hopinfo" class="small">Tap a line to see why it has that colour. Tap two releases to see the route between them.</div>
+<div id="hopinfo" class="small">Lines inside a row are single updates; the elbows join each hub to the next one down. Tap a line to see why it has that colour, or tap two releases for the route.</div>
 <div id="map"></div>
 
 <p class="foot">Made by <span class="mono">bench/porting_map.py</span> from <span class="mono">coverage/changes/index.json</span>, <span class="mono">coverage/ledger.json</span> and <span class="mono">ROADMAP.md</span> on <span id="gen"></span>. Before 1.14.4 Mojang published no official names, so those families are grouped by version number and nothing there is measured.</p>
@@ -169,23 +176,40 @@ const FAM = {}; IX.families.forEach(f => f.versions.forEach(v => FAM[v] = f));
 const HUBS = IX.families.map(f => f.hub);
 const IS_HUB = new Set(HUBS);
 const STEP = {}; IX.steps.forEach(s => STEP[s.from + "__" + s.to] = s);
-const PASS = new Set(["behaviour", "load"]);
-const SAID = { behaviour: "behaviour checked in the game", load: "loads in the real game", build: "builds, mixins checked", stop: "stopped with named errors" };
+const RUN_SAID = { behaviour: "behaviour checked in the game", load: "loads in the real game", build: "packaged build, not loaded yet", stop: "stopped with named errors" };
+const WORST = { red: 0, yellow: 1, green: 2 };
 
-// ---- what a hop's colour means: only recorded runs and the ROADMAP's "doing" steps count ----
+// ---- colours: bench/ledger_rule.py gives every update a colour per direction from
+// coverage/ledger.json and the ROADMAP's "doing" steps; a hop takes its worst update ----
+const stepSt = (i, fwd) => IX.stepStatus[ALL[i] + "__" + ALL[i + 1]][fwd ? "fwd" : "back"];
 function status(a, b) {
   const fwd = POS[a] < POS[b], lo = Math.min(POS[a], POS[b]), hi = Math.max(POS[a], POS[b]);
-  if (!MEASURED(a) || !MEASURED(b)) return { c: "red", word: "Blocked", why: "No official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it yet." };
-  const dir = r => (POS[r.from] < POS[r.to]) === fwd;
+  const parts = [];
+  for (let i = lo; i < hi; i++) {
+    const s = stepSt(i, fwd), last = parts[parts.length - 1];
+    if (last && last.s.word === s.word && last.s.why === s.why) last.to = i + 1; else parts.push({ from: i, to: i + 1, s });
+  }
+  if (!fwd) parts.reverse();
+  const worst = parts.reduce((w, p) => WORST[p.s.c] < WORST[w.c] ? p.s : w, parts[0].s);
+  if (parts.length === 1) return worst;
+  const name = p => fwd ? `${ALL[p.from]} → ${ALL[p.to]}` : `${ALL[p.to]} → ${ALL[p.from]}`;
+  const why = parts.map(p => `${name(p)}: ${p.s.word.toLowerCase()} (${p.s.why.replace(/\.$/, "")}).`).join(" ");
+  let word = parts.every(p => p.s.c === worst.c) ? worst.word : { red: "Not working yet", yellow: "Partly working", green: "Works" }[worst.c];
+  if (worst.c === "red" && parts.some(p => p.s.c !== "red") && parts.every(p => p.s.c !== "red" || p.s.word === "Not tried")) word = "Partly tried";
+  return { c: worst.c, word, why };
+}
+// Is there a command worth running as-is? Only if a port across this whole hop, this direction, got past named errors.
+function readiness(h) {
+  if (!h.measured) return { k: "blocked", label: "Blocked" };
+  const fwd = POS[h.a] < POS[h.b], lo = Math.min(POS[h.a], POS[h.b]), hi = Math.max(POS[h.a], POS[h.b]);
+  const runs = IX.runs.filter(r => POS[r.from] !== undefined && POS[r.to] !== undefined && (POS[r.from] < POS[r.to]) === fwd);
   const span = r => [Math.min(POS[r.from], POS[r.to]), Math.max(POS[r.from], POS[r.to])];
-  const runs = IX.runs.filter(r => POS[r.from] !== undefined && POS[r.to] !== undefined && dir(r));
-  const full = runs.find(r => PASS.has(r.status) && span(r)[0] <= lo && hi <= span(r)[1]);
-  if (full) return { c: "green", word: "Works", why: `${full.mod} (${full.loader}) ${full.from} → ${full.to}: ${SAID[full.status]}.` };
-  const work = IX.doing.find(d => dir(d) && span(d)[0] < hi && span(d)[1] > lo);
-  if (work) return { c: "yellow", word: "Being worked on", why: `ROADMAP step ${work.step}: ${work.from} → ${work.to}.` };
-  const part = runs.filter(r => span(r)[0] < hi && span(r)[1] > lo);
-  if (part.length) return { c: "red", word: "Not working yet", why: "Runs that touch it: " + part.slice(0, 3).map(r => `${r.mod} ${r.from} → ${r.to} (${SAID[r.status]})`).join("; ") + "." };
-  return { c: "red", word: "Not tried", why: "No port has been run on this hop yet." };
+  const full = runs.filter(r => span(r)[0] <= lo && hi <= span(r)[1]).sort((x, y) => "stop build load behaviour".indexOf(y.status) - "stop build load behaviour".indexOf(x.status));
+  if (full.length && full[0].status !== "stop") return { k: "ready", label: `Ran before: ${full[0].mod} ${full[0].from} → ${full[0].to}, ${RUN_SAID[full[0].status]}` };
+  if (full.length) return { k: "warn", label: `Tried: ${full[0].mod} ${full[0].from} → ${full[0].to} stopped with named errors. Expect errors` };
+  const part = runs.find(r => span(r)[0] < hi && span(r)[1] > lo);
+  if (part) return { k: "warn", label: `Not tried across the whole hop (${part.mod} ran ${part.from} → ${part.to}). Expect errors` };
+  return { k: "warn", label: "Not tried yet: expect errors" };
 }
 
 // ---- sizes ---------------------------------------------------------------------------------
@@ -240,8 +264,11 @@ function render() {
   <p class="summary">${hops.length} hop${hops.length === 1 ? "" : "s"}: ${[["green", "work"], ["yellow", "being worked on"], ["red", "not working yet or blocked"]].filter(([c]) => n(c)).map(([c, w]) => `<span class="dot st-${c}"></span>${n(c)} ${w}`).join(" &nbsp; ")}</p>
   ${blocked.length ? `<div class="notice"><b>Blocked: no official mappings for ${esc([...new Set(blocked.flatMap(h => [h.a, h.b]).filter(v => !MEASURED(v)))].slice(0, 4).join(", "))}${blocked.length > 0 ? "" : ""} yet.</b> Mojang's names start at 1.14.4. Those hops can't be measured or ported by modaccel today; they would need MCP or other legacy community mappings.</div>` : ""}
   ${back ? `<p class="small">Backport: rules are written for forward ports, so only renames from the mappings count as handled. What the newer game added is missing on the way back.</p>` : ""}
+  <div class="plat"><span class="small">Commands for</span><button type="button" data-plat="win" class="${PLAT === "win" ? "on" : ""}">Windows</button><button type="button" data-plat="nix" class="${PLAT === "nix" ? "on" : ""}">macOS / Linux</button></div>
+  <p class="small">Run one hop at a time: port, check it builds and loads, then the next. A command is only marked as ready when a port across that hop has been run. Chaining hops in one command is not built yet (ROADMAP 11b).</p>
   <table class="tbl stack"><thead><tr><th class="l">Hop</th><th class="l">Status</th><th>Size</th><th>Names that break</th><th class="hi">modaccel handles</th><th>Left for you</th></tr></thead><tbody>`;
   hops.forEach((h, i) => {
+    h.ready = readiness(h);
     const num = v => h.measured ? fmt(v) : `<span class="small">not measured</span>`;
     html += `<tr class="hop"><td class="l hopname"><b>${esc(h.a)} → ${esc(h.b)}</b><span class="sub">${h.measured ? h.steps.length + " update" + (h.steps.length === 1 ? "" : "s") : "before 1.14.4"}</span></td>
       <td class="status" data-k="Status"><span class="dot st-${h.st.c}"></span>${h.st.word}<span class="why">${esc(h.st.why)}</span></td>
@@ -249,14 +276,9 @@ function render() {
       <td data-k="Names that break">${num(h.broken)}</td>
       <td class="hi" data-k="modaccel handles">${num(h.handled)}${h.measured && h.note ? `<span class="sub">+ ${fmt(h.note)} with a how-to</span>` : ""}</td>
       <td data-k="Left for you">${num(h.left)}</td></tr>
-      <tr class="cmd"><td colspan="6">${h.measured ? `<div class="cmdline"><code>${esc(cmd(h))}</code><button type="button" data-copy="${i}">Copy</button>${h.steps.length ? `<button type="button" data-open="${i}">Show ${h.steps.length === 1 ? "the update" : h.steps.length + " updates"}</button>` : ""}</div><div class="inner" id="in${i}" hidden></div>` : `<span class="small">No command: this hop is blocked.</span>`}</td></tr>`;
+      <tr class="cmd"><td colspan="6">${h.measured ? `<div class="ready ${h.ready.k}">${esc(h.ready.label)}</div><div class="cmdline"><code>${esc(cmd(h))}</code><button type="button" data-copy="${i}">Copy</button>${h.steps.length ? `<button type="button" data-open="${i}">Show ${h.steps.length === 1 ? "the update" : h.steps.length + " updates"}</button>` : ""}</div><div class="inner" id="in${i}" hidden></div>` : `<div class="ready blocked">Blocked: no command until there are mappings for this hop.</div>`}</td></tr>`;
   });
   html += `</tbody></table>`;
-  const runnable = hops.filter(h => h.measured);
-  if (runnable.length > 1) html += `<h2 style="font-size:20px;margin-top:28px">Commands, in order</h2>
-    <div class="plat"><button type="button" data-plat="win" class="${PLAT === "win" ? "on" : ""}">Windows</button><button type="button" data-plat="nix" class="${PLAT === "nix" ? "on" : ""}">macOS / Linux</button></div>
-    <pre class="all">${esc(runnable.map(cmd).join("\n"))}</pre>
-    <p class="small">One hop at a time: port, check it builds and loads, then run the next. Chaining hops in one command is not built yet.</p>`;
   out.innerHTML = html;
   out.querySelectorAll("button[data-copy]").forEach(b => b.onclick = () => { try { navigator.clipboard.writeText(cmd(hops[+b.dataset.copy])); b.textContent = "Copied"; } catch (e) {} });
   out.querySelectorAll("button[data-plat]").forEach(b => b.onclick = () => { PLAT = b.dataset.plat; render(); });
@@ -271,43 +293,65 @@ function render() {
 
 // ---- every release, top to bottom ----------------------------------------------------------
 const lineOf = v => v.startsWith("1.") ? v.split(".").slice(0, 2).join(".") + ".X" : v.split(".")[0] + ".X";
-function hopOf(i) { // the hub hop that contains the segment between release i and i+1
-  let a = null, b = null;
-  for (const h of HUBS) { if (POS[h] <= i) a = h; if (POS[h] >= i + 1 && b === null) b = h; }
-  return a && b ? [a, b] : null;
-}
 function drawMap() {
   const rows = new Map();
   ALL.forEach((v, i) => { const k = lineOf(v); if (!rows.has(k)) rows.set(k, []); rows.get(k).push(i); });
   let html = "";
   for (const [k, idx] of rows) {
     html += `<div class="vrow"><div class="vlabel">${esc(k)}</div><div class="vchips">`;
-    for (const i of idx) {
+    idx.forEach((i, n) => {
       const v = ALL[i], f = FAM[v];
       const cls = ["chip", IS_HUB.has(v) ? "hub" : "", IS_HUB.has(v) && f.estimated ? "est" : "", MEASURED(v) ? "" : "old"].join(" ");
       html += `<span class="rel"><button type="button" class="${cls}" data-v="${esc(v)}" title="${esc(v + (IS_HUB.has(v) ? " · hub" : "") + (f.estimated ? " · estimated family" : ""))}">${esc(v)}</button>`;
-      if (i + 1 < ALL.length) {
-        const hp = hopOf(i), st = hp ? status(hp[0], hp[1]) : null;
-        html += `<button type="button" class="seg ${st ? st.c[0] : ""}" data-i="${i}" aria-label="${esc(hp ? hp[0] + " to " + hp[1] + ": " + st.word : "")}" title="${esc(hp ? hp[0] + " → " + hp[1] + ": " + st.word + ". " + st.why : "")}"><i></i></button>`;
+      if (n + 1 < idx.length) { // rows stop at their last release; the hub links below join the rows
+        const st = stepSt(i, true);
+        html += `<button type="button" class="seg ${st.c[0]}" data-i="${i}" aria-label="${esc(v + " to " + ALL[i + 1] + ": " + st.word)}" title="${esc(v + " → " + ALL[i + 1] + ": " + st.word + ". " + st.why)}"><i></i></button>`;
       }
       html += `</span>`;
-    }
+    });
     html += `</div></div>`;
   }
-  $("#map").innerHTML = html;
+  $("#map").innerHTML = html + `<svg id="links" aria-hidden="true"></svg>`;
   $("#map").querySelectorAll(".seg").forEach(b => b.onclick = () => {
-    const hp = hopOf(+b.dataset.i), st = status(hp[0], hp[1]);
-    $("#map").querySelectorAll(".seg").forEach(s => { const o = hopOf(+s.dataset.i); s.classList.toggle("on", o && o[0] === hp[0]); });
-    $("#hopinfo").innerHTML = `<span class="dot st-${st.c}"></span><b>${esc(hp[0])} → ${esc(hp[1])}: ${st.word}.</b> ${esc(st.why)}`;
+    const i = +b.dataset.i, st = stepSt(i, true);
+    info(`<span class="dot st-${st.c}"></span><b>${esc(ALL[i])} → ${esc(ALL[i + 1])}: ${st.word}.</b> ${esc(st.why)}`);
   });
   let pickNext = "from";
   $("#map").querySelectorAll(".chip").forEach(b => b.onclick = () => {
     $("#" + pickNext).value = b.dataset.v;
-    if (pickNext === "from") { pickNext = "to"; mark(b.dataset.v, null); $("#hopinfo").innerHTML = `Starting from <b>${esc(b.dataset.v)}</b>. Now tap where you want to go.`; return; }
+    if (pickNext === "from") { pickNext = "to"; mark(b.dataset.v, null); info(`Starting from <b>${esc(b.dataset.v)}</b>. Now tap where you want to go.`); return; }
     pickNext = "from"; render(); $("#route").scrollIntoView({ behavior: "smooth" });
   });
+  window.addEventListener("resize", () => drawLinks());
 }
-function mark(x, y) { document.querySelectorAll(".chip").forEach(c => c.classList.toggle("sel", c.dataset.v === x || c.dataset.v === y)); }
+function info(html) { $("#hopinfo").innerHTML = html; }
+let ROUTE = null;
+// Hub to hub: where the next hub sits on a lower line, draw an elbow from one to the other.
+function drawLinks() {
+  const box = $("#map"), svg = $("#links"), at = box.getBoundingClientRect();
+  svg.setAttribute("width", box.scrollWidth); svg.setAttribute("height", box.scrollHeight);
+  const chip = v => box.querySelector(`.chip[data-v="${CSS.escape(v)}"]`).getBoundingClientRect();
+  let out = "";
+  for (let n = 0; n + 1 < HUBS.length; n++) {
+    const a = HUBS[n], b = HUBS[n + 1], r1 = chip(a), r2 = chip(b);
+    if (Math.abs(r1.top - r2.top) < 4) continue;
+    const x1 = r1.left + r1.width / 2 - at.left, y1 = r1.bottom - at.top, x2 = r2.left + r2.width / 2 - at.left, y2 = r2.top - at.top, mid = y2 - 6;
+    const st = status(a, b), on = ROUTE && POS[a] < ROUTE[1] && POS[b] > ROUTE[0];
+    out += `<path class="${st.c[0]}${on ? " in" : ""}" data-a="${esc(a)}" data-b="${esc(b)}" d="M${x1} ${y1} V${mid} H${x2} V${y2}"><title>${esc(a + " → " + b + ": " + st.word + ". " + st.why)}</title></path>`;
+  }
+  svg.innerHTML = out;
+  svg.querySelectorAll("path").forEach(p => p.onclick = () => {
+    const st = status(p.dataset.a, p.dataset.b);
+    info(`<span class="dot st-${st.c}"></span><b>${esc(p.dataset.a)} → ${esc(p.dataset.b)}: ${st.word}.</b> ${esc(st.why)}`);
+  });
+}
+function mark(x, y) {
+  document.querySelectorAll(".chip").forEach(c => c.classList.toggle("sel", c.dataset.v === x || c.dataset.v === y));
+  ROUTE = x && y && x !== y ? [Math.min(POS[x], POS[y]), Math.max(POS[x], POS[y])] : null;
+  $("#map").classList.toggle("route", !!ROUTE);
+  document.querySelectorAll(".seg").forEach(s => s.classList.toggle("in", !!ROUTE && +s.dataset.i >= ROUTE[0] && +s.dataset.i < ROUTE[1]));
+  drawLinks();
+}
 
 /*DETAIL*/
 

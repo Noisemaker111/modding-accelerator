@@ -16,6 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from page_style import STYLE, THEME_JS  # noqa: E402
+from ledger_rule import COLOUR, RANK, WORD  # noqa: E402  (the porting map reads the same rule)
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "index.html"
@@ -30,9 +31,6 @@ data = load("bench/data.json")
 bumps = load("bench/port/results.json")
 mods = load("bench/mods/results.json")
 
-RANK = {"behaviour": 4, "load": 3, "build": 2, "stop": 1}
-WORD = {"behaviour": "Behaviour checked in the game", "load": "Loads in the real game", "build": "Builds, mixins checked", "stop": "Stops with named errors"}
-COLOUR = {"behaviour": "green", "load": "green", "build": "yellow", "stop": "red"}
 LOADER = {"fabric": "Fabric", "neoforge": "NeoForge", "forge": "Forge", "quilt": "Quilt"}
 
 
