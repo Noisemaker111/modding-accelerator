@@ -162,8 +162,7 @@ final class Game {
             String world = options.get("world", "lab");
             if (world.isEmpty() || world.equals(".") || world.equals("..") || world.indexOf('/') >= 0 || world.indexOf('\\') >= 0 || world.indexOf('\0') >= 0)
                 throw new IOException("--world must name one existing save folder");
-            Path launch = build.project.state().resolve("launch.json");
-            Path gameDir = Files.exists(launch) ? Path.of(Json.text(Json.read(launch), "directory", "")) : build.project.root.resolve("run");
+            Path gameDir = gameDirectory(request(current, Json.map("command", "status")));
             Path savesRoot = gameDir.resolve("saves").toRealPath();
             Path saves = savesRoot.resolve(world);
             if (!Files.isRegularFile(saves.resolve("level.dat"))) throw new IOException("World save does not exist: " + saves);
@@ -232,9 +231,7 @@ final class Game {
         result = request(current, Json.map("command", "status"));
         if ((options.has("expect-world") || command.equals("world-check") || command.equals("mp-check")) && !Boolean.TRUE.equals(result.get("inWorld"))) throw new IOException("Expected a loaded world; current screen: " + result.get("screen"));
         if (command.equals("world-check")) {
-            Path launch = build.project.state().resolve("launch.json");
-            Path gameDir = Files.exists(launch) ? Path.of(Json.text(Json.read(launch), "directory", "")) : build.project.root.resolve("run");
-            verifyWorld(result, gameDir.resolve("saves/" + options.get("world", "lab")));
+            verifyWorld(result, gameDirectory(result).resolve("saves/" + options.get("world", "lab")));
         }
         if (command.equals("mp-check") && Boolean.TRUE.equals(result.get("integratedServer"))) throw new IOException("Client joined an integrated world instead of the dedicated server");
         if (options.values.containsKey("expect-screen") && !options.get("expect-screen", "").equals(result.get("screen"))) throw new IOException("Expected screen " + options.get("expect-screen", "") + "; got " + result.get("screen"));
@@ -256,6 +253,17 @@ final class Game {
         }
         if (command.equals("mp-check") && options.values.containsKey("server")) result.put("server", Json.map("owned", false, "address", options.get("server", ""), "buildVerified", false));
         return result;
+    }
+    /**
+     * The running game's own directory. The recorded launch directory was wrong for ForgeGradle,
+     * NeoGradle and Architectury Loom (the project folder instead of its run folder), so world-check
+     * looked for saves where the game never writes them. Older agents don't report it.
+     */
+    Path gameDirectory(Map<String, Object> status) throws Exception {
+        String reported = Json.text(status, "gameDirectory", "");
+        if (!reported.isEmpty()) return Path.of(reported);
+        Path launch = build.project.state().resolve("launch.json");
+        return Files.exists(launch) ? Path.of(Json.text(Json.read(launch), "directory", "")) : build.project.root.resolve("run");
     }
     String fingerprint() throws Exception {
         return Fingerprints.bytes((Fingerprints.build(model, build.project, build.init) + Fingerprints.files(List.of(

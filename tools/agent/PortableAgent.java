@@ -155,7 +155,8 @@ public final class PortableAgent {
                             "f3Handled", optionalField(field(client, "keyboard"), "switchF3State"));
             done.complete(Json.map("ok", true, "identity", identity, "screen", screen == null ? "" : screen.getClass().getName(), "inWorld", inWorld(),
                     "integratedServer", singleplayer != null, "level", hasLevel, "worldPath", singleplayer == null ? "" : worldPath(singleplayer),
-                    "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput));
+                    "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput,
+                    "gameDirectory", gameDirectory()));
         } else if (command.equals("resize")) {
             int width = number(request, "width"), height = number(request, "height");
             if (width < 320 || width > 7680 || height < 240 || height > 4320) throw new IllegalArgumentException("Unsupported frame size");
@@ -376,6 +377,10 @@ public final class PortableAgent {
         return ((Path)path).toAbsolutePath().normalize().toString();
     }
     private static int number(Map<String, Object> request, String key) { return ((Number)request.get(key)).intValue(); }
+    /** Where the running game keeps saves: the recorded launch directory is not always it (Forge, NeoGradle, Architectury). */
+    private static String gameDirectory() {
+        try { return ((java.io.File) field(client, "gameDirectory", "runDirectory")).getAbsolutePath(); } catch (Exception unknown) { return ""; }
+    }
     private static Object optionalField(Object owner, String name) { try { return field(owner, name); } catch (Exception ignored) { return null; } }
     private static Class<?> load(String... names) throws ClassNotFoundException {
         for (String name : names) try { return Class.forName(name, true, client.getClass().getClassLoader()); } catch (ClassNotFoundException ignored) {}
