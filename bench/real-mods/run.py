@@ -28,7 +28,10 @@ GAME_STEPS = ["port", "compile", "test", "ui-check-1", "ui-check-2", "stale-refu
               "world-check", "eval-until", "reload", "reload-current", "reload-revert", "game-stop",
               "restart-unchanged", "java-ui-check", "game-stop-final"]
 STEPS = ["clone", "doctor", "setup"] + GAME_STEPS + ["nodes-compile", "no-leftovers"]
-SAVE = HERE / "saves/lab"  # a flat 1.20.1 save (level.dat only); newer games upgrade it on open
+SAVE = HERE / "saves/lab"  # a flat 1.20.1 save (level.dat only); 1.20.1 to 1.21.x games upgrade it on open
+# 26.x asks to back up a world from an older version before opening it, so 26.x games get a save
+# made by 26.3 itself (level and dimension data, no chunks; chunks regenerate from the seed).
+SAVE_26 = HERE / "saves/lab-26.3"
 
 # Known failure text -> the next action a person can take. Matching is a hint, not a verdict.
 HINTS = [
@@ -330,8 +333,9 @@ class ModRun:
             self.put("world-check", "fail", error="could not ask the running game for its game directory (eval failed)")
         else:
             target = directory / "saves" / "lab"
+            save = SAVE_26 if str(self.mod.get("minecraft", "")).startswith("26") else SAVE
             if not target.exists():
-                shutil.copytree(SAVE, target)
+                shutil.copytree(save, target)
             call = self.modaccel("world-check", "world-check", ["--world", "lab"])
             self.from_call("world-check", call, gameDirectory=str(directory),
                            capture=find_png(call["result"].get("capture")) or find_png(call["result"]))
