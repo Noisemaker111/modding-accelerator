@@ -42,6 +42,14 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/ (b
 11. Chain mappings across more than one family in a single port, with one record per hop. **done**
     with 11b up to 1.21.11; updates into 26.x have no shared ids, so there the router relies on
     rules and names errors from the step files by name only.
+11c. Learn rules from Stonecutter mods: 33 open-source multi-version mods pinned in
+    `coverage/stonecutter/mods.json`, 5,045 `//? if` switches extracted with file, method and the
+    update their boundary falls on (`bench/stonecutter_mine.py`). Changes made the same way in two or
+    more mods became 38 rules in `knowledge/fixes.json` (22 forward, 16 backports), each with its
+    switches as examples and a test that self-test re-runs (`bench/stonecutter_rules.py`). **done** —
+    ZombieApocalypseAddon 1.21.1 → 26.3 stops at 50 errors instead of 69; → 1.21.6 (9) and the
+    untouched Notes 1.21 → 1.21.6 (14) are unchanged, their errors have no repeated switch. The map
+    shows rules learned per update.
 12. Prove one untouched mod from 1.20.1 (or older) to 1.21.6 to a build, then to a loaded client. **later**
 13. Publish the family list each jump still needs, so a stop is a shopping list. **later**
 

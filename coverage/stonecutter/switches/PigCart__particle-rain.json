@@ -1,0 +1,4692 @@
+{
+ "repo": "PigCart/particle-rain",
+ "commit": "c01178778bb0200139b80587ee69fa60bff3560f",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "neoforge"
+ ],
+ "versions": [
+  "1.20.1",
+  "1.21.1",
+  "1.21.9",
+  "1.21.11",
+  "26.1",
+  "26.2",
+  "26.3"
+ ],
+ "files": 30,
+ "switches": 108,
+ "versionSwitches": 101,
+ "rows": [
+  {
+   "file": "src/main/java/pigcart/particlerain/config/ConfigData.java",
+   "line": 4,
+   "method": "(imports)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;\nimport net.minecraft.client.particle.SingleQuadParticle;"
+    },
+    {
+     "condition": null,
+     "code": ""
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "state"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "minecraft"
+     ]
+    }
+   ],
+   "older": "",
+   "newer": "import net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;\nimport net.minecraft.client.particle.SingleQuadParticle;",
+   "removed": [],
+   "added": [
+    "SingleQuadParticle",
+    "client",
+    "minecraft",
+    "net",
+    "particle",
+    "renderer",
+    "state"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/ConfigScreen.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": "<=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "import net.minecraft.client.gui.GuiGraphics;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/ConfigScreen.java",
+   "line": 52,
+   "method": "init",
+   "condition": ">=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.1",
+     "code": "//repositionElements();"
+    },
+    {
+     "condition": null,
+     "code": "layout.arrangeElements();"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "layout.arrangeElements();",
+   "newer": "//repositionElements();",
+   "removed": [
+    "arrangeElements",
+    "layout"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/ConfigScreen.java",
+   "line": 66,
+   "method": "addContents",
+   "condition": ">=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.1",
+     "code": "layout.getContentHeight()"
+    },
+    {
+     "condition": null,
+     "code": "height"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "layout"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "height"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "getContentHeight",
+      "height",
+      "layout"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "height",
+      "layout"
+     ]
+    }
+   ],
+   "older": "height",
+   "newer": "layout.getContentHeight()",
+   "removed": [
+    "height"
+   ],
+   "added": [
+    "getContentHeight",
+    "layout"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/ConfigScreen.java",
+   "line": 70,
+   "method": "addContents",
+   "condition": "<=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "addWidget(list);"
+    },
+    {
+     "condition": null,
+     "code": "//layout.addToContents(list);"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "addWidget(list);",
+   "newer": "//layout.addToContents(list);",
+   "removed": [
+    "addWidget",
+    "list"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/ConfigScreen.java",
+   "line": 108,
+   "method": "(class body)",
+   "condition": ">=1.21.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.1",
+     "code": "@Override\n    protected void repositionElements() {\n        layout.arrangeElements();\n        if (list != null) list.updateSize(width, layout);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/ConfigScreen.java",
+   "line": 116,
+   "method": "(class body)",
+   "condition": "<=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "@Override\n    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {\n        renderBackground(guiGraphics);\n        list.render(guiGraphics, mouseX, mouseY, partialTick);\n        super.render(guiGraphics, mouseX, mouseY, partialTick);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/ConfigScreen.java",
+   "line": 148,
+   "method": "refresh",
+   "condition": ">=1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "//this.list.scrollAmount()"
+    },
+    {
+     "condition": null,
+     "code": "this.list.getScrollAmount()"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "getScrollAmount"
+     ]
+    }
+   ],
+   "older": "this.list.getScrollAmount()",
+   "newer": "//this.list.scrollAmount()",
+   "removed": [
+    "getScrollAmount",
+    "list"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/InputWidget.java",
+   "line": 74,
+   "method": "(class body)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "public void extractWidgetRenderState(net.minecraft.client.gui.GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float a) {\n        super.extractWidgetRenderState(guiGraphics, mouseX, mouseY, a);"
+    },
+    {
+     "condition": null,
+     "code": "public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {\n        super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "GuiGraphics",
+      "GuiGraphicsExtractor",
+      "extractWidgetRenderState",
+      "renderWidget"
+     ]
+    }
+   ],
+   "older": "public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {\n        super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);",
+   "newer": "public void extractWidgetRenderState(net.minecraft.client.gui.GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float a) {\n        super.extractWidgetRenderState(guiGraphics, mouseX, mouseY, a);",
+   "removed": [
+    "GuiGraphics",
+    "partialTick",
+    "renderWidget"
+   ],
+   "added": [
+    "GuiGraphicsExtractor",
+    "client",
+    "extractWidgetRenderState",
+    "gui",
+    "minecraft",
+    "net"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/InputWidget.java",
+   "line": 97,
+   "method": "setFilter",
+   "condition": "<26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.1",
+     "code": "if (filteredChars != null) {\n            setFilter((string) -> !filteredChars.matcher(string).find());\n        } else {\n            this.setFilter(Objects::nonNull);\n        }"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/LabelWidget.java",
+   "line": 7,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "//import net.minecraft.client.gui.ActiveTextCollector;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/LabelWidget.java",
+   "line": 10,
+   "method": "(imports)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "//import net.minecraft.client.gui.GuiGraphicsExtractor;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.gui.GuiGraphics;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "GuiGraphics"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.gui.GuiGraphics;",
+   "newer": "//import net.minecraft.client.gui.GuiGraphicsExtractor;",
+   "removed": [
+    "GuiGraphics",
+    "client",
+    "gui",
+    "minecraft",
+    "net"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/LabelWidget.java",
+   "line": 39,
+   "method": "(class body)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "public void visitLines(ActiveTextCollector activeTextCollector) {\n        // abstract method unused due to overriding renderWidget\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/LabelWidget.java",
+   "line": 45,
+   "method": "(class body)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "extractWidgetRenderState(GuiGraphicsExtractor"
+    },
+    {
+     "condition": null,
+     "code": "renderWidget(GuiGraphics"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "GuiGraphics",
+      "GuiGraphicsExtractor",
+      "extractWidgetRenderState",
+      "renderWidget"
+     ]
+    }
+   ],
+   "older": "renderWidget(GuiGraphics",
+   "newer": "extractWidgetRenderState(GuiGraphicsExtractor",
+   "removed": [
+    "GuiGraphics",
+    "renderWidget"
+   ],
+   "added": [
+    "GuiGraphicsExtractor",
+    "extractWidgetRenderState"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/LabelWidget.java",
+   "line": 50,
+   "method": "renderWidget",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "text"
+    },
+    {
+     "condition": null,
+     "code": "drawString"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "drawString",
+      "text"
+     ]
+    }
+   ],
+   "older": "drawString",
+   "newer": "text",
+   "removed": [
+    "drawString"
+   ],
+   "added": [
+    "text"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/WidgetList.java",
+   "line": 19,
+   "method": "WidgetList",
+   "condition": "<=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "bottomY,"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/WidgetList.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": "<=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "protected int getScrollbarPosition() {\n        return super.getScrollbarPosition() + 32;\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/WidgetList.java",
+   "line": 49,
+   "method": "(class body)",
+   "condition": "} >=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "} >=1.21.9",
+     "code": "public void renderContent(GuiGraphics guiGraphics, int mouseX, int mouseY, boolean isHovering, float partialTick) {\n\t\t\trenderEntryWidgets(guiGraphics, this.getContentY(), mouseX, mouseY, partialTick);\n        }"
+    },
+    {
+     "condition": null,
+     "code": "public void render(GuiGraphics guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovering, float partialTick) {\n            renderEntryWidgets(guiGraphics, top, mouseX, mouseY, partialTick);\n        }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "index",
+      "left",
+      "render"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "index",
+      "render"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "height",
+      "render",
+      "top",
+      "width"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "index",
+      "render"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "getContentY",
+      "index",
+      "left",
+      "render",
+      "renderContent",
+      "top"
+     ]
+    }
+   ],
+   "older": "public void render(GuiGraphics guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovering, float partialTick) {\n            renderEntryWidgets(guiGraphics, top, mouseX, mouseY, partialTick);\n        }",
+   "newer": "public void renderContent(GuiGraphics guiGraphics, int mouseX, int mouseY, boolean isHovering, float partialTick) {\n\t\t\trenderEntryWidgets(guiGraphics, this.getContentY(), mouseX, mouseY, partialTick);\n        }",
+   "removed": [
+    "height",
+    "hovering",
+    "index",
+    "left",
+    "render",
+    "top",
+    "width"
+   ],
+   "added": [
+    "getContentY",
+    "isHovering",
+    "renderContent"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/WidgetList.java",
+   "line": 59,
+   "method": "(class body)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "GuiGraphicsExtractor"
+    },
+    {
+     "condition": null,
+     "code": "GuiGraphics"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "GuiGraphics",
+      "GuiGraphicsExtractor"
+     ]
+    }
+   ],
+   "older": "GuiGraphics",
+   "newer": "GuiGraphicsExtractor",
+   "removed": [
+    "GuiGraphics"
+   ],
+   "added": [
+    "GuiGraphicsExtractor"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/WidgetList.java",
+   "line": 65,
+   "method": "renderEntryWidgets",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "extractRenderState"
+    },
+    {
+     "condition": null,
+     "code": "render"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "extractRenderState",
+      "render"
+     ]
+    }
+   ],
+   "older": "render",
+   "newer": "extractRenderState",
+   "removed": [
+    "render"
+   ],
+   "added": [
+    "extractRenderState"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/WidgetUtil.java",
+   "line": 48,
+   "method": "getBool",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "//,()-> initialValue)"
+    },
+    {
+     "condition": null,
+     "code": ").withInitialValue(initialValue)"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "withInitialValue"
+     ]
+    }
+   ],
+   "older": ").withInitialValue(initialValue)",
+   "newer": "//,()-> initialValue)",
+   "removed": [
+    "initialValue",
+    "withInitialValue"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/WidgetUtil.java",
+   "line": 73,
+   "method": "getEnum",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "//,()-> initialValue).withValues(values);"
+    },
+    {
+     "condition": null,
+     "code": ").withValues(values).withInitialValue(initialValue);\n        // in 1.20.1 withValues must be called before withInitialValue otherwise it doesnt get the index correctly"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "values",
+      "withInitialValue"
+     ]
+    }
+   ],
+   "older": ").withValues(values).withInitialValue(initialValue);\n        // in 1.20.1 withValues must be called before withInitialValue otherwise it doesnt get the index correctly",
+   "newer": "//,()-> initialValue).withValues(values);",
+   "removed": [
+    "initialValue",
+    "values",
+    "withInitialValue",
+    "withValues"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/gui/WidgetUtil.java",
+   "line": 80,
+   "method": "getEnum",
+   "condition": ">=1.21.9 <1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9 <1.21.11",
+     "code": "true"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/ParticleData.java",
+   "line": 24,
+   "method": "(imports)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.particle.ParticleRenderType;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "state"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.particle.ParticleRenderType;",
+   "newer": "import net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;",
+   "removed": [
+    "ParticleRenderType",
+    "particle"
+   ],
+   "added": [
+    "renderer",
+    "state"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/ParticleData.java",
+   "line": 156,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "public SingleQuadParticle.Layer get() {\n                return SingleQuadParticle.Layer.OPAQUE;\n            }"
+    },
+    {
+     "condition": null,
+     "code": "public ParticleRenderType get() {\n                return ParticleRenderType.PARTICLE_SHEET_OPAQUE;\n            }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "Layer"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "Layer"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "Layer",
+      "PARTICLE_SHEET_OPAQUE"
+     ]
+    }
+   ],
+   "older": "public ParticleRenderType get() {\n                return ParticleRenderType.PARTICLE_SHEET_OPAQUE;\n            }",
+   "newer": "public SingleQuadParticle.Layer get() {\n                return SingleQuadParticle.Layer.OPAQUE;\n            }",
+   "removed": [
+    "PARTICLE_SHEET_OPAQUE",
+    "ParticleRenderType"
+   ],
+   "added": [
+    "Layer",
+    "OPAQUE",
+    "SingleQuadParticle"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/ParticleData.java",
+   "line": 168,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "public SingleQuadParticle.Layer get() {\n                return SingleQuadParticle.Layer.TRANSLUCENT;\n            }"
+    },
+    {
+     "condition": null,
+     "code": "public ParticleRenderType get() {\n                return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;\n            }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "Layer"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "Layer"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "Layer",
+      "PARTICLE_SHEET_TRANSLUCENT"
+     ]
+    }
+   ],
+   "older": "public ParticleRenderType get() {\n                return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;\n            }",
+   "newer": "public SingleQuadParticle.Layer get() {\n                return SingleQuadParticle.Layer.TRANSLUCENT;\n            }",
+   "removed": [
+    "PARTICLE_SHEET_TRANSLUCENT",
+    "ParticleRenderType"
+   ],
+   "added": [
+    "Layer",
+    "SingleQuadParticle",
+    "TRANSLUCENT"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/config/ParticleData.java",
+   "line": 182,
+   "method": "get",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "if (VersionUtil.shadersEnabled()) {\n                return SingleQuadParticle.Layer.TRANSLUCENT;\n            }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/loaders/fabric/FabricEntrypoint.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package pigcart.particlerain.loaders.fabric;\n\nimport net.fabricmc.api.ClientModInitializer;\nimport net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;\nimport net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;\n//~ if >=26.1 'ParticleFactoryRegistry' -> 'ParticleProviderRegistry' {\nimport net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;\n//~}\nimport net.fabricmc.fabric.api.particle.v1.FabricParticleTypes;\nimport net.fabricmc.fabric.api.resource.ResourceManagerHelper;\nimport net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;\nimport net.minecraft.core.Registry;\nimport net.minecraft.core.particles.SimpleParticleType;\nimport net.minecraft.core.registries.BuiltInRegistries;\nimport net.minecraft.resources.ResourceLocation;\nimport net.minecraft.server.packs.PackType;\nimport net.minecraft.server.packs.resources.ResourceManager;\nimport pigcart.particlerain.ParticleRain;\nimport pigcart.particlerain.VersionUtil;\nimport pigcart.particlerain.ParticleLoader;\nimport pigcart.particlerain.particle.*;\n\npublic class FabricEntrypoint implements ClientModInitializer {\n\n    @Override\n    public void onInitializeClient() {\n        //TODO\n        ParticleRain.STREAK = registerParticle(\"streak\");\n        //~ if >=26.1 ParticleFactoryRegistry -> ParticleProviderRegistry\n        ParticleFactoryRegistry.getInstance().register(ParticleRain.STREAK, StreakParticle.Provider::new);\n\n        ParticleRain.onInitializeClient();\n\n        ClientTickEvents.END_CLIENT_TICK.register(ParticleRain::onTick);\n        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {\n            dispatcher.register(ParticleRain.getCommands());\n        });\n        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {\n\n            @Override\n            public void onResourceManagerReload(ResourceManager resourceManager) {\n                ParticleLoader.onResourceManagerReload(resourceManager);\n            }\n\n            @Override\n            public ResourceLocation getFabricId() {\n                return VersionUtil.getId(\"reload\");\n            }\n        });\n    }\n    private SimpleParticleType registerParticle(String name) {\n        return Registry.register(BuiltInRegistries.PARTICLE_TYPE, VersionUtil.getId(name), FabricParticleTypes.simple(true));\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/loaders/fabric/ModMenuEntrypoint.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package pigcart.particlerain.loaders.fabric;\n\nimport com.terraformersmc.modmenu.api.ConfigScreenFactory;\nimport com.terraformersmc.modmenu.api.ModMenuApi;\nimport pigcart.particlerain.config.ConfigManager;\n\npublic class ModMenuEntrypoint implements ModMenuApi {\n\n    @Override\n    public ConfigScreenFactory<?> getModConfigScreenFactory() {\n        return ConfigManager::screenPlease;\n    }\n\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/loaders/forge/ForgeEntrypoint.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "package pigcart.particlerain.loaders.forge;\n\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.core.particles.ParticleType;\nimport net.minecraft.core.particles.SimpleParticleType;\nimport net.minecraft.core.registries.Registries;\nimport net.minecraft.server.packs.resources.ResourceManager;\nimport net.minecraft.server.packs.resources.SimplePreparableReloadListener;\nimport net.minecraft.util.profiling.ProfilerFiller;\nimport net.minecraftforge.client.ConfigScreenHandler;\nimport net.minecraftforge.client.event.RegisterClientCommandsEvent;\nimport net.minecraftforge.client.event.RegisterClientReloadListenersEvent;\nimport net.minecraftforge.client.event.RegisterParticleProvidersEvent;\nimport net.minecraftforge.common.MinecraftForge;\nimport net.minecraftforge.event.TickEvent;\nimport net.minecraftforge.eventbus.api.IEventBus;\nimport net.minecraftforge.fml.ModLoadingContext;\nimport net.minecraftforge.fml.common.Mod;\nimport net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;\nimport net.minecraftforge.fml.loading.FMLEnvironment;\nimport net.minecraftforge.registries.DeferredRegister;\nimport net.minecraftforge.registries.RegistryObject;\nimport pigcart.particlerain.ParticleLoader;\nimport pigcart.particlerain.ParticleRain;\nimport pigcart.particlerain.config.ConfigManager;\nimport pigcart.particlerain.particle.*;\n\n@Mod(ParticleRain.MOD_ID)\npublic class ForgeEntrypoint {\n\n    public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = DeferredRegister.create(Registries.PARTICLE_TYPE, ParticleRain.MOD_ID);\n\n    public static final RegistryObject<SimpleParticleType> STREAK = registerParticle(\"streak\");\n\n    private static RegistryObject<SimpleParticleType> registerParticle(String name) {\n        return PARTICLE_TYPES.register(name, () -> new SimpleParticleType(true));\n    }\n\n    public static void onTick(TickEvent.ClientTickEvent event) {\n        ParticleRain.onTick(Minecraft.getInstance());\n    }\n\n    public static void onRegisterCommands(RegisterClientCommandsEvent event) {\n        event.getDispatcher().register(ParticleRain.getCommands());\n    }\n\n    public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {\n        //TODO\n        event.registerSpriteSet(STREAK.get(), StreakParticle.Provider::new);\n        ParticleRain.STREAK = STREAK.get();\n    }\n\n    public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {\n        event.registerReloadListener(new SimplePreparableReloadListener<>() {\n            @Override\n            protected Object prepare(ResourceManager resourceManager, ProfilerFiller profilerFiller) {\n                ParticleLoader.onResourceManagerReload(resourceManager); //yeah whatever\n                return null;\n            }\n\n            @Override\n            protected void apply(Object o, ResourceManager resourceManager, ProfilerFiller profilerFiller) {\n            }\n        });\n    }\n\n    @SuppressWarnings(\"removal\")\n    public ForgeEntrypoint() {\n        if (FMLEnvironment.dist.isDedicatedServer()) return;\n\n        IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();\n        MinecraftForge.EVENT_BUS.addListener(ForgeEntrypoint::onTick);\n        MinecraftForge.EVENT_BUS.addListener(ForgeEntrypoint::onRegisterCommands);\n        //MinecraftForge.EVENT_BUS.addListener(ForgeEntrypoint::onRegisterReloadListeners);\n        PARTICLE_TYPES.register(eventBus);\n        eventBus.addListener(ForgeEntrypoint::onRegisterParticleProviders);\n        eventBus.addListener(ForgeEntrypoint::onRegisterClientReloadListeners);\n        ModLoadingContext.get().registerExtensionPoint(\n                ConfigScreenHandler.ConfigScreenFactory.class,\n                () -> new ConfigScreenHandler.ConfigScreenFactory(\n                        (client, parent) -> ConfigManager.screenPlease(parent)\n                )\n        );\n        ParticleRain.onInitializeClient();\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/loaders/neoforge/NeoforgeEntrypoint.java",
+   "line": 57,
+   "method": "(imports)",
+   "condition": ">=1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "//net.neoforged.neoforge.client.event.AddClientReloadListenersEvent event"
+    },
+    {
+     "condition": null,
+     "code": "net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [],
+   "older": "net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event",
+   "newer": "//net.neoforged.neoforge.client.event.AddClientReloadListenersEvent event",
+   "removed": [
+    "RegisterClientReloadListenersEvent",
+    "client",
+    "event",
+    "neoforge",
+    "neoforged",
+    "net"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/loaders/neoforge/NeoforgeEntrypoint.java",
+   "line": 63,
+   "method": "(imports)",
+   "condition": ">=1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "//event.addListener(VersionUtil.getId(\"reload\"),"
+    },
+    {
+     "condition": null,
+     "code": "event.registerReloadListener("
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [],
+   "older": "event.registerReloadListener(",
+   "newer": "//event.addListener(VersionUtil.getId(\"reload\"),",
+   "removed": [
+    "event",
+    "registerReloadListener"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/loaders/neoforge/NeoforgeEntrypoint.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package pigcart.particlerain.loaders.neoforge;\n\nimport com.mojang.brigadier.CommandDispatcher;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.commands.CommandSourceStack;\nimport net.minecraft.core.particles.ParticleType;\nimport net.minecraft.core.particles.SimpleParticleType;\nimport net.minecraft.core.registries.BuiltInRegistries;\nimport net.minecraft.server.packs.resources.ResourceManager;\nimport net.minecraft.server.packs.resources.SimplePreparableReloadListener;\nimport net.minecraft.util.profiling.ProfilerFiller;\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.ModLoadingContext;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.fml.loading.FMLEnvironment;\nimport net.neoforged.neoforge.client.event.ClientTickEvent;\nimport net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;\nimport net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.registries.DeferredHolder;\nimport net.neoforged.neoforge.registries.DeferredRegister;\nimport pigcart.particlerain.ParticleLoader;\nimport pigcart.particlerain.ParticleRain;\nimport pigcart.particlerain.VersionUtil;\nimport pigcart.particlerain.config.ConfigManager;\nimport pigcart.particlerain.particle.*;\n\n@Mod(ParticleRain.MOD_ID)\npublic class NeoforgeEntrypoint {\n\n    public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = DeferredRegister.create(BuiltInRegistries.PARTICLE_TYPE, ParticleRain.MOD_ID);\n\n    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> STREAK = registerParticle(\"streak\");\n\n    private static DeferredHolder<ParticleType<?>, SimpleParticleType> registerParticle(String name) {\n        return PARTICLE_TYPES.register(name, () -> new SimpleParticleType(true));\n    }\n\n    public static void onTick(ClientTickEvent.Post event) {\n        ParticleRain.onTick(Minecraft.getInstance());\n    }\n\n    public static void onRegisterCommands(RegisterClientCommandsEvent event) {\n        CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();\n        dispatcher.register(ParticleRain.getCommands());\n    }\n\n    public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {\n        //TODO\n        event.registerSpriteSet(STREAK.get(), StreakParticle.Provider::new);\n        ParticleRain.STREAK = STREAK.get();\n    }\n\n    public static void onRegisterReloadListeners(\n            //? >=1.21.4 {\n            //net.neoforged.neoforge.client.event.AddClientReloadListenersEvent event\n            //?} else {\n            net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event\n            //?}\n    ) {\n        //? >=1.21.4 {\n        //event.addListener(VersionUtil.getId(\"reload\"),\n        //?} else {\n        event.registerReloadListener(\n        //?}\n            new SimplePreparableReloadListener<>() {\n                @Override\n                protected Object prepare(ResourceManager resourceManager, ProfilerFiller profilerFiller) {\n                    ParticleLoader.onResourceManagerReload(resourceManager); //yeah whatever\n                    return null;\n                }\n\n                @Override\n                protected void apply(Object o, ResourceManager resourceManager, ProfilerFiller profilerFiller) {}\n        });\n    }\n\n    public NeoforgeEntrypoint(IEventBus eventBus) {\n        if (FMLEnvironment.dist.isDedicatedServer()) return;\n\n        NeoForge.EVENT_BUS.addListener(NeoforgeEntrypoint::onTick);\n        NeoForge.EVENT_BUS.addListener(NeoforgeEntrypoint::onRegisterCommands);\n        PARTICLE_TYPES.register(eventBus);\n        eventBus.addListener(NeoforgeEntrypoint::onRegisterParticleProviders);\n        eventBus.addListener(NeoforgeEntrypoint::onRegisterReloadListeners);\n        ModLoadingContext.get().registerExtensionPoint(\n                IConfigScreenFactory.class,\n                () -> (modContainer, pa"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/access/ClientLevelAccessor.java",
+   "line": 11,
+   "method": "(class body)",
+   "condition": "1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "1.20.1",
+     "code": "@Invoker\n    void callAddEntity(int entityId, Entity entityToSpawn);"
+    }
+   ],
+   "boundary": [
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/access/DisplayAccessor.java",
+   "line": 14,
+   "method": "(class body)",
+   "condition": "1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "1.20.1",
+     "code": "@Invoker\n    void callSetInterpolationDuration(int interpolationDuration);\n\n    @Invoker\n    void callSetInterpolationDelay(int interpolationDelay);"
+    },
+    {
+     "condition": null,
+     "code": "@Invoker\n    void callSetTransformationInterpolationDuration(int i);\n    @Invoker\n    void callSetTransformationInterpolationDelay(int i);"
+    }
+   ],
+   "boundary": [
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/access/ParticleEngineAccessor.java",
+   "line": 12,
+   "method": "(class body)",
+   "condition": "<1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.9",
+     "code": "@Accessor\n    TextureAtlas getTextureAtlas();"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/access/SingleQuadParticleAccessor.java",
+   "line": 15,
+   "method": "(class body)",
+   "condition": "<1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.9",
+     "code": "@Invoker\n    void callRenderVertex(VertexConsumer buffer, Quaternionf quaternion, float x, float y, float z, float xOffset, float yOffset, float quadSize, float u, float v, int packedLight);"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/access/SingleQuadParticleAccessor.java",
+   "line": 14,
+   "method": "(class body)",
+   "condition": ">1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "//? if <1.21.9 {\n    @Invoker\n    void callRenderVertex(VertexConsumer buffer, Quaternionf quaternion, float x, float y, float z, float xOffset, float yOffset, float quadSize, float u, float v, int packedLight);\n    //?}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/fabric/RegistrySyncManagerMixin.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric && >1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric && >1.20.1",
+     "code": "package pigcart.particlerain.mixin.fabric;\n\nimport net.fabricmc.fabric.impl.registry.sync.RegistrySyncManager;\nimport net.minecraft.server.MinecraftServer;\nimport net.minecraft.server.network.ServerConfigurationPacketListenerImpl;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\nimport static pigcart.particlerain.config.ConfigManager.getConfig;\n\n// Allows for other fabricapi users to join LAN worlds if they do not have the mod but the host player does.\n@Mixin(RegistrySyncManager.class)\npublic abstract class RegistrySyncManagerMixin {\n\n    @Inject(method = \"configureClient\", at = @At(\"HEAD\"), cancellable = true)\n    private static void configureClient(ServerConfigurationPacketListenerImpl handler, MinecraftServer server, CallbackInfo ci) {\n        if (!getConfig().compat.syncRegistries) {\n            ci.cancel();\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/render/ClientLevelMixin.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import com.llamalad7.mixinextras.injector.wrapoperation.Operation;\nimport com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;\nimport net.minecraft.client.OptionInstance;\nimport net.minecraft.server.level.ParticleStatus;\nimport net.minecraft.sounds.SoundEvent;\nimport net.minecraft.sounds.SoundSource;\nimport net.minecraft.world.level.levelgen.Heightmap;\nimport org.objectweb.asm.Opcodes;\nimport pigcart.particlerain.ParticleRain;\n\nimport static pigcart.particlerain.config.ConfigManager.getConfig;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/render/ClientLevelMixin.java",
+   "line": 46,
+   "method": "(class body)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "// bypass precipitation check so we can share the sound placement calculations with non-rain sounds\n    @WrapOperation(method = \"tickWeatherEffects\", at = @At(value = \"INVOKE\",\n            target = \"Lnet/minecraft/client/multiplayer/ClientLevel;getPrecipitationAt(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/biome/Biome$Precipitation;\"\n    ))\n    public Biome.Precipitation overridePrecipitation(ClientLevel instance, BlockPos blockPos, Operation<Biome.Precipitation> original) {\n        return Biome.Precipitation.RAIN;\n    }\n\n    // insert additional sounds without replacing vanilla code block where rain sounds are played\n    @Inject(method = \"tickWeatherEffects\", at = @At(value = \"FIELD\", opcode = Opcodes.PUTFIELD, shift = At.Shift.AFTER, ordinal = 1,\n            target = \"Lnet/minecraft/client/multiplayer/ClientLevel;rainSoundTime:I\"), cancellable = true\n    )\n    public void hookWeatherSounds(CallbackInfo ci, @Local(name = \"cameraPosition\") BlockPos cameraPosition, @Local(name = \"rainParticlePosition\") BlockPos rainPos) {\n        ParticleRain.doAdditionalWeatherSounds((ClientLevel)(Object)this, cameraPosition, rainPos, ci);\n    }\n\n    @WrapOperation(method = \"tickWeatherEffects\", at = @At(value = \"INVOKE\",\n            target = \"Lnet/minecraft/client/multiplayer/ClientLevel;getHeightmapPos(Lnet/minecraft/world/level/levelgen/Heightmap$Types;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/core/BlockPos;\"\n    ))\n    public BlockPos alterHeightmapPos(ClientLevel instance, Heightmap.Types types, BlockPos blockPos, Operation<BlockPos> original) {\n        int newY = ParticleSpawner.getHeight(instance, blockPos.getX(), blockPos.getZ());\n        return new BlockPos(blockPos.getX(), newY, blockPos.getZ());\n    }\n\n    // make rain sound use the mods rain volume slider\n    @WrapOperation(method = \"tickWeatherEffects\", at = @At(value = \"INVOKE\",\n            target = \"Lnet/minecraft/client/multiplayer/ClientLevel;playLocalSound(Lnet/minecraft/core/BlockPos;Lnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;FFZ)V\"\n    ))\n    public void adjustRainVolume(ClientLevel instance, BlockPos blockPos, SoundEvent soundEvent, SoundSource soundSource, float volume, float pitch, boolean distanceDelay, Operation<Void> original) {\n        original.call(instance, blockPos, soundEvent, soundSource, getConfig().sound.rainVolume, pitch, distanceDelay);\n    }\n\n    // particle status MINIMAL disables splash particles\n    @SuppressWarnings({\"unchecked\", \"rawtypes\"})\n    @WrapOperation(method = \"tickWeatherEffects\", at = @At(value = \"INVOKE\", ordinal = 0,\n            target = \"Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;\"\n    ))\n    public <T> T tickRainParticles(OptionInstance instance, Operation<T> original) {\n        if (!getConfig().compat.doDefaultSplashing) {\n            return (T) ParticleStatus.MINIMAL;\n        }\n        return original.call(instance);\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/render/ParticleEngineMixin.java",
+   "line": 37,
+   "method": "(class body)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Inject(method = \"tick\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/particle/Particle;getParticleLimit()Ljava/util/Optional;\"))\n    public void onParticleSpawnCanceled(CallbackInfo ci, @Local Particle particle) {\n        if (particle instanceof WeatherParticle) ParticleSpawner.particleCount--;\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/render/ParticleEngineMixin.java",
+   "line": 44,
+   "method": "(class body)",
+   "condition": "<1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.9",
+     "code": "@Mutable\n    @Final\n    @Shadow\n    private static List<ParticleRenderType> RENDER_ORDER;\n\n    @Inject(at = @At(\"RETURN\"), method = \"<clinit>\")\n    private static void addTypes(CallbackInfo ci) {\n        RENDER_ORDER = ImmutableList.<ParticleRenderType>builder().addAll(RENDER_ORDER)\n                .add(BlendedParticleRenderType.INSTANCE)\n                .build();\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/render/WeatherEffectRendererMixin.java",
+   "line": 28,
+   "method": "(imports)",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "import net.minecraft.client.renderer.MultiBufferSource;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/render/WeatherEffectRendererMixin.java",
+   "line": 31,
+   "method": "(imports)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "/*import net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/WeatherRenderState;\n*/"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/render/WeatherEffectRendererMixin.java",
+   "line": 40,
+   "method": "(imports)",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "@Shadow protected abstract Biome.Precipitation getPrecipitationAt(Level level, BlockPos pos);\n\n    // bypass precipitation check so we can share the sound placement calculations with non-rain sounds\n    @WrapOperation(method = \"tickRainParticles\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/renderer/WeatherEffectRenderer;getPrecipitationAt(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/biome/Biome$Precipitation;\"))\n    public Biome.Precipitation getPrecipitationAt(WeatherEffectRenderer instance, Level level, BlockPos blockPos3, Operation<Biome.Precipitation> original) {\n        return Biome.Precipitation.RAIN;\n    }\n\n    // insert additional sounds without replacing vanilla code block where rain sounds are played\n    @Inject(method = \"tickRainParticles\", at = @At(value = \"FIELD\", opcode = Opcodes.PUTFIELD, shift = At.Shift.AFTER, ordinal = 1, target = \"Lnet/minecraft/client/renderer/WeatherEffectRenderer;rainSoundTime:I\"), cancellable = true)\n    public void hookWeatherSounds(ClientLevel level, Camera camera, int ticks, ParticleStatus particleStatus,/*?>=1.21.11{*//*int weatherRadius,*//*?}*/ CallbackInfo ci, @Local(ordinal = 0) BlockPos blockPos, @Local(ordinal = 1) BlockPos blockPos2) {\n        ParticleRain.doAdditionalWeatherSounds(level, blockPos, blockPos2, ci);\n    }\n\n    @WrapOperation(\n            method = \"tickRainParticles\",\n            at = @At(\n                    value = \"INVOKE\",\n                    target = \"Lnet/minecraft/client/multiplayer/ClientLevel;getHeightmapPos(Lnet/minecraft/world/level/levelgen/Heightmap$Types;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/core/BlockPos;\"\n            )\n    )\n    public BlockPos alterHeightmapPos(ClientLevel instance, Heightmap.Types types, BlockPos blockPos, Operation<BlockPos> original) {\n        int newY = ParticleSpawner.getHeight(instance, blockPos.getX(), blockPos.getZ());\n        return new BlockPos(blockPos.getX(), newY, blockPos.getZ());\n    }\n\n    // make rain sound use the mods rain volume slider\n    @WrapOperation(method = \"tickRainParticles\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/multiplayer/ClientLevel;playLocalSound(Lnet/minecraft/core/BlockPos;Lnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;FFZ)V\"))\n    public void adjustRainVolume(ClientLevel instance, BlockPos blockPos, SoundEvent soundEvent, SoundSource soundSource, float volume, float pitch, boolean distanceDelay, Operation<Void> original) {\n        original.call(instance, blockPos, soundEvent, soundSource, getConfig().sound.rainVolume, pitch, distanceDelay);\n    }\n\n    // particle status MINIMAL disables splash particles\n    @Inject(method = \"tickRainParticles\", at = @At(\"HEAD\"))\n    public void tickRainParticles(ClientLevel level, Camera camera, int ticks, ParticleStatus particleStatus,/*?>=1.21.11{*//*int weatherRadius,*//*?}*/ CallbackInfo ci, @Local(argsOnly = true) LocalRef<ParticleStatus> particleStatusLocalRef) {\n        if (!getConfig().compat.doDefaultSplashing) {\n            particleStatusLocalRef.set(ParticleStatus.MINIMAL);\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/render/WeatherEffectRendererMixin.java",
+   "line": 86,
+   "method": "(imports)",
+   "condition": "} >=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "} >=1.21.9",
+     "code": "/*@Inject(method = \"extractRenderState\", at = @At(\"HEAD\"), cancellable = true)\n    public void render(Level level, int ticks, float partialTick, Vec3 cameraPosition, WeatherRenderState reusedState, CallbackInfo ci) {\n    */"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"render(Lnet/minecraft/world/level/Level;Lnet/minecraft/client/renderer/MultiBufferSource;IFLnet/minecraft/world/phys/Vec3;)V\", at = @At(\"HEAD\"), cancellable = true)\n    public void render(Level level, MultiBufferSource bufferSource, int ticks, float partialTick, Vec3 cameraPosition, CallbackInfo ci) {"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "bufferSource"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "bufferSource"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "WeatherRenderState"
+     ]
+    }
+   ],
+   "older": "@Inject(method = \"render(Lnet/minecraft/world/level/Level;Lnet/minecraft/client/renderer/MultiBufferSource;IFLnet/minecraft/world/phys/Vec3;)V\", at = @At(\"HEAD\"), cancellable = true)\n    public void render(Level level, MultiBufferSource bufferSource, int ticks, float partialTick, Vec3 cameraPosition, CallbackInfo ci) {",
+   "newer": "/*@Inject(method = \"extractRenderState\", at = @At(\"HEAD\"), cancellable = true)\n    public void render(Level level, int ticks, float partialTick, Vec3 cameraPosition, WeatherRenderState reusedState, CallbackInfo ci) {\n    */",
+   "removed": [
+    "MultiBufferSource",
+    "bufferSource"
+   ],
+   "added": [
+    "WeatherRenderState",
+    "reusedState"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/render/WeatherEffectRendererMixin.java",
+   "line": 83,
+   "method": "(imports)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "/*@Inject(method = \"extractRenderState\", at = @At(\"HEAD\"), cancellable = true)\n    public void render(ClientLevel level, float partialTicks, Vec3 cameraPos, WeatherRenderState renderState, CallbackInfo ci) {\n    *///?} >=1.21.9 {\n    /*@Inject(method = \"extractRenderState\", at = @At(\"HEAD\"), cancellable = true)\n    public void render(Level level, int ticks, float partialTick, Vec3 cameraPosition, WeatherRenderState reusedState, CallbackInfo ci) {\n    *///?} else {\n    @Inject(method = \"render(Lnet/minecraft/world/level/Level;Lnet/minecraft/client/renderer/MultiBufferSource;IFLnet/minecraft/world/phys/Vec3;)V\", at = @At(\"HEAD\"), cancellable = true)\n    public void render(Level level, MultiBufferSource bufferSource, int ticks, float partialTick, Vec3 cameraPosition, CallbackInfo ci) {\n    //?}\n        if (!getConfig().compat.renderDefaultWeather) {\n            ci.cancel();\n        }\n    }\n}\n*/"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/render/WeatherEffectRendererMixin.java",
+   "line": 99,
+   "method": "(imports)",
+   "condition": "<=1.21.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "import com.llamalad7.mixinextras.injector.wrapoperation.Operation;\nimport com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;\nimport com.llamalad7.mixinextras.sugar.Local;\nimport net.minecraft.client.Camera;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.client.OptionInstance;\nimport net.minecraft.client.ParticleStatus;\nimport net.minecraft.client.multiplayer.ClientLevel;\nimport net.minecraft.client.renderer.LevelRenderer;\nimport net.minecraft.client.renderer.LightTexture;\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.core.Holder;\nimport net.minecraft.core.registries.Registries;\nimport net.minecraft.sounds.SoundEvent;\nimport net.minecraft.sounds.SoundSource;\nimport net.minecraft.world.level.LevelReader;\nimport net.minecraft.world.level.biome.Biome;\nimport net.minecraft.world.level.biome.Biomes;\nimport org.objectweb.asm.Opcodes;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\nimport pigcart.particlerain.ParticleRain;\nimport pigcart.particlerain.ParticleSpawner;\nimport pigcart.particlerain.config.ConfigManager;\n\nimport static pigcart.particlerain.config.ConfigManager.getConfig;\n\n@Mixin(LevelRenderer.class)\npublic class WeatherEffectRendererMixin {\n\n    // bypass precipitation check so we can share the sound placement calculations with non-rain sounds\n    @WrapOperation(method = \"tickRain\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/world/level/LevelReader;getBiome(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/core/Holder;\"))\n    public Holder<Biome> getBiomeValue(LevelReader instance, BlockPos pos, Operation<Holder<Biome>> original) {\n        // mixin somehow can't resolve target getPrecipitationAt so lets just replace the gotten biome with a rainy one instead\n        return Minecraft.getInstance().level.registryAccess().registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS);\n    }\n\n    @WrapOperation(\n            method = \"tickRain\",\n            at = @At(\n                    value = \"INVOKE\",\n                    target = \"Lnet/minecraft/world/level/LevelReader;getHeightmapPos(Lnet/minecraft/world/level/levelgen/Heightmap$Types;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/core/BlockPos;\"\n            )\n    )\n    public BlockPos alterHeightmapPos(net.minecraft.world.level.LevelReader instance, net.minecraft.world.level.levelgen.Heightmap.Types types, BlockPos blockPos, Operation<BlockPos> original) {\n        ClientLevel level = (ClientLevel) instance;\n        int newY = ParticleSpawner.getHeight(level, blockPos.getX(), blockPos.getZ());\n        return new BlockPos(blockPos.getX(), newY, blockPos.getZ());\n    }\n\n    // insert additional sounds without replacing vanilla code block where rain sounds are played\n    @Inject(method = \"tickRain\", at = @At(value = \"FIELD\", opcode = Opcodes.PUTFIELD, shift = At.Shift.AFTER, ordinal = 1, target = \"Lnet/minecraft/client/renderer/LevelRenderer;rainSoundTime:I\"), cancellable = true)\n    public void hookWeatherSounds(Camera camera, CallbackInfo ci, @Local(ordinal = 0) BlockPos blockPos, @Local(ordinal = 1) BlockPos blockPos2) {\n        ParticleRain.doAdditionalWeatherSounds(Minecraft.getInstance().level, blockPos, blockPos2, ci);\n    }\n\n    // make rain sound use the mods rain volume slider\n    @WrapOperation(method = \"tickRain\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/multiplayer/ClientLevel;playLocalSound(Lnet/minecraft/core/BlockPos;Lnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;FFZ)V\"))\n    public void adjustRainVolume(ClientLevel instance, BlockPos blockPos, SoundEvent soundEvent, SoundSource soundSource, float volume, float pitch, boolean distanceDelay, Operation<Void> original) {\n        original.call(instance, blockPos, soundEvent, soundSource, getConfig().sound.rainVolume, pitch, distanceDelay);\n    }\n\n    // particle status MINIMAL"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/tint/DripParticleMixin.java",
+   "line": 14,
+   "method": "(imports)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.particle.Particle;\nimport net.minecraft.client.particle.SingleQuadParticle;\nimport net.minecraft.util.RandomSource;\n\n@Mixin({\n        DripParticle.WaterFallProvider.class,\n        DripParticle.WaterHangProvider.class,\n        DripParticle.DripstoneWaterFallProvider.class,\n        DripParticle.DripstoneWaterHangProvider.class\n})\npublic abstract class DripParticleMixin {\n    @Inject(method = \"createParticle(Lnet/minecraft/core/particles/SimpleParticleType;Lnet/minecraft/client/multiplayer/ClientLevel;DDDDDDLnet/minecraft/util/RandomSource;)Lnet/minecraft/client/particle/Particle;\", at = @At(\"TAIL\"))\n    public void createParticle(SimpleParticleType particleType, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, RandomSource random, CallbackInfoReturnable<Particle> cir) {\n        if (ConfigManager.getConfig().compat.waterTint) TextureUtil.applyWaterTint((SingleQuadParticle) cir.getReturnValue(), level, BlockPos.containing(x, y, z));\n    }\n}"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.particle.TextureSheetParticle;\n\n@Mixin(DripParticle.class)\npublic abstract class DripParticleMixin {\n\n    @Inject(method = {\n            \"createWaterHangParticle\",\n            \"createWaterFallParticle\",\n            \"createDripstoneWaterHangParticle\",\n            \"createDripstoneWaterFallParticle\"\n    }, at = @At(\"TAIL\"))\n    private static void tintWaterParticle(SimpleParticleType simpleParticleType, ClientLevel clientLevel, double d, double e, double f, double g, double h, double i, CallbackInfoReturnable<TextureSheetParticle> cir) {\n        if (ConfigManager.getConfig().compat.waterTint) TextureUtil.applyWaterTint(cir.getReturnValue(), clientLevel, BlockPos.containing(d, e, f));\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "level",
+      "random"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "DripstoneWaterFallProvider",
+      "DripstoneWaterHangProvider",
+      "TextureSheetParticle",
+      "WaterFallProvider",
+      "WaterHangProvider",
+      "clientLevel",
+      "createParticle",
+      "level"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.particle.TextureSheetParticle;\n\n@Mixin(DripParticle.class)\npublic abstract class DripParticleMixin {\n\n    @Inject(method = {\n            \"createWaterHangParticle\",\n            \"createWaterFallParticle\",\n            \"createDripstoneWaterHangParticle\",\n            \"createDripstoneWaterFallParticle\"\n    }, at = @At(\"TAIL\"))\n    private static void tintWaterParticle(SimpleParticleType simpleParticleType, ClientLevel clientLevel, double d, double e, double f, double g, double h, double i, CallbackInfoReturnable<TextureSheetParticle> cir) {\n        if (ConfigManager.getConfig().compat.waterTint) TextureUtil.applyWaterTint(cir.getReturnValue(), clientLevel, BlockPos.containing(d, e, f));\n    }\n}",
+   "newer": "import net.minecraft.client.particle.Particle;\nimport net.minecraft.client.particle.SingleQuadParticle;\nimport net.minecraft.util.RandomSource;\n\n@Mixin({\n        DripParticle.WaterFallProvider.class,\n        DripParticle.WaterHangProvider.class,\n        DripParticle.DripstoneWaterFallProvider.class,\n        DripParticle.DripstoneWaterHangProvider.class\n})\npublic abstract class DripParticleMixin {\n    @Inject(method = \"createParticle(Lnet/minecraft/core/particles/SimpleParticleType;Lnet/minecraft/client/multiplayer/ClientLevel;DDDDDDLnet/minecraft/util/RandomSource;)Lnet/minecraft/client/particle/Particle;\", at = @At(\"TAIL\"))\n    public void createParticle(SimpleParticleType particleType, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, RandomSource random, CallbackInfoReturnable<Particle> cir) {\n        if (ConfigManager.getConfig().compat.waterTint) TextureUtil.applyWaterTint((SingleQuadParticle) cir.getReturnValue(), level, BlockPos.containing(x, y, z));\n    }\n}",
+   "removed": [
+    "TextureSheetParticle",
+    "clientLevel",
+    "simpleParticleType",
+    "tintWaterParticle"
+   ],
+   "added": [
+    "DripstoneWaterFallProvider",
+    "DripstoneWaterHangProvider",
+    "Particle",
+    "RandomSource",
+    "SingleQuadParticle",
+    "WaterFallProvider",
+    "WaterHangProvider",
+    "createParticle",
+    "level",
+    "particleType",
+    "random",
+    "util",
+    "xSpeed",
+    "ySpeed",
+    "zSpeed"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/tint/TextureSheetParticleMixin.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "<1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.9",
+     "code": "package pigcart.particlerain.mixin.tint;\n\nimport net.minecraft.client.multiplayer.ClientLevel;\nimport net.minecraft.client.particle.SingleQuadParticle;\nimport net.minecraft.client.particle.SpriteSet;\nimport net.minecraft.client.particle.TextureSheetParticle;\nimport net.minecraft.client.renderer.texture.TextureAtlasSprite;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n@Mixin(TextureSheetParticle.class)\n///  Provides inject for [WaterDropParticleMixin]\npublic abstract class TextureSheetParticleMixin extends SingleQuadParticle {\n\n    @Shadow protected abstract void setSprite(TextureAtlasSprite textureAtlasSprite);\n\n    protected TextureSheetParticleMixin(ClientLevel clientLevel, double d, double e, double f) {\n        super(clientLevel, d, e, f);\n    }\n\n    @Inject(method = \"pickSprite\", at = @At(\"TAIL\"))\n    public void pickSprite(SpriteSet spriteSet, CallbackInfo ci) {};\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/tint/WaterDropParticleMixin.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "//import net.minecraft.client.particle.SingleQuadParticle;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.particle.TextureSheetParticle;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "TextureSheetParticle"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.particle.TextureSheetParticle;",
+   "newer": "//import net.minecraft.client.particle.SingleQuadParticle;",
+   "removed": [
+    "TextureSheetParticle",
+    "client",
+    "minecraft",
+    "net",
+    "particle"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/tint/WaterDropParticleMixin.java",
+   "line": 23,
+   "method": "(imports)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "public abstract class WaterDropParticleMixin extends SingleQuadParticle {\n\n    protected WaterDropParticleMixin(ClientLevel level, double x, double y, double z, TextureAtlasSprite sprite) {\n        super(level, x, y, z, sprite);\n    }\n\n    @Inject(method = \"<init>\", at = @At(\"TAIL\"))\n    public void pickSprite(ClientLevel level, double x, double y, double z, TextureAtlasSprite sprite, CallbackInfo ci) {"
+    },
+    {
+     "condition": null,
+     "code": "public abstract class WaterDropParticleMixin extends TextureSheetParticleMixin {\n\n    protected WaterDropParticleMixin(ClientLevel clientLevel, double d, double e, double f) {\n        super(clientLevel, d, e, f);\n    }\n\n    @Override\n    public void pickSprite(SpriteSet spriteSet, CallbackInfo ci) {"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "level",
+      "sprite"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "clientLevel",
+      "level",
+      "sprite"
+     ]
+    }
+   ],
+   "older": "public abstract class WaterDropParticleMixin extends TextureSheetParticleMixin {\n\n    protected WaterDropParticleMixin(ClientLevel clientLevel, double d, double e, double f) {\n        super(clientLevel, d, e, f);\n    }\n\n    @Override\n    public void pickSprite(SpriteSet spriteSet, CallbackInfo ci) {",
+   "newer": "public abstract class WaterDropParticleMixin extends SingleQuadParticle {\n\n    protected WaterDropParticleMixin(ClientLevel level, double x, double y, double z, TextureAtlasSprite sprite) {\n        super(level, x, y, z, sprite);\n    }\n\n    @Inject(method = \"<init>\", at = @At(\"TAIL\"))\n    public void pickSprite(ClientLevel level, double x, double y, double z, TextureAtlasSprite sprite, CallbackInfo ci) {",
+   "removed": [
+    "Override",
+    "SpriteSet",
+    "TextureSheetParticleMixin",
+    "clientLevel",
+    "spriteSet"
+   ],
+   "added": [
+    "Inject",
+    "SingleQuadParticle",
+    "TextureAtlasSprite",
+    "level",
+    "method",
+    "sprite"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/WeatherDataMixin.java",
+   "line": 10,
+   "method": "(imports)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "//import net.minecraft.world.level.saveddata.WeatherData;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.multiplayer.ClientLevel;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraft.client.multiplayer.ClientLevel;",
+   "newer": "//import net.minecraft.world.level.saveddata.WeatherData;",
+   "removed": [
+    "ClientLevel",
+    "client",
+    "minecraft",
+    "multiplayer",
+    "net"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/mixin/WeatherDataMixin.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "//@Mixin(WeatherData.class)"
+    },
+    {
+     "condition": null,
+     "code": "@Mixin(ClientLevel.ClientLevelData.class)"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [],
+   "older": "@Mixin(ClientLevel.ClientLevelData.class)",
+   "newer": "//@Mixin(WeatherData.class)",
+   "removed": [
+    "ClientLevel",
+    "ClientLevelData",
+    "Mixin"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/BlockDisplayParticle.java",
+   "line": 19,
+   "method": "(imports)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.blaze3d.vertex.VertexConsumer;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "state",
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "minecraft"
+     ]
+    }
+   ],
+   "older": "import com.mojang.blaze3d.vertex.VertexConsumer;",
+   "newer": "import net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;",
+   "removed": [
+    "VertexConsumer",
+    "blaze3d",
+    "com",
+    "mojang",
+    "vertex"
+   ],
+   "added": [
+    "client",
+    "minecraft",
+    "net",
+    "renderer",
+    "state"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/BlockDisplayParticle.java",
+   "line": 89,
+   "method": "updateDisplay",
+   "condition": "else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "else",
+     "code": "((DisplayAccessor) display).callSetTransformationInterpolationDuration(1);\n        ((DisplayAccessor) display).callSetTransformationInterpolationDelay(0);"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/CustomParticle.java",
+   "line": 18,
+   "method": "(imports)",
+   "condition": "> 1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.20.1",
+     "code": "//import pigcart.particlerain.mixin.access.SingleQuadParticleAccessor;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/CustomParticle.java",
+   "line": 21,
+   "method": "(imports)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.particle.SingleQuadParticle;\nimport net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;\nimport net.minecraft.util.RandomSource;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.blaze3d.vertex.VertexConsumer;\nimport net.minecraft.client.particle.ParticleRenderType;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "state",
+      "vertex"
+     ]
+    }
+   ],
+   "older": "import com.mojang.blaze3d.vertex.VertexConsumer;\nimport net.minecraft.client.particle.ParticleRenderType;",
+   "newer": "import net.minecraft.client.particle.SingleQuadParticle;\nimport net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;\nimport net.minecraft.util.RandomSource;",
+   "removed": [
+    "ParticleRenderType",
+    "VertexConsumer",
+    "blaze3d",
+    "com",
+    "mojang",
+    "vertex"
+   ],
+   "added": [
+    "RandomSource",
+    "SingleQuadParticle",
+    "renderer",
+    "state",
+    "util"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/CustomParticle.java",
+   "line": 242,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "public SingleQuadParticle.Layer getLayer() {\n        return data.renderType.get();\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public ParticleRenderType getRenderType() {\n        return data.renderType.get();\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "Layer",
+      "getRenderType"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "Layer",
+      "getRenderType"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "getRenderType"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "Layer",
+      "getLayer",
+      "getRenderType"
+     ]
+    }
+   ],
+   "older": "public ParticleRenderType getRenderType() {\n        return data.renderType.get();\n    }",
+   "newer": "public SingleQuadParticle.Layer getLayer() {\n        return data.renderType.get();\n    }",
+   "removed": [
+    "ParticleRenderType",
+    "getRenderType"
+   ],
+   "added": [
+    "Layer",
+    "SingleQuadParticle",
+    "getLayer"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/CustomParticle.java",
+   "line": 328,
+   "method": "renderCameraCopyQuad",
+   "condition": "<= 1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<= 1.20.1",
+     "code": "quaternion.mul(Axis.YP.rotation(Mth.PI));"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/CustomParticle.java",
+   "line": 347,
+   "method": "renderSquishyRotatedQuad",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "this.extractRotatedQuad(h, quaternion, x, y, z, tickPercent);\n        // doesnt seem to be an easy way to dig into a particles size now."
+    },
+    {
+     "condition": null,
+     "code": "float size = this.getQuadSize(tickPercent);\n        float u0 = this.getU0();\n        float u1 = this.getU1();\n        float v0 = this.getV0();\n        float v1 = this.getV1();\n        int color = this.getLightColor(tickPercent);\n        this.renderVertex(h, quaternion, x, y, z,  1.0F, -squish, size, u1, v1, color);\n        this.renderVertex(h, quaternion, x, y, z,  1.0F,  squish, size, u1, v0, color);\n        this.renderVertex(h, quaternion, x, y, z, -1.0F,  squish, size, u0, v0, color);\n        this.renderVertex(h, quaternion, x, y, z, -1.0F, -squish, size, u0, v1, color);"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "color",
+      "size"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "color",
+      "getLightColor"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "color",
+      "extractRotatedQuad",
+      "size"
+     ]
+    }
+   ],
+   "older": "float size = this.getQuadSize(tickPercent);\n        float u0 = this.getU0();\n        float u1 = this.getU1();\n        float v0 = this.getV0();\n        float v1 = this.getV1();\n        int color = this.getLightColor(tickPercent);\n        this.renderVertex(h, quaternion, x, y, z,  1.0F, -squish, size, u1, v1, color);\n        this.renderVertex(h, quaternion, x, y, z,  1.0F,  squish, size, u1, v0, color);\n        this.renderVertex(h, quaternion, x, y, z, -1.0F,  squish, size, u0, v0, color);\n        this.renderVertex(h, quaternion, x, y, z, -1.0F, -squish, size, u0, v1, color);",
+   "newer": "this.extractRotatedQuad(h, quaternion, x, y, z, tickPercent);\n        // doesnt seem to be an easy way to dig into a particles size now.",
+   "removed": [
+    "color",
+    "getLightColor",
+    "getQuadSize",
+    "getU0",
+    "getU1",
+    "getV0",
+    "getV1",
+    "renderVertex",
+    "size",
+    "squish"
+   ],
+   "added": [
+    "extractRotatedQuad"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/CustomParticle.java",
+   "line": 365,
+   "method": "(class body)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "public void renderRotatedQuad(QuadParticleRenderState h, Quaternionf quaternion, float offsetX, float offsetY, float offsetZ, float tickPercent) {\n        this.extractRotatedQuad(h, quaternion, offsetX, offsetY, offsetZ, tickPercent);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/CustomParticle.java",
+   "line": 373,
+   "method": "renderVertex",
+   "condition": "<= 1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<= 1.20.1",
+     "code": "Vector3f vec = (new Vector3f(xOffset, yOffset, 0.0F)).rotate(quaternion).mul(quadSize).add(x, y, z);\n        buffer.vertex(vec.x(), vec.y(), vec.z()).uv(u, v).color(rCol, gCol, bCol, alpha).uv2(packedLight).endVertex();"
+    },
+    {
+     "condition": null,
+     "code": "SingleQuadParticleAccessor p = (SingleQuadParticleAccessor) this;\n        p.callRenderVertex(buffer, quaternion, x, y, z, xOffset, yOffset, quadSize, u, v, packedLight);"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "add"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "add"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "add",
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "color",
+      "endVertex",
+      "uv2",
+      "vertex"
+     ]
+    }
+   ],
+   "older": "Vector3f vec = (new Vector3f(xOffset, yOffset, 0.0F)).rotate(quaternion).mul(quadSize).add(x, y, z);\n        buffer.vertex(vec.x(), vec.y(), vec.z()).uv(u, v).color(rCol, gCol, bCol, alpha).uv2(packedLight).endVertex();",
+   "newer": "SingleQuadParticleAccessor p = (SingleQuadParticleAccessor) this;\n        p.callRenderVertex(buffer, quaternion, x, y, z, xOffset, yOffset, quadSize, u, v, packedLight);",
+   "removed": [
+    "Vector3f",
+    "add",
+    "alpha",
+    "bCol",
+    "color",
+    "endVertex",
+    "gCol",
+    "mul",
+    "rCol",
+    "rotate",
+    "uv2",
+    "vec",
+    "vertex"
+   ],
+   "added": [
+    "SingleQuadParticleAccessor",
+    "callRenderVertex"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/CustomParticle.java",
+   "line": 371,
+   "method": "(class body)",
+   "condition": "<1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.9",
+     "code": "private void renderVertex(VertexConsumer buffer, Quaternionf quaternion, float x, float y, float z, float xOffset, float yOffset, float quadSize, float u, float v, int packedLight) {\n        //? if <= 1.20.1 {\n        Vector3f vec = (new Vector3f(xOffset, yOffset, 0.0F)).rotate(quaternion).mul(quadSize).add(x, y, z);\n        buffer.vertex(vec.x(), vec.y(), vec.z()).uv(u, v).color(rCol, gCol, bCol, alpha).uv2(packedLight).endVertex();\n        //?} else {\n        /*SingleQuadParticleAccessor p = (SingleQuadParticleAccessor) this;\n        p.callRenderVertex(buffer, quaternion, x, y, z, xOffset, yOffset, quadSize, u, v, packedLight);\n        *///?}\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/CustomParticle.java",
+   "line": 391,
+   "method": "(class body)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": ", RandomSource random"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/render/BlendedParticleRenderType.java",
+   "line": 39,
+   "method": "(imports)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "/*.withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(\n                            BlendFunction.TRANSLUCENT))\n                    .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(\n                            //~ if 26.1 'GREATER_THAN' -> 'LESS_THAN'\n                            com.mojang.blaze3d.platform.CompareOp.GREATER_THAN, false))\n                    */"
+    },
+    {
+     "condition": null,
+     "code": ".withBlend(BlendFunction.TRANSLUCENT)\n                    .withDepthWrite(false)"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "ColorTargetState",
+      "CompareOp",
+      "DepthStencilState",
+      "withBlend",
+      "withColorTargetState",
+      "withDepthStencilState",
+      "withDepthWrite"
+     ]
+    }
+   ],
+   "older": ".withBlend(BlendFunction.TRANSLUCENT)\n                    .withDepthWrite(false)",
+   "newer": "/*.withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(\n                            BlendFunction.TRANSLUCENT))\n                    .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(\n                            //~ if 26.1 'GREATER_THAN' -> 'LESS_THAN'\n                            com.mojang.blaze3d.platform.CompareOp.GREATER_THAN, false))\n                    */",
+   "removed": [
+    "withBlend",
+    "withDepthWrite"
+   ],
+   "added": [
+    "ColorTargetState",
+    "CompareOp",
+    "DepthStencilState",
+    "GREATER_THAN",
+    "blaze3d",
+    "com",
+    "mojang",
+    "pipeline",
+    "platform",
+    "withColorTargetState",
+    "withDepthStencilState"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/render/BlendedParticleRenderType.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">=26.3 | >=1.21.9 | 1.21.1 | 1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.renderpearl.api.pipeline.*;\nimport net.minecraft.client.particle.SingleQuadParticle;\nimport net.minecraft.client.renderer.RenderPipelines;\nimport net.minecraft.client.renderer.texture.TextureAtlas;\nimport pigcart.particlerain.VersionUtil;\n\nimport static net.minecraft.client.renderer.RenderPipelines.PARTICLE_SNIPPET;\n\npublic class BlendedParticleRenderType {\n\n    public static final RenderPipeline BLENDED_PARTICLE = RenderPipelines.register(\n            RenderPipeline.builder(PARTICLE_SNIPPET)\n                    .withLocation(VersionUtil.getId(\"pipeline/particle_blended\"))\n                    .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))\n                    .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN, false))\n                    .build()\n    );\n    public static final SingleQuadParticle.Layer INSTANCE =\n            new SingleQuadParticle.Layer(true, TextureAtlas.LOCATION_PARTICLES, BLENDED_PARTICLE, RenderPipelines.OIT_PARTICLE);\n}"
+    },
+    {
+     "condition": ">=1.21.9",
+     "code": "import com.mojang.blaze3d.pipeline.BlendFunction;\nimport com.mojang.blaze3d.pipeline.RenderPipeline;\nimport net.minecraft.client.particle.SingleQuadParticle;\nimport net.minecraft.client.renderer.RenderPipelines;\nimport net.minecraft.client.renderer.texture.TextureAtlas;\nimport pigcart.particlerain.VersionUtil;\n\nimport static net.minecraft.client.renderer.RenderPipelines.PARTICLE_SNIPPET;\n\npublic class BlendedParticleRenderType {\n\n    public static final RenderPipeline BLENDED_PARTICLE = RenderPipelines.register(\n            RenderPipeline.builder(PARTICLE_SNIPPET)\n                    .withLocation(VersionUtil.getId(\"pipeline/particle_blended\"))\n                    //? >=26.1 {\n                    /*.withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(\n                            BlendFunction.TRANSLUCENT))\n                    .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(\n                            //~ if 26.1 'GREATER_THAN' -> 'LESS_THAN'\n                            com.mojang.blaze3d.platform.CompareOp.GREATER_THAN, false))\n                    *///?} else {\n                    .withBlend(BlendFunction.TRANSLUCENT)\n                    .withDepthWrite(false)\n                    //?}\n                    .build()\n    );\n    public static final SingleQuadParticle.Layer INSTANCE =\n            new SingleQuadParticle.Layer(true, TextureAtlas.LOCATION_PARTICLES, BLENDED_PARTICLE);\n}"
+    },
+    {
+     "condition": "1.21.1",
+     "code": "import com.mojang.blaze3d.systems.RenderSystem;\nimport com.mojang.blaze3d.vertex.BufferBuilder;\nimport com.mojang.blaze3d.vertex.DefaultVertexFormat;\nimport com.mojang.blaze3d.vertex.Tesselator;\nimport com.mojang.blaze3d.vertex.VertexFormat;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.client.particle.ParticleRenderType;\nimport net.minecraft.client.renderer.texture.TextureAtlas;\nimport net.minecraft.client.renderer.texture.TextureManager;\n\npublic class BlendedParticleRenderType {\n    public static final ParticleRenderType INSTANCE = new ParticleRenderType() {\n        @Override\n        public BufferBuilder begin(Tesselator tesselator, TextureManager textureManager) {\n            Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();\n            RenderSystem.enableDepthTest();\n            RenderSystem.depthMask(false);\n            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);\n            RenderSystem.enableBlend();\n            RenderSystem.defaultBlendFunc();\n            return tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.PARTICLE);\n        }\n    };\n}"
+    },
+    {
+     "condition": "1.20.1",
+     "code": "import com.mojang.blaze3d.systems.RenderSystem;\nimport com.mojang.blaze3d.vertex.BufferBuilder;\nimport com.mojang.blaze3d.vertex.DefaultVertexFormat;\nimport com.mojang.blaze3d.vertex.Tesselator;\nimport com.mojang.blaze3d.vertex.VertexFormat;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.client.particle.ParticleRenderType;\nimport net.minecraft.client.renderer.texture.TextureAtlas;\nimport net.minecraft.client.renderer.texture.TextureManager;\n\npublic class BlendedParticleRenderType {\n    public static final ParticleRenderType INSTANCE = new ParticleRenderType() {\n        @Override\n        public void begin(BufferBuilder bufferBuilder, TextureManager textureManager) {\n            Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer(); // fixes black texture on item pickup\n            RenderSystem.enableDepthTest(); // fixes xray flickering on item pickup\n            RenderSystem.depthMask(false); // controls whether particles are blended together or masked out\n\n            // identical to vanilla translucent particle\n            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);\n            RenderSystem.enableBlend();\n            RenderSystem.defaultBlendFunc();\n            bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.PARTICLE);\n        }\n        @Override\n        public void end(Tesselator tessellator) {\n            tessellator.end();\n            // reset state\n            RenderSystem.disableBlend();\n            RenderSystem.depthMask(true);\n        }\n    };\n}"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3",
+    "1.21.8 -> 1.21.9",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "26.2 -> 26.3",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.20 -> 1.20.1"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "OIT_PARTICLE"
+     ]
+    }
+   ],
+   "older": "import com.mojang.blaze3d.pipeline.BlendFunction;\nimport com.mojang.blaze3d.pipeline.RenderPipeline;\nimport net.minecraft.client.particle.SingleQuadParticle;\nimport net.minecraft.client.renderer.RenderPipelines;\nimport net.minecraft.client.renderer.texture.TextureAtlas;\nimport pigcart.particlerain.VersionUtil;\n\nimport static net.minecraft.client.renderer.RenderPipelines.PARTICLE_SNIPPET;\n\npublic class BlendedParticleRenderType {\n\n    public static final RenderPipeline BLENDED_PARTICLE = RenderPipelines.register(\n            RenderPipeline.builder(PARTICLE_SNIPPET)\n                    .withLocation(VersionUtil.getId(\"pipeline/particle_blended\"))\n                    //? >=26.1 {\n                    /*.withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(\n                            BlendFunction.TRANSLUCENT))\n                    .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(\n                            //~ if 26.1 'GREATER_THAN' -> 'LESS_THAN'\n                            com.mojang.blaze3d.platform.CompareOp.GREATER_THAN, false))\n                    *///?} else {\n                    .withBlend(BlendFunction.TRANSLUCENT)\n                    .withDepthWrite(false)\n                    //?}\n                    .build()\n    );\n    public static final SingleQuadParticle.Layer INSTANCE =\n            new SingleQuadParticle.Layer(true, TextureAtlas.LOCATION_PARTICLES, BLENDED_PARTICLE);\n}",
+   "newer": "import com.mojang.renderpearl.api.pipeline.*;\nimport net.minecraft.client.particle.SingleQuadParticle;\nimport net.minecraft.client.renderer.RenderPipelines;\nimport net.minecraft.client.renderer.texture.TextureAtlas;\nimport pigcart.particlerain.VersionUtil;\n\nimport static net.minecraft.client.renderer.RenderPipelines.PARTICLE_SNIPPET;\n\npublic class BlendedParticleRenderType {\n\n    public static final RenderPipeline BLENDED_PARTICLE = RenderPipelines.register(\n            RenderPipeline.builder(PARTICLE_SNIPPET)\n                    .withLocation(VersionUtil.getId(\"pipeline/particle_blended\"))\n                    .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))\n                    .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN, false))\n                    .build()\n    );\n    public static final SingleQuadParticle.Layer INSTANCE =\n            new SingleQuadParticle.Layer(true, TextureAtlas.LOCATION_PARTICLES, BLENDED_PARTICLE, RenderPipelines.OIT_PARTICLE);\n}",
+   "removed": [
+    "blaze3d",
+    "platform",
+    "withBlend",
+    "withDepthWrite"
+   ],
+   "added": [
+    "OIT_PARTICLE",
+    "api",
+    "renderpearl"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/StreakParticle.java",
+   "line": 24,
+   "method": "(imports)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.blaze3d.vertex.VertexConsumer;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "state",
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "minecraft"
+     ]
+    }
+   ],
+   "older": "import com.mojang.blaze3d.vertex.VertexConsumer;",
+   "newer": "import net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;",
+   "removed": [
+    "VertexConsumer",
+    "blaze3d",
+    "com",
+    "mojang",
+    "vertex"
+   ],
+   "added": [
+    "client",
+    "minecraft",
+    "net",
+    "renderer",
+    "state"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/StreakParticle.java",
+   "line": 93,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "extract(QuadParticleRenderState"
+    },
+    {
+     "condition": null,
+     "code": "render(VertexConsumer"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "render"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "render"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "render"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "render"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "QuadParticleRenderState",
+      "extract",
+      "render"
+     ]
+    }
+   ],
+   "older": "render(VertexConsumer",
+   "newer": "extract(QuadParticleRenderState",
+   "removed": [
+    "VertexConsumer",
+    "render"
+   ],
+   "added": [
+    "QuadParticleRenderState",
+    "extract"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/StreakParticle.java",
+   "line": 113,
+   "method": "(class body)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": ", RandomSource random"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/WeatherParticle.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "import net.minecraft.client.particle.SingleQuadParticle;\nimport net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.particle.ParticleRenderType;\nimport net.minecraft.client.particle.TextureSheetParticle;\nimport com.mojang.blaze3d.vertex.VertexConsumer;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "state",
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "TextureSheetParticle"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.particle.ParticleRenderType;\nimport net.minecraft.client.particle.TextureSheetParticle;\nimport com.mojang.blaze3d.vertex.VertexConsumer;",
+   "newer": "import net.minecraft.client.particle.SingleQuadParticle;\nimport net.minecraft.client.renderer.state./*?>=26.1{*//*level.*//*?}*/QuadParticleRenderState;",
+   "removed": [
+    "ParticleRenderType",
+    "TextureSheetParticle",
+    "VertexConsumer",
+    "blaze3d",
+    "com",
+    "mojang",
+    "vertex"
+   ],
+   "added": [
+    "SingleQuadParticle",
+    "renderer",
+    "state"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/WeatherParticle.java",
+   "line": 27,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "SingleQuadParticle"
+    },
+    {
+     "condition": null,
+     "code": "TextureSheetParticle"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "TextureSheetParticle"
+     ]
+    }
+   ],
+   "older": "TextureSheetParticle",
+   "newer": "SingleQuadParticle",
+   "removed": [
+    "TextureSheetParticle"
+   ],
+   "added": [
+    "SingleQuadParticle"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/WeatherParticle.java",
+   "line": 35,
+   "method": "WeatherParticle",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": ",sprite"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/WeatherParticle.java",
+   "line": 55,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "//public SingleQuadParticle.Layer getLayer() {"
+    },
+    {
+     "condition": null,
+     "code": "public ParticleRenderType getRenderType() {"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "getRenderType"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "getRenderType"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "getRenderType"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "getRenderType"
+     ]
+    }
+   ],
+   "older": "public ParticleRenderType getRenderType() {",
+   "newer": "//public SingleQuadParticle.Layer getLayer() {",
+   "removed": [
+    "ParticleRenderType",
+    "getRenderType"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/particle/WeatherParticle.java",
+   "line": 90,
+   "method": "(class body)",
+   "condition": "<=1.20.1 | >=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "protected void renderRotatedQuad(VertexConsumer vertexConsumer, Quaternionf quaternionf, float x, float y, float z, float tickPercent) {\n        quaternionf.rotateY(Mth.PI);\n        float size = this.getQuadSize(tickPercent);\n        float u0 = this.getU0();\n        float u1 = this.getU1();\n        float v0 = this.getV0();\n        float v1 = this.getV1();\n        int lightColor = this.getLightColor(tickPercent);\n\n        Vector3f[] vector3fs = new Vector3f[]{\n                new Vector3f(-1.0F, -1.0F, 0.0F),\n                new Vector3f(-1.0F, 1.0F, 0.0F),\n                new Vector3f(1.0F, 1.0F, 0.0F),\n                new Vector3f(1.0F, -1.0F, 0.0F)};\n\n        for(int k = 0; k < 4; ++k) {\n            Vector3f vector3f = vector3fs[k];\n            vector3f.rotate(quaternionf);\n            vector3f.mul(size);\n            vector3f.add(x, y, z);\n        }\n\n        vertexConsumer.vertex(vector3fs[0].x(), vector3fs[0].y(), vector3fs[0].z()).uv(u1, v1).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(lightColor).endVertex();\n        vertexConsumer.vertex(vector3fs[1].x(), vector3fs[1].y(), vector3fs[1].z()).uv(u1, v0).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(lightColor).endVertex();\n        vertexConsumer.vertex(vector3fs[2].x(), vector3fs[2].y(), vector3fs[2].z()).uv(u0, v0).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(lightColor).endVertex();\n        vertexConsumer.vertex(vector3fs[3].x(), vector3fs[3].y(), vector3fs[3].z()).uv(u0, v1).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(lightColor).endVertex();\n\n    }"
+    },
+    {
+     "condition": ">=1.21.9",
+     "code": "public void renderRotatedQuad(QuadParticleRenderState h, Quaternionf quaternion, float offsetX, float offsetY, float offsetZ, float tickPercent) {\n        this.extractRotatedQuad(h, quaternion, offsetX, offsetY, offsetZ, tickPercent);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2",
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "add"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "add"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "add",
+      "size",
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "color",
+      "endVertex",
+      "uv2",
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "add",
+      "color",
+      "size",
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "add",
+      "color",
+      "getLightColor",
+      "rotate"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "add"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "QuadParticleRenderState",
+      "add",
+      "alpha",
+      "bCol",
+      "color",
+      "extractRotatedQuad",
+      "gCol",
+      "rCol",
+      "size"
+     ]
+    }
+   ],
+   "older": "protected void renderRotatedQuad(VertexConsumer vertexConsumer, Quaternionf quaternionf, float x, float y, float z, float tickPercent) {\n        quaternionf.rotateY(Mth.PI);\n        float size = this.getQuadSize(tickPercent);\n        float u0 = this.getU0();\n        float u1 = this.getU1();\n        float v0 = this.getV0();\n        float v1 = this.getV1();\n        int lightColor = this.getLightColor(tickPercent);\n\n        Vector3f[] vector3fs = new Vector3f[]{\n                new Vector3f(-1.0F, -1.0F, 0.0F),\n                new Vector3f(-1.0F, 1.0F, 0.0F),\n                new Vector3f(1.0F, 1.0F, 0.0F),\n                new Vector3f(1.0F, -1.0F, 0.0F)};\n\n        for(int k = 0; k < 4; ++k) {\n            Vector3f vector3f = vector3fs[k];\n            vector3f.rotate(quaternionf);\n            vector3f.mul(size);\n            vector3f.add(x, y, z);\n        }\n\n        vertexConsumer.vertex(vector3fs[0].x(), vector3fs[0].y(), vector3fs[0].z()).uv(u1, v1).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(lightColor).endVertex();\n        vertexConsumer.vertex(vector3fs[1].x(), vector3fs[1].y(), vector3fs[1].z()).uv(u1, v0).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(lightColor).endVertex();\n        vertexConsumer.vertex(vector3fs[2].x(), vector3fs[2].y(), vector3fs[2].z()).uv(u0, v0).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(lightColor).endVertex();\n        vertexConsumer.vertex(vector3fs[3].x(), vector3fs[3].y(), vector3fs[3].z()).uv(u0, v1).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(lightColor).endVertex();\n\n    }",
+   "newer": "public void renderRotatedQuad(QuadParticleRenderState h, Quaternionf quaternion, float offsetX, float offsetY, float offsetZ, float tickPercent) {\n        this.extractRotatedQuad(h, quaternion, offsetX, offsetY, offsetZ, tickPercent);\n    }",
+   "removed": [
+    "Mth",
+    "Vector3f",
+    "VertexConsumer",
+    "add",
+    "alpha",
+    "bCol",
+    "color",
+    "endVertex",
+    "gCol",
+    "getLightColor",
+    "getQuadSize",
+    "getU0",
+    "getU1",
+    "getV0",
+    "getV1",
+    "lightColor",
+    "mul",
+    "quaternionf",
+    "rCol",
+    "rotate",
+    "rotateY",
+    "size",
+    "uv2",
+    "vector3f",
+    "vector3fs",
+    "vertex",
+    "vertexConsumer"
+   ],
+   "added": [
+    "QuadParticleRenderState",
+    "extractRotatedQuad",
+    "offsetX",
+    "offsetY",
+    "offsetZ",
+    "quaternion"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/ParticleRain.java",
+   "line": 24,
+   "method": "(imports)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.client.gui.components.debug.DebugScreenEntries;\nimport pigcart.particlerain.particle.render.BlendedParticleRenderType;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/ParticleRain.java",
+   "line": 93,
+   "method": "onInitializeClient",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "DebugScreenEntries.register(VersionUtil.getId(\"debug\"),\n                (display, level, levelChunk, levelChunk2) ->\n                        display.addToGroup(VersionUtil.getId(\"debug_group\"), getDebugLines())\n        );\n        DebugScreenEntries.register(VersionUtil.getId(\"biome_tags\"),\n                (display, level, levelChunk, levelChunk2) ->\n                        display.addToGroup(VersionUtil.getId(\"biome_tags_group\"), getBiomeTags())\n        );\n        if (VersionUtil.irisLoaded()) {\n            net.irisshaders.iris.api.v0.IrisApi.getInstance().assignPipeline(\n                    BlendedParticleRenderType.BLENDED_PARTICLE,\n                    net.irisshaders.iris.api.v0.IrisProgram.PARTICLES_TRANSLUCENT\n            );\n        }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/ParticleRain.java",
+   "line": 114,
+   "method": "onTick",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "camera.position()"
+    },
+    {
+     "condition": null,
+     "code": "camera.getPosition()"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "getPosition",
+      "position"
+     ]
+    }
+   ],
+   "older": "camera.getPosition()",
+   "newer": "camera.position()",
+   "removed": [
+    "getPosition"
+   ],
+   "added": [
+    "position"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 29,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "//import net.minecraft.world.attribute.EnvironmentAttributes;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 32,
+   "method": "(imports)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "//import net.minecraft.data.AtlasIds;"
+    },
+    {
+     "condition": null,
+     "code": "import pigcart.particlerain.mixin.access.ParticleEngineAccessor;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [],
+   "older": "import pigcart.particlerain.mixin.access.ParticleEngineAccessor;",
+   "newer": "//import net.minecraft.data.AtlasIds;",
+   "removed": [
+    "ParticleEngineAccessor",
+    "access",
+    "mixin",
+    "particlerain",
+    "pigcart"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 51,
+   "method": "hotbarMessage",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "//Minecraft.getInstance().gui.hud.setOverlayMessage(component, false);"
+    },
+    {
+     "condition": null,
+     "code": "Minecraft.getInstance().gui.setOverlayMessage(component, false);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "getInstance",
+      "setOverlayMessage"
+     ]
+    }
+   ],
+   "older": "Minecraft.getInstance().gui.setOverlayMessage(component, false);",
+   "newer": "//Minecraft.getInstance().gui.hud.setOverlayMessage(component, false);",
+   "removed": [
+    "Minecraft",
+    "component",
+    "getInstance",
+    "gui",
+    "setOverlayMessage"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 63,
+   "method": "irisLoaded",
+   "condition": "forge | neoforge | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "//net.minecraftforge.fml.ModList.get().isLoaded(\"oculus\");"
+    },
+    {
+     "condition": "neoforge",
+     "code": "//net.neoforged.fml.ModList.get().isLoaded(\"iris\");"
+    },
+    {
+     "condition": null,
+     "code": "net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded(\"iris\");"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 72,
+   "method": "windLinkLoaded",
+   "condition": "forge | neoforge | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "//net.minecraftforge.fml.ModList.get().isLoaded(\"windlink\");"
+    },
+    {
+     "condition": "neoforge",
+     "code": "//net.neoforged.fml.ModList.get().isLoaded(\"windlink\");"
+    },
+    {
+     "condition": null,
+     "code": "net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded(\"windlink\");"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 83,
+   "method": "getId",
+   "condition": "<=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "return new ResourceLocation(ParticleRain.MOD_ID, path);"
+    },
+    {
+     "condition": null,
+     "code": "//return ResourceLocation.fromNamespaceAndPath(ParticleRain.MOD_ID, path);"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "return new ResourceLocation(ParticleRain.MOD_ID, path);",
+   "newer": "//return ResourceLocation.fromNamespaceAndPath(ParticleRain.MOD_ID, path);",
+   "removed": [
+    "MOD_ID",
+    "ParticleRain",
+    "ResourceLocation",
+    "path"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 91,
+   "method": "getMcId",
+   "condition": "<=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "return new ResourceLocation(ResourceLocation.DEFAULT_NAMESPACE, path);"
+    },
+    {
+     "condition": null,
+     "code": "//return ResourceLocation.withDefaultNamespace(path);"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "return new ResourceLocation(ResourceLocation.DEFAULT_NAMESPACE, path);",
+   "newer": "//return ResourceLocation.withDefaultNamespace(path);",
+   "removed": [
+    "DEFAULT_NAMESPACE",
+    "ResourceLocation",
+    "path"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 100,
+   "method": "parseId",
+   "condition": "<=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "return ResourceLocation.tryParse(string);"
+    },
+    {
+     "condition": null,
+     "code": "//return ResourceLocation.parse(string);"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "return ResourceLocation.tryParse(string);",
+   "newer": "//return ResourceLocation.parse(string);",
+   "removed": [
+    "ResourceLocation",
+    "string",
+    "tryParse"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 110,
+   "method": "getClipContext",
+   "condition": "<=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "return new ClipContext(clipStart, clipEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, Minecraft.getInstance().player);"
+    },
+    {
+     "condition": null,
+     "code": "//return new ClipContext(clipStart, clipEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, CollisionContext.empty());"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "ANY"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "getInstance"
+     ]
+    }
+   ],
+   "older": "return new ClipContext(clipStart, clipEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, Minecraft.getInstance().player);",
+   "newer": "//return new ClipContext(clipStart, clipEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, CollisionContext.empty());",
+   "removed": [
+    "ANY",
+    "Block",
+    "COLLIDER",
+    "ClipContext",
+    "Fluid",
+    "Minecraft",
+    "clipEnd",
+    "clipStart",
+    "getInstance",
+    "player"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 116,
+   "method": "(class body)",
+   "condition": "<=1.20.1 | <1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "public static AnimationMetadataSection getEmptySpriteMetadata() {\n        return AnimationMetadataSection.EMPTY;\n    }"
+    },
+    {
+     "condition": "<1.21.9",
+     "code": "public static ResourceMetadata getEmptySpriteMetadata() {\n        return new ResourceMetadata.Builder().build();\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2",
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "Builder",
+      "build"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "Builder",
+      "EMPTY"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "Builder",
+      "EMPTY",
+      "build"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "Builder",
+      "build"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "Builder",
+      "EMPTY",
+      "build"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "Builder",
+      "EMPTY",
+      "build"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "Builder",
+      "build"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "Builder",
+      "build"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "Builder",
+      "EMPTY"
+     ]
+    }
+   ],
+   "older": "public static AnimationMetadataSection getEmptySpriteMetadata() {\n        return AnimationMetadataSection.EMPTY;\n    }",
+   "newer": "public static ResourceMetadata getEmptySpriteMetadata() {\n        return new ResourceMetadata.Builder().build();\n    }",
+   "removed": [
+    "AnimationMetadataSection",
+    "EMPTY"
+   ],
+   "added": [
+    "Builder",
+    "ResourceMetadata",
+    "build"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 146,
+   "method": "(class body)",
+   "condition": ">=1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "//AnimationMetadataSection.TYPE"
+    },
+    {
+     "condition": null,
+     "code": "AnimationMetadataSection.SERIALIZER"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "SERIALIZER"
+     ]
+    }
+   ],
+   "older": "AnimationMetadataSection.SERIALIZER",
+   "newer": "//AnimationMetadataSection.TYPE",
+   "removed": [
+    "AnimationMetadataSection",
+    "SERIALIZER"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 162,
+   "method": "(class body)",
+   "condition": "<1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": ",\n                /*? if >=1.21.9 {*//*animationMetadata, List.of()*//*?} else {*/resourceMetadata/*?}*/"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 126,
+   "method": "(class body)",
+   "condition": "<=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "public static SpriteContents loadSplashSprite(int i) throws IOException {\n        final ResourceLocation location = getMcId(\"textures/particle/splash_\" + i + \".png\");\n        Resource resource = Minecraft.getInstance().getResourceManager().getResourceOrThrow(location);\n        AnimationMetadataSection metadata = resource.metadata().getSection(AnimationMetadataSection.SERIALIZER).orElse(AnimationMetadataSection.EMPTY);\n        NativeImage splashImage = TextureUtil.loadTexture(resource);\n        TextureUtil.desaturate(splashImage);\n        return new SpriteContents(\n                getId(\"splash_\" + i),\n                metadata.calculateFrameSize(splashImage.getWidth(), splashImage.getHeight()),\n                splashImage, metadata);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public static SpriteContents loadSplashSprite(int i) throws IOException {\n        final ResourceLocation location = getMcId(\"textures/particle/splash_\" + i + \".png\");\n        Resource resource = Minecraft.getInstance().getResourceManager().getResourceOrThrow(location);\n        ResourceMetadata resourceMetadata = resource.metadata();\n        NativeImage splashImage = TextureUtil.loadTexture(resource);\n        TextureUtil.desaturate(splashImage);\n        Optional<AnimationMetadataSection> animationMetadata = resourceMetadata.getSection(\n                //? if >=1.21.4 {\n                //AnimationMetadataSection.TYPE\n                 //?} else {\n                AnimationMetadataSection.SERIALIZER\n                //?}\n        );\n        FrameSize frameSize;\n        if (animationMetadata.isPresent()) {\n            frameSize = animationMetadata.get().calculateFrameSize(splashImage.getWidth(), splashImage.getHeight());\n        } else {\n            frameSize = new FrameSize(splashImage.getWidth(), splashImage.getHeight());\n        }\n        return new SpriteContents(\n                getId(\"splash_\" + i),\n                frameSize,\n                splashImage\n                //? <1.21.11 {\n                ,\n                /*? if >=1.21.9 {*//*animationMetadata, List.of()*//*?} else {*/resourceMetadata/*?}*/\n                //?}\n        );\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "get"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "EMPTY"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "EMPTY",
+      "get"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "get"
+     ]
+    }
+   ],
+   "older": "public static SpriteContents loadSplashSprite(int i) throws IOException {\n        final ResourceLocation location = getMcId(\"textures/particle/splash_\" + i + \".png\");\n        Resource resource = Minecraft.getInstance().getResourceManager().getResourceOrThrow(location);\n        AnimationMetadataSection metadata = resource.metadata().getSection(AnimationMetadataSection.SERIALIZER).orElse(AnimationMetadataSection.EMPTY);\n        NativeImage splashImage = TextureUtil.loadTexture(resource);\n        TextureUtil.desaturate(splashImage);\n        return new SpriteContents(\n                getId(\"splash_\" + i),\n                metadata.calculateFrameSize(splashImage.getWidth(), splashImage.getHeight()),\n                splashImage, metadata);\n    }",
+   "newer": "public static SpriteContents loadSplashSprite(int i) throws IOException {\n        final ResourceLocation location = getMcId(\"textures/particle/splash_\" + i + \".png\");\n        Resource resource = Minecraft.getInstance().getResourceManager().getResourceOrThrow(location);\n        ResourceMetadata resourceMetadata = resource.metadata();\n        NativeImage splashImage = TextureUtil.loadTexture(resource);\n        TextureUtil.desaturate(splashImage);\n        Optional<AnimationMetadataSection> animationMetadata = resourceMetadata.getSection(\n                //? if >=1.21.4 {\n                //AnimationMetadataSection.TYPE\n                 //?} else {\n                AnimationMetadataSection.SERIALIZER\n                //?}\n        );\n        FrameSize frameSize;\n        if (animationMetadata.isPresent()) {\n            frameSize = animationMetadata.get().calculateFrameSize(splashImage.getWidth(), splashImage.getHeight());\n        } else {\n            frameSize = new FrameSize(splashImage.getWidth(), splashImage.getHeight());\n        }\n        return new SpriteContents(\n                getId(\"splash_\" + i),\n                frameSize,\n                splashImage\n                //? <1.21.11 {\n                ,\n                /*? if >=1.21.9 {*//*animationMetadata, List.of()*//*?} else {*/resourceMetadata/*?}*/\n                //?}\n        );\n    }",
+   "removed": [
+    "EMPTY",
+    "orElse"
+   ],
+   "added": [
+    "FrameSize",
+    "Optional",
+    "ResourceMetadata",
+    "animationMetadata",
+    "frameSize",
+    "get",
+    "isPresent",
+    "resourceMetadata"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 171,
+   "method": "getPrecipitationAt",
+   "condition": ">=1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "//return biome.value().getPrecipitationAt(blockPos, level.getSeaLevel());"
+    },
+    {
+     "condition": null,
+     "code": "return biome.value().getPrecipitationAt(blockPos);"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "getPrecipitationAt",
+      "value"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "value"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "value"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "biome",
+      "blockPos"
+     ]
+    }
+   ],
+   "older": "return biome.value().getPrecipitationAt(blockPos);",
+   "newer": "//return biome.value().getPrecipitationAt(blockPos, level.getSeaLevel());",
+   "removed": [
+    "biome",
+    "blockPos",
+    "getPrecipitationAt",
+    "value"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 179,
+   "method": "getMapColor",
+   "condition": ">=1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "//return new Color(level.getBlockState(level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, blockPos).below()).getBlock().defaultMapColor().calculateARGBColor(MapColor.Brightness.NORMAL));"
+    },
+    {
+     "condition": null,
+     "code": "final Color color = new Color(level.getBlockState(level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, blockPos).below()).getBlock().defaultMapColor().calculateRGBColor(MapColor.Brightness.NORMAL));\n        // red and blue are swapped\n        return new Color(color.getBlue(), color.getGreen(), color.getRed());"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "NORMAL",
+      "calculateRGBColor",
+      "color",
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "color",
+      "getBlock",
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "blockPos",
+      "color",
+      "getBlockState",
+      "level"
+     ]
+    }
+   ],
+   "older": "final Color color = new Color(level.getBlockState(level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, blockPos).below()).getBlock().defaultMapColor().calculateRGBColor(MapColor.Brightness.NORMAL));\n        // red and blue are swapped\n        return new Color(color.getBlue(), color.getGreen(), color.getRed());",
+   "newer": "//return new Color(level.getBlockState(level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, blockPos).below()).getBlock().defaultMapColor().calculateARGBColor(MapColor.Brightness.NORMAL));",
+   "removed": [
+    "Brightness",
+    "Color",
+    "Heightmap",
+    "MOTION_BLOCKING",
+    "MapColor",
+    "NORMAL",
+    "Types",
+    "below",
+    "blockPos",
+    "calculateRGBColor",
+    "color",
+    "defaultMapColor",
+    "getBlock",
+    "getBlockState",
+    "getBlue",
+    "getGreen",
+    "getHeightmapPos",
+    "getRed",
+    "level"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 189,
+   "method": "schedule",
+   "condition": ">=1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "//Minecraft.getInstance().schedule(task);"
+    },
+    {
+     "condition": null,
+     "code": "Minecraft.getInstance().tell(task);"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "tell"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "getInstance"
+     ]
+    }
+   ],
+   "older": "Minecraft.getInstance().tell(task);",
+   "newer": "//Minecraft.getInstance().schedule(task);",
+   "removed": [
+    "Minecraft",
+    "getInstance",
+    "task",
+    "tell"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 197,
+   "method": "getTagIds",
+   "condition": ">=1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "//return registry.listTagIds();"
+    },
+    {
+     "condition": null,
+     "code": "return registry.getTagNames();"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "getTagNames",
+      "registry"
+     ]
+    }
+   ],
+   "older": "return registry.getTagNames();",
+   "newer": "//return registry.listTagIds();",
+   "removed": [
+    "getTagNames",
+    "registry"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 205,
+   "method": "getRegistry",
+   "condition": ">=1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "//return Minecraft.getInstance().level.registryAccess().lookupOrThrow(key);"
+    },
+    {
+     "condition": null,
+     "code": "return Minecraft.getInstance().level.registryAccess().registryOrThrow(key);"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "key",
+      "level",
+      "registryAccess",
+      "registryOrThrow"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "key",
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "getInstance",
+      "level"
+     ]
+    }
+   ],
+   "older": "return Minecraft.getInstance().level.registryAccess().registryOrThrow(key);",
+   "newer": "//return Minecraft.getInstance().level.registryAccess().lookupOrThrow(key);",
+   "removed": [
+    "Minecraft",
+    "getInstance",
+    "key",
+    "level",
+    "registryAccess",
+    "registryOrThrow"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 213,
+   "method": "getCloudHeight",
+   "condition": ">=1.21.11 | >=1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "//return level.environmentAttributes().getValue(EnvironmentAttributes.CLOUD_HEIGHT, pos).intValue();"
+    },
+    {
+     "condition": ">=1.21.6",
+     "code": "//return level.dimensionType().cloudHeight().isPresent() ? level.dimensionType().cloudHeight().get() : 0;"
+    },
+    {
+     "condition": null,
+     "code": "return (int) level.effects().getCloudHeight();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [],
+   "older": "//return level.dimensionType().cloudHeight().isPresent() ? level.dimensionType().cloudHeight().get() : 0;",
+   "newer": "//return level.environmentAttributes().getValue(EnvironmentAttributes.CLOUD_HEIGHT, pos).intValue();",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 223,
+   "method": "getMaxY",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "//return level.getMaxY();"
+    },
+    {
+     "condition": null,
+     "code": "return 255;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [],
+   "older": "return 255;",
+   "newer": "//return level.getMaxY();",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 231,
+   "method": "getMinY",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "//return level.getMinY();"
+    },
+    {
+     "condition": null,
+     "code": "return -64;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [],
+   "older": "return -64;",
+   "newer": "//return level.getMinY();",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 239,
+   "method": "getSprite",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "//return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.PARTICLES).getSprite(id);"
+    },
+    {
+     "condition": null,
+     "code": "return ((ParticleEngineAccessor) Minecraft.getInstance().particleEngine).getTextureAtlas().getSprite(id);"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "getSprite"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "getInstance",
+      "getTextureAtlas"
+     ]
+    }
+   ],
+   "older": "return ((ParticleEngineAccessor) Minecraft.getInstance().particleEngine).getTextureAtlas().getSprite(id);",
+   "newer": "//return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.PARTICLES).getSprite(id);",
+   "removed": [
+    "Minecraft",
+    "ParticleEngineAccessor",
+    "getInstance",
+    "getSprite",
+    "getTextureAtlas",
+    "particleEngine"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 247,
+   "method": "newNonAnimatedSpriteContents",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "//return new SpriteContents(getId(id), frameSize, sprite);"
+    },
+    {
+     "condition": null,
+     "code": "return(new SpriteContents(VersionUtil.getId(id), frameSize, sprite, getEmptySpriteMetadata()));"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "getId"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "getId",
+      "sprite"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "getId"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "getId",
+      "sprite"
+     ]
+    }
+   ],
+   "older": "return(new SpriteContents(VersionUtil.getId(id), frameSize, sprite, getEmptySpriteMetadata()));",
+   "newer": "//return new SpriteContents(getId(id), frameSize, sprite);",
+   "removed": [
+    "SpriteContents",
+    "VersionUtil",
+    "frameSize",
+    "getEmptySpriteMetadata",
+    "getId",
+    "sprite"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 257,
+   "method": "getFOV",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "boolean firstPerson = options.getCameraType().isFirstPerson();\n        float effectScale = options.fovEffectScale().get().floatValue();\n        return fov * Minecraft.getInstance().player.getFieldOfViewModifier(firstPerson, effectScale);"
+    },
+    {
+     "condition": null,
+     "code": "return fov * Minecraft.getInstance().player.getFieldOfViewModifier();"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "get"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "get"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "floatValue",
+      "get"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "get"
+     ]
+    }
+   ],
+   "older": "return fov * Minecraft.getInstance().player.getFieldOfViewModifier();",
+   "newer": "boolean firstPerson = options.getCameraType().isFirstPerson();\n        float effectScale = options.fovEffectScale().get().floatValue();\n        return fov * Minecraft.getInstance().player.getFieldOfViewModifier(firstPerson, effectScale);",
+   "removed": [],
+   "added": [
+    "effectScale",
+    "firstPerson",
+    "floatValue",
+    "fovEffectScale",
+    "get",
+    "getCameraType",
+    "isFirstPerson",
+    "options"
+   ]
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 269,
+   "method": "openUri",
+   "condition": "} >=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "} >=1.21.11",
+     "code": "//net.minecraft.util.Util.getPlatform().openUri(uri);"
+    },
+    {
+     "condition": null,
+     "code": "net.minecraft.Util.getPlatform().openUri(uri);"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Util"
+     ]
+    }
+   ],
+   "older": "net.minecraft.Util.getPlatform().openUri(uri);",
+   "newer": "//net.minecraft.util.Util.getPlatform().openUri(uri);",
+   "removed": [
+    "Util",
+    "getPlatform",
+    "minecraft",
+    "net",
+    "openUri",
+    "uri"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 277,
+   "method": "camPos",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "//return cam.position();"
+    },
+    {
+     "condition": null,
+     "code": "return cam.getPosition();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "getPosition"
+     ]
+    }
+   ],
+   "older": "return cam.getPosition();",
+   "newer": "//return cam.position();",
+   "removed": [
+    "cam",
+    "getPosition"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 285,
+   "method": "getKeyId",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "//return key.identifier();"
+    },
+    {
+     "condition": null,
+     "code": "return key.location();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "location"
+     ]
+    }
+   ],
+   "older": "return key.location();",
+   "newer": "//return key.identifier();",
+   "removed": [
+    "key",
+    "location"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 293,
+   "method": "getFogColor",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "return new Color(12112639);\n        // environment values change dramatically at night. looks weird on particles. idk how to target only the day value.\n        //return new Color(level.environmentAttributes().getValue(EnvironmentAttributes.FOG_COLOR, pos));"
+    },
+    {
+     "condition": null,
+     "code": "return new Color(level.getBiome(pos).value().getFogColor());"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "getFogColor",
+      "value"
+     ]
+    }
+   ],
+   "older": "return new Color(level.getBiome(pos).value().getFogColor());",
+   "newer": "return new Color(12112639);\n        // environment values change dramatically at night. looks weird on particles. idk how to target only the day value.\n        //return new Color(level.environmentAttributes().getValue(EnvironmentAttributes.FOG_COLOR, pos));",
+   "removed": [
+    "getBiome",
+    "getFogColor",
+    "level",
+    "pos",
+    "value"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/pigcart/particlerain/VersionUtil.java",
+   "line": 305,
+   "method": "addChatMsg",
+   "condition": "} >=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "} >=26.1",
+     "code": "//Minecraft.getInstance().gui.getChat().addClientSystemMessage(Component.literal(message));"
+    },
+    {
+     "condition": null,
+     "code": "Minecraft.getInstance().gui.getChat().addMessage(Component.literal(message));"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "addMessage"
+     ]
+    }
+   ],
+   "older": "Minecraft.getInstance().gui.getChat().addMessage(Component.literal(message));",
+   "newer": "//Minecraft.getInstance().gui.getChat().addClientSystemMessage(Component.literal(message));",
+   "removed": [
+    "Component",
+    "Minecraft",
+    "addMessage",
+    "getChat",
+    "getInstance",
+    "gui",
+    "literal",
+    "message"
+   ],
+   "added": []
+  }
+ ]
+}

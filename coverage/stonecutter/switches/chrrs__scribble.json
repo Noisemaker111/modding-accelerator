@@ -1,0 +1,356 @@
+{
+ "repo": "chrrs/scribble",
+ "commit": "bf88a49b43cee3486e5389adb3bf89b21895226c",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "neoforge"
+ ],
+ "versions": [
+  "26.1",
+  "26.2",
+  "26.3"
+ ],
+ "files": 2,
+ "switches": 6,
+ "versionSwitches": 6,
+ "rows": [
+  {
+   "file": "common/src/main/java/me/chrr/scribble/book/FileChooser.java",
+   "line": 31,
+   "method": "chooseFile",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "long window = Minecraft.getInstance().getWindow().handle();\n                org.lwjgl.sdl.SDL_DialogFileCallbackI fileCallback = (_, filelist, _) -> {\n                    if (filelist == 0L) {\n                        Scribble.LOGGER.error(\"failed to choose path: {}\", org.lwjgl.sdl.SDLError.SDL_GetError());\n                        return;\n                    }\n\n                    long str = org.lwjgl.system.MemoryUtil.memGetAddress(filelist);\n                    if (str == 0L) {\n                        // No file was selected.\n                        return;\n                    }\n\n                    try {\n                        Path p = Path.of(org.lwjgl.system.MemoryUtil.memUTF8(str));\n                        Minecraft.getInstance().execute(() -> pathConsumer.accept(p));\n                    } catch (InvalidPathException e) {\n                        Scribble.LOGGER.error(\"failed to choose path\", e);\n                    }\n                };"
+    },
+    {
+     "condition": null,
+     "code": "org.lwjgl.PointerBuffer filter = null;\n                String path;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "accept",
+      "execute",
+      "filter",
+      "getInstance"
+     ]
+    }
+   ],
+   "older": "org.lwjgl.PointerBuffer filter = null;\n                String path;",
+   "newer": "long window = Minecraft.getInstance().getWindow().handle();\n                org.lwjgl.sdl.SDL_DialogFileCallbackI fileCallback = (_, filelist, _) -> {\n                    if (filelist == 0L) {\n                        Scribble.LOGGER.error(\"failed to choose path: {}\", org.lwjgl.sdl.SDLError.SDL_GetError());\n                        return;\n                    }\n\n                    long str = org.lwjgl.system.MemoryUtil.memGetAddress(filelist);\n                    if (str == 0L) {\n                        // No file was selected.\n                        return;\n                    }\n\n                    try {\n                        Path p = Path.of(org.lwjgl.system.MemoryUtil.memUTF8(str));\n                        Minecraft.getInstance().execute(() -> pathConsumer.accept(p));\n                    } catch (InvalidPathException e) {\n                        Scribble.LOGGER.error(\"failed to choose path\", e);\n                    }\n                };",
+   "removed": [
+    "PointerBuffer",
+    "String",
+    "filter",
+    "path"
+   ],
+   "added": [
+    "InvalidPathException",
+    "LOGGER",
+    "MemoryUtil",
+    "Minecraft",
+    "Path",
+    "SDLError",
+    "SDL_DialogFileCallbackI",
+    "SDL_GetError",
+    "Scribble",
+    "accept",
+    "error",
+    "execute",
+    "fileCallback",
+    "filelist",
+    "getInstance",
+    "getWindow",
+    "handle",
+    "memGetAddress",
+    "memUTF8",
+    "pathConsumer",
+    "sdl",
+    "str",
+    "system",
+    "window"
+   ]
+  },
+  {
+   "file": "common/src/main/java/me/chrr/scribble/book/FileChooser.java",
+   "line": 59,
+   "method": "chooseFile",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "org.lwjgl.sdl.SDL_DialogFileFilter.Buffer filters = org.lwjgl.sdl.SDL_DialogFileFilter.create(1);\n                    filters.get(0).name(stack.UTF8(\"Scribble Book (.json)\")).pattern(stack.UTF8(\"json\"));\n\n                    org.lwjgl.sdl.SDLDialog.SDL_ShowSaveFileDialog(fileCallback, 0L, window, filters, defaultPath);"
+    },
+    {
+     "condition": null,
+     "code": "filter = stack.mallocPointer(1);\n                    filter.put(stack.UTF8(\"*.json\"));\n                    filter.flip();\n\n                    path = org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_saveFileDialog(\n                            net.minecraft.locale.Language.getInstance().getOrDefault(\"text.scribble.action.save_book_to_file\"), defaultPath,\n                            filter, \"Scribble Book (.json)\");"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "create",
+      "filter",
+      "get",
+      "name"
+     ]
+    }
+   ],
+   "older": "filter = stack.mallocPointer(1);\n                    filter.put(stack.UTF8(\"*.json\"));\n                    filter.flip();\n\n                    path = org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_saveFileDialog(\n                            net.minecraft.locale.Language.getInstance().getOrDefault(\"text.scribble.action.save_book_to_file\"), defaultPath,\n                            filter, \"Scribble Book (.json)\");",
+   "newer": "org.lwjgl.sdl.SDL_DialogFileFilter.Buffer filters = org.lwjgl.sdl.SDL_DialogFileFilter.create(1);\n                    filters.get(0).name(stack.UTF8(\"Scribble Book (.json)\")).pattern(stack.UTF8(\"json\"));\n\n                    org.lwjgl.sdl.SDLDialog.SDL_ShowSaveFileDialog(fileCallback, 0L, window, filters, defaultPath);",
+   "removed": [
+    "Language",
+    "TinyFileDialogs",
+    "filter",
+    "flip",
+    "getInstance",
+    "getOrDefault",
+    "locale",
+    "mallocPointer",
+    "minecraft",
+    "net",
+    "path",
+    "put",
+    "tinyfd",
+    "tinyfd_saveFileDialog",
+    "util"
+   ],
+   "added": [
+    "Buffer",
+    "SDLDialog",
+    "SDL_DialogFileFilter",
+    "SDL_ShowSaveFileDialog",
+    "create",
+    "fileCallback",
+    "filters",
+    "get",
+    "name",
+    "pattern",
+    "sdl",
+    "window"
+   ]
+  },
+  {
+   "file": "common/src/main/java/me/chrr/scribble/book/FileChooser.java",
+   "line": 74,
+   "method": "chooseFile",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "org.lwjgl.sdl.SDL_DialogFileFilter.Buffer filters = org.lwjgl.sdl.SDL_DialogFileFilter.create(1);\n                    filters.get(0).name(stack.UTF8(\"Scribble Book (.book, .json)\")).pattern(stack.UTF8(\"json;book\"));\n\n                    org.lwjgl.sdl.SDLDialog.SDL_ShowOpenFileDialog(fileCallback, 0L, window, filters, defaultPath, false);"
+    },
+    {
+     "condition": null,
+     "code": "if (org.lwjgl.system.Platform.get() != org.lwjgl.system.Platform.MACOSX) {\n                        // We only want to select Scribble book and JSON files.\n                        filter = stack.mallocPointer(2);\n                        filter.put(stack.UTF8(\"*.book\"));\n                        filter.put(stack.UTF8(\"*.json\"));\n                        filter.flip();\n                    }\n\n                    path = org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_openFileDialog(\n                            net.minecraft.locale.Language.getInstance().getOrDefault(\"text.scribble.action.load_book_from_file\"), defaultPath,\n                            filter, \"Scribble Book (.book, .json)\", false);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "create",
+      "filter",
+      "name"
+     ]
+    }
+   ],
+   "older": "if (org.lwjgl.system.Platform.get() != org.lwjgl.system.Platform.MACOSX) {\n                        // We only want to select Scribble book and JSON files.\n                        filter = stack.mallocPointer(2);\n                        filter.put(stack.UTF8(\"*.book\"));\n                        filter.put(stack.UTF8(\"*.json\"));\n                        filter.flip();\n                    }\n\n                    path = org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_openFileDialog(\n                            net.minecraft.locale.Language.getInstance().getOrDefault(\"text.scribble.action.load_book_from_file\"), defaultPath,\n                            filter, \"Scribble Book (.book, .json)\", false);",
+   "newer": "org.lwjgl.sdl.SDL_DialogFileFilter.Buffer filters = org.lwjgl.sdl.SDL_DialogFileFilter.create(1);\n                    filters.get(0).name(stack.UTF8(\"Scribble Book (.book, .json)\")).pattern(stack.UTF8(\"json;book\"));\n\n                    org.lwjgl.sdl.SDLDialog.SDL_ShowOpenFileDialog(fileCallback, 0L, window, filters, defaultPath, false);",
+   "removed": [
+    "Language",
+    "MACOSX",
+    "Platform",
+    "TinyFileDialogs",
+    "filter",
+    "flip",
+    "getInstance",
+    "getOrDefault",
+    "locale",
+    "mallocPointer",
+    "minecraft",
+    "net",
+    "path",
+    "put",
+    "system",
+    "tinyfd",
+    "tinyfd_openFileDialog",
+    "util"
+   ],
+   "added": [
+    "Buffer",
+    "SDLDialog",
+    "SDL_DialogFileFilter",
+    "SDL_ShowOpenFileDialog",
+    "create",
+    "fileCallback",
+    "filters",
+    "name",
+    "pattern",
+    "sdl",
+    "window"
+   ]
+  },
+  {
+   "file": "common/src/main/java/me/chrr/scribble/book/FileChooser.java",
+   "line": 94,
+   "method": "chooseFile",
+   "condition": "<26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.3",
+     "code": "// If the returned path is null, the user closed the file dialog.\n                if (path == null) {\n                    return;\n                }\n\n                try {\n                    Path p = Path.of(path);\n                    Minecraft.getInstance().execute(() -> pathConsumer.accept(p));\n                } catch (InvalidPathException e) {\n                    Scribble.LOGGER.error(\"failed to choose path\", e);\n                }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "common/src/main/java/me/chrr/scribble/util/KeyboardUtil.java",
+   "line": 11,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "public static final int KEY_PAGE_UP = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_PAGEUP;\n    public static final int KEY_PAGE_DOWN = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_PAGEDOWN;\n    public static final int KEY_MINUS = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_MINUS;\n    public static final int KEY_ENTER = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_RETURN;\n    public static final int KEY_KP_ENTER = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_KP_ENTER;\n    public static final int KEY_BACKSPACE = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_BACKSPACE;\n    public static final int KEY_DELETE = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_DELETE;\n    public static final int KEY_ESCAPE = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_ESCAPE;\n    public static final int KEY_LEFT = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_LEFT;\n    public static final int KEY_RIGHT = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_RIGHT;\n    public static final int KEY_B = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_B;\n    public static final int KEY_I = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_I;\n    public static final int KEY_K = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_K;\n    public static final int KEY_U = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_U;"
+    },
+    {
+     "condition": null,
+     "code": "public static final int KEY_PAGE_UP = org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_UP;\n    public static final int KEY_PAGE_DOWN = org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_DOWN;\n    public static final int KEY_MINUS = org.lwjgl.glfw.GLFW.GLFW_KEY_MINUS;\n    public static final int KEY_ENTER = org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER;\n    public static final int KEY_KP_ENTER = org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER;\n    public static final int KEY_BACKSPACE = org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSPACE;\n    public static final int KEY_DELETE = org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE;\n    public static final int KEY_ESCAPE = org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;\n    public static final int KEY_LEFT = org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT;\n    public static final int KEY_RIGHT = org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT;\n    public static final int KEY_B = org.lwjgl.glfw.GLFW.GLFW_KEY_B;\n    public static final int KEY_I = org.lwjgl.glfw.GLFW.GLFW_KEY_I;\n    public static final int KEY_K = org.lwjgl.glfw.GLFW.GLFW_KEY_K;\n    public static final int KEY_U = org.lwjgl.glfw.GLFW.GLFW_KEY_U;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "public static final int KEY_PAGE_UP = org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_UP;\n    public static final int KEY_PAGE_DOWN = org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_DOWN;\n    public static final int KEY_MINUS = org.lwjgl.glfw.GLFW.GLFW_KEY_MINUS;\n    public static final int KEY_ENTER = org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER;\n    public static final int KEY_KP_ENTER = org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER;\n    public static final int KEY_BACKSPACE = org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSPACE;\n    public static final int KEY_DELETE = org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE;\n    public static final int KEY_ESCAPE = org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;\n    public static final int KEY_LEFT = org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT;\n    public static final int KEY_RIGHT = org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT;\n    public static final int KEY_B = org.lwjgl.glfw.GLFW.GLFW_KEY_B;\n    public static final int KEY_I = org.lwjgl.glfw.GLFW.GLFW_KEY_I;\n    public static final int KEY_K = org.lwjgl.glfw.GLFW.GLFW_KEY_K;\n    public static final int KEY_U = org.lwjgl.glfw.GLFW.GLFW_KEY_U;",
+   "newer": "public static final int KEY_PAGE_UP = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_PAGEUP;\n    public static final int KEY_PAGE_DOWN = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_PAGEDOWN;\n    public static final int KEY_MINUS = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_MINUS;\n    public static final int KEY_ENTER = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_RETURN;\n    public static final int KEY_KP_ENTER = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_KP_ENTER;\n    public static final int KEY_BACKSPACE = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_BACKSPACE;\n    public static final int KEY_DELETE = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_DELETE;\n    public static final int KEY_ESCAPE = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_ESCAPE;\n    public static final int KEY_LEFT = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_LEFT;\n    public static final int KEY_RIGHT = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_RIGHT;\n    public static final int KEY_B = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_B;\n    public static final int KEY_I = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_I;\n    public static final int KEY_K = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_K;\n    public static final int KEY_U = org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_U;",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_B",
+    "GLFW_KEY_BACKSPACE",
+    "GLFW_KEY_DELETE",
+    "GLFW_KEY_ENTER",
+    "GLFW_KEY_ESCAPE",
+    "GLFW_KEY_I",
+    "GLFW_KEY_K",
+    "GLFW_KEY_KP_ENTER",
+    "GLFW_KEY_LEFT",
+    "GLFW_KEY_MINUS",
+    "GLFW_KEY_PAGE_DOWN",
+    "GLFW_KEY_PAGE_UP",
+    "GLFW_KEY_RIGHT",
+    "GLFW_KEY_U",
+    "glfw"
+   ],
+   "added": [
+    "SDLScancode",
+    "SDL_SCANCODE_B",
+    "SDL_SCANCODE_BACKSPACE",
+    "SDL_SCANCODE_DELETE",
+    "SDL_SCANCODE_ESCAPE",
+    "SDL_SCANCODE_I",
+    "SDL_SCANCODE_K",
+    "SDL_SCANCODE_KP_ENTER",
+    "SDL_SCANCODE_LEFT",
+    "SDL_SCANCODE_MINUS",
+    "SDL_SCANCODE_PAGEDOWN",
+    "SDL_SCANCODE_PAGEUP",
+    "SDL_SCANCODE_RETURN",
+    "SDL_SCANCODE_RIGHT",
+    "SDL_SCANCODE_U",
+    "sdl"
+   ]
+  },
+  {
+   "file": "common/src/main/java/me/chrr/scribble/util/KeyboardUtil.java",
+   "line": 48,
+   "method": "isKey",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "if (keyEvent.key() == org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_UNKNOWN) {\n            return false;\n        } else {\n            return keyName.equalsIgnoreCase(org.lwjgl.sdl.SDLKeyboard.SDL_GetKeyName(keyEvent.keycode()));\n        }"
+    },
+    {
+     "condition": null,
+     "code": "if (keyEvent.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_UNKNOWN) {\n            return false;\n        } else {\n            return keyName.equalsIgnoreCase(org.lwjgl.glfw.GLFW.glfwGetKeyName(keyEvent.key(), 0));\n        }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "keycode"
+     ]
+    }
+   ],
+   "older": "if (keyEvent.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_UNKNOWN) {\n            return false;\n        } else {\n            return keyName.equalsIgnoreCase(org.lwjgl.glfw.GLFW.glfwGetKeyName(keyEvent.key(), 0));\n        }",
+   "newer": "if (keyEvent.key() == org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_UNKNOWN) {\n            return false;\n        } else {\n            return keyName.equalsIgnoreCase(org.lwjgl.sdl.SDLKeyboard.SDL_GetKeyName(keyEvent.keycode()));\n        }",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_UNKNOWN",
+    "glfw",
+    "glfwGetKeyName"
+   ],
+   "added": [
+    "SDLKeyboard",
+    "SDLScancode",
+    "SDL_GetKeyName",
+    "SDL_SCANCODE_UNKNOWN",
+    "keycode",
+    "sdl"
+   ]
+  }
+ ]
+}

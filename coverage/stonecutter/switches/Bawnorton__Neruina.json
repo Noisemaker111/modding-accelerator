@@ -1,0 +1,3070 @@
+{
+ "repo": "Bawnorton/Neruina",
+ "commit": "61c3f8f4c3dbdfc7e74a5809aa6b426c12e96ae0",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "1.20.1",
+  "1.21.1",
+  "1.21.5",
+  "1.21.6",
+  "1.21.8",
+  "1.21.10",
+  "1.21.11",
+  "26.1.2",
+  "26.2",
+  "26.3"
+ ],
+ "files": 26,
+ "switches": 70,
+ "versionSwitches": 65,
+ "rows": [
+  {
+   "file": "src/main/java/com/bawnorton/neruina/command/NeruinaCommandHandler.java",
+   "line": 38,
+   "method": "(imports)",
+   "condition": ">1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "import com.bawnorton.configurable.api.ConfigurableApi;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/command/NeruinaCommandHandler.java",
+   "line": 48,
+   "method": "register",
+   "condition": ">1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": ".then(Commands.literal(\"reload\")\n\t\t\t\t\t\t\t\t.executes(context -> {\n\t\t\t\t\t\t\t\t\tConfigurableApi.loadFromDisk();\n\t\t\t\t\t\t\t\t\tsendSuccess(context, messageHandler.formatText(\"commands.neruina.reload\"));\n\t\t\t\t\t\t\t\t\treturn 1;\n\t\t\t\t\t\t\t\t})\n\t\t\t\t\t\t)"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/command/NeruinaCommandHandler.java",
+   "line": 331,
+   "method": "executeTestReport",
+   "condition": ">=1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "if (!player.getGameProfile().id().equals(UUID.fromString(\"17c06cab-bf05-4ade-a8d6-ed14aaf70545\"))) {"
+    },
+    {
+     "condition": null,
+     "code": "if(!player.getGameProfile().getId().equals(UUID.fromString(\"17c06cab-bf05-4ade-a8d6-ed14aaf70545\"))) {"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "getId"
+     ]
+    }
+   ],
+   "older": "if(!player.getGameProfile().getId().equals(UUID.fromString(\"17c06cab-bf05-4ade-a8d6-ed14aaf70545\"))) {",
+   "newer": "if (!player.getGameProfile().id().equals(UUID.fromString(\"17c06cab-bf05-4ade-a8d6-ed14aaf70545\"))) {",
+   "removed": [
+    "getId"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/command/NeruinaCommandHandler.java",
+   "line": 427,
+   "method": "executeInfo",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "switch (cause) {\n\t\t\tcase Entity entity -> sendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.entity\",\n\t\t\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateEntityActions(player, entity),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t\tcase BlockEntity ignored -> sendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.block_entity\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateHandlingActions(player, ErroredType.BLOCK_ENTITY, entry.dimension(), entry.pos()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t\tcase ItemStack ignored -> sendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.item_stack\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName()\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResumeAction(player, ErroredType.ITEM_STACK, entry.uuid().toString()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t\tcase Block ignored -> sendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.block_state\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateHandlingActions(player, ErroredType.BLOCK_STATE, entry.dimension(), entry.pos()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t\tcase null, default -> sendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.null_cause\",\n\t\t\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateTeleportAction(player, ErroredType.UNKNOWN, entry.dimension(), entry.pos()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t}"
+    },
+    {
+     "condition": null,
+     "code": "if (cause instanceof Entity entity) {\n\t\t\tsendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.entity\",\n\t\t\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateEntityActions(player, entity),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t} else if (cause instanceof BlockEntity) {\n\t\t\tsendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.block_entity\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateHandlingActions(player, ErroredType.BLOCK_ENTITY, entry.dimension(), entry.pos()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t}  else if (cause instanceof ItemStack) {\n\t\t\tsendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.item_stack\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName()\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResumeAction(player, ErroredType.ITEM_STACK, entry.uuid().toString()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t} else if (cause instanceof Block) {\n\t\t\tsendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.block_state\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateHandlingActions(player, ErroredType.BLOCK_STATE, entry.dimension(), entry.pos()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t} else {\n\t\t\tsendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.null_cause\",\n\t\t\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateTeleportAction(player, ErroredType.UNKNOWN, entry.dimension(), entry.pos()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "if (cause instanceof Entity entity) {\n\t\t\tsendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.entity\",\n\t\t\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateEntityActions(player, entity),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t} else if (cause instanceof BlockEntity) {\n\t\t\tsendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.block_entity\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateHandlingActions(player, ErroredType.BLOCK_ENTITY, entry.dimension(), entry.pos()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t}  else if (cause instanceof ItemStack) {\n\t\t\tsendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.item_stack\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName()\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResumeAction(player, ErroredType.ITEM_STACK, entry.uuid().toString()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t} else if (cause instanceof Block) {\n\t\t\tsendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.block_state\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateHandlingActions(player, ErroredType.BLOCK_STATE, entry.dimension(), entry.pos()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(p",
+   "newer": "switch (cause) {\n\t\t\tcase Entity entity -> sendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.entity\",\n\t\t\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateEntityActions(player, entity),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t\tcase BlockEntity ignored -> sendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.block_entity\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateHandlingActions(player, ErroredType.BLOCK_ENTITY, entry.dimension(), entry.pos()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t\tcase ItemStack ignored -> sendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.item_stack\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName()\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResumeAction(player, ErroredType.ITEM_STACK, entry.uuid().toString()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t\tcase Block ignored -> sendSuccess(\n\t\t\t\t\tcontext,\n\t\t\t\t\tTexter.pad(\n\t\t\t\t\t\t\tTexter.concatDelimited(\n\t\t\t\t\t\t\t\t\tTexter.LINE_BREAK,\n\t\t\t\t\t\t\t\t\tTexter.format(Texter.translatable(\n\t\t\t\t\t\t\t\t\t\t\t\"commands.neruina.info.block_state\",\n\t\t\t\t\t\t\t\t\t\t\tentry.getCauseName(),\n\t\t\t\t\t\t\t\t\t\t\tmessageHandler.posAsNums(entry.pos())\n\t\t\t\t\t\t\t\t\t)),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateHandlingActions(player, ErroredType.BLOCK_STATE, entry.dimension(), entry.pos()),\n\t\t\t\t\t\t\t\t\tmessageHandler.generateResourceActions(player, entry)\n\t\t\t\t\t\t\t)\n\t\t\t\t\t)\n\t\t\t);\n\t\t\tcase null, d",
+   "removed": [],
+   "added": [
+    "ignored"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/config/Config.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "import com.bawnorton.configurable.Configurable;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/config/Config.java",
+   "line": 8,
+   "method": "(class body)",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "@Configurable\n\tpublic static Integer minPermissionLevelForMessages = 0;\n\n\t@Configurable\n\tpublic static Integer minPermissionLevelForCommands = 2;\n\n\t@Configurable\n\tpublic static Boolean autoKillTickingEntities = false;\n\n\t@Configurable\n\tpublic static Boolean killPlayersInstead = false;\n\n\t@Configurable\n\tpublic static Integer tickingExceptionThreshold = 10;\n\n\t@Configurable\n\tpublic static Boolean handleTickingEntities = true;\n\n\t@Configurable\n\tpublic static Boolean handleTickingBlockEntities = true;\n\n\t@Configurable\n\tpublic static Boolean handleTickingBlockStates = true;\n\n\t@Configurable\n\tpublic static Boolean handleTickingItemStacks = true;\n\n\t@Configurable\n\tpublic static Boolean handleTickingPlayers = true;"
+    },
+    {
+     "condition": null,
+     "code": "public static Integer minPermissionLevelForMessages = 0;\n\n\tpublic static Integer minPermissionLevelForCommands = 2;\n\n\tpublic static Boolean autoKillTickingEntities = false;\n\n\tpublic static Boolean killPlayersInstead = false;\n\n\tpublic static Integer tickingExceptionThreshold = 10;\n\n\tpublic static Boolean handleTickingEntities = true;\n\n\tpublic static Boolean handleTickingBlockEntities = true;\n\n\tpublic static Boolean handleTickingBlockStates = true;\n\n\tpublic static Boolean handleTickingItemStacks = true;\n\n\tpublic static Boolean handleTickingPlayers = true;\n\n\tstatic class DummyInstance {\n\t\tInteger minPermissionLevelForMessages = 0;\n\n\t\tInteger minPermissionLevelForCommands = 2;\n\n\t\tBoolean autoKillTickingEntities = false;\n\n\t\tBoolean killPlayersInstead = false;\n\n\t\tInteger tickingExceptionThreshold = 10;\n\n\t\tBoolean handleTickingEntities = true;\n\n\t\tBoolean handleTickingBlockEntities = true;\n\n\t\tBoolean handleTickingBlockStates = true;\n\n\t\tBoolean handleTickingItemStacks = true;\n\n\t\tBoolean handleTickingPlayers = true;\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "public static Integer minPermissionLevelForMessages = 0;\n\n\tpublic static Integer minPermissionLevelForCommands = 2;\n\n\tpublic static Boolean autoKillTickingEntities = false;\n\n\tpublic static Boolean killPlayersInstead = false;\n\n\tpublic static Integer tickingExceptionThreshold = 10;\n\n\tpublic static Boolean handleTickingEntities = true;\n\n\tpublic static Boolean handleTickingBlockEntities = true;\n\n\tpublic static Boolean handleTickingBlockStates = true;\n\n\tpublic static Boolean handleTickingItemStacks = true;\n\n\tpublic static Boolean handleTickingPlayers = true;\n\n\tstatic class DummyInstance {\n\t\tInteger minPermissionLevelForMessages = 0;\n\n\t\tInteger minPermissionLevelForCommands = 2;\n\n\t\tBoolean autoKillTickingEntities = false;\n\n\t\tBoolean killPlayersInstead = false;\n\n\t\tInteger tickingExceptionThreshold = 10;\n\n\t\tBoolean handleTickingEntities = true;\n\n\t\tBoolean handleTickingBlockEntities = true;\n\n\t\tBoolean handleTickingBlockStates = true;\n\n\t\tBoolean handleTickingItemStacks = true;\n\n\t\tBoolean handleTickingPlayers = true;\n\t}",
+   "newer": "@Configurable\n\tpublic static Integer minPermissionLevelForMessages = 0;\n\n\t@Configurable\n\tpublic static Integer minPermissionLevelForCommands = 2;\n\n\t@Configurable\n\tpublic static Boolean autoKillTickingEntities = false;\n\n\t@Configurable\n\tpublic static Boolean killPlayersInstead = false;\n\n\t@Configurable\n\tpublic static Integer tickingExceptionThreshold = 10;\n\n\t@Configurable\n\tpublic static Boolean handleTickingEntities = true;\n\n\t@Configurable\n\tpublic static Boolean handleTickingBlockEntities = true;\n\n\t@Configurable\n\tpublic static Boolean handleTickingBlockStates = true;\n\n\t@Configurable\n\tpublic static Boolean handleTickingItemStacks = true;\n\n\t@Configurable\n\tpublic static Boolean handleTickingPlayers = true;",
+   "removed": [
+    "DummyInstance"
+   ],
+   "added": [
+    "Configurable"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/config/ConfigManager.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "<=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "package com.bawnorton.neruina.config;\n\nimport com.bawnorton.neruina.Neruina;\nimport com.bawnorton.neruina.platform.Platform;\nimport com.google.gson.FieldNamingPolicy;\nimport com.google.gson.Gson;\nimport com.google.gson.GsonBuilder;\nimport com.google.gson.JsonSyntaxException;\n\nimport java.io.File;\nimport java.io.IOException;\nimport java.nio.file.Files;\nimport java.nio.file.Path;\n\npublic final class ConfigManager {\n\tpublic static final Path CONFIG_PATH = Platform.getConfigDir().resolve(Neruina.MOD_ID + \".json\");\n\tprivate static final Gson GSON = new GsonBuilder()\n\t\t\t.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)\n\t\t\t.setPrettyPrinting()\n\t\t\t.create();\n\n\tpublic static void load() {\n\t\tConfig.DummyInstance instance = new Config.DummyInstance();\n\t\ttry {\n\t\t\tif (!Files.exists(CONFIG_PATH)) {\n\t\t\t\tFiles.createDirectories(CONFIG_PATH.getParent());\n\t\t\t\tFiles.createFile(CONFIG_PATH);\n\t\t\t\tsave();\n\t\t\t\treturn;\n\t\t\t}\n\t\t\ttry {\n\t\t\t\tinstance = GSON.fromJson(Files.newBufferedReader(CONFIG_PATH), Config.DummyInstance.class);\n\t\t\t} catch (JsonSyntaxException e) {\n\t\t\t\tNeruina.LOGGER.error(\"Failed to load config, using defaults\", e);\n\t\t\t}\n\t\t} catch (IOException e) {\n\t\t\tNeruina.LOGGER.error(\"Failed to load config, using defaults\", e);\n\t\t}\n\n\t\tif (instance == null) {\n\t\t\tNeruina.LOGGER.warn(\"Config file was empty, using defaults\");\n\t\t\tinstance = new Config.DummyInstance();\n\t\t}\n\n\t\tif (instance.minPermissionLevelForMessages == null) {\n\t\t\tinstance.minPermissionLevelForMessages = 0;\n\t\t}\n\t\tif (instance.minPermissionLevelForCommands == null) {\n\t\t\tinstance.minPermissionLevelForCommands = 2;\n\t\t}\n\t\tif (instance.autoKillTickingEntities == null) {\n\t\t\tinstance.autoKillTickingEntities = false;\n\t\t}\n\t\tif (instance.killPlayersInstead == null) {\n\t\t\tinstance.killPlayersInstead = false;\n\t\t}\n\t\tif (instance.tickingExceptionThreshold == null) {\n\t\t\tinstance.tickingExceptionThreshold = 10;\n\t\t}\n\t\tif (instance.handleTickingEntities == null) {\n\t\t\tinstance.handleTickingEntities = true;\n\t\t}\n\t\tif (instance.handleTickingBlockEntities == null) {\n\t\t\tinstance.handleTickingBlockEntities = true;\n\t\t}\n\t\tif (instance.handleTickingBlockStates == null) {\n\t\t\tinstance.handleTickingBlockStates = true;\n\t\t}\n\t\tif (instance.handleTickingItemStacks == null) {\n\t\t\tinstance.handleTickingItemStacks = true;\n\t\t}\n\t\tif (instance.handleTickingPlayers == null) {\n\t\t\tinstance.handleTickingPlayers = true;\n\t\t}\n\n\t\tConfig.minPermissionLevelForMessages = instance.minPermissionLevelForMessages;\n\t\tConfig.minPermissionLevelForCommands = instance.minPermissionLevelForCommands;\n\t\tConfig.autoKillTickingEntities = instance.autoKillTickingEntities;\n\t\tConfig.killPlayersInstead = instance.killPlayersInstead;\n\t\tConfig.tickingExceptionThreshold = instance.tickingExceptionThreshold;\n\t\tConfig.handleTickingEntities = instance.handleTickingEntities;\n\t\tConfig.handleTickingBlockEntities = instance.handleTickingBlockEntities;\n\t\tConfig.handleTickingBlockStates = instance.handleTickingBlockStates;\n\t\tConfig.handleTickingItemStacks = instance.handleTickingItemStacks;\n\t\tConfig.handleTickingPlayers = instance.handleTickingPlayers;\n\n\t\tsave();\n\t}\n\n\tpublic static void save() {\n\t\tConfig.DummyInstance instance = new Config.DummyInstance();\n\t\tinstance.minPermissionLevelForMessages = Config.minPermissionLevelForMessages;\n\t\tinstance.minPermissionLevelForCommands = Config.minPermissionLevelForCommands;\n\t\tinstance.autoKillTickingEntities = Config.autoKillTickingEntities;\n\t\tinstance.killPlayersInstead = Config.killPlayersInstead;\n\t\tinstance.tickingExceptionThreshold = Config.tickingExceptionThreshold;\n\t\tinstance.handleTickingEntities = Config.handleTickingEntities;\n\t\tinstance.handleTickingBlockEntities = Config.handleTickingBlockEntities;\n\t\tinstance.handleTickingBlockStates = Config.handleTickingBlockStates;\n\t\tinstance.handleTickingItemStacks = Config.handleTickingItemStacks;\n\t\tinstance.handleTickingPlayers = Config.handleTickingPlayers;\n\n\t\ttry {\n\t\t\tif (!Files.exists(CONFIG_PATH)) {\n\t\t\t\tFiles.createDirectories(CONFIG_PATH.getParent());\n\t"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+   "line": 38,
+   "method": "onInitializeDataGenerator",
+   "condition": ">=1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.6",
+     "code": "DetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),"
+    },
+    {
+     "condition": null,
+     "code": "/*DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t*/"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "getPackVersion",
+      "packVersion"
+     ]
+    }
+   ],
+   "older": "/*DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t*/",
+   "newer": "DetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),",
+   "removed": [
+    "getPackVersion"
+   ],
+   "added": [
+    "packVersion"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+   "line": 36,
+   "method": "onInitializeDataGenerator",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\t//? if >=1.21.6 {\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t\t\t/*DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t*///?}\n\t\t\t\t\t\t\t\tOptional.empty()"
+    },
+    {
+     "condition": null,
+     "code": "/*Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t*/"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "empty"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "empty"
+     ]
+    }
+   ],
+   "older": "/*Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t*/",
+   "newer": "Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\t//? if >=1.21.6 {\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t\t\t/*DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t*///?}\n\t\t\t\t\t\t\t\tOptional.empty()",
+   "removed": [],
+   "added": [
+    "Optional",
+    "empty",
+    "packVersion"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+   "line": 24,
+   "method": "onInitializeDataGenerator",
+   "condition": ">=1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "PackMetadataSection.SERVER_TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tInclusiveRange.create(\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t).getOrThrow()\n\t\t\t\t\t\t)"
+    },
+    {
+     "condition": null,
+     "code": "PackMetadataSection.TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\t//? if >1.20.1 {\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\t//? if >=1.21.6 {\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t\t\t/*DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t*///?}\n\t\t\t\t\t\t\t\tOptional.empty()\n\t\t\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t\t\t/*Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t*///?}\n\t\t\t\t\t\t)"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "SERVER_TYPE",
+      "TYPE",
+      "create"
+     ]
+    }
+   ],
+   "older": "PackMetadataSection.TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\t//? if >1.20.1 {\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\t//? if >=1.21.6 {\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t\t\t/*DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t*///?}\n\t\t\t\t\t\t\t\tOptional.empty()\n\t\t\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t\t\t/*Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t*///?}\n\t\t\t\t\t\t)",
+   "newer": "PackMetadataSection.SERVER_TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tInclusiveRange.create(\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t).getOrThrow()\n\t\t\t\t\t\t)",
+   "removed": [
+    "Optional",
+    "TYPE",
+    "empty",
+    "getPackVersion"
+   ],
+   "added": [
+    "InclusiveRange",
+    "SERVER_TYPE",
+    "create",
+    "getOrThrow"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+   "line": 67,
+   "method": "(class body)",
+   "condition": "neoforge | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "/*import net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.data.event.GatherDataEvent;\n*/"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraftforge.data.event.GatherDataEvent;\nimport net.minecraftforge.eventbus.api.SubscribeEvent;\nimport net.minecraftforge.fml.common.Mod.EventBusSubscriber;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+   "line": 80,
+   "method": "(class body)",
+   "condition": ">=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "public static void gatherServerData(GatherDataEvent.Server event) {\n\t\tDataGenerator gen = event.getGenerator();"
+    },
+    {
+     "condition": null,
+     "code": "/*public static void gatherData(GatherDataEvent event) {\n\t\tDataGenerator gen = event.getGenerator();\n\t*/"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [],
+   "older": "/*public static void gatherData(GatherDataEvent event) {\n\t\tDataGenerator gen = event.getGenerator();\n\t*/",
+   "newer": "public static void gatherServerData(GatherDataEvent.Server event) {\n\t\tDataGenerator gen = event.getGenerator();",
+   "removed": [
+    "gatherData"
+   ],
+   "added": [
+    "Server",
+    "gatherServerData"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+   "line": 104,
+   "method": "(class body)",
+   "condition": ">=1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.6",
+     "code": "DetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),"
+    },
+    {
+     "condition": null,
+     "code": "/*¹DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t¹*/"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "getPackVersion",
+      "packVersion"
+     ]
+    }
+   ],
+   "older": "/*¹DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t¹*/",
+   "newer": "DetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),",
+   "removed": [
+    "getPackVersion"
+   ],
+   "added": [
+    "packVersion"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+   "line": 102,
+   "method": "(class body)",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\t//? if >=1.21.6 {\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t //?} else {\n\t\t\t\t\t\t\t\t/*¹DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t¹*///?}\n\t\t\t\t\t\t\t\tOptional.empty()"
+    },
+    {
+     "condition": null,
+     "code": "/*¹Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t¹*/"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "empty"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "empty"
+     ]
+    }
+   ],
+   "older": "/*¹Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t¹*/",
+   "newer": "Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\t//? if >=1.21.6 {\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t //?} else {\n\t\t\t\t\t\t\t\t/*¹DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t¹*///?}\n\t\t\t\t\t\t\t\tOptional.empty()",
+   "removed": [],
+   "added": [
+    "Optional",
+    "empty",
+    "packVersion"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+   "line": 90,
+   "method": "(class body)",
+   "condition": ">=1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "PackMetadataSection.SERVER_TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tInclusiveRange.create(\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t).getOrThrow()\n\t\t\t\t\t\t)"
+    },
+    {
+     "condition": null,
+     "code": "/*PackMetadataSection.TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\t//? if >1.20.1 {\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\t//? if >=1.21.6 {\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t //?} else {\n\t\t\t\t\t\t\t\t/*¹DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t¹*///?}\n\t\t\t\t\t\t\t\tOptional.empty()\n\t\t\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t\t\t/*¹Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t¹*///?}\n\t\t\t\t\t\t)\n\t\t\t\t\t\t*/"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "SERVER_TYPE",
+      "TYPE",
+      "create"
+     ]
+    }
+   ],
+   "older": "/*PackMetadataSection.TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\t//? if >1.20.1 {\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\t//? if >=1.21.6 {\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t //?} else {\n\t\t\t\t\t\t\t\t/*¹DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t¹*///?}\n\t\t\t\t\t\t\t\tOptional.empty()\n\t\t\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t\t\t/*¹Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t¹*///?}\n\t\t\t\t\t\t)\n\t\t\t\t\t\t*/",
+   "newer": "PackMetadataSection.SERVER_TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tInclusiveRange.create(\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t).getOrThrow()\n\t\t\t\t\t\t)",
+   "removed": [
+    "Optional",
+    "TYPE",
+    "empty",
+    "getPackVersion"
+   ],
+   "added": [
+    "InclusiveRange",
+    "SERVER_TYPE",
+    "create",
+    "getOrThrow"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import dev.kikugie.fletching_table.annotation.fabric.Entrypoint;\nimport net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;\nimport net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;\nimport net.minecraft.DetectedVersion;\nimport net.minecraft.data.metadata.PackMetadataGenerator;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.server.packs.PackType;\nimport net.minecraft.server.packs.metadata.pack.PackMetadataSection;\nimport net.minecraft.util.InclusiveRange;\n\nimport java.util.Optional;\n\n@Entrypoint(\"fabric-datagen\")\npublic final class NeruinaDataGen implements DataGeneratorEntrypoint {\n\t@Override\n\tpublic void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {\n\t\tFabricDataGenerator.Pack mainPack = fabricDataGenerator.createPack();\n\t\tmainPack.addProvider((FabricDataGenerator.Pack.Factory<PackMetadataGenerator>) output -> new PackMetadataGenerator(output)\n\t\t\t\t.add(\n\t\t\t\t\t\t//? if >=1.21.10 {\n\t\t\t\t\t\tPackMetadataSection.SERVER_TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tInclusiveRange.create(\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t).getOrThrow()\n\t\t\t\t\t\t)\n\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t/*PackMetadataSection.TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\t//? if >1.20.1 {\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\t//? if >=1.21.6 {\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t\t\t/*DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t*///?}\n\t\t\t\t\t\t\t\tOptional.empty()\n\t\t\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t\t\t/*Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t*///?}\n\t\t\t\t\t\t)\n\t\t\t\t\t\t*///?}\n\t\t\t\t)\n\t\t);\n\t}\n}"
+    },
+    {
+     "condition": null,
+     "code": "import com.bawnorton.neruina.Neruina;\nimport net.minecraft.DetectedVersion;\nimport net.minecraft.data.DataGenerator;\nimport net.minecraft.data.PackOutput;\nimport net.minecraft.data.metadata.PackMetadataGenerator;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.server.packs.PackType;\nimport net.minecraft.server.packs.metadata.pack.PackMetadataSection;\nimport net.minecraft.util.InclusiveRange;\n\nimport java.util.Optional;\n\n//? if neoforge {\n/*import net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.data.event.GatherDataEvent;\n*///?} else {\nimport net.minecraftforge.data.event.GatherDataEvent;\nimport net.minecraftforge.eventbus.api.SubscribeEvent;\nimport net.minecraftforge.fml.common.Mod.EventBusSubscriber;\n//?}\n\n@EventBusSubscriber(modid = Neruina.MOD_ID)\npublic final class NeruinaDataGen {\n\t@SubscribeEvent\n\t//? if >=1.21.5 {\n\tpublic static void gatherServerData(GatherDataEvent.Server event) {\n\t\tDataGenerator gen = event.getGenerator();\n\t//?} else {\n\t/*public static void gatherData(GatherDataEvent event) {\n\t\tDataGenerator gen = event.getGenerator();\n\t*///?}\n\t\tPackOutput mainPack = gen.getPackOutput();\n\t\tgen.addProvider(true, new PackMetadataGenerator(mainPack)\n\t\t\t\t.add(\n\t\t\t\t\t\t//? if >=1.21.10 {\n\t\t\t\t\t\tPackMetadataSection.SERVER_TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tInclusiveRange.create(\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t).getOrThrow()\n\t\t\t\t\t\t)\n\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t/*PackMetadataSection.TYPE,\n\t\t\t\t\t\tnew PackMetadataSection(\n\t\t\t\t\t\t\t\t//? if >1.20.1 {\n\t\t\t\t\t\t\t\tComponent.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\t//? if >=1.21.6 {\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.packVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t //?} else {\n\t\t\t\t\t\t\t\t/*¹DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),\n\t\t\t\t\t\t\t\t¹*///?}\n\t\t\t\t\t\t\t\tOptional.empty()\n\t\t\t\t\t\t\t\t//?} else {\n\t\t\t\t\t\t\t\t/*¹Component.literal(\"${mod_description}\"),\n\t\t\t\t\t\t\t\tDetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA)\n\t\t\t\t\t\t\t\t¹*///?}\n\t\t\t\t\t\t)\n\t\t\t\t\t\t*///?}\n\t\t\t\t)\n\t\t);\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/client/ClientTickHandler.java",
+   "line": 12,
+   "method": "(imports)",
+   "condition": ">1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "import net.minecraft.client.gui.screens.GenericMessageScreen;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/client/ClientTickHandler.java",
+   "line": 22,
+   "method": "handleTickingClient",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "client.disconnect(new GenericMessageScreen(Texter.translatable(\"menu.savingLevel\")), false);"
+    },
+    {
+     "condition": null,
+     "code": "client.getConnection().onDisconnect(Texter.translatable(\"menu.savingLevel\"));"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "disconnect",
+      "onDisconnect"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "GenericMessageScreen",
+      "disconnect"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "disconnect",
+      "onDisconnect"
+     ]
+    }
+   ],
+   "older": "client.getConnection().onDisconnect(Texter.translatable(\"menu.savingLevel\"));",
+   "newer": "client.disconnect(new GenericMessageScreen(Texter.translatable(\"menu.savingLevel\")), false);",
+   "removed": [
+    "getConnection",
+    "onDisconnect"
+   ],
+   "added": [
+    "GenericMessageScreen",
+    "disconnect"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/client/ClientTickHandler.java",
+   "line": 27,
+   "method": "handleTickingClient",
+   "condition": ">26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">26.1",
+     "code": "client.setScreenAndShow(new TitleScreen());"
+    },
+    {
+     "condition": null,
+     "code": "client.setScreen(new TitleScreen());"
+    }
+   ],
+   "boundary": [
+    "26.1 -> 26.1.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [],
+   "older": "client.setScreen(new TitleScreen());",
+   "newer": "client.setScreenAndShow(new TitleScreen());",
+   "removed": [
+    "setScreen"
+   ],
+   "added": [
+    "setScreenAndShow"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/client/ClientTickHandler.java",
+   "line": 32,
+   "method": "handleTickingClient",
+   "condition": "<=1.21.1 | <26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "client.getToasts()"
+    },
+    {
+     "condition": "<26.2",
+     "code": "client.getToastManager()"
+    },
+    {
+     "condition": null,
+     "code": "client.gui.toastManager()"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2",
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "getToastManager",
+      "getToasts"
+     ]
+    }
+   ],
+   "older": "client.getToasts()",
+   "newer": "client.getToastManager()",
+   "removed": [
+    "getToasts"
+   ],
+   "added": [
+    "getToastManager"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/client/ClientTickHandler.java",
+   "line": 40,
+   "method": "handleTickingClient",
+   "condition": "<26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "SystemToast.multiline(\n                                client,"
+    },
+    {
+     "condition": null,
+     "code": "new SystemToast("
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "multiline"
+     ]
+    }
+   ],
+   "older": "SystemToast.multiline(\n                                client,",
+   "newer": "new SystemToast(",
+   "removed": [
+    "client",
+    "multiline"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/client/ClientTickHandler.java",
+   "line": 46,
+   "method": "handleTickingClient",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,"
+    },
+    {
+     "condition": null,
+     "code": "SystemToast.SystemToastIds.WORLD_ACCESS_FAILURE,"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "SystemToastId",
+      "SystemToastIds"
+     ]
+    }
+   ],
+   "older": "SystemToast.SystemToastIds.WORLD_ACCESS_FAILURE,",
+   "newer": "SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,",
+   "removed": [
+    "SystemToastIds"
+   ],
+   "added": [
+    "SystemToastId"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/MessageHandler.java",
+   "line": 71,
+   "method": "sendToPlayer",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "player.sendSystemMessage(pad ? Texter.pad(message) : message);"
+    },
+    {
+     "condition": null,
+     "code": "player.displayClientMessage(pad ? Texter.pad(message) : message, false);"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "displayClientMessage",
+      "sendSystemMessage"
+     ]
+    }
+   ],
+   "older": "player.displayClientMessage(pad ? Texter.pad(message) : message, false);",
+   "newer": "player.sendSystemMessage(pad ? Texter.pad(message) : message);",
+   "removed": [
+    "displayClientMessage"
+   ],
+   "added": [
+    "sendSystemMessage"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/MessageHandler.java",
+   "line": 177,
+   "method": "generateTeleportAction",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "dimension.identifier().toString(),"
+    },
+    {
+     "condition": null,
+     "code": "dimension.location().toString(),"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "identifier",
+      "location"
+     ]
+    }
+   ],
+   "older": "dimension.location().toString(),",
+   "newer": "dimension.identifier().toString(),",
+   "removed": [
+    "location"
+   ],
+   "added": [
+    "identifier"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/PersitanceHandler.java",
+   "line": 26,
+   "method": "(imports)",
+   "condition": ">=1.21.5",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "import net.minecraft.world.level.saveddata.SavedDataType;"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/PersitanceHandler.java",
+   "line": 41,
+   "method": "(class body)",
+   "condition": ">1.21.1 | >1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21.1",
+     "code": "private static final SavedDataType<PersitanceHandler> type = new SavedDataType<>(\n\t\t\t//$ if >=26.1 'ResourceLocation.fromNamespaceAndPath(Neruina.MOD_ID, \"persistance\"),' else 'Neruina.MOD_ID,'\n\t\t\tIdentifier.fromNamespaceAndPath(Neruina.MOD_ID, \"persistance\"),\n\t\t\tPersitanceHandler::new,\n\t\t\tCODEC,\n\t\t\tnull\n\t);"
+    },
+    {
+     "condition": ">1.20.1",
+     "code": "private static final SavedData.Factory<PersitanceHandler> type = new SavedData.Factory<>(\n\t\t  PersitanceHandler::new,\n\t\t  (compoundTag, provider) -> load(compoundTag),\n\t\t  null\n  );"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2",
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "CODEC",
+      "Factory",
+      "load"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "CODEC",
+      "load"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "CODEC",
+      "Factory",
+      "SavedDataType",
+      "load"
+     ]
+    },
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "CODEC",
+      "load",
+      "provider"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "CODEC"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "CODEC",
+      "load"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "CODEC",
+      "fromNamespaceAndPath",
+      "load",
+      "provider"
+     ]
+    }
+   ],
+   "older": "private static final SavedData.Factory<PersitanceHandler> type = new SavedData.Factory<>(\n\t\t  PersitanceHandler::new,\n\t\t  (compoundTag, provider) -> load(compoundTag),\n\t\t  null\n  );",
+   "newer": "private static final SavedDataType<PersitanceHandler> type = new SavedDataType<>(\n\t\t\t//$ if >=26.1 'ResourceLocation.fromNamespaceAndPath(Neruina.MOD_ID, \"persistance\"),' else 'Neruina.MOD_ID,'\n\t\t\tIdentifier.fromNamespaceAndPath(Neruina.MOD_ID, \"persistance\"),\n\t\t\tPersitanceHandler::new,\n\t\t\tCODEC,\n\t\t\tnull\n\t);",
+   "removed": [
+    "Factory",
+    "SavedData",
+    "compoundTag",
+    "load",
+    "provider"
+   ],
+   "added": [
+    "CODEC",
+    "Identifier",
+    "MOD_ID",
+    "Neruina",
+    "SavedDataType",
+    "fromNamespaceAndPath"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/PersitanceHandler.java",
+   "line": 67,
+   "method": "updateServerState",
+   "condition": "<=1.20.1 | <=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "PersitanceHandler handler = dataStorage.computeIfAbsent(\n\t\t\t\tPersitanceHandler::load,\n\t\t\t\tPersitanceHandler::new,\n\t\t\t\tNeruina.MOD_ID\n\t\t);"
+    },
+    {
+     "condition": "<=1.21.1",
+     "code": "PersitanceHandler handler = dataStorage.computeIfAbsent(type, Neruina.MOD_ID);"
+    },
+    {
+     "condition": null,
+     "code": "PersitanceHandler handler = dataStorage.computeIfAbsent(type);"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2",
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "load",
+      "type"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "type"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "load",
+      "type"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "load",
+      "type"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "load"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "load",
+      "type"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "load",
+      "type"
+     ]
+    }
+   ],
+   "older": "PersitanceHandler handler = dataStorage.computeIfAbsent(\n\t\t\t\tPersitanceHandler::load,\n\t\t\t\tPersitanceHandler::new,\n\t\t\t\tNeruina.MOD_ID\n\t\t);",
+   "newer": "PersitanceHandler handler = dataStorage.computeIfAbsent(type, Neruina.MOD_ID);",
+   "removed": [
+    "load"
+   ],
+   "added": [
+    "type"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/PersitanceHandler.java",
+   "line": 87,
+   "method": "load",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "if (dataResult.isSuccess()) {\n\t\t\treturn dataResult.getOrThrow();\n\t\t} else {\n\t\t\tNeruina.LOGGER.warn(\"Failed to load persitance handler. {}\", dataResult.error().orElseThrow());\n\t\t\treturn new PersitanceHandler();\n\t\t}"
+    },
+    {
+     "condition": null,
+     "code": "Either<PersitanceHandler, DataResult.PartialResult<PersitanceHandler>> either = dataResult.get();\n\t\tif (either.left().isPresent()) {\n\t\t\treturn either.left().get();\n\t\t} else {\n\t\t\tNeruina.LOGGER.warn(\"Failed to load persitance handler. {}\", either.right().orElseThrow());\n\t\t\treturn new PersitanceHandler();\n\t\t}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "error",
+      "get"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "either",
+      "get"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "get"
+     ]
+    }
+   ],
+   "older": "Either<PersitanceHandler, DataResult.PartialResult<PersitanceHandler>> either = dataResult.get();\n\t\tif (either.left().isPresent()) {\n\t\t\treturn either.left().get();\n\t\t} else {\n\t\t\tNeruina.LOGGER.warn(\"Failed to load persitance handler. {}\", either.right().orElseThrow());\n\t\t\treturn new PersitanceHandler();\n\t\t}",
+   "newer": "if (dataResult.isSuccess()) {\n\t\t\treturn dataResult.getOrThrow();\n\t\t} else {\n\t\t\tNeruina.LOGGER.warn(\"Failed to load persitance handler. {}\", dataResult.error().orElseThrow());\n\t\t\treturn new PersitanceHandler();\n\t\t}",
+   "removed": [
+    "DataResult",
+    "Either",
+    "PartialResult",
+    "either",
+    "get",
+    "isPresent",
+    "left",
+    "right"
+   ],
+   "added": [
+    "error",
+    "getOrThrow",
+    "isSuccess"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/PersitanceHandler.java",
+   "line": 114,
+   "method": "(class body)",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "public @NotNull CompoundTag save(@NotNull CompoundTag tag, HolderLookup.Provider registries) {\n\t\tDataResult<Tag> dataResult = CODEC.encode(this, NbtOps.INSTANCE, tag);\n\t\treturn (CompoundTag) dataResult.getOrThrow();\n\t}"
+    },
+    {
+     "condition": null,
+     "code": "public CompoundTag save(CompoundTag compoundTag) {\n\t\tDataResult<Tag> dataResult = CODEC.encode(this, NbtOps.INSTANCE, compoundTag);\n\t\treturn (CompoundTag) dataResult.get().left().orElseThrow();\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "get",
+      "tag"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "Provider"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "Provider",
+      "get"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "get",
+      "registries"
+     ]
+    }
+   ],
+   "older": "public CompoundTag save(CompoundTag compoundTag) {\n\t\tDataResult<Tag> dataResult = CODEC.encode(this, NbtOps.INSTANCE, compoundTag);\n\t\treturn (CompoundTag) dataResult.get().left().orElseThrow();\n\t}",
+   "newer": "public @NotNull CompoundTag save(@NotNull CompoundTag tag, HolderLookup.Provider registries) {\n\t\tDataResult<Tag> dataResult = CODEC.encode(this, NbtOps.INSTANCE, tag);\n\t\treturn (CompoundTag) dataResult.getOrThrow();\n\t}",
+   "removed": [
+    "compoundTag",
+    "get",
+    "left",
+    "orElseThrow"
+   ],
+   "added": [
+    "HolderLookup",
+    "NotNull",
+    "Provider",
+    "getOrThrow",
+    "registries",
+    "tag"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/TickHandler.java",
+   "line": 56,
+   "method": "tick",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "recentErrors.removeFirst();"
+    },
+    {
+     "condition": null,
+     "code": "recentErrors.remove(0);"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "remove"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "remove"
+     ]
+    }
+   ],
+   "older": "recentErrors.remove(0);",
+   "newer": "recentErrors.removeFirst();",
+   "removed": [
+    "remove"
+   ],
+   "added": [
+    "removeFirst"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/handler/TickHandler.java",
+   "line": 293,
+   "method": "killEntity",
+   "condition": ">1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21.1",
+     "code": "if (entity.level() instanceof ServerLevel serverWorld) {\n\t\t\tentity.kill(serverWorld);\n\t\t}"
+    },
+    {
+     "condition": null,
+     "code": "entity.kill();"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "level"
+     ]
+    }
+   ],
+   "older": "entity.kill();",
+   "newer": "if (entity.level() instanceof ServerLevel serverWorld) {\n\t\t\tentity.kill(serverWorld);\n\t\t}",
+   "removed": [],
+   "added": [
+    "ServerLevel",
+    "level",
+    "serverWorld"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/catchers/InventoryMixin.java",
+   "line": 22,
+   "method": "(imports)",
+   "condition": ">1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "import net.minecraft.core.component.DataComponents;\nimport net.minecraft.world.item.component.CustomData;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/catchers/InventoryMixin.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": "<=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "public NonNullList<ItemStack> items;"
+    },
+    {
+     "condition": null,
+     "code": "private NonNullList<ItemStack> items;"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [],
+   "older": "public NonNullList<ItemStack> items;",
+   "newer": "private NonNullList<ItemStack> items;",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/catchers/InventoryMixin.java",
+   "line": 42,
+   "method": "(class body)",
+   "condition": "forge | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*target = \"Lnet/minecraft/world/item/ItemStack;onInventoryTick(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/player/Player;II)V\"\n\t\t\t)\n\t)\n\tprivate void catchTickingItemStack$notTheCauseOfTickLag(ItemStack instance, Level level, Player entity, int index, int selected, Operation<Void> original) {\n\t\t\t\t\t*/"
+    },
+    {
+     "condition": null,
+     "code": "target = \"Lnet/minecraft/world/item/ItemStack;inventoryTick(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;IZ)V\"\n\t\t\t)\n\t)\n\tprivate void catchTickingItemStack$notTheCauseOfTickLag(ItemStack instance, Level level, Entity entity, int index, boolean selected, Operation<Void> original) {"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/catchers/InventoryMixin.java",
+   "line": 37,
+   "method": "(class body)",
+   "condition": "<=1.20.1 | <=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "@WrapOperation(\n\t\t\tmethod = \"tick\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\t//? if forge {\n\t\t\t\t\t/*target = \"Lnet/minecraft/world/item/ItemStack;onInventoryTick(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/player/Player;II)V\"\n\t\t\t)\n\t)\n\tprivate void catchTickingItemStack$notTheCauseOfTickLag(ItemStack instance, Level level, Player entity, int index, int selected, Operation<Void> original) {\n\t\t\t\t\t*///?} else {\n\t\t\t\t\ttarget = \"Lnet/minecraft/world/item/ItemStack;inventoryTick(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;IZ)V\"\n\t\t\t)\n\t)\n\tprivate void catchTickingItemStack$notTheCauseOfTickLag(ItemStack instance, Level level, Entity entity, int index, boolean selected, Operation<Void> original) {\n\t\t\t\t\t//?}\n\t\tNeruina.getInstance().getTickHandler().safelyTickItemStack(instance, level, entity, index, selected, original);\n\t}"
+    },
+    {
+     "condition": "<=1.21.1",
+     "code": "@WrapOperation(\n\t    method = \"tick\",\n\t    at = @At(\n\t        value = \"INVOKE\",\n\t        target = \"Lnet/minecraft/world/item/ItemStack;inventoryTick(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;IZ)V\"\n\t    )\n  )\n  private void catchTickingItemStack$notTheCauseOfTickLag(ItemStack instance, Level level, Entity entity, int i, boolean b, Operation<Void> original) {\n      Neruina.getInstance().getTickHandler().safelyTickItemStack(instance, level, entity, i, b, original);\n  }"
+    },
+    {
+     "condition": null,
+     "code": "@WrapOperation(\n\t\t\tmethod = \"tick\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lnet/minecraft/world/item/ItemStack;inventoryTick(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/entity/EquipmentSlot;)V\"\n\t\t\t)\n\t)\n\tprivate void catchTickingItemStack$notTheCauseOfTickLag(ItemStack instance, Level level, Entity entity, EquipmentSlot slot, Operation<Void> original, @Local(ordinal = 0) int slotIndex) {\n\t\tNeruina.getInstance().getTickHandler().safelyTickItemStack(instance, level, entity, slot, slotIndex, original);\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2",
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "index"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "index"
+     ]
+    }
+   ],
+   "older": "@WrapOperation(\n\t\t\tmethod = \"tick\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\t//? if forge {\n\t\t\t\t\t/*target = \"Lnet/minecraft/world/item/ItemStack;onInventoryTick(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/player/Player;II)V\"\n\t\t\t)\n\t)\n\tprivate void catchTickingItemStack$notTheCauseOfTickLag(ItemStack instance, Level level, Player entity, int index, int selected, Operation<Void> original) {\n\t\t\t\t\t*///?} else {\n\t\t\t\t\ttarget = \"Lnet/minecraft/world/item/ItemStack;inventoryTick(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;IZ)V\"\n\t\t\t)\n\t)\n\tprivate void catchTickingItemStack$notTheCauseOfTickLag(ItemStack instance, Level level, Entity entity, int index, boolean selected, Operation<Void> original) {\n\t\t\t\t\t//?}\n\t\tNeruina.getInstance().getTickHandler().safelyTickItemStack(instance, level, entity, index, selected, original);\n\t}",
+   "newer": "@WrapOperation(\n\t    method = \"tick\",\n\t    at = @At(\n\t        value = \"INVOKE\",\n\t        target = \"Lnet/minecraft/world/item/ItemStack;inventoryTick(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;IZ)V\"\n\t    )\n  )\n  private void catchTickingItemStack$notTheCauseOfTickLag(ItemStack instance, Level level, Entity entity, int i, boolean b, Operation<Void> original) {\n      Neruina.getInstance().getTickHandler().safelyTickItemStack(instance, level, entity, i, b, original);\n  }",
+   "removed": [
+    "Player",
+    "index",
+    "selected"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/catchers/InventoryMixin.java",
+   "line": 82,
+   "method": "removeErroredStatusOnInvInit",
+   "condition": "<=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "CompoundTag tag = stack.getTag();\n\t\t\tif (tag == null) return;\n\n\t\t\tif (tag.getBoolean(\"neruina$errored\")) {\n\t\t\t\tNeruina.getInstance().getTickHandler().removeErrored(stack);\n\t\t\t}"
+    },
+    {
+     "condition": null,
+     "code": "CustomData data = stack.get(DataComponents.CUSTOM_DATA);\n\t\t\tif (data == null) return;\n\n\t\t\tCompoundTag tag = data.copyTag();"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "get"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "CustomData",
+      "DataComponents",
+      "data",
+      "get",
+      "getInstance",
+      "getTag"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "get"
+     ]
+    }
+   ],
+   "older": "CompoundTag tag = stack.getTag();\n\t\t\tif (tag == null) return;\n\n\t\t\tif (tag.getBoolean(\"neruina$errored\")) {\n\t\t\t\tNeruina.getInstance().getTickHandler().removeErrored(stack);\n\t\t\t}",
+   "newer": "CustomData data = stack.get(DataComponents.CUSTOM_DATA);\n\t\t\tif (data == null) return;\n\n\t\t\tCompoundTag tag = data.copyTag();",
+   "removed": [
+    "Neruina",
+    "getBoolean",
+    "getInstance",
+    "getTag",
+    "getTickHandler",
+    "removeErrored"
+   ],
+   "added": [
+    "CUSTOM_DATA",
+    "CustomData",
+    "DataComponents",
+    "copyTag",
+    "data",
+    "get"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/catchers/InventoryMixin.java",
+   "line": 95,
+   "method": "removeErroredStatusOnInvInit",
+   "condition": "<=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "if (tag.getBoolean(\"neruina$errored\")) {\n        Neruina.getInstance().getTickHandler().removeErrored(stack);\n      }"
+    },
+    {
+     "condition": null,
+     "code": "if (tag.getBoolean(\"neruina$errored\").orElse(false)) {\n\t\t\t\tNeruina.getInstance().getTickHandler().removeErrored(stack);\n\t\t\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "orElse"
+     ]
+    }
+   ],
+   "older": "if (tag.getBoolean(\"neruina$errored\")) {\n        Neruina.getInstance().getTickHandler().removeErrored(stack);\n      }",
+   "newer": "if (tag.getBoolean(\"neruina$errored\").orElse(false)) {\n\t\t\t\tNeruina.getInstance().getTickHandler().removeErrored(stack);\n\t\t\t}",
+   "removed": [],
+   "added": [
+    "orElse"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/catchers/ServerGamePacketListenerImplMixin.java",
+   "line": 14,
+   "method": "(class body)",
+   "condition": ">=1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "method = \"tickPlayer\","
+    },
+    {
+     "condition": null,
+     "code": "method = \"tick\","
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [],
+   "older": "method = \"tick\",",
+   "newer": "method = \"tickPlayer\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/catchers/ServerLevelMixin.java",
+   "line": 18,
+   "method": "(class body)",
+   "condition": "<=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "@Inject(method = \"sendBlockUpdated\", at = @At(\"HEAD\"))\n    private void removeErrored(BlockPos pos, BlockState oldState, BlockState newState, int flags, CallbackInfo ci) {\n      TickHandler tickHandler = Neruina.getInstance().getTickHandler();\n      if (tickHandler.isErrored(oldState, pos)) {\n        tickHandler.removeErrored(oldState, pos);\n      }\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"updatePOIOnBlockStateChange\", at = @At(\"HEAD\"))\n\tprivate void removeErrored(BlockPos pos, BlockState oldState, BlockState newState, CallbackInfo ci) {\n\t\tTickHandler tickHandler = Neruina.getInstance().getTickHandler();\n\t\tif (tickHandler.isErrored(oldState, pos)) {\n\t\t\ttickHandler.removeErrored(oldState, pos);\n\t\t}\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [],
+   "older": "@Inject(method = \"sendBlockUpdated\", at = @At(\"HEAD\"))\n    private void removeErrored(BlockPos pos, BlockState oldState, BlockState newState, int flags, CallbackInfo ci) {\n      TickHandler tickHandler = Neruina.getInstance().getTickHandler();\n      if (tickHandler.isErrored(oldState, pos)) {\n        tickHandler.removeErrored(oldState, pos);\n      }\n    }",
+   "newer": "@Inject(method = \"updatePOIOnBlockStateChange\", at = @At(\"HEAD\"))\n\tprivate void removeErrored(BlockPos pos, BlockState oldState, BlockState newState, CallbackInfo ci) {\n\t\tTickHandler tickHandler = Neruina.getInstance().getTickHandler();\n\t\tif (tickHandler.isErrored(oldState, pos)) {\n\t\t\ttickHandler.removeErrored(oldState, pos);\n\t\t}\n\t}",
+   "removed": [
+    "flags"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/compat/doespotatotick/LevelMixin.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "<=1.21.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "package com.bawnorton.neruina.mixin.compat.doespotatotick;\n\nimport com.bawnorton.neruina.Neruina;\nimport com.bawnorton.neruina.util.annotation.ConditionalMixin;\nimport com.llamalad7.mixinextras.injector.ModifyReturnValue;\nimport com.llamalad7.mixinextras.injector.wrapoperation.Operation;\nimport com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;\nimport net.minecraft.world.entity.Entity;\nimport net.minecraft.world.level.Level;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Coerce;\nimport java.util.function.Consumer;\n\n@Mixin(value = Level.class, priority = 1500)\n@ConditionalMixin(modids = \"does_potato_tick\")\npublic abstract class LevelMixin {\n    @ModifyReturnValue(method = \"shouldTickDeath\", at = @At(\"RETURN\"))\n    private boolean dontTickIfErrored(boolean original, Entity entity) {\n        if (original) {\n            return !Neruina.getInstance().getTickHandler().isErrored(entity);\n        }\n\n        return false;\n    }\n\n    @WrapOperation(method = \"guardEntityTick\", at = @At(value = \"INVOKE\", target = \"Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V\", remap = false))\n    private void catchTickingEntities(Consumer<Object> consumer, @Coerce Object entity, Operation<Void> original) {\n        Neruina.getInstance().getTickHandler().safelyTickEntities(consumer, (Entity) entity, original);\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/compat/itshallnottick/LevelMixin.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "<= 1.21.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<= 1.21.1",
+     "code": "package com.bawnorton.neruina.mixin.compat.itshallnottick;\n\nimport com.bawnorton.neruina.Neruina;\nimport com.bawnorton.neruina.util.annotation.ConditionalMixin;\nimport com.llamalad7.mixinextras.injector.ModifyReturnValue;\nimport com.llamalad7.mixinextras.injector.wrapoperation.Operation;\nimport com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;\nimport net.minecraft.world.entity.Entity;\nimport net.minecraft.world.level.Level;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Coerce;\nimport java.util.function.Consumer;\n\n@Mixin(value = Level.class, priority = 1500)\n@ConditionalMixin(modids = \"itshallnottick\")\npublic abstract class LevelMixin {\n\t@ModifyReturnValue(\n\t\t\tmethod = \"shouldTickDeath\",\n\t\t\tat = @At(\"RETURN\")\n\t)\n\tprivate boolean shouldUpdatePostDeath(boolean original, Entity entity) {\n\t\tif (original) {\n\t\t\treturn !Neruina.getInstance().getTickHandler().isErrored(entity);\n\t\t}\n\n\t\treturn false;\n\t}\n\n\t@SuppressWarnings({\"UnresolvedMixinReference\", \"MixinAnnotationTarget\", \"InvalidInjectorMethodSignature\"})\n\t@WrapOperation(\n\t\t\tmethod = \"tickEntity\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lnet/minecraft/entity/TickOptimizer;entityTicking(Ljava/util/function/Consumer;Lnet/minecraft/entity/Entity;Lnet/minecraft/world/World;Lnet/minecraft/util/math/random/Random;)V\"\n\t\t\t)\n\t)\n\tprivate void catchTickingEntities(Consumer<Entity> consumer, Entity entity, Level world, @Coerce Object random, Operation<Void> original) {\n\t\tNeruina.getInstance().getTickHandler().safelyTickEntities(consumer, entity, world, random, original);\n\t}\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/compat/noseenotick/LevelMixin.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "<=1.21.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "package com.bawnorton.neruina.mixin.compat.noseenotick;\n\nimport com.bawnorton.neruina.Neruina;\nimport com.bawnorton.neruina.util.annotation.ConditionalMixin;\nimport com.llamalad7.mixinextras.injector.ModifyReturnValue;\nimport com.llamalad7.mixinextras.injector.wrapoperation.Operation;\nimport com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;\nimport net.minecraft.world.entity.Entity;\nimport net.minecraft.world.level.Level;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Coerce;\nimport java.util.function.Consumer;\n\n@Mixin(value = Level.class, priority = 1500)\n@ConditionalMixin(modids = \"noseenotick\")\npublic abstract class LevelMixin {\n    @ModifyReturnValue(method = \"shouldTickDeath\", at = @At(\"RETURN\"))\n    private boolean dontTickIfErrored(boolean original, Entity entity) {\n        if (original) {\n            return !Neruina.getInstance().getTickHandler().isErrored(entity);\n        }\n\n        return false;\n    }\n\n    @SuppressWarnings({\"MixinAnnotationTarget\", \"InvalidInjectorMethodSignature\"})\n    @WrapOperation(\n            method = \"guardEntityTick\",\n            at = {\n                    @At(\n                            value = \"INVOKE\",\n                            target = \"Lnet/minecraft/entity/TickOptimizer;entityTicking(Ljava/util/function/Consumer;Lnet/minecraft/entity/Entity;Lnet/minecraft/world/Level;Lnet/minecraft/util/math/random/Random;)V\",\n                            remap = false\n                    ),\n                    @At(\n                            value = \"INVOKE\",\n                            target = \"Lnet/minecraft/entity/TickOptimizer;entityTicking(Ljava/util/function/Consumer;Lnet/minecraft/class_1297;Lnet/minecraft/class_1937;Lnet/minecraft/class_8892;)V\",\n                            remap = false\n                    )\n            },\n            require = 0\n    )\n    private void catchTickingEntities(Consumer<Entity> consumer, Entity entity, Level level, @Coerce Object random, Operation<Void> original) {\n        Neruina.getInstance().getTickHandler().safelyTickEntities(consumer, entity, level, random, original);\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/errorable/BlockEntityMixin.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": ">=1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.6",
+     "code": "import net.minecraft.world.level.storage.ValueInput;\nimport net.minecraft.world.level.storage.ValueOutput;"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/errorable/BlockEntityMixin.java",
+   "line": 103,
+   "method": "(class body)",
+   "condition": "<=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "/*neruina$errored = tag.getBoolean(\"neruina$errored\");\n    if (tag.contains(\"neruina$tickingEntryId\")) {\n      try {\n        neruina$tickingEntryId = UUID.fromString(tag.getString(\"neruina$tickingEntryId\"));\n\t\t\t} catch (IllegalArgumentException e) {\n\t\t\t\tneruina$tickingEntryId = null;\n\t\t\t\tneruina$clearErrored();\n\t\t\t}\n    }\n    */"
+    },
+    {
+     "condition": null,
+     "code": "neruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\ttry {\n      neruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t} catch (IllegalArgumentException e) {\n\t\t\tneruina$tickingEntryId = null;\n\t\t\tneruina$clearErrored();\n\t\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "contains",
+      "orElse"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "contains",
+      "getBoolean",
+      "getBooleanOr",
+      "map"
+     ]
+    }
+   ],
+   "older": "/*neruina$errored = tag.getBoolean(\"neruina$errored\");\n    if (tag.contains(\"neruina$tickingEntryId\")) {\n      try {\n        neruina$tickingEntryId = UUID.fromString(tag.getString(\"neruina$tickingEntryId\"));\n\t\t\t} catch (IllegalArgumentException e) {\n\t\t\t\tneruina$tickingEntryId = null;\n\t\t\t\tneruina$clearErrored();\n\t\t\t}\n    }\n    */",
+   "newer": "neruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\ttry {\n      neruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t} catch (IllegalArgumentException e) {\n\t\t\tneruina$tickingEntryId = null;\n\t\t\tneruina$clearErrored();\n\t\t}",
+   "removed": [
+    "contains",
+    "getBoolean"
+   ],
+   "added": [
+    "getBooleanOr",
+    "map",
+    "orElse"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/errorable/BlockEntityMixin.java",
+   "line": 53,
+   "method": "(class body)",
+   "condition": "<=1.20.1 | <=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "@Inject(\n\t\t\tmethod = \"saveAdditional\",\n\t\t\tat = @At(\"HEAD\")\n\t)\n\tprivate void writeErroredToNbt(CompoundTag nbt, CallbackInfo ci) {\n\t\tif (neruina$errored) {\n\t\t\tnbt.putBoolean(\"neruina$errored\", true);\n\t\t}\n\t\tif (neruina$tickingEntryId != null) {\n\t\t\tnbt.putUUID(\"neruina$tickingEntryId\", neruina$tickingEntryId);\n\t\t}\n\t}\n\n\t@Inject(\n\t\t\tmethod = \"load\",\n\t\t\tat = @At(\"TAIL\")\n\t)\n\tprivate void readErroredFromNbt(CompoundTag nbt, CallbackInfo ci) {\n\t\tif (nbt.contains(\"neruina$errored\")) {\n\t\t\tneruina$errored = nbt.getBoolean(\"neruina$errored\");\n\t\t}\n\t\tif (nbt.contains(\"neruina$tickingEntryId\")) {\n\t\t\ttry {\n\t\t\t\tneruina$tickingEntryId = nbt.getUUID(\"neruina$tickingEntryId\");\n\t\t\t} catch (IllegalArgumentException e) {\n\t\t\t\tneruina$tickingEntryId = null;\n\t\t\t\tneruina$clearErrored();\n\t\t\t}\n\t\t}\n\t}"
+    },
+    {
+     "condition": "<=1.21.5",
+     "code": "@Inject(\n\t\t  method = \"saveAdditional\",\n\t\t  at = @At(\"HEAD\")\n  )\n  private void writeErrored(CompoundTag tag, HolderLookup.Provider registries, CallbackInfo ci) {\n    if (neruina$errored) {\n      tag.putBoolean(\"neruina$errored\", true);\n    }\n    if (neruina$tickingEntryId != null) {\n      tag.putString(\"neruina$tickingEntryId\", neruina$tickingEntryId.toString());\n    }\n  }\n\n  @Inject(\n\t    method = \"loadAdditional\",\n\t    at = @At(\"TAIL\")\n  )\n  private void loadAdditional(CompoundTag tag, HolderLookup.Provider registries, CallbackInfo ci) {\n    //? if <=1.21.1 {\n    /*neruina$errored = tag.getBoolean(\"neruina$errored\");\n    if (tag.contains(\"neruina$tickingEntryId\")) {\n      try {\n        neruina$tickingEntryId = UUID.fromString(tag.getString(\"neruina$tickingEntryId\"));\n\t\t\t} catch (IllegalArgumentException e) {\n\t\t\t\tneruina$tickingEntryId = null;\n\t\t\t\tneruina$clearErrored();\n\t\t\t}\n    }\n    *///?} else {\n    neruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\ttry {\n      neruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t} catch (IllegalArgumentException e) {\n\t\t\tneruina$tickingEntryId = null;\n\t\t\tneruina$clearErrored();\n\t\t}\n    //?}\n  }"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(\n\t\t\tmethod = \"saveAdditional\",\n\t\t\tat = @At(\"HEAD\")\n\t)\n\tprivate void writeErroredToOutput(ValueOutput output, CallbackInfo ci) {\n\t\tif (neruina$errored) {\n\t\t\toutput.putBoolean(\"neruina$errored\", true);\n\t\t}\n\t\tif (neruina$tickingEntryId != null) {\n\t\t\toutput.putString(\"neruina$tickingEntryId\", neruina$tickingEntryId.toString());\n\t\t}\n\t}\n\n\t@Inject(\n\t\t\tmethod = \"loadAdditional\",\n\t\t\tat = @At(\"TAIL\")\n\t)\n\tprivate void readErroredFromNbt(ValueInput input, CallbackInfo ci) {\n\t\tneruina$errored = input.getBooleanOr(\"neruina$errored\", false);\n\t\ttry {\n\t\t\tneruina$tickingEntryId = input.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t} catch (IllegalArgumentException e) {\n\t\t\tneruina$tickingEntryId = null;\n\t\t\tneruina$clearErrored();\n\t\t}\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2",
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.5 -> 1.21.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "tag",
+      "toString"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "Provider",
+      "toString"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "Provider",
+      "loadAdditional",
+      "nbt",
+      "toString"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "registries",
+      "toString"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "fromString",
+      "loadAdditional",
+      "tag",
+      "toString"
+     ]
+    }
+   ],
+   "older": "@Inject(\n\t\t\tmethod = \"saveAdditional\",\n\t\t\tat = @At(\"HEAD\")\n\t)\n\tprivate void writeErroredToNbt(CompoundTag nbt, CallbackInfo ci) {\n\t\tif (neruina$errored) {\n\t\t\tnbt.putBoolean(\"neruina$errored\", true);\n\t\t}\n\t\tif (neruina$tickingEntryId != null) {\n\t\t\tnbt.putUUID(\"neruina$tickingEntryId\", neruina$tickingEntryId);\n\t\t}\n\t}\n\n\t@Inject(\n\t\t\tmethod = \"load\",\n\t\t\tat = @At(\"TAIL\")\n\t)\n\tprivate void readErroredFromNbt(CompoundTag nbt, CallbackInfo ci) {\n\t\tif (nbt.contains(\"neruina$errored\")) {\n\t\t\tneruina$errored = nbt.getBoolean(\"neruina$errored\");\n\t\t}\n\t\tif (nbt.contains(\"neruina$tickingEntryId\")) {\n\t\t\ttry {\n\t\t\t\tneruina$tickingEntryId = nbt.getUUID(\"neruina$tickingEntryId\");\n\t\t\t} catch (IllegalArgumentException e) {\n\t\t\t\tneruina$tickingEntryId = null;\n\t\t\t\tneruina$clearErrored();\n\t\t\t}\n\t\t}\n\t}",
+   "newer": "@Inject(\n\t\t  method = \"saveAdditional\",\n\t\t  at = @At(\"HEAD\")\n  )\n  private void writeErrored(CompoundTag tag, HolderLookup.Provider registries, CallbackInfo ci) {\n    if (neruina$errored) {\n      tag.putBoolean(\"neruina$errored\", true);\n    }\n    if (neruina$tickingEntryId != null) {\n      tag.putString(\"neruina$tickingEntryId\", neruina$tickingEntryId.toString());\n    }\n  }\n\n  @Inject(\n\t    method = \"loadAdditional\",\n\t    at = @At(\"TAIL\")\n  )\n  private void loadAdditional(CompoundTag tag, HolderLookup.Provider registries, CallbackInfo ci) {\n    //? if <=1.21.1 {\n    /*neruina$errored = tag.getBoolean(\"neruina$errored\");\n    if (tag.contains(\"neruina$tickingEntryId\")) {\n      try {\n        neruina$tickingEntryId = UUID.fromString(tag.getString(\"neruina$tickingEntryId\"));\n\t\t\t} catch (IllegalArgumentException e) {\n\t\t\t\tneruina$tickingEntryId = null;\n\t\t\t\tneruina$clearErrored();\n\t\t\t}\n    }\n    *///?} else {\n    neruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\ttry {\n      neruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t} catch (IllegalArgumentException e) {\n\t\t\tneruina$tickingEntryId = null;\n\t\t\tneruina$clearErrored();\n\t\t}\n    //?}\n  }",
+   "removed": [
+    "getUUID",
+    "nbt",
+    "putUUID",
+    "readErroredFromNbt",
+    "writeErroredToNbt"
+   ],
+   "added": [
+    "HolderLookup",
+    "Provider",
+    "UUID",
+    "fromString",
+    "getBooleanOr",
+    "getString",
+    "loadAdditional",
+    "map",
+    "orElse",
+    "putString",
+    "registries",
+    "tag",
+    "toString",
+    "writeErrored"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/errorable/EntityMixin.java",
+   "line": 26,
+   "method": "(imports)",
+   "condition": ">=1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.6",
+     "code": "import net.minecraft.world.level.storage.ValueInput;\nimport net.minecraft.world.level.storage.ValueOutput;"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/errorable/EntityMixin.java",
+   "line": 96,
+   "method": "(class body)",
+   "condition": "<=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "/*neruina$errored = tag.getBoolean(\"neruina$errored\");\n    if (tag.contains(\"neruina$tickingEntryId\")) {\n\t\t\ttry {\n        neruina$tickingEntryId = UUID.fromString(tag.getString(\"neruina$tickingEntryId\"));\n\t\t\t} catch (IllegalArgumentException e) {\n\t\t\t\tneruina$tickingEntryId = null;\n\t\t\t\tneruina$clearErrored();\n\t\t\t}\n    }\n    */"
+    },
+    {
+     "condition": null,
+     "code": "neruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\ttry {\n\t\t\tneruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t} catch (IllegalArgumentException e) {\n\t\t\tneruina$tickingEntryId = null;\n\t\t\tneruina$clearErrored();\n\t\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "contains",
+      "orElse"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "contains",
+      "getBoolean",
+      "getBooleanOr",
+      "map"
+     ]
+    }
+   ],
+   "older": "/*neruina$errored = tag.getBoolean(\"neruina$errored\");\n    if (tag.contains(\"neruina$tickingEntryId\")) {\n\t\t\ttry {\n        neruina$tickingEntryId = UUID.fromString(tag.getString(\"neruina$tickingEntryId\"));\n\t\t\t} catch (IllegalArgumentException e) {\n\t\t\t\tneruina$tickingEntryId = null;\n\t\t\t\tneruina$clearErrored();\n\t\t\t}\n    }\n    */",
+   "newer": "neruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\ttry {\n\t\t\tneruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t} catch (IllegalArgumentException e) {\n\t\t\tneruina$tickingEntryId = null;\n\t\t\tneruina$clearErrored();\n\t\t}",
+   "removed": [
+    "contains",
+    "getBoolean"
+   ],
+   "added": [
+    "getBooleanOr",
+    "map",
+    "orElse"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/errorable/EntityMixin.java",
+   "line": 71,
+   "method": "(class body)",
+   "condition": "<=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.5",
+     "code": "@Inject(\n\t\t\tmethod = \"saveWithoutId\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lnet/minecraft/world/entity/Entity;addAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V\"\n\t\t\t)\n\t)\n\tprivate void writeErrored(CompoundTag tag, CallbackInfoReturnable<CompoundTag> cir) {\n\t\tif (neruina$errored) {\n\t\t\ttag.putBoolean(\"neruina$errored\", true);\n\t\t}\n\t\tif (neruina$tickingEntryId != null) {\n\t\t\ttag.putString(\"neruina$tickingEntryId\", neruina$tickingEntryId.toString());\n\t\t}\n\t}\n\n\t@Inject(\n\t\t\tmethod = \"load\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lnet/minecraft/world/entity/Entity;setAirSupply(I)V\"\n\t\t\t)\n\t)\n\tprivate void loadAdditional(CompoundTag tag, CallbackInfo ci) {\n\t\t//? if <=1.21.1 {\n    /*neruina$errored = tag.getBoolean(\"neruina$errored\");\n    if (tag.contains(\"neruina$tickingEntryId\")) {\n\t\t\ttry {\n        neruina$tickingEntryId = UUID.fromString(tag.getString(\"neruina$tickingEntryId\"));\n\t\t\t} catch (IllegalArgumentException e) {\n\t\t\t\tneruina$tickingEntryId = null;\n\t\t\t\tneruina$clearErrored();\n\t\t\t}\n    }\n    *///?} else {\n\t\tneruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\ttry {\n\t\t\tneruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t} catch (IllegalArgumentException e) {\n\t\t\tneruina$tickingEntryId = null;\n\t\t\tneruina$clearErrored();\n\t\t}\n\t\t//?}\n\t}"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(\n\t\t\tmethod = \"saveWithoutId\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lnet/minecraft/world/entity/Entity;addAdditionalSaveData(Lnet/minecraft/world/level/storage/ValueOutput;)V\"\n\t\t\t)\n\t)\n\tprivate void writeErroredToNbt(ValueOutput output, CallbackInfo ci) {\n\t\tif (neruina$errored) {\n\t\t\toutput.putBoolean(\"neruina$errored\", true);\n\t\t}\n\t\tif (neruina$tickingEntryId != null) {\n\t\t\toutput.putString(\"neruina$tickingEntryId\", neruina$tickingEntryId.toString());\n\t\t}\n\t}\n\n\t@Inject(\n\t\t\tmethod = \"load\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lnet/minecraft/world/entity/Entity;setAirSupply(I)V\"\n\t\t\t)\n\t)\n\tprivate void readErroredFromNbt(ValueInput input, CallbackInfo ci) {\n\t\tneruina$errored = input.getBooleanOr(\"neruina$errored\", false);\n\t\ttry {\n\t\t\tneruina$tickingEntryId = input.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t} catch (IllegalArgumentException e) {\n\t\t\tneruina$tickingEntryId = null;\n\t\t\tneruina$clearErrored();\n\t\t}\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "ValueInput",
+      "ValueOutput",
+      "loadAdditional",
+      "tag"
+     ]
+    }
+   ],
+   "older": "@Inject(\n\t\t\tmethod = \"saveWithoutId\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lnet/minecraft/world/entity/Entity;addAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V\"\n\t\t\t)\n\t)\n\tprivate void writeErrored(CompoundTag tag, CallbackInfoReturnable<CompoundTag> cir) {\n\t\tif (neruina$errored) {\n\t\t\ttag.putBoolean(\"neruina$errored\", true);\n\t\t}\n\t\tif (neruina$tickingEntryId != null) {\n\t\t\ttag.putString(\"neruina$tickingEntryId\", neruina$tickingEntryId.toString());\n\t\t}\n\t}\n\n\t@Inject(\n\t\t\tmethod = \"load\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lnet/minecraft/world/entity/Entity;setAirSupply(I)V\"\n\t\t\t)\n\t)\n\tprivate void loadAdditional(CompoundTag tag, CallbackInfo ci) {\n\t\t//? if <=1.21.1 {\n    /*neruina$errored = tag.getBoolean(\"neruina$errored\");\n    if (tag.contains(\"neruina$tickingEntryId\")) {\n\t\t\ttry {\n        neruina$tickingEntryId = UUID.fromString(tag.getString(\"neruina$tickingEntryId\"));\n\t\t\t} catch (IllegalArgumentException e) {\n\t\t\t\tneruina$tickingEntryId = null;\n\t\t\t\tneruina$clearErrored();\n\t\t\t}\n    }\n    *///?} else {\n\t\tneruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\ttry {\n\t\t\tneruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t} catch (IllegalArgumentException e) {\n\t\t\tneruina$tickingEntryId = null;\n\t\t\tneruina$clearErrored();\n\t\t}\n\t\t//?}\n\t}",
+   "newer": "@Inject(\n\t\t\tmethod = \"saveWithoutId\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lnet/minecraft/world/entity/Entity;addAdditionalSaveData(Lnet/minecraft/world/level/storage/ValueOutput;)V\"\n\t\t\t)\n\t)\n\tprivate void writeErroredToNbt(ValueOutput output, CallbackInfo ci) {\n\t\tif (neruina$errored) {\n\t\t\toutput.putBoolean(\"neruina$errored\", true);\n\t\t}\n\t\tif (neruina$tickingEntryId != null) {\n\t\t\toutput.putString(\"neruina$tickingEntryId\", neruina$tickingEntryId.toString());\n\t\t}\n\t}\n\n\t@Inject(\n\t\t\tmethod = \"load\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lnet/minecraft/world/entity/Entity;setAirSupply(I)V\"\n\t\t\t)\n\t)\n\tprivate void readErroredFromNbt(ValueInput input, CallbackInfo ci) {\n\t\tneruina$errored = input.getBooleanOr(\"neruina$errored\", false);\n\t\ttry {\n\t\t\tneruina$tickingEntryId = input.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t} catch (IllegalArgumentException e) {\n\t\t\tneruina$tickingEntryId = null;\n\t\t\tneruina$clearErrored();\n\t\t}\n\t}",
+   "removed": [
+    "CallbackInfoReturnable",
+    "CompoundTag",
+    "cir",
+    "contains",
+    "getBoolean",
+    "loadAdditional",
+    "tag",
+    "writeErrored"
+   ],
+   "added": [
+    "ValueInput",
+    "ValueOutput",
+    "input",
+    "output",
+    "readErroredFromNbt",
+    "writeErroredToNbt"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/errorable/ItemStackMixin.java",
+   "line": 18,
+   "method": "(imports)",
+   "condition": ">1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "import net.minecraft.core.component.DataComponentPatch;\nimport net.minecraft.core.component.DataComponents;\nimport net.minecraft.core.component.PatchedDataComponentMap;\nimport net.minecraft.world.item.component.CustomData;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/errorable/ItemStackMixin.java",
+   "line": 27,
+   "method": "(class body)",
+   "condition": "<=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "@Shadow\n\tpublic abstract boolean hasTag();\n\n\t@Shadow\n\tpublic abstract CompoundTag getTag();"
+    },
+    {
+     "condition": null,
+     "code": "@Shadow\n\t@Final\n    private PatchedDataComponentMap components;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "PatchedDataComponentMap",
+      "components",
+      "getTag",
+      "hasTag"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "components"
+     ]
+    }
+   ],
+   "older": "@Shadow\n\tpublic abstract boolean hasTag();\n\n\t@Shadow\n\tpublic abstract CompoundTag getTag();",
+   "newer": "@Shadow\n\t@Final\n    private PatchedDataComponentMap components;",
+   "removed": [
+    "CompoundTag",
+    "getTag",
+    "hasTag"
+   ],
+   "added": [
+    "Final",
+    "PatchedDataComponentMap",
+    "components"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/errorable/ItemStackMixin.java",
+   "line": 126,
+   "method": "readErroredFromComponents",
+   "condition": "<=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "neruina$errored = tag.getBoolean(\"neruina$errored\");\n\t\tif (tag.contains(\"neruina$tickingEntryId\")) {\n\t\t\tString id = tag.getString(\"neruina$tickingEntryId\");\n\t\t\ttry {\n\t\t\t\tneruina$tickingEntryId = UUID.fromString(id);\n\t\t\t} catch (IllegalArgumentException ignored) {}\n\t\t}"
+    },
+    {
+     "condition": null,
+     "code": "neruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\tneruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "contains",
+      "orElse"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "contains",
+      "getBoolean",
+      "getBooleanOr",
+      "map"
+     ]
+    }
+   ],
+   "older": "neruina$errored = tag.getBoolean(\"neruina$errored\");\n\t\tif (tag.contains(\"neruina$tickingEntryId\")) {\n\t\t\tString id = tag.getString(\"neruina$tickingEntryId\");\n\t\t\ttry {\n\t\t\t\tneruina$tickingEntryId = UUID.fromString(id);\n\t\t\t} catch (IllegalArgumentException ignored) {}\n\t\t}",
+   "newer": "neruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\tneruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);",
+   "removed": [
+    "IllegalArgumentException",
+    "String",
+    "contains",
+    "getBoolean",
+    "ignored"
+   ],
+   "added": [
+    "getBooleanOr",
+    "map",
+    "orElse"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/errorable/ItemStackMixin.java",
+   "line": 73,
+   "method": "(class body)",
+   "condition": "<=1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "@Unique\n\tprivate void neruina$updateData() {\n\t\tif (neruina$errored) {\n\t\t\tCompoundTag tag = new CompoundTag();\n\t\t\ttag.putBoolean(\"neruina$errored\", true);\n\t\t\tif(neruina$tickingEntryId != null) {\n\t\t\t\ttag.putUUID(\"neruina$tickingEntryId\", neruina$tickingEntryId);\n\t\t\t}\n\t\t}\n\t}\n\n\t@Inject(\n\t\t\tmethod = \"<init>(Lnet/minecraft/nbt/CompoundTag;)V\",\n\t\t\tat = @At(\"TAIL\")\n\t)\n\tprivate void readErroredFromNbt(CompoundTag itemNbt, CallbackInfo ci) {\n\t\tif(hasTag()) {\n\t\t\tCompoundTag tag = getTag();\n\t\t\tif (tag.contains(\"neruina$errored\")) {\n\t\t\t\tneruina$errored = tag.getBoolean(\"neruina$errored\");\n\t\t\t}\n\t\t\tif (tag.contains(\"neruina$tickingEntryId\")) {\n\t\t\t\tneruina$tickingEntryId = tag.getUUID(\"neruina$tickingEntryId\");\n\t\t\t}\n\t\t}\n\t}"
+    },
+    {
+     "condition": null,
+     "code": "@Unique\n\tprivate void neruina$updateData() {\n\t\tCompoundTag tag = new CompoundTag();\n\t\tif (neruina$errored) {\n\t\t\ttag.putBoolean(\"neruina$errored\", true);\n\t\t}\n\t\tif (neruina$tickingEntryId != null) {\n\t\t\ttag.putString(\"neruina$tickingEntryId\", neruina$tickingEntryId.toString());\n\t\t}\n\t\tCustomData data = CustomData.of(tag);\n\t\tDataComponentPatch.Builder builder = DataComponentPatch.builder()\n\t\t\t\t.set(DataComponents.CUSTOM_DATA, data);\n\t\tcomponents.applyPatch(builder.build());\n\t}\n\n\t@Inject(\n\t\t\t//~ if >=26.1 'Lnet/minecraft/world/level/ItemLike' -> 'Lnet/minecraft/core/Holder'\n\t\t\tmethod = \"<init>(Lnet/minecraft/core/Holder;ILnet/minecraft/core/component/PatchedDataComponentMap;)V\",\n\t\t\tat = @At(\"TAIL\")\n\t)\n\tprivate void readErroredFromComponents(CallbackInfo ci) {\n\t\tCustomData data = components.get(DataComponents.CUSTOM_DATA);\n\t\tif (data == null) return;\n\n\t\tCompoundTag tag = data.copyTag();\n\t\t//? if <=1.21.1 {\n\t\t/*neruina$errored = tag.getBoolean(\"neruina$errored\");\n\t\tif (tag.contains(\"neruina$tickingEntryId\")) {\n\t\t\tString id = tag.getString(\"neruina$tickingEntryId\");\n\t\t\ttry {\n\t\t\t\tneruina$tickingEntryId = UUID.fromString(id);\n\t\t\t} catch (IllegalArgumentException ignored) {}\n\t\t}\n    \t*///?} else {\n\t\tneruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\tneruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t//?}\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "Builder",
+      "build",
+      "get",
+      "toString"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "Builder",
+      "builder",
+      "toString"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "Builder",
+      "CustomData",
+      "DataComponentPatch",
+      "DataComponents",
+      "build",
+      "components",
+      "data",
+      "get",
+      "getTag",
+      "hasTag",
+      "set",
+      "toString"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "Builder",
+      "build",
+      "builder",
+      "components",
+      "get",
+      "set",
+      "toString"
+     ]
+    }
+   ],
+   "older": "@Unique\n\tprivate void neruina$updateData() {\n\t\tif (neruina$errored) {\n\t\t\tCompoundTag tag = new CompoundTag();\n\t\t\ttag.putBoolean(\"neruina$errored\", true);\n\t\t\tif(neruina$tickingEntryId != null) {\n\t\t\t\ttag.putUUID(\"neruina$tickingEntryId\", neruina$tickingEntryId);\n\t\t\t}\n\t\t}\n\t}\n\n\t@Inject(\n\t\t\tmethod = \"<init>(Lnet/minecraft/nbt/CompoundTag;)V\",\n\t\t\tat = @At(\"TAIL\")\n\t)\n\tprivate void readErroredFromNbt(CompoundTag itemNbt, CallbackInfo ci) {\n\t\tif(hasTag()) {\n\t\t\tCompoundTag tag = getTag();\n\t\t\tif (tag.contains(\"neruina$errored\")) {\n\t\t\t\tneruina$errored = tag.getBoolean(\"neruina$errored\");\n\t\t\t}\n\t\t\tif (tag.contains(\"neruina$tickingEntryId\")) {\n\t\t\t\tneruina$tickingEntryId = tag.getUUID(\"neruina$tickingEntryId\");\n\t\t\t}\n\t\t}\n\t}",
+   "newer": "@Unique\n\tprivate void neruina$updateData() {\n\t\tCompoundTag tag = new CompoundTag();\n\t\tif (neruina$errored) {\n\t\t\ttag.putBoolean(\"neruina$errored\", true);\n\t\t}\n\t\tif (neruina$tickingEntryId != null) {\n\t\t\ttag.putString(\"neruina$tickingEntryId\", neruina$tickingEntryId.toString());\n\t\t}\n\t\tCustomData data = CustomData.of(tag);\n\t\tDataComponentPatch.Builder builder = DataComponentPatch.builder()\n\t\t\t\t.set(DataComponents.CUSTOM_DATA, data);\n\t\tcomponents.applyPatch(builder.build());\n\t}\n\n\t@Inject(\n\t\t\t//~ if >=26.1 'Lnet/minecraft/world/level/ItemLike' -> 'Lnet/minecraft/core/Holder'\n\t\t\tmethod = \"<init>(Lnet/minecraft/core/Holder;ILnet/minecraft/core/component/PatchedDataComponentMap;)V\",\n\t\t\tat = @At(\"TAIL\")\n\t)\n\tprivate void readErroredFromComponents(CallbackInfo ci) {\n\t\tCustomData data = components.get(DataComponents.CUSTOM_DATA);\n\t\tif (data == null) return;\n\n\t\tCompoundTag tag = data.copyTag();\n\t\t//? if <=1.21.1 {\n\t\t/*neruina$errored = tag.getBoolean(\"neruina$errored\");\n\t\tif (tag.contains(\"neruina$tickingEntryId\")) {\n\t\t\tString id = tag.getString(\"neruina$tickingEntryId\");\n\t\t\ttry {\n\t\t\t\tneruina$tickingEntryId = UUID.fromString(id);\n\t\t\t} catch (IllegalArgumentException ignored) {}\n\t\t}\n    \t*///?} else {\n\t\tneruina$errored = tag.getBooleanOr(\"neruina$errored\", false);\n\t\tneruina$tickingEntryId = tag.getString(\"neruina$tickingEntryId\").map(UUID::fromString).orElse(null);\n\t\t//?}\n\t}",
+   "removed": [
+    "getTag",
+    "getUUID",
+    "hasTag",
+    "itemNbt",
+    "putUUID",
+    "readErroredFromNbt"
+   ],
+   "added": [
+    "Builder",
+    "CUSTOM_DATA",
+    "CustomData",
+    "DataComponentPatch",
+    "DataComponents",
+    "IllegalArgumentException",
+    "String",
+    "UUID",
+    "applyPatch",
+    "build",
+    "builder",
+    "components",
+    "copyTag",
+    "data",
+    "fromString",
+    "get",
+    "getBooleanOr",
+    "getString",
+    "ignored",
+    "map",
+    "orElse",
+    "putString",
+    "readErroredFromComponents",
+    "set",
+    "toString"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/mixin/test/ZombieMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.world.entity.monster.zombie.Zombie;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.world.entity.monster.Zombie;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraft.world.entity.monster.Zombie;",
+   "newer": "import net.minecraft.world.entity.monster.zombie.Zombie;",
+   "removed": [],
+   "added": [
+    "zombie"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/Neruina.java",
+   "line": 29,
+   "method": "Neruina",
+   "condition": "<=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.20.1",
+     "code": "com.bawnorton.neruina.config.ConfigManager.load();"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/platform/NeruinaWrapper.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "fabric | neoforge | forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import dev.kikugie.fletching_table.annotation.fabric.Entrypoint;\nimport net.fabricmc.api.ModInitializer;\n\n@Entrypoint\npublic class NeruinaWrapper implements ModInitializer {\n\t@Override\n\tpublic void onInitialize() {\n\t\tNeruina.init();\n\t}\n}"
+    },
+    {
+     "condition": "neoforge",
+     "code": "import net.neoforged.fml.common.Mod;\n\n@Mod(Neruina.MOD_ID)\npublic class NeruinaWrapper {\n    public NeruinaWrapper() {\n        Neruina.init();\n    }\n}"
+    },
+    {
+     "condition": "forge",
+     "code": "import net.minecraftforge.fml.common.Mod;\n\n@Mod(Neruina.MOD_ID)\npublic class NeruinaWrapper {\n\t\tpublic NeruinaWrapper() {\n\t\t\tNeruina.init();\n\t\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/platform/Platform.java",
+   "line": 85,
+   "method": "(class body)",
+   "condition": ">=1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "/*public static boolean isModLoaded(String modid) {\n\t\tList<ModInfo> mods = FMLLoader.getCurrent().getLoadingModList().getMods();\n\t\tfor (ModInfo mod : mods) {\n\t\t\tif (mod.getModId().equals(modid)) {\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}\n\n\tpublic static String modidFromJar(String jarName) {\n\t\tfor (ModInfo mod : FMLLoader.getCurrent().getLoadingModList().getMods()) {\n\t\t\tString modLocation = mod.getOwningFile()\n\t\t\t\t\t.getFile()\n\t\t\t\t\t.getFilePath()\n\t\t\t\t\t.toString()\n\t\t\t\t\t.replace(\"+\", \" \");\n\n\t\t\tString decodedJarName = URLDecoder.decode(jarName, StandardCharsets.UTF_8);\n\t\t\tint hashIndex = decodedJarName.lastIndexOf(\"#\");\n\t\t\tif (hashIndex != -1) {\n\t\t\t\tdecodedJarName = decodedJarName.substring(0, hashIndex);\n\t\t\t}\n\t\t\tif (modLocation.endsWith(decodedJarName)) {\n\t\t\t\treturn mod.getModId();\n\t\t\t}\n\t\t}\n\t\treturn null;\n\t}\n\n\tpublic static String getVersion() {\n\t\treturn FMLLoader.getCurrent().getVersionInfo().neoForgeVersion();\n\t}\n\n\tpublic static boolean isClient() {\n\t\treturn FMLLoader.getCurrent().getDist().isClient();\n\t}\n\n\tpublic static boolean isDev() {\n\t\treturn !FMLLoader.getCurrent().isProduction();\n\t}\n\t*/"
+    },
+    {
+     "condition": null,
+     "code": "public static boolean isModLoaded(String modid) {\n\t\tList<ModInfo> mods = LoadingModList.get().getMods();\n\t\tfor (ModInfo mod : mods) {\n\t\t\tif (mod.getModId().equals(modid)) {\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}\n\n\tpublic static String modidFromJar(String jarName) {\n\t\tfor (ModInfo mod : LoadingModList.get().getMods()) {\n\t\t\tString modLocation = mod.getOwningFile()\n\t\t\t\t\t.getFile()\n\t\t\t\t\t.getFilePath()\n\t\t\t\t\t.toString()\n\t\t\t\t\t.replace(\"+\", \" \");\n\n\t\t\tString decodedJarName = URLDecoder.decode(jarName, StandardCharsets.UTF_8);\n\t\t\tint hashIndex = decodedJarName.lastIndexOf(\"#\");\n\t\t\tif (hashIndex != -1) {\n\t\t\t\tdecodedJarName = decodedJarName.substring(0, hashIndex);\n\t\t\t}\n\t\t\tif (modLocation.endsWith(decodedJarName)) {\n\t\t\t\treturn mod.getModId();\n\t\t\t}\n\t\t}\n\t\treturn null;\n\t}\n\n\tpublic static String getVersion() {\n\t\treturn FMLLoader.versionInfo().neoForgeVersion();\n\t}\n\n\tpublic static boolean isClient() {\n\t\treturn FMLLoader.getDist().isClient();\n\t}\n\n\tpublic static boolean isDev() {\n\t\treturn !FMLLoader.isProduction();\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "get"
+     ]
+    }
+   ],
+   "older": "public static boolean isModLoaded(String modid) {\n\t\tList<ModInfo> mods = LoadingModList.get().getMods();\n\t\tfor (ModInfo mod : mods) {\n\t\t\tif (mod.getModId().equals(modid)) {\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}\n\n\tpublic static String modidFromJar(String jarName) {\n\t\tfor (ModInfo mod : LoadingModList.get().getMods()) {\n\t\t\tString modLocation = mod.getOwningFile()\n\t\t\t\t\t.getFile()\n\t\t\t\t\t.getFilePath()\n\t\t\t\t\t.toString()\n\t\t\t\t\t.replace(\"+\", \" \");\n\n\t\t\tString decodedJarName = URLDecoder.decode(jarName, StandardCharsets.UTF_8);\n\t\t\tint hashIndex = decodedJarName.lastIndexOf(\"#\");\n\t\t\tif (hashIndex != -1) {\n\t\t\t\tdecodedJarName = decodedJarName.substring(0, hashIndex);\n\t\t\t}\n\t\t\tif (modLocation.endsWith(decodedJarName)) {\n\t\t\t\treturn mod.getModId();\n\t\t\t}\n\t\t}\n\t\treturn null;\n\t}\n\n\tpublic static String getVersion() {\n\t\treturn FMLLoader.versionInfo().neoForgeVersion();\n\t}\n\n\tpublic static boolean isClient() {\n\t\treturn FMLLoader.getDist().isClient();\n\t}\n\n\tpublic static boolean isDev() {\n\t\treturn !FMLLoader.isProduction();\n\t}",
+   "newer": "/*public static boolean isModLoaded(String modid) {\n\t\tList<ModInfo> mods = FMLLoader.getCurrent().getLoadingModList().getMods();\n\t\tfor (ModInfo mod : mods) {\n\t\t\tif (mod.getModId().equals(modid)) {\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}\n\n\tpublic static String modidFromJar(String jarName) {\n\t\tfor (ModInfo mod : FMLLoader.getCurrent().getLoadingModList().getMods()) {\n\t\t\tString modLocation = mod.getOwningFile()\n\t\t\t\t\t.getFile()\n\t\t\t\t\t.getFilePath()\n\t\t\t\t\t.toString()\n\t\t\t\t\t.replace(\"+\", \" \");\n\n\t\t\tString decodedJarName = URLDecoder.decode(jarName, StandardCharsets.UTF_8);\n\t\t\tint hashIndex = decodedJarName.lastIndexOf(\"#\");\n\t\t\tif (hashIndex != -1) {\n\t\t\t\tdecodedJarName = decodedJarName.substring(0, hashIndex);\n\t\t\t}\n\t\t\tif (modLocation.endsWith(decodedJarName)) {\n\t\t\t\treturn mod.getModId();\n\t\t\t}\n\t\t}\n\t\treturn null;\n\t}\n\n\tpublic static String getVersion() {\n\t\treturn FMLLoader.getCurrent().getVersionInfo().neoForgeVersion();\n\t}\n\n\tpublic static boolean isClient() {\n\t\treturn FMLLoader.getCurrent().getDist().isClient();\n\t}\n\n\tpublic static boolean isDev() {\n\t\treturn !FMLLoader.getCurrent().isProduction();\n\t}\n\t*/",
+   "removed": [
+    "LoadingModList",
+    "get",
+    "versionInfo"
+   ],
+   "added": [
+    "getCurrent",
+    "getLoadingModList",
+    "getVersionInfo"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/platform/Platform.java",
+   "line": 4,
+   "method": "(imports)",
+   "condition": "fabric | neoforge | forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import java.nio.file.Path;\n\nimport net.fabricmc.api.EnvType;\nimport net.fabricmc.loader.api.FabricLoader;\nimport net.fabricmc.loader.api.ModContainer;\nimport net.fabricmc.loader.api.metadata.ModMetadata;\nimport net.fabricmc.loader.api.metadata.ModOrigin;\n\npublic final class Platform {\n\tpublic static Path getConfigDir() {\n    return FabricLoader.getInstance().getConfigDir();\n  }\n\n\tpublic static boolean isModLoaded(String modid) {\n\t\treturn FabricLoader.getInstance().isModLoaded(modid);\n\t}\n\n\tpublic static ModLoader getModLoader() {\n\t\treturn ModLoader.FABRIC;\n\t}\n\n\tpublic static String modidFromJar(String jarName) {\n\t\tfor (ModContainer modContainer : FabricLoader.getInstance().getAllMods()) {\n\t\t\tModMetadata metadata = modContainer.getMetadata();\n\t\t\tModOrigin origin = modContainer.getOrigin();\n\t\t\tswitch (origin.getKind()) {\n\t\t\t\tcase PATH -> {\n\t\t\t\t\tfor (Path path : origin.getPaths()) {\n\t\t\t\t\t\tif (path.endsWith(jarName)) {\n\t\t\t\t\t\t\treturn metadata.getId();\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tcase NESTED -> {\n\t\t\t\t\tString parentLocation = origin.getParentSubLocation();\n\t\t\t\t\tif (parentLocation != null && parentLocation.endsWith(jarName)) {\n\t\t\t\t\t\treturn metadata.getId();\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\treturn null;\n\t}\n\n\tpublic static String getModVersion(String modid) {\n\t\treturn FabricLoader.getInstance().getModContainer(modid).map(ModContainer::getMetadata).map(modMetadata -> modMetadata.getVersion().getFriendlyString()).orElse(\"unknown\");\n\t}\n\n\tpublic static String getVersion() {\n\t\treturn getModVersion(\"fabricloader\");\n\t}\n\n\tpublic static boolean isClient() {\n\t\treturn FabricLoader.getInstance().getEnvironmentType().equals(EnvType.CLIENT);\n\t}\n\n\tpublic static boolean isDev() {\n\t\treturn FabricLoader.getInstance().isDevelopmentEnvironment();\n\t}\n}"
+    },
+    {
+     "condition": "neoforge",
+     "code": "import java.util.List;\nimport java.net.URLDecoder;\nimport java.nio.charset.StandardCharsets;\n\nimport net.neoforged.fml.ModList;\nimport net.neoforged.fml.loading.FMLLoader;\nimport net.neoforged.fml.loading.LoadingModList;\nimport net.neoforged.fml.loading.moddiscovery.ModInfo;\n\npublic final class Platform {\n\tpublic static ModLoader getModLoader() {\n\t\treturn ModLoader.NEOFORGE;\n\t}\n\n\tpublic static String getModVersion(String modid) {\n\t\treturn ModList.get().getModFileById(modid).versionString();\n\t}\n\n\t//? if >=1.21.10 {\n\t/*public static boolean isModLoaded(String modid) {\n\t\tList<ModInfo> mods = FMLLoader.getCurrent().getLoadingModList().getMods();\n\t\tfor (ModInfo mod : mods) {\n\t\t\tif (mod.getModId().equals(modid)) {\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}\n\n\tpublic static String modidFromJar(String jarName) {\n\t\tfor (ModInfo mod : FMLLoader.getCurrent().getLoadingModList().getMods()) {\n\t\t\tString modLocation = mod.getOwningFile()\n\t\t\t\t\t.getFile()\n\t\t\t\t\t.getFilePath()\n\t\t\t\t\t.toString()\n\t\t\t\t\t.replace(\"+\", \" \");\n\n\t\t\tString decodedJarName = URLDecoder.decode(jarName, StandardCharsets.UTF_8);\n\t\t\tint hashIndex = decodedJarName.lastIndexOf(\"#\");\n\t\t\tif (hashIndex != -1) {\n\t\t\t\tdecodedJarName = decodedJarName.substring(0, hashIndex);\n\t\t\t}\n\t\t\tif (modLocation.endsWith(decodedJarName)) {\n\t\t\t\treturn mod.getModId();\n\t\t\t}\n\t\t}\n\t\treturn null;\n\t}\n\n\tpublic static String getVersion() {\n\t\treturn FMLLoader.getCurrent().getVersionInfo().neoForgeVersion();\n\t}\n\n\tpublic static boolean isClient() {\n\t\treturn FMLLoader.getCurrent().getDist().isClient();\n\t}\n\n\tpublic static boolean isDev() {\n\t\treturn !FMLLoader.getCurrent().isProduction();\n\t}\n\t*///?} else {\n\tpublic static boolean isModLoaded(String modid) {\n\t\tList<ModInfo> mods = LoadingModList.get().getMods();\n\t\tfor (ModInfo mod : mods) {\n\t\t\tif (mod.getModId().equals(modid)) {\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}\n\n\tpublic static String modidFromJar(String jarName) {\n\t\tfor (ModInfo mod : LoadingModList.get().getMods()) {\n\t\t\tString modLocation = mod.getOwningFile()\n\t\t\t\t\t.getFile()\n\t\t\t\t\t.getFilePath()\n\t\t\t\t\t.toString()\n\t\t\t\t\t.replace(\"+\", \" \");\n\n\t\t\tString decodedJarName = URLDecoder.decode(jarName, StandardCharsets.UTF_8);\n\t\t\tint hashIndex = decodedJarName.lastIndexOf(\"#\");\n\t\t\tif (hashIndex != -1) {\n\t\t\t\tdecodedJarName = decodedJarName.substring(0, hashIndex);\n\t\t\t}\n\t\t\tif (modLocation.endsWith(decodedJarName)) {\n\t\t\t\treturn mod.getModId();\n\t\t\t}\n\t\t}\n\t\treturn null;\n\t}\n\n\tpublic static String getVersion() {\n\t\treturn FMLLoader.versionInfo().neoForgeVersion();\n\t}\n\n\tpublic static boolean isClient() {\n\t\treturn FMLLoader.getDist().isClient();\n\t}\n\n\tpublic static boolean isDev() {\n\t\treturn !FMLLoader.isProduction();\n\t}\n\t//?}\n}"
+    },
+    {
+     "condition": "forge",
+     "code": "import net.minecraftforge.fml.loading.FMLLoader;\nimport net.minecraftforge.fml.loading.FMLPaths;\nimport net.minecraftforge.fml.loading.LoadingModList;\nimport net.minecraftforge.fml.loading.moddiscovery.ModInfo;\n\nimport java.nio.file.Path;\nimport java.util.List;\n\npublic final class Platform {\n\tpublic static boolean isModLoaded(String modid) {\n\t\tList<ModInfo> mods = LoadingModList.get().getMods();\n\t\tfor (ModInfo mod : mods) {\n\t\t\tif (mod.getModId().equals(modid)) {\n\t\t\t\treturn true;\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}\n\n\tpublic static ModLoader getModLoader() {\n\t\treturn ModLoader.FORGE;\n\t}\n\n\tpublic static String modidFromJar(String jarName) {\n\t\tfor (ModInfo mod : LoadingModList.get().getMods()) {\n\t\t\tString modLocation = mod.getOwningFile()\n\t\t\t\t\t.getFile()\n\t\t\t\t\t.getFilePath()\n\t\t\t\t\t.toString()\n\t\t\t\t\t.replace(\"+\", \" \");\n\n\t\t\tif (modLocation.endsWith(jarName)) {\n\t\t\t\treturn mod.getModId();\n\t\t\t}\n\t\t}\n\t\treturn null;\n\t}\n\n\tpublic static String getVersion() {\n\t\treturn FMLLoader.versionInfo().forgeVersion();\n\t}\n\n\tpublic static boolean isClient() {\n\t\treturn FMLLoader.getDist().isClient();\n\t}\n\n\tpublic static boolean isDev() {\n\t\treturn !FMLLoader.isProduction();\n\t}\n\n\tpublic static String getModVersion(String modid) {\n\t\treturn LoadingModList.get().getModFileById(modid).versionString();\n\t}\n\n\tpublic static Path getConfigDir() {\n\t\treturn FMLPaths.CONFIGDIR.get();\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/report/GithubAuthManager.java",
+   "line": 50,
+   "method": "(imports)",
+   "condition": ">=26.3 | >=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.blaze3d.Blaze3D;"
+    },
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.util.Util;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.Util;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "26.2 -> 26.3",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Util"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.util.Util;",
+   "newer": "import com.mojang.blaze3d.Blaze3D;",
+   "removed": [
+    "Util",
+    "minecraft",
+    "net",
+    "util"
+   ],
+   "added": [
+    "Blaze3D",
+    "blaze3d",
+    "com",
+    "mojang"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/report/GithubAuthManager.java",
+   "line": 146,
+   "method": "getAuthorisationCode",
+   "condition": "forge || neoforge && <=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge || neoforge && <=1.21.1",
+     "code": "String state = RandomStringUtils.randomAlphabetic(8);"
+    },
+    {
+     "condition": null,
+     "code": "String state = RandomStringUtils.secure().nextAlphabetic(8);"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/report/IssueFormatter.java",
+   "line": 35,
+   "method": "(class body)",
+   "condition": "<=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.5",
+     "code": "return SharedConstants.getCurrentVersion().getName();"
+    },
+    {
+     "condition": null,
+     "code": "return SharedConstants.getCurrentVersion().name();"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "getName",
+      "name"
+     ]
+    }
+   ],
+   "older": "return SharedConstants.getCurrentVersion().getName();",
+   "newer": "return SharedConstants.getCurrentVersion().name();",
+   "removed": [
+    "getName"
+   ],
+   "added": [
+    "name"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/util/TickingEntry.java",
+   "line": 36,
+   "method": "(imports)",
+   "condition": ">1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "import net.minecraft.ReportType;"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/util/TickingEntry.java",
+   "line": 125,
+   "method": "populate",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "switch (cause) {\n\t\t\tcase Entity entity -> entity.fillCrashReportCategory(category);\n\t\t\tcase BlockEntity blockEntity -> blockEntity.fillCrashReportCategory(category);\n\t\t\tcase BlockState state -> {\n\t\t\t\tcategory.setDetail(\"Position\", pos);\n\t\t\t\tcategory.setDetail(\"BlockState\", state);\n\t\t\t}\n\t\t\tcase ItemStack stack -> category.setDetail(\"ItemStack\", stack);\n\t\t\tcase null, default -> category.setDetail(\"Errored\", \"Unknown\");\n\t\t}"
+    },
+    {
+     "condition": null,
+     "code": "if (cause instanceof Entity entity) {\n\t\t\tentity.fillCrashReportCategory(category);\n\t\t} else if (cause instanceof BlockEntity blockEntity) {\n\t\t\tblockEntity.fillCrashReportCategory(category);\n\t\t} else if (cause instanceof BlockState state) {\n\t\t\tcategory.setDetail(\"Position\", pos);\n\t\t\tcategory.setDetail(\"BlockState\", state);\n\t\t} else if (cause instanceof ItemStack stack) {\n\t\t\tcategory.setDetail(\"ItemStack\", stack);\n\t\t} else {\n\t\t\tcategory.setDetail(\"Errored\", \"Unknown\");\n\t\t}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "if (cause instanceof Entity entity) {\n\t\t\tentity.fillCrashReportCategory(category);\n\t\t} else if (cause instanceof BlockEntity blockEntity) {\n\t\t\tblockEntity.fillCrashReportCategory(category);\n\t\t} else if (cause instanceof BlockState state) {\n\t\t\tcategory.setDetail(\"Position\", pos);\n\t\t\tcategory.setDetail(\"BlockState\", state);\n\t\t} else if (cause instanceof ItemStack stack) {\n\t\t\tcategory.setDetail(\"ItemStack\", stack);\n\t\t} else {\n\t\t\tcategory.setDetail(\"Errored\", \"Unknown\");\n\t\t}",
+   "newer": "switch (cause) {\n\t\t\tcase Entity entity -> entity.fillCrashReportCategory(category);\n\t\t\tcase BlockEntity blockEntity -> blockEntity.fillCrashReportCategory(category);\n\t\t\tcase BlockState state -> {\n\t\t\t\tcategory.setDetail(\"Position\", pos);\n\t\t\t\tcategory.setDetail(\"BlockState\", state);\n\t\t\t}\n\t\t\tcase ItemStack stack -> category.setDetail(\"ItemStack\", stack);\n\t\t\tcase null, default -> category.setDetail(\"Errored\", \"Unknown\");\n\t\t}",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/util/TickingEntry.java",
+   "line": 156,
+   "method": "createCrashReport",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "return report.getFriendlyReport(ReportType.CRASH);"
+    },
+    {
+     "condition": null,
+     "code": "return report.getFriendlyReport();"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "ReportType"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "ReportType"
+     ]
+    }
+   ],
+   "older": "return report.getFriendlyReport();",
+   "newer": "return report.getFriendlyReport(ReportType.CRASH);",
+   "removed": [],
+   "added": [
+    "CRASH",
+    "ReportType"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/util/TickingEntry.java",
+   "line": 174,
+   "method": "update",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "switch (cause) {\n\t\t\tcase Entity entity -> {\n\t\t\t\tcachedCauseType = Type.ENTITY.type;\n\t\t\t\tcachedCauseName = Type.ENTITY.nameFunction.apply(entity);\n\t\t\t}\n\t\t\tcase BlockEntity blockEntity -> {\n\t\t\t\tcachedCauseType = Type.BLOCK_ENTITY.type;\n\t\t\t\tcachedCauseName = Type.BLOCK_ENTITY.nameFunction.apply(blockEntity);\n\t\t\t}\n\t\t\tcase BlockState state -> {\n\t\t\t\tcachedCauseType = Type.BLOCK_STATE.type;\n\t\t\t\tcachedCauseName = Type.BLOCK_STATE.nameFunction.apply(state);\n\t\t\t}\n\t\t\tcase ItemStack stack -> {\n\t\t\t\tcachedCauseType = Type.ITEM_STACK.type;\n\t\t\t\tcachedCauseName = Type.ITEM_STACK.nameFunction.apply(stack);\n\t\t\t}\n\t\t\tcase null, default -> {\n\t\t\t\tcachedCauseType = Type.UNKNOWN.type;\n\t\t\t\tcachedCauseName = Type.UNKNOWN.nameFunction.apply(cause);\n\t\t\t}\n\t\t}"
+    },
+    {
+     "condition": null,
+     "code": "if (cause instanceof Entity entity) {\n\t\t\tcachedCauseType = Type.ENTITY.type;\n\t\t\tcachedCauseName = Type.ENTITY.nameFunction.apply(entity);\n\t\t} else if (cause instanceof BlockEntity blockEntity) {\n\t\t\tcachedCauseType = Type.BLOCK_ENTITY.type;\n\t\t\tcachedCauseName = Type.BLOCK_ENTITY.nameFunction.apply(blockEntity);\n\t\t} else if (cause instanceof BlockState state) {\n\t\t\tcachedCauseType = Type.BLOCK_STATE.type;\n\t\t\tcachedCauseName = Type.BLOCK_STATE.nameFunction.apply(state);\n\t\t} else if (cause instanceof ItemStack stack) {\n\t\t\tcachedCauseType = Type.ITEM_STACK.type;\n\t\t\tcachedCauseName = Type.ITEM_STACK.nameFunction.apply(stack);\n\t\t} else {\n\t\t\tcachedCauseType = Type.UNKNOWN.type;\n\t\t\tcachedCauseName = Type.UNKNOWN.nameFunction.apply(cause);\n\t\t}"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "if (cause instanceof Entity entity) {\n\t\t\tcachedCauseType = Type.ENTITY.type;\n\t\t\tcachedCauseName = Type.ENTITY.nameFunction.apply(entity);\n\t\t} else if (cause instanceof BlockEntity blockEntity) {\n\t\t\tcachedCauseType = Type.BLOCK_ENTITY.type;\n\t\t\tcachedCauseName = Type.BLOCK_ENTITY.nameFunction.apply(blockEntity);\n\t\t} else if (cause instanceof BlockState state) {\n\t\t\tcachedCauseType = Type.BLOCK_STATE.type;\n\t\t\tcachedCauseName = Type.BLOCK_STATE.nameFunction.apply(state);\n\t\t} else if (cause instanceof ItemStack stack) {\n\t\t\tcachedCauseType = Type.ITEM_STACK.type;\n\t\t\tcachedCauseName = Type.ITEM_STACK.nameFunction.apply(stack);\n\t\t} else {\n\t\t\tcachedCauseType = Type.UNKNOWN.type;\n\t\t\tcachedCauseName = Type.UNKNOWN.nameFunction.apply(cause);\n\t\t}",
+   "newer": "switch (cause) {\n\t\t\tcase Entity entity -> {\n\t\t\t\tcachedCauseType = Type.ENTITY.type;\n\t\t\t\tcachedCauseName = Type.ENTITY.nameFunction.apply(entity);\n\t\t\t}\n\t\t\tcase BlockEntity blockEntity -> {\n\t\t\t\tcachedCauseType = Type.BLOCK_ENTITY.type;\n\t\t\t\tcachedCauseName = Type.BLOCK_ENTITY.nameFunction.apply(blockEntity);\n\t\t\t}\n\t\t\tcase BlockState state -> {\n\t\t\t\tcachedCauseType = Type.BLOCK_STATE.type;\n\t\t\t\tcachedCauseName = Type.BLOCK_STATE.nameFunction.apply(state);\n\t\t\t}\n\t\t\tcase ItemStack stack -> {\n\t\t\t\tcachedCauseType = Type.ITEM_STACK.type;\n\t\t\t\tcachedCauseName = Type.ITEM_STACK.nameFunction.apply(stack);\n\t\t\t}\n\t\t\tcase null, default -> {\n\t\t\t\tcachedCauseType = Type.UNKNOWN.type;\n\t\t\t\tcachedCauseName = Type.UNKNOWN.nameFunction.apply(cause);\n\t\t\t}\n\t\t}",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/version/PermissionWrapper.java",
+   "line": 6,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.server.permissions.Permission;\nimport net.minecraft.server.permissions.PermissionLevel;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/version/PermissionWrapper.java",
+   "line": 12,
+   "method": "(class body)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "static boolean hasPermission(Player player, int permission) {\n\t\treturn player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(permission)));\n\t}\n\n\tstatic boolean hasPermission(CommandSourceStack sourceStack, int permission) {\n\t\treturn sourceStack.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(permission)));\n\t}"
+    },
+    {
+     "condition": null,
+     "code": "static boolean hasPermission(Player player, int permission) {\n\t\treturn player.hasPermissions(permission);\n\t}\n\n\tstatic boolean hasPermission(CommandSourceStack sourceStack, int permission) {\n\t\treturn sourceStack.hasPermission(permission);\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "HasCommandLevel",
+      "Permission",
+      "PermissionLevel",
+      "hasPermissions",
+      "permissions"
+     ]
+    }
+   ],
+   "older": "static boolean hasPermission(Player player, int permission) {\n\t\treturn player.hasPermissions(permission);\n\t}\n\n\tstatic boolean hasPermission(CommandSourceStack sourceStack, int permission) {\n\t\treturn sourceStack.hasPermission(permission);\n\t}",
+   "newer": "static boolean hasPermission(Player player, int permission) {\n\t\treturn player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(permission)));\n\t}\n\n\tstatic boolean hasPermission(CommandSourceStack sourceStack, int permission) {\n\t\treturn sourceStack.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(permission)));\n\t}",
+   "removed": [
+    "hasPermissions"
+   ],
+   "added": [
+    "HasCommandLevel",
+    "Permission",
+    "PermissionLevel",
+    "byId",
+    "permissions"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/version/Texter.java",
+   "line": 21,
+   "method": "(imports)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.util.Util;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.Util;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraft.Util;",
+   "newer": "import net.minecraft.util.Util;",
+   "removed": [],
+   "added": [
+    "util"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/version/Texter.java",
+   "line": 78,
+   "method": "concatDelimited",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "siblings.removeLast();"
+    },
+    {
+     "condition": null,
+     "code": "siblings.remove(siblings.size() - 1);"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "remove"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "remove",
+      "size"
+     ]
+    }
+   ],
+   "older": "siblings.remove(siblings.size() - 1);",
+   "newer": "siblings.removeLast();",
+   "removed": [
+    "remove",
+    "size"
+   ],
+   "added": [
+    "removeLast"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/version/Texter.java",
+   "line": 110,
+   "method": "clickEvent",
+   "condition": "<=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "return new ClickEvent(action, value);"
+    },
+    {
+     "condition": null,
+     "code": "return switch (action) {\n\t\t\tcase OPEN_URL -> new ClickEvent.OpenUrl(URI.create(value));\n\t\t\tcase OPEN_FILE -> new ClickEvent.OpenFile(value);\n\t\t\tcase RUN_COMMAND -> new ClickEvent.RunCommand(value);\n\t\t\tcase SUGGEST_COMMAND -> new ClickEvent.SuggestCommand(value);\n\t\t\tcase COPY_TO_CLIPBOARD -> new ClickEvent.CopyToClipboard(value);\n\t\t\tcase CHANGE_PAGE -> new ClickEvent.ChangePage(Integer.parseInt(value));\n\t\t\tdefault -> null;\n\t\t};"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "ChangePage",
+      "CopyToClipboard",
+      "OpenFile",
+      "OpenUrl",
+      "RunCommand",
+      "SuggestCommand",
+      "create"
+     ]
+    }
+   ],
+   "older": "return new ClickEvent(action, value);",
+   "newer": "return switch (action) {\n\t\t\tcase OPEN_URL -> new ClickEvent.OpenUrl(URI.create(value));\n\t\t\tcase OPEN_FILE -> new ClickEvent.OpenFile(value);\n\t\t\tcase RUN_COMMAND -> new ClickEvent.RunCommand(value);\n\t\t\tcase SUGGEST_COMMAND -> new ClickEvent.SuggestCommand(value);\n\t\t\tcase COPY_TO_CLIPBOARD -> new ClickEvent.CopyToClipboard(value);\n\t\t\tcase CHANGE_PAGE -> new ClickEvent.ChangePage(Integer.parseInt(value));\n\t\t\tdefault -> null;\n\t\t};",
+   "removed": [],
+   "added": [
+    "CHANGE_PAGE",
+    "COPY_TO_CLIPBOARD",
+    "ChangePage",
+    "CopyToClipboard",
+    "Integer",
+    "OPEN_FILE",
+    "OPEN_URL",
+    "OpenFile",
+    "OpenUrl",
+    "RUN_COMMAND",
+    "RunCommand",
+    "SUGGEST_COMMAND",
+    "SuggestCommand",
+    "URI",
+    "create",
+    "parseInt"
+   ]
+  },
+  {
+   "file": "src/main/java/com/bawnorton/neruina/version/Texter.java",
+   "line": 125,
+   "method": "(class body)",
+   "condition": "<=1.21.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.21.1",
+     "code": "static <T> HoverEvent hoverEvent(HoverEvent.Action<T> action, T value) {\n        return new HoverEvent(action, value);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "static HoverEvent hoverEvent(HoverEvent.Action action, Object value) {\n\t\treturn switch (action) {\n\t\t\tcase SHOW_TEXT -> new HoverEvent.ShowText((Component) value);\n\t\t\tcase SHOW_ENTITY -> new HoverEvent.ShowEntity((HoverEvent.EntityTooltipInfo) value);\n            default -> throw new IllegalArgumentException(\"Unsupported hover event action: \" + action);\n        };\n\t}"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "ShowEntity",
+      "ShowText"
+     ]
+    }
+   ],
+   "older": "static <T> HoverEvent hoverEvent(HoverEvent.Action<T> action, T value) {\n        return new HoverEvent(action, value);\n    }",
+   "newer": "static HoverEvent hoverEvent(HoverEvent.Action action, Object value) {\n\t\treturn switch (action) {\n\t\t\tcase SHOW_TEXT -> new HoverEvent.ShowText((Component) value);\n\t\t\tcase SHOW_ENTITY -> new HoverEvent.ShowEntity((HoverEvent.EntityTooltipInfo) value);\n            default -> throw new IllegalArgumentException(\"Unsupported hover event action: \" + action);\n        };\n\t}",
+   "removed": [],
+   "added": [
+    "Component",
+    "EntityTooltipInfo",
+    "IllegalArgumentException",
+    "Object",
+    "SHOW_ENTITY",
+    "SHOW_TEXT",
+    "ShowEntity",
+    "ShowText"
+   ]
+  }
+ ]
+}

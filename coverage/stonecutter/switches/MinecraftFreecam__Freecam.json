@@ -1,0 +1,2540 @@
+{
+ "repo": "MinecraftFreecam/Freecam",
+ "commit": "aad378b5a30c438a9ba9de3b7856f8457b070f0e",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "1.17.1",
+  "1.18.2",
+  "1.19.4",
+  "1.20.6",
+  "1.21.11",
+  "26.2",
+  "26.3"
+ ],
+ "files": 24,
+ "switches": 64,
+ "versionSwitches": 51,
+ "rows": [
+  {
+   "file": "cloth-config/src/main/java/net/xolt/freecam/config/gui/ModConfigScreenFactory.java",
+   "line": 19,
+   "method": "(imports)",
+   "condition": "cloth_dependencies",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "cloth_dependencies",
+     "code": "@SuppressWarnings(\"UnstableApiUsage\")"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "cloth-config/src/main/java/net/xolt/freecam/config/gui/ModConfigScreenFactory.java",
+   "line": 178,
+   "method": "collisionCategory",
+   "condition": "cloth_dependencies",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "cloth_dependencies",
+     "code": ".setRequirement(() -> !ignoreAll.getValue())"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "cloth-config/src/main/java/net/xolt/freecam/config/gui/ModConfigScreenFactory.java",
+   "line": 188,
+   "method": "collisionCategory",
+   "condition": "cloth_dependencies",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "cloth_dependencies",
+     "code": ".setRequirement(() -> !ignoreAll.getValue())"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "cloth-config/src/main/java/net/xolt/freecam/config/gui/ModConfigScreenFactory.java",
+   "line": 198,
+   "method": "collisionCategory",
+   "condition": "cloth_dependencies",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "cloth_dependencies",
+     "code": ".setRequirement(() -> !ignoreAll.getValue())"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "cloth-config/src/main/java/net/xolt/freecam/config/gui/ModConfigScreenFactory.java",
+   "line": 211,
+   "method": "collisionCategory",
+   "condition": "cloth_dependencies",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "cloth_dependencies",
+     "code": ".setDisplayRequirement(ignoreCustom::getValue)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "cloth-config/src/main/java/net/xolt/freecam/config/gui/ModConfigScreenFactory.java",
+   "line": 223,
+   "method": "collisionCategory",
+   "condition": "cloth_dependencies",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "cloth_dependencies",
+     "code": ".setDisplayRequirement(ignoreCustom::getValue)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "cloth-config/src/main/java/net/xolt/freecam/config/gui/ModConfigScreenFactory.java",
+   "line": 292,
+   "method": "visualCategory",
+   "condition": "cloth_dependencies",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "cloth_dependencies",
+     "code": ".setRequirement(showPlayer::getValue)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "cloth-config/src/main/java/net/xolt/freecam/config/gui/ModConfigScreenFactory.java",
+   "line": 282,
+   "method": "visualCategory",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "BooleanListEntry outlinePlayer = entryBuilder.startBooleanToggle(\n                Component.translatable(\"freecam.config.visual.outlinePlayer.label\"),\n                config().visual.outlinePlayer)\n            .setTooltip(\n                Component.translatable(\"freecam.config.visual.outlinePlayer.tooltip[0]\"),\n                Component.translatable(\"freecam.config.visual.outlinePlayer.tooltip[1]\")\n            )\n            .setDefaultValue(defaults().visual.outlinePlayer)\n            .setSaveConsumer(value -> config().visual.outlinePlayer = value)\n            //? if cloth_dependencies\n            .setRequirement(showPlayer::getValue)\n            .build();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "cloth-config/src/main/java/net/xolt/freecam/config/gui/ModConfigScreenFactory.java",
+   "line": 325,
+   "method": "visualCategory",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "outlinePlayer,"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "cloth-config/src/main/java/net/xolt/freecam/config/gui/ModConfigScreenFactory.java",
+   "line": 417,
+   "method": "serversCategory",
+   "condition": "cloth_dependencies",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "cloth_dependencies",
+     "code": ".setDisplayRequirement(() -> mode.getValue() == ModConfigDTO.ServerRestriction.WHITELIST)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "cloth-config/src/main/java/net/xolt/freecam/config/gui/ModConfigScreenFactory.java",
+   "line": 426,
+   "method": "serversCategory",
+   "condition": "cloth_dependencies",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "cloth_dependencies",
+     "code": ".setDisplayRequirement(() -> mode.getValue() == ModConfigDTO.ServerRestriction.BLACKLIST)"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/config/ModBindings.java",
+   "line": 35,
+   "method": "(class body)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": ",KEY_OUTLINE_TOGGLE(() -> builder(\"outlinePlayer.toggle\")\n            .action(Freecam::toggleOutline)\n            .build())"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/Freecam.java",
+   "line": 22,
+   "method": "(imports)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.client.player.ClientInput;\nimport net.minecraft.world.entity.player.Input;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.player.Input;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "ClientInput"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "entity"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.player.Input;",
+   "newer": "import net.minecraft.client.player.ClientInput;\nimport net.minecraft.world.entity.player.Input;",
+   "removed": [],
+   "added": [
+    "ClientInput",
+    "entity",
+    "world"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/Freecam.java",
+   "line": 292,
+   "method": "updateDummyInput",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "ClientInput input = new ClientInput();\n        input.keyPresses = new Input(\n            false,\n            false,\n            false,\n            false,\n            false,\n            playerInput.keyPresses.shift(),\n            false\n        );"
+    },
+    {
+     "condition": null,
+     "code": "Input input = new Input();\n        input.shiftKeyDown = playerInput.shiftKeyDown;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "ClientInput",
+      "keyPresses",
+      "shiftKeyDown"
+     ]
+    }
+   ],
+   "older": "Input input = new Input();\n        input.shiftKeyDown = playerInput.shiftKeyDown;",
+   "newer": "ClientInput input = new ClientInput();\n        input.keyPresses = new Input(\n            false,\n            false,\n            false,\n            false,\n            false,\n            playerInput.keyPresses.shift(),\n            false\n        );",
+   "removed": [
+    "shiftKeyDown"
+   ],
+   "added": [
+    "ClientInput",
+    "keyPresses",
+    "shift"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/AvatarRendererMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": ">= 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": "import net.minecraft.client.renderer.SubmitNodeCollector;\nimport net.minecraft.client.renderer.entity.player.AvatarRenderer;\nimport net.minecraft.client.renderer.entity.state.AvatarRenderState;\nimport net.minecraft.client.renderer.state.level.CameraRenderState;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.renderer.entity.EntityRenderer;\nimport net.minecraft.client.renderer.MultiBufferSource;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.world.entity.Entity;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "level",
+      "state"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "AvatarRenderState",
+      "AvatarRenderer",
+      "CameraRenderState",
+      "SubmitNodeCollector",
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "level"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.renderer.entity.EntityRenderer;\nimport net.minecraft.client.renderer.MultiBufferSource;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.world.entity.Entity;",
+   "newer": "import net.minecraft.client.renderer.SubmitNodeCollector;\nimport net.minecraft.client.renderer.entity.player.AvatarRenderer;\nimport net.minecraft.client.renderer.entity.state.AvatarRenderState;\nimport net.minecraft.client.renderer.state.level.CameraRenderState;",
+   "removed": [
+    "Component",
+    "Entity",
+    "EntityRenderer",
+    "MultiBufferSource",
+    "chat",
+    "network",
+    "world"
+   ],
+   "added": [
+    "AvatarRenderState",
+    "AvatarRenderer",
+    "CameraRenderState",
+    "SubmitNodeCollector",
+    "level",
+    "player",
+    "state"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/AvatarRendererMixin.java",
+   "line": 21,
+   "method": "(imports)",
+   "condition": "<1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "//import static net.xolt.freecam.Freecam.MC;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/AvatarRendererMixin.java",
+   "line": 45,
+   "method": "(class body)",
+   "condition": ">=1.20.6",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.20.6",
+     "code": "float partialTick,"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/AvatarRendererMixin.java",
+   "line": 28,
+   "method": "(class body)",
+   "condition": ">= 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": "// Prevent rendering of nametag in inventory screen\n    //~ if >= 26.0 'state/CameraRenderState' -> 'state/level/CameraRenderState'\n    //~ if >= 26.0 'submitNameTag' -> 'submitNameDisplay'\n    @Inject(method = \"submitNameDisplay(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V\", at = @At(\"HEAD\"), cancellable = true)\n    private void onSubmitNameDisplay(AvatarRenderState renderState, PoseStack poseStack, SubmitNodeCollector nodeCollector, CameraRenderState cameraRenderState, CallbackInfo ci) {\n        if (Freecam.isEnabled() && renderState.shadowPieces.isEmpty()) {\n            ci.cancel();\n        }\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"renderNameTag\", at = @At(\"HEAD\"), cancellable = true)\n    private void onRenderLabel(Entity renderState,\n                               Component component,\n                               PoseStack poseStack,\n                               MultiBufferSource multiBufferSource,\n                               int packedLightCoords,\n                               //? if >=1.20.6\n                               float partialTick,\n                               CallbackInfo ci) {\n        if (Freecam.isEnabled() && !MC.getEntityRenderDispatcher().shouldRenderShadow) {\n            ci.cancel();\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "isEmpty"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "isEmpty"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "isEmpty"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "isEmpty"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "AvatarRenderState",
+      "CameraRenderState",
+      "SubmitNodeCollector",
+      "isEmpty",
+      "shadowPieces"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "isEmpty"
+     ]
+    }
+   ],
+   "older": "@Inject(method = \"renderNameTag\", at = @At(\"HEAD\"), cancellable = true)\n    private void onRenderLabel(Entity renderState,\n                               Component component,\n                               PoseStack poseStack,\n                               MultiBufferSource multiBufferSource,\n                               int packedLightCoords,\n                               //? if >=1.20.6\n                               float partialTick,\n                               CallbackInfo ci) {\n        if (Freecam.isEnabled() && !MC.getEntityRenderDispatcher().shouldRenderShadow) {\n            ci.cancel();\n        }\n    }",
+   "newer": "// Prevent rendering of nametag in inventory screen\n    //~ if >= 26.0 'state/CameraRenderState' -> 'state/level/CameraRenderState'\n    //~ if >= 26.0 'submitNameTag' -> 'submitNameDisplay'\n    @Inject(method = \"submitNameDisplay(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V\", at = @At(\"HEAD\"), cancellable = true)\n    private void onSubmitNameDisplay(AvatarRenderState renderState, PoseStack poseStack, SubmitNodeCollector nodeCollector, CameraRenderState cameraRenderState, CallbackInfo ci) {\n        if (Freecam.isEnabled() && renderState.shadowPieces.isEmpty()) {\n            ci.cancel();\n        }\n    }",
+   "removed": [
+    "Component",
+    "Entity",
+    "MultiBufferSource",
+    "component",
+    "getEntityRenderDispatcher",
+    "multiBufferSource",
+    "onRenderLabel",
+    "packedLightCoords",
+    "partialTick",
+    "shouldRenderShadow"
+   ],
+   "added": [
+    "AvatarRenderState",
+    "CameraRenderState",
+    "SubmitNodeCollector",
+    "cameraRenderState",
+    "isEmpty",
+    "nodeCollector",
+    "onSubmitNameDisplay",
+    "shadowPieces"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/BlockStateBaseMixin.java",
+   "line": 28,
+   "method": "onGetCollisionShape",
+   "condition": "<1.18 >>",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.18 >>",
+     "code": "&& Freecam.isEnabled()) {"
+    }
+   ],
+   "boundary": [
+    "1.17.1 -> 1.18"
+   ],
+   "window": [
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/CameraMixin.java",
+   "line": 17,
+   "method": "(imports)",
+   "condition": "} else if <26.1",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "} else if <26.1",
+     "code": "//import net.minecraft.world.level.Level;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/CameraMixin.java",
+   "line": 28,
+   "method": "(class body)",
+   "condition": ">=26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "@Inject(method = \"setEntity\", at = @At(\"HEAD\"))\n    private void onSetEntity(Entity entity, CallbackInfo ci) {\n        if (entity == null || this.entity == null) {\n            return;\n        }\n\n        if (entity instanceof FreeCamera || this.entity instanceof FreeCamera) {\n            this.eyeHeightOld = this.eyeHeight = entity.getEyeHeight();\n        }\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"setup\", at = @At(\"HEAD\"))\n    //~ if >=1.21.11 'BlockGetter area' -> 'Level level'\n    public void onUpdate(Level level, Entity entity, boolean thirdPerson, boolean inverseView, float tickDelta, CallbackInfo ci) {\n        if (entity == null || this.entity == null || entity.equals(this.entity)) {\n            return;\n        }\n\n        if (entity instanceof FreeCamera || this.entity instanceof FreeCamera) {\n            this.eyeHeightOld = this.eyeHeight = entity.getEyeHeight();\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "equals",
+      "level"
+     ]
+    },
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "equals",
+      "level"
+     ]
+    }
+   ],
+   "older": "@Inject(method = \"setup\", at = @At(\"HEAD\"))\n    //~ if >=1.21.11 'BlockGetter area' -> 'Level level'\n    public void onUpdate(Level level, Entity entity, boolean thirdPerson, boolean inverseView, float tickDelta, CallbackInfo ci) {\n        if (entity == null || this.entity == null || entity.equals(this.entity)) {\n            return;\n        }\n\n        if (entity instanceof FreeCamera || this.entity instanceof FreeCamera) {\n            this.eyeHeightOld = this.eyeHeight = entity.getEyeHeight();\n        }\n    }",
+   "newer": "@Inject(method = \"setEntity\", at = @At(\"HEAD\"))\n    private void onSetEntity(Entity entity, CallbackInfo ci) {\n        if (entity == null || this.entity == null) {\n            return;\n        }\n\n        if (entity instanceof FreeCamera || this.entity instanceof FreeCamera) {\n            this.eyeHeightOld = this.eyeHeight = entity.getEyeHeight();\n        }\n    }",
+   "removed": [
+    "Level",
+    "equals",
+    "inverseView",
+    "level",
+    "onUpdate",
+    "thirdPerson",
+    "tickDelta"
+   ],
+   "added": [
+    "onSetEntity"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/EnablePlayerOutlineMixin.java",
+   "line": 17,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.client.renderer.extract.LevelExtractor;\nimport org.spongepowered.asm.mixin.gen.Invoker;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.renderer.LevelRenderer;\nimport net.minecraft.client.renderer.entity.EntityRenderDispatcher;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.Unique;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "extract"
+     ]
+    },
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "LevelExtractor",
+      "entity"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.renderer.LevelRenderer;\nimport net.minecraft.client.renderer.entity.EntityRenderDispatcher;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.Unique;",
+   "newer": "import net.minecraft.client.renderer.extract.LevelExtractor;\nimport org.spongepowered.asm.mixin.gen.Invoker;",
+   "removed": [
+    "EntityRenderDispatcher",
+    "Final",
+    "LevelRenderer",
+    "Shadow",
+    "Unique",
+    "entity"
+   ],
+   "added": [
+    "Invoker",
+    "LevelExtractor",
+    "extract",
+    "gen"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/EnablePlayerOutlineMixin.java",
+   "line": 38,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Invoker(\"extractEntity\")\n    abstract EntityRenderState freecam$extractEntity(final Entity entity, final float partialTickTime);"
+    },
+    {
+     "condition": null,
+     "code": "@Shadow @Final private EntityRenderDispatcher entityRenderDispatcher;\n\n    @Unique\n    private EntityRenderState freecam$extractEntity(final Entity entity, final float partialTickTime) {\n        return entityRenderDispatcher.extractEntity(entity, partialTickTime);\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "@Shadow @Final private EntityRenderDispatcher entityRenderDispatcher;\n\n    @Unique\n    private EntityRenderState freecam$extractEntity(final Entity entity, final float partialTickTime) {\n        return entityRenderDispatcher.extractEntity(entity, partialTickTime);\n    }",
+   "newer": "@Invoker(\"extractEntity\")\n    abstract EntityRenderState freecam$extractEntity(final Entity entity, final float partialTickTime);",
+   "removed": [
+    "EntityRenderDispatcher",
+    "Final",
+    "Shadow",
+    "Unique",
+    "entityRenderDispatcher"
+   ],
+   "added": [
+    "Invoker"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/EnablePlayerOutlineMixin.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "package net.xolt.freecam.mixins;\n\nimport net.minecraft.client.Camera;\nimport net.minecraft.client.DeltaTracker;\nimport net.minecraft.client.renderer.culling.Frustum;\nimport net.minecraft.client.renderer.entity.state.EntityRenderState;\nimport net.minecraft.client.renderer.state.level.LevelRenderState;\nimport net.minecraft.util.ARGB;\nimport net.minecraft.world.entity.Entity;\nimport net.xolt.freecam.Freecam;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n//? if >=26.2 {\nimport net.minecraft.client.renderer.extract.LevelExtractor;\nimport org.spongepowered.asm.mixin.gen.Invoker;\n//? } else {\n/*import net.minecraft.client.renderer.LevelRenderer;\nimport net.minecraft.client.renderer.entity.EntityRenderDispatcher;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.Unique;\n*///? }\n\nimport static net.xolt.freecam.Freecam.MC;\n\n/// When Freecam is active and the ['outlines' feature][Freecam#isOutlineEnabled()]\n/// is enabled, ensure the local player is visible and has\n/// ['show entity outlines'][LevelRenderState#shouldShowEntityOutlines] enabled.\n\n//~ if >=26.2 LevelRenderer -> LevelExtractor\n@Mixin(LevelExtractor.class)\npublic abstract class EnablePlayerOutlineMixin {\n\n    //? if >=26.2 {\n    @Invoker(\"extractEntity\")\n    abstract EntityRenderState freecam$extractEntity(final Entity entity, final float partialTickTime);\n    //? } else {\n    /*@Shadow @Final private EntityRenderDispatcher entityRenderDispatcher;\n\n    @Unique\n    private EntityRenderState freecam$extractEntity(final Entity entity, final float partialTickTime) {\n        return entityRenderDispatcher.extractEntity(entity, partialTickTime);\n    }\n    *///? }\n\n    @Inject(method = \"extractVisibleEntities\", at = @At(\"TAIL\"))\n    private void onExtractVisibleEntities(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState levelRenderState, CallbackInfo ci) {\n        if (Freecam.isEnabled() && Freecam.isOutlineEnabled()) {\n            float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);\n            EntityRenderState state = freecam$extractEntity(MC.player, partialTick);\n            state.outlineColor = ARGB.opaque(MC.player.getTeamColor());\n            levelRenderState.entityRenderStates.add(state);\n            //~ if >=26.2 haveGlowingEntities -> shouldShowEntityOutlines\n            levelRenderState.shouldShowEntityOutlines = true;\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/EntityRenderDispatcherMixin.java",
+   "line": 27,
+   "method": "(class body)",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "float partialTicks,"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/FirstPersonHandRotationMixin.java",
+   "line": 8,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import net.minecraft.client.player.FirstPersonHandsAndItems;\nimport net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;\nimport net.minecraft.util.Mth;\nimport net.xolt.freecam.util.FreeCamera;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;"
+    },
+    {
+     "condition": null,
+     "code": "import com.llamalad7.mixinextras.injector.ModifyExpressionValue;\nimport com.llamalad7.mixinextras.injector.wrapoperation.Operation;\nimport com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;\nimport net.minecraft.client.renderer.ItemInHandRenderer;\nimport static org.objectweb.asm.Opcodes.GETFIELD;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "FirstPersonHandsAndItems",
+      "FirstPersonHandsAndItemsRenderState",
+      "ItemInHandRenderer",
+      "state"
+     ]
+    }
+   ],
+   "older": "import com.llamalad7.mixinextras.injector.ModifyExpressionValue;\nimport com.llamalad7.mixinextras.injector.wrapoperation.Operation;\nimport com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;\nimport net.minecraft.client.renderer.ItemInHandRenderer;\nimport static org.objectweb.asm.Opcodes.GETFIELD;",
+   "newer": "import net.minecraft.client.player.FirstPersonHandsAndItems;\nimport net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;\nimport net.minecraft.util.Mth;\nimport net.xolt.freecam.util.FreeCamera;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;",
+   "removed": [
+    "GETFIELD",
+    "ItemInHandRenderer",
+    "ModifyExpressionValue",
+    "Opcodes",
+    "Operation",
+    "WrapOperation",
+    "com",
+    "injector",
+    "llamalad7",
+    "mixinextras",
+    "objectweb",
+    "wrapoperation"
+   ],
+   "added": [
+    "CallbackInfo",
+    "FirstPersonHandsAndItems",
+    "FirstPersonHandsAndItemsRenderState",
+    "FreeCamera",
+    "Inject",
+    "Mth",
+    "callback",
+    "freecam",
+    "injection",
+    "level",
+    "mixin",
+    "player",
+    "spongepowered",
+    "state",
+    "util",
+    "xolt"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/FirstPersonHandRotationMixin.java",
+   "line": 30,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "@Inject(method = \"extractRenderState\", at = @At(\"TAIL\"))\n    private void onExtractRenderState(LocalPlayer player, float partialTicks, FirstPersonHandsAndItemsRenderState state, CallbackInfo ci) {\n        if (Freecam.isEnabled()) {\n            FreeCamera camera = Freecam.getFreeCamera();\n            state.viewXRot = camera.getViewXRot(partialTicks);\n            state.viewYRot = camera.getViewYRot(partialTicks);\n            state.xBob = Mth.lerp(partialTicks, camera.xBobO(), camera.xBob());\n            state.yBob = Mth.lerp(partialTicks, camera.yBobO(), camera.yBob());\n        }\n    }"
+    },
+    {
+     "condition": null,
+     "code": "//~ if >=26.2 renderHandsWithItems -> submitHandsWithItems {\n\n    @WrapOperation(method = \"submitHandsWithItems\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/player/LocalPlayer;getViewXRot(F)F\"))\n    private float onSubmitHandsWithItems_player_getViewXRot(LocalPlayer player, float partialTick, Operation<Float> original) {\n        return Freecam.isEnabled() ? Freecam.getFreeCamera().getViewXRot(partialTick) : original.call(player, partialTick);\n    }\n\n    @WrapOperation(method = \"submitHandsWithItems\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/player/LocalPlayer;getViewYRot(F)F\"))\n    private float onSubmitHandsWithItems_player_getViewYRot(LocalPlayer player, float partialTick, Operation<Float> original) {\n        return Freecam.isEnabled() ? Freecam.getFreeCamera().getViewYRot(partialTick) : original.call(player, partialTick);\n    }\n\n    // Makes arm movement depend upon FreeCamera movement rather than player movement.\n    @ModifyExpressionValue(method = \"submitHandsWithItems\", at = @At(value = \"FIELD\", opcode = GETFIELD, target = \"Lnet/minecraft/client/player/LocalPlayer;xBob:F\"))\n    private float onSubmitHandsWithItems_player_xBob(float original) {\n        return Freecam.isEnabled() ? Freecam.getFreeCamera().xBob() : original;\n    }\n\n    // Makes arm movement depend upon FreeCamera movement rather than player movement.\n    @ModifyExpressionValue(method = \"submitHandsWithItems\", at = @At(value = \"FIELD\", opcode = GETFIELD, target = \"Lnet/minecraft/client/player/LocalPlayer;xBobO:F\"))\n    private float onSubmitHandsWithItems_player_xBobO(float original) {\n        return Freecam.isEnabled() ? Freecam.getFreeCamera().xBobO() : original;\n    }\n\n    // Makes arm movement depend upon FreeCamera movement rather than player movement.\n    @ModifyExpressionValue(method = \"submitHandsWithItems\", at = @At(value = \"FIELD\", opcode = GETFIELD, target = \"Lnet/minecraft/client/player/LocalPlayer;yBob:F\"))\n    private float onSubmitHandsWithItems_player_yBob(float original) {\n        return Freecam.isEnabled() ? Freecam.getFreeCamera().yBob() : original;\n    }\n\n    // Makes arm movement depend upon FreeCamera movement rather than player movement.\n    @ModifyExpressionValue(method = \"submitHandsWithItems\", at = @At(value = \"FIELD\", opcode = GETFIELD, target = \"Lnet/minecraft/client/player/LocalPlayer;yBobO:F\"))\n    private float onSubmitHandsWithItems_player_yBobO(float original) {\n        return Freecam.isEnabled() ? Freecam.getFreeCamera().yBobO() : original;\n    }\n\n    //~ }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "FirstPersonHandsAndItemsRenderState",
+      "lerp",
+      "state",
+      "target",
+      "value"
+     ]
+    }
+   ],
+   "older": "//~ if >=26.2 renderHandsWithItems -> submitHandsWithItems {\n\n    @WrapOperation(method = \"submitHandsWithItems\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/player/LocalPlayer;getViewXRot(F)F\"))\n    private float onSubmitHandsWithItems_player_getViewXRot(LocalPlayer player, float partialTick, Operation<Float> original) {\n        return Freecam.isEnabled() ? Freecam.getFreeCamera().getViewXRot(partialTick) : original.call(player, partialTick);\n    }\n\n    @WrapOperation(method = \"submitHandsWithItems\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/player/LocalPlayer;getViewYRot(F)F\"))\n    private float onSubmitHandsWithItems_player_getViewYRot(LocalPlayer player, float partialTick, Operation<Float> original) {\n        return Freecam.isEnabled() ? Freecam.getFreeCamera().getViewYRot(partialTick) : original.call(player, partialTick);\n    }\n\n    // Makes arm movement depend upon FreeCamera movement rather than player movement.\n    @ModifyExpressionValue(method = \"submitHandsWithItems\", at = @At(value = \"FIELD\", opcode = GETFIELD, target = \"Lnet/minecraft/client/player/LocalPlayer;xBob:F\"))\n    private float onSubmitHandsWithItems_player_xBob(float original) {\n        return Freecam.isEnabled() ? Freecam.getFreeCamera().xBob() : original;\n    }\n\n    // Makes arm movement depend upon FreeCamera movement rather than player movement.\n    @ModifyExpressionValue(method = \"submitHandsWithItems\", at = @At(value = \"FIELD\", opcode = GETFIELD, target = \"Lnet/minecraft/client/player/LocalPlayer;xBobO:F\"))\n    private float onSubmitHandsWithItems_player_xBobO(float original) {\n        return Freecam.isEnabled() ? Freecam.getFreeCamera().xBobO() : original;\n    }\n\n    // Makes arm movement depend upon FreeCamera movement rather than player movement.\n    @ModifyExpressionValue(method = \"submitHandsWithItems\", at = @At(value = \"FIELD\", opcode = GETFIELD, target = \"Lnet/minecraft/client/player/LocalPlayer;yBob:F\"))\n    private float onSubmitHandsWithItems_pla",
+   "newer": "@Inject(method = \"extractRenderState\", at = @At(\"TAIL\"))\n    private void onExtractRenderState(LocalPlayer player, float partialTicks, FirstPersonHandsAndItemsRenderState state, CallbackInfo ci) {\n        if (Freecam.isEnabled()) {\n            FreeCamera camera = Freecam.getFreeCamera();\n            state.viewXRot = camera.getViewXRot(partialTicks);\n            state.viewYRot = camera.getViewYRot(partialTicks);\n            state.xBob = Mth.lerp(partialTicks, camera.xBobO(), camera.xBob());\n            state.yBob = Mth.lerp(partialTicks, camera.yBobO(), camera.yBob());\n        }\n    }",
+   "removed": [
+    "Float",
+    "GETFIELD",
+    "ModifyExpressionValue",
+    "Operation",
+    "WrapOperation",
+    "call",
+    "onSubmitHandsWithItems_player_getViewXRot",
+    "onSubmitHandsWithItems_player_getViewYRot",
+    "onSubmitHandsWithItems_player_xBob",
+    "onSubmitHandsWithItems_player_xBobO",
+    "onSubmitHandsWithItems_player_yBob",
+    "onSubmitHandsWithItems_player_yBobO",
+    "opcode",
+    "original",
+    "partialTick",
+    "target",
+    "value"
+   ],
+   "added": [
+    "CallbackInfo",
+    "FirstPersonHandsAndItemsRenderState",
+    "FreeCamera",
+    "Inject",
+    "Mth",
+    "camera",
+    "lerp",
+    "onExtractRenderState",
+    "partialTicks",
+    "state",
+    "viewXRot",
+    "viewYRot"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/FirstPersonHandShadingMixin.java",
+   "line": 22,
+   "method": "(class body)",
+   "condition": ">=26.3 | >=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "method = \"submitArmWithItem\","
+    },
+    {
+     "condition": ">=26.2",
+     "code": "method = \"submitHandsWithItems\","
+    },
+    {
+     "condition": null,
+     "code": "method = \"renderHandsWithItems\","
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3",
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.2 -> 26.3",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "method = \"submitHandsWithItems\",",
+   "newer": "method = \"submitArmWithItem\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/FullBrightMixin.java",
+   "line": 12,
+   "method": "(imports)",
+   "condition": "<26.1 >=1.19 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.1 >=1.19",
+     "code": "import com.llamalad7.mixinextras.expression.Definition;\nimport com.llamalad7.mixinextras.expression.Expression;\nimport com.llamalad7.mixinextras.injector.wrapoperation.Operation;\nimport com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;"
+    },
+    {
+     "condition": null,
+     "code": "import com.llamalad7.mixinextras.injector.ModifyExpressionValue;\nimport static org.objectweb.asm.Opcodes.GETFIELD;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/FullBrightMixin.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": ">=26.1 | >=1.19 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "@ModifyExpressionValue(method = \"render\", at = @At(value = \"FIELD\", opcode = GETFIELD, target = \"Lnet/minecraft/client/renderer/state/LightmapRenderState;brightness:F\"))\n    private float onGetBrightness(float original) {\n        return freecam$useFullBright() ? 16.0f : original;\n    }"
+    },
+    {
+     "condition": ">=1.19",
+     "code": "@Expression(\"this.minecraft.options.gamma().get()\")\n    @Definition(id = \"minecraft\", field = \"Lnet/minecraft/client/renderer/LightTexture;minecraft:Lnet/minecraft/client/Minecraft;\")\n    @Definition(id = \"options\", field = \"Lnet/minecraft/client/Minecraft;options:Lnet/minecraft/client/Options;\")\n    @Definition(id = \"gamma\", method = \"Lnet/minecraft/client/Options;gamma()Lnet/minecraft/client/OptionInstance;\")\n    @Definition(id = \"get\", method = \"Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;\")\n    @WrapOperation(method = \"updateLightTexture\", at = @At(\"MIXINEXTRAS:EXPRESSION\"))\n    @SuppressWarnings(\"unchecked\")\n    private <T> T onGetGamma(net.minecraft.client.OptionInstance<T> instance, Operation<T> original) {\n        return freecam$useFullBright() ? (T) (Double) 16.0 : original.call(instance);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@ModifyExpressionValue(method = \"updateLightTexture\", at = @At(value = \"FIELD\", opcode = GETFIELD, target = \"Lnet/minecraft/client/Options;gamma:D\"))\n    private double onGetGamma(double original) {\n        return freecam$useFullBright() ? 16.0 : original;\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "Operation",
+      "value"
+     ]
+    },
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "Double",
+      "value"
+     ]
+    },
+    {
+     "step": "1.18.2 -> 1.19",
+     "names": [
+      "target"
+     ]
+    },
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "target",
+      "value"
+     ]
+    }
+   ],
+   "older": "@Expression(\"this.minecraft.options.gamma().get()\")\n    @Definition(id = \"minecraft\", field = \"Lnet/minecraft/client/renderer/LightTexture;minecraft:Lnet/minecraft/client/Minecraft;\")\n    @Definition(id = \"options\", field = \"Lnet/minecraft/client/Minecraft;options:Lnet/minecraft/client/Options;\")\n    @Definition(id = \"gamma\", method = \"Lnet/minecraft/client/Options;gamma()Lnet/minecraft/client/OptionInstance;\")\n    @Definition(id = \"get\", method = \"Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;\")\n    @WrapOperation(method = \"updateLightTexture\", at = @At(\"MIXINEXTRAS:EXPRESSION\"))\n    @SuppressWarnings(\"unchecked\")\n    private <T> T onGetGamma(net.minecraft.client.OptionInstance<T> instance, Operation<T> original) {\n        return freecam$useFullBright() ? (T) (Double) 16.0 : original.call(instance);\n    }",
+   "newer": "@ModifyExpressionValue(method = \"render\", at = @At(value = \"FIELD\", opcode = GETFIELD, target = \"Lnet/minecraft/client/renderer/state/LightmapRenderState;brightness:F\"))\n    private float onGetBrightness(float original) {\n        return freecam$useFullBright() ? 16.0f : original;\n    }",
+   "removed": [
+    "Definition",
+    "Double",
+    "Expression",
+    "Operation",
+    "OptionInstance",
+    "SuppressWarnings",
+    "WrapOperation",
+    "call",
+    "client",
+    "field",
+    "instance",
+    "minecraft",
+    "net",
+    "onGetGamma"
+   ],
+   "added": [
+    "GETFIELD",
+    "ModifyExpressionValue",
+    "onGetBrightness",
+    "opcode",
+    "target",
+    "value"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/HudItemOverlayMixin.java",
+   "line": 10,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.client.gui.Hud;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.gui.Gui;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "Hud"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.gui.Gui;",
+   "newer": "import net.minecraft.client.gui.Hud;",
+   "removed": [
+    "Gui"
+   ],
+   "added": [
+    "Hud"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/HudItemOverlayMixin.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": ">=1.20.6 | > 1.18.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.6",
+     "code": "import net.minecraft.client.gui.GuiGraphicsExtractor;"
+    },
+    {
+     "condition": "> 1.18.2",
+     "code": "import com.mojang.blaze3d.vertex.PoseStack;"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6",
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.4 -> 1.20",
+     "names": [
+      "gui"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "minecraft"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "vertex"
+     ]
+    }
+   ],
+   "older": "import com.mojang.blaze3d.vertex.PoseStack;",
+   "newer": "import net.minecraft.client.gui.GuiGraphicsExtractor;",
+   "removed": [
+    "PoseStack",
+    "blaze3d",
+    "com",
+    "mojang",
+    "vertex"
+   ],
+   "added": [
+    "GuiGraphicsExtractor",
+    "client",
+    "gui",
+    "minecraft",
+    "net"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/HudItemOverlayMixin.java",
+   "line": 32,
+   "method": "(class body)",
+   "condition": "} else if > 1.18.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "} else if > 1.18.2",
+     "code": "//PoseStack poseStack,"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/HudPlayerMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.client.gui.Hud;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.gui.Gui;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "Hud"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.gui.Gui;",
+   "newer": "import net.minecraft.client.gui.Hud;",
+   "removed": [
+    "Gui"
+   ],
+   "added": [
+    "Hud"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/IrisShadowRendererMixin.java",
+   "line": 10,
+   "method": "(imports)",
+   "condition": "<1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.9",
+     "code": "package net.xolt.freecam.mixins;\n\nimport net.xolt.freecam.Freecam;\nimport net.xolt.freecam.config.ModConfig;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Pseudo;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;\n\n@Pseudo\n@Mixin(\n        //~ if >=1.20 'net.coderbot.iris.pipeline' -> 'net.irisshaders.iris.shadows'\n        targets = \"net.irisshaders.iris.shadows.ShadowRenderer\",\n        remap = false\n)\npublic class IrisShadowRendererMixin {\n\n    // Hide player shadow in freecam if showPlayer is disabled\n    @Inject(method = \"renderPlayerEntity\", at = @At(\"HEAD\"), cancellable = true)\n    private void onRenderPlayerShadow(CallbackInfoReturnable<Integer> cir) {\n        if (Freecam.isEnabled() && ModConfig.get().shouldHidePlayer()) {\n            cir.setReturnValue(0);\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/MultiPlayerGameModeMixin.java",
+   "line": 19,
+   "method": "(imports)",
+   "condition": "<=1.18.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<=1.18.2",
+     "code": "import net.minecraft.client.multiplayer.ClientLevel;"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/MultiPlayerGameModeMixin.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": "<= 1.18.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<= 1.18.2",
+     "code": "//ClientLevel level,"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/MultiPlayerGameModeMixin.java",
+   "line": 46,
+   "method": "(class body)",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "EntityHitResult hitResult,"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/mixins/MultiPlayerGameModeMixin.java",
+   "line": 56,
+   "method": "(class body)",
+   "condition": "<26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.1",
+     "code": "@Inject(method = \"interactAt\", at = @At(\"HEAD\"), cancellable = true)\n    private void onInteractEntityAtLocation(Player player, Entity entity, EntityHitResult hitResult, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {\n        if (entity == MC.player || freecam$disableInteract()) {\n            cir.setReturnValue(InteractionResult.PASS);\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/util/FreeCamera.java",
+   "line": 22,
+   "method": "(imports)",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import net.minecraft.world.entity.MoveSimulationType;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/util/FreeCamera.java",
+   "line": 26,
+   "method": "(imports)",
+   "condition": ">=1.20.6",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.20.6",
+     "code": "import net.minecraft.core.Holder;"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/util/FreeCamera.java",
+   "line": 63,
+   "method": "tick",
+   "condition": "<1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.21.11",
+     "code": "//false // isMovingSlowly"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/util/FreeCamera.java",
+   "line": 65,
+   "method": "tick",
+   "condition": "<1.21.11 && >=1.19",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.21.11 && >=1.19",
+     "code": "//, 0.3F // sneakSpeedMultiplier"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/util/FreeCamera.java",
+   "line": 164,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "@Override\n    public @Nullable SwingDescription getCurrentSwing() {\n        return MC.player.getCurrentSwing();\n    }\n\n    @Override\n    public float getSwingAnimation(final float partialTicks) {\n        return MC.player.getSwingAnimation(partialTicks);\n    }\n\n    @Override\n    public boolean isSwinging() {\n        return MC.player.isSwinging();\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@Override\n    public float getAttackAnim(float tickDelta) {\n        return MC.player.getAttackAnim(tickDelta);\n    }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "SwingDescription",
+      "getAttackAnim",
+      "getCurrentSwing",
+      "getSwingAnimation",
+      "isSwinging"
+     ]
+    }
+   ],
+   "older": "@Override\n    public float getAttackAnim(float tickDelta) {\n        return MC.player.getAttackAnim(tickDelta);\n    }",
+   "newer": "@Override\n    public @Nullable SwingDescription getCurrentSwing() {\n        return MC.player.getCurrentSwing();\n    }\n\n    @Override\n    public float getSwingAnimation(final float partialTicks) {\n        return MC.player.getSwingAnimation(partialTicks);\n    }\n\n    @Override\n    public boolean isSwinging() {\n        return MC.player.isSwinging();\n    }",
+   "removed": [
+    "getAttackAnim",
+    "tickDelta"
+   ],
+   "added": [
+    "Nullable",
+    "SwingDescription",
+    "getCurrentSwing",
+    "getSwingAnimation",
+    "isSwinging",
+    "partialTicks"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/util/FreeCamera.java",
+   "line": 286,
+   "method": "(class body)",
+   "condition": ">=26.3 | >=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "@Override\n    public @NotNull MoveSimulationType getMoveSimulationType() {\n        return MoveSimulationType.SERVER_AND_CLIENT;\n    }"
+    },
+    {
+     "condition": ">=1.21.11",
+     "code": "@Override\n    public boolean canSimulateMovement() {\n        return true;\n    }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "26.2 -> 26.3",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "MoveSimulationType",
+      "canSimulateMovement",
+      "getMoveSimulationType"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "canSimulateMovement"
+     ]
+    }
+   ],
+   "older": "@Override\n    public boolean canSimulateMovement() {\n        return true;\n    }",
+   "newer": "@Override\n    public @NotNull MoveSimulationType getMoveSimulationType() {\n        return MoveSimulationType.SERVER_AND_CLIENT;\n    }",
+   "removed": [
+    "canSimulateMovement"
+   ],
+   "added": [
+    "MoveSimulationType",
+    "NotNull",
+    "SERVER_AND_CLIENT",
+    "getMoveSimulationType"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/util/FreeCamera.java",
+   "line": 298,
+   "method": "(class body)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "@Override\n    protected void applyInput() {\n        Vec2 moveVector = getInput().getMoveVector();\n        if (moveVector.lengthSquared() != 0.0F)\n            moveVector = moveVector.scale(0.98F);\n        applyInputHelper(moveVector, isJumpKeyDown());\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@Override\n    protected void serverAiStep() {\n        Input input = getInput();\n        Vec2 moveVector = new Vec2(input.leftImpulse, input.forwardImpulse);\n        applyInputHelper(moveVector, isJumpKeyDown());\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "lengthSquared"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "Input",
+      "scale"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "applyInput",
+      "forwardImpulse",
+      "leftImpulse",
+      "scale",
+      "serverAiStep"
+     ]
+    }
+   ],
+   "older": "@Override\n    protected void serverAiStep() {\n        Input input = getInput();\n        Vec2 moveVector = new Vec2(input.leftImpulse, input.forwardImpulse);\n        applyInputHelper(moveVector, isJumpKeyDown());\n    }",
+   "newer": "@Override\n    protected void applyInput() {\n        Vec2 moveVector = getInput().getMoveVector();\n        if (moveVector.lengthSquared() != 0.0F)\n            moveVector = moveVector.scale(0.98F);\n        applyInputHelper(moveVector, isJumpKeyDown());\n    }",
+   "removed": [
+    "Input",
+    "forwardImpulse",
+    "input",
+    "leftImpulse",
+    "serverAiStep"
+   ],
+   "added": [
+    "applyInput",
+    "getMoveVector",
+    "lengthSquared",
+    "scale"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/util/FreecamPosition.java",
+   "line": 6,
+   "method": "(imports)",
+   "condition": "> 1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.18.2",
+     "code": "import org.joml.Quaternionf;\nimport org.joml.Vector3f;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.math.Quaternion;\nimport com.mojang.math.Vector3f;"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "Quaternion"
+     ]
+    }
+   ],
+   "older": "import com.mojang.math.Quaternion;\nimport com.mojang.math.Vector3f;",
+   "newer": "import org.joml.Quaternionf;\nimport org.joml.Vector3f;",
+   "removed": [
+    "Quaternion",
+    "com",
+    "math",
+    "mojang"
+   ],
+   "added": [
+    "Quaternionf",
+    "joml",
+    "org"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/util/FreecamPosition.java",
+   "line": 42,
+   "method": "setRotation",
+   "condition": "> 1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.18.2",
+     "code": "rotation.rotationYXZ(-yaw * ((float) Math.PI / 180), pitch * ((float) Math.PI / 180), 0.0f);"
+    },
+    {
+     "condition": null,
+     "code": "rotation.set(0.0F, 0.0F, 0.0F, 1.0F);\n        rotation.mul(Vector3f.YP.rotationDegrees(-yaw));\n        rotation.mul(Vector3f.XP.rotationDegrees(pitch));"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "Vector3f",
+      "set"
+     ]
+    }
+   ],
+   "older": "rotation.set(0.0F, 0.0F, 0.0F, 1.0F);\n        rotation.mul(Vector3f.YP.rotationDegrees(-yaw));\n        rotation.mul(Vector3f.XP.rotationDegrees(pitch));",
+   "newer": "rotation.rotationYXZ(-yaw * ((float) Math.PI / 180), pitch * ((float) Math.PI / 180), 0.0f);",
+   "removed": [
+    "Vector3f",
+    "mul",
+    "rotationDegrees",
+    "set"
+   ],
+   "added": [
+    "Math",
+    "rotationYXZ"
+   ]
+  },
+  {
+   "file": "common/src/main/java/net/xolt/freecam/util/FreecamPosition.java",
+   "line": 54,
+   "method": "setRotation",
+   "condition": "> 1.18.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "> 1.18.2",
+     "code": "horizontalPlane.rotate(rotation);\n        verticalPlane.rotate(rotation);\n        diagonalPlane.rotate(rotation);"
+    },
+    {
+     "condition": null,
+     "code": "horizontalPlane.transform(rotation);\n        verticalPlane.transform(rotation);\n        diagonalPlane.transform(rotation);"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.2 -> 1.19.3",
+     "names": [
+      "rotate"
+     ]
+    }
+   ],
+   "older": "horizontalPlane.transform(rotation);\n        verticalPlane.transform(rotation);\n        diagonalPlane.transform(rotation);",
+   "newer": "horizontalPlane.rotate(rotation);\n        verticalPlane.rotate(rotation);\n        diagonalPlane.rotate(rotation);",
+   "removed": [
+    "transform"
+   ],
+   "added": [
+    "rotate"
+   ]
+  },
+  {
+   "file": "fabric/src/main/java/net/xolt/freecam/fabric/mixins/LevelExtractorMixin.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.client.Camera;\nimport net.minecraft.client.DeltaTracker;\nimport net.minecraft.client.renderer.culling.Frustum;\nimport net.minecraft.client.renderer.entity.state.EntityRenderState;\nimport net.minecraft.client.renderer.extract.LevelExtractor;\nimport net.minecraft.client.renderer.state.level.LevelRenderState;\nimport net.minecraft.world.TickRateManager;\nimport net.minecraft.world.entity.Entity;\nimport net.xolt.freecam.Freecam;\nimport net.xolt.freecam.config.ModConfig;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\nimport static net.xolt.freecam.Freecam.MC;\n\n@Mixin(LevelExtractor.class)\npublic abstract class LevelExtractorMixin {\n\n    // Makes the player render if showPlayer is enabled.\n    @Shadow protected abstract EntityRenderState extractEntity(Entity e, float g);\n\n    @Inject(method = \"extractVisibleEntities\", at = @At(value = \"RETURN\"))\n    private void onExtractVisibleEntities(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState renderState, CallbackInfo ci) {\n        if (MC.level != null && Freecam.isEnabled() && ModConfig.get().shouldShowPlayer()) {\n            Entity player = MC.player;\n            TickRateManager tickRateManager = MC.level.tickRateManager();\n            float g = deltaTracker.getGameTimeDeltaPartialTick(!tickRateManager.isEntityFrozen(player));\n            EntityRenderState entityRenderState = this.extractEntity(player, g);\n            renderState.entityRenderStates.add(entityRenderState);\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "fabric/src/main/java/net/xolt/freecam/fabric/mixins/LevelRendererMixin.java",
+   "line": 14,
+   "method": "(imports)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.client.DeltaTracker;\nimport net.minecraft.client.renderer.entity.state.EntityRenderState;\nimport net.minecraft.client.renderer.state.level.LevelRenderState;"
+    },
+    {
+     "condition": null,
+     "code": "/*import com.mojang.blaze3d.vertex.PoseStack;\nimport net.minecraft.world.phys.Vec3;\n\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Unique;\nimport org.spongepowered.asm.mixin.injection.callback.LocalCapture;\n*/"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "DeltaTracker",
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "EntityRenderState",
+      "level",
+      "state",
+      "vertex"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "LevelRenderState",
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "entity",
+      "level"
+     ]
+    }
+   ],
+   "older": "/*import com.mojang.blaze3d.vertex.PoseStack;\nimport net.minecraft.world.phys.Vec3;\n\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Unique;\nimport org.spongepowered.asm.mixin.injection.callback.LocalCapture;\n*/",
+   "newer": "import net.minecraft.client.DeltaTracker;\nimport net.minecraft.client.renderer.entity.state.EntityRenderState;\nimport net.minecraft.client.renderer.state.level.LevelRenderState;",
+   "removed": [
+    "Final",
+    "LocalCapture",
+    "PoseStack",
+    "Unique",
+    "Vec3",
+    "asm",
+    "blaze3d",
+    "callback",
+    "com",
+    "injection",
+    "mixin",
+    "mojang",
+    "org",
+    "phys",
+    "spongepowered",
+    "vertex",
+    "world"
+   ],
+   "added": [
+    "DeltaTracker",
+    "EntityRenderState",
+    "LevelRenderState",
+    "client",
+    "entity",
+    "level",
+    "renderer",
+    "state"
+   ]
+  },
+  {
+   "file": "fabric/src/main/java/net/xolt/freecam/fabric/mixins/LevelRendererMixin.java",
+   "line": 26,
+   "method": "(imports)",
+   "condition": "<1.21.11 && >=1.20.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.11 && >=1.20.6",
+     "code": "/*import net.minecraft.util.profiling.ProfilerFiller;\nimport org.joml.Matrix4fStack;\n*/"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ]
+  },
+  {
+   "file": "fabric/src/main/java/net/xolt/freecam/fabric/mixins/LevelRendererMixin.java",
+   "line": 30,
+   "method": "(imports)",
+   "condition": ">=1.20.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.6",
+     "code": "import net.minecraft.world.TickRateManager;\nimport net.minecraft.client.renderer.culling.Frustum;"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ]
+  },
+  {
+   "file": "fabric/src/main/java/net/xolt/freecam/fabric/mixins/LevelRendererMixin.java",
+   "line": 34,
+   "method": "(imports)",
+   "condition": ">1.18.2 && <1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.18.2 && <1.21.11",
+     "code": "/*import org.joml.Matrix4f;\n*/"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "fabric/src/main/java/net/xolt/freecam/fabric/mixins/LevelRendererMixin.java",
+   "line": 37,
+   "method": "(imports)",
+   "condition": "<= 1.18.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<= 1.18.2",
+     "code": "/*import com.mojang.math.Matrix4f;\n*/"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ]
+  },
+  {
+   "file": "fabric/src/main/java/net/xolt/freecam/fabric/mixins/LevelRendererMixin.java",
+   "line": 67,
+   "method": "(imports)",
+   "condition": ">=1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.6",
+     "code": "private void onRender(float partialTick,\n                          long nanoTime,\n                          boolean renderBlockOutline,\n                          Camera camera,\n                          GameRenderer gameRenderer,\n                          LightTexture lightTexture,\n                          Matrix4f matrix4f,\n                          Matrix4f matrix4f2,\n                          CallbackInfo ci,\n                          // Local capture needed for poseStack\n                          TickRateManager tickRateManager,\n                          float g,\n                          ProfilerFiller profilerFiller,\n                          Vec3 cameraPosition,\n                          double x,\n                          double y,\n                          double z,\n                          boolean frustumNotNull,\n                          Frustum frustum,\n                          float renderDistance,\n                          boolean fog,\n                          Matrix4fStack modelViewStack,\n                          boolean bl4,\n                          PoseStack poseStack,\n                          MultiBufferSource.BufferSource bufferSource) {\n        onRender(new Vec3(x, y, z), partialTick, poseStack, renderBuffers);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "/*¹private void onRender(PoseStack matrices,\n                          float tickDelta,\n                          long limitTime,\n                          boolean renderBlockOutline,\n                          Camera camera,\n                          GameRenderer gameRenderer,\n                          LightTexture lightmapTextureManager,\n                          Matrix4f positionMatrix,\n                          CallbackInfo ci) {\n        onRender(camera.getPosition(), tickDelta, matrices, renderBuffers);\n    }\n    ¹*/"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.19.4 -> 1.20",
+     "names": [
+      "bufferSource"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "TickRateManager",
+      "tickRateManager"
+     ]
+    }
+   ],
+   "older": "/*¹private void onRender(PoseStack matrices,\n                          float tickDelta,\n                          long limitTime,\n                          boolean renderBlockOutline,\n                          Camera camera,\n                          GameRenderer gameRenderer,\n                          LightTexture lightmapTextureManager,\n                          Matrix4f positionMatrix,\n                          CallbackInfo ci) {\n        onRender(camera.getPosition(), tickDelta, matrices, renderBuffers);\n    }\n    ¹*/",
+   "newer": "private void onRender(float partialTick,\n                          long nanoTime,\n                          boolean renderBlockOutline,\n                          Camera camera,\n                          GameRenderer gameRenderer,\n                          LightTexture lightTexture,\n                          Matrix4f matrix4f,\n                          Matrix4f matrix4f2,\n                          CallbackInfo ci,\n                          // Local capture needed for poseStack\n                          TickRateManager tickRateManager,\n                          float g,\n                          ProfilerFiller profilerFiller,\n                          Vec3 cameraPosition,\n                          double x,\n                          double y,\n                          double z,\n                          boolean frustumNotNull,\n                          Frustum frustum,\n                          float renderDistance,\n                          boolean fog,\n                          Matrix4fStack modelViewStack,\n                          boolean bl4,\n                          PoseStack poseStack,\n                          MultiBufferSource.BufferSource bufferSource) {\n        onRender(new Vec3(x, y, z), partialTick, poseStack, renderBuffers);\n    }",
+   "removed": [
+    "getPosition",
+    "lightmapTextureManager",
+    "limitTime",
+    "matrices",
+    "positionMatrix",
+    "tickDelta"
+   ],
+   "added": [
+    "BufferSource",
+    "Frustum",
+    "Matrix4fStack",
+    "MultiBufferSource",
+    "ProfilerFiller",
+    "TickRateManager",
+    "Vec3",
+    "bl4",
+    "bufferSource",
+    "cameraPosition",
+    "fog",
+    "frustum",
+    "frustumNotNull",
+    "lightTexture",
+    "matrix4f",
+    "matrix4f2",
+    "modelViewStack",
+    "nanoTime",
+    "partialTick",
+    "poseStack",
+    "profilerFiller",
+    "renderDistance",
+    "tickRateManager"
+   ]
+  },
+  {
+   "file": "fabric/src/main/java/net/xolt/freecam/fabric/mixins/LevelRendererMixin.java",
+   "line": 47,
+   "method": "(imports)",
+   "condition": ">=1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "@Shadow protected abstract EntityRenderState extractEntity(Entity e, float g);\n\n    @Inject(method = \"extractVisibleEntities\", at = @At(value = \"RETURN\"))\n    private void onExtractVisibleEntities(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState renderState, CallbackInfo ci) {\n        if (MC.level != null && Freecam.isEnabled() && ModConfig.get().shouldShowPlayer()) {\n            Entity player = MC.player;\n            TickRateManager tickRateManager = MC.level.tickRateManager();\n            float g = deltaTracker.getGameTimeDeltaPartialTick(!tickRateManager.isEntityFrozen(player));\n            EntityRenderState entityRenderState = this.extractEntity(player, g);\n            renderState.entityRenderStates.add(entityRenderState);\n        }\n    }"
+    },
+    {
+     "condition": null,
+     "code": "/*@Shadow @Final\n    private RenderBuffers renderBuffers;\n\n    @Shadow protected abstract void renderEntity(Entity entity, double camX, double camY, double camZ, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource);\n\n    @Inject(method = \"renderLevel\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/renderer/LevelRenderer;checkPoseStack(Lcom/mojang/blaze3d/vertex/PoseStack;)V\", ordinal = 0), locals = LocalCapture.CAPTURE_FAILHARD)\n    //? if >=1.20.6 {\n    private void onRender(float partialTick,\n                          long nanoTime,\n                          boolean renderBlockOutline,\n                          Camera camera,\n                          GameRenderer gameRenderer,\n                          LightTexture lightTexture,\n                          Matrix4f matrix4f,\n                          Matrix4f matrix4f2,\n                          CallbackInfo ci,\n                          // Local capture needed for poseStack\n                          TickRateManager tickRateManager,\n                          float g,\n                          ProfilerFiller profilerFiller,\n                          Vec3 cameraPosition,\n                          double x,\n                          double y,\n                          double z,\n                          boolean frustumNotNull,\n                          Frustum frustum,\n                          float renderDistance,\n                          boolean fog,\n                          Matrix4fStack modelViewStack,\n                          boolean bl4,\n                          PoseStack poseStack,\n                          MultiBufferSource.BufferSource bufferSource) {\n        onRender(new Vec3(x, y, z), partialTick, poseStack, renderBuffers);\n    }\n    //? } else {\n    /*¹private void onRender(PoseStack matrices,\n                          float tickDelta,\n                          long limitTime,\n                          boolean renderBlockOutline,\n                          Camera camera,\n                          GameRenderer gameRenderer,\n                          LightTexture lightmapTextureManager,\n                          Matrix4f positionMatrix,\n                          CallbackInfo ci) {\n        onRender(camera.getPosition(), tickDelta, matrices, renderBuffers);\n    }\n    ¹*///? }\n\n    @Unique\n    private void onRender(Vec3 cameraPos, float partialTick, PoseStack poseStack, RenderBuffers renderBuffers) {\n        if (Freecam.isEnabled() && ModConfig.get().shouldShowPlayer()) {\n            renderEntity(MC.player, cameraPos.x, cameraPos.y, cameraPos.z, partialTick, poseStack, renderBuffers.bufferSource());\n        }\n    }\n    */"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "DeltaTracker"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "EntityRenderState",
+      "add",
+      "bufferSource",
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "add",
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "add",
+      "bufferSource",
+      "level"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "LevelRenderState",
+      "add",
+      "extractEntity",
+      "level",
+      "target"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "getPosition",
+      "level"
+     ]
+    }
+   ],
+   "older": "/*@Shadow @Final\n    private RenderBuffers renderBuffers;\n\n    @Shadow protected abstract void renderEntity(Entity entity, double camX, double camY, double camZ, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource);\n\n    @Inject(method = \"renderLevel\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/renderer/LevelRenderer;checkPoseStack(Lcom/mojang/blaze3d/vertex/PoseStack;)V\", ordinal = 0), locals = LocalCapture.CAPTURE_FAILHARD)\n    //? if >=1.20.6 {\n    private void onRender(float partialTick,\n                          long nanoTime,\n                          boolean renderBlockOutline,\n                          Camera camera,\n                          GameRenderer gameRenderer,\n                          LightTexture lightTexture,\n                          Matrix4f matrix4f,\n                          Matrix4f matrix4f2,\n                          CallbackInfo ci,\n                          // Local capture needed for poseStack\n                          TickRateManager tickRateManager,\n                          float g,\n                          ProfilerFiller profilerFiller,\n                          Vec3 cameraPosition,\n                          double x,\n                          double y,\n                          double z,\n                          boolean frustumNotNull,\n                          Frustum frustum,\n                          float renderDistance,\n                          boolean fog,\n                          Matrix4fStack modelViewStack,\n                          boolean bl4,\n                          PoseStack poseStack,\n                          MultiBufferSource.BufferSource bufferSource) {\n        onRender(new Vec3(x, y, z), partialTick, poseStack, renderBuffers);\n    }\n    //? } else {\n    /*¹private void onRender(PoseStack matrices,\n                          float tickDelta,\n                          long limitTime,\n                          boolean renderBlockOutline,\n                          Camera camera,",
+   "newer": "@Shadow protected abstract EntityRenderState extractEntity(Entity e, float g);\n\n    @Inject(method = \"extractVisibleEntities\", at = @At(value = \"RETURN\"))\n    private void onExtractVisibleEntities(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState renderState, CallbackInfo ci) {\n        if (MC.level != null && Freecam.isEnabled() && ModConfig.get().shouldShowPlayer()) {\n            Entity player = MC.player;\n            TickRateManager tickRateManager = MC.level.tickRateManager();\n            float g = deltaTracker.getGameTimeDeltaPartialTick(!tickRateManager.isEntityFrozen(player));\n            EntityRenderState entityRenderState = this.extractEntity(player, g);\n            renderState.entityRenderStates.add(entityRenderState);\n        }\n    }",
+   "removed": [
+    "BufferSource",
+    "CAPTURE_FAILHARD",
+    "Final",
+    "GameRenderer",
+    "LightTexture",
+    "LocalCapture",
+    "Matrix4f",
+    "Matrix4fStack",
+    "MultiBufferSource",
+    "PoseStack",
+    "ProfilerFiller",
+    "RenderBuffers",
+    "Unique",
+    "Vec3",
+    "bl4",
+    "bufferSource",
+    "camX",
+    "camY",
+    "camZ",
+    "cameraPos",
+    "cameraPosition",
+    "entity",
+    "fog",
+    "frustumNotNull",
+    "gameRenderer",
+    "getPosition",
+    "lightTexture",
+    "lightmapTextureManager",
+    "limitTime",
+    "locals",
+    "matrices",
+    "matrix4f",
+    "matrix4f2",
+    "modelViewStack",
+    "nanoTime",
+    "onRender",
+    "ordinal",
+    "partialTick",
+    "poseStack",
+    "positionMatrix"
+   ],
+   "added": [
+    "DeltaTracker",
+    "EntityRenderState",
+    "LevelRenderState",
+    "add",
+    "deltaTracker",
+    "entityRenderState",
+    "entityRenderStates",
+    "extractEntity",
+    "getGameTimeDeltaPartialTick",
+    "isEntityFrozen",
+    "level",
+    "onExtractVisibleEntities",
+    "renderState"
+   ]
+  },
+  {
+   "file": "fabric/src/main/java/net/xolt/freecam/fabric/mixins/LevelRendererMixin.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "import net.minecraft.client.Camera;\nimport net.minecraft.client.renderer.*;\nimport net.minecraft.world.entity.Entity;\nimport net.xolt.freecam.Freecam;\nimport net.xolt.freecam.config.ModConfig;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n//? if >=1.21.11 {\nimport net.minecraft.client.DeltaTracker;\nimport net.minecraft.client.renderer.entity.state.EntityRenderState;\nimport net.minecraft.client.renderer.state.level.LevelRenderState;\n//? } else {\n/*import com.mojang.blaze3d.vertex.PoseStack;\nimport net.minecraft.world.phys.Vec3;\n\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Unique;\nimport org.spongepowered.asm.mixin.injection.callback.LocalCapture;\n*///? }\n//? if <1.21.11 && >=1.20.6 {\n/*import net.minecraft.util.profiling.ProfilerFiller;\nimport org.joml.Matrix4fStack;\n*///? }\n//? if >=1.20.6 {\nimport net.minecraft.world.TickRateManager;\nimport net.minecraft.client.renderer.culling.Frustum;\n//? }\n//? if >1.18.2 && <1.21.11 {\n/*import org.joml.Matrix4f;\n*///? }\n//? if <= 1.18.2 {\n/*import com.mojang.math.Matrix4f;\n*///? }\n\nimport static net.xolt.freecam.Freecam.MC;\n\n@Mixin(LevelRenderer.class)\npublic abstract class LevelRendererMixin {\n\n    // Makes the player render if showPlayer is enabled.\n    //? if >=1.21.11 {\n    @Shadow protected abstract EntityRenderState extractEntity(Entity e, float g);\n\n    @Inject(method = \"extractVisibleEntities\", at = @At(value = \"RETURN\"))\n    private void onExtractVisibleEntities(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState renderState, CallbackInfo ci) {\n        if (MC.level != null && Freecam.isEnabled() && ModConfig.get().shouldShowPlayer()) {\n            Entity player = MC.player;\n            TickRateManager tickRateManager = MC.level.tickRateManager();\n            float g = deltaTracker.getGameTimeDeltaPartialTick(!tickRateManager.isEntityFrozen(player));\n            EntityRenderState entityRenderState = this.extractEntity(player, g);\n            renderState.entityRenderStates.add(entityRenderState);\n        }\n    }\n    //? } else {\n    /*@Shadow @Final\n    private RenderBuffers renderBuffers;\n\n    @Shadow protected abstract void renderEntity(Entity entity, double camX, double camY, double camZ, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource);\n\n    @Inject(method = \"renderLevel\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/renderer/LevelRenderer;checkPoseStack(Lcom/mojang/blaze3d/vertex/PoseStack;)V\", ordinal = 0), locals = LocalCapture.CAPTURE_FAILHARD)\n    //? if >=1.20.6 {\n    private void onRender(float partialTick,\n                          long nanoTime,\n                          boolean renderBlockOutline,\n                          Camera camera,\n                          GameRenderer gameRenderer,\n                          LightTexture lightTexture,\n                          Matrix4f matrix4f,\n                          Matrix4f matrix4f2,\n                          CallbackInfo ci,\n                          // Local capture needed for poseStack\n                          TickRateManager tickRateManager,\n                          float g,\n                          ProfilerFiller profilerFiller,\n                          Vec3 cameraPosition,\n                          double x,\n                          double y,\n                          double z,\n                          boolean frustumNotNull,\n                          Frustum frustum,\n                          float renderDistance,\n                          boolean fog,\n                          Matrix4fStack modelViewStack,\n                          boolean bl4,\n                          PoseStack poseStack,\n                          MultiBufferSource.BufferSource bufferSource) {\n        onRender(new Vec3(x, y, z), partialTick, "
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "forge/src/main/java/net/xolt/freecam/forge/FreecamForge.java",
+   "line": 35,
+   "method": "clientSetup",
+   "condition": "forge: < 41",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge: < 41",
+     "code": "ModBindings.forEach(ClientRegistry::registerKeyBinding);"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "forge/src/main/java/net/xolt/freecam/forge/FreecamForge.java",
+   "line": 40,
+   "method": "(class body)",
+   "condition": "forge: >= 41",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge: >= 41",
+     "code": "@SubscribeEvent\n    public static void registerKeymappings(RegisterKeyMappingsEvent event) {\n        ModBindings.forEach(event::register);\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "forge/src/main/java/net/xolt/freecam/forge/mixins/ModListScreenMixin.java",
+   "line": 7,
+   "method": "(imports)",
+   "condition": "forge: >=41.1",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "forge: >=41.1",
+     "code": "import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "neoforge/src/main/java/net/xolt/freecam/forge/FreecamNeoforge.java",
+   "line": 46,
+   "method": "(class body)",
+   "condition": "neoforge: <21",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge: <21",
+     "code": "@EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)\n    public static class GlobalEventHandler {"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "neoforge/src/main/java/net/xolt/freecam/forge/mixins/EntityRenderDispatcherMixin.java",
+   "line": 30,
+   "method": "(class body)",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "float partialTicks,"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "neoforge/src/main/java/net/xolt/freecam/forge/NeoforgePlatform.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "neoforge: >=21",
+   "kind": "constant",
+   "single": true,
+   "branches": [
+    {
+     "condition": "neoforge: >=21",
+     "code": "import net.neoforged.fml.loading.FMLLoader;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  }
+ ]
+}

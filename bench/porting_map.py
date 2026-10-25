@@ -44,6 +44,8 @@ def main():
     slim = {k: index[k] for k in ("generated", "allVersions", "blocked", "runs", "doing", "stepStatus")}
     slim["families"] = [{k: f[k] for k in ("id", "versions", "hub") if k in f} | {"estimated": f.get("estimated", False)} for f in index["families"]["list"]]
     slim["steps"] = slim_steps
+    sc = ROOT / "coverage" / "stonecutter" / "index.json"
+    slim["stonecutterMods"] = json.loads(sc.read_text(encoding="utf-8"))["totals"]["mods"] if sc.is_file() else 0
     payload = json.dumps(slim, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
     html = TEMPLATE.replace("/*STYLE*/", STYLE).replace("/*THEME*/", THEME_JS).replace("/*DETAIL*/", DETAIL_JS).replace("/*INDEX*/null", payload)
     (DOCS / "porting-map.html").write_bytes(html.encode("utf-8"))
@@ -161,6 +163,10 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 <div id="hopinfo" class="small">Lines inside a row are single updates; the elbows join each hub to the next one down. Tap a line to see why it has that colour, or tap two releases for the route.</div>
 <div id="map"></div>
 
+<h2>Learned from real mods</h2>
+<p class="small">Stonecutter mods keep one source for many versions, with switches like <span class="mono">//? if &gt;=1.21.2</span>: each one is a person showing the code before and after an update. These are the switches mined from <span id="scmods"></span> open-source mods, placed on the update their version boundary falls on, and the rules learned where the same change repeats across mods. A rule runs only on its own update, and only when the compiler reports the old name.</p>
+<table class="tbl" id="sctable"><thead><tr><th class="l">Update</th><th>Switches</th><th>Mods</th><th class="l">Rules learned (forward)</th><th class="l">Backport rules</th></tr></thead><tbody></tbody></table>
+
 <p class="foot">Made by <span class="mono">bench/porting_map.py</span> from <span class="mono">coverage/changes/index.json</span>, <span class="mono">coverage/ledger.json</span> and <span class="mono">ROADMAP.md</span> on <span id="gen"></span>. Before 1.14.4 Mojang published no official names, so those families are grouped by version number and nothing there is measured.</p>
 </main>
 <script>
@@ -244,6 +250,22 @@ function route(x, y) {
   return hops;
 }
 
+// ---- rules learned from Stonecutter mods ----------------------------------------------------
+// Each update carries how many version switches real multi-version mods put on it and which
+// rules were learned from them (coverage/stonecutter, bench/stonecutter_mine.py).
+const SC = l => l.s.stonecutter || { switches: 0, mods: 0, rules: [], backRules: [] };
+const learnedRules = l => l.fwd ? SC(l).rules : SC(l).backRules;
+function mined(l) {
+  const sc = SC(l), r = learnedRules(l);
+  if (!sc.switches && !r.length) return "";
+  return ` · ${sc.switches ? `${fmt(sc.switches)} switch${sc.switches === 1 ? "" : "es"} in ${sc.mods} Stonecutter mod${sc.mods === 1 ? "" : "s"}` : "no mined switches"}${r.length ? `, ${r.length} rule${r.length === 1 ? "" : "s"} learned` : ""}`;
+}
+function mineLine(hops) {
+  const legs = hops.flatMap(h => h.steps), rules = legs.flatMap(learnedRules), sw = legs.reduce((n, l) => n + SC(l).switches, 0);
+  if (!legs.length) return "";
+  return `<p class="small">Learned from real mods: ${fmt(sw)} Stonecutter version switches fall on this route's updates; ${rules.length ? `${rules.length} rule${rules.length === 1 ? "" : "s"} learned from them run${rules.length === 1 ? "s" : ""} on it (${esc(rules.slice(0, 6).join(", "))}${rules.length > 6 ? ", …" : ""})` : "no rule learned from them covers it yet"}.</p>`;
+}
+
 // ---- commands ------------------------------------------------------------------------------
 let PLAT = /Win/.test(navigator.platform || navigator.userAgent) ? "win" : "nix";
 const cmd = h => `${PLAT === "win" ? "modaccel.cmd" : "./modaccel"} port --root <your mod folder> --from ${h.a} --to ${h.b} --fix`;
@@ -265,7 +287,9 @@ function render() {
   ${blocked.length ? `<div class="notice"><b>Blocked: no official mappings for ${esc([...new Set(blocked.flatMap(h => [h.a, h.b]).filter(v => !MEASURED(v)))].slice(0, 4).join(", "))}${blocked.length > 0 ? "" : ""} yet.</b> Mojang's names start at 1.14.4. Those hops can't be measured or ported by modaccel today; they would need MCP or other legacy community mappings.</div>` : ""}
   ${back ? `<p class="small">Backport: rules are written for forward ports, so only renames from the mappings count as handled. What the newer game added is missing on the way back.</p>` : ""}
   <div class="plat"><span class="small">Commands for</span><button type="button" data-plat="win" class="${PLAT === "win" ? "on" : ""}">Windows</button><button type="button" data-plat="nix" class="${PLAT === "nix" ? "on" : ""}">macOS / Linux</button></div>
-  <p class="small">Run one hop at a time: port, check it builds and loads, then the next. A command is only marked as ready when a port across that hop has been run. Chaining hops in one command is not built yet (ROADMAP 11b).</p>
+  <p class="small">One command walks the whole route: it goes hub to hub, joins every update's renames into one map, runs only the rules for the updates it crosses, and names the update behind each error left. The rows below are the same route, hop by hop, if you would rather check each hop builds and loads before the next.</p>
+  <div class="cmdline"><code>${esc(cmd({ a: x, b: y }))}</code><button type="button" data-copy="all">Copy</button></div>
+  ${mineLine(hops)}
   <table class="tbl stack"><thead><tr><th class="l">Hop</th><th class="l">Status</th><th>Size</th><th>Names that break</th><th class="hi">modaccel handles</th><th>Left for you</th></tr></thead><tbody>`;
   hops.forEach((h, i) => {
     h.ready = readiness(h);
@@ -280,12 +304,12 @@ function render() {
   });
   html += `</tbody></table>`;
   out.innerHTML = html;
-  out.querySelectorAll("button[data-copy]").forEach(b => b.onclick = () => { try { navigator.clipboard.writeText(cmd(hops[+b.dataset.copy])); b.textContent = "Copied"; } catch (e) {} });
+  out.querySelectorAll("button[data-copy]").forEach(b => b.onclick = () => { try { navigator.clipboard.writeText(cmd(b.dataset.copy === "all" ? { a: x, b: y } : hops[+b.dataset.copy])); b.textContent = "Copied"; } catch (e) {} });
   out.querySelectorAll("button[data-plat]").forEach(b => b.onclick = () => { PLAT = b.dataset.plat; render(); });
   out.querySelectorAll("button[data-open]").forEach(b => b.onclick = () => {
     const i = +b.dataset.open, box = $("#in" + i), h = hops[i];
     if (!box.hidden) { box.hidden = true; return; }
-    box.innerHTML = h.steps.map(l => `<div class="srow"><b>${esc(l.a)} → ${esc(l.b)}</b><span class="size sz-${l.size}">${l.size}</span><span class="n">${fmt(l.broken)} break · ${fmt(l.mapped + l.rule)} handled · ${fmt(l.left)} left${l.s.linked === "exact" ? "" : " · names matched by guess"}</span><button type="button" data-step="${esc(l.s.from + "__" + l.s.to)}" data-fwd="${l.fwd ? 1 : 0}">What changed</button></div>`).join("");
+    box.innerHTML = h.steps.map(l => `<div class="srow"><b>${esc(l.a)} → ${esc(l.b)}</b><span class="size sz-${l.size}">${l.size}</span><span class="n">${fmt(l.broken)} break · ${fmt(l.mapped + l.rule)} handled · ${fmt(l.left)} left${l.s.linked === "exact" ? "" : " · names matched by guess"}${mined(l)}</span><button type="button" data-step="${esc(l.s.from + "__" + l.s.to)}" data-fwd="${l.fwd ? 1 : 0}">What changed</button></div>`).join("");
     box.hidden = false;
     box.querySelectorAll("button[data-step]").forEach(s => s.onclick = () => openStep(s.dataset.step, s.dataset.fwd === "1"));
   });
@@ -370,8 +394,15 @@ function pickers() {
   });
 }
 
+function scTable() {
+  const rows = IX.steps.filter(s => s.stonecutter && (s.stonecutter.switches || s.stonecutter.rules.length || s.stonecutter.backRules.length));
+  $("#scmods").textContent = IX.stonecutterMods;
+  $("#sctable tbody").innerHTML = rows.map(s => `<tr><td class="l"><b>${esc(s.from)} → ${esc(s.to)}</b></td><td data-k="Switches">${fmt(s.stonecutter.switches)}</td><td data-k="Mods">${s.stonecutter.mods}</td>
+    <td class="l mono small" data-k="Rules learned">${s.stonecutter.rules.length ? esc(s.stonecutter.rules.join(", ")) : "–"}</td><td class="l mono small" data-k="Backport rules">${s.stonecutter.backRules.length ? esc(s.stonecutter.backRules.join(", ")) : "–"}</td></tr>`).join("");
+}
+
 const START = new URLSearchParams(location.hash.slice(1));
-drawMap(); pickers(); render();
+drawMap(); pickers(); render(); scTable();
 if (START.get("step") && STEP[START.get("step")]) openStep(START.get("step"), START.get("back") !== "1");
 $("#gen").textContent = IX.generated;
 </script>

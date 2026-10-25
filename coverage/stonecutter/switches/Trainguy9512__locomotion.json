@@ -1,0 +1,408 @@
+{
+ "repo": "Trainguy9512/locomotion",
+ "commit": "d1cab66e949dcfcd98481bc31eb42111edeeceac",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "1.21.5",
+  "1.21.11"
+ ],
+ "files": 6,
+ "switches": 9,
+ "versionSwitches": 9,
+ "rows": [
+  {
+   "file": "src/main/java/com/trainguy9512/locomotion/animation/animator/entity/firstperson/FirstPersonAttackAnimations.java",
+   "line": 94,
+   "method": "(class body)",
+   "condition": ">= 1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": "public static final Identifier SPEAR_JAB = register(LocomotionMain.makeIdentifier(\"spear_jab\"), AttackAnimationRule.builder(\n            FirstPersonMontages.HAND_SPEAR_JAB_MONTAGE,\n            context -> context.item().getUseAnimation() == LocomotionMultiVersionWrappers.getSpearUseAnimation(),\n            30\n    )\n            .build());"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/com/trainguy9512/locomotion/animation/animator/entity/firstperson/FirstPersonJointAnimator.java",
+   "line": 210,
+   "method": "extractAnimationData",
+   "condition": ">= 1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.5",
+     "code": "driverContainer.getDriver(FirstPersonDrivers.HOTBAR_SLOT).setValue(player.getInventory().getSelectedSlot());"
+    },
+    {
+     "condition": null,
+     "code": "driverContainer.getDriver(HOTBAR_SLOT).setValue(dataReference.getInventory().selected);"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "getSelectedSlot"
+     ]
+    }
+   ],
+   "older": "driverContainer.getDriver(HOTBAR_SLOT).setValue(dataReference.getInventory().selected);",
+   "newer": "driverContainer.getDriver(FirstPersonDrivers.HOTBAR_SLOT).setValue(player.getInventory().getSelectedSlot());",
+   "removed": [
+    "dataReference",
+    "selected"
+   ],
+   "added": [
+    "FirstPersonDrivers",
+    "getSelectedSlot",
+    "player"
+   ]
+  },
+  {
+   "file": "src/main/java/com/trainguy9512/locomotion/animation/animator/entity/firstperson/FirstPersonJointAnimator.java",
+   "line": 216,
+   "method": "extractAnimationData",
+   "condition": ">= 1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": "FirstPersonSpear.extractSpearData(player, driverContainer, montageManager);"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/com/trainguy9512/locomotion/animation/animator/entity/firstperson/handpose/FirstPersonHandPoses.java",
+   "line": 192,
+   "method": "(class body)",
+   "condition": ">= 1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": "public static final Identifier SPEAR = register(LocomotionMain.makeIdentifier(\"spear\"), HandPoseDefinition.builder(\n            \"spear\",\n            FirstPersonSpear::constructSpearPoseFunction,\n            FirstPersonAnimationSequences.HAND_SPEAR_POSE,\n            itemStack -> itemStack.getUseAnimation() == LocomotionMultiVersionWrappers.getSpearUseAnimation(),\n            100)\n            .setRaiseSequence(FirstPersonAnimationSequences.HAND_SPEAR_RAISE)\n            .setLowerSequence(FirstPersonAnimationSequences.HAND_SPEAR_LOWER)\n            .build());"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/com/trainguy9512/locomotion/mixin/item/MixinBlocksAttacks.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">= 1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.5",
+     "code": "import com.trainguy9512.locomotion.animation.animator.JointAnimatorDispatcher;\nimport com.trainguy9512.locomotion.animation.animator.entity.firstperson.FirstPersonDrivers;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.entity.LivingEntity;\nimport net.minecraft.world.item.component.BlocksAttacks;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n@Mixin(BlocksAttacks.class)\npublic class MixinBlocksAttacks {\n\n    @Inject(\n            method = \"onBlocked\",\n            at = @At(\"HEAD\")\n    )\n    public void playShieldImpactMontageOnShieldBlocked(ServerLevel serverLevel, LivingEntity livingEntity, CallbackInfo ci) {\n        if (Minecraft.getInstance().isLocalPlayer(livingEntity.getUUID())) {\n            JointAnimatorDispatcher.getInstance().getFirstPersonPlayerDataContainer().ifPresent(dataContainer -> dataContainer.getDriver(FirstPersonDrivers.HAS_BLOCKED_ATTACK).trigger());\n        }\n    }\n}"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.world.item.ShieldItem;\nimport org.spongepowered.asm.mixin.Mixin;\n\n@Mixin(ShieldItem.class)\npublic class MixinBlocksAttacks {\n\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "BlocksAttacks",
+      "level",
+      "trigger"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.world.item.ShieldItem;\nimport org.spongepowered.asm.mixin.Mixin;\n\n@Mixin(ShieldItem.class)\npublic class MixinBlocksAttacks {\n\n}",
+   "newer": "import com.trainguy9512.locomotion.animation.animator.JointAnimatorDispatcher;\nimport com.trainguy9512.locomotion.animation.animator.entity.firstperson.FirstPersonDrivers;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.entity.LivingEntity;\nimport net.minecraft.world.item.component.BlocksAttacks;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n@Mixin(BlocksAttacks.class)\npublic class MixinBlocksAttacks {\n\n    @Inject(\n            method = \"onBlocked\",\n            at = @At(\"HEAD\")\n    )\n    public void playShieldImpactMontageOnShieldBlocked(ServerLevel serverLevel, LivingEntity livingEntity, CallbackInfo ci) {\n        if (Minecraft.getInstance().isLocalPlayer(livingEntity.getUUID())) {\n            JointAnimatorDispatcher.getInstance().getFirstPersonPlayerDataContainer().ifPresent(dataContainer -> dataContainer.getDriver(FirstPersonDrivers.HAS_BLOCKED_ATTACK).trigger());\n        }\n    }\n}",
+   "removed": [
+    "ShieldItem"
+   ],
+   "added": [
+    "BlocksAttacks",
+    "CallbackInfo",
+    "FirstPersonDrivers",
+    "HAS_BLOCKED_ATTACK",
+    "Inject",
+    "JointAnimatorDispatcher",
+    "LivingEntity",
+    "Minecraft",
+    "ServerLevel",
+    "animation",
+    "animator",
+    "callback",
+    "client",
+    "com",
+    "component",
+    "dataContainer",
+    "entity",
+    "firstperson",
+    "getDriver",
+    "getFirstPersonPlayerDataContainer",
+    "getInstance",
+    "getUUID",
+    "ifPresent",
+    "injection",
+    "isLocalPlayer",
+    "level",
+    "livingEntity",
+    "locomotion",
+    "method",
+    "playShieldImpactMontageOnShieldBlocked",
+    "server",
+    "serverLevel",
+    "trainguy9512",
+    "trigger"
+   ]
+  },
+  {
+   "file": "src/main/java/com/trainguy9512/locomotion/render/FirstPersonPlayerRenderer.java",
+   "line": 98,
+   "method": "renderLocomotionArmWithItem",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "AvatarRenderer<@NotNull AbstractClientPlayer> playerRenderer = this.entityRenderDispatcher.getPlayerRenderer(player);"
+    },
+    {
+     "condition": null,
+     "code": "PlayerRenderer playerRenderer = (PlayerRenderer)this.entityRenderDispatcher.getRenderer(abstractClientPlayer);"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "AvatarRenderer",
+      "PlayerRenderer",
+      "getPlayerRenderer"
+     ]
+    }
+   ],
+   "older": "PlayerRenderer playerRenderer = (PlayerRenderer)this.entityRenderDispatcher.getRenderer(abstractClientPlayer);",
+   "newer": "AvatarRenderer<@NotNull AbstractClientPlayer> playerRenderer = this.entityRenderDispatcher.getPlayerRenderer(player);",
+   "removed": [
+    "PlayerRenderer",
+    "abstractClientPlayer",
+    "getRenderer"
+   ],
+   "added": [
+    "AbstractClientPlayer",
+    "AvatarRenderer",
+    "NotNull",
+    "getPlayerRenderer",
+    "player"
+   ]
+  },
+  {
+   "file": "src/main/java/com/trainguy9512/locomotion/render/FirstPersonPlayerRenderer.java",
+   "line": 159,
+   "method": "render",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "AvatarRenderer<AbstractClientPlayer> playerRenderer = this.entityRenderDispatcher.getPlayerRenderer(player);"
+    },
+    {
+     "condition": null,
+     "code": "PlayerRenderer playerRenderer = (PlayerRenderer)this.entityRenderDispatcher.getRenderer(abstractClientPlayer);"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "AvatarRenderer",
+      "PlayerRenderer",
+      "getPlayerRenderer"
+     ]
+    }
+   ],
+   "older": "PlayerRenderer playerRenderer = (PlayerRenderer)this.entityRenderDispatcher.getRenderer(abstractClientPlayer);",
+   "newer": "AvatarRenderer<AbstractClientPlayer> playerRenderer = this.entityRenderDispatcher.getPlayerRenderer(player);",
+   "removed": [
+    "PlayerRenderer",
+    "abstractClientPlayer",
+    "getRenderer"
+   ],
+   "added": [
+    "AbstractClientPlayer",
+    "AvatarRenderer",
+    "getPlayerRenderer",
+    "player"
+   ]
+  },
+  {
+   "file": "src/main/java/com/trainguy9512/locomotion/util/LocomotionMultiVersionWrappers.java",
+   "line": 8,
+   "method": "getTridentUseAnimation",
+   "condition": ">= 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": "return ItemUseAnimation.TRIDENT;"
+    },
+    {
+     "condition": null,
+     "code": "return ItemUseAnimation.SPEAR;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "TRIDENT"
+     ]
+    }
+   ],
+   "older": "return ItemUseAnimation.SPEAR;",
+   "newer": "return ItemUseAnimation.TRIDENT;",
+   "removed": [
+    "SPEAR"
+   ],
+   "added": [
+    "TRIDENT"
+   ]
+  },
+  {
+   "file": "src/main/java/com/trainguy9512/locomotion/util/LocomotionMultiVersionWrappers.java",
+   "line": 16,
+   "method": "getSpearUseAnimation",
+   "condition": ">= 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": "return ItemUseAnimation.SPEAR;"
+    },
+    {
+     "condition": null,
+     "code": "throw new RuntimeException(\"1.21.11 feature attempted to be used in older version\");"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "SPEAR"
+     ]
+    }
+   ],
+   "older": "throw new RuntimeException(\"1.21.11 feature attempted to be used in older version\");",
+   "newer": "return ItemUseAnimation.SPEAR;",
+   "removed": [
+    "RuntimeException"
+   ],
+   "added": [
+    "ItemUseAnimation",
+    "SPEAR"
+   ]
+  }
+ ]
+}

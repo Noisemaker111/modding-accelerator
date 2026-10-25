@@ -1,0 +1,2061 @@
+{
+ "repo": "Clickism/ClickVillagers",
+ "commit": "1e3b1859e6c50145e8ef3aa0222366157d237817",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "neoforge"
+ ],
+ "versions": [
+  "1.21.1",
+  "1.21.11",
+  "26.1",
+  "26.2",
+  "26.3"
+ ],
+ "files": 18,
+ "switches": 46,
+ "versionSwitches": 43,
+ "rows": [
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/event/PlaceVillagerInVehicleListener.java",
+   "line": 25,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.world.entity.vehicle.boat.*;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/mixin/DispenserBlockMixin.java",
+   "line": 34,
+   "method": "(class body)",
+   "condition": ">=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "@Inject(\n            method = \"getDispenseMethod(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;)Lnet/minecraft/core/dispenser/DispenseItemBehavior;\",\n            at = @At(\"HEAD\"),\n            cancellable = true\n    )"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(\n            method = \"Lnet/minecraft/block/DispenserBlock;getBehaviorForItem(Lnet/minecraft/item/ItemStack;)Lnet/minecraft/block/dispenser/DispenserBehavior;\",\n            at = @At(\"HEAD\"),\n            cancellable = true\n    )"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "@Inject(\n            method = \"Lnet/minecraft/block/DispenserBlock;getBehaviorForItem(Lnet/minecraft/item/ItemStack;)Lnet/minecraft/block/dispenser/DispenserBehavior;\",\n            at = @At(\"HEAD\"),\n            cancellable = true\n    )",
+   "newer": "@Inject(\n            method = \"getDispenseMethod(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;)Lnet/minecraft/core/dispenser/DispenseItemBehavior;\",\n            at = @At(\"HEAD\"),\n            cancellable = true\n    )",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/mixin/DispenserBlockMixin.java",
+   "line": 48,
+   "method": "(class body)",
+   "condition": ">=1.20.5",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "Level world,"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/mixin/DispenserBlockMixin.java",
+   "line": 55,
+   "method": "getBehaviorForItem",
+   "condition": "<1.20.5",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.20.5",
+     "code": "World world = world(pointer);"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/mixin/LivingEntityMixin.java",
+   "line": 41,
+   "method": "(class body)",
+   "condition": ">1.21.1",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">1.21.1",
+     "code": "ServerLevel world,"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/mixin/MerchantContainerMixin.java",
+   "line": 50,
+   "method": "onSetOfferIndex",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "(ServerLevel) villager.level()"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/mixin/VillagerDataMixin.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": ">=1.21.8",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.8",
+     "code": "import net.minecraft.network.RegistryFriendlyByteBuf;\nimport net.minecraft.network.codec.StreamCodec;\nimport net.minecraft.network.codec.ByteBufCodecs;"
+    }
+   ],
+   "boundary": [
+    "1.21.7 -> 1.21.8"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/platform/fabric/FabricEntrypoint.java",
+   "line": 42,
+   "method": "onInitialize",
+   "condition": "<21.6",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<21.6",
+     "code": "//if (hitResult != null) return InteractionResult.PASS;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/platform/fabric/FabricEntrypoint.java",
+   "line": 8,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import de.clickism.clickvillagers.ClickVillagers;\nimport de.clickism.clickvillagers.event.PickupVillagerListener;\nimport de.clickism.clickvillagers.event.PlaceVillagerInVehicleListener;\nimport de.clickism.clickvillagers.event.PlaceVillagerListener;\nimport de.clickism.clickvillagers.event.UpdateNotifier;\nimport de.clickism.clickvillagers.util.CooldownManager;\nimport de.clickism.clickvillagers.util.MessageType;\nimport de.clickism.clickvillagers.util.VersionHelper;\nimport de.clickism.configured.fabriccommandadapter.FabricCommandAdapter;\nimport de.clickism.configured.fabriccommandadapter.command.GetCommand;\nimport de.clickism.configured.fabriccommandadapter.command.PathCommand;\nimport de.clickism.configured.fabriccommandadapter.command.ReloadCommand;\nimport de.clickism.configured.fabriccommandadapter.command.SetCommand;\nimport net.fabricmc.api.ModInitializer;\nimport net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;\nimport net.fabricmc.fabric.api.event.player.UseBlockCallback;\nimport net.fabricmc.fabric.api.event.player.UseEntityCallback;\nimport net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;\nimport net.fabricmc.loader.api.FabricLoader;\nimport net.minecraft.commands.Commands;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.world.InteractionResult;\n\nimport static de.clickism.clickvillagers.ClickVillagersConfig.*;\n\npublic class FabricEntrypoint implements ModInitializer {\n    @Override\n    public void onInitialize() {\n        CooldownManager cooldownManager = new CooldownManager(COOLDOWN::get);\n        var pickupMobListener = new PickupVillagerListener(cooldownManager);\n        var placeMobInVehicleListener = new PlaceVillagerInVehicleListener();\n        UseEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> {\n                    //? if <21.6\n                    //if (hitResult != null) return InteractionResult.PASS;\n                    return pickupMobListener.event(player, level, hand, entity);\n                }\n        );\n        UseEntityCallback.EVENT.register((player, level, hand, entity, hitResult) ->\n                placeMobInVehicleListener.event(player, level, hand, entity));\n        UseBlockCallback.EVENT.register(new PlaceVillagerListener()::event);\n\n        ClickVillagers.initialize();\n\n        // Register Commands\n        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {\n            dispatcher.register(Commands.literal(\"clickvillagers\")\n                    .requires(VersionHelper::isOpOrInSinglePlayer)\n                    .then(FabricCommandAdapter.ofConfig(CONFIG)\n                            .add(new SetCommand((sender, key, value) -> {\n                                MessageType.CONFIG.send(sender, Component.literal(\"§aConfig option \\\"§l\" + key + \"§a\\\" set to §l\" + value + \".\"));\n                            }))\n                            .add(new GetCommand((sender, key, value) -> {\n                                MessageType.CONFIG.send(sender, Component.literal(\"§aConfig option \\\"§l\" + key + \"§a\\\" has value §l\" + value + \".\"));\n                            }))\n                            .add(new ReloadCommand(sender -> {\n                                MessageType.CONFIG.send(sender, Component.literal(\"§aReloaded the config file.\"));\n                            }))\n                            .add(new PathCommand((sender, path) -> {\n                                MessageType.CONFIG.send(sender, Component.literal(\"§aThe config file is located at: §f\" + path));\n                            }))\n                            .buildRoot()\n                    )\n            );\n        });\n\n        // Check for updates\n        if (CHECK_UPDATES.get()) {\n            String modVersion = FabricLoader.getInstance().getModContainer(ClickVillagers.MOD_ID)\n                    .map(container -> container.getMetadata().getVersion().getFriendlyString())\n                    .orElse(null);\n            ClickVillagers.checkUpdat"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/platform/neoforge/NeoforgeEntrypoint.java",
+   "line": 8,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import de.clickism.clickvillagers.ClickVillagers;\nimport de.clickism.clickvillagers.event.UpdateNotifier;\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.ModList;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.neoforge.common.NeoForge;\n\nimport static de.clickism.clickvillagers.ClickVillagersConfig.CHECK_UPDATES;\n\n@Mod(ClickVillagers.MOD_ID)\npublic class NeoforgeEntrypoint {\n    public NeoforgeEntrypoint(IEventBus eventBus) {\n        NeoForge.EVENT_BUS.register(new NeoforgeEventListener());\n\n        ClickVillagers.initialize();\n\n        // Register commands\n        NeoForge.EVENT_BUS.register(new NeoforgeEventListener.ConfigCommandRegisterListener());\n\n        // Check for updates\n        if (CHECK_UPDATES.get()) {\n            String modVersion = ModList.get()\n                    .getModContainerById(ClickVillagers.MOD_ID)\n                    .map(container -> container.getModInfo().getVersion().toString())\n                    .orElse(null);\n            ClickVillagers.checkUpdates(modVersion, \"neoforge\");\n            var notifier = new UpdateNotifier(ClickVillagers::newerVersion);\n            NeoForge.EVENT_BUS.register(new NeoforgeEventListener.JoinListener(notifier));\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/platform/neoforge/NeoforgeEventListener.java",
+   "line": 8,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import de.clickism.clickvillagers.event.PickupVillagerListener;\nimport de.clickism.clickvillagers.event.PlaceVillagerInVehicleListener;\nimport de.clickism.clickvillagers.event.PlaceVillagerListener;\nimport de.clickism.clickvillagers.event.UpdateNotifier;\nimport de.clickism.clickvillagers.util.CooldownManager;\nimport de.clickism.clickvillagers.util.MessageType;\nimport de.clickism.clickvillagers.util.VersionHelper;\nimport de.clickism.configured.neoforgecommandadapter.NeoforgeCommandAdapter;\nimport de.clickism.configured.neoforgecommandadapter.command.GetCommand;\nimport de.clickism.configured.neoforgecommandadapter.command.PathCommand;\nimport de.clickism.configured.neoforgecommandadapter.command.ReloadCommand;\nimport de.clickism.configured.neoforgecommandadapter.command.SetCommand;\nimport net.minecraft.commands.Commands;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.neoforge.event.RegisterCommandsEvent;\nimport net.neoforged.neoforge.event.entity.player.PlayerEvent;\nimport net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;\n\nimport static de.clickism.clickvillagers.ClickVillagersConfig.CONFIG;\nimport static de.clickism.clickvillagers.ClickVillagersConfig.COOLDOWN;\n\npublic class NeoforgeEventListener {\n    private final PickupVillagerListener pickupVillagerListener = new PickupVillagerListener(new CooldownManager(COOLDOWN::get));\n    private final PlaceVillagerListener placeVillagerListener = new PlaceVillagerListener();\n    private final PlaceVillagerInVehicleListener placeVillagerInVehicleListener = new PlaceVillagerInVehicleListener();\n\n    @SubscribeEvent\n    public void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {\n        placeVillagerListener.event(event.getEntity(), event.getLevel(), event.getHand(), event.getHitVec());\n    }\n\n    @SubscribeEvent\n    public void onRightClickEntity(PlayerInteractEvent.EntityInteract event) {\n        pickupVillagerListener.event(event.getEntity(), event.getLevel(), event.getHand(), event.getTarget());\n        placeVillagerInVehicleListener.event(event.getEntity(), event.getLevel(), event.getHand(), event.getTarget());\n    }\n\n    public record JoinListener(UpdateNotifier notifier) {\n        @SubscribeEvent\n        public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {\n            if (!(event.getEntity() instanceof ServerPlayer player)) return;\n            notifier.onJoin(player);\n        }\n    }\n\n    public record ConfigCommandRegisterListener() {\n        @SubscribeEvent\n        public void onRegisterCommands(RegisterCommandsEvent event) {\n            event.getDispatcher().register(Commands.literal(\"clickvillagers\")\n                    .requires(VersionHelper::isOpOrInSinglePlayer)\n                    .then(NeoforgeCommandAdapter.ofConfig(CONFIG)\n                            .add(new SetCommand((sender, key, value) -> {\n                                MessageType.CONFIG.send(sender, Component.literal(\"§aConfig option \\\"§l\" + key + \"§a\\\" set to §l\" + value + \".\"));\n                            }))\n                            .add(new GetCommand((sender, key, value) -> {\n                                MessageType.CONFIG.send(sender, Component.literal(\"§aConfig option \\\"§l\" + key + \"§a\\\" has value §l\" + value + \".\"));\n                            }))\n                            .add(new ReloadCommand(sender -> {\n                                MessageType.CONFIG.send(sender, Component.literal(\"§aReloaded the config file.\"));\n                            }))\n                            .add(new PathCommand((sender, path) -> {\n                                MessageType.CONFIG.send(sender, Component.literal(\"§aThe config file is located at: §f\" + path));\n                            }))\n                            .buildRoot())\n            );\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/ColoredItemHelper.java",
+   "line": 11,
+   "method": "(imports)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.world.level.block.ColorCollection;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/ColoredItemHelper.java",
+   "line": 17,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "public static final ColorCollection<Item> STAINED_GLASS_PANE = Items.STAINED_GLASS_PANE;\n    public static final ColorCollection<Item> GLAZED_TERRACOTTA = Items.GLAZED_TERRACOTTA;\n    public static final ColorCollection<Item> DYED_TERRACOTTA = Items.DYED_TERRACOTTA;\n    public static final ColorCollection<Item> WOOL = Items.WOOL;"
+    },
+    {
+     "condition": null,
+     "code": "public static final ColorCollection<Item> STAINED_GLASS_PANE = new ColorCollection<>(\n            Items.WHITE_STAINED_GLASS_PANE,\n            Items.ORANGE_STAINED_GLASS_PANE,\n            Items.MAGENTA_STAINED_GLASS_PANE,\n            Items.LIGHT_BLUE_STAINED_GLASS_PANE,\n            Items.YELLOW_STAINED_GLASS_PANE,\n            Items.LIME_STAINED_GLASS_PANE,\n            Items.PINK_STAINED_GLASS_PANE,\n            Items.GRAY_STAINED_GLASS_PANE,\n            Items.LIGHT_GRAY_STAINED_GLASS_PANE,\n            Items.CYAN_STAINED_GLASS_PANE,\n            Items.PURPLE_STAINED_GLASS_PANE,\n            Items.BLUE_STAINED_GLASS_PANE,\n            Items.BROWN_STAINED_GLASS_PANE,\n            Items.GREEN_STAINED_GLASS_PANE,\n            Items.RED_STAINED_GLASS_PANE,\n            Items.BLACK_STAINED_GLASS_PANE\n    );\n\n    public static final ColorCollection<Item> GLAZED_TERRACOTTA = new ColorCollection<>(\n            Items.WHITE_GLAZED_TERRACOTTA,\n            Items.ORANGE_GLAZED_TERRACOTTA,\n            Items.MAGENTA_GLAZED_TERRACOTTA,\n            Items.LIGHT_BLUE_GLAZED_TERRACOTTA,\n            Items.YELLOW_GLAZED_TERRACOTTA,\n            Items.LIME_GLAZED_TERRACOTTA,\n            Items.PINK_GLAZED_TERRACOTTA,\n            Items.GRAY_GLAZED_TERRACOTTA,\n            Items.LIGHT_GRAY_GLAZED_TERRACOTTA,\n            Items.CYAN_GLAZED_TERRACOTTA,\n            Items.PURPLE_GLAZED_TERRACOTTA,\n            Items.BLUE_GLAZED_TERRACOTTA,\n            Items.BROWN_GLAZED_TERRACOTTA,\n            Items.GREEN_GLAZED_TERRACOTTA,\n            Items.RED_GLAZED_TERRACOTTA,\n            Items.BLACK_GLAZED_TERRACOTTA\n    );\n\n    public static final ColorCollection<Item> DYED_TERRACOTTA = new ColorCollection<>(\n            Items.WHITE_TERRACOTTA,\n            Items.ORANGE_TERRACOTTA,\n            Items.MAGENTA_TERRACOTTA,\n            Items.LIGHT_BLUE_TERRACOTTA,\n            Items.YELLOW_TERRACOTTA,\n            Items.LIME_TERRACOTTA,\n            Items.PINK_TERRACOTTA,\n            Items.GRAY_TERRACOTTA,\n            Items.LIGHT_GRAY_TERRACOTTA,\n            Items.CYAN_TERRACOTTA,\n            Items.PURPLE_TERRACOTTA,\n            Items.BLUE_TERRACOTTA,\n            Items.BROWN_TERRACOTTA,\n            Items.GREEN_TERRACOTTA,\n            Items.RED_TERRACOTTA,\n            Items.BLACK_TERRACOTTA\n    );\n\n    public static final ColorCollection<Item> WOOL = new ColorCollection<>(\n            Items.WHITE_WOOL,\n            Items.ORANGE_WOOL,\n            Items.MAGENTA_WOOL,\n            Items.LIGHT_BLUE_WOOL,\n            Items.YELLOW_WOOL,\n            Items.LIME_WOOL,\n            Items.PINK_WOOL,\n            Items.GRAY_WOOL,\n            Items.LIGHT_GRAY_WOOL,\n            Items.CYAN_WOOL,\n            Items.PURPLE_WOOL,\n            Items.BLUE_WOOL,\n            Items.BROWN_WOOL,\n            Items.GREEN_WOOL,\n            Items.RED_WOOL,\n            Items.BLACK_WOOL\n    );"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "BLACK_GLAZED_TERRACOTTA",
+      "BLACK_STAINED_GLASS_PANE",
+      "BLACK_TERRACOTTA",
+      "BLACK_WOOL",
+      "BLUE_GLAZED_TERRACOTTA",
+      "BLUE_STAINED_GLASS_PANE",
+      "BLUE_TERRACOTTA",
+      "BLUE_WOOL",
+      "BROWN_GLAZED_TERRACOTTA",
+      "BROWN_STAINED_GLASS_PANE",
+      "BROWN_TERRACOTTA",
+      "BROWN_WOOL"
+     ]
+    }
+   ],
+   "older": "public static final ColorCollection<Item> STAINED_GLASS_PANE = new ColorCollection<>(\n            Items.WHITE_STAINED_GLASS_PANE,\n            Items.ORANGE_STAINED_GLASS_PANE,\n            Items.MAGENTA_STAINED_GLASS_PANE,\n            Items.LIGHT_BLUE_STAINED_GLASS_PANE,\n            Items.YELLOW_STAINED_GLASS_PANE,\n            Items.LIME_STAINED_GLASS_PANE,\n            Items.PINK_STAINED_GLASS_PANE,\n            Items.GRAY_STAINED_GLASS_PANE,\n            Items.LIGHT_GRAY_STAINED_GLASS_PANE,\n            Items.CYAN_STAINED_GLASS_PANE,\n            Items.PURPLE_STAINED_GLASS_PANE,\n            Items.BLUE_STAINED_GLASS_PANE,\n            Items.BROWN_STAINED_GLASS_PANE,\n            Items.GREEN_STAINED_GLASS_PANE,\n            Items.RED_STAINED_GLASS_PANE,\n            Items.BLACK_STAINED_GLASS_PANE\n    );\n\n    public static final ColorCollection<Item> GLAZED_TERRACOTTA = new ColorCollection<>(\n            Items.WHITE_GLAZED_TERRACOTTA,\n            Items.ORANGE_GLAZED_TERRACOTTA,\n            Items.MAGENTA_GLAZED_TERRACOTTA,\n            Items.LIGHT_BLUE_GLAZED_TERRACOTTA,\n            Items.YELLOW_GLAZED_TERRACOTTA,\n            Items.LIME_GLAZED_TERRACOTTA,\n            Items.PINK_GLAZED_TERRACOTTA,\n            Items.GRAY_GLAZED_TERRACOTTA,\n            Items.LIGHT_GRAY_GLAZED_TERRACOTTA,\n            Items.CYAN_GLAZED_TERRACOTTA,\n            Items.PURPLE_GLAZED_TERRACOTTA,\n            Items.BLUE_GLAZED_TERRACOTTA,\n            Items.BROWN_GLAZED_TERRACOTTA,\n            Items.GREEN_GLAZED_TERRACOTTA,\n            Items.RED_GLAZED_TERRACOTTA,\n            Items.BLACK_GLAZED_TERRACOTTA\n    );\n\n    public static final ColorCollection<Item> DYED_TERRACOTTA = new ColorCollection<>(\n            Items.WHITE_TERRACOTTA,\n            Items.ORANGE_TERRACOTTA,\n            Items.MAGENTA_TERRACOTTA,\n            Items.LIGHT_BLUE_TERRACOTTA,\n            Items.YELLOW_TERRACOTTA,\n            Items.LIME_TERRACOTTA,\n            Items.PINK_TERRACOTTA,\n            Items.GRAY_TERRACOTTA,\n            Items.LIGH",
+   "newer": "public static final ColorCollection<Item> STAINED_GLASS_PANE = Items.STAINED_GLASS_PANE;\n    public static final ColorCollection<Item> GLAZED_TERRACOTTA = Items.GLAZED_TERRACOTTA;\n    public static final ColorCollection<Item> DYED_TERRACOTTA = Items.DYED_TERRACOTTA;\n    public static final ColorCollection<Item> WOOL = Items.WOOL;",
+   "removed": [
+    "BLACK_GLAZED_TERRACOTTA",
+    "BLACK_STAINED_GLASS_PANE",
+    "BLACK_TERRACOTTA",
+    "BLACK_WOOL",
+    "BLUE_GLAZED_TERRACOTTA",
+    "BLUE_STAINED_GLASS_PANE",
+    "BLUE_TERRACOTTA",
+    "BLUE_WOOL",
+    "BROWN_GLAZED_TERRACOTTA",
+    "BROWN_STAINED_GLASS_PANE",
+    "BROWN_TERRACOTTA",
+    "BROWN_WOOL",
+    "CYAN_GLAZED_TERRACOTTA",
+    "CYAN_STAINED_GLASS_PANE",
+    "CYAN_TERRACOTTA",
+    "CYAN_WOOL",
+    "GRAY_GLAZED_TERRACOTTA",
+    "GRAY_STAINED_GLASS_PANE",
+    "GRAY_TERRACOTTA",
+    "GRAY_WOOL",
+    "GREEN_GLAZED_TERRACOTTA",
+    "GREEN_STAINED_GLASS_PANE",
+    "GREEN_TERRACOTTA",
+    "GREEN_WOOL",
+    "LIGHT_BLUE_GLAZED_TERRACOTTA",
+    "LIGHT_BLUE_STAINED_GLASS_PANE",
+    "LIGHT_BLUE_TERRACOTTA",
+    "LIGHT_BLUE_WOOL",
+    "LIGHT_GRAY_GLAZED_TERRACOTTA",
+    "LIGHT_GRAY_STAINED_GLASS_PANE",
+    "LIGHT_GRAY_TERRACOTTA",
+    "LIGHT_GRAY_WOOL",
+    "LIME_GLAZED_TERRACOTTA",
+    "LIME_STAINED_GLASS_PANE",
+    "LIME_TERRACOTTA",
+    "LIME_WOOL",
+    "MAGENTA_GLAZED_TERRACOTTA",
+    "MAGENTA_STAINED_GLASS_PANE",
+    "MAGENTA_TERRACOTTA",
+    "MAGENTA_WOOL"
+   ],
+   "added": []
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/ColoredItemHelper.java",
+   "line": 101,
+   "method": "(class body)",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "public record ColorCollection<T>(\n            T white,\n            T orange,\n            T magenta,\n            T lightBlue,\n            T yellow,\n            T lime,\n            T pink,\n            T gray,\n            T lightGray,\n            T cyan,\n            T purple,\n            T blue,\n            T brown,\n            T green,\n            T red,\n            T black\n    ) {\n        public List<T> asList() {\n            return List.of(white, orange, magenta, lightBlue, yellow, lime, pink, gray, lightGray, cyan, purple, blue, brown, green, red, black);\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/NbtFixer.java",
+   "line": 18,
+   "method": "(class body)",
+   "condition": ">=1.21.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "// DataFixers didn't work so do it manually\n    public static void applyDataFixes(CompoundTag nbt) {\n        try {\n            CompoundTag offersCompound = nbt.getCompound(\"Offers\").orElseThrow();\n            ListTag recipesList = offersCompound.getListOrEmpty(\"Recipes\");\n            for (Tag recipe : recipesList) {\n                if (!(recipe instanceof CompoundTag recipeCompound)) continue;\n                removeLevelsKey(recipeCompound.getCompoundOrEmpty(\"buy\"));\n                removeLevelsKey(recipeCompound.getCompoundOrEmpty(\"sell\"));\n            }\n        } catch (NoSuchElementException ignored) {\n        }\n    }\n\n    private static void removeLevelsKey(CompoundTag nbtCompound) {\n        CompoundTag componentsCompound = nbtCompound.getCompound(\"components\").orElse(null);\n        if (componentsCompound == null) return;\n        removeLevelsKeyFromEnchantments(componentsCompound, \"minecraft:enchantments\");\n        removeLevelsKeyFromEnchantments(componentsCompound, \"minecraft:stored_enchantments\");\n    }\n\n    private static void removeLevelsKeyFromEnchantments(CompoundTag nbtCompound, String enchantmentKey) {\n        CompoundTag enchantmentCompound = nbtCompound.getCompoundOrEmpty(enchantmentKey);\n        CompoundTag levelsCompound = enchantmentCompound.getCompoundOrEmpty(\"levels\");\n        if (levelsCompound.isEmpty()) return;\n        nbtCompound.put(enchantmentKey, levelsCompound);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/TradeResetHelper.java",
+   "line": 13,
+   "method": "(imports)",
+   "condition": ">1.21.4 | >1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21.4",
+     "code": "import net.minecraft.core.component.DataComponentExactPredicate;"
+    },
+    {
+     "condition": ">1.20.1",
+     "code": "import net.minecraft.core.component.DataComponentPredicate;"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5",
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "DataComponentExactPredicate",
+      "DataComponentPredicate"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.core.component.DataComponentPredicate;",
+   "newer": "import net.minecraft.core.component.DataComponentExactPredicate;",
+   "removed": [
+    "DataComponentPredicate"
+   ],
+   "added": [
+    "DataComponentExactPredicate"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/TradeResetHelper.java",
+   "line": 43,
+   "method": "(class body)",
+   "condition": ">1.21.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21.4",
+     "code": "DataComponentExactPredicate.allOf(RESET_ITEM_STACK.getComponents())\n             //?} else\n            //DataComponentPredicate.allOf(RESET_ITEM_STACK.getComponents())\n    );"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/TradeResetHelper.java",
+   "line": 59,
+   "method": "getResetOffer",
+   "condition": ">1.20.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.1",
+     "code": "RESET_TRADED_ITEM,\n                Optional.of(RESET_TRADED_ITEM),\n                RESET_TRADED_ITEM.itemStack(),"
+    },
+    {
+     "condition": null,
+     "code": "RESET_ITEM_STACK,\n                RESET_ITEM_STACK,\n                RESET_ITEM_STACK,"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "itemStack"
+     ]
+    }
+   ],
+   "older": "RESET_ITEM_STACK,\n                RESET_ITEM_STACK,\n                RESET_ITEM_STACK,",
+   "newer": "RESET_TRADED_ITEM,\n                Optional.of(RESET_TRADED_ITEM),\n                RESET_TRADED_ITEM.itemStack(),",
+   "removed": [
+    "RESET_ITEM_STACK"
+   ],
+   "added": [
+    "Optional",
+    "RESET_TRADED_ITEM",
+    "itemStack"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/Utils.java",
+   "line": 14,
+   "method": "(imports)",
+   "condition": "<1.20.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.20.5",
+     "code": "import net.minecraft.nbt.NbtCompound;\nimport net.minecraft.nbt.NbtList;\nimport java.util.stream.Stream;"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/Utils.java",
+   "line": 98,
+   "method": "(class body)",
+   "condition": "<1.20.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.20.5",
+     "code": "public static Stream<String> streamEnchantments(NbtList enchantments) {\n        if (enchantments == null || enchantments.isEmpty()) return Stream.empty();\n        return enchantments.stream()\n                .map(element -> {\n                    if (!(element instanceof NbtCompound compound)) return \"?\";\n                    int level = compound.getShort(\"lvl\");\n                    Identifier id = Identifier.tryParse(compound.getString(\"id\"));\n                    if (id == null) return \"?\";\n                    String enchantment = id.getPath().replace(\"_\", \" \");\n                    String levelString = Utils.toRomanNumeral(level);\n                    return Utils.titleCase(enchantment) + \" \" + levelString;\n                });\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/VersionHelper.java",
+   "line": 24,
+   "method": "(imports)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "import net.minecraft.server.players.NameAndId;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/VersionHelper.java",
+   "line": 27,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import net.minecraft.server.permissions.Permissions;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/VersionHelper.java",
+   "line": 31,
+   "method": "(imports)",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import net.minecraft.util.Prediction;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/util/VersionHelper.java",
+   "line": 91,
+   "method": "getPlayerName",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "return server.services().nameToIdCache().get(uuid)\n                .map(NameAndId::name);"
+    },
+    {
+     "condition": null,
+     "code": "var cache = server.getProfileCache();\n        if (cache == null) return Optional.empty();\n        return cache.get(uuid).map(GameProfile::getName);"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "getName",
+      "name"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "getName",
+      "name"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "empty",
+      "getName",
+      "name"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "getName",
+      "name"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "NameAndId",
+      "getProfileCache",
+      "name",
+      "nameToIdCache",
+      "services"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "getName",
+      "name"
+     ]
+    }
+   ],
+   "older": "var cache = server.getProfileCache();\n        if (cache == null) return Optional.empty();\n        return cache.get(uuid).map(GameProfile::getName);",
+   "newer": "return server.services().nameToIdCache().get(uuid)\n                .map(NameAndId::name);",
+   "removed": [
+    "GameProfile",
+    "Optional",
+    "cache",
+    "empty",
+    "getName",
+    "getProfileCache"
+   ],
+   "added": [
+    "NameAndId",
+    "name",
+    "nameToIdCache",
+    "services"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PartnerState.java",
+   "line": 21,
+   "method": "(imports)",
+   "condition": ">=1.21.5",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "import net.minecraft.world.level.saveddata.SavedDataType;"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PartnerState.java",
+   "line": 28,
+   "method": "(class body)",
+   "condition": ">=1.21.5 | >=1.20.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "@SuppressWarnings(\"unchecked\")\n    public static Codec<PartnerState> codec(ServerLevel world) {\n        return Codec.of(new Encoder<>() {\n            @Override\n            public <T> DataResult<T> encode(PartnerState input, DynamicOps<T> ops, T prefix) {\n                CompoundTag nbtCompound = new CompoundTag();\n                input.save(nbtCompound, world.registryAccess());\n                return DataResult.success((T) nbtCompound);\n            }\n        }, new Decoder<>() {\n            @Override\n            public <T> DataResult<Pair<PartnerState, T>> decode(DynamicOps<T> ops, T input) {\n                CompoundTag nbtCompound = (CompoundTag) ops.convertTo(NbtOps.INSTANCE, input);\n                PartnerState partnerState = createFromNbt(nbtCompound, world.registryAccess());\n                return DataResult.success(Pair.of(partnerState, ops.empty()));\n            }\n        });\n    }"
+    },
+    {
+     "condition": ">=1.20.5",
+     "code": "private static final Factory<PartnerState> type = new Factory<>(\n            PartnerState::new,\n            PartnerState::createFromNbt,\n            null\n    );"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5",
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "Factory",
+      "convertTo",
+      "input",
+      "save",
+      "type"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "codec",
+      "type"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "Factory",
+      "codec",
+      "decode",
+      "type"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "save",
+      "type"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "INSTANCE",
+      "codec",
+      "save",
+      "type"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Factory",
+      "INSTANCE",
+      "codec",
+      "ops",
+      "type"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "INSTANCE",
+      "codec",
+      "empty",
+      "registryAccess",
+      "save",
+      "type"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "empty"
+     ]
+    }
+   ],
+   "older": "private static final Factory<PartnerState> type = new Factory<>(\n            PartnerState::new,\n            PartnerState::createFromNbt,\n            null\n    );",
+   "newer": "@SuppressWarnings(\"unchecked\")\n    public static Codec<PartnerState> codec(ServerLevel world) {\n        return Codec.of(new Encoder<>() {\n            @Override\n            public <T> DataResult<T> encode(PartnerState input, DynamicOps<T> ops, T prefix) {\n                CompoundTag nbtCompound = new CompoundTag();\n                input.save(nbtCompound, world.registryAccess());\n                return DataResult.success((T) nbtCompound);\n            }\n        }, new Decoder<>() {\n            @Override\n            public <T> DataResult<Pair<PartnerState, T>> decode(DynamicOps<T> ops, T input) {\n                CompoundTag nbtCompound = (CompoundTag) ops.convertTo(NbtOps.INSTANCE, input);\n                PartnerState partnerState = createFromNbt(nbtCompound, world.registryAccess());\n                return DataResult.success(Pair.of(partnerState, ops.empty()));\n            }\n        });\n    }",
+   "removed": [
+    "Factory",
+    "type"
+   ],
+   "added": [
+    "Codec",
+    "CompoundTag",
+    "DataResult",
+    "Decoder",
+    "DynamicOps",
+    "Encoder",
+    "INSTANCE",
+    "NbtOps",
+    "Override",
+    "Pair",
+    "ServerLevel",
+    "SuppressWarnings",
+    "codec",
+    "convertTo",
+    "decode",
+    "empty",
+    "encode",
+    "input",
+    "nbtCompound",
+    "ops",
+    "partnerState",
+    "prefix",
+    "registryAccess",
+    "save",
+    "success",
+    "world"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PartnerState.java",
+   "line": 57,
+   "method": "(class body)",
+   "condition": "<1.21.5",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.21.5",
+     "code": "//@Override"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PartnerState.java",
+   "line": 60,
+   "method": "(class body)",
+   "condition": ">=1.20.5",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": ", HolderLookup.Provider registries"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PartnerState.java",
+   "line": 93,
+   "method": "(class body)",
+   "condition": ">=1.20.5",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": ", HolderLookup.Provider registryLookup"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PartnerState.java",
+   "line": 128,
+   "method": "getServerState",
+   "condition": ">=21.6 | >=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=21.6",
+     "code": "ClickVillagers.id(\"partner_state\"),\n                //?} else\n                //ClickVillagers.MOD_ID,\n                PartnerState::new,\n                codec(world),\n                null\n        );\n        PartnerState state = persistentStateManager.computeIfAbsent(type);"
+    },
+    {
+     "condition": ">=1.20.5",
+     "code": "PartnerState state = persistentStateManager.computeIfAbsent(type, ClickVillagers.MOD_ID);"
+    },
+    {
+     "condition": null,
+     "code": "PartnerState state = persistentStateManager.getOrCreate(\n                PartnerState::createFromNbt,\n                PartnerState::new,\n                ClickVillagers.MOD_ID\n        );"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.21.11 -> 26.1",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "codec"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "codec"
+     ]
+    }
+   ],
+   "older": "PartnerState state = persistentStateManager.computeIfAbsent(type, ClickVillagers.MOD_ID);",
+   "newer": "ClickVillagers.id(\"partner_state\"),\n                //?} else\n                //ClickVillagers.MOD_ID,\n                PartnerState::new,\n                codec(world),\n                null\n        );\n        PartnerState state = persistentStateManager.computeIfAbsent(type);",
+   "removed": [
+    "MOD_ID"
+   ],
+   "added": [
+    "codec",
+    "world"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PickupHandler.java",
+   "line": 47,
+   "method": "(imports)",
+   "condition": ">=1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.6",
+     "code": "import net.minecraft.world.level.storage.TagValueInput;\nimport net.minecraft.world.level.storage.TagValueOutput;\nimport net.minecraft.world.level.storage.ValueInput;\nimport net.minecraft.util.ProblemReporter;"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PickupHandler.java",
+   "line": 53,
+   "method": "(imports)",
+   "condition": ">=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "import net.minecraft.core.component.DataComponents;\nimport net.minecraft.world.item.component.ItemLore;\nimport net.minecraft.world.item.component.CustomData;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.nbt.NbtList;\nimport net.minecraft.nbt.NbtString;"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "CustomData",
+      "DataComponents",
+      "ItemLore",
+      "component",
+      "item",
+      "nbt"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.nbt.NbtList;\nimport net.minecraft.nbt.NbtString;",
+   "newer": "import net.minecraft.core.component.DataComponents;\nimport net.minecraft.world.item.component.ItemLore;\nimport net.minecraft.world.item.component.CustomData;",
+   "removed": [
+    "NbtList",
+    "NbtString",
+    "nbt"
+   ],
+   "added": [
+    "CustomData",
+    "DataComponents",
+    "ItemLore",
+    "component",
+    "core",
+    "item",
+    "world"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PickupHandler.java",
+   "line": 62,
+   "method": "(imports)",
+   "condition": ">=1.21.4",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.4",
+     "code": "import net.minecraft.world.entity.EntitySpawnReason;"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PickupHandler.java",
+   "line": 69,
+   "method": "(class body)",
+   "condition": "<1.21.1",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.21.1",
+     "code": "private static final String DATA_KEY = \"ClickVillagersData\";"
+    }
+   ],
+   "boundary": [
+    "1.21 -> 1.21.1"
+   ],
+   "window": [
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PickupHandler.java",
+   "line": 76,
+   "method": "(class body)",
+   "condition": ">=1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.6",
+     "code": "public static <T extends LivingEntity & VillagerDataHolder> ItemStack toItemStack(T entity) {\n        TagValueOutput view = TagValueOutput.createWithContext(new ProblemReporter.Collector(), VersionHelper.getWorld(entity).registryAccess());\n        entity.saveWithoutId(view);\n        String id = EntityType.getKey(entity.getType()).toString();\n        view.putString(TYPE_KEY, id);\n        view.putString(DATA_VERSION_KEY, String.valueOf(DATA_VERSION));\n        List<Component> lore = getLore(new VillagerHandler<>(entity));\n        MutableComponent displayName = getDisplayName(entity);\n        ItemStack itemStack = getItemStack(displayName, lore, view);\n        VillagerTextures.setEntityTexture(itemStack, entity);\n        entity.remove(Entity.RemovalReason.DISCARDED);\n        return itemStack;\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public static <T extends LivingEntity & VillagerDataHolder> ItemStack toItemStack(T entity) {\n        CompoundTag nbt = new CompoundTag();\n        entity.save(nbt);\n        String id = EntityType.getKey(entity.getType()).toString();\n        nbt.putString(TYPE_KEY, id);\n        nbt.putString(DATA_VERSION_KEY, String.valueOf(DATA_VERSION));\n        List<Component> lore = getLore(new VillagerHandler<>(entity));\n        ItemStack itemStack = getItemStack(getDisplayName(entity), lore, nbt);\n        VillagerTextures.setEntityTexture(itemStack, entity);\n        entity.remove(Entity.RemovalReason.DISCARDED);\n        return itemStack;\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "save"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "save"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "TagValueOutput",
+      "save",
+      "saveWithoutId"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "save"
+     ]
+    }
+   ],
+   "older": "public static <T extends LivingEntity & VillagerDataHolder> ItemStack toItemStack(T entity) {\n        CompoundTag nbt = new CompoundTag();\n        entity.save(nbt);\n        String id = EntityType.getKey(entity.getType()).toString();\n        nbt.putString(TYPE_KEY, id);\n        nbt.putString(DATA_VERSION_KEY, String.valueOf(DATA_VERSION));\n        List<Component> lore = getLore(new VillagerHandler<>(entity));\n        ItemStack itemStack = getItemStack(getDisplayName(entity), lore, nbt);\n        VillagerTextures.setEntityTexture(itemStack, entity);\n        entity.remove(Entity.RemovalReason.DISCARDED);\n        return itemStack;\n    }",
+   "newer": "public static <T extends LivingEntity & VillagerDataHolder> ItemStack toItemStack(T entity) {\n        TagValueOutput view = TagValueOutput.createWithContext(new ProblemReporter.Collector(), VersionHelper.getWorld(entity).registryAccess());\n        entity.saveWithoutId(view);\n        String id = EntityType.getKey(entity.getType()).toString();\n        view.putString(TYPE_KEY, id);\n        view.putString(DATA_VERSION_KEY, String.valueOf(DATA_VERSION));\n        List<Component> lore = getLore(new VillagerHandler<>(entity));\n        MutableComponent displayName = getDisplayName(entity);\n        ItemStack itemStack = getItemStack(displayName, lore, view);\n        VillagerTextures.setEntityTexture(itemStack, entity);\n        entity.remove(Entity.RemovalReason.DISCARDED);\n        return itemStack;\n    }",
+   "removed": [
+    "CompoundTag",
+    "nbt",
+    "save"
+   ],
+   "added": [
+    "Collector",
+    "MutableComponent",
+    "ProblemReporter",
+    "TagValueOutput",
+    "VersionHelper",
+    "createWithContext",
+    "displayName",
+    "getWorld",
+    "registryAccess",
+    "saveWithoutId",
+    "view"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PickupHandler.java",
+   "line": 176,
+   "method": "writeCustomData",
+   "condition": ">=1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.6",
+     "code": "view.buildResult()\n                //?} else\n                //nbt\n        ));\n    }\n\n    @Nullable\n    private static CompoundTag readCustomData(ItemStack itemStack) {\n        CustomData nbt = itemStack.get(DataComponents.CUSTOM_DATA);\n        if (nbt == null) return null;\n        return nbt.copyTag();\n    }\n\n    private static void formatItem(ItemStack itemStack, Component name, List<Component> lore) {\n        itemStack.set(DataComponents.ITEM_NAME, name);\n        itemStack.set(DataComponents.CUSTOM_NAME, name);\n        itemStack.set(DataComponents.LORE, new ItemLore(lore));\n    }"
+    },
+    {
+     "condition": null,
+     "code": "private static void writeCustomData(ItemStack itemStack, NbtCompound nbt) {\n        itemStack.getOrCreateNbt().put(DATA_KEY, nbt);\n    }\n\n    @Nullable\n    private static NbtCompound readCustomData(ItemStack itemStack) {\n        NbtCompound nbt = itemStack.getNbt();\n        if (nbt == null) return null;\n        return nbt.getCompound(DATA_KEY);\n    }\n\n    private static void formatItem(ItemStack itemStack, Text name, List<Text> lore) {\n        NbtList list = new NbtList();\n        lore.forEach(text -> list.add(NbtString.of(Text.Serializer.toJson(text))));\n        NbtCompound display = itemStack.getOrCreateSubNbt(\"display\");\n        display.put(\"Lore\", list);\n        display.put(\"Name\", NbtString.of(Text.Serializer.toJson(name)));\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "add",
+      "get",
+      "put"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "get",
+      "put",
+      "toJson"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "Serializer",
+      "add",
+      "get",
+      "getCompound",
+      "put",
+      "set"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "Serializer",
+      "add",
+      "toJson"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "add",
+      "get",
+      "set",
+      "text"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "get",
+      "set",
+      "text",
+      "toJson"
+     ]
+    }
+   ],
+   "older": "private static void writeCustomData(ItemStack itemStack, NbtCompound nbt) {\n        itemStack.getOrCreateNbt().put(DATA_KEY, nbt);\n    }\n\n    @Nullable\n    private static NbtCompound readCustomData(ItemStack itemStack) {\n        NbtCompound nbt = itemStack.getNbt();\n        if (nbt == null) return null;\n        return nbt.getCompound(DATA_KEY);\n    }\n\n    private static void formatItem(ItemStack itemStack, Text name, List<Text> lore) {\n        NbtList list = new NbtList();\n        lore.forEach(text -> list.add(NbtString.of(Text.Serializer.toJson(text))));\n        NbtCompound display = itemStack.getOrCreateSubNbt(\"display\");\n        display.put(\"Lore\", list);\n        display.put(\"Name\", NbtString.of(Text.Serializer.toJson(name)));\n    }",
+   "newer": "view.buildResult()\n                //?} else\n                //nbt\n        ));\n    }\n\n    @Nullable\n    private static CompoundTag readCustomData(ItemStack itemStack) {\n        CustomData nbt = itemStack.get(DataComponents.CUSTOM_DATA);\n        if (nbt == null) return null;\n        return nbt.copyTag();\n    }\n\n    private static void formatItem(ItemStack itemStack, Component name, List<Component> lore) {\n        itemStack.set(DataComponents.ITEM_NAME, name);\n        itemStack.set(DataComponents.CUSTOM_NAME, name);\n        itemStack.set(DataComponents.LORE, new ItemLore(lore));\n    }",
+   "removed": [
+    "DATA_KEY",
+    "NbtCompound",
+    "NbtList",
+    "NbtString",
+    "Serializer",
+    "Text",
+    "add",
+    "display",
+    "forEach",
+    "getCompound",
+    "getNbt",
+    "getOrCreateNbt",
+    "getOrCreateSubNbt",
+    "list",
+    "put",
+    "text",
+    "toJson",
+    "writeCustomData"
+   ],
+   "added": [
+    "CUSTOM_DATA",
+    "CUSTOM_NAME",
+    "Component",
+    "CompoundTag",
+    "CustomData",
+    "DataComponents",
+    "ITEM_NAME",
+    "ItemLore",
+    "LORE",
+    "buildResult",
+    "copyTag",
+    "get",
+    "set",
+    "view"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PickupHandler.java",
+   "line": 230,
+   "method": "readEntityFromItemStack",
+   "condition": ">=1.21.5",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "NbtFixer.applyDataFixes(nbt);"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PickupHandler.java",
+   "line": 238,
+   "method": "readEntityFromItemStack",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(Identifier.tryParse(id)).orElse(null);"
+    },
+    {
+     "condition": null,
+     "code": "EntityType<?> type = EntityType.byString(id).orElse(null);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "byString"
+     ]
+    }
+   ],
+   "older": "EntityType<?> type = EntityType.byString(id).orElse(null);",
+   "newer": "EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(Identifier.tryParse(id)).orElse(null);",
+   "removed": [
+    "byString"
+   ],
+   "added": [
+    "BuiltInRegistries",
+    "ENTITY_TYPE",
+    "Identifier",
+    "getOptional",
+    "tryParse"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PickupHandler.java",
+   "line": 262,
+   "method": "removeUuidIfDuplicate",
+   "condition": ">=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "nbt.read(\"UUID\", UUIDUtil.CODEC).ifPresent(uuid -> {\n            if (world.getEntity(uuid) != null) {\n                nbt.remove(\"UUID\");\n            }\n        });"
+    },
+    {
+     "condition": null,
+     "code": "UUID uuid = nbt.getUUID(\"UUID\");\n        if (((ServerLevel) world).getEntity(uuid) != null) {\n            nbt.remove(\"UUID\");\n        }"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "CODEC",
+      "read"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "CODEC"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "CODEC",
+      "getUUID",
+      "read"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "read"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "CODEC",
+      "read"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "CODEC"
+     ]
+    }
+   ],
+   "older": "UUID uuid = nbt.getUUID(\"UUID\");\n        if (((ServerLevel) world).getEntity(uuid) != null) {\n            nbt.remove(\"UUID\");\n        }",
+   "newer": "nbt.read(\"UUID\", UUIDUtil.CODEC).ifPresent(uuid -> {\n            if (world.getEntity(uuid) != null) {\n                nbt.remove(\"UUID\");\n            }\n        });",
+   "removed": [
+    "ServerLevel",
+    "UUID",
+    "getUUID"
+   ],
+   "added": [
+    "CODEC",
+    "UUIDUtil",
+    "ifPresent",
+    "read"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/PickupHandler.java",
+   "line": 293,
+   "method": "getVillagerDisplayName",
+   "condition": ">=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "Holder<VillagerProfession> profession = villager.getVillagerData().profession();\n        String professionName = VersionHelper.identifier(profession.unwrapKey().orElseThrow()).getPath();\n        if (profession.is(VillagerProfession.NONE)) {\n            return Component.literal(\"Villager\");\n        }"
+    },
+    {
+     "condition": null,
+     "code": "VillagerProfession profession = villager.getVillagerData().getProfession();\n        String professionName = profession.toString();\n        if (profession.equals(VillagerProfession.NONE)) {\n            return Component.literal(\"Villager\");\n        }"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "equals"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "toString"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "equals",
+      "getProfession",
+      "toString"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "equals"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "equals",
+      "toString"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "identifier",
+      "toString"
+     ]
+    }
+   ],
+   "older": "VillagerProfession profession = villager.getVillagerData().getProfession();\n        String professionName = profession.toString();\n        if (profession.equals(VillagerProfession.NONE)) {\n            return Component.literal(\"Villager\");\n        }",
+   "newer": "Holder<VillagerProfession> profession = villager.getVillagerData().profession();\n        String professionName = VersionHelper.identifier(profession.unwrapKey().orElseThrow()).getPath();\n        if (profession.is(VillagerProfession.NONE)) {\n            return Component.literal(\"Villager\");\n        }",
+   "removed": [
+    "equals",
+    "getProfession",
+    "toString"
+   ],
+   "added": [
+    "Holder",
+    "VersionHelper",
+    "getPath",
+    "identifier",
+    "orElseThrow",
+    "unwrapKey"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/TradeInfoProvider.java",
+   "line": 84,
+   "method": "(class body)",
+   "condition": ">=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "private static String formatEnchantments(MerchantOffer offer) {\n        String spacing = getSpacing(offer);\n        ItemStack item = offer.getResult();\n        return item.getEnchantments().entrySet().stream()\n                .map(entry -> {\n                    String enchantment = entry.getKey().unwrapKey()\n                            .map(VersionHelper::identifier)\n                            .map(Identifier::getPath)\n                            .map(s -> s.replace(\"_\", \" \"))\n                            .orElse(\"?\");\n                    String level = Utils.toRomanNumeral(entry.getIntValue());\n                    return \"\\n\" + spacing + \"§7\" + Utils.titleCase(enchantment) + \" \" + level;\n                })\n                .collect(Collectors.joining());\n    }"
+    },
+    {
+     "condition": null,
+     "code": "private static String formatEnchantments(TradeOffer offer) {\n        String spacing = getSpacing(offer);\n        ItemStack item = offer.getSellItem();\n        return Utils.streamEnchantments(item.getEnchantments())\n                .map(s -> \"\\n\" + spacing + \"§7\" + s)\n                .collect(Collectors.joining());\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "entrySet",
+      "getPath",
+      "level"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "enchantment"
+     ]
+    }
+   ],
+   "older": "private static String formatEnchantments(TradeOffer offer) {\n        String spacing = getSpacing(offer);\n        ItemStack item = offer.getSellItem();\n        return Utils.streamEnchantments(item.getEnchantments())\n                .map(s -> \"\\n\" + spacing + \"§7\" + s)\n                .collect(Collectors.joining());\n    }",
+   "newer": "private static String formatEnchantments(MerchantOffer offer) {\n        String spacing = getSpacing(offer);\n        ItemStack item = offer.getResult();\n        return item.getEnchantments().entrySet().stream()\n                .map(entry -> {\n                    String enchantment = entry.getKey().unwrapKey()\n                            .map(VersionHelper::identifier)\n                            .map(Identifier::getPath)\n                            .map(s -> s.replace(\"_\", \" \"))\n                            .orElse(\"?\");\n                    String level = Utils.toRomanNumeral(entry.getIntValue());\n                    return \"\\n\" + spacing + \"§7\" + Utils.titleCase(enchantment) + \" \" + level;\n                })\n                .collect(Collectors.joining());\n    }",
+   "removed": [
+    "TradeOffer",
+    "getSellItem",
+    "streamEnchantments"
+   ],
+   "added": [
+    "Identifier",
+    "MerchantOffer",
+    "VersionHelper",
+    "enchantment",
+    "entry",
+    "entrySet",
+    "getIntValue",
+    "getKey",
+    "getPath",
+    "getResult",
+    "identifier",
+    "level",
+    "orElse",
+    "replace",
+    "stream",
+    "titleCase",
+    "toRomanNumeral",
+    "unwrapKey"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/TradeInfoProviders.java",
+   "line": 20,
+   "method": "(imports)",
+   "condition": ">1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.6",
+     "code": "import net.minecraft.core.component.DataComponents;\nimport net.minecraft.world.item.enchantment.ItemEnchantments;\nimport net.minecraft.resources.ResourceKey;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.item.EnchantedBookItem;\nimport net.minecraft.nbt.NbtCompound;\nimport net.minecraft.nbt.NbtList;"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "enchantment"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.item.EnchantedBookItem;\nimport net.minecraft.nbt.NbtCompound;\nimport net.minecraft.nbt.NbtList;",
+   "newer": "import net.minecraft.core.component.DataComponents;\nimport net.minecraft.world.item.enchantment.ItemEnchantments;\nimport net.minecraft.resources.ResourceKey;",
+   "removed": [
+    "EnchantedBookItem",
+    "NbtCompound",
+    "NbtList",
+    "nbt"
+   ],
+   "added": [
+    "DataComponents",
+    "ItemEnchantments",
+    "ResourceKey",
+    "component",
+    "core",
+    "enchantment",
+    "resources",
+    "world"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/TradeInfoProviders.java",
+   "line": 197,
+   "method": "(class body)",
+   "condition": ">=1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.5",
+     "code": "public static TradeInfoProvider getProvider(ResourceKey<VillagerProfession> profession) {\n        return PROVIDERS.getOrDefault(profession, ALL_TRADES);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public static TradeInfoProvider getProvider(VillagerProfession profession) {\n        return PROVIDERS.getOrDefault(profession, ALL_TRADES);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [],
+   "older": "public static TradeInfoProvider getProvider(VillagerProfession profession) {\n        return PROVIDERS.getOrDefault(profession, ALL_TRADES);\n    }",
+   "newer": "public static TradeInfoProvider getProvider(ResourceKey<VillagerProfession> profession) {\n        return PROVIDERS.getOrDefault(profession, ALL_TRADES);\n    }",
+   "removed": [],
+   "added": [
+    "ResourceKey"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/TradeInfoProviders.java",
+   "line": 292,
+   "method": "(class body)",
+   "condition": ">1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.20.6",
+     "code": "private static String formatEnchantedBook(ItemStack item) {\n        ItemEnchantments enchants = item.get(DataComponents.STORED_ENCHANTMENTS);\n        if (enchants == null) return \"\";\n        String enchantments = enchants.entrySet().stream()\n                .map(entry -> {\n                    String enchantment = entry.getKey().unwrapKey()\n                            .map(VersionHelper::identifier)\n                            .map(Identifier::getPath)\n                            .map(s -> s.replace(\"_\", \" \"))\n                            .orElse(\"?\");\n                    String level = Utils.toRomanNumeral(entry.getIntValue());\n                    return Utils.titleCase(enchantment) + \" \" + level;\n                })\n                .collect(Collectors.joining(\" + \"));\n        return \"§d📖 \" + enchantments;\n    }"
+    },
+    {
+     "condition": null,
+     "code": "private static String formatEnchantedBook(ItemStack item) {\n        NbtList enchants = EnchantedBookItem.getEnchantmentNbt(item);\n        if (enchants == null || enchants.isEmpty()) return \"\";\n        String string = Utils.streamEnchantments(enchants)\n                .collect(Collectors.joining(\" + \"));\n        return \"§d📖 \" + string;\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "enchantment",
+      "enchantments",
+      "get"
+     ]
+    }
+   ],
+   "older": "private static String formatEnchantedBook(ItemStack item) {\n        NbtList enchants = EnchantedBookItem.getEnchantmentNbt(item);\n        if (enchants == null || enchants.isEmpty()) return \"\";\n        String string = Utils.streamEnchantments(enchants)\n                .collect(Collectors.joining(\" + \"));\n        return \"§d📖 \" + string;\n    }",
+   "newer": "private static String formatEnchantedBook(ItemStack item) {\n        ItemEnchantments enchants = item.get(DataComponents.STORED_ENCHANTMENTS);\n        if (enchants == null) return \"\";\n        String enchantments = enchants.entrySet().stream()\n                .map(entry -> {\n                    String enchantment = entry.getKey().unwrapKey()\n                            .map(VersionHelper::identifier)\n                            .map(Identifier::getPath)\n                            .map(s -> s.replace(\"_\", \" \"))\n                            .orElse(\"?\");\n                    String level = Utils.toRomanNumeral(entry.getIntValue());\n                    return Utils.titleCase(enchantment) + \" \" + level;\n                })\n                .collect(Collectors.joining(\" + \"));\n        return \"§d📖 \" + enchantments;\n    }",
+   "removed": [
+    "EnchantedBookItem",
+    "NbtList",
+    "getEnchantmentNbt",
+    "isEmpty",
+    "streamEnchantments",
+    "string"
+   ],
+   "added": [
+    "DataComponents",
+    "Identifier",
+    "ItemEnchantments",
+    "STORED_ENCHANTMENTS",
+    "VersionHelper",
+    "enchantment",
+    "enchantments",
+    "entry",
+    "entrySet",
+    "get",
+    "getIntValue",
+    "getKey",
+    "getPath",
+    "identifier",
+    "level",
+    "map",
+    "orElse",
+    "replace",
+    "stream",
+    "titleCase",
+    "toRomanNumeral",
+    "unwrapKey"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/VillagerTextures.java",
+   "line": 27,
+   "method": "(imports)",
+   "condition": ">=1.20.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.5",
+     "code": "import net.minecraft.core.component.DataComponents;\nimport net.minecraft.world.item.component.ResolvableProfile;\nimport org.spongepowered.include.com.google.common.collect.Multimap;"
+    }
+   ],
+   "boundary": [
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "mod/src/main/java/de/clickism/clickvillagers/villager/VillagerTextures.java",
+   "line": 63,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | >=1.20.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "private static void setTexture(ItemStack itemStack, String texture) {\n        ArrayListMultimap<String, Property> properties = ArrayListMultimap.create();\n        properties.put(\"textures\", new Property(\"textures\", texture));\n        PropertyMap propertyMap = new PropertyMap(properties);\n        var profile = ResolvableProfile.createResolved(new GameProfile(UUID.randomUUID(), \"\", propertyMap));\n        itemStack.set(DataComponents.PROFILE, profile);\n    }"
+    },
+    {
+     "condition": ">=1.20.5",
+     "code": "private static void setTexture(ItemStack itemStack, String texture) {\n        PropertyMap propertyMap = new PropertyMap();\n        propertyMap.put(\"textures\", new Property(\"textures\", texture));\n        itemStack.set(DataComponents.PROFILE,\n                new ResolvableProfile(Optional.empty(), Optional.of(UUID.randomUUID()), propertyMap));\n    }"
+    },
+    {
+     "condition": null,
+     "code": "private static void setTexture(ItemStack itemStack, String texture) {\n        GameProfile profile = new GameProfile(UUID.randomUUID(), null);\n        profile.getProperties().put(\"textures\", new Property(\"textures\", texture));\n        itemStack.getOrCreateNbt().put(\"SkullOwner\", NbtHelper.writeGameProfile(new NbtCompound(), profile));\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9",
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "create",
+      "empty"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "create",
+      "createResolved"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "create",
+      "properties"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "create"
+     ]
+    }
+   ],
+   "older": "private static void setTexture(ItemStack itemStack, String texture) {\n        PropertyMap propertyMap = new PropertyMap();\n        propertyMap.put(\"textures\", new Property(\"textures\", texture));\n        itemStack.set(DataComponents.PROFILE,\n                new ResolvableProfile(Optional.empty(), Optional.of(UUID.randomUUID()), propertyMap));\n    }",
+   "newer": "private static void setTexture(ItemStack itemStack, String texture) {\n        ArrayListMultimap<String, Property> properties = ArrayListMultimap.create();\n        properties.put(\"textures\", new Property(\"textures\", texture));\n        PropertyMap propertyMap = new PropertyMap(properties);\n        var profile = ResolvableProfile.createResolved(new GameProfile(UUID.randomUUID(), \"\", propertyMap));\n        itemStack.set(DataComponents.PROFILE, profile);\n    }",
+   "removed": [
+    "Optional",
+    "empty"
+   ],
+   "added": [
+    "ArrayListMultimap",
+    "GameProfile",
+    "create",
+    "createResolved",
+    "profile",
+    "properties"
+   ]
+  }
+ ]
+}

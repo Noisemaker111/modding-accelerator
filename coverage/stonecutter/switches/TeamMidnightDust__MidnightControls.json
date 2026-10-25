@@ -1,0 +1,834 @@
+{
+ "repo": "TeamMidnightDust/MidnightControls",
+ "commit": "719dfdfe9f137b55d7314c9ed87b94c95c170292",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "1.21.11",
+  "26.1",
+  "26.2"
+ ],
+ "files": 19,
+ "switches": 28,
+ "versionSwitches": 15,
+ "rows": [
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/compat/LibGuiCompat.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import io.github.cottonmc.cotton.gui.impl.client.CottonScreenImpl;\nimport io.github.cottonmc.cotton.gui.widget.WButton;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.client.gui.screens.Screen;\nimport net.minecraft.client.resources.sounds.SimpleSoundInstance;\nimport net.minecraft.sounds.SoundEvents;\nimport org.jetbrains.annotations.NotNull;\n\n@SuppressWarnings(\"UnstableApiUsage\")\npublic class LibGuiCompat {\n    public static boolean handlePress(@NotNull Screen screen) {\n        if (screen instanceof CottonScreenImpl cottonScreen) {\n            if (cottonScreen.getDescription() != null && cottonScreen.getDescription().getFocus() != null) {\n                if (cottonScreen.getDescription().getFocus() instanceof WButton button && button.getOnClick() != null) {\n                    button.getOnClick().run();\n                    Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));\n                    return true;\n                }\n            }\n        }\n        return false;\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/gui/cursor/CursorRenderer.java",
+   "line": 26,
+   "method": "drawUnalignedTexturedQuad",
+   "condition": "fabric | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "accessor.getScissorStack().peek()"
+    },
+    {
+     "condition": null,
+     "code": "context.peekScissorStack()"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/MidnightInput.java",
+   "line": 23,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import eu.midnightdust.midnightcontrols.client.compat.LibGuiCompat;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/DrawContextAccessor.java",
+   "line": 23,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@Accessor(\"scissorStack\")\n    //~ if >= 26.1 'GuiGraphics' -> 'GuiGraphicsExtractor'\n    GuiGraphicsExtractor.ScissorStack getScissorStack();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/GameRendererMixin.java",
+   "line": 31,
+   "method": "(imports)",
+   "condition": ">= 26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.1",
+     "code": "import net.minecraft.client.renderer.state.level.CameraRenderState;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/GameRendererMixin.java",
+   "line": 48,
+   "method": "(class body)",
+   "condition": "fabric | neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "//~ if >= 26.1 'Lnet/minecraft/client/gui/screens/Screen;renderWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V' -> 'Lnet/minecraft/client/gui/screens/Screen;extractRenderStateWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V'\n    //~ if >= 26.1 'render' -> 'extractGui'\n    @Inject(method = \"extractGui\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/gui/screens/Screen;extractRenderStateWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V\", shift = At.Shift.AFTER))"
+    },
+    {
+     "condition": "neoforge",
+     "code": "/*//~ if >= 26.1 'render' -> 'extractGui'\n    @Inject(method = \"extractGui\", at = @At(value = \"INVOKE\", target = \"Lnet/neoforged/neoforge/client/ClientHooks;drawScreen(Lnet/minecraft/client/gui/screens/Screen;Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V\", shift = At.Shift.AFTER))\n    *//*?}*/\n    private void midnightcontrols$renderVirtualCursor(DeltaTracker tickCounter, boolean tick, /*? if >= 26.1 {*/final boolean resourcesLoaded, /*?}*/ CallbackInfo ci, @Local GuiGraphicsExtractor drawContext) {\n        VirtualCursorRenderer.getInstance().renderCursor(drawContext,  minecraft);\n        if (MidnightControlsClient.isWayland) WaylandCursorRenderer.getInstance().renderCursor(drawContext, minecraft);\n    }\n    //~}\n    */"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/GameRendererMixin.java",
+   "line": 65,
+   "method": "(class body)",
+   "condition": ">= 26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.1",
+     "code": "@Local CameraRenderState camState"
+    },
+    {
+     "condition": null,
+     "code": "@Local(ordinal = 1) Matrix4f worldSpaceMatrix"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "CameraRenderState"
+     ]
+    }
+   ],
+   "older": "@Local(ordinal = 1) Matrix4f worldSpaceMatrix",
+   "newer": "@Local CameraRenderState camState",
+   "removed": [
+    "Matrix4f",
+    "ordinal",
+    "worldSpaceMatrix"
+   ],
+   "added": [
+    "CameraRenderState",
+    "camState"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/GuiMixin.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">= 26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;\nimport com.llamalad7.mixinextras.injector.wrapoperation.Operation;\n\nimport com.llamalad7.mixinextras.sugar.Local;\nimport eu.midnightdust.midnightcontrols.ControlsMode;\nimport eu.midnightdust.midnightcontrols.client.MidnightControlsClient;\nimport eu.midnightdust.midnightcontrols.client.MidnightControlsConfig;\nimport eu.midnightdust.midnightcontrols.client.gui.cursor.VirtualCursorRenderer;\nimport eu.midnightdust.midnightcontrols.client.gui.cursor.WaylandCursorRenderer;\nimport net.minecraft.client.DeltaTracker;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.client.gui.Gui;\nimport net.minecraft.client.gui.GuiGraphicsExtractor;\nimport net.minecraft.client.gui.screens.Screen;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n@Mixin(Gui.class)\npublic abstract class GuiMixin {\n    @Shadow\n    @Final\n    private Minecraft minecraft;\n\n    @Shadow\n    public abstract Screen screen();\n\n    @WrapMethod(method = \"setScreen\")\n    private void midnightcontrols$onSetScreen(Screen screen, Operation<Void> original) {\n        MidnightControlsClient.onScreenOpen(screen, original);\n    }\n\n    @Inject(method = \"extractRenderState\", at = @At(\"HEAD\"))\n    private void midnightcontrols$onRender(DeltaTracker deltaTracker, final boolean shouldRenderLevel, final boolean resourcesLoaded, CallbackInfo ci) {\n        if (this.screen() != null && MidnightControlsConfig.controlsMode == ControlsMode.CONTROLLER)\n            MidnightControlsClient.input.onPreRenderScreen(this.screen());\n    }\n\n    @Inject(method = \"extractRenderState\", at = @At(\"TAIL\"))\n    private void midnightcontrols$renderVirtualCursor(DeltaTracker deltaTracker, final boolean shouldRenderLevel, final boolean resourcesLoaded, CallbackInfo ci, @Local(name = \"graphics\") GuiGraphicsExtractor graphics) {\n        VirtualCursorRenderer.getInstance().renderCursor(graphics, minecraft);\n        if (MidnightControlsClient.isWayland) WaylandCursorRenderer.getInstance().renderCursor(graphics, minecraft);\n    }\n}"
+    },
+    {
+     "condition": null,
+     "code": "import eu.midnightdust.core.MidnightLib;\nimport org.spongepowered.asm.mixin.Mixin;\n@Mixin(MidnightLib.class)\npublic class GuiMixin {}"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "callback",
+      "name",
+      "screen"
+     ]
+    }
+   ],
+   "older": "import eu.midnightdust.core.MidnightLib;\nimport org.spongepowered.asm.mixin.Mixin;\n@Mixin(MidnightLib.class)\npublic class GuiMixin {}",
+   "newer": "import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;\nimport com.llamalad7.mixinextras.injector.wrapoperation.Operation;\n\nimport com.llamalad7.mixinextras.sugar.Local;\nimport eu.midnightdust.midnightcontrols.ControlsMode;\nimport eu.midnightdust.midnightcontrols.client.MidnightControlsClient;\nimport eu.midnightdust.midnightcontrols.client.MidnightControlsConfig;\nimport eu.midnightdust.midnightcontrols.client.gui.cursor.VirtualCursorRenderer;\nimport eu.midnightdust.midnightcontrols.client.gui.cursor.WaylandCursorRenderer;\nimport net.minecraft.client.DeltaTracker;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.client.gui.Gui;\nimport net.minecraft.client.gui.GuiGraphicsExtractor;\nimport net.minecraft.client.gui.screens.Screen;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n@Mixin(Gui.class)\npublic abstract class GuiMixin {\n    @Shadow\n    @Final\n    private Minecraft minecraft;\n\n    @Shadow\n    public abstract Screen screen();\n\n    @WrapMethod(method = \"setScreen\")\n    private void midnightcontrols$onSetScreen(Screen screen, Operation<Void> original) {\n        MidnightControlsClient.onScreenOpen(screen, original);\n    }\n\n    @Inject(method = \"extractRenderState\", at = @At(\"HEAD\"))\n    private void midnightcontrols$onRender(DeltaTracker deltaTracker, final boolean shouldRenderLevel, final boolean resourcesLoaded, CallbackInfo ci) {\n        if (this.screen() != null && MidnightControlsConfig.controlsMode == ControlsMode.CONTROLLER)\n            MidnightControlsClient.input.onPreRenderScreen(this.screen());\n    }\n\n    @Inject(method = \"extractRenderState\", at = @At(\"TAIL\"))\n    private void midnightcontrols$renderVirtualCursor(DeltaTracker deltaTracker, final boolean shouldRenderLevel, final boolean reso",
+   "removed": [
+    "MidnightLib",
+    "core"
+   ],
+   "added": [
+    "CONTROLLER",
+    "CallbackInfo",
+    "ControlsMode",
+    "DeltaTracker",
+    "Final",
+    "Gui",
+    "GuiGraphicsExtractor",
+    "Inject",
+    "Local",
+    "MidnightControlsClient",
+    "MidnightControlsConfig",
+    "Minecraft",
+    "Operation",
+    "Screen",
+    "Shadow",
+    "VirtualCursorRenderer",
+    "Void",
+    "WaylandCursorRenderer",
+    "WrapMethod",
+    "callback",
+    "client",
+    "com",
+    "controlsMode",
+    "cursor",
+    "deltaTracker",
+    "getInstance",
+    "graphics",
+    "gui",
+    "injection",
+    "injector",
+    "input",
+    "isWayland",
+    "llamalad7",
+    "method",
+    "midnightcontrols",
+    "minecraft",
+    "mixinextras",
+    "name",
+    "net",
+    "onPreRenderScreen"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/InGameHudMixin.java",
+   "line": 12,
+   "method": "(imports)",
+   "condition": ">= 26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "import net.minecraft.client.gui.Hud;\n@Mixin(Hud.class)"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.gui.Gui;\n@Mixin(Gui.class)"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "Hud"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.gui.Gui;\n@Mixin(Gui.class)",
+   "newer": "import net.minecraft.client.gui.Hud;\n@Mixin(Hud.class)",
+   "removed": [
+    "Gui"
+   ],
+   "added": [
+    "Hud"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/InGameHudMixin.java",
+   "line": 26,
+   "method": "(class body)",
+   "condition": "fabric | neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "@Inject(method = \"extractHotbarAndDecorations\", at = @At(\"HEAD\"))"
+    },
+    {
+     "condition": "neoforge",
+     "code": "@Inject(method = \"extractCrosshair\", at = @At(\"HEAD\"))"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/KeyboardMixin.java",
+   "line": 14,
+   "method": "(class body)",
+   "condition": ">= 26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "@Redirect(method = \"keyPress\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/gui/Gui;screen()Lnet/minecraft/client/gui/screens/Screen;\"))\n    private Screen midnightcontrols$ignoreTouchOverlay(Gui instance) {\n        if (instance.screen() instanceof TouchscreenOverlay) return null;\n        return instance.screen();\n    }"
+    },
+    {
+     "condition": null,
+     "code": "@Redirect(method = \"keyPress\", at = @At(value = \"FIELD\", target = \"Lnet/minecraft/client/Minecraft;screen:Lnet/minecraft/client/gui/screens/Screen;\"))\n    private Screen midnightcontrols$ignoreTouchOverlay(Minecraft instance) {\n        if (instance.screen instanceof TouchscreenOverlay) return null;\n        return instance.screen;\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "@Redirect(method = \"keyPress\", at = @At(value = \"FIELD\", target = \"Lnet/minecraft/client/Minecraft;screen:Lnet/minecraft/client/gui/screens/Screen;\"))\n    private Screen midnightcontrols$ignoreTouchOverlay(Minecraft instance) {\n        if (instance.screen instanceof TouchscreenOverlay) return null;\n        return instance.screen;\n    }",
+   "newer": "@Redirect(method = \"keyPress\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/gui/Gui;screen()Lnet/minecraft/client/gui/screens/Screen;\"))\n    private Screen midnightcontrols$ignoreTouchOverlay(Gui instance) {\n        if (instance.screen() instanceof TouchscreenOverlay) return null;\n        return instance.screen();\n    }",
+   "removed": [
+    "Minecraft"
+   ],
+   "added": [
+    "Gui"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/MinecraftClientMixin.java",
+   "line": 42,
+   "method": "(imports)",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "import net.minecraft.client.gui.screens.Screen;\nimport com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;\nimport com.llamalad7.mixinextras.injector.wrapoperation.Operation;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/MinecraftClientMixin.java",
+   "line": 113,
+   "method": "(class body)",
+   "condition": "< 26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 26.2",
+     "code": "@WrapMethod(method = \"setScreen\")\n    private void setScreen(Screen screen, Operation<Void> original) {\n        MidnightControlsClient.onScreenOpen(screen, original);\n    }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/WorldRendererMixin.java",
+   "line": 37,
+   "method": "(imports)",
+   "condition": ">= 26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "import net.minecraft.client.renderer.GameRenderer;\nimport net.minecraft.client.renderer.SubmitNodeCollector;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.renderer.MultiBufferSource;\nimport net.minecraft.client.renderer.ShapeRenderer;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "MultiBufferSource",
+      "ShapeRenderer"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.renderer.MultiBufferSource;\nimport net.minecraft.client.renderer.ShapeRenderer;",
+   "newer": "import net.minecraft.client.renderer.GameRenderer;\nimport net.minecraft.client.renderer.SubmitNodeCollector;",
+   "removed": [
+    "MultiBufferSource",
+    "ShapeRenderer"
+   ],
+   "added": [
+    "GameRenderer",
+    "SubmitNodeCollector"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/WorldRendererMixin.java",
+   "line": 44,
+   "method": "(imports)",
+   "condition": ">= 26.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.1",
+     "code": "import net.minecraft.client.renderer.state.level.LevelRenderState;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.renderer.state.LevelRenderState;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "level"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.renderer.state.LevelRenderState;",
+   "newer": "import net.minecraft.client.renderer.state.level.LevelRenderState;",
+   "removed": [],
+   "added": [
+    "level"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/WorldRendererMixin.java",
+   "line": 63,
+   "method": "(class body)",
+   "condition": ">= 26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "@Shadow\n    @Final\n    private GameRenderer gameRenderer;"
+    },
+    {
+     "condition": null,
+     "code": "@Shadow\n    @Final\n    private Minecraft minecraft;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "@Shadow\n    @Final\n    private Minecraft minecraft;",
+   "newer": "@Shadow\n    @Final\n    private GameRenderer gameRenderer;",
+   "removed": [
+    "Minecraft",
+    "minecraft"
+   ],
+   "added": [
+    "GameRenderer",
+    "gameRenderer"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/WorldRendererMixin.java",
+   "line": 79,
+   "method": "(class body)",
+   "condition": ">= 26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "private void onOutlineRender(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, LevelRenderState levelRenderState, CallbackInfo ci) {"
+    },
+    {
+     "condition": null,
+     "code": "private void onOutlineRender(MultiBufferSource.BufferSource bufferSource, PoseStack poseStack, boolean onlyTranslucentBlocks, LevelRenderState levelRenderState, CallbackInfo ci) {"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "BufferSource",
+      "MultiBufferSource",
+      "bufferSource"
+     ]
+    }
+   ],
+   "older": "private void onOutlineRender(MultiBufferSource.BufferSource bufferSource, PoseStack poseStack, boolean onlyTranslucentBlocks, LevelRenderState levelRenderState, CallbackInfo ci) {",
+   "newer": "private void onOutlineRender(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, LevelRenderState levelRenderState, CallbackInfo ci) {",
+   "removed": [
+    "BufferSource",
+    "MultiBufferSource",
+    "bufferSource",
+    "onlyTranslucentBlocks"
+   ],
+   "added": [
+    "SubmitNodeCollector",
+    "submitNodeCollector"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/WorldRendererMixin.java",
+   "line": 111,
+   "method": "(class body)",
+   "condition": ">= 26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "poseStack.translate((double)blockPos.getX() - camPos.x, (double)blockPos.getY() - camPos.y, (double)blockPos.getZ() - camPos.z);\n            submitNodeCollector.submitShapeOutline(poseStack, outlineShape, RenderTypes.lines(), ARGB.color(MidnightControlsConfig.touchOutlineColorAlpha, rgb.getRGB()), this.gameRenderer.gameRenderState().windowRenderState.appropriateLineWidth, false);"
+    },
+    {
+     "condition": null,
+     "code": "var vertexConsumer = bufferSource.getBuffer(RenderTypes.lines());\n            ShapeRenderer.renderShape(poseStack, vertexConsumer, outlineShape, blockPos.getX() - camPos.x(), blockPos.getY() - camPos.y(), blockPos.getZ() - camPos.z(),\n                    ARGB.color(MidnightControlsConfig.touchOutlineColorAlpha, rgb.getRGB()), 4);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "ShapeRenderer",
+      "bufferSource",
+      "gameRenderState",
+      "submitShapeOutline"
+     ]
+    }
+   ],
+   "older": "var vertexConsumer = bufferSource.getBuffer(RenderTypes.lines());\n            ShapeRenderer.renderShape(poseStack, vertexConsumer, outlineShape, blockPos.getX() - camPos.x(), blockPos.getY() - camPos.y(), blockPos.getZ() - camPos.z(),\n                    ARGB.color(MidnightControlsConfig.touchOutlineColorAlpha, rgb.getRGB()), 4);",
+   "newer": "poseStack.translate((double)blockPos.getX() - camPos.x, (double)blockPos.getY() - camPos.y, (double)blockPos.getZ() - camPos.z);\n            submitNodeCollector.submitShapeOutline(poseStack, outlineShape, RenderTypes.lines(), ARGB.color(MidnightControlsConfig.touchOutlineColorAlpha, rgb.getRGB()), this.gameRenderer.gameRenderState().windowRenderState.appropriateLineWidth, false);",
+   "removed": [
+    "ShapeRenderer",
+    "bufferSource",
+    "getBuffer",
+    "renderShape",
+    "vertexConsumer"
+   ],
+   "added": [
+    "appropriateLineWidth",
+    "gameRenderState",
+    "gameRenderer",
+    "submitNodeCollector",
+    "submitShapeOutline",
+    "translate",
+    "windowRenderState"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/mixin/WorldRendererMixin.java",
+   "line": 151,
+   "method": "(class body)",
+   "condition": ">= 26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "poseStack.translate((double)blockPos.getX() - camPos.x, (double)blockPos.getY() - camPos.y, (double)blockPos.getZ() - camPos.z);\n            submitNodeCollector.submitShapeOutline(poseStack, outlineShape, RenderTypes.lines(), ARGB.color(MidnightControlsConfig.reacharoundOutlineColorAlpha, rgb.getRGB()), this.gameRenderer.gameRenderState().windowRenderState.appropriateLineWidth, false);"
+    },
+    {
+     "condition": null,
+     "code": "var vertexConsumer = bufferSource.getBuffer(RenderTypes.lines());\n            ShapeRenderer.renderShape(poseStack, vertexConsumer, outlineShape, blockPos.getX() - camPos.x(), blockPos.getY() - camPos.y(), blockPos.getZ() - camPos.z(),\n                    ARGB.color(MidnightControlsConfig.reacharoundOutlineColorAlpha, rgb.getRGB()), 4);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "ShapeRenderer",
+      "bufferSource",
+      "gameRenderState",
+      "submitShapeOutline"
+     ]
+    }
+   ],
+   "older": "var vertexConsumer = bufferSource.getBuffer(RenderTypes.lines());\n            ShapeRenderer.renderShape(poseStack, vertexConsumer, outlineShape, blockPos.getX() - camPos.x(), blockPos.getY() - camPos.y(), blockPos.getZ() - camPos.z(),\n                    ARGB.color(MidnightControlsConfig.reacharoundOutlineColorAlpha, rgb.getRGB()), 4);",
+   "newer": "poseStack.translate((double)blockPos.getX() - camPos.x, (double)blockPos.getY() - camPos.y, (double)blockPos.getZ() - camPos.z);\n            submitNodeCollector.submitShapeOutline(poseStack, outlineShape, RenderTypes.lines(), ARGB.color(MidnightControlsConfig.reacharoundOutlineColorAlpha, rgb.getRGB()), this.gameRenderer.gameRenderState().windowRenderState.appropriateLineWidth, false);",
+   "removed": [
+    "ShapeRenderer",
+    "bufferSource",
+    "getBuffer",
+    "renderShape",
+    "vertexConsumer"
+   ],
+   "added": [
+    "appropriateLineWidth",
+    "gameRenderState",
+    "gameRenderer",
+    "submitNodeCollector",
+    "submitShapeOutline",
+    "translate",
+    "windowRenderState"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/touch/TouchInput.java",
+   "line": 58,
+   "method": "mouseHeldDown",
+   "condition": ">= 26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.1",
+     "code": "entityHit,"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/client/util/platform/ItemGroupUtil.java",
+   "line": 17,
+   "method": "getVisibleGroups",
+   "condition": "fabric && >= 26.1 | fabric | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric && >= 26.1",
+     "code": "(screen.getTabsOnPage(screen.getCurrentPage()))"
+    },
+    {
+     "condition": "fabric",
+     "code": "(screen.getItemGroupsOnPage(screen.getCurrentPage()))"
+    },
+    {
+     "condition": null,
+     "code": "(screen.getCurrentPage().getVisibleTabs())"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/fabric/event/MouseClickListener.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import eu.midnightdust.midnightcontrols.client.MidnightControlsConfig;\nimport net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;\nimport net.minecraft.client.gui.screens.Screen;\nimport net.minecraft.client.input.MouseButtonEvent;\nimport org.jetbrains.annotations.NotNull;\n\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.clickInterceptor;\n\npublic class MouseClickListener implements ScreenMouseEvents.AllowMouseClick {\n    private final Screen screen;\n\n    public MouseClickListener(Screen screen) {\n        this.screen = screen;\n    }\n\n    @Override\n    public boolean allowMouseClick(@NotNull Screen screen, @NotNull MouseButtonEvent click) {\n        if(MidnightControlsConfig.virtualKeyboard) {\n            clickInterceptor.intercept(screen, click);\n        }\n        return true;\n    }\n\n    // Add equals and hashCode to prevent duplicate registrations\n    @Override\n    public boolean equals(Object obj) {\n        if (obj instanceof MouseClickListener) {\n            return ((MouseClickListener) obj).screen == this.screen;\n        }\n        return false;\n    }\n\n    @Override\n    public int hashCode() {\n        return screen.hashCode();\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/fabric/event/PlayerChangeControlsModeCallback.java",
+   "line": 12,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import eu.midnightdust.midnightcontrols.ControlsMode;\nimport net.fabricmc.fabric.api.event.Event;\nimport net.fabricmc.fabric.api.event.EventFactory;\nimport net.minecraft.world.entity.player.Player;\nimport org.jetbrains.annotations.NotNull;\n\n/**\n * Represents an event callback which is fired when a player changes the controls mode.\n *\n * @author LambdAurora\n * @version 1.10.0\n * @since 1.1.0\n */\n@FunctionalInterface\npublic interface PlayerChangeControlsModeCallback {\n    Event<@NotNull PlayerChangeControlsModeCallback> EVENT = EventFactory.createArrayBacked(PlayerChangeControlsModeCallback.class, listeners -> (player, controlsMode) -> {\n        for (PlayerChangeControlsModeCallback event : listeners) {\n            event.apply(player, controlsMode);\n        }\n    });\n\n    void apply(@NotNull Player player, @NotNull ControlsMode controlsMode);\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/fabric/MidnightControlsClientFabric.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import eu.midnightdust.midnightcontrols.MidnightControlsConstants;\nimport eu.midnightdust.midnightcontrols.client.MidnightControlsClient;\nimport eu.midnightdust.midnightcontrols.client.MidnightControlsConfig;\nimport eu.midnightdust.midnightcontrols.client.MidnightControlsReloadListener;\nimport eu.midnightdust.midnightcontrols.fabric.event.MouseClickListener;\nimport eu.midnightdust.midnightcontrols.packet.ControlsModePayload;\nimport eu.midnightdust.midnightcontrols.packet.FeaturePayload;\nimport eu.midnightdust.midnightcontrols.packet.HelloPayload;\nimport net.fabricmc.api.ClientModInitializer;\nimport net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;\n//~ if >=26.1 'net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper' -> 'net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper'\nimport net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nimport net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;\nimport net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;\nimport net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;\nimport net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;\nimport net.fabricmc.fabric.api.resource.v1.ResourceLoader;\nimport net.fabricmc.fabric.api.resource.v1.pack.PackActivationType;\nimport net.fabricmc.loader.api.FabricLoader;\nimport net.fabricmc.loader.api.ModContainer;\nimport net.minecraft.server.packs.PackType;\n\nimport java.util.Optional;\n\nimport static eu.midnightdust.midnightcontrols.MidnightControls.id;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.BINDING_LOOK_DOWN;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.BINDING_LOOK_LEFT;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.BINDING_LOOK_RIGHT;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.BINDING_LOOK_UP;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.BINDING_RING;\n\npublic class MidnightControlsClientFabric implements ClientModInitializer {\n    @Override\n    public void onInitializeClient() {\n        //~ if >=26.1 'KeyBindingHelper.registerKeyBinding' -> 'KeyMappingHelper.registerKeyMapping' {\n        KeyMappingHelper.registerKeyMapping(BINDING_LOOK_UP);\n        KeyMappingHelper.registerKeyMapping(BINDING_LOOK_RIGHT);\n        KeyMappingHelper.registerKeyMapping(BINDING_LOOK_DOWN);\n        KeyMappingHelper.registerKeyMapping(BINDING_LOOK_LEFT);\n        KeyMappingHelper.registerKeyMapping(BINDING_RING);\n        //~}\n        ClientPlayNetworking.registerGlobalReceiver(ControlsModePayload.PACKET_ID, (payload, context) ->\n                context.responseSender().sendPacket(new ControlsModePayload(MidnightControlsConfig.controlsMode.getName())));\n        ClientPlayNetworking.registerGlobalReceiver(FeaturePayload.PACKET_ID, ((payload, context) -> {}));\n\n        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {\n            var version = \"\";\n            Optional<ModContainer> container;\n            if ((container = FabricLoader.getInstance().getModContainer(MidnightControlsConstants.NAMESPACE)).isPresent()) {\n                version = container.get().getMetadata().getVersion().getFriendlyString();\n            }\n            var controlsMode = MidnightControlsConfig.controlsMode.getName();\n            sender.sendPacket(new HelloPayload(version, controlsMode));\n            sender.sendPacket(new ControlsModePayload(controlsMode));\n            MidnightControlsClient.onJoinServer();\n        });\n        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> MidnightControlsClient.onLeaveServer());\n\n        ClientTickEvents.START_CLIENT_TICK.register(MidnightControlsClient::onTick);\n        ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {\n            ScreenMouseEvents.allowMouseClick(screen).register(new MouseClickListener(screen));\n        });\n\n        FabricLoader.getIns"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/fabric/MidnightControlsFabric.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import eu.midnightdust.midnightcontrols.ControlsMode;\nimport eu.midnightdust.midnightcontrols.MidnightControls;\nimport eu.midnightdust.midnightcontrols.MidnightControlsFeature;\nimport eu.midnightdust.midnightcontrols.fabric.event.PlayerChangeControlsModeCallback;\nimport eu.midnightdust.midnightcontrols.packet.ControlsModePayload;\nimport eu.midnightdust.midnightcontrols.packet.FeaturePayload;\nimport eu.midnightdust.midnightcontrols.packet.HelloPayload;\nimport net.fabricmc.api.ModInitializer;\nimport net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;\nimport net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;\n\npublic class MidnightControlsFabric implements ModInitializer {\n    @Override\n    public void onInitialize() {\n        MidnightControls.init();\n        //~ if >= 26.1 'playC2S' -> 'serverboundPlay' {\n        //~ if >= 26.1 'playS2C' -> 'clientboundPlay' {\n        PayloadTypeRegistry.serverboundPlay().register(HelloPayload.PACKET_ID, HelloPayload.codec);\n        PayloadTypeRegistry.serverboundPlay().register(ControlsModePayload.PACKET_ID, ControlsModePayload.codec);\n        PayloadTypeRegistry.clientboundPlay().register(ControlsModePayload.PACKET_ID, ControlsModePayload.codec);\n        PayloadTypeRegistry.clientboundPlay().register(FeaturePayload.PACKET_ID, FeaturePayload.codec);\n        //~}\n        //~}\n\n        ServerPlayNetworking.registerGlobalReceiver(HelloPayload.PACKET_ID, (payload, context) -> {\n            ControlsMode.byId(payload.controlsMode()).ifPresent(controlsMode -> PlayerChangeControlsModeCallback.EVENT.invoker().apply(context.player(), controlsMode));\n            context.responseSender().sendPacket(new FeaturePayload(MidnightControlsFeature.HORIZONTAL_REACHAROUND));\n        });\n        ServerPlayNetworking.registerGlobalReceiver(ControlsModePayload.PACKET_ID, (payload, context) -> {\n            ControlsMode.byId(payload.controlsMode()).ifPresent(controlsMode -> PlayerChangeControlsModeCallback.EVENT.invoker().apply(context.player(), controlsMode));\n        });\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/neoforge/event/PlayerChangeControlsModeEvent.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import eu.midnightdust.midnightcontrols.ControlsMode;\nimport net.minecraft.world.entity.player.Player;\nimport net.neoforged.bus.api.Event;\nimport net.neoforged.fml.event.IModBusEvent;\n\npublic class PlayerChangeControlsModeEvent extends Event implements IModBusEvent {\n    public PlayerChangeControlsModeEvent(Player player, ControlsMode controlsMode) {\n\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/neoforge/MidnightControlsClientNeoforge.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import eu.midnightdust.midnightcontrols.client.MidnightControlsClient;\nimport eu.midnightdust.midnightcontrols.client.MidnightControlsConfig;\nimport eu.midnightdust.midnightcontrols.client.MidnightControlsReloadListener;\nimport eu.midnightdust.midnightcontrols.client.util.platform.NetworkUtil;\nimport eu.midnightdust.midnightcontrols.packet.ControlsModePayload;\nimport eu.midnightdust.midnightcontrols.packet.HelloPayload;\nimport net.minecraft.client.gui.screens.Screen;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;\nimport net.minecraft.server.packs.PackType;\nimport net.minecraft.server.packs.repository.Pack;\nimport net.minecraft.server.packs.repository.PackSource;\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.ModList;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.neoforge.client.event.*;\nimport net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;\nimport net.neoforged.neoforge.event.AddPackFindersEvent;\n\nimport static eu.midnightdust.midnightcontrols.MidnightControls.id;\nimport static eu.midnightdust.midnightcontrols.MidnightControlsConstants.NAMESPACE;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.BINDING_LOOK_DOWN;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.BINDING_LOOK_LEFT;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.BINDING_LOOK_RIGHT;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.BINDING_LOOK_UP;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.BINDING_RING;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.client;\nimport static eu.midnightdust.midnightcontrols.client.MidnightControlsClient.clickInterceptor;\n\n\n@Mod(value = NAMESPACE, dist = Dist.CLIENT)\npublic class MidnightControlsClientNeoforge {\n    public MidnightControlsClientNeoforge() {\n        MidnightControlsClient.initClient();\n    }\n\n    @EventBusSubscriber(modid = NAMESPACE, value = Dist.CLIENT)\n    public static class ClientEvents {\n        @SubscribeEvent\n        public static void registerKeybinding(RegisterKeyMappingsEvent event) {\n            event.register(BINDING_RING);\n            event.register(BINDING_LOOK_UP);\n            event.register(BINDING_LOOK_DOWN);\n            event.register(BINDING_LOOK_LEFT);\n            event.register(BINDING_LOOK_RIGHT);\n        }\n        @SubscribeEvent\n        public static void addPackFinders(AddPackFindersEvent event) {\n            if (false) { // TODO: Switch to stonecutter build system to be able to test packs in dev environment\n                event.addPackFinders(id(\"bedrock\"), PackType.CLIENT_RESOURCES, Component.literal(\"midnightcontrols/bedrock\"), PackSource.BUILT_IN, false, Pack.Position.TOP);\n                event.addPackFinders(id(\"legacy\"), PackType.CLIENT_RESOURCES, Component.literal(\"midnightcontrols/legacy\"), PackSource.BUILT_IN, false, Pack.Position.TOP);\n            }\n        }\n        @SubscribeEvent\n        public static void onResourceReload(AddClientReloadListenersEvent event) {\n            event.addListener(id(\"keyboard-layouts\"), MidnightControlsReloadListener.INSTANCE);\n        }\n        @SubscribeEvent\n        public static void registerPayloads(RegisterClientPayloadHandlersEvent event) {\n            event.register(ControlsModePayload.PACKET_ID, (payload, context) -> {\n                context.connection().send(new ServerboundCustomPayloadPacket(new ControlsModePayload(MidnightControlsConfig.controlsMode.getName())));\n            });\n        }\n        @SubscribeEvent\n        public static void sendPacketOnLogin(ClientPlayerNetworkEvent.LoggingIn event) {\n            var version = ModList.get().getModFileById(NAMESPACE).versionString();\n            var controlsMode = MidnightControlsConfig"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/midnightcontrols/neoforge/MidnightControlsNeoforge.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import eu.midnightdust.midnightcontrols.ControlsMode;\nimport eu.midnightdust.midnightcontrols.MidnightControls;\nimport eu.midnightdust.midnightcontrols.MidnightControlsFeature;\nimport eu.midnightdust.midnightcontrols.neoforge.event.PlayerChangeControlsModeEvent;\nimport eu.midnightdust.midnightcontrols.packet.ControlsModePayload;\nimport eu.midnightdust.midnightcontrols.packet.FeaturePayload;\nimport eu.midnightdust.midnightcontrols.packet.HelloPayload;\nimport net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;\nimport net.neoforged.neoforge.network.registration.PayloadRegistrar;\n\nimport static eu.midnightdust.midnightcontrols.MidnightControlsConstants.NAMESPACE;\n\n@Mod(value = NAMESPACE)\npublic class MidnightControlsNeoforge {\n    public MidnightControlsNeoforge() {\n        MidnightControls.init();\n    }\n    @EventBusSubscriber(modid = NAMESPACE)\n    public class CommonEvents {\n        @SubscribeEvent\n        public static void registerPayloads(RegisterPayloadHandlersEvent event) {\n            PayloadRegistrar registrar = event.registrar(\"1\").optional();\n            registrar.playToServer(HelloPayload.PACKET_ID, HelloPayload.codec, (payload, context) -> {\n                ControlsMode.byId(payload.controlsMode()).ifPresent(controlsMode -> new PlayerChangeControlsModeEvent(context.player(), controlsMode));\n                context.connection().send(new ClientboundCustomPayloadPacket(new FeaturePayload(MidnightControlsFeature.HORIZONTAL_REACHAROUND)));\n            });\n            registrar.playBidirectional(ControlsModePayload.PACKET_ID, ControlsModePayload.codec, (payload, context) -> {\n                ControlsMode.byId(payload.controlsMode()).ifPresent(controlsMode -> new PlayerChangeControlsModeEvent(context.player(), controlsMode));\n            });\n            registrar.playToClient(FeaturePayload.PACKET_ID, FeaturePayload.codec, (payload, context) -> {});\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  }
+ ]
+}

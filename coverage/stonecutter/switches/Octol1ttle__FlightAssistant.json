@@ -1,0 +1,1400 @@
+{
+ "repo": "Octol1ttle/FlightAssistant",
+ "commit": "266e2f2f14592737c529956273312b1dcfcfa043",
+ "names": "unknown",
+ "loaders": [
+  "fabric",
+  "neoforge",
+  "quilt"
+ ],
+ "versions": [
+  "1.20.1",
+  "1.21.1",
+  "1.21.6",
+  "1.21.9",
+  "1.21.11"
+ ],
+ "files": 32,
+ "switches": 47,
+ "versionSwitches": 39,
+ "rows": [
+  {
+   "file": "src/main/java/ru/octol1ttle/flightassistant/mixin/ClientLevelRunningNormallyInvoker.java",
+   "line": 8,
+   "method": "(class body)",
+   "condition": ">=1.21",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21",
+     "code": "@org.spongepowered.asm.mixin.gen.Invoker(\"isLevelRunningNormally\")\nboolean invokeIsLevelRunningNormally();"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/octol1ttle/flightassistant/mixin/EntityInvoker.java",
+   "line": 8,
+   "method": "(class body)",
+   "condition": ">=1.21.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.2",
+     "code": "@org.spongepowered.asm.mixin.gen.Invoker(\"isInvulnerableToBase\")\n    boolean invokeIsInvulnerableToBase(net.minecraft.world.damagesource.DamageSource damageSource);"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/octol1ttle/flightassistant/mixin/gui/GuiMixinLayeredDraw.java",
+   "line": 8,
+   "method": "(class body)",
+   "condition": "fabric && >=1.21 && <1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric && >=1.21 && <1.21.6",
+     "code": "@com.llamalad7.mixinextras.injector.ModifyReceiver(method = \"<init>\", at = @org.spongepowered.asm.mixin.injection.At(value = \"INVOKE\", target = \"Lnet/minecraft/client/gui/LayeredDraw;add(Lnet/minecraft/client/gui/LayeredDraw$Layer;)Lnet/minecraft/client/gui/LayeredDraw;\", ordinal = 2))\n    public net.minecraft.client.gui.LayeredDraw render(net.minecraft.client.gui.LayeredDraw instance, net.minecraft.client.gui.LayeredDraw.Layer layer) {\n        return instance.add((guiGraphics, deltaTracker)\n                -> ru.octol1ttle.flightassistant.api.util.event.FixedGuiRenderCallback.EVENT.invoker().onRenderGui(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(true))\n        );\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/octol1ttle/flightassistant/mixin/gui/GuiMixinLegacy.java",
+   "line": 8,
+   "method": "(class body)",
+   "condition": "fabric && <1.21",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric && <1.21",
+     "code": "@org.spongepowered.asm.mixin.injection.Inject(method = \"render\", at = @org.spongepowered.asm.mixin.injection.At(value = \"INVOKE\", target = \"Lnet/minecraft/client/multiplayer/MultiPlayerGameMode;getPlayerMode()Lnet/minecraft/world/level/GameType;\", ordinal = 0))\n    private void render(net.minecraft.client.gui.GuiGraphics guiGraphics, float partialTick, org.spongepowered.asm.mixin.injection.callback.CallbackInfo callbackInfo) {\n        ru.octol1ttle.flightassistant.api.util.event.FixedGuiRenderCallback.EVENT.invoker().onRenderGui(guiGraphics, partialTick);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/octol1ttle/flightassistant/mixin/gui/GuiMixinNew.java",
+   "line": 8,
+   "method": "(class body)",
+   "condition": "fabric && >=1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric && >=1.21.6",
+     "code": "@org.spongepowered.asm.mixin.injection.Inject(method = \"render\", at = @org.spongepowered.asm.mixin.injection.At(value = \"INVOKE\", target = \"Lnet/minecraft/client/gui/Gui;renderHotbarAndDecorations(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V\"))\n    private void beforeRenderHotbarAndDecorations(net.minecraft.client.gui.GuiGraphics guiGraphics, net.minecraft.client.DeltaTracker deltaTracker, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {\n        ru.octol1ttle.flightassistant.api.util.event.FixedGuiRenderCallback.EVENT.invoker().onRenderGui(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(true));\n        guiGraphics.nextStratum();\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/octol1ttle/flightassistant/mixin/level_renderer/LevelRendererMixinLegacy.java",
+   "line": 8,
+   "method": "(class body)",
+   "condition": "<1.21",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21",
+     "code": "@org.spongepowered.asm.mixin.injection.Inject(method = \"renderLevel\", at = @org.spongepowered.asm.mixin.injection.At(\"HEAD\"))\n    private void onStartRender(com.mojang.blaze3d.vertex.PoseStack poseStack, float partialTick, long finishNanoTime, boolean renderBlockOutline, net.minecraft.client.Camera camera, net.minecraft.client.renderer.GameRenderer gameRenderer, net.minecraft.client.renderer.LightTexture lightTexture, org.joml.Matrix4f projectionMatrix, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {\n        ru.octol1ttle.flightassistant.api.util.event.LevelRenderCallback.EVENT.invoker().onStartRenderLevel(partialTick, camera, projectionMatrix, com.mojang.blaze3d.systems.RenderSystem.getInverseViewRotationMatrix().invert());\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/octol1ttle/flightassistant/mixin/level_renderer/LevelRendererMixinNewest.java",
+   "line": 8,
+   "method": "(class body)",
+   "condition": ">=1.21.6 && <1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.6 && <1.21.9",
+     "code": "@org.spongepowered.asm.mixin.injection.Inject(method = \"renderLevel\", at = @org.spongepowered.asm.mixin.injection.At(\"HEAD\"))\n    private void onStartRender(com.mojang.blaze3d.resource.GraphicsResourceAllocator graphicsResourceAllocator, net.minecraft.client.DeltaTracker deltaTracker, boolean renderBlockOutline, net.minecraft.client.Camera camera, org.joml.Matrix4f frustumMatrix, org.joml.Matrix4f projectionMatrix, com.mojang.blaze3d.buffers.GpuBufferSlice fogBuffer, org.joml.Vector4f fogColor, boolean renderSky, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {\n        ru.octol1ttle.flightassistant.api.util.event.LevelRenderCallback.EVENT.invoker().onStartRenderLevel(deltaTracker.getGameTimeDeltaPartialTick(true), camera, projectionMatrix, frustumMatrix.get3x3(new org.joml.Matrix3f()));\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6",
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/octol1ttle/flightassistant/mixin/level_renderer/LevelRendererMixinNewestest.java",
+   "line": 8,
+   "method": "(class body)",
+   "condition": ">=1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "@org.spongepowered.asm.mixin.injection.Inject(method = \"renderLevel\", at = @org.spongepowered.asm.mixin.injection.At(\"HEAD\"))\n    private void onStartRender(com.mojang.blaze3d.resource.GraphicsResourceAllocator graphicsResourceAllocator, net.minecraft.client.DeltaTracker deltaTracker, boolean renderBlockOutline, net.minecraft.client.Camera camera, org.joml.Matrix4f frustumMatrix, org.joml.Matrix4f projectionMatrix, org.joml.Matrix4f cullingProjectionMatrix, com.mojang.blaze3d.buffers.GpuBufferSlice fogBuffer, org.joml.Vector4f fogColor, boolean renderSky, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {\n        ru.octol1ttle.flightassistant.api.util.event.LevelRenderCallback.EVENT.invoker().onStartRenderLevel(deltaTracker.getGameTimeDeltaPartialTick(true), camera, projectionMatrix, frustumMatrix.get3x3(new org.joml.Matrix3f()));\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/octol1ttle/flightassistant/mixin/level_renderer/LevelRendererMixinOld.java",
+   "line": 8,
+   "method": "(class body)",
+   "condition": ">=1.21 && <1.21.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21 && <1.21.2",
+     "code": "@org.spongepowered.asm.mixin.injection.Inject(method = \"renderLevel\", at = @org.spongepowered.asm.mixin.injection.At(\"HEAD\"))\n    private void onStartRender(net.minecraft.client.DeltaTracker deltaTracker, boolean renderBlockOutline, net.minecraft.client.Camera camera, net.minecraft.client.renderer.GameRenderer gameRenderer, net.minecraft.client.renderer.LightTexture lightTexture, org.joml.Matrix4f frustumMatrix, org.joml.Matrix4f projectionMatrix, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {\n        ru.octol1ttle.flightassistant.api.util.event.LevelRenderCallback.EVENT.invoker().onStartRenderLevel(deltaTracker.getGameTimeDeltaPartialTick(true), camera, projectionMatrix, frustumMatrix.get3x3(new org.joml.Matrix3f()));\n    }"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21",
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/net/minecraft/resources/ResourceLocation.kt",
+   "line": 3,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "typealias ResourceLocation = Identifier"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/nl/enjarai/doabarrelroll/compat/flightassistant/DaBRCompatFA.kt",
+   "line": 10,
+   "method": "(class body)",
+   "condition": "do-a-barrel-roll | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "do-a-barrel-roll",
+     "code": "private lateinit var rollComputer: DaBRRollComputer\n    private lateinit var thrustComputer: DaBRThrustComputer\n\n    fun init() {\n        if (!Platform.isModLoaded(\"do_a_barrel_roll\")) {\n            return\n        }\n        FlightAssistant.logger.info(\"Initializing support for Do a Barrel Roll\")\n\n        ComputerRegistrationCallback.EVENT.register(ComputerRegistrationCallback { computers, registerFunction ->\n            rollComputer = DaBRRollComputer(computers)\n            registerFunction.accept(DaBRRollComputer.ID, rollComputer)\n            thrustComputer = DaBRThrustComputer(computers)\n            registerFunction.accept(DaBRThrustComputer.ID, thrustComputer)\n        })\n        RollSourceRegistrationCallback.EVENT.register { it.accept(rollComputer) }\n        ThrustSourceRegistrationCallback.EVENT.register { it.accept(thrustComputer) }\n    }"
+    },
+    {
+     "condition": null,
+     "code": "fun init() {\n        if (Platform.isModLoaded(\"do_a_barrel_roll\")) {\n            FlightAssistant.logger.warn(\"Do a Barrel Roll is present, but this version of FlightAssistant does not have support for it. Update FlightAssistant, or report this issue if there are no updates available\")\n        }\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/nl/enjarai/doabarrelroll/compat/flightassistant/DaBRRollComputer.kt",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "do-a-barrel-roll",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "do-a-barrel-roll",
+     "code": "import net.minecraft.resources.ResourceLocation\nimport nl.enjarai.doabarrelroll.DoABarrelRoll\nimport nl.enjarai.doabarrelroll.api.RollEntity\nimport ru.octol1ttle.flightassistant.api.autoflight.roll.RollSource\nimport ru.octol1ttle.flightassistant.api.computer.Computer\nimport ru.octol1ttle.flightassistant.api.computer.ComputerBus\nimport ru.octol1ttle.flightassistant.api.util.FATickCounter\n\nclass DaBRRollComputer(computers: ComputerBus) : Computer(computers), RollSource {\n    override fun isActive(): Boolean {\n        return (computers.data.player as RollEntity).`doABarrelRoll$isRolling`()\n    }\n\n    override fun getRoll(): Float {\n        return (computers.data.player as RollEntity).`doABarrelRoll$getRoll`(FATickCounter.partialTick)\n    }\n\n    override fun addRoll(diff: Float) {\n        return (computers.data.player as RollEntity).`doABarrelRoll$setRoll`(getRoll() + diff)\n    }\n\n    override fun reset() {\n    }\n\n    companion object {\n        val ID: ResourceLocation = DoABarrelRoll.id(\"roll\")\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/nl/enjarai/doabarrelroll/compat/flightassistant/DaBRThrustComputer.kt",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "do-a-barrel-roll",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "do-a-barrel-roll",
+     "code": "import kotlin.math.sign\nimport net.minecraft.resources.ResourceLocation\nimport nl.enjarai.doabarrelroll.DoABarrelRoll\nimport nl.enjarai.doabarrelroll.api.event.ThrustEvents\nimport nl.enjarai.doabarrelroll.config.ModConfig\nimport ru.octol1ttle.flightassistant.api.autoflight.thrust.ThrustSource\nimport ru.octol1ttle.flightassistant.api.computer.Computer\nimport ru.octol1ttle.flightassistant.api.computer.ComputerBus\n\nclass DaBRThrustComputer(computers: ComputerBus) : Computer(computers), ThrustSource {\n    override val priority: ThrustSource.Priority = ThrustSource.Priority.HIGH\n    override val supportsReverse: Boolean = true\n\n    override fun subscribeToEvents() {\n        ThrustEvents.MODIFY_THRUST_INPUT.register({\n            if (computers.data.automationsAllowed() && !computers.thrust.isDisabledOrFaulted()) {\n                // TODO: config option *sigh*\n                computers.thrust.tickTarget(sign(it).toFloat())\n                return@register computers.thrust.current.toDouble()\n            }\n\n            return@register it\n        }, 10)\n    }\n\n    override fun isAvailable(): Boolean {\n        return ModConfig.INSTANCE.enableThrust\n    }\n\n    override fun tick() {\n    }\n\n    override fun reset() {\n    }\n\n    companion object {\n        val ID: ResourceLocation = DoABarrelRoll.id(\"thrust\")\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/api/util/extensions/GuiGraphicsExtensions.kt",
+   "line": 61,
+   "method": "(imports)",
+   "condition": "<1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.6",
+     "code": ", 0.0f"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/api/util/extensions/GuiGraphicsExtensions.kt",
+   "line": 62,
+   "method": "(imports)",
+   "condition": "<1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.6",
+     "code": ", 1.0f"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/api/util/extensions/GuiGraphicsExtensions.kt",
+   "line": 134,
+   "method": "(imports)",
+   "condition": "<1.21.6",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.21.6",
+     "code": "pose().translate(0.0f, 0.0f, 100.0f)"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/api/util/extensions/GuiGraphicsExtensions.kt",
+   "line": 162,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "/*renderOutline(\n*///?} else\n    submitOutline(\n        x, y, width, height, color)\n    renderDeferredElements()\n}\n*/"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/api/util/ScreenSpace.kt",
+   "line": 89,
+   "method": "(class body)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "private val net.minecraft.client.Camera.yRot: Float\n        get() = this.yRot()"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/config/FAConfig.kt",
+   "line": 71,
+   "method": "(class body)",
+   "condition": ">=1.21.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.2",
+     "code": "for (slot: net.minecraft.world.entity.EquipmentSlot in net.minecraft.world.entity.EquipmentSlot.VALUES) {\n                    if (player.getItemBySlot(slot).has(net.minecraft.core.component.DataComponents.GLIDER)) {\n                        return displaysStorage.notFlyingHasElytra\n                    }\n                }"
+    },
+    {
+     "condition": null,
+     "code": "if (player.allSlots.any { stack -> stack.item is net.minecraft.world.item.ElytraItem }) {\n                    return displaysStorage.notFlyingHasElytra\n                }"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "ElytraItem",
+      "GLIDER",
+      "VALUES",
+      "item"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "item",
+      "slot"
+     ]
+    }
+   ],
+   "older": "if (player.allSlots.any { stack -> stack.item is net.minecraft.world.item.ElytraItem }) {\n                    return displaysStorage.notFlyingHasElytra\n                }",
+   "newer": "for (slot: net.minecraft.world.entity.EquipmentSlot in net.minecraft.world.entity.EquipmentSlot.VALUES) {\n                    if (player.getItemBySlot(slot).has(net.minecraft.core.component.DataComponents.GLIDER)) {\n                        return displaysStorage.notFlyingHasElytra\n                    }\n                }",
+   "removed": [
+    "ElytraItem",
+    "allSlots",
+    "any",
+    "item",
+    "stack"
+   ],
+   "added": [
+    "DataComponents",
+    "EquipmentSlot",
+    "GLIDER",
+    "VALUES",
+    "component",
+    "core",
+    "entity",
+    "getItemBySlot",
+    "has",
+    "slot"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/config/FAModMenuIntegration.kt",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import com.terraformersmc.modmenu.api.ConfigScreenFactory\nimport com.terraformersmc.modmenu.api.ModMenuApi\nimport net.minecraft.client.gui.screens.Screen\n\nobject FAModMenuIntegration : ModMenuApi {\n    override fun getModConfigScreenFactory(): ConfigScreenFactory<*> = ConfigScreenFactory { parent: Screen -> FAConfigScreen.generate(parent) }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/FAKeyMappings.kt",
+   "line": 12,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "private val DEFAULT_CATEGORY = KeyMapping.Category.register(FlightAssistant.id(\"main\"))\n    private val THRUST_CATEGORY = KeyMapping.Category.register(FlightAssistant.id(\"thrust\"))"
+    },
+    {
+     "condition": null,
+     "code": "private const val DEFAULT_CATEGORY = \"key.category.flightassistant.main\"\n    private const val THRUST_CATEGORY = \"key.category.flightassistant.thrust\""
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "Category"
+     ]
+    }
+   ],
+   "older": "private const val DEFAULT_CATEGORY = \"key.category.flightassistant.main\"\n    private const val THRUST_CATEGORY = \"key.category.flightassistant.thrust\"",
+   "newer": "private val DEFAULT_CATEGORY = KeyMapping.Category.register(FlightAssistant.id(\"main\"))\n    private val THRUST_CATEGORY = KeyMapping.Category.register(FlightAssistant.id(\"thrust\"))",
+   "removed": [
+    "const"
+   ],
+   "added": [
+    "Category",
+    "FlightAssistant",
+    "KeyMapping",
+    "register"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/FAKeyMappings.kt",
+   "line": 53,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "private fun addKeyMapping(translationKey: String, code: Int, category: KeyMapping.Category = DEFAULT_CATEGORY): KeyMapping {\n        val keyBinding = KeyMapping(\"key.category.flightassistant.${category.id.path}.${translationKey}\", InputConstants.Type.KEYSYM, code, category)"
+    },
+    {
+     "condition": null,
+     "code": "private fun addKeyMapping(translationKey: String, code: Int, category: String = DEFAULT_CATEGORY): KeyMapping {\n        val keyBinding = KeyMapping(\"${category}.${translationKey}\", InputConstants.Type.KEYSYM, code, category)"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "Category"
+     ]
+    }
+   ],
+   "older": "private fun addKeyMapping(translationKey: String, code: Int, category: String = DEFAULT_CATEGORY): KeyMapping {\n        val keyBinding = KeyMapping(\"${category}.${translationKey}\", InputConstants.Type.KEYSYM, code, category)",
+   "newer": "private fun addKeyMapping(translationKey: String, code: Int, category: KeyMapping.Category = DEFAULT_CATEGORY): KeyMapping {\n        val keyBinding = KeyMapping(\"key.category.flightassistant.${category.id.path}.${translationKey}\", InputConstants.Type.KEYSYM, code, category)",
+   "removed": [],
+   "added": [
+    "Category"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/FlightAssistant.kt",
+   "line": 19,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "private val net.minecraft.client.Camera.xRot: Float\n    get() = this.xRot()\n\nprivate val net.minecraft.client.Camera.yRot: Float\n    get() = this.yRot()"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/FlightAssistantFabric.kt",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import dev.architectury.registry.client.keymappings.KeyMappingRegistry\nimport net.fabricmc.api.ClientModInitializer\nimport nl.enjarai.doabarrelroll.compat.flightassistant.DaBRCompatFA\n\nobject FlightAssistantFabric : ClientModInitializer {\n    override fun onInitializeClient() {\n        FlightAssistant.init()\n        DaBRCompatFA.init()\n        FAKeyMappings.keyMappings.forEach(KeyMappingRegistry::register)\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/FlightAssistantForge.kt",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "neoforge | forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "/*import net.minecraft.client.Minecraft\nimport net.neoforged.bus.api.IEventBus\nimport net.neoforged.fml.ModLoadingContext\nimport net.neoforged.fml.common.Mod\nimport net.neoforged.neoforge.client.event.RegisterGuiLayersEvent\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent\nimport net.neoforged.neoforge.client.gui.VanillaGuiLayers\nimport nl.enjarai.doabarrelroll.compat.flightassistant.DaBRCompatFA\nimport ru.octol1ttle.flightassistant.api.util.event.FixedGuiRenderCallback\nimport ru.octol1ttle.flightassistant.config.FAConfigScreen\nimport thedarkcolour.kotlinforforge.neoforge.KotlinModLoadingContext\n\ntypealias CSF = net.neoforged.neoforge.client.gui.IConfigScreenFactory\n*/"
+    },
+    {
+     "condition": "forge",
+     "code": "/*import net.minecraftforge.client.event.RegisterGuiOverlaysEvent\nimport net.minecraftforge.client.event.RegisterKeyMappingsEvent\nimport net.minecraftforge.client.gui.overlay.VanillaGuiOverlay\nimport net.minecraftforge.eventbus.api.IEventBus\nimport net.minecraftforge.fml.ModLoadingContext\nimport net.minecraftforge.fml.common.Mod\nimport nl.enjarai.doabarrelroll.compat.flightassistant.DaBRCompatFA\nimport ru.octol1ttle.flightassistant.api.util.event.FixedGuiRenderCallback\nimport ru.octol1ttle.flightassistant.config.FAConfigScreen\nimport thedarkcolour.kotlinforforge.KotlinModLoadingContext\n\ntypealias CSF = net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory\n*/"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/FlightAssistantForge.kt",
+   "line": 52,
+   "method": "(imports)",
+   "condition": "neoforge | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "/*fun onRegisterGuiOverlay(event: RegisterGuiLayersEvent) {\n        event.registerBelow(VanillaGuiLayers.HOTBAR, FlightAssistant.id(\"neoforge_gui\")) { guiGraphics, deltaTracker ->\n            if (!Minecraft.getInstance().options.hideGui) {\n                FixedGuiRenderCallback.EVENT.invoker().onRenderGui(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(true))\n            }\n        }\n    }\n*/"
+    },
+    {
+     "condition": null,
+     "code": "fun onRegisterGuiOverlay(event: RegisterGuiOverlaysEvent) {\n        event.registerBelow(VanillaGuiOverlay.HOTBAR.id(), \"flightassistant\") { gui, graphics, partialTick, _, _ ->\n            if (!gui.minecraft.options.hideGui) {\n                gui.setupOverlayRenderState(true, false)\n                FixedGuiRenderCallback.EVENT.invoker().onRenderGui(graphics, partialTick)\n            }\n        }\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/FlightAssistantForge.kt",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "!fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "!fabric",
+     "code": "//? if neoforge {\n/*import net.minecraft.client.Minecraft\nimport net.neoforged.bus.api.IEventBus\nimport net.neoforged.fml.ModLoadingContext\nimport net.neoforged.fml.common.Mod\nimport net.neoforged.neoforge.client.event.RegisterGuiLayersEvent\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent\nimport net.neoforged.neoforge.client.gui.VanillaGuiLayers\nimport nl.enjarai.doabarrelroll.compat.flightassistant.DaBRCompatFA\nimport ru.octol1ttle.flightassistant.api.util.event.FixedGuiRenderCallback\nimport ru.octol1ttle.flightassistant.config.FAConfigScreen\nimport thedarkcolour.kotlinforforge.neoforge.KotlinModLoadingContext\n\ntypealias CSF = net.neoforged.neoforge.client.gui.IConfigScreenFactory\n*///?} else if forge {\n/*import net.minecraftforge.client.event.RegisterGuiOverlaysEvent\nimport net.minecraftforge.client.event.RegisterKeyMappingsEvent\nimport net.minecraftforge.client.gui.overlay.VanillaGuiOverlay\nimport net.minecraftforge.eventbus.api.IEventBus\nimport net.minecraftforge.fml.ModLoadingContext\nimport net.minecraftforge.fml.common.Mod\nimport nl.enjarai.doabarrelroll.compat.flightassistant.DaBRCompatFA\nimport ru.octol1ttle.flightassistant.api.util.event.FixedGuiRenderCallback\nimport ru.octol1ttle.flightassistant.config.FAConfigScreen\nimport thedarkcolour.kotlinforforge.KotlinModLoadingContext\n\ntypealias CSF = net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory\n*///?}\n\n@Mod(FlightAssistant.MOD_ID)\nobject FlightAssistantForge {\n    init {\n        FlightAssistant.init()\n        DaBRCompatFA.init()\n        ModLoadingContext.get().registerExtensionPoint(\n            CSF::class.java,\n        ) { CSF { _, parent -> FAConfigScreen.generate(parent) } }\n\n        val modEventBus: IEventBus = KotlinModLoadingContext.get().getKEventBus()\n        modEventBus.addListener(this::onRegisterKeyMappings)\n        modEventBus.addListener(this::onRegisterGuiOverlay)\n    }\n\n    fun onRegisterKeyMappings(event: RegisterKeyMappingsEvent) {\n        FAKeyMappings.keyMappings.forEach(event::register)\n    }\n\n//? if neoforge {\n    /*fun onRegisterGuiOverlay(event: RegisterGuiLayersEvent) {\n        event.registerBelow(VanillaGuiLayers.HOTBAR, FlightAssistant.id(\"neoforge_gui\")) { guiGraphics, deltaTracker ->\n            if (!Minecraft.getInstance().options.hideGui) {\n                FixedGuiRenderCallback.EVENT.invoker().onRenderGui(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(true))\n            }\n        }\n    }\n*///?} else {\n    fun onRegisterGuiOverlay(event: RegisterGuiOverlaysEvent) {\n        event.registerBelow(VanillaGuiOverlay.HOTBAR.id(), \"flightassistant\") { gui, graphics, partialTick, _, _ ->\n            if (!gui.minecraft.options.hideGui) {\n                gui.setupOverlayRenderState(true, false)\n                FixedGuiRenderCallback.EVENT.invoker().onRenderGui(graphics, partialTick)\n            }\n        }\n    }\n//?}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/impl/computer/ComputerHost.kt",
+   "line": 116,
+   "method": "tick",
+   "condition": ">=1.21",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21",
+     "code": "|| !(mc as ru.octol1ttle.flightassistant.mixin.ClientLevelRunningNormallyInvoker).invokeIsLevelRunningNormally()"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/impl/computer/safety/ElytraStatusComputer.kt",
+   "line": 72,
+   "method": "findActiveElytra",
+   "condition": ">=1.21.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.2",
+     "code": "for (equipmentSlot in net.minecraft.world.entity.EquipmentSlot.VALUES) {\n            val stack: ItemStack = player.getItemBySlot(equipmentSlot)\n            if (net.minecraft.world.entity.LivingEntity.canGlideUsing(stack, equipmentSlot)) {\n                return stack\n            }\n        }"
+    },
+    {
+     "condition": null,
+     "code": "for (stack: ItemStack in player.armorSlots) {\n            if (stack.item is net.minecraft.world.item.ElytraItem) {\n                return stack\n            }\n        }"
+    }
+   ],
+   "boundary": [
+    "1.21.1 -> 1.21.2"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "ElytraItem",
+      "VALUES",
+      "canGlideUsing",
+      "item"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "item"
+     ]
+    }
+   ],
+   "older": "for (stack: ItemStack in player.armorSlots) {\n            if (stack.item is net.minecraft.world.item.ElytraItem) {\n                return stack\n            }\n        }",
+   "newer": "for (equipmentSlot in net.minecraft.world.entity.EquipmentSlot.VALUES) {\n            val stack: ItemStack = player.getItemBySlot(equipmentSlot)\n            if (net.minecraft.world.entity.LivingEntity.canGlideUsing(stack, equipmentSlot)) {\n                return stack\n            }\n        }",
+   "removed": [
+    "ElytraItem",
+    "armorSlots",
+    "item"
+   ],
+   "added": [
+    "EquipmentSlot",
+    "LivingEntity",
+    "VALUES",
+    "canGlideUsing",
+    "entity",
+    "equipmentSlot",
+    "getItemBySlot"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/impl/display/AttitudeDisplay.kt",
+   "line": 39,
+   "method": "render",
+   "condition": "<1.21.6",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.21.6",
+     "code": "pose().translate(0.0f, 0.0f, -200.0f)"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/impl/display/AttitudeDisplay.kt",
+   "line": 124,
+   "method": "AttitudeDisplay",
+   "condition": "<1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.6",
+     "code": ", 0.0f"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/impl/display/FlightDirectorsDisplay.kt",
+   "line": 36,
+   "method": "render",
+   "condition": "<1.21.6",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.21.6",
+     "code": "pose().translate(0.0f, 0.0f, -100.0f)"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/impl/display/FlightPathDisplay.kt",
+   "line": 26,
+   "method": "render",
+   "condition": "<1.21.6",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<1.21.6",
+     "code": "pose().translate(0.0f, 0.0f, -150.0f)"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/components/CycleTextOnlyButton.kt",
+   "line": 38,
+   "method": "(class body)",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "override fun onPress(input: net.minecraft.client.input.InputWithModifiers) {\n        if (input.hasShiftDown()) {\n            this.cycleValue(-1)\n        } else {\n            this.cycleValue(1)\n        }\n    }"
+    },
+    {
+     "condition": null,
+     "code": "override fun onPress() {\n        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {\n            this.cycleValue(-1)\n        } else {\n            this.cycleValue(1)\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "InputWithModifiers"
+     ]
+    }
+   ],
+   "older": "override fun onPress() {\n        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {\n            this.cycleValue(-1)\n        } else {\n            this.cycleValue(1)\n        }\n    }",
+   "newer": "override fun onPress(input: net.minecraft.client.input.InputWithModifiers) {\n        if (input.hasShiftDown()) {\n            this.cycleValue(-1)\n        } else {\n            this.cycleValue(1)\n        }\n    }",
+   "removed": [
+    "Screen",
+    "gui",
+    "screens"
+   ],
+   "added": [
+    "InputWithModifiers",
+    "input"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/components/FABaseList.kt",
+   "line": 7,
+   "method": "(class body)",
+   "condition": "<1.21",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21",
+     "code": "y1,"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/components/FABaseList.kt",
+   "line": 9,
+   "method": "(class body)",
+   "condition": "<1.21",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21",
+     "code": "setRenderBackground(false)\n        setRenderTopAndBottom(false)"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/components/SmartStringWidget.kt",
+   "line": 6,
+   "method": "(imports)",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "import ru.octol1ttle.flightassistant.api.util.extensions.setColor"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/components/SmartStringWidget.kt",
+   "line": 15,
+   "method": "leftAligned",
+   "condition": "<1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.9",
+     "code": "this.alignLeft()"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/components/SmartStringWidget.kt",
+   "line": 31,
+   "method": "SmartStringWidget",
+   "condition": ">=1.21.11",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "fun setColor(color: Int): SmartStringWidget {\n        this.message = this.message.copy().setColor(color)\n        return this\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/FABaseScreen.kt",
+   "line": 28,
+   "method": "render",
+   "condition": ">=1.21",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21",
+     "code": ", mouseX, mouseY, delta"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/FABaseScreen.kt",
+   "line": 25,
+   "method": "render",
+   "condition": "<1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.6",
+     "code": "this.renderBackground(\n            guiGraphics\n            /*? if >=1.21 {*//*, mouseX, mouseY, delta *///?}\n        )"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/FABaseScreen.kt",
+   "line": 40,
+   "method": "FABaseScreen",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "override fun keyPressed(event: net.minecraft.client.input.KeyEvent): Boolean {\n        if (super.keyPressed(event)) {\n            return true\n        } else if (FAKeyMappings.openFlightAssistantSetup.matches(event)) {\n            this.onClose()\n            return true\n        }\n\n        return false\n    }"
+    },
+    {
+     "condition": null,
+     "code": "override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {\n        if (super.keyPressed(keyCode, scanCode, modifiers)) {\n\t\t\treturn true\n\t\t} else if (FAKeyMappings.openFlightAssistantSetup.matches(keyCode, scanCode)) {\n\t\t\tthis.onClose()\n\t\t\treturn true\n\t\t}\n\n        return false\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "KeyEvent"
+     ]
+    }
+   ],
+   "older": "override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {\n        if (super.keyPressed(keyCode, scanCode, modifiers)) {\n\t\t\treturn true\n\t\t} else if (FAKeyMappings.openFlightAssistantSetup.matches(keyCode, scanCode)) {\n\t\t\tthis.onClose()\n\t\t\treturn true\n\t\t}\n\n        return false\n    }",
+   "newer": "override fun keyPressed(event: net.minecraft.client.input.KeyEvent): Boolean {\n        if (super.keyPressed(event)) {\n            return true\n        } else if (FAKeyMappings.openFlightAssistantSetup.matches(event)) {\n            this.onClose()\n            return true\n        }\n\n        return false\n    }",
+   "removed": [
+    "Int",
+    "keyCode",
+    "modifiers",
+    "scanCode"
+   ],
+   "added": [
+    "KeyEvent",
+    "client",
+    "event",
+    "input",
+    "minecraft",
+    "net"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/system/SystemManagementList.kt",
+   "line": 34,
+   "method": "Entry",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "override fun renderContent(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {\n            val top = contentY"
+    },
+    {
+     "condition": null,
+     "code": "override fun render(guiGraphics: GuiGraphics, index: Int, top: Int, left: Int, width: Int, height: Int, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "index",
+      "left",
+      "render",
+      "renderContent"
+     ]
+    }
+   ],
+   "older": "override fun render(guiGraphics: GuiGraphics, index: Int, top: Int, left: Int, width: Int, height: Int, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {",
+   "newer": "override fun renderContent(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {\n            val top = contentY",
+   "removed": [
+    "height",
+    "index",
+    "left",
+    "render",
+    "width"
+   ],
+   "added": [
+    "contentY",
+    "renderContent"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/waypoints/WaypointsList.kt",
+   "line": 28,
+   "method": "PhaseEntry",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "override fun renderContent(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {\n            val left = contentX\n            val top = contentY\n            val index = list.children().indexOf(this)"
+    },
+    {
+     "condition": null,
+     "code": "override fun render(guiGraphics: GuiGraphics, index: Int, top: Int, left: Int, width: Int, height: Int, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "children",
+      "render",
+      "renderContent"
+     ]
+    }
+   ],
+   "older": "override fun render(guiGraphics: GuiGraphics, index: Int, top: Int, left: Int, width: Int, height: Int, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {",
+   "newer": "override fun renderContent(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {\n            val left = contentX\n            val top = contentY\n            val index = list.children().indexOf(this)",
+   "removed": [
+    "height",
+    "render",
+    "width"
+   ],
+   "added": [
+    "children",
+    "contentX",
+    "contentY",
+    "indexOf",
+    "list",
+    "renderContent"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/waypoints/WaypointsList.kt",
+   "line": 106,
+   "method": "WaypointEntry",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "override fun renderContent(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {\n            val left = contentX\n            val top = contentY\n            val index = list.children().indexOf(this)"
+    },
+    {
+     "condition": null,
+     "code": "override fun render(guiGraphics: GuiGraphics, index: Int, top: Int, left: Int, width: Int, height: Int, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "children",
+      "render",
+      "renderContent"
+     ]
+    }
+   ],
+   "older": "override fun render(guiGraphics: GuiGraphics, index: Int, top: Int, left: Int, width: Int, height: Int, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {",
+   "newer": "override fun renderContent(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, hovering: Boolean, partialTick: Float) {\n            val left = contentX\n            val top = contentY\n            val index = list.children().indexOf(this)",
+   "removed": [
+    "height",
+    "render",
+    "width"
+   ],
+   "added": [
+    "children",
+    "contentX",
+    "contentY",
+    "indexOf",
+    "list",
+    "renderContent"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/waypoints/WaypointsList.kt",
+   "line": 238,
+   "method": "WaypointEntry",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "override fun mouseClicked(event: MouseButtonEvent, isDoubleClick: Boolean): Boolean {\n            val button = event.button()\n            val callSuper = { super.mouseClicked(event, isDoubleClick) }"
+    },
+    {
+     "condition": null,
+     "code": "override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {\n            val callSuper = { super.mouseClicked(mouseX, mouseY, button) }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "MouseButtonEvent"
+     ]
+    }
+   ],
+   "older": "override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {\n            val callSuper = { super.mouseClicked(mouseX, mouseY, button) }",
+   "newer": "override fun mouseClicked(event: MouseButtonEvent, isDoubleClick: Boolean): Boolean {\n            val button = event.button()\n            val callSuper = { super.mouseClicked(event, isDoubleClick) }",
+   "removed": [
+    "Double",
+    "Int",
+    "mouseX",
+    "mouseY"
+   ],
+   "added": [
+    "MouseButtonEvent",
+    "event",
+    "isDoubleClick"
+   ]
+  },
+  {
+   "file": "src/main/kotlin/ru/octol1ttle/flightassistant/screen/waypoints/WaypointsList.kt",
+   "line": 258,
+   "method": "WaypointEntry",
+   "condition": ">=1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.9",
+     "code": "override fun mouseReleased(event: MouseButtonEvent): Boolean {\n            val button = event.button()\n            val callSuper = { super.mouseReleased(event) }"
+    },
+    {
+     "condition": null,
+     "code": "override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "MouseButtonEvent"
+     ]
+    }
+   ],
+   "older": "override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {",
+   "newer": "override fun mouseReleased(event: MouseButtonEvent): Boolean {\n            val button = event.button()\n            val callSuper = { super.mouseReleased(event) }",
+   "removed": [
+    "Double",
+    "Int",
+    "mouseX",
+    "mouseY"
+   ],
+   "added": [
+    "MouseButtonEvent",
+    "callSuper",
+    "event"
+   ]
+  }
+ ]
+}
