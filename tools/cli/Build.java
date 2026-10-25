@@ -17,6 +17,15 @@ final class Build {
                 "required", required, "gradleJava", jdk.version(), "home", jdk.home().toString()));
     }
     static final long DAEMON_IDLE_MS = 30 * 60 * 1000;
+    /** True when the user's Gradle home, the build, or GRADLE_OPTS already sets the daemon idle timeout. */
+    boolean userSetsIdleTimeout() throws IOException {
+        String key = "org.gradle.daemon.idletimeout";
+        if (System.getenv().getOrDefault("GRADLE_OPTS", "").contains(key)) return true;
+        Path gradleHome = Path.of(System.getenv().getOrDefault("GRADLE_USER_HOME", Path.of(System.getProperty("user.home"), ".gradle").toString()));
+        for (Path properties : List.of(gradleHome.resolve("gradle.properties"), project.root.resolve("gradle.properties")))
+            if (!ProjectModel.properties(properties).getProperty(key, "").isBlank()) return true;
+        return false;
+    }
     Path daemons() { return project.state().resolve("gradle-daemons").toAbsolutePath(); }
     /** Stops the Gradle daemons modaccel started for this checkout; null if it never started any. */
     Run.Result stopDaemons() throws Exception {
@@ -57,7 +66,8 @@ final class Build {
         // Daemons of modaccel's own, so game-stop can stop them without touching the user's or another
         // agent's (gradle --stop would end them all), and one left running leaves after half an hour idle.
         command.add("-Dorg.gradle.daemon.registry.base=" + daemons());
-        command.add("-Dorg.gradle.daemon.idletimeout=" + DAEMON_IDLE_MS);
+        // A command-line value would override one the user set, so only fill in a default.
+        if (!userSetsIdleTimeout()) command.add("-Dorg.gradle.daemon.idletimeout=" + DAEMON_IDLE_MS);
         command.addAll(arguments);
         return command;
     }
