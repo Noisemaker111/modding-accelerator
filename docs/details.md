@@ -213,8 +213,37 @@ its existing accepted EULA and settings, then stops that owned server after the 
 Joining a world alone leaves `behaviorVerified=false`; add a meaningful assertion
 to check the mod's behavior.
 Every command saves a JSON receipt in the target's `.runs/portable/` with its actual
-verification tier, stage times and logs. Source and dependency changes require stopping
-the client and checking the rebuilt game; this path does not yet hot-reload edits.
+verification tier, stage times and logs. Dependency changes require stopping the client
+and checking the rebuilt game.
+
+`eval --code SNIPPET` (or `--file SNIPPET.java`) runs Java inside the owned client and prints
+the value. The agent compiles the snippet with the JDK's compiler against the game's classpath
+and loads it with a child of the loader that loaded Minecraft, so it sees the game and the mod
+as they run, mixins included. It runs on the game thread unless `--thread control` is given.
+`mc` is the Minecraft instance, `print(x)` adds output, `vars` keeps values between snippets,
+and `call(objectOrClass, "name", args...)` / `field(objectOrClass, "name")` reach private
+members. Leading `import` lines are allowed; compile errors and stack traces point at snippet
+lines. Measured on Diorama (Fabric 26.3, Windows): 0.6–1.5 s per snippet against a running
+client, for example the map tile under the player and its bake state.
+
+`reload` recompiles the selected project's classes and swaps them into the owned client. The
+agent records a hash of every file in the project's class and resource folders on the game's
+classpath at startup; a reload redefines the changed classes the game has loaded, leaves
+unloaded ones for the loader to read on first use, and reloads resource packs when a resource
+changed. The compile runs without the init script and with Gradle's configuration cache, so
+on Diorama's 21-project build it took 2.7 s instead of about 11 s; the redefinition took
+0.15 s. A changed class shape on a stock JVM, a mixin, or mod metadata is reported as needing
+a restart (exit 1), and nothing in that batch is applied. After a reload that applied
+everything, the session's fingerprint is the new build's, so `ui-check`/`world-check` accept
+it. Objects keep their field values and static initializers do not rerun.
+
+`--jbr` on `ui-check`/`world-check` starts the client on JetBrains Runtime of the same Java
+version, with `-XX:+AllowEnhancedClassRedefinition -XX:TieredStopAtLevel=1` (C2 plus
+redefinition has crashed the VM). Loom fixes `runClient`'s launcher before an init script can
+change it, so Gradle prepares and records the launch, skips starting it, and modaccel starts
+the recorded command on JBR, which Gradle's toolchain resolution provides. With it, reload also
+swaps added and removed methods and fields: on Diorama an added static method and field were
+callable after a 3.4 s reload, and the field kept its value across the next reload.
 
 Local checks cover Windows PowerShell/Git Bash, Fabric 1.21.5/1.21.6/26.3 and NeoForge 1.21.1.
 An isolated Linux VPS passed source/packaged core checks and real Gradle/JUnit checks

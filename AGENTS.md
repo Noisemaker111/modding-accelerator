@@ -49,8 +49,10 @@ Current input is a Gradle source checkout; compiled-JAR conversion is unsupporte
 Use the portable command for current work: `modaccel.cmd` on Windows,
 `./modaccel` on POSIX, or `java -jar modaccel.jar`. See `help` and `support`.
 Use `port --from OLD --to NEW --fix`, `fast`, `ui-check`, `world-check`,
-`mp-check`, `game-status`, and `game-stop`. Portable hot reload is unfinished;
-stop and rebuild after source changes. Package locally; publishing needs approval.
+`mp-check`, `eval`, `reload`, `game-status`, and `game-stop`. `eval` runs Java in the
+owned client; `reload` swaps recompiled classes into it and says when a restart is
+needed (mixins, mod metadata, or a changed class shape without `--jbr`). Package locally;
+publishing needs approval.
 Run builds and game launches through modaccel, never raw Gradle or manual game
 launches. Show only inspected 1280x720 Minecraft framebuffer captures, never desktop grabs.
 

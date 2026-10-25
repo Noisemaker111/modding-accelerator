@@ -29,7 +29,8 @@ final class Build {
         List<String> command = new ArrayList<>(command(tasks));
         int init = command.indexOf("-I"); if (init >= 0) { command.remove(init + 1); command.remove(init); }
         command.replaceAll(argument -> argument.equals("--no-configuration-cache") ? "--configuration-cache" : argument);
-        command.removeIf(argument -> argument.startsWith("-Dmodaccel.") || argument.equals("-Dfabric.loom.ci=true"));
+        // modaccel's own invocations need every selected project configured; a compile doesn't.
+        command.removeIf(argument -> argument.startsWith("-Dmodaccel.") || argument.equals("-Dfabric.loom.ci=true") || argument.equals("--no-configure-on-demand"));
         Run.Result result = Run.command(command, project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log(stage), 900);
         report.stage(stage, result, Json.map("java", jdk.version(), "gradle", project.wrapperVersion(), "configurationCache", true)); return result;
     }
