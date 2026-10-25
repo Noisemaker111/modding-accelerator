@@ -568,6 +568,23 @@ lab server  up   port 25565 pid 29536  3m40s   dedicated server
 Every long step prints its own `[  24.2s] what it is doing` line, so a command is never silent
 while it waits on a port, a build or a game.
 
+## Porting map
+
+`docs/porting-map.html` lists every Java release from 1.0 to 26.3. From 1.14.4 on, each neighbouring
+pair of releases is diffed in Mojang's own names (`java tools/ChangeIndex.java`), joined across
+versions by Fabric's intermediary ids; 26.1 and later ship unobfuscated, so those steps are matched
+by name and are a best guess. "Names that break" counts public classes, methods and fields that are
+renamed, removed or change signature. "modaccel handles" counts the renames `port --fix` rewrites
+from the mappings plus the ones an automatic rule in `knowledge/` names; how-tos are counted
+separately. An update that breaks 1% or more of the old names starts a new family, and each
+family's hub is its release with the most mods on Modrinth. Before 1.14.4 there are no official
+names, so families are grouped by version number, marked estimated, and nothing is measured.
+
+A line is green only when `coverage/ledger.json` has a port across that whole hop that loaded or
+passed a behaviour check in the game; yellow when a ROADMAP step marked doing covers it; red
+otherwise, with the reason shown. Refresh: `java tools/ChangeIndex.java`, then
+`python bench/change_routes.py` and `python bench/porting_map.py`.
+
 ## Porting, measured
 
 Six open-source mods (Trinkets, Traverse, Terrestria, Traveler's Backpack, Polymer, Artifacts),

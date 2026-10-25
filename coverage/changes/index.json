@@ -13,6 +13,274 @@
   "hubRule": "Each family's hub is the release in it with the most mods on Modrinth (counted on the date shown), because a port that starts or ends there helps the most people. A family of one release is its own hub.",
   "list": [
    {
+    "id": "1.0",
+    "versions": [
+     "1.0"
+    ],
+    "hub": "1.0",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.0": 119
+    }
+   },
+   {
+    "id": "1.1",
+    "versions": [
+     "1.1"
+    ],
+    "hub": "1.1",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.1": 119
+    }
+   },
+   {
+    "id": "1.2.1 to 1.2.5",
+    "versions": [
+     "1.2.1",
+     "1.2.2",
+     "1.2.3",
+     "1.2.4",
+     "1.2.5"
+    ],
+    "hub": "1.2.5",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.2.1": 86,
+     "1.2.2": 85,
+     "1.2.3": 110,
+     "1.2.4": 95,
+     "1.2.5": 140
+    }
+   },
+   {
+    "id": "1.3.1 to 1.3.2",
+    "versions": [
+     "1.3.1",
+     "1.3.2"
+    ],
+    "hub": "1.3.2",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.3.1": 111,
+     "1.3.2": 139
+    }
+   },
+   {
+    "id": "1.4.2 to 1.4.7",
+    "versions": [
+     "1.4.2",
+     "1.4.4",
+     "1.4.5",
+     "1.4.6",
+     "1.4.7"
+    ],
+    "hub": "1.4.7",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.4.2": 127,
+     "1.4.4": 117,
+     "1.4.5": 128,
+     "1.4.6": 138,
+     "1.4.7": 173
+    }
+   },
+   {
+    "id": "1.5.1 to 1.5.2",
+    "versions": [
+     "1.5.1",
+     "1.5.2"
+    ],
+    "hub": "1.5.2",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.5.1": 136,
+     "1.5.2": 171
+    }
+   },
+   {
+    "id": "1.6.1 to 1.6.4",
+    "versions": [
+     "1.6.1",
+     "1.6.2",
+     "1.6.4"
+    ],
+    "hub": "1.6.4",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.6.1": 117,
+     "1.6.2": 140,
+     "1.6.4": 320
+    }
+   },
+   {
+    "id": "1.7.2 to 1.7.10",
+    "versions": [
+     "1.7.2",
+     "1.7.3",
+     "1.7.4",
+     "1.7.5",
+     "1.7.6",
+     "1.7.7",
+     "1.7.8",
+     "1.7.9",
+     "1.7.10"
+    ],
+    "hub": "1.7.10",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.7.2": 194,
+     "1.7.3": 142,
+     "1.7.4": 141,
+     "1.7.5": 140,
+     "1.7.6": 139,
+     "1.7.7": 139,
+     "1.7.8": 139,
+     "1.7.9": 136,
+     "1.7.10": 996
+    }
+   },
+   {
+    "id": "1.8 to 1.8.9",
+    "versions": [
+     "1.8",
+     "1.8.1",
+     "1.8.2",
+     "1.8.3",
+     "1.8.4",
+     "1.8.5",
+     "1.8.6",
+     "1.8.7",
+     "1.8.8",
+     "1.8.9"
+    ],
+    "hub": "1.8.9",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.8": 219,
+     "1.8.1": 173,
+     "1.8.2": 173,
+     "1.8.3": 173,
+     "1.8.4": 172,
+     "1.8.5": 172,
+     "1.8.6": 172,
+     "1.8.7": 172,
+     "1.8.8": 229,
+     "1.8.9": 906
+    }
+   },
+   {
+    "id": "1.9 to 1.9.4",
+    "versions": [
+     "1.9",
+     "1.9.1",
+     "1.9.2",
+     "1.9.3",
+     "1.9.4"
+    ],
+    "hub": "1.9.4",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.9": 242,
+     "1.9.1": 179,
+     "1.9.2": 179,
+     "1.9.3": 180,
+     "1.9.4": 345
+    }
+   },
+   {
+    "id": "1.10 to 1.10.2",
+    "versions": [
+     "1.10",
+     "1.10.1",
+     "1.10.2"
+    ],
+    "hub": "1.10.2",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.10": 119,
+     "1.10.1": 210,
+     "1.10.2": 493
+    }
+   },
+   {
+    "id": "1.11 to 1.11.2",
+    "versions": [
+     "1.11",
+     "1.11.1",
+     "1.11.2"
+    ],
+    "hub": "1.11.2",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.11": 272,
+     "1.11.1": 207,
+     "1.11.2": 464
+    }
+   },
+   {
+    "id": "1.12 to 1.12.2",
+    "versions": [
+     "1.12",
+     "1.12.1",
+     "1.12.2"
+    ],
+    "hub": "1.12.2",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.12": 504,
+     "1.12.1": 467,
+     "1.12.2": 2866
+    }
+   },
+   {
+    "id": "1.13 to 1.13.2",
+    "versions": [
+     "1.13",
+     "1.13.1",
+     "1.13.2"
+    ],
+    "hub": "1.13.2",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.13": 451,
+     "1.13.1": 448,
+     "1.13.2": 598
+    }
+   },
+   {
+    "id": "1.14 to 1.14.3",
+    "versions": [
+     "1.14",
+     "1.14.1",
+     "1.14.2",
+     "1.14.3"
+    ],
+    "hub": "1.14.3",
+    "estimated": true,
+    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+    "mods": {
+     "1.14": 805,
+     "1.14.1": 804,
+     "1.14.2": 845,
+     "1.14.3": 856
+    }
+   },
+   {
     "id": "1.14.4",
     "versions": [
      "1.14.4"
@@ -302,7 +570,7 @@
     "hub": "26.2",
     "hubReason": "only release in the family",
     "mods": {
-     "26.2": 14155
+     "26.2": 14156
     }
    },
    {
@@ -313,7 +581,7 @@
     "hub": "26.3",
     "hubReason": "only release in the family",
     "mods": {
-     "26.3": 9025
+     "26.3": 9027
     }
    }
   ]
@@ -377,8 +645,67 @@
    "26.1": 11942,
    "26.1.1": 11502,
    "26.1.2": 15327,
-   "26.2": 14155,
-   "26.3": 9025
+   "26.2": 14156,
+   "26.3": 9027,
+   "1.0": 119,
+   "1.1": 119,
+   "1.2.1": 86,
+   "1.2.2": 85,
+   "1.2.3": 110,
+   "1.2.4": 95,
+   "1.2.5": 140,
+   "1.3.1": 111,
+   "1.3.2": 139,
+   "1.4.2": 127,
+   "1.4.4": 117,
+   "1.4.5": 128,
+   "1.4.6": 138,
+   "1.4.7": 173,
+   "1.5.1": 136,
+   "1.5.2": 171,
+   "1.6.1": 117,
+   "1.6.2": 140,
+   "1.6.4": 320,
+   "1.7.2": 194,
+   "1.7.3": 142,
+   "1.7.4": 141,
+   "1.7.5": 140,
+   "1.7.6": 139,
+   "1.7.7": 139,
+   "1.7.8": 139,
+   "1.7.9": 136,
+   "1.7.10": 996,
+   "1.8": 219,
+   "1.8.1": 173,
+   "1.8.2": 173,
+   "1.8.3": 173,
+   "1.8.4": 172,
+   "1.8.5": 172,
+   "1.8.6": 172,
+   "1.8.7": 172,
+   "1.8.8": 229,
+   "1.8.9": 906,
+   "1.9": 242,
+   "1.9.1": 179,
+   "1.9.2": 179,
+   "1.9.3": 180,
+   "1.9.4": 345,
+   "1.10": 119,
+   "1.10.1": 210,
+   "1.10.2": 493,
+   "1.11": 272,
+   "1.11.1": 207,
+   "1.11.2": 464,
+   "1.12": 504,
+   "1.12.1": 467,
+   "1.12.2": 2866,
+   "1.13": 451,
+   "1.13.1": 448,
+   "1.13.2": 598,
+   "1.14": 805,
+   "1.14.1": 804,
+   "1.14.2": 845,
+   "1.14.3": 856
   }
  },
  "versions": [
@@ -821,6 +1148,640 @@
    "methods": 64402,
    "fields": 23471,
    "family": "26.3"
+  }
+ ],
+ "allVersions": [
+  {
+   "id": "1.0",
+   "released": "2011-11-17",
+   "status": "blocked",
+   "family": "1.0"
+  },
+  {
+   "id": "1.1",
+   "released": "2012-01-11",
+   "status": "blocked",
+   "family": "1.1"
+  },
+  {
+   "id": "1.2.1",
+   "released": "2012-02-29",
+   "status": "blocked",
+   "family": "1.2.1 to 1.2.5"
+  },
+  {
+   "id": "1.2.2",
+   "released": "2012-02-29",
+   "status": "blocked",
+   "family": "1.2.1 to 1.2.5"
+  },
+  {
+   "id": "1.2.3",
+   "released": "2012-03-01",
+   "status": "blocked",
+   "family": "1.2.1 to 1.2.5"
+  },
+  {
+   "id": "1.2.4",
+   "released": "2012-03-21",
+   "status": "blocked",
+   "family": "1.2.1 to 1.2.5"
+  },
+  {
+   "id": "1.2.5",
+   "released": "2012-03-29",
+   "status": "blocked",
+   "family": "1.2.1 to 1.2.5"
+  },
+  {
+   "id": "1.3.1",
+   "released": "2012-07-31",
+   "status": "blocked",
+   "family": "1.3.1 to 1.3.2"
+  },
+  {
+   "id": "1.3.2",
+   "released": "2012-08-15",
+   "status": "blocked",
+   "family": "1.3.1 to 1.3.2"
+  },
+  {
+   "id": "1.4.2",
+   "released": "2012-11-24",
+   "status": "blocked",
+   "family": "1.4.2 to 1.4.7"
+  },
+  {
+   "id": "1.4.4",
+   "released": "2012-12-13",
+   "status": "blocked",
+   "family": "1.4.2 to 1.4.7"
+  },
+  {
+   "id": "1.4.5",
+   "released": "2012-12-19",
+   "status": "blocked",
+   "family": "1.4.2 to 1.4.7"
+  },
+  {
+   "id": "1.4.6",
+   "released": "2012-12-19",
+   "status": "blocked",
+   "family": "1.4.2 to 1.4.7"
+  },
+  {
+   "id": "1.4.7",
+   "released": "2012-12-27",
+   "status": "blocked",
+   "family": "1.4.2 to 1.4.7"
+  },
+  {
+   "id": "1.5.1",
+   "released": "2013-03-20",
+   "status": "blocked",
+   "family": "1.5.1 to 1.5.2"
+  },
+  {
+   "id": "1.5.2",
+   "released": "2013-04-25",
+   "status": "blocked",
+   "family": "1.5.1 to 1.5.2"
+  },
+  {
+   "id": "1.6.1",
+   "released": "2013-06-28",
+   "status": "blocked",
+   "family": "1.6.1 to 1.6.4"
+  },
+  {
+   "id": "1.6.2",
+   "released": "2013-07-05",
+   "status": "blocked",
+   "family": "1.6.1 to 1.6.4"
+  },
+  {
+   "id": "1.6.4",
+   "released": "2013-09-19",
+   "status": "blocked",
+   "family": "1.6.1 to 1.6.4"
+  },
+  {
+   "id": "1.7.2",
+   "released": "2013-10-25",
+   "status": "blocked",
+   "family": "1.7.2 to 1.7.10"
+  },
+  {
+   "id": "1.7.3",
+   "released": "2013-12-06",
+   "status": "blocked",
+   "family": "1.7.2 to 1.7.10"
+  },
+  {
+   "id": "1.7.4",
+   "released": "2013-12-09",
+   "status": "blocked",
+   "family": "1.7.2 to 1.7.10"
+  },
+  {
+   "id": "1.7.5",
+   "released": "2014-02-26",
+   "status": "blocked",
+   "family": "1.7.2 to 1.7.10"
+  },
+  {
+   "id": "1.7.6",
+   "released": "2014-04-09",
+   "status": "blocked",
+   "family": "1.7.2 to 1.7.10"
+  },
+  {
+   "id": "1.7.7",
+   "released": "2014-04-09",
+   "status": "blocked",
+   "family": "1.7.2 to 1.7.10"
+  },
+  {
+   "id": "1.7.8",
+   "released": "2014-04-09",
+   "status": "blocked",
+   "family": "1.7.2 to 1.7.10"
+  },
+  {
+   "id": "1.7.9",
+   "released": "2014-04-14",
+   "status": "blocked",
+   "family": "1.7.2 to 1.7.10"
+  },
+  {
+   "id": "1.7.10",
+   "released": "2014-05-14",
+   "status": "blocked",
+   "family": "1.7.2 to 1.7.10"
+  },
+  {
+   "id": "1.8",
+   "released": "2014-09-02",
+   "status": "blocked",
+   "family": "1.8 to 1.8.9"
+  },
+  {
+   "id": "1.8.1",
+   "released": "2014-11-24",
+   "status": "blocked",
+   "family": "1.8 to 1.8.9"
+  },
+  {
+   "id": "1.8.2",
+   "released": "2015-02-19",
+   "status": "blocked",
+   "family": "1.8 to 1.8.9"
+  },
+  {
+   "id": "1.8.3",
+   "released": "2015-02-20",
+   "status": "blocked",
+   "family": "1.8 to 1.8.9"
+  },
+  {
+   "id": "1.8.4",
+   "released": "2015-04-17",
+   "status": "blocked",
+   "family": "1.8 to 1.8.9"
+  },
+  {
+   "id": "1.8.5",
+   "released": "2015-05-22",
+   "status": "blocked",
+   "family": "1.8 to 1.8.9"
+  },
+  {
+   "id": "1.8.6",
+   "released": "2015-05-25",
+   "status": "blocked",
+   "family": "1.8 to 1.8.9"
+  },
+  {
+   "id": "1.8.7",
+   "released": "2015-06-05",
+   "status": "blocked",
+   "family": "1.8 to 1.8.9"
+  },
+  {
+   "id": "1.8.8",
+   "released": "2015-07-27",
+   "status": "blocked",
+   "family": "1.8 to 1.8.9"
+  },
+  {
+   "id": "1.8.9",
+   "released": "2015-12-03",
+   "status": "blocked",
+   "family": "1.8 to 1.8.9"
+  },
+  {
+   "id": "1.9",
+   "released": "2016-02-29",
+   "status": "blocked",
+   "family": "1.9 to 1.9.4"
+  },
+  {
+   "id": "1.9.1",
+   "released": "2016-03-30",
+   "status": "blocked",
+   "family": "1.9 to 1.9.4"
+  },
+  {
+   "id": "1.9.2",
+   "released": "2016-03-30",
+   "status": "blocked",
+   "family": "1.9 to 1.9.4"
+  },
+  {
+   "id": "1.9.3",
+   "released": "2016-05-10",
+   "status": "blocked",
+   "family": "1.9 to 1.9.4"
+  },
+  {
+   "id": "1.9.4",
+   "released": "2016-05-10",
+   "status": "blocked",
+   "family": "1.9 to 1.9.4"
+  },
+  {
+   "id": "1.10",
+   "released": "2016-06-08",
+   "status": "blocked",
+   "family": "1.10 to 1.10.2"
+  },
+  {
+   "id": "1.10.1",
+   "released": "2016-06-22",
+   "status": "blocked",
+   "family": "1.10 to 1.10.2"
+  },
+  {
+   "id": "1.10.2",
+   "released": "2016-06-23",
+   "status": "blocked",
+   "family": "1.10 to 1.10.2"
+  },
+  {
+   "id": "1.11",
+   "released": "2016-11-14",
+   "status": "blocked",
+   "family": "1.11 to 1.11.2"
+  },
+  {
+   "id": "1.11.1",
+   "released": "2016-12-20",
+   "status": "blocked",
+   "family": "1.11 to 1.11.2"
+  },
+  {
+   "id": "1.11.2",
+   "released": "2016-12-21",
+   "status": "blocked",
+   "family": "1.11 to 1.11.2"
+  },
+  {
+   "id": "1.12",
+   "released": "2017-06-02",
+   "status": "blocked",
+   "family": "1.12 to 1.12.2"
+  },
+  {
+   "id": "1.12.1",
+   "released": "2017-08-03",
+   "status": "blocked",
+   "family": "1.12 to 1.12.2"
+  },
+  {
+   "id": "1.12.2",
+   "released": "2017-09-18",
+   "status": "blocked",
+   "family": "1.12 to 1.12.2"
+  },
+  {
+   "id": "1.13",
+   "released": "2018-07-18",
+   "status": "blocked",
+   "family": "1.13 to 1.13.2"
+  },
+  {
+   "id": "1.13.1",
+   "released": "2018-08-22",
+   "status": "blocked",
+   "family": "1.13 to 1.13.2"
+  },
+  {
+   "id": "1.13.2",
+   "released": "2018-10-22",
+   "status": "blocked",
+   "family": "1.13 to 1.13.2"
+  },
+  {
+   "id": "1.14",
+   "released": "2019-04-23",
+   "status": "blocked",
+   "family": "1.14 to 1.14.3"
+  },
+  {
+   "id": "1.14.1",
+   "released": "2019-05-13",
+   "status": "blocked",
+   "family": "1.14 to 1.14.3"
+  },
+  {
+   "id": "1.14.2",
+   "released": "2019-05-27",
+   "status": "blocked",
+   "family": "1.14 to 1.14.3"
+  },
+  {
+   "id": "1.14.3",
+   "released": "2019-06-24",
+   "status": "blocked",
+   "family": "1.14 to 1.14.3"
+  },
+  {
+   "id": "1.14.4",
+   "released": "2019-07-19",
+   "status": "indexed",
+   "family": "1.14.4"
+  },
+  {
+   "id": "1.15",
+   "released": "2019-12-09",
+   "status": "indexed",
+   "family": "1.15 to 1.15.2"
+  },
+  {
+   "id": "1.15.1",
+   "released": "2019-12-16",
+   "status": "indexed",
+   "family": "1.15 to 1.15.2"
+  },
+  {
+   "id": "1.15.2",
+   "released": "2020-01-17",
+   "status": "indexed",
+   "family": "1.15 to 1.15.2"
+  },
+  {
+   "id": "1.16",
+   "released": "2020-06-23",
+   "status": "indexed",
+   "family": "1.16 to 1.16.1"
+  },
+  {
+   "id": "1.16.1",
+   "released": "2020-06-24",
+   "status": "indexed",
+   "family": "1.16 to 1.16.1"
+  },
+  {
+   "id": "1.16.2",
+   "released": "2020-08-11",
+   "status": "indexed",
+   "family": "1.16.2 to 1.16.5"
+  },
+  {
+   "id": "1.16.3",
+   "released": "2020-09-10",
+   "status": "indexed",
+   "family": "1.16.2 to 1.16.5"
+  },
+  {
+   "id": "1.16.4",
+   "released": "2020-10-29",
+   "status": "indexed",
+   "family": "1.16.2 to 1.16.5"
+  },
+  {
+   "id": "1.16.5",
+   "released": "2021-01-14",
+   "status": "indexed",
+   "family": "1.16.2 to 1.16.5"
+  },
+  {
+   "id": "1.17",
+   "released": "2021-06-08",
+   "status": "indexed",
+   "family": "1.17 to 1.17.1"
+  },
+  {
+   "id": "1.17.1",
+   "released": "2021-07-06",
+   "status": "indexed",
+   "family": "1.17 to 1.17.1"
+  },
+  {
+   "id": "1.18",
+   "released": "2021-11-30",
+   "status": "indexed",
+   "family": "1.18 to 1.18.1"
+  },
+  {
+   "id": "1.18.1",
+   "released": "2021-12-10",
+   "status": "indexed",
+   "family": "1.18 to 1.18.1"
+  },
+  {
+   "id": "1.18.2",
+   "released": "2022-02-28",
+   "status": "indexed",
+   "family": "1.18.2"
+  },
+  {
+   "id": "1.19",
+   "released": "2022-06-07",
+   "status": "indexed",
+   "family": "1.19 to 1.19.2"
+  },
+  {
+   "id": "1.19.1",
+   "released": "2022-07-27",
+   "status": "indexed",
+   "family": "1.19 to 1.19.2"
+  },
+  {
+   "id": "1.19.2",
+   "released": "2022-08-05",
+   "status": "indexed",
+   "family": "1.19 to 1.19.2"
+  },
+  {
+   "id": "1.19.3",
+   "released": "2022-12-07",
+   "status": "indexed",
+   "family": "1.19.3"
+  },
+  {
+   "id": "1.19.4",
+   "released": "2023-03-14",
+   "status": "indexed",
+   "family": "1.19.4"
+  },
+  {
+   "id": "1.20",
+   "released": "2023-06-02",
+   "status": "indexed",
+   "family": "1.20 to 1.20.1"
+  },
+  {
+   "id": "1.20.1",
+   "released": "2023-06-12",
+   "status": "indexed",
+   "family": "1.20 to 1.20.1"
+  },
+  {
+   "id": "1.20.2",
+   "released": "2023-09-20",
+   "status": "indexed",
+   "family": "1.20.2"
+  },
+  {
+   "id": "1.20.3",
+   "released": "2023-12-04",
+   "status": "indexed",
+   "family": "1.20.3 to 1.20.4"
+  },
+  {
+   "id": "1.20.4",
+   "released": "2023-12-07",
+   "status": "indexed",
+   "family": "1.20.3 to 1.20.4"
+  },
+  {
+   "id": "1.20.5",
+   "released": "2024-04-23",
+   "status": "indexed",
+   "family": "1.20.5 to 1.20.6"
+  },
+  {
+   "id": "1.20.6",
+   "released": "2024-04-29",
+   "status": "indexed",
+   "family": "1.20.5 to 1.20.6"
+  },
+  {
+   "id": "1.21",
+   "released": "2024-06-13",
+   "status": "indexed",
+   "family": "1.21 to 1.21.1"
+  },
+  {
+   "id": "1.21.1",
+   "released": "2024-08-08",
+   "status": "indexed",
+   "family": "1.21 to 1.21.1"
+  },
+  {
+   "id": "1.21.2",
+   "released": "2024-10-22",
+   "status": "indexed",
+   "family": "1.21.2 to 1.21.3"
+  },
+  {
+   "id": "1.21.3",
+   "released": "2024-10-23",
+   "status": "indexed",
+   "family": "1.21.2 to 1.21.3"
+  },
+  {
+   "id": "1.21.4",
+   "released": "2024-12-03",
+   "status": "indexed",
+   "family": "1.21.4"
+  },
+  {
+   "id": "1.21.5",
+   "released": "2025-03-25",
+   "status": "indexed",
+   "family": "1.21.5"
+  },
+  {
+   "id": "1.21.6",
+   "released": "2025-06-17",
+   "status": "indexed",
+   "family": "1.21.6 to 1.21.8"
+  },
+  {
+   "id": "1.21.7",
+   "released": "2025-06-30",
+   "status": "indexed",
+   "family": "1.21.6 to 1.21.8"
+  },
+  {
+   "id": "1.21.8",
+   "released": "2025-07-17",
+   "status": "indexed",
+   "family": "1.21.6 to 1.21.8"
+  },
+  {
+   "id": "1.21.9",
+   "released": "2025-09-30",
+   "status": "indexed",
+   "family": "1.21.9 to 1.21.10"
+  },
+  {
+   "id": "1.21.10",
+   "released": "2025-10-07",
+   "status": "indexed",
+   "family": "1.21.9 to 1.21.10"
+  },
+  {
+   "id": "1.21.11",
+   "released": "2025-12-09",
+   "status": "indexed",
+   "family": "1.21.11"
+  },
+  {
+   "id": "26.1",
+   "released": "2026-03-24",
+   "status": "indexed",
+   "family": "26.1 to 26.1.2"
+  },
+  {
+   "id": "26.1.1",
+   "released": "2026-04-01",
+   "status": "indexed",
+   "family": "26.1 to 26.1.2"
+  },
+  {
+   "id": "26.1.2",
+   "released": "2026-04-09",
+   "status": "indexed",
+   "family": "26.1 to 26.1.2"
+  },
+  {
+   "id": "26.2",
+   "released": "2026-06-16",
+   "status": "indexed",
+   "family": "26.2"
+  },
+  {
+   "id": "26.3",
+   "released": "2026-09-15",
+   "status": "indexed",
+   "family": "26.3"
+  }
+ ],
+ "doing": [
+  {
+   "step": "7",
+   "from": "1.20.1",
+   "to": "1.21.6",
+   "text": "A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. 62 errors down to 51 after seven rules (Identifier, food components, debug HUD); the rest needs re"
+  },
+  {
+   "step": "17",
+   "from": "1.21.6",
+   "to": "26.3",
+   "text": "Port one mod to 26.3 to a build, then to a loaded client. AppleSkin NeoForge 1.21.6 → 26.3 reaches a packaged build with the mixin audit in 66s: build settings,"
   }
  ],
  "blocked": [
@@ -13536,6 +14497,366 @@
  ],
  "hubHops": [
   {
+   "from": "1.0",
+   "to": "1.1",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.1",
+   "to": "1.2.5",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.2.5",
+   "to": "1.3.2",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.3.2",
+   "to": "1.4.7",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.4.7",
+   "to": "1.5.2",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.5.2",
+   "to": "1.6.4",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.6.4",
+   "to": "1.7.10",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.7.10",
+   "to": "1.8.9",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.8.9",
+   "to": "1.9.4",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.9.4",
+   "to": "1.10.2",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.10.2",
+   "to": "1.11.2",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.11.2",
+   "to": "1.12.2",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.12.2",
+   "to": "1.13.2",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.13.2",
+   "to": "1.14.3",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
+   "from": "1.14.3",
+   "to": "1.14.4",
+   "steps": [],
+   "broken": 0,
+   "coverage": {
+    "listed": 0,
+    "mappings": 0,
+    "rule": 0,
+    "note": 0,
+    "left": 0
+   },
+   "bestRun": null,
+   "backportRun": null,
+   "measured": false,
+   "status": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."
+   }
+  },
+  {
    "from": "1.14.4",
    "to": "1.15.2",
    "steps": [
@@ -13552,7 +14873,16 @@
     "left": 2301
    },
    "bestRun": null,
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.15.2",
@@ -13570,7 +14900,16 @@
     "left": 3619
    },
    "bestRun": null,
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.16.1",
@@ -13590,7 +14929,16 @@
     "left": 1257
    },
    "bestRun": null,
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.16.5",
@@ -13608,7 +14956,16 @@
     "left": 2504
    },
    "bestRun": null,
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.17.1",
@@ -13626,7 +14983,16 @@
     "left": 1205
    },
    "bestRun": null,
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.18.1",
@@ -13643,7 +15009,16 @@
     "left": 1287
    },
    "bestRun": null,
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.18.2",
@@ -13662,7 +15037,16 @@
     "left": 2379
    },
    "bestRun": null,
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.19.2",
@@ -13679,7 +15063,16 @@
     "left": 2468
    },
    "bestRun": null,
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.19.3",
@@ -13696,7 +15089,16 @@
     "left": 760
    },
    "bestRun": null,
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.19.4",
@@ -13714,7 +15116,16 @@
     "left": 1134
    },
    "bestRun": null,
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.20.1",
@@ -13739,7 +15150,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "yellow",
+    "reason": "Being worked on: ROADMAP step 7 (1.20.1 → 1.21.6)."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.20.2",
@@ -13765,7 +15185,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "yellow",
+    "reason": "Being worked on: ROADMAP step 7 (1.20.1 → 1.21.6)."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.20.4",
@@ -13791,7 +15220,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "yellow",
+    "reason": "Being worked on: ROADMAP step 7 (1.20.1 → 1.21.6)."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.20.6",
@@ -13817,7 +15255,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "yellow",
+    "reason": "Being worked on: ROADMAP step 7 (1.20.1 → 1.21.6)."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.21.1",
@@ -13843,7 +15290,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "green",
+    "reason": "Ported and checked: ZombieApocalypseAddon (neoforge) 1.21.1 → 1.21.4, behaviour checked in the game."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.21.3",
@@ -13868,7 +15324,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "green",
+    "reason": "Ported and checked: ZombieApocalypseAddon (neoforge) 1.21.1 → 1.21.4, behaviour checked in the game."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.21.4",
@@ -13893,7 +15358,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "yellow",
+    "reason": "Being worked on: ROADMAP step 7 (1.20.1 → 1.21.6)."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.21.5",
@@ -13912,7 +15386,16 @@
     "left": 699
    },
    "bestRun": null,
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "yellow",
+    "reason": "Being worked on: ROADMAP step 7 (1.20.1 → 1.21.6)."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not working yet across the whole hop. Runs that touch it: F3Nope 1.21.6 → 1.21.5: load."
+   }
   },
   {
    "from": "1.21.8",
@@ -13938,7 +15421,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "yellow",
+    "reason": "Being worked on: ROADMAP step 17 (1.21.6 → 26.3)."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.21.10",
@@ -13963,7 +15455,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "yellow",
+    "reason": "Being worked on: ROADMAP step 17 (1.21.6 → 26.3)."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "1.21.11",
@@ -13990,7 +15491,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "yellow",
+    "reason": "Being worked on: ROADMAP step 17 (1.21.6 → 26.3)."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "26.1.2",
@@ -14015,7 +15525,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "yellow",
+    "reason": "Being worked on: ROADMAP step 17 (1.21.6 → 26.3)."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   },
   {
    "from": "26.2",
@@ -14040,7 +15559,16 @@
     "exact": false,
     "date": "2026-10-24"
    },
-   "backportRun": null
+   "backportRun": null,
+   "measured": true,
+   "status": {
+    "colour": "yellow",
+    "reason": "Being worked on: ROADMAP step 17 (1.21.6 → 26.3)."
+   },
+   "backStatus": {
+    "colour": "red",
+    "reason": "Not tried yet: no port has been run on this hop."
+   }
   }
  ],
  "runs": [

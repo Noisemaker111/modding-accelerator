@@ -4,7 +4,7 @@ Goal: any Minecraft version to any other, and any loader to any other, from a Gr
 checkout, with checks that prove it works. Version changes and loader changes are separate jobs.
 
 Status words: **done** (ran and checked), **doing** (current step), **next**, **later**.
-Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/progress.html
+Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/ (bench page)
 (numbers come from `coverage/ledger.json`, one row per port that was actually run).
 
 ## Phase 1 — Neighbouring versions (1.21.x), Fabric and NeoForge

@@ -103,8 +103,9 @@ def main():
     order = {v["id"]: i for i, v in enumerate(meta["versions"])}
     old = load(OUT) if OUT.exists() else {}
     mods = old.get("mods")
-    if refresh or not mods or set(indexed) - set(mods.get("counts", {})):
-        mods = mod_counts(indexed, mods)
+    every = [v["id"] for v in meta["versions"]]
+    if refresh or not mods or set(every) - set(mods.get("counts", {})):
+        mods = mod_counts(every, mods)
 
     # ---- steps -----------------------------------------------------------------------------
     steps = []
@@ -271,13 +272,63 @@ def main():
         s["bestRun"] = best_run(s["from"], s["to"])
         s["backportRun"] = best_run(s["to"], s["from"])
 
+    # ---- estimated families before 1.14.4 ---------------------------------------------------
+    # No official mappings, so nothing can be measured: group by version line instead (1.12,
+    # 1.12.1 and 1.12.2 are one family) and pick the line's most-modded release as its hub.
+    early = [v["id"] for v in meta["versions"] if v["status"] == "blocked"]
+    lines = {}
+    for v in early:
+        lines.setdefault(".".join(v.split(".")[:2]), []).append(v)
+    est = []
+    for line, vs in lines.items():
+        best = max(vs, key=lambda v: (mods["counts"].get(v, 0), order[v]))
+        est.append({"id": vs[0] if len(vs) == 1 else f"{vs[0]} to {vs[-1]}", "versions": vs, "hub": best, "estimated": True,
+                    "hubReason": "estimated: grouped by version number, most mods on Modrinth",
+                    "mods": {v: mods["counts"].get(v, 0) for v in vs}})
+        for v in vs:
+            family_of[v] = est[-1]["id"]
+    fam_out = est + fam_out
+
+    # ---- hop colours from evidence ---------------------------------------------------------
+    roadmap = (ROOT / "ROADMAP.md").read_text(encoding="utf-8")
+    doing = []
+    for m in re.finditer(r"(?ms)^(\d+[a-z]?)\. (.*?)(?=^\d+[a-z]?\. |^## |\Z)", roadmap):
+        if "**doing**" in m.group(2):
+            for a, b in re.findall(r"(\d+\.\d+(?:\.\d+)?)\s*(?:→|->)\s*(\d+\.\d+(?:\.\d+)?)", m.group(2)):
+                if a in order and b in order:
+                    doing.append({"step": m.group(1), "from": a, "to": b, "text": " ".join(m.group(2).split())[:160]})
+    passing = {"behaviour", "load"}
+
+    def hop_status(a, b):
+        fwd = order[a] < order[b]
+        lo, hi = min(order[a], order[b]), max(order[a], order[b])
+        if a in early or b in early:
+            return {"colour": "red", "reason": "Blocked: Mojang published no official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it."}
+        same = [h for h in ledger["hops"] if h["from"] in order and h["to"] in order and (order[h["from"]] < order[h["to"]]) == fwd]
+        span = lambda h: (min(order[h["from"]], order[h["to"]]), max(order[h["from"]], order[h["to"]]))
+        full = [h for h in same if h["status"] in passing and span(h)[0] <= lo and hi <= span(h)[1]]
+        if full:
+            h = full[0]
+            return {"colour": "green", "reason": f"Ported and checked: {h['mod']} ({h['loader']}) {h['from']} → {h['to']}, {h['status']} checked in the game."}
+        work = [d for d in doing if (order[d["from"]] < order[d["to"]]) == fwd and min(order[d["from"]], order[d["to"]]) < hi and max(order[d["from"]], order[d["to"]]) > lo]
+        if work:
+            d = work[0]
+            return {"colour": "yellow", "reason": f"Being worked on: ROADMAP step {d['step']} ({d['from']} → {d['to']})."}
+        part = [h for h in same if span(h)[0] < hi and span(h)[1] > lo]
+        if part:
+            said = "; ".join(f"{h['mod']} {h['from']} → {h['to']}: {'stopped with named errors' if h['status'] == 'stop' else h['status']}" for h in part[:3])
+            return {"colour": "red", "reason": f"Not working yet across the whole hop. Runs that touch it: {said}."}
+        return {"colour": "red", "reason": "Not tried yet: no port has been run on this hop."}
+
     hubs = [f["hub"] for f in fam_out]
     hub_hops = []
     for a, b in zip(hubs, hubs[1:]):
         span = [s for s in steps if order[a] <= order[s["from"]] and order[s["to"]] <= order[b]]
         tot = {k: sum(s["coverage"][k] for s in span) for k in ("listed", "mappings", "rule", "note", "left")}
         hub_hops.append({"from": a, "to": b, "steps": [s["file"] for s in span], "broken": sum(s["broken"] for s in span),
-                         "coverage": tot, "bestRun": best_run(a, b), "backportRun": best_run(b, a)})
+                         "coverage": tot, "bestRun": best_run(a, b) if a not in early else None,
+                         "backportRun": best_run(b, a) if a not in early else None,
+                         "measured": a not in early and b not in early, "status": hop_status(a, b), "backStatus": hop_status(b, a)})
 
     blocked = [{"id": v["id"], "released": v["released"], "reason": v["reason"]} for v in meta["versions"] if v["status"] == "blocked"]
     out = {
@@ -293,6 +344,8 @@ def main():
         "rulesSkipped": skipped,
         "mods": mods,
         "versions": [dict(v, family=family_of.get(v["id"])) for v in meta["versions"] if v["status"] == "indexed"],
+        "allVersions": [{"id": v["id"], "released": v["released"], "status": v["status"], "family": family_of.get(v["id"])} for v in meta["versions"]],
+        "doing": doing,
         "blocked": blocked,
         "steps": [{k: v for k, v in s.items() if k != "_data"} for s in steps],
         "hubHops": hub_hops,

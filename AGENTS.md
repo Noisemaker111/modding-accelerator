@@ -11,7 +11,7 @@ The limited Fabric beta is a starting point, not the finished scope.
 ## Where the work is (update this block when a phase step changes)
 
 ROADMAP.md holds the phases and numbered steps; only statuses there are claims.
-Live board: `docs/progress.html`, rendered from `coverage/ledger.json` by
+Live board: `docs/index.html` (the bench page; `docs/progress.html` now points there), rendered from `coverage/ledger.json` by
 `python bench/progress.py`. A port run that is not in the ledger did not happen.
 
 - Phase 1 step 7 (doing): AppleSkin 1.20.1 → 1.21.6. Loom 1.8→1.10 and Gradle
