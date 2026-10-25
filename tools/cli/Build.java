@@ -24,7 +24,10 @@ final class Build {
         Path wrapper = project.root.resolve("gradle/wrapper/gradle-wrapper.jar");
         if (!Files.isRegularFile(wrapper)) throw new IOException("Missing " + wrapper + "; restore this project's Gradle wrapper jar.");
         List<String> command = new ArrayList<>(List.of(jdk.java().toString(), "-cp", wrapper.toString(), "org.gradle.wrapper.GradleWrapperMain",
-                "--console=plain", "--no-configuration-cache", "-I", init.toString()));
+                "--console=plain", "--no-configuration-cache", "-I", init.toString(),
+                // The init script registers its tasks and captures launches once every selected project
+                // has configured; a build with org.gradle.configureondemand=true would never get there.
+                "--no-configure-on-demand"));
         List<String> toolchains = new ArrayList<>();
         Path projectCache = harness.resolve(".modaccel/jdks").toAbsolutePath().normalize();
         Path userCache = Path.of(System.getProperty("user.home"), ".modaccel/jdks").toAbsolutePath().normalize();
