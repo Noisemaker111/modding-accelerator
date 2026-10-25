@@ -36,7 +36,7 @@ def main():
         total += out.stat().st_size
         cov = {k: v for k, v in s["coverage"].items() if k not in ("matched",)}
         slim_steps.append({**{k: v for k, v in s.items() if k != "coverage"}, "coverage": cov})
-    slim = {k: index[k] for k in ("generated", "names", "linked", "families", "matching", "mods", "versions", "blocked", "hubHops", "routing", "counting")}
+    slim = {k: index[k] for k in ("generated", "names", "linked", "families", "matching", "mods", "versions", "blocked", "hubHops", "routing", "counting", "runs")}
     slim["steps"] = slim_steps
     payload = json.dumps(slim, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
     html = TEMPLATE.replace("/*INDEX*/null", payload)
@@ -97,7 +97,7 @@ button.swap { height:44px; width:44px; padding:0; font-size:18px }
 .leg { margin-top:16px }
 .leg h3 { display:flex; gap:8px; align-items:baseline; flex-wrap:wrap }
 .leg h3 .small { font-weight:400 }
-.step { display:grid; grid-template-columns:150px 92px 1fr 190px 120px; gap:12px; align-items:center; padding:10px 12px; border-top:1px solid var(--rule) }
+.step { display:grid; grid-template-columns:150px 92px 1fr 150px; gap:12px; align-items:center; padding:10px 12px; border-top:1px solid var(--rule) }
 .step:first-of-type { border-top:0 }
 .step .jump { font-weight:600; white-space:nowrap }
 .size { font-size:12.5px; font-weight:600; padding:2px 8px; border-radius:999px; color:#fff; text-align:center; white-space:nowrap }
@@ -128,6 +128,16 @@ td { padding:8px; border-bottom:1px solid var(--rule); vertical-align:top }
 .st { flex:none; font-size:11px; padding:1px 6px; border-radius:4px; color:#fff }
 .st.mappings { background:var(--mapped) } .st.rule { background:var(--rule-c) } .st.note { background:var(--note) }
 .more { margin-top:12px }
+details.hop { border-top:1px solid var(--rule) }
+details.hop:first-of-type { border-top:0 }
+details.hop > summary { list-style:none; cursor:pointer; border-top:0 }
+details.hop > summary::-webkit-details-marker { display:none }
+details.hop .open { display:inline-block; white-space:nowrap; font-size:13px; padding:7px 10px; border:1px solid var(--rule); border-radius:8px; background:var(--chip); text-align:center }
+details.hop .open::after { content:" \25BE" }
+details.hop[open] .open::after { content:" \25B4" }
+details.hop .inner { margin:0 0 8px 18px; border-left:3px solid var(--rule); background:var(--bg); border-radius:0 8px 8px 0 }
+.proof { margin-top:4px }
+.privbox { display:flex; gap:8px; align-items:center; margin-top:10px; font-size:13px; color:var(--ink2) }
 .how li { margin:6px 0; color:var(--ink2) }
 .foot { margin-top:34px; padding-top:14px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--ink3) }
 .theme { font-size:13px; padding:4px 10px }
@@ -138,9 +148,10 @@ td { padding:8px; border-bottom:1px solid var(--rule); vertical-align:top }
   .tiles { grid-template-columns:repeat(2,1fr) }
   .tiles .tile:first-child { grid-column:1 / -1 }
   .step { grid-template-columns:1fr auto; gap:6px 10px }
-  .step .barwrap, .step .proof { grid-column:1 / -1 }
+  .step .barwrap { grid-column:1 / -1 }
   .step .go { grid-column:1 / -1 }
-  .step .go button { width:100% }
+  .step .go button, .step .go .open { width:100% }
+  details.hop .inner { margin-left:8px }
   .hide-sm { display:none }
   .item { flex-wrap:wrap; gap:4px 6px; padding:5px 0 }
   .item .mono { flex:1 1 100%; order:3 }
@@ -211,13 +222,10 @@ function sizeWord(share) {
 function leg(a, b) {
   const fwd = POS[a] < POS[b];
   const s = fwd ? STEP[a + "__" + b] : STEP[b + "__" + a];
-  const c = s.counts, cov = s.coverage;
+  const cov = s.coverage, bk = cov.back;
   if (fwd) return { a, b, s, fwd, broken: cov.listed, mapped: cov.mappings, rule: cov.rule, note: cov.note, left: cov.left };
   // Going back: what the newer game added is missing in the older one; renames run backwards.
-  const ren = (c.classesRenamedApi || 0) + (c.methodsRenamedApi || 0) + (c.fieldsRenamedApi || 0);
-  const broken = (c.classesAddedApi || 0) + (c.methodsAddedApi || 0) + (c.fieldsAddedApi || 0) + ren + (c.methodsChangedApi || 0) + (c.fieldsChangedApi || 0);
-  const mapped = s.linked === "exact" ? ren : 0;
-  return { a, b, s, fwd, broken, mapped, rule: 0, note: 0, left: broken - mapped };
+  return { a, b, s, fwd, broken: bk.listed, mapped: bk.mappings, rule: 0, note: 0, left: bk.left };
 }
 
 function walk(a, b) {
@@ -229,18 +237,28 @@ function walk(a, b) {
 
 // Hub and spoke: X to its family's hub, hub to hub, then out to Y. Only hubs between X and Y are
 // used, so a route never doubles back past where it started or ended.
+function hop(a, b) {
+  const steps = walk(a, b);
+  const sum = k => steps.reduce((n, l) => n + l[k], 0);
+  return { a, b, steps, broken: sum("broken"), mapped: sum("mapped"), rule: sum("rule"), note: sum("note"), left: sum("left") };
+}
 function route(x, y) {
   const fx = FAM[x], fy = FAM[y], dir = Math.sign(POS[y] - POS[x]);
-  if (fx === fy) return [{ title: "Inside one family", note: "releases " + fx.id, steps: walk(x, y) }];
+  if (fx === fy) return [{ title: "Inside one family", note: "releases " + fx.id + " barely differ", hops: [hop(x, y)] }];
   const between = h => (POS[h] - POS[x]) * dir > 0 && (POS[y] - POS[h]) * dir > 0;
   const hubs = IX.families.list.map(f => f.hub).filter(between);
   if (dir < 0) hubs.reverse();
   const legs = [];
   let at = x;
-  if (hubs.length && hubs[0] === fx.hub) { legs.push({ title: "To your family's hub", note: fx.hub, steps: walk(x, fx.hub) }); at = fx.hub; }
+  if (hubs.length && hubs[0] === fx.hub) { legs.push({ title: "To your family's hub", note: fx.hub, hops: [hop(x, fx.hub)] }); at = fx.hub; }
   const rest = hubs.filter(h => h !== at);
-  if (rest.length) { legs.push({ title: "Hub to hub", note: [at, ...rest].join(" → "), steps: walk(at, rest[rest.length - 1]) }); at = rest[rest.length - 1]; }
-  if (at !== y) legs.push({ title: legs.length ? "Out to your version" : "Straight there", note: y, steps: walk(at, y) });
+  if (rest.length) {
+    const fromHub = FAM[at].hub === at;
+    const hops = [];
+    for (const h of rest) { hops.push(hop(at, h)); at = h; }
+    legs.push({ title: fromHub ? "Hub to hub" : "Through the hubs", note: hops.length + " hop" + (hops.length === 1 ? "" : "s") + ", one row per hop", hops });
+  }
+  if (at !== y) legs.push({ title: legs.length ? "Out to your version" : "Straight there", note: y, hops: [hop(at, y)] });
   return legs;
 }
 
@@ -249,24 +267,34 @@ function bar(l) {
   const seg = (n, col) => n ? `<i style="width:${(100 * n / t).toFixed(2)}%;background:${col}"></i>` : "";
   return `<div class="bar" role="img" aria-label="${l.mapped + l.rule} handled, ${l.note} with a how-to, ${l.left} left">${seg(l.mapped, "var(--mapped)")}${seg(l.rule, "var(--rule-c)")}${seg(l.note, "var(--note)")}${seg(l.left, "var(--left)")}</div>`;
 }
+const numbers = l => `${fmt(l.broken)} names break · ${fmt(l.mapped + l.rule)} handled · ${fmt(l.note)} how-to · ${fmt(l.left)} left`;
 
-function proof(l) {
-  const r = l.fwd ? l.s.bestRun : l.s.backportRun;
-  if (!r) return `<span class="small">no port run on this step yet</span>`;
-  const how = r.exact ? "" : ` <span class="small">(as part of ${esc(r.from)} → ${esc(r.to)})</span>`;
-  return `<span class="dot" style="background:${SCOL[r.status]}"></span><b>${esc(r.mod)}</b> ${esc(r.loader)}: ${STATUS[r.status]}${how}`;
+// A port run shows on a row only when it ran exactly that jump; longer runs are listed once per route.
+function runsExactly(a, b) {
+  return IX.runs.filter(r => r.from === a && r.to === b).map(r => `<div class="proof"><span class="dot" style="background:${SCOL[r.status]}"></span>Port run: <b>${esc(r.mod)}</b> ${esc(r.loader)}, ${STATUS[r.status]}</div>`).join("");
 }
 
 function stepRow(l) {
   const [w, col] = sizeWord(l.fwd ? l.s.breakingShare : l.broken / Math.max(1, l.s.oldSize));
-  const handled = l.mapped + l.rule;
   return `<div class="step">
     <div class="jump">${esc(l.a)} → ${esc(l.b)}${l.fwd ? "" : ' <span class="small">back</span>'}</div>
     <div><span class="size" style="background:${col}">${w}</span></div>
-    <div class="barwrap">${bar(l)}<div class="small">${fmt(l.broken)} names break · ${fmt(handled)} handled · ${fmt(l.note)} how-to · ${fmt(l.left)} left${l.s.linked === "exact" ? "" : " · names matched by guess"}</div></div>
-    <div class="proof">${proof(l)}</div>
+    <div class="barwrap">${bar(l)}<div class="small">${numbers(l)}${l.s.linked === "exact" ? "" : " · names matched by guess"}</div>${runsExactly(l.a, l.b)}</div>
     <div class="go"><button type="button" data-step="${esc(l.s.from + "__" + l.s.to)}" data-fwd="${l.fwd ? 1 : 0}">What changed</button></div>
   </div>`;
+}
+
+function hopRow(h) {
+  if (h.steps.length === 1) return stepRow(h.steps[0]);
+  const order = ["tiny", "small", "medium", "big"];
+  const sizes = h.steps.map(l => sizeWord(l.fwd ? l.s.breakingShare : l.broken / Math.max(1, l.s.oldSize)));
+  const [w, col] = sizes.reduce((m, z) => order.indexOf(z[0]) > order.indexOf(m[0]) ? z : m);
+  return `<details class="hop"><summary class="step">
+    <div class="jump">${esc(h.a)} → ${esc(h.b)}<div class="small" style="font-weight:400">${h.steps.length} updates</div></div>
+    <div><span class="size" style="background:${col}" title="its biggest update">${w}</span></div>
+    <div class="barwrap">${bar(h)}<div class="small">${numbers(h)}</div>${runsExactly(h.a, h.b)}</div>
+    <div class="go"><span class="open">Show ${h.steps.length} updates</span></div>
+  </summary><div class="inner">${h.steps.map(stepRow).join("")}</div></details>`;
 }
 
 function render() {
@@ -276,16 +304,18 @@ function render() {
   const out = $("#route");
   const blockedSide = BLOCKED[x] || BLOCKED[y];
   if (blockedSide) {
-    out.innerHTML = `<div class="notice bad"><b>${esc(blockedSide.id)} is not in the index.</b> ${esc(blockedSide.reason)} The index starts at 1.14.4.</div>`;
-    $("#detail").innerHTML = ""; return;
+    out.innerHTML = `<div class="notice bad"><b>Blocked: no official mappings for ${esc(blockedSide.id)} yet.</b> Mojang's own names start at 1.14.4, so ${esc(blockedSide.id)} is not in the index and no route can be shown. It would need MCP or other legacy community mappings, which the index does not use. Pick 1.14.4 or later.</div>`;
+    return;
   }
-  if (x === y) { out.innerHTML = `<div class="notice">Pick two different versions.</div>`; $("#detail").innerHTML = ""; return; }
+  if (x === y) { out.innerHTML = `<div class="notice">Pick two different versions.</div>`; return; }
   const legs = route(x, y);
-  const all = legs.flatMap(g => g.steps);
+  const all = legs.flatMap(g => g.hops.flatMap(h => h.steps));
   const sum = k => all.reduce((n, l) => n + l[k], 0);
   const fams = new Set(all.map(l => FAM[l.b].id)); fams.add(FAM[x].id);
   const back = POS[y] < POS[x];
   const bigs = all.filter(l => sizeWord(l.fwd ? l.s.breakingShare : l.broken / Math.max(1, l.s.oldSize))[0] === "big").map(l => `${l.a} → ${l.b}`);
+  const lo = Math.min(POS[x], POS[y]), hi = Math.max(POS[x], POS[y]);
+  const runs = IX.runs.filter(r => (POS[r.to] > POS[r.from]) === !back && Math.min(POS[r.from], POS[r.to]) < hi && Math.max(POS[r.from], POS[r.to]) > lo);
   let html = `<h2>${esc(x)} → ${esc(y)}${back ? " (backport)" : ""}</h2>
   <p>${all.length} update${all.length === 1 ? "" : "s"} across ${fams.size} famil${fams.size === 1 ? "y" : "ies"}. ${bigs.length ? "The hardest: " + esc(bigs.join(", ")) + "." : "No big updates on this route."}</p>
   <div class="tiles">
@@ -297,10 +327,13 @@ function render() {
   </div>
   <div class="legend"><span><span class="sw" style="background:var(--mapped)"></span>renamed for you</span><span><span class="sw" style="background:var(--rule-c)"></span>fixed by a rule</span><span><span class="sw" style="background:var(--note)"></span>how-to written</span><span><span class="sw" style="background:var(--left)"></span>left to do</span></div>
   ${back ? `<div class="notice">Backports: the rules in this repo are written for forward ports, so only mapping renames count as handled here. Anything the newer game added is missing on the way back.</div>` : ""}
-  <p class="small" style="margin-top:10px">Your mod only meets the changes it actually uses, usually a small slice of these. Open a step and search for the classes your mod calls.</p>`;
+  <p class="small" style="margin-top:10px">“Handled” is renamed for you plus fixed by a rule. Counts leave out private members. Your mod only meets the changes it actually uses, usually a small slice of these: open an update and search for the classes your mod calls.</p>`;
   for (const g of legs) {
-    html += `<div class="leg"><h3>${esc(g.title)} <span class="small">${esc(g.note)}</span></h3><div class="card" style="padding:4px 4px">${g.steps.map(stepRow).join("")}</div></div>`;
+    html += `<div class="leg"><h3>${esc(g.title)} <span class="small">${esc(g.note)}</span></h3><div class="card" style="padding:4px 4px">${g.hops.map(hopRow).join("")}</div></div>`;
   }
+  html += `<div class="leg"><h3>Ports run on this route <span class="small">from coverage/ledger.json; only ports that were really run</span></h3><div class="card">` +
+    (runs.length ? runs.map(r => `<div class="proof" style="margin:4px 0"><span class="dot" style="background:${SCOL[r.status]}"></span><b>${esc(r.mod)}</b> ${esc(r.loader)} ${esc(r.from)} → ${esc(r.to)}: ${STATUS[r.status]} <span class="small">${esc(r.date || "")}</span></div>`).join("")
+      : `<p>No port has been run on any part of this route yet.</p>`) + `</div></div>`;
   out.innerHTML = html;
   out.querySelectorAll("button[data-step]").forEach(b => b.onclick = () => openStep(b.dataset.step, b.dataset.fwd === "1"));
 }
@@ -334,13 +367,14 @@ const FLIP = { removed: "added", added: "removed", renamed: "renamed", changed: 
 
 function flatten(d, fwd) {
   const st = {};
-  for (const [kind, owner, text, status, rule] of d.matched) st[owner + "|" + text] = [status, rule];
+  const KN = { "class renamed": "classesRenamed", "class removed": "classesRemoved" };
+  for (const [kind, owner, text, status, rule] of d.matched) st[(KN[kind] || kind) + "|" + owner + "|" + text] = [status, rule];
   const rows = [];
   const push = (kind, owner, text) => {
     let [what, type] = KIND[kind];
     let shown = text;
     if (!fwd) { what = FLIP[what]; if (text.includes(" -> ")) shown = text.split(" -> ").reverse().join(" -> "); }
-    let s = fwd ? st[owner + "|" + text] : null;
+    let s = fwd ? st[kind + "|" + owner + "|" + text] : null;
     if (!s && what === "renamed" && d.linked === "exact") s = ["mappings", null];
     rows.push({ what, type, owner, text: shown, status: s ? s[0] : (what === "added" ? "" : "left"), rule: s ? s[1] : null, priv: text.startsWith("private ") });
   };
@@ -357,6 +391,7 @@ async function openStep(key, fwd) {
   const s = STEP[key];
   const a = fwd ? s.from : s.to, b = fwd ? s.to : s.from;
   box.innerHTML = `<h2>What changed: ${esc(a)} → ${esc(b)}</h2><p>Loading…</p>`;
+  try { history.replaceState(null, "", "#from=" + encodeURIComponent($("#from").value) + "&to=" + encodeURIComponent($("#to").value) + "&step=" + encodeURIComponent(key) + (fwd ? "" : "&back=1")); } catch (e) {}
   box.scrollIntoView({ behavior: "smooth", block: "start" });
   let d;
   try { d = await loadStep(key); } catch (e) { box.innerHTML += `<div class="notice bad">${esc(e.message)}</div>`; return; }
@@ -369,26 +404,29 @@ async function openStep(key, fwd) {
     <div class="card">
       <input type="search" id="q" placeholder="Search a class or method your mod uses, e.g. ItemStack or getTag" aria-label="Search the changes">
       <div class="filters" id="filters"></div>
+      <label class="privbox"><input type="checkbox" id="priv"> Also show private members (${fmt(VIEW.rows.filter(r => r.priv).length)}). Mixins sometimes target them; the counts on the route leave them out.</label>
       <div id="list"></div>
     </div>`;
+  $("#priv").onchange = e => { VIEW.priv = e.target.checked; VIEW.limit = 150; draw(); };
   $("#q").oninput = e => { VIEW.q = e.target.value.trim().toLowerCase(); VIEW.limit = 150; draw(); };
   draw();
 }
 
 const simpleName = o => o.slice(o.lastIndexOf(".") + 1).toLowerCase();
-const FILTERS = [["break", "Breaks a mod"], ["left", "Left to do"], ["handled", "Handled"], ["renamed", "Renamed or moved"], ["removed", "Removed"], ["changed", "New signature"], ["added", "Added"], ["all", "Everything"]];
+const FILTERS = [["break", "Breaks a mod"], ["handled", "Handled"], ["howto", "How-to"], ["left", "Left to do"], ["renamed", "Renamed or moved"], ["removed", "Removed"], ["changed", "New signature"], ["added", "Added"], ["all", "Everything"]];
 function keep(r, f) {
   if (f === "all") return true;
   if (f === "break") return r.what !== "added";
   if (f === "left") return r.status === "left";
-  if (f === "handled") return r.status === "mappings" || r.status === "rule" || r.status === "note";
+  if (f === "handled") return r.status === "mappings" || r.status === "rule";
+  if (f === "howto") return r.status === "note";
   return r.what === f;
 }
 
 function draw() {
   const v = VIEW;
   const q = v.q;
-  const match = r => !q || r.owner.toLowerCase().includes(q) || r.text.toLowerCase().includes(q);
+  const match = r => (v.priv || !r.priv) && (!q || r.owner.toLowerCase().includes(q) || r.text.toLowerCase().includes(q));
   const base = v.rows.filter(match);
   $("#filters").innerHTML = FILTERS.map(([k, label]) => `<button type="button" class="${v.filter === k ? "on" : ""}" data-f="${k}">${label} <span class="small">${fmt(base.filter(r => keep(r, k)).length)}</span></button>`).join("");
   $("#filters").querySelectorAll("button").forEach(b => b.onclick = () => { v.filter = b.dataset.f; v.limit = 150; draw(); });
@@ -468,7 +506,9 @@ function pickers() {
   $("#quick").querySelectorAll("button").forEach(b => b.onclick = () => { $("#from").value = b.dataset.a; $("#to").value = b.dataset.b; render(); });
 }
 
+const START = new URLSearchParams(location.hash.slice(1));
 pickers(); families(); how(); render();
+if (START.get("step") && STEP[START.get("step")]) openStep(START.get("step"), START.get("back") !== "1");
 $("#gen").textContent = IX.generated;
 </script>
 </body></html>

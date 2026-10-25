@@ -1167,6 +1167,11 @@
      "note": 0,
      "left": 2871
     },
+    "back": {
+     "mappings": 116,
+     "left": 2293,
+     "listed": 2409
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -1209,6 +1214,11 @@
      "rule": 0,
      "note": 0,
      "left": 3
+    },
+    "back": {
+     "mappings": 0,
+     "left": 0,
+     "listed": 0
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -1259,6 +1269,11 @@
      "rule": 0,
      "note": 0,
      "left": 53
+    },
+    "back": {
+     "mappings": 6,
+     "left": 73,
+     "listed": 79
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -1313,6 +1328,11 @@
      "note": 0,
      "left": 4715
     },
+    "back": {
+     "mappings": 214,
+     "left": 5026,
+     "listed": 5240
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -1354,6 +1374,11 @@
      "rule": 0,
      "note": 0,
      "left": 0
+    },
+    "back": {
+     "mappings": 0,
+     "left": 0,
+     "listed": 0
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -1408,6 +1433,11 @@
      "note": 0,
      "left": 1694
     },
+    "back": {
+     "mappings": 73,
+     "left": 1131,
+     "listed": 1204
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -1450,6 +1480,11 @@
      "rule": 0,
      "note": 0,
      "left": 0
+    },
+    "back": {
+     "mappings": 0,
+     "left": 1,
+     "listed": 1
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -1499,6 +1534,11 @@
      "note": 0,
      "left": 14
     },
+    "back": {
+     "mappings": 1,
+     "left": 53,
+     "listed": 54
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -1541,6 +1581,11 @@
      "rule": 0,
      "note": 0,
      "left": 0
+    },
+    "back": {
+     "mappings": 0,
+     "left": 1,
+     "listed": 1
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -1595,6 +1640,11 @@
      "note": 0,
      "left": 3394
     },
+    "back": {
+     "mappings": 149,
+     "left": 6754,
+     "listed": 6903
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -1646,6 +1696,11 @@
      "rule": 0,
      "note": 0,
      "left": 75
+    },
+    "back": {
+     "mappings": 6,
+     "left": 83,
+     "listed": 89
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -1700,6 +1755,11 @@
      "note": 0,
      "left": 1565
     },
+    "back": {
+     "mappings": 91,
+     "left": 1545,
+     "listed": 1636
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -1747,6 +1807,11 @@
      "rule": 0,
      "note": 0,
      "left": 17
+    },
+    "back": {
+     "mappings": 2,
+     "left": 14,
+     "listed": 16
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -1801,6 +1866,11 @@
      "note": 0,
      "left": 1823
     },
+    "back": {
+     "mappings": 30,
+     "left": 1568,
+     "listed": 1598
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -1853,6 +1923,11 @@
      "rule": 0,
      "note": 0,
      "left": 2871
+    },
+    "back": {
+     "mappings": 260,
+     "left": 3345,
+     "listed": 3605
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -1907,6 +1982,11 @@
      "note": 0,
      "left": 301
     },
+    "back": {
+     "mappings": 16,
+     "left": 399,
+     "listed": 415
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -1954,6 +2034,11 @@
      "rule": 0,
      "note": 0,
      "left": 10
+    },
+    "back": {
+     "mappings": 0,
+     "left": 8,
+     "listed": 8
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -2008,6 +2093,11 @@
      "note": 0,
      "left": 3456
     },
+    "back": {
+     "mappings": 83,
+     "left": 2831,
+     "listed": 2914
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -2060,6 +2150,11 @@
      "rule": 0,
      "note": 0,
      "left": 1084
+    },
+    "back": {
+     "mappings": 31,
+     "left": 1383,
+     "listed": 1414
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -2114,6 +2209,11 @@
      "note": 0,
      "left": 1544
     },
+    "back": {
+     "mappings": 60,
+     "left": 1526,
+     "listed": 1586
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -2157,6 +2257,11 @@
      "rule": 0,
      "note": 0,
      "left": 3
+    },
+    "back": {
+     "mappings": 0,
+     "left": 3,
+     "listed": 3
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -2210,6 +2315,11 @@
      "rule": 0,
      "note": 0,
      "left": 2822
+    },
+    "back": {
+     "mappings": 95,
+     "left": 2495,
+     "listed": 2590
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -2272,6 +2382,11 @@
      "note": 0,
      "left": 1043
     },
+    "back": {
+     "mappings": 27,
+     "left": 2169,
+     "listed": 2196
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -2321,6 +2436,11 @@
      "rule": 0,
      "note": 0,
      "left": 0
+    },
+    "back": {
+     "mappings": 0,
+     "left": 0,
+     "listed": 0
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -2383,6 +2503,11 @@
      "note": 0,
      "left": 4246
     },
+    "back": {
+     "mappings": 130,
+     "left": 4791,
+     "listed": 4921
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -2434,6 +2559,11 @@
      "rule": 0,
      "note": 0,
      "left": 0
+    },
+    "back": {
+     "mappings": 0,
+     "left": 2,
+     "listed": 2
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -2496,6 +2626,11 @@
      "note": 0,
      "left": 1539
     },
+    "back": {
+     "mappings": 86,
+     "left": 1604,
+     "listed": 1690
+    },
     "rulesInRange": 0,
     "ruleHits": [],
     "matched": []
@@ -2548,6 +2683,11 @@
      "rule": 0,
      "note": 0,
      "left": 4
+    },
+    "back": {
+     "mappings": 0,
+     "left": 12,
+     "listed": 12
     },
     "rulesInRange": 0,
     "ruleHits": [],
@@ -2609,6 +2749,11 @@
      "rule": 37,
      "note": 340,
      "left": 3941
+    },
+    "back": {
+     "mappings": 135,
+     "left": 4107,
+     "listed": 4242
     },
     "rulesInRange": 73,
     "ruleHits": [
@@ -5454,6 +5599,11 @@
      "note": 0,
      "left": 0
     },
+    "back": {
+     "mappings": 0,
+     "left": 1,
+     "listed": 1
+    },
     "rulesInRange": 73,
     "ruleHits": [],
     "matched": []
@@ -5514,6 +5664,11 @@
      "rule": 0,
      "note": 36,
      "left": 804
+    },
+    "back": {
+     "mappings": 81,
+     "left": 965,
+     "listed": 1046
     },
     "rulesInRange": 77,
     "ruleHits": [
@@ -5849,6 +6004,11 @@
      "rule": 80,
      "note": 152,
      "left": 3075
+    },
+    "back": {
+     "mappings": 187,
+     "left": 2694,
+     "listed": 2881
     },
     "rulesInRange": 79,
     "ruleHits": [
@@ -7696,6 +7856,11 @@
      "rule": 0,
      "note": 336,
      "left": 1173
+    },
+    "back": {
+     "mappings": 62,
+     "left": 1812,
+     "listed": 1874
     },
     "rulesInRange": 44,
     "ruleHits": [
@@ -10146,6 +10311,11 @@
      "note": 3,
      "left": 6
     },
+    "back": {
+     "mappings": 0,
+     "left": 16,
+     "listed": 16
+    },
     "rulesInRange": 55,
     "ruleHits": [
      {
@@ -10224,6 +10394,11 @@
      "note": 0,
      "left": 0
     },
+    "back": {
+     "mappings": 0,
+     "left": 1,
+     "listed": 1
+    },
     "rulesInRange": 55,
     "ruleHits": [],
     "matched": []
@@ -10284,6 +10459,11 @@
      "rule": 10,
      "note": 21,
      "left": 2450
+    },
+    "back": {
+     "mappings": 218,
+     "left": 2799,
+     "listed": 3017
     },
     "rulesInRange": 55,
     "ruleHits": [
@@ -10604,6 +10784,11 @@
      "note": 27,
      "left": 0
     },
+    "back": {
+     "mappings": 0,
+     "left": 29,
+     "listed": 29
+    },
     "rulesInRange": 55,
     "ruleHits": [
      {
@@ -10860,6 +11045,11 @@
      "note": 7,
      "left": 1814
     },
+    "back": {
+     "mappings": 696,
+     "left": 1929,
+     "listed": 2625
+    },
     "rulesInRange": 55,
     "ruleHits": [
      {
@@ -11091,6 +11281,11 @@
      "rule": 14,
      "note": 143,
      "left": 3735
+    },
+    "back": {
+     "mappings": 0,
+     "left": 3855,
+     "listed": 3855
     },
     "rulesInRange": 55,
     "ruleHits": [
@@ -12307,6 +12502,11 @@
      "note": 0,
      "left": 0
     },
+    "back": {
+     "mappings": 0,
+     "left": 0,
+     "listed": 0
+    },
     "rulesInRange": 49,
     "ruleHits": [],
     "matched": []
@@ -12356,6 +12556,11 @@
      "rule": 0,
      "note": 0,
      "left": 0
+    },
+    "back": {
+     "mappings": 0,
+     "left": 0,
+     "listed": 0
     },
     "rulesInRange": 49,
     "ruleHits": [],
@@ -12417,6 +12622,11 @@
      "rule": 9,
      "note": 37,
      "left": 3270
+    },
+    "back": {
+     "mappings": 0,
+     "left": 2845,
+     "listed": 2845
     },
     "rulesInRange": 49,
     "ruleHits": [
@@ -12870,6 +13080,11 @@
      "rule": 3,
      "note": 51,
      "left": 4770
+    },
+    "back": {
+     "mappings": 0,
+     "left": 4823,
+     "listed": 4823
     },
     "rulesInRange": 47,
     "ruleHits": [
@@ -13826,6 +14041,88 @@
     "date": "2026-10-24"
    },
    "backportRun": null
+  }
+ ],
+ "runs": [
+  {
+   "mod": "AppleSkin",
+   "loader": "neoforge",
+   "from": "1.21.6",
+   "to": "26.3",
+   "status": "build",
+   "date": "2026-10-24"
+  },
+  {
+   "mod": "F3Nope",
+   "loader": "fabric",
+   "from": "1.21.5",
+   "to": "1.21.6",
+   "status": "behaviour",
+   "date": "2026-10-24"
+  },
+  {
+   "mod": "F3Nope",
+   "loader": "fabric",
+   "from": "1.21.6",
+   "to": "1.21.5",
+   "status": "load",
+   "date": "2026-10-24"
+  },
+  {
+   "mod": "AppleSkin",
+   "loader": "fabric",
+   "from": "1.21.5",
+   "to": "1.21.6",
+   "status": "behaviour",
+   "date": "2026-10-24"
+  },
+  {
+   "mod": "AppleSkin",
+   "loader": "fabric",
+   "from": "1.21.6",
+   "to": "1.21.9",
+   "status": "stop",
+   "date": "2026-10-24"
+  },
+  {
+   "mod": "ZombieApocalypseAddon",
+   "loader": "neoforge",
+   "from": "1.21.1",
+   "to": "1.21.4",
+   "status": "behaviour",
+   "date": "2026-10-24"
+  },
+  {
+   "mod": "ZombieApocalypseAddon",
+   "loader": "neoforge",
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "status": "stop",
+   "date": "2026-10-24"
+  },
+  {
+   "mod": "Jade",
+   "loader": "neoforge",
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "status": "stop",
+   "date": "2026-10-24"
+  },
+  {
+   "mod": "AppleSkin",
+   "loader": "fabric",
+   "from": "1.20.1",
+   "to": "1.21.6",
+   "status": "stop",
+   "date": "2026-10-24"
+  },
+  {
+   "mod": "AppleSkin",
+   "loader": "fabric",
+   "from": "26.3",
+   "to": "26.3",
+   "status": "build",
+   "date": "2026-10-24"
   }
  ]
 }

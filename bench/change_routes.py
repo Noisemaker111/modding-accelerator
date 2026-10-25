@@ -229,9 +229,22 @@ def main():
                 key = f"{r['source']}: {r['id']}"
                 hits[key] = hits.get(key, 0) + 1
                 handled.append([kind, owner, text, st, key])
+        # A backport meets the same file reversed: what was added is missing, renames run backwards.
+        d = s["_data"]
+        back = {"mappings": 0, "left": 0}
+        for o, n in d["classesRenamed"]:
+            back["mappings" if s["linked"] == "exact" else "left"] += 1
+        back["left"] += len(d["classesAdded"])
+        for owner, lists in d["members"].items():
+            for key in ("methodsRenamed", "fieldsRenamed", "methodsChanged", "fieldsChanged", "methodsAdded", "fieldsAdded"):
+                for it in lists.get(key, []):
+                    if it.startswith("private "):
+                        continue
+                    back["mappings" if key.endswith("Renamed") and s["linked"] == "exact" else "left"] += 1
+        back["listed"] = back["mappings"] + back["left"]
         listed = sum(tally.values())
         return {"listed": listed, "listedWithPrivate": sum(tally_all.values()), **tally, "withPrivate": tally_all,
-                "rulesInRange": len(rs), "ruleHits": [{"rule": k, "changes": v} for k, v in sorted(hits.items(), key=lambda x: -x[1])],
+                "back": back, "rulesInRange": len(rs), "ruleHits": [{"rule": k, "changes": v} for k, v in sorted(hits.items(), key=lambda x: -x[1])],
                 "matched": handled}
 
     ledger = load(ROOT / "coverage" / "ledger.json")
@@ -283,6 +296,7 @@ def main():
         "blocked": blocked,
         "steps": [{k: v for k, v in s.items() if k != "_data"} for s in steps],
         "hubHops": hub_hops,
+        "runs": [{k: h.get(k) for k in ("mod", "loader", "from", "to", "status", "date")} for h in ledger["hops"] if h["from"] in order and h["to"] in order],
     }
     OUT.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print("wrote", OUT, OUT.stat().st_size, "bytes;", len(fam_out), "families; hubs:", ", ".join(hubs))
