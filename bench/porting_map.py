@@ -88,22 +88,30 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 .ln { display:inline-block; width:26px; height:5px; border-radius:3px; vertical-align:middle; margin-right:7px }
 #hopinfo { min-height:2.6em; margin-top:10px; font-size:16px; color:var(--ink) }
 .vrow { display:flex; gap:14px; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--rule) }
-.vlabel { flex:none; width:84px; text-align:center; font-weight:700; font-size:18px; border:2px solid var(--ink); border-radius:6px; padding:2px 0; margin-top:3px }
+.vlabel { flex:none; width:64px; font-weight:700; font-size:18px; padding:4px 0 0; line-height:1.15 }
+.vlabel .est { display:block; font-size:12px; font-weight:400; color:var(--ink3) }
 .vchips { display:flex; flex-wrap:wrap; align-items:center; row-gap:8px }
 .rel { display:inline-flex; align-items:center }
-.chip { font:inherit; font-size:18px; font-weight:600; border:0; background:none; padding:3px 5px; border-radius:6px; color:var(--ink) }
-.chip.hub { border:2px solid var(--ink); background:var(--chip) }
-.chip.est { border-style:dashed }
-.chip.sel { background:var(--hi); color:var(--hi-ink); border-color:var(--hi-edge) }
-.chip.old { color:var(--ink2); font-weight:500 }
+.chip { font:inherit; font-size:18px; font-weight:500; border:0; background:none; padding:3px 5px; border-radius:6px; color:var(--ink) }
+.chip.hub, .hubmark { border:2px solid var(--ink); background:var(--chip); font-weight:700 }
+.hubmark, .pickmark { border-radius:6px; padding:0 5px; font-weight:600 }
+.chip.sel, .pickmark { background:var(--hi); color:var(--hi-ink); border-color:var(--hi-edge) }
+.chip.old { color:var(--ink3); font-weight:500 }
+.chip.old.hub { border-color:var(--ink3) }
 .seg { border:0; padding:10px 0; background:none; width:26px; cursor:pointer }
 .seg i { display:block; height:5px; border-radius:3px }
-#map { position:relative }
-#links { position:absolute; left:0; top:0; pointer-events:none; overflow:visible }
-#links path { fill:none; stroke-width:4; stroke-linejoin:round; pointer-events:stroke; cursor:pointer }
-#links path.g { stroke:var(--green) } #links path.y { stroke:var(--yellow) } #links path.r { stroke:var(--red) }
-#map.route .seg:not(.in), #map.route #links path:not(.in) { opacity:.25 }
-#map.route .seg.in i { height:9px } #map.route #links path.in { stroke-width:7 }
+#map { position:relative; padding-left:var(--gut, 0px) }
+#jumps { position:absolute; left:0; top:0; overflow:visible }
+#jumps path { fill:none; stroke-linejoin:round; stroke-linecap:round }
+#jumps .g { stroke:var(--green) } #jumps .y { stroke:var(--yellow) } #jumps .r { stroke:var(--red) }
+#jumps .base path { stroke-width:1.2; opacity:.16 }
+#jumps .top path { stroke-width:2.2; opacity:.95; pointer-events:stroke; cursor:pointer }
+#jumps .top path.bold { stroke-width:5 }
+#jumps .top path.direct { stroke-dasharray:8 5 }
+#jumps.phone .top path { stroke-width:1.4 } #jumps.phone .top path.bold { stroke-width:3 }
+#jumps circle { fill:var(--ink3) }
+#map.route .seg:not(.in) { opacity:.25 }
+#map.route .seg.in i { height:9px }
 .ready { font-size:14px; font-weight:600; margin:2px 0 6px }
 .ready.ready { color:var(--green) } .ready.warn { color:var(--red) } .ready.blocked { color:var(--ink3); font-weight:500 }
 .seg.g i { background:var(--green) } .seg.y i { background:var(--yellow) } .seg.r i { background:var(--red) }
@@ -123,7 +131,7 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 @media (max-width: 720px) {
   .pick { grid-template-columns:1fr auto 1fr }
   .vrow { gap:10px }
-  .vlabel { width:64px; font-size:15px }
+  .vlabel { width:48px; font-size:15px }
   .chip { font-size:16px }
   .seg { width:18px }
   .item { flex-wrap:wrap; gap:4px 6px; padding:5px 0 }
@@ -137,7 +145,7 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
   <h1>Porting map</h1>
   <nav><a href="index.html">Bench</a><a href="https://github.com/Noisemaker111/modding-accelerator">GitHub</a><button class="theme" id="theme" type="button">Dark</button></nav>
 </div>
-<p class="lede">Pick the version your mod is on and the one you want. Long ports go hub to hub, and each line's colour says what has really been run. <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/docs/details.md#porting-map">How it's measured</a></p>
+<p class="lede">Pick the version your mod is on and the one you want. Long ports go through the popular versions, and each line's colour says what has really been tried. <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/docs/details.md#porting-map">How it's measured</a></p>
 
 <div class="card">
   <div class="pick">
@@ -152,13 +160,15 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 
 <h2>Every release</h2>
 <div class="legend">
-  <span><span class="ln st-green"></span>a port loaded or passed a check in the game</span>
-  <span><span class="ln st-yellow"></span>builds, or being worked on</span>
-  <span><span class="ln st-red"></span>not working yet, or blocked</span>
-  <span><b style="border:2px solid var(--ink);border-radius:5px;padding:0 4px">1.20.1</b> hub</span>
-  <span><b style="border:2px dashed var(--ink);border-radius:5px;padding:0 4px">1.12.2</b> hub of an estimated family</span>
+  <span><b class="hubmark">1.20.1</b> boxed: a popular version, good to port through</span>
+  <span><b class="pickmark">1.21.6</b> your two picks</span>
+  <span><span class="ln st-green"></span>a mod was moved across and works in the game</span>
+  <span><span class="ln st-yellow"></span>it builds, or we're working on it</span>
+  <span><span class="ln st-red"></span>not tried yet, or not possible yet</span>
+  <span><span style="color:var(--ink3)">grey versions</span>: before 1.14.4, our numbers are guesses</span>
 </div>
-<div id="hopinfo" class="small">Lines inside a row are single updates; the elbows join each hub to the next one down. Tap a line to see why it has that colour, or tap two releases for the route.</div>
+<p class="small" style="margin-top:8px">Lines between versions in a row: one update at a time. Lines on the left: jump straight between two boxed versions. Hover a version to see its jumps (on a phone, pick two versions); jumping in one go isn't built yet.</p>
+<div id="hopinfo" class="small"></div>
 <div id="map"></div>
 
 <p class="foot">Made by <span class="mono">bench/porting_map.py</span> from <span class="mono">coverage/changes/index.json</span>, <span class="mono">coverage/ledger.json</span> and <span class="mono">ROADMAP.md</span> on <span id="gen"></span>. Before 1.14.4 Mojang published no official names, so those families are grouped by version number and nothing there is measured.</p>
@@ -251,6 +261,7 @@ const cmd = h => `${PLAT === "win" ? "modaccel.cmd" : "./modaccel"} port --root 
 function render() {
   $("#detail").innerHTML = "";
   const x = $("#from").value, y = $("#to").value;
+  if (!x || !y) { mark(x || null, y || null); $("#route").innerHTML = `<p class="summary">Pick ${x ? "where you want to go" : "both versions"} above, or tap two versions in the list below.</p>`; return; }
   try { history.replaceState(null, "", "#from=" + encodeURIComponent(x) + "&to=" + encodeURIComponent(y)); } catch (e) {}
   mark(x, y);
   const out = $("#route");
@@ -263,6 +274,7 @@ function render() {
   let html = `<h2>${esc(x)} → ${esc(y)}${back ? " (backport)" : ""}</h2>
   <p class="summary">${hops.length} hop${hops.length === 1 ? "" : "s"}: ${[["green", "work"], ["yellow", "being worked on"], ["red", "not working yet or blocked"]].filter(([c]) => n(c)).map(([c, w]) => `<span class="dot st-${c}"></span>${n(c)} ${w}`).join(" &nbsp; ")}</p>
   ${blocked.length ? `<div class="notice"><b>Blocked: no official mappings for ${esc([...new Set(blocked.flatMap(h => [h.a, h.b]).filter(v => !MEASURED(v)))].slice(0, 4).join(", "))}${blocked.length > 0 ? "" : ""} yet.</b> Mojang's names start at 1.14.4. Those hops can't be measured or ported by modaccel today; they would need MCP or other legacy community mappings.</div>` : ""}
+  ${(() => { const on = HUBS.filter(h => POS[h] >= Math.min(POS[x], POS[y]) && POS[h] <= Math.max(POS[x], POS[y])); return on.length > 2 ? `<p class="small">Jumping straight from ${esc(back ? on[on.length - 1] : on[0])} to ${esc(back ? on[0] : on[on.length - 1])} in one go isn't built yet (dashed line on the map), so today it's ${hops.length} hops, one at a time.</p>` : ""; })()}
   ${back ? `<p class="small">Backport: rules are written for forward ports, so only renames from the mappings count as handled. What the newer game added is missing on the way back.</p>` : ""}
   <div class="plat"><span class="small">Commands for</span><button type="button" data-plat="win" class="${PLAT === "win" ? "on" : ""}">Windows</button><button type="button" data-plat="nix" class="${PLAT === "nix" ? "on" : ""}">macOS / Linux</button></div>
   <p class="small">Run one hop at a time: port, check it builds and loads, then the next. A command is only marked as ready when a port across that hop has been run. Chaining hops in one command is not built yet (ROADMAP 11b).</p>
@@ -298,11 +310,11 @@ function drawMap() {
   ALL.forEach((v, i) => { const k = lineOf(v); if (!rows.has(k)) rows.set(k, []); rows.get(k).push(i); });
   let html = "";
   for (const [k, idx] of rows) {
-    html += `<div class="vrow"><div class="vlabel">${esc(k)}</div><div class="vchips">`;
+    html += `<div class="vrow"><div class="vlabel">${esc(k.replace(/\.X$/, ""))}${MEASURED(ALL[idx[idx.length - 1]]) ? "" : `<span class="est">guess</span>`}</div><div class="vchips">`;
     idx.forEach((i, n) => {
       const v = ALL[i], f = FAM[v];
-      const cls = ["chip", IS_HUB.has(v) ? "hub" : "", IS_HUB.has(v) && f.estimated ? "est" : "", MEASURED(v) ? "" : "old"].join(" ");
-      html += `<span class="rel"><button type="button" class="${cls}" data-v="${esc(v)}" title="${esc(v + (IS_HUB.has(v) ? " · hub" : "") + (f.estimated ? " · estimated family" : ""))}">${esc(v)}</button>`;
+      const cls = ["chip", IS_HUB.has(v) ? "hub" : "", MEASURED(v) ? "" : "old"].join(" ");
+      html += `<span class="rel"><button type="button" class="${cls}" data-v="${esc(v)}" title="${esc(v + (IS_HUB.has(v) ? ": a popular version, good to port through" : "") + (MEASURED(v) ? "" : ". Before 1.14.4: our numbers are guesses"))}">${esc(v)}</button>`;
       if (n + 1 < idx.length) { // rows stop at their last release; the hub links below join the rows
         const st = stepSt(i, true);
         html += `<button type="button" class="seg ${st.c[0]}" data-i="${i}" aria-label="${esc(v + " to " + ALL[i + 1] + ": " + st.word)}" title="${esc(v + " → " + ALL[i + 1] + ": " + st.word + ". " + st.why)}"><i></i></button>`;
@@ -311,7 +323,7 @@ function drawMap() {
     });
     html += `</div></div>`;
   }
-  $("#map").innerHTML = html + `<svg id="links" aria-hidden="true"></svg>`;
+  $("#map").innerHTML = html + `<svg id="jumps"></svg>`;
   $("#map").querySelectorAll(".seg").forEach(b => b.onclick = () => {
     const i = +b.dataset.i, st = stepSt(i, true);
     info(`<span class="dot st-${st.c}"></span><b>${esc(ALL[i])} → ${esc(ALL[i + 1])}: ${st.word}.</b> ${esc(st.why)}`);
@@ -322,32 +334,73 @@ function drawMap() {
     if (pickNext === "from") { pickNext = "to"; mark(b.dataset.v, null); info(`Starting from <b>${esc(b.dataset.v)}</b>. Now tap where you want to go.`); return; }
     pickNext = "from"; render(); $("#route").scrollIntoView({ behavior: "smooth" });
   });
+  $("#map").querySelectorAll(".chip").forEach(b => {
+    b.onmouseenter = () => { HOVER = FAM[b.dataset.v].hub; drawLinks(); };
+    b.onmouseleave = () => { HOVER = null; drawLinks(); };
+  });
   window.addEventListener("resize", () => drawLinks());
 }
 function info(html) { $("#hopinfo").innerHTML = html; }
-let ROUTE = null;
-// Hub to hub: where the next hub sits on a lower line, draw an elbow from one to the other.
+let ROUTE = null, PICK = [], HOVER = null;
+// Every hub-to-hub jump, as a bracket in the gutter on the left: out of one hub's row, down a lane,
+// into the other's. The lane is set by how many hubs the jump spans, so one hub's jumps nest and
+// never cross each other. A jump is coloured by the worst update inside it; jumping in one go is not
+// built yet, so a jump longer than one hub hop is never shown better than yellow.
+function jumpStatus(a, b) {
+  const st = status(a, b), span = Math.abs(HUBS.indexOf(b) - HUBS.indexOf(a));
+  if (span < 2) return st;
+  return { c: st.c === "green" ? "yellow" : st.c, word: st.c === "red" ? st.word : "One-step jump not built yet", why: "One-step jump not built yet: today you port hub by hub. Along the way: " + st.why };
+}
 function drawLinks() {
-  const box = $("#map"), svg = $("#links"), at = box.getBoundingClientRect();
-  svg.setAttribute("width", box.scrollWidth); svg.setAttribute("height", box.scrollHeight);
-  const chip = v => box.querySelector(`.chip[data-v="${CSS.escape(v)}"]`).getBoundingClientRect();
-  let out = "";
-  for (let n = 0; n + 1 < HUBS.length; n++) {
-    const a = HUBS[n], b = HUBS[n + 1], r1 = chip(a), r2 = chip(b);
-    if (Math.abs(r1.top - r2.top) < 4) continue;
-    const x1 = r1.left + r1.width / 2 - at.left, y1 = r1.bottom - at.top, x2 = r2.left + r2.width / 2 - at.left, y2 = r2.top - at.top, mid = y2 - 6;
-    const st = status(a, b), on = ROUTE && POS[a] < ROUTE[1] && POS[b] > ROUTE[0];
-    out += `<path class="${st.c[0]}${on ? " in" : ""}" data-a="${esc(a)}" data-b="${esc(b)}" d="M${x1} ${y1} V${mid} H${x2} V${y2}"><title>${esc(a + " → " + b + ": " + st.word + ". " + st.why)}</title></path>`;
+  const box = $("#map"), svg = $("#jumps");
+  if (!svg) return;
+  const phone = innerWidth < 720;
+  const focus = [...new Set([...PICK.map(v => FAM[v].hub), HOVER].filter(Boolean))];
+  // Route: the hub hops it walks today, plus the direct jump from its first hub to its last.
+  const bold = new Set(); let direct = null;
+  if (ROUTE) {
+    const on = HUBS.filter(h => POS[h] >= ROUTE[0] && POS[h] <= ROUTE[1]);
+    for (let n = 0; n + 1 < on.length; n++) bold.add(on[n] + "|" + on[n + 1]);
+    if (on.length > 2) direct = on[0] + "|" + on[on.length - 1];
   }
-  svg.innerHTML = out;
-  svg.querySelectorAll("path").forEach(p => p.onclick = () => {
-    const st = status(p.dataset.a, p.dataset.b);
+  const span = (a, b) => Math.abs(HUBS.indexOf(b) - HUBS.indexOf(a));
+  // On a phone only the picked route gets lanes, packed tight; every jump at once is a solid block there.
+  const shown = (a, b) => { const k = a + "|" + b; return bold.has(k) || k === direct; };
+  let laneOf = (a, b) => span(a, b) - 1, lanes = HUBS.length - 1;
+  if (phone) {
+    const spans = [];
+    for (let i = 0; i < HUBS.length; i++) for (let j = i + 1; j < HUBS.length; j++) if (shown(HUBS[i], HUBS[j])) spans.push(j - i);
+    const order = [...new Set(spans)].sort((x, y) => x - y);
+    laneOf = (a, b) => order.indexOf(span(a, b)); lanes = order.length;
+  }
+  const step = phone ? (lanes > 12 ? 2 : 4) : 4, gut = lanes ? lanes * step + 18 : 0;
+  box.style.setProperty("--gut", gut + "px");
+  const at = box.getBoundingClientRect();
+  svg.setAttribute("width", gut); svg.setAttribute("height", box.scrollHeight);
+  svg.classList.toggle("phone", phone);
+  const y = {}; HUBS.forEach(h => { const r = box.querySelector(`.chip[data-v="${CSS.escape(h)}"]`).getBoundingClientRect(); y[h] = r.top + r.height / 2 - at.top; });
+  const edge = gut - 6;
+  const path = (a, b) => { const x = edge - 6 - laneOf(a, b) * step; return `M${edge} ${y[a]} H${x} V${y[b]} H${edge}`; };
+  let base = "", top = "";
+  for (let i = 0; i < HUBS.length; i++) for (let j = i + 1; j < HUBS.length; j++) {
+    const a = HUBS[i], b = HUBS[j], key = a + "|" + b;
+    const hot = focus.includes(a) || focus.includes(b), isBold = bold.has(key), isDirect = key === direct;
+    if (phone && !shown(a, b)) continue;
+    const st = jumpStatus(a, b), d = path(a, b);
+    if (!phone) base += `<path class="${st.c[0]}" d="${d}"/>`;
+    if (hot || isBold || isDirect) top += `<path class="${st.c[0]}${isBold ? " bold" : ""}${isDirect ? " bold direct" : ""}" data-a="${esc(a)}" data-b="${esc(b)}" d="${d}"><title>${esc(a + " → " + b + ": " + st.word + ". " + st.why)}</title></path>`;
+  }
+  const dots = gut ? HUBS.map(h => `<circle cx="${edge}" cy="${y[h]}" r="2.5"/>`).join("") : "";
+  svg.innerHTML = `<g class="base">${base}</g><g class="top">${top}</g>${dots}`;
+  svg.querySelectorAll(".top path").forEach(p => p.onclick = () => {
+    const st = jumpStatus(p.dataset.a, p.dataset.b);
     info(`<span class="dot st-${st.c}"></span><b>${esc(p.dataset.a)} → ${esc(p.dataset.b)}: ${st.word}.</b> ${esc(st.why)}`);
   });
 }
 function mark(x, y) {
   document.querySelectorAll(".chip").forEach(c => c.classList.toggle("sel", c.dataset.v === x || c.dataset.v === y));
   ROUTE = x && y && x !== y ? [Math.min(POS[x], POS[y]), Math.max(POS[x], POS[y])] : null;
+  PICK = [x, y].filter(Boolean);
   $("#map").classList.toggle("route", !!ROUTE);
   document.querySelectorAll(".seg").forEach(s => s.classList.toggle("in", !!ROUTE && +s.dataset.i >= ROUTE[0] && +s.dataset.i < ROUTE[1]));
   drawLinks();
@@ -357,11 +410,11 @@ function mark(x, y) {
 
 // ---- pickers -------------------------------------------------------------------------------
 function pickers() {
-  const opts = [...ALL].reverse().map(v => `<option value="${esc(v)}">${esc(v)}${IS_HUB.has(v) ? " ★" : ""}</option>`).join("");
+  const opts = `<option value="">Pick</option>` + [...ALL].reverse().map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("");
   $("#from").innerHTML = opts; $("#to").innerHTML = opts;
   const h = new URLSearchParams(location.hash.slice(1));
-  $("#from").value = POS[h.get("from")] !== undefined ? h.get("from") : "1.20.1";
-  $("#to").value = POS[h.get("to")] !== undefined ? h.get("to") : "1.21.1";
+  $("#from").value = POS[h.get("from")] !== undefined ? h.get("from") : "";
+  $("#to").value = POS[h.get("to")] !== undefined ? h.get("to") : "";
   $("#from").onchange = $("#to").onchange = render;
   $("#swap").onclick = () => { const f = $("#from").value; $("#from").value = $("#to").value; $("#to").value = f; render(); };
   window.addEventListener("hashchange", () => {
