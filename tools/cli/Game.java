@@ -301,12 +301,15 @@ final class Game {
         // build), since some failures only happen on one runtime.
         Path java = options.values.containsKey("java") ? javaExecutable(options.get("java", "")) : null;
         boolean saved = Files.exists(recipe) && Boolean.TRUE.equals(Json.read(recipe).get("verified")) && fingerprint.equals(Json.read(recipe).get("fingerprint")) && task.equals(Json.read(recipe).get("task"))
-                && jbr == Boolean.TRUE.equals(Json.read(recipe).get("jbr"));
+                && jbr == Boolean.TRUE.equals(Json.read(recipe).get("jbr")) && replayable(Json.read(recipe));
         if (!saved && (jbr || java != null)) {
             Run.Result prepared = build.gradle(List.of("-Dmodaccel.recompile=true", "-Dmodaccel.captureTask=" + task, "-Dmodaccel.agent=" + agent, "-Dmodaccel.fingerprint=" + fingerprint,
                     "-Dmodaccel.token=" + token, "-Dmodaccel.jbr=" + jbr, "-Dmodaccel.recordOnly=true", task), jbr ? "prepare-jbr-launch" : "prepare-launch");
             if (prepared.exit() != 0 || !Files.exists(recipe) || jbr && Json.read(recipe).get("jbrExecutable") == null)
                 throw new IOException("Could not prepare the " + (jbr ? "JetBrains Runtime " : "") + "launch.\n" + Run.failure(prepared.log()));
+            if (!replayable(Json.read(recipe)))
+                throw new IOException("This build's " + task + " supplies its classpath only while Gradle runs it, so the recorded launch cannot be started on "
+                        + (jbr ? "JetBrains Runtime" : "--java") + ". Start it without " + (jbr ? "--jbr" : "--java") + ".");
             saved = true;
         }
         if (saved) {
@@ -345,7 +348,7 @@ final class Game {
         Process process = builder.start();
         process.onExit().thenAccept(ended -> ready.completeExceptionally(new IOException("Client stopped before its first rendered frame (exit " + ended.exitValue() + "). Log: " + log)));
         Map<String, Object> value;
-        try { value = ready.get(180, TimeUnit.SECONDS); }
+        try { value = awaitFirstFrame(ready, log, saved); }
         catch (Exception failure) {
             process.descendants().forEach(ProcessHandle::destroy); process.destroy();
             throw new IOException("Client startup failed: " + failure + "\n" + Run.failure(log) + "\nLog: " + log);
@@ -357,6 +360,48 @@ final class Game {
         if (Files.exists(recipe)) { var launch = Json.read(recipe); if (fingerprint.equals(launch.get("fingerprint"))) { launch.put("verified", true); Json.save(recipe, launch); } }
         build.report.stages.add(Json.map("name", "game-start", "seconds", (System.nanoTime() - start) / 1e9, "mode", mode, "log", log.toString()));
         return value;
+    }
+    /**
+     * A recorded launch can only be replayed if it says where the classes are. NeoGradle 7.0 (Jade)
+     * and ForgeGradle 6 (MineColonies) supply the classpath and program arguments at exec time, so
+     * the recipe holds only JVM flags and the main class, and replaying it failed with
+     * "Could not find or load main class cpw.mods.bootstraplauncher.BootstrapLauncher". Such a
+     * recipe is left to Gradle, which prepares and launches the client again.
+     */
+    static boolean replayable(Map<String, Object> launch) {
+        for (String argument : ProjectModel.strings(launch.get("arguments")))
+            if (Set.of("-cp", "-classpath", "--class-path", "-p", "--module-path", "-jar").contains(argument) || argument.startsWith("@")) return true;
+        return false;
+    }
+    static final long GAME_START_SECONDS = 180, GRADLE_PREPARE_SECONDS = 30 * 60;
+    /**
+     * Waits for the client's first frame. The 180 s budget starts when the game itself starts:
+     * when Gradle launches it, Gradle first compiles and prepares the run, which on a big mod
+     * (MineColonies: about 4 minutes of javac) used to use up the whole budget before the game
+     * existed. Gradle's own phase gets a separate, much larger budget; its exit still fails at once.
+     * A Fabric loader that rejects the mods leaves an error window open instead of exiting, so
+     * that line fails the start at once instead of after the whole timeout.
+     */
+    static Map<String, Object> awaitFirstFrame(CompletableFuture<Map<String, Object>> ready, Path log, boolean launchedDirectly) throws Exception {
+        long begin = System.nanoTime(), gameStarted = launchedDirectly ? begin : 0, offset = 0;
+        StringBuilder tail = new StringBuilder();
+        while (true) {
+            try { return ready.get(1, TimeUnit.SECONDS); }
+            catch (TimeoutException waiting) { }
+            if (Files.exists(log)) try (var file = new RandomAccessFile(log.toFile(), "r")) {
+                if (file.length() > offset) {
+                    file.seek(offset); byte[] bytes = new byte[(int)Math.min(file.length() - offset, 1 << 20)]; file.readFully(bytes); offset += bytes.length;
+                    tail.append(new String(bytes, StandardCharsets.UTF_8)); if (tail.length() > 4096) tail.delete(0, tail.length() - 4096);
+                    if (gameStarted == 0 && tail.indexOf("MODACCEL_LAUNCH") >= 0) gameStarted = System.nanoTime();
+                    if (tail.indexOf("Incompatible mods found!") >= 0) throw new IOException("The mod loader rejected the mods (Incompatible mods found!); the reason is in the game log.");
+                }
+            }
+            long now = System.nanoTime();
+            if (gameStarted != 0 && now - gameStarted > GAME_START_SECONDS * 1_000_000_000L)
+                throw new TimeoutException("no rendered frame " + GAME_START_SECONDS + " s after the game started");
+            if (gameStarted == 0 && now - begin > GRADLE_PREPARE_SECONDS * 1_000_000_000L)
+                throw new TimeoutException("Gradle did not start the game within " + GRADLE_PREPARE_SECONDS + " s");
+        }
     }
     /** The java executable for --java, given a Java home or the executable itself. */
     static Path javaExecutable(String value) throws IOException {

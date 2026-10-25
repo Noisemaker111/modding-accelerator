@@ -54,6 +54,8 @@ final class Console {
         }
         String text = body.toString().trim();
         boolean minecraft = loads(game, "net.minecraft.client.Minecraft");
+        // Fabric builds on Yarn names call the same class MinecraftClient; mc must exist there too.
+        boolean yarn = !minecraft && loads(game, "net.minecraft.client.MinecraftClient");
         // An expression is returned as it is; statements return what they return, or null.
         List<String> forms = new ArrayList<String>();
         if (!text.endsWith(";") && !text.endsWith("}")) { forms.add("return " + text + ";"); forms.add(text + ";\nreturn null;"); }
@@ -85,6 +87,7 @@ final class Console {
                     + "    throw new NoSuchFieldException(type.getName() + \".\" + name);\n  }\n");
             source.append("  public Object run(Map<String, Object> vars) throws Throwable {\n    this.vars = vars;\n");
             if (minecraft) source.append("    final Minecraft mc = Minecraft.getInstance();\n");
+            else if (yarn) source.append("    final net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();\n");
             int bodyLine = source.toString().split("\n", -1).length;
             source.append(form).append("\n  }\n}\n");
             Map<String, ByteArrayOutputStream> classes = new LinkedHashMap<String, ByteArrayOutputStream>();
