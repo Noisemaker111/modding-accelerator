@@ -36,9 +36,9 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 | 3 Run check | Loads in the real game/server, screenshot or command proof | yes | yes | partial | yes (26.3 node) | no (needs a server check) |
 | 4 Multiplayer check | Dedicated server plus client, or server plus bot | partial | partial | no | no | no (bot exists in their repo) |
 | 5 Version port | `port --from --to`, routed through hubs | yes (1.14.4+) | yes (1.14.4+) | no | via its nodes | no (often just config) |
-| 6 Platform change | e.g. Fabric → NeoForge | later | later | later | n/a | **decide** |
+| 6 Platform change | e.g. Fabric → NeoForge | later | later | later | n/a | not planned |
 
-## 3. Proposed policy (decide)
+## 3. Policy
 
 1. **Who we're for.** People who write mods or plugins from source. Not players, and not compiled jars.
 2. **What gets first-class support.** Fabric and NeoForge first, then Forge (old modpacks), then Paper (servers). Quilt rides on Fabric. Proxies and datapacks come later.
