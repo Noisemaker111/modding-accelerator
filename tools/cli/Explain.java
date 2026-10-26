@@ -68,27 +68,35 @@ final class Explain {
                 + (only.isEmpty() ? "" : " matching " + only) + ", " + failingName + " beside " + workingName + ".";
         // Once it compiles, what's left is what the compiler can't see: mixins aimed at methods or
         // fields the game doesn't have, which otherwise fail one at a time as the client starts.
-        int dead = 0; boolean auditFailed = false;
+        // Mixin itself applies them against this version's game (the verdict); the hand audit's
+        // member-by-member notes follow as hints, beside the working version's API.
+        int dead = 0, hints = 0; Map<String, Object> mixins = null;
         if (shown == 0 && exit == 0 && only.isEmpty() && !options.values.containsKey("log")) {
-            Run.Result audit = new JavaTools(build).audit(Json.map("projects", List.of(failing)));
+            Map<String, Object> projectModel = Json.map("projects", List.of(failing));
+            try { mixins = new MixinCheck(build, projectModel).run(options); }
+            catch (Exception failure) { mixins = Json.map("ok", false, "checked", false, "details", "The Mixin check could not run: " + failure.getMessage()); }
+            for (String key : List.of("failures", "dead")) dead += Json.array(mixins.get(key)).size();
+            summary += " Mixin: " + String.valueOf(mixins.get("details")).lines().findFirst().orElse("") ;
+            if (dead > 0) out.append('\n').append(String.valueOf(mixins.get("details")).lines().skip(1).reduce("", (a, b) -> a + b + "\n"));
+            Run.Result audit = new JavaTools(build).audit(projectModel);
             String lastAudited = "";
             for (String line : new String(Files.readAllBytes(audit.log()), StandardCharsets.UTF_8).lines().toList()) {
                 Matcher finding = Pattern.compile("^(\\S.*?\\.java):(\\d+) (.*)$").matcher(line);
                 if (line.startsWith("note:") || !finding.matches()) continue;
-                dead++;
+                if (hints++ == 0) out.append("\nHand audit hints (modaccel reads the class files; a guess, not Mixin's verdict):\n");
                 String file = source(build.project.root.resolve(finding.group(1)).toString());
                 if (!file.equals(lastAudited)) { out.append('\n').append(file).append('\n'); lastAudited = file; }
                 out.append("  ").append(finding.group(2)).append(": ").append(finding.group(3)).append('\n');
                 String[] subject = auditSubject(finding.group(3));
                 if (subject != null) for (String explained : memberLines(subject[0], subject[1], List.of(), workingName, workingApi, failingName, failingApi)) out.append("    ").append(explained).append('\n');
             }
-            summary += " Mixin audit: " + dead + " dead target" + (dead == 1 ? "" : "s") + ".";
-            if (audit.exit() != 0 && dead == 0) { auditFailed = true; summary += " The audit itself failed: " + Run.tail(audit.log()); }
+            if (hints > 0) summary += " Hand audit hints: " + hints + ".";
         }
         // A compile that failed is not ok just because --only filtered its errors out, nor is an audit that never ran.
         if (shown == 0 && exit != 0) summary += " The compile still failed (exit " + exit + "); see the log.";
-        return Json.map("ok", exit == 0 && shown == 0 && dead == 0 && !auditFailed, "errors", shown, "deadMixinTargets", dead, "files", perFile, "log", log.toString(), "tasks", tasks,
-                "details", summary + (shown == 0 && dead == 0 ? "" : "\n" + out.toString().stripTrailing()));
+        boolean mixinsOk = mixins == null || Boolean.TRUE.equals(mixins.get("ok"));
+        return Json.map("ok", exit == 0 && shown == 0 && mixinsOk, "errors", shown, "deadMixinTargets", dead, "mixinCheck", mixins, "mixinHints", hints, "files", perFile, "log", log.toString(), "tasks", tasks,
+                "details", summary + (shown == 0 && dead == 0 && hints == 0 ? "" : "\n" + out.toString().stripTrailing()));
     }
 
     /** The class and member a mixin audit finding is about, as {owner, name}. */

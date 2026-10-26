@@ -63,11 +63,13 @@ public final class HardeningTest {
         String reason = Port.failureReason("1.21.4", false, null, 0, 1, "", log);
         require(reason.startsWith("The build failed without compiler errors") && reason.contains("com.simibubi.create:create-1.21.1:6.0.4-55") && !reason.contains("semantic migration"),
                 "a dependency failure reads as a build failure with its block: " + reason);
-        String packaged = Port.failureReason("1.21.4", true, new Run.Result(0, log, 1), 0, 1, "", log);
+        String packaged = Port.failureReason("1.21.4", true, Json.map("ok", true, "checked", true), 0, 1, "", log);
         require(packaged.contains("packaged build failed without a compiler error") && packaged.contains("Could not find"), "a failed packaged build shows why");
         require(Port.failureReason("1.21.4", false, null, 3, 2, "", log).startsWith("3 compiler error(s) remain"), "real compiler errors keep the migration message");
-        Path audit = scratch.resolve("audit.log"); Files.writeString(audit, "error: 2 mixin sources found but no Minecraft game jar on the compile classpath, so no mixin target was checked.\n");
-        require(Port.failureReason("1.21.4", true, new Run.Result(3, audit, 1), 0, 1, "", log).contains("no Minecraft game jar"), "an audit that could not look says so");
+        String unchecked = Port.failureReason("1.21.4", true, Json.map("ok", false, "checked", false, "reason", "No client run task (runClient) in the selected project"), 0, 1, "", log);
+        require(unchecked.contains("not checked by Mixin") && unchecked.contains("No client run task"), "mixins Mixin could not check are named as unchecked, never passed: " + unchecked);
+        String failed = Port.failureReason("1.21.4", true, Json.map("ok", false, "checked", true), 0, 1, "", log);
+        require(failed.contains("Mixin did not apply every mixin cleanly"), "a Mixin failure reads as one: " + failed);
     }
     /** The port result says what the audit looked at; "checked" never stands for nothing checked. */
     static void mixinAudit(Path scratch) throws Exception {

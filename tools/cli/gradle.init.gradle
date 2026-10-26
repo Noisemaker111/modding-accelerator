@@ -126,6 +126,11 @@ gradle.afterProject { p ->
         }
         p.tasks.withType(org.gradle.language.jvm.tasks.ProcessResources).configureEach { outputs.upToDateWhen { false } }
     }
+    // mixin-check prepares the client launch to apply mixins, never to render, so it skips the game's
+    // sound and texture download (hundreds of MB on a cold machine). Off unless asked for.
+    if (System.getProperty('modaccel.skipAssets', '') == 'true') {
+        p.tasks.matching { it.name == 'downloadAssets' }.configureEach { enabled = false }
+    }
     def sets = p.extensions.findByName('sourceSets')
     if (sets?.findByName('test') && !p.tasks.findByName('modaccelPure')) {
         p.tasks.register('modaccelPure', Test) {
