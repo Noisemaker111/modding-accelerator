@@ -279,6 +279,23 @@ empty-cache setup speed and Forge framebuffer checks remain unfinished.
 SHA-256 checksums locally; nothing is published. The older Windows lanes described below remain available through their
 existing verbs (`ui`, `node`, `world`, `mp`, and single-dash `port` options).
 
+### Real Stonecutter mods in CI
+
+`bench/real-mods/manifest.json` pins real mods (repo, commit, `--project`, loader). In CI,
+`python bench/real-mods/run.py --compile-nodes --only ID` clones one entry fresh and runs only
+modaccel on it: doctor, then setup and compile of each listed node. No game is started.
+
+- **Every PR** (`portable.yml`, job `stonecutter-sample`, must finish in under 5 minutes): three
+  representative nodes, each its own job on Windows, Linux and macOS: Diorama `:26.3`, Diorama
+  `:1.21.1` and In-Game Account Switcher `:26.3-fabric`. The Gradle home is cached per node and OS.
+- **Nightly and on demand** (`stonecutter-nightly.yml`, job `stonecutter-nodes`, not a merge
+  blocker): every node of Diorama (22) and In-Game Account Switcher (12), on all three OS. Moved
+  off PRs because a cold run takes 10-40 minutes per mod and OS.
+
+A node that fails upstream is listed under `known_failures` with the exact error it must show;
+a different error, or the node passing, is reported. The full game loop of `run.py` (ui-check,
+world-check, reload, eval) is not run in CI.
+
 > **Not a finished product, and not the only option:** what is still missing is in
 > [`ROADMAP.md`](ROADMAP.md), and how it compares to existing tools (including where they win) is
 > in [`bench/alternatives.md`](bench/alternatives.md).
