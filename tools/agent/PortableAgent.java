@@ -20,6 +20,7 @@ public final class PortableAgent {
     private static Object lastScreen; private static long screenSince;
     private static final Map<String, Object> identity = new LinkedHashMap<String, Object>();
     public static void premain(String args, Instrumentation instrumentation) {
+        QuietOptions.seedThisGame(); // no narrator, no sound: before Minecraft reads options.txt
         // Only JDK classes are referenced by transformed game code. Isolated loaders
         // need neither our jar on their mod path nor access to our implementation classes.
         HotReload.install(instrumentation);
@@ -158,7 +159,8 @@ public final class PortableAgent {
                             "f3Handled", optionalField(field(client, "keyboard"), "switchF3State"));
             done.complete(Json.map("ok", true, "identity", identity, "screen", screen == null ? "" : screen.getClass().getName(), "inWorld", inWorld(),
                     "integratedServer", singleplayer != null, "level", hasLevel, "worldPath", singleplayer == null ? "" : worldPath(singleplayer),
-                    "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput));
+                    "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput,
+                    "gameDirectory", gameDirectory(), "narrator", narrator(), "masterVolume", masterVolume()));
         } else if (command.equals("resize")) {
             int width = number(request, "width"), height = number(request, "height");
             if (width < 320 || width > 7680 || height < 240 || height > 4320) throw new IllegalArgumentException("Unsupported frame size");
@@ -405,6 +407,32 @@ public final class PortableAgent {
         return ((Path)path).toAbsolutePath().normalize().toString();
     }
     private static int number(Map<String, Object> request, String key) { return ((Number)request.get(key)).intValue(); }
+    /** The live narrator setting (OFF when quiet), read back from the game's options. */
+    private static String narrator() {
+        try {
+            Object options = field(client, "options"); Object option = null;
+            for (String name : new String[] {"narrator", "getNarrator"}) try { option = options.getClass().getMethod(name).invoke(options); break; } catch (NoSuchMethodException next) { }
+            if (option == null) option = optionalField(options, "narrator");
+            for (String name : new String[] {"get", "getValue"}) try { return String.valueOf(option.getClass().getMethod(name).invoke(option)); } catch (NoSuchMethodException next) { }
+            return String.valueOf(option);
+        } catch (Exception unknown) { return "unknown: " + cause(unknown); }
+    }
+    /** The live master volume (0.0 when quiet). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object masterVolume() {
+        try {
+            Object options = field(client, "options");
+            for (java.lang.reflect.Method method : options.getClass().getMethods())
+                if ((method.getName().equals("getSoundSourceVolume") || method.getName().equals("getSoundVolume") || method.getName().equals("getFinalSoundCategoryVolume"))
+                        && method.getParameterCount() == 1 && method.getParameterTypes()[0].isEnum())
+                    return method.invoke(options, Enum.valueOf((Class) method.getParameterTypes()[0], "MASTER"));
+            return "unknown: no volume getter";
+        } catch (Exception unknown) { return "unknown: " + cause(unknown); }
+    }
+    /** Where the running game keeps saves: the recorded launch directory is not always it (Forge, NeoGradle, Architectury). */
+    private static String gameDirectory() {
+        try { return ((java.io.File) field(client, "gameDirectory", "runDirectory")).getAbsolutePath(); } catch (Exception unknown) { return ""; }
+    }
     private static Object optionalField(Object owner, String name) { try { return field(owner, name); } catch (Exception ignored) { return null; } }
     private static Class<?> load(String... names) throws ClassNotFoundException {
         for (String name : names) try { return Class.forName(name, true, client.getClass().getClassLoader()); } catch (ClassNotFoundException ignored) {}

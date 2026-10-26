@@ -108,6 +108,18 @@ public final class PortableTests {
         check(saved.stream().mapToInt(String::length).sum() < 8000 && saved.contains(launch.get(1)), "saved launches keep existing argument files at the top level");
         Object json = Json.parse(Json.write(Json.map("unicode", "mod 🧱", "path", "C:\\mods with spaces\\test", "rows", List.of(1, true, "\n\""))));
         check(Json.object(json).get("unicode").equals("mod 🧱"), "structured results preserve Unicode and quoted paths");
+        Path quietDir = scratch.resolve("quiet game"); Files.createDirectories(quietDir);
+        Files.writeString(quietDir.resolve("options.txt"), "version:5023\r\nnarrator:2\r\nguiScale:2\r\nsoundCategory_master:1.0\r\nonboardAccessibility:true\r\nkey_key.jump:key.keyboard.space\r\n");
+        Path quietFile = QuietOptions.seed(QuietOptions.gameDirectory("net.minecraft.client.main.Main --username Dev --gameDir " + quietDir + " --assetsDir x", "/elsewhere"));
+        List<String> quiet = Files.readAllLines(quietFile);
+        check(quiet.containsAll(List.of("narrator:0", "onboardAccessibility:false", "soundCategory_master:0.0", "tutorialStep:none", "skipMultiplayerWarning:true", "joinedFirstServer:true")),
+                "seeded options.txt has no narrator, no sound, no tutorial or first-server prompts: " + quiet);
+        check(quiet.containsAll(List.of("version:5023", "guiScale:2", "key_key.jump:key.keyboard.space")) && quiet.indexOf("version:5023") == 0 && quiet.size() == 9,
+                "seeding options.txt keeps every other key and its order");
+        Path freshQuiet = QuietOptions.seed(scratch.resolve("fresh quiet"));
+        check(Files.readAllLines(freshQuiet).equals(List.of("narrator:0", "onboardAccessibility:false", "soundCategory_master:0.0", "tutorialStep:none", "skipMultiplayerWarning:true", "joinedFirstServer:true")),
+                "a first launch gets a quiet options.txt");
+        check(QuietOptions.gameDirectory("Main --version 26.3", "/work/run").equals(Path.of("/work/run")), "without --gameDir the working directory is the game directory");
         Path dark = scratch.resolve("frame dark.png"), half = scratch.resolve("frame half.png");
         BufferedImage left = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB), right = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB);
         for (int y = 0; y < 5; y++) for (int x = 0; x < 10; x++) right.setRGB(x, y, 0xFFFFFF);
