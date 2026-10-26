@@ -56,13 +56,19 @@
       "loader": "fabric",
       "from": "1.21.5",
       "to": "1.21.6",
-      "status": "load",
-      "detail": "Port and backport; opening the inventory changed 95.6% of the frame, and a save reloaded at the same position. Re-marked from behaviour to load on 2026-10-26: Opening the inventory changes the frame and a save reloads at the same position with or without AppleSkin, so neither checks its behaviour. Nothing asserted AppleSkin's own state (its HUD overlay, saturation or tooltip values).",
+      "status": "behaviour",
+      "detail": "Port and backport. Behaviour asserted on 2026-10-26 by tools/tests/AppleSkinHudCheck.java in the real 1.21.6 client through modaccel eval: the health AppleSkin's HUD estimates a golden carrot restores (+12.000002) matched what natural regeneration really healed once the player ate it (+12.000001), within 0.01. With its slow-regeneration estimate broken on purpose (+1.5 instead of +1) the same check failed (+13.000002 against +12.000001). Re-marked to load earlier the same day because the inventory opening and save reload did not check AppleSkin; those are not counted.",
       "date": "2026-10-24",
       "remarked": {
         "was": "behaviour",
         "date": "2026-10-26",
         "why": "Opening the inventory changes the frame and a save reloads at the same position with or without AppleSkin, so neither checks its behaviour. Nothing asserted AppleSkin's own state (its HUD overlay, saturation or tooltip values)."
+      },
+      "promoted": {
+        "from": "load",
+        "date": "2026-10-26",
+        "test": "tools/tests/AppleSkinHudCheck.java",
+        "why": "An assertion on AppleSkin's own HUD value passed in the real client, and failed with AppleSkin broken on purpose."
       }
     },
     {
@@ -73,6 +79,15 @@
       "status": "stop",
       "detail": "Guided debug HUD migration; the remaining changes are named rather than guessed.",
       "date": "2026-10-24"
+    },
+    {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.4",
+      "status": "behaviour",
+      "detail": "Fresh copy of upstream 1bb67d4 ported by modaccel port --fix with no manual edits (154s, packaged build). Behaviour asserted on 2026-10-26 by tools/tests/ZombieAiCheck.java in the real 1.21.4 client (NeoForge 21.4.161) through modaccel eval: a zombie summoned by a command got the mod's own goals (ZombieEatFoodGoal, ZombieMountZombieHorseGoal, target goal ZombieHuntGoal) and its zombieapocalypseaddon_scaled tag, and once the mod's /zhunt command turned hunting on it targeted and hit a pig three blocks away, which a vanilla zombie never does. With EventHandler's goal injection removed on purpose the same check failed (no goals, no target). The server-check bot was not used: MCProtocolLib has no 1.21.4 release.",
+      "date": "2026-10-26"
     },
     {
       "mod": "ZombieApocalypseAddon",

@@ -296,6 +296,27 @@ A node that fails upstream is listed under `known_failures` with the exact error
 a different error, or the node passing, is reported. The full game loop of `run.py` (ui-check,
 world-check, reload, eval) is not run in CI.
 
+### Mods: the mod's own effect, asserted in the real client
+
+Two local checks (not in PR CI: they start the game) assert what a ported mod itself does, through
+`ui-check` and `eval` only, and each breaks the mod on purpose in a copy and requires the same check to fail:
+
+- `java tools/tests/AppleSkinHudCheck.java . build/distributions/modaccel.jar <AppleSkin 1.21.6 port>`:
+  the player is set to 2 health, food 17, saturation 0; the health AppleSkin's HUD estimates a golden
+  carrot restores (the flashing hearts) must match what natural regeneration really heals after eating
+  it, within 0.01 (seen: +12.000002 estimated, +12.000001 healed). Break: its slow-regeneration step
+  estimates 1.5 instead of 1 → +13.000002, fails. 75 s with a cold client, 2 minutes for the never-launched broken copy.
+- `java tools/tests/ZombieAiCheck.java . build/distributions/modaccel.jar <ZombieApocalypseAddon 1.21.4 port>`:
+  a summoned zombie must carry the mod's goals (ZombieEatFoodGoal, ZombieMountZombieHorseGoal,
+  ZombieHuntGoal) and scaling tag, and after the mod's `/zhunt on` and `/zhunt berserker on` it must
+  target a pig three blocks away (a vanilla zombie never does). Break: no goal injection → fails.
+  About 50 s warm, 3 minutes for the never-launched broken copy.
+
+The server-check bot is not used for these: MCProtocolLib has no 1.21.4 release, and a vanilla bot
+joining a modded NeoForge server is unverified. The first launch of a never-launched NeoForge copy is
+refused once as "Project changed during verification" (its launch writes files its own classpath
+names); both checks launch again once when that exact message appears.
+
 ### Plugins on a real Paper server (`server-check`)
 
 `modaccel server-check --root PLUGIN [--file SCENARIO]` builds the plugin jar with its own task,

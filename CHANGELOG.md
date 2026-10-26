@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased: mods' own effects asserted in the real client
+
+- **AppleSkin (Fabric, 1.21.5 → 1.21.6 port) is behaviour again**, through a named test:
+  `tools/tests/AppleSkinHudCheck.java` checks that the health AppleSkin's HUD estimates a golden carrot
+  restores matches what natural regeneration really heals (+12.000002 against +12.000001), and fails
+  when AppleSkin's estimate is broken on purpose.
+- **Zombie Apocalypse Addon (NeoForge, 1.21.1 → 1.21.4 port, fresh, no manual edits)**:
+  `tools/tests/ZombieAiCheck.java` checks a summoned zombie gets the mod's goals and scaling tag and,
+  with `/zhunt` on, hunts a pig; it fails when the mod's goal injection is removed. New ledger row.
+- Both run locally only (they start the game). The server-check bot was not used: no MCProtocolLib
+  release speaks 1.21.4.
+
 ## Unreleased: plugins on a real Paper server with a bot (`server-check`)
 
 - **`modaccel server-check`** runs a Paper plugin on the real Paper server for its Minecraft version
