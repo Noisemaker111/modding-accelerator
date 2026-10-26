@@ -11,8 +11,10 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/ (b
 
 1. Port a real Fabric mod one minor forward: F3Nope 1.21.5 → 1.21.6, build + mixin audit. **done**
 2. Same mod backwards: untouched upstream 1.21.6 → 1.21.5, real client loads it. **done**
-3. Prove a port's behaviour, not just its build: overlay inspected, AppleSkin inventory change
-   95.6%, save reloads at the same position. **done**
+3. Prove a port's behaviour, not just its build. The first try (overlay inspected, AppleSkin
+   inventory change 95.6%, save reloads at the same position) was re-marked to "loads" on
+   2026-10-26: a frame change and a save reload happen without the mod. Behaviour needs an
+   assertion on the mod's own state (`--assert` on its class, `--expect-value` on its screen). **next**
 4. Second loader end to end: NeoForge ZombieApocalypseAddon 1.21.1 → 1.21.4 with no hand edits;
    its `/za` command runs in a 1.21.4 world. **done**
 5. Dependency blockers become one-file answers: verified selection, disable with proof, and a

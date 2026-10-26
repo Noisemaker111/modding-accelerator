@@ -215,19 +215,8 @@ final class Dependencies {
         // The evaluated model does not carry Loom's version; the build's own files state it.
         if (loom.isEmpty() && loader.equals("fabric")) loom = setup.build.project.loomVersion();
         if (loader.equals("fabric") && !loom.isEmpty()) {
-            // The newest release can be built by a newer Loom whose files (class tweakers) this
-            // project's Loom cannot read, which fails before any code compiles. Prefer the newest
-            // release this build can consume; the project's own toolchain stays unchanged.
-            Map<String, Object> compatible = null; List<String> skipped = new ArrayList<>();
-            for (Object item : releases) {
-                var candidate = Json.object(item);
-                String built = builtWithLoom(setup.build, candidate);
-                if (built.isEmpty() || Versions.compare(minor(built), minor(loom)) <= 0) { compatible = candidate; break; }
-                skipped.add(Json.text(candidate, "version_number", "") + " (Loom " + built + ")");
-            }
-            if (compatible != null) release = compatible;
-            if (!skipped.isEmpty()) toolchainNote = (compatible != null ? "Skipped " : "Every release needs a newer Loom than this project's " + loom + ": ")
-                    + String.join(", ", skipped) + (compatible != null ? ", built with a newer Loom than this project's " + loom : "; raise loom_version if configuration fails");
+            toolchainNote = loomWarning(release, builtWithLoom(setup.build, release), loom);
+            if (toolchainNote != null) System.err.println("Warning: " + toolchainNote);
         }
         String published = Json.text(release, "version_number", ""), target;
         if (group.equals(MODRINTH_GROUP)) {
@@ -238,7 +227,7 @@ final class Dependencies {
         if (target.isEmpty()) throw new IOException("Published target " + published + " has no verified Maven coordinate for " + group + ":" + name);
         Map<String, Object> evidence = Json.map("sourceSha512", hash, "identity", current.getOrDefault("identity", "exact artifact hash"),
                 "publishedProject", current.get("project_id"), "publishedVersion", published, "gameVersion", to, "evidence", "published " + displayLoader(loader) + " release lists " + to);
-        if (toolchainNote != null) evidence.put("toolchain", toolchainNote);
+        if (toolchainNote != null) evidence.put("warning", toolchainNote);
         if (preRelease) evidence.put("preRelease", Json.text(release, "version_type", "pre-release") + ": " + group + ":" + name + " published no full release for " + to
                 + ", so its newest " + Json.text(release, "version_type", "pre-release") + " " + published + " was chosen. Pin another version with a selection if that is not wanted.");
         apply(setup, group, name, old, group, name, target, binary, evidence);
@@ -276,6 +265,17 @@ final class Dependencies {
         if (old.equals(Json.text(current, "id", ""))) return true;
         String number = Json.text(release, "version_number", "");
         return sameGame.stream().filter(v -> number.equals(Json.text(Json.object(v), "version_number", ""))).count() > 1;
+    }
+    /**
+     * A release built by a newer Loom is kept, with a warning. Whether this project's Loom can read
+     * it is Gradle's to decide: a newer-Loom jar is usually readable (YACL was), and skipping it on
+     * that guess silently chose an older dependency. The jar's own Fabric-Loom-Version is the fact
+     * reported; the project's Loom version comes from its build files.
+     */
+    static String loomWarning(Map<String, Object> release, String built, String loom) {
+        if (built.isEmpty() || loom.isEmpty() || Versions.compare(minor(built), minor(loom)) <= 0) return null;
+        return Json.text(release, "version_number", "") + " was built with Loom " + built + " (its jar's Fabric-Loom-Version), newer than this project's Loom " + loom
+                + ". It was kept: Gradle decides whether this Loom reads it. If configuration fails on that dependency's files, raise loom_version or select an older release in .modaccel/dependencies.json.";
     }
     /** "1.10.5" or "1.10-SNAPSHOT" -> "1.10". */
     static String minor(String version) {

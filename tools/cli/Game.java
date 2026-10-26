@@ -150,7 +150,8 @@ final class Game {
                 options.values.put("server", "127.0.0.1:" + owned.port);
                 try {
                     Map<String, Object> checked = run(options);
-                    checked.put("server", Json.map("owned", true, "task", owned.task, "pid", owned.process.pid(), "port", owned.port, "log", owned.log.toString()));
+                    // The client's loader was asked; the dedicated server has no agent to ask, so its mod list is unchecked.
+                    checked.put("server", Json.map("owned", true, "task", owned.task, "pid", owned.process.pid(), "port", owned.port, "log", owned.log.toString(), "modsChecked", false));
                     return checked;
                 } finally {
                     options.values.remove("server");
@@ -246,6 +247,8 @@ final class Game {
         if (String.valueOf(first.get("screen")).endsWith("AccessibilityOnboardingScreen")) {
             actions.add(request(current, Json.map("command", "click", "label", "Continue")));
         }
+        // A rendered frame is not a loaded mod: ask the loader before any check counts.
+        Map<String, Object> mods = modsLoaded(current, options, build.project.root.resolve("build/modaccel/shots/" + build.report.id + "-mods.png"));
         if (command.equals("world-check")) {
             String world = options.get("world", "lab");
             if (world.isEmpty() || world.equals(".") || world.equals("..") || world.indexOf('/') >= 0 || world.indexOf('\\') >= 0 || world.indexOf('\0') >= 0)
@@ -307,11 +310,19 @@ final class Game {
         if (options.values.containsKey("type")) actions.add(request(current, Json.map("command", "type", "text", options.get("type", ""))));
         // A real click may schedule a transition or a fade; wait for the requested outcome.
         request(current, Json.map("command", "ready", "expectScreen", options.get("expect-screen", ""), "expectWorld", options.has("expect-world") || command.equals("world-check") || command.equals("mp-check")));
-        if (options.values.containsKey("assert")) actions.add(request(current, Json.map("command", "assert", "method", options.get("assert", ""))));
+        // Behaviour counts only when an assertion ran against the mod's own code or screen.
+        List<Path> own = LoadedMods.outputs(model, LoadedMods.owner(clientTask(options)));
+        String asserted = null, valueScreen = null, valueCheck = null;
+        if (options.values.containsKey("assert")) {
+            asserted = options.get("assert", "");
+            actions.add(request(current, Json.map("command", "assert", "method", asserted)));
+        }
         if (options.values.containsKey("expect-value")) {
             String[] check = options.get("expect-value", "").split("=", 2);
             if (check.length != 2 || !check[0].matches("[A-Za-z_$][A-Za-z0-9_$]*")) throw new IllegalArgumentException("--expect-value needs getter=value, for example shards=6");
-            actions.add(request(current, Json.map("command", "expect-value", "getter", check[0], "value", check[1])));
+            Map<String, Object> value = request(current, Json.map("command", "expect-value", "getter", check[0], "value", check[1]));
+            actions.add(value);
+            valueScreen = Json.text(value, "screenClass", ""); valueCheck = options.get("expect-value", "");
         }
         long captureStart = System.nanoTime();
         Map<String, Object> captured = request(current, Json.map("command", "capture", "path", shot.toString(), "width", 1280, "height", 720));
@@ -329,17 +340,18 @@ final class Game {
         build.report.stages.add(Json.map("name", "framebuffer-check", "seconds", (System.nanoTime() - captureStart) / 1e9));
         result.putAll(Json.map("tier", command.equals("mp-check") ? "dedicated-client" : command.equals("world-check") ? "integrated-world" : "client-render", "capture", captured, "fingerprint", fingerprint, "actions", actions,
                 "actionOrder", List.of("screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-value", "capture"),
-                "worldVerified", command.equals("world-check") || command.equals("mp-check"), "behaviorVerified", options.values.containsKey("assert") || options.values.containsKey("expect-value") || change != null || saveRoundtrip != null,
-                "visualInspectionRequired", true, "details", "Real client rendered a 1280x720 Minecraft framebuffer: " + shot));
+                "worldVerified", command.equals("world-check") || command.equals("mp-check"), "modsLoaded", mods,
+                "visualInspectionRequired", true, "details", Json.text(mods, "details", "") + "\nReal client rendered a 1280x720 Minecraft framebuffer: " + shot));
+        result.putAll(behaviour(own, asserted, valueScreen, valueCheck, change != null, saveRoundtrip != null));
         if (change != null) {
             result.put("visualChange", change);
-            result.put("details", change.get("details"));
+            result.put("details", Json.text(mods, "details", "") + "\n" + change.get("details"));
         }
         if (saveRoundtrip != null) {
             result.put("saveRoundtrip", saveRoundtrip);
-            result.put("details", saveRoundtrip.get("details"));
+            result.put("details", Json.text(mods, "details", "") + "\n" + saveRoundtrip.get("details"));
         }
-        if (command.equals("mp-check") && options.values.containsKey("server")) result.put("server", Json.map("owned", false, "address", options.get("server", ""), "buildVerified", false));
+        if (command.equals("mp-check") && options.values.containsKey("server")) result.put("server", Json.map("owned", false, "address", options.get("server", ""), "buildVerified", false, "modsChecked", false));
         return result;
     }
     /**
@@ -378,18 +390,65 @@ final class Game {
         try { return Json.map("command", command, "x", Integer.parseInt(parts[0].trim()), "y", Integer.parseInt(parts[1].trim())); }
         catch (NumberFormatException error) { throw new IllegalArgumentException("--" + command + " needs integer x,y"); }
     }
+    /**
+     * behaviorVerified and why. Only a passed assertion whose class is this project's own code, or
+     * an --expect-value read from the project's own screen, counts. A frame change and a save
+     * round-trip happen with the mod missing, so they never count. Assertions that failed threw earlier.
+     */
+    static Map<String, Object> behaviour(List<Path> own, String asserted, String valueScreen, String valueCheck, boolean frameChanged, boolean saveReloaded) {
+        List<String> counted = new ArrayList<>(), not = new ArrayList<>();
+        if (asserted != null) {
+            String owner = asserted.split("#", 2)[0];
+            if (LoadedMods.ownClass(own, owner)) counted.add("assertion " + asserted + " passed");
+            else not.add("the assertion's class " + owner + " is not in this project's build output");
+        }
+        if (valueCheck != null) {
+            if (LoadedMods.ownClass(own, valueScreen)) counted.add("the mod's screen " + valueScreen + " reported " + valueCheck);
+            else not.add("--expect-value read " + (valueScreen == null || valueScreen.isEmpty() ? "a screen" : valueScreen) + ", which is not this project's class");
+        }
+        if (!counted.isEmpty()) return Json.map("behaviorVerified", true, "behaviorBasis", String.join("; ", counted));
+        if (frameChanged) not.add("a frame change happens with or without the mod");
+        if (saveReloaded) not.add("a save round-trip is vanilla");
+        return Json.map("behaviorVerified", false, "behaviorBasis", "Behaviour not checked" + (not.isEmpty() ? "" : ": " + String.join("; ", not))
+                + ". Assert on the mod's own state with --assert class#method or --expect-value on the mod's screen.");
+    }
+    /** The Gradle task that runs the client: --client-task or --task, else the one runClient task. */
+    String clientTask(Modaccel.Options options) throws IOException {
+        String task = options.get("client-task", options.get("task", ""));
+        if (!task.isEmpty()) return task;
+        List<String> tasks = new ArrayList<>(), warm = new ArrayList<>();
+        for (Object p : Json.array(model.get("projects"))) for (Object t : Json.array(Json.object(p).get("tasks"))) {
+            String path = Json.text(Json.object(t), "task", ""); if (path.endsWith(":runClient")) tasks.add(path); else if (path.endsWith(":runClientWarm")) warm.add(path);
+        }
+        if (tasks.isEmpty()) tasks = warm;
+        if (tasks.size() != 1) throw new IOException("Choose --project and/or --task for the client: " + tasks);
+        return tasks.get(0);
+    }
+    /**
+     * Fails unless the running loader lists every mod this project's built metadata declares, with
+     * its version. On failure the current frame is saved first, so the refusal can be looked at.
+     */
+    Map<String, Object> modsLoaded(Map<String, Object> session, Modaccel.Options options, Path shot) throws Exception {
+        long start = System.nanoTime();
+        List<Path> outputs = LoadedMods.outputs(model, LoadedMods.owner(clientTask(options)));
+        List<LoadedMods.Declared> declared = LoadedMods.declared(outputs);
+        Map<String, Object> answer = request(session, Json.map("command", "mods", "ids", LoadedMods.ids(declared)));
+        Map<String, Object> verdict = LoadedMods.verdict(declared, outputs, answer);
+        build.report.stages.add(Json.map("name", "mods-loaded", "seconds", (System.nanoTime() - start) / 1e9, "ok", verdict.get("ok"), "loader", verdict.get("loader")));
+        if (!Boolean.TRUE.equals(verdict.get("ok"))) {
+            String saved = "";
+            try {
+                Files.createDirectories(shot.getParent());
+                request(session, Json.map("command", "capture", "path", shot.toString(), "width", 1280, "height", 720));
+                saved = "\nFrame at the time: " + shot;
+            } catch (Exception noCapture) { }
+            throw new IOException(verdict.get("details") + saved + "\nGame log: " + session.get("log"));
+        }
+        return verdict;
+    }
     Map<String, Object> start(Modaccel.Options options, String fingerprint) throws Exception {
         Path agent = agent(); String token = UUID.randomUUID().toString();
-        String task = options.get("client-task", options.get("task", ""));
-        if (task.isEmpty()) {
-            List<String> tasks = new ArrayList<>(), warm = new ArrayList<>();
-            for (Object p : Json.array(model.get("projects"))) for (Object t : Json.array(Json.object(p).get("tasks"))) {
-                String path = Json.text(Json.object(t), "task", ""); if (path.endsWith(":runClient")) tasks.add(path); else if (path.endsWith(":runClientWarm")) warm.add(path);
-            }
-            if (tasks.isEmpty()) tasks = warm;
-            if (tasks.size() != 1) throw new IOException("Choose --project and/or --task for the client: " + tasks);
-            task = tasks.get(0);
-        }
+        String task = clientTask(options);
         Path recipe = build.project.state().resolve("launch.json");
         List<String> command; Map<String, String> environment = new HashMap<>(); Path directory; String mode;
         boolean jbr = options.has("jbr");

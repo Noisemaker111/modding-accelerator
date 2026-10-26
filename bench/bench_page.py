@@ -50,21 +50,23 @@ def secs(v):
 def tested():
     rows = {}
     for h in ledger["hops"]:
-        r = rows.setdefault(h["mod"], {"loaders": set(), "versions": set(), "best": None, "date": "", "what": "ported by modaccel"})
+        r = rows.setdefault(h["mod"], {"loaders": set(), "versions": set(), "best": {}, "date": "", "what": "ported by modaccel"})
         r["loaders"].add(LOADER.get(h["loader"], h["loader"]))
         r["versions"].update([h["from"], h["to"]])
-        if not r["best"] or RANK[h["status"]] > RANK[r["best"]["status"]]:
-            r["best"] = h
+        # A run proves only its own loader: keep the furthest run per loader.
+        mine = r["best"].get(h["loader"])
+        if not mine or RANK[h["status"]] > RANK[mine["status"]]:
+            r["best"][h["loader"]] = h
         r["date"] = max(r["date"], h["date"])
     for m in bumps["mods"]:
-        r = rows.setdefault(m["name"], {"loaders": set(), "versions": set(), "best": None, "date": "", "what": "version bump by hand, errors counted"})
+        r = rows.setdefault(m["name"], {"loaders": set(), "versions": set(), "best": {}, "date": "", "what": "version bump by hand, errors counted"})
         r["loaders"].add("Fabric")
         r["versions"].update([m["current_mc"], m["target_mc"]])
         r["date"] = max(r["date"], bumps["date"])
         r.setdefault("errors", m["errors"]["total"])
     for m in mods["mods"]:
         name = {"diorama": "Diorama", "minecolonies": "MineColonies"}.get(m["name"], m["name"])
-        r = rows.setdefault(name, {"loaders": set(), "versions": set(), "best": None, "date": "", "what": "their own build, then modaccel fast"})
+        r = rows.setdefault(name, {"loaders": set(), "versions": set(), "best": {}, "date": "", "what": "their own build, then modaccel fast"})
         r["loaders"].update(LOADER.get(x, x) for x in m.get("loaders", []))
         mc = m.get("minecraft", {})
         if mc.get("active"):
@@ -84,12 +86,13 @@ def vkey(v):
 
 def tested_table():
     rows = tested()
-    order = sorted(rows.items(), key=lambda kv: (-(RANK[kv[1]["best"]["status"]] if kv[1]["best"] else 0), kv[0].lower()))
+    top = lambda r: max((RANK[b["status"]] for b in r["best"].values()), default=0)
+    order = sorted(rows.items(), key=lambda kv: (-top(kv[1]), kv[0].lower()))
     out = []
     for name, r in order:
-        b = r["best"]
-        if b:
-            reach = f"{dot(COLOUR[b['status']])}{WORD[b['status']]}<span class='sub'>{b['from']} → {b['to']}</span>"
+        if r["best"]:
+            reach = "".join(f"<div>{dot(COLOUR[b['status']])}{WORD[b['status']]}<span class='sub'>{LOADER.get(l, l)}, {b['from']} → {b['to']}</span></div>"
+                            for l, b in sorted(r["best"].items(), key=lambda kv: -RANK[kv[1]["status"]]))
         elif "errors" in r:
             reach = f"{dot('grey')}Bump measured<span class='sub'>{r['errors']} compile errors, repaired by hand</span>"
         else:
