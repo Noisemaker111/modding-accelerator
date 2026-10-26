@@ -6,6 +6,8 @@ This file holds only what is specific to this project.
 
 Anyone brings an unfamiliar mod source project (a Gradle checkout; compiled JARs are unsupported), picks a Minecraft version, and gets a reversible port plus fast, trustworthy logic and game checks with minimal setup. Windows, Linux and macOS; Java and Kotlin; Fabric and NeoForge; forward and back. Changing loader is a separate job. The limited Fabric beta is a starting point, not the scope.
 
+Versions should not matter. Write each tool once against one version and translate where it meets the game (ViaProxy for the protocol, the change index for names), never a per-version copy or list. A version that doesn't work yet is a missing translation to name and build, not a limit to report. `ROADMAP.md` has the idea.
+
 ## Where the truth is
 
 - `ROADMAP.md` holds the phases and numbered steps. Only statuses there are claims; update it when a step changes. `README.md` is the public goal and support table; `PLAN.md` the evidence behind the steps.
