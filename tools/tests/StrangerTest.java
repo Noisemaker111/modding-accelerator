@@ -29,6 +29,7 @@ public final class StrangerTest {
             setupText(scratch);
             staleLoaderCache(scratch);
             missingRuntime();
+            optionalInjections();
             jdkTypo();
             gameStartup(scratch);
             insideCheckout(scratch);
@@ -82,6 +83,17 @@ public final class StrangerTest {
         Files.delete(resources.resolve("data/compasspin/recipe/broken.json"));
         String badId = String.join("\n", ProjectModel.strings(ModChecks.run(model).get("problems")));
         require(badId.contains("mod id \"Compass Pin\" is not valid"), "an invalid Fabric id is a problem: " + badId);
+
+        // F3Nope: Loom's split client set. main's fabric.mod.json names the client set's mixin config and entrypoint; they ship in one jar.
+        Path split = scratch.resolve("f3nope"), mainOut = split.resolve("build/resources/main"), clientOut = split.resolve("build/resources/client"), clientClasses = split.resolve("build/classes/java/client");
+        write(mainOut.resolve("fabric.mod.json"), "{\"schemaVersion\": 1, \"id\": \"f3nope\", \"entrypoints\": {\"client\": [\"com.f3nope.F3NopeClient\"]}, \"mixins\": [{\"config\": \"f3nope.client.mixins.json\", \"environment\": \"client\"}]}");
+        write(clientOut.resolve("f3nope.client.mixins.json"), "{\"package\": \"com.f3nope.mixin\", \"client\": [\"DebugMixin\"]}");
+        write(clientClasses.resolve("com/f3nope/F3NopeClient.class"), "x"); write(clientClasses.resolve("com/f3nope/mixin/DebugMixin.class"), "x");
+        Map<String, Object> splitModel = Json.map("projects", List.of(Json.map("path", ":", "sourceSets", List.of(
+                Json.map("name", "main", "output", List.of(split.resolve("build/classes/java/main").toString(), mainOut.toString())),
+                Json.map("name", "client", "output", List.of(clientClasses.toString(), clientOut.toString()))))));
+        Map<String, Object> splitResult = ModChecks.run(splitModel);
+        require(Boolean.TRUE.equals(splitResult.get("ok")) && String.valueOf(splitResult.get("checked")).contains("1 mixin config(s) with 1 mixin class(es)"), "a split client set is checked with main as one jar: " + splitResult);
 
         Path neo = scratch.resolve("neo"), neoResources = neo.resolve("build/resources/main");
         write(neoResources.resolve("META-INF/neoforge.mods.toml"), "modLoader=\"javafml\"\n[[mods]]\nmodId=\"Bad-Id\"\n[[dependencies.x]]\nmodId=\"minecraft\"\n[[mixins]]\nconfig=\"missing.mixins.json\"\n");
@@ -226,6 +238,11 @@ public final class StrangerTest {
         var options = new Modaccel.Options(new String[] {"explain", "--project", "26.3", "--against", "26.2, :26.1"});
         require(options.get("project", "").equals(":26.3") && options.get("against", "").equals(":26.2,:26.1"), "project paths get their leading colon: " + options.values);
         require(new Modaccel.Options(new String[] {"fast", "--project", ":"}).get("project", "").equals(":"), "the root project stays ':'");
+        require(Modaccel.unknownCommand("complie").startsWith("Unknown command complie. Did you mean compile?"), "a typed command slip gets the real one");
+        require(!Modaccel.unknownCommand("xyzzy").contains("Did you mean"), "no guess for nonsense");
+        // Gradle's message for --project :26.4, as Diorama's build printed it under "Build discovery failed".
+        String noProject = Modaccel.plainError(new java.io.IOException("Build discovery failed. A problem occurred configuring root project 'diorama'.\n> Could not create task ':modaccelMetadata'.\n   > No project :26.4; available projects: [:, :26.2, :26.3, :26.3-neoforge]\nLog: x"));
+        require(noProject.startsWith("There is no project :26.4 in this build. It has 3: :26.2, :26.3, :26.3-neoforge."), "a wrong --project lists the real ones plainly: " + noProject);
         try { new Modaccel.Options(new String[] {"fast", "--nope", "x"}); throw new AssertionError("an unknown option passed"); }
         catch (IllegalArgumentException expected) { require(expected.getMessage().contains("modaccel help fast"), "an unknown option points to the command's help: " + expected.getMessage()); }
     }
@@ -284,23 +301,43 @@ public final class StrangerTest {
         require(Game.missingRuntime(model, ":1.21.1-fabric") == null, "another node with everything downloaded starts");
     }
 
+    /** A require = 0 injection on a misspelt method passed mixin-check as "9 applied": Mixin skips it without a word. The line is MixinAudit's own, from Diorama. */
+    static void optionalInjections() {
+        String text = Modaccel.optionalInjections(List.of("# 9 mixins, 9 targets, 20 members checked, 0 dead",
+                "note: src/main/java/dev/diorama/mixin/PauseScreenTitleMixin.java:12 optional (require = 0): @Inject method 'inti' not found in net.minecraft.client.gui.screens.TitleScreen (methods: init, <init>, tick, <clinit>, added)"));
+        require(text.startsWith("1 optional injection (require = 0) found no target in this game, so Mixin skips it without an error and it never runs:")
+                && text.contains("PauseScreenTitleMixin.java:12 @Inject method 'inti' not found") && !text.contains("note:"), "an optional injection with no target is named: " + text);
+        require(Modaccel.optionalInjections(List.of("# 9 mixins, 9 targets, 21 members checked, 0 dead")).isEmpty(), "nothing optional, nothing said");
+    }
+
     /** explain called Math.rond "likely newer than the Java release". */
     static void jdkTypo() {
         List<String> similar = Explain.jdkSimilar("java.lang.Math", "rond");
         require(similar != null && similar.contains("round"), "a misspelt JDK member gets the real name: " + similar);
         require(Explain.jdkSimilar("java.lang.Math", "round") == null, "a real JDK member is not a typo");
+        // A build compiling for a newer Java than modaccel runs on: its own JDK's modules image is read.
+        Path home = Path.of(System.getProperty("java.home"));
+        List<String> fromImage = Explain.jdkSimilar("java.lang.Math", "rond", home);
+        require(fromImage != null && fromImage.contains("round"), "the build's JDK image is read for the real name: " + fromImage);
+        require(Explain.jdkSimilar("java.lang.String", "hashCode", home) == null, "a member inherited from Object is found through the supertypes");
     }
 
     /** A registry clash crash came back inside ExecutionException wrappers in a JSON blob. */
     static void gameStartup(Path scratch) throws Exception {
         Path crash = scratch.resolve("run/crash-reports/crash-2026-10-26_12.00.00-client.txt");
         write(crash, "---- Minecraft Crash Report ----\n// Oops.\n\nTime: 2026-10-26 12:00:00\nDescription: Initializing game\n\n"
-                + "java.lang.IllegalStateException: Duplicate registration diorama:compass_pin\n\tat net.minecraft.core.MappedRegistry.register(MappedRegistry.java:120)\n\n\nA detailed walkthrough of the error\n");
+                + "java.lang.RuntimeException: Could not execute entrypoint stage 'client' due to errors, provided by 'diorama' at 'dev.diorama.fabric.DioramaFabric'!\n"
+                + "\tat net.fabricmc.loader.impl.FabricLoaderImpl.lambda$invokeEntrypoints$0(FabricLoaderImpl.java:413)\n\tat net.fabricmc.loader.impl.util.ExceptionUtil.gatherExceptions(ExceptionUtil.java:33)\n"
+                + "\tat knot//net.minecraft.client.Minecraft.<init>(Minecraft.java:469)\n"
+                + "Caused by: java.lang.IllegalStateException: Adding duplicate key 'ResourceKey[minecraft:item / diorama:compass_pin]' to registry\n"
+                + "\tat knot//net.minecraft.core.MappedRegistry.register(MappedRegistry.java:120)\n\tat knot//net.minecraft.core.Registry.register(Registry.java:150)\n"
+                + "\tat knot//dev.diorama.feature.CompassPin.register(CompassPin.java:19)\n\tat knot//dev.diorama.fabric.DioramaFabric.onInitializeClient(DioramaFabric.java:40)\n\t... 12 more\n\n\nA detailed walkthrough of the error\n");
         Path log = scratch.resolve("run/client.log");
         write(log, "[12:00:00] [Render thread/INFO]: Loading Minecraft 26.3 with Fabric Loader 0.19.2\n#@!@# Game crashed! Crash report saved to: #@!@# " + crash + "\n");
         String text = Game.startupFailure(new ExecutionException(new java.io.IOException("Client exited with code -1. Log: " + log)), log);
         require(text.startsWith("The game did not start: Client exited with code -1.") && !text.contains("ExecutionException"), "the wrapper exceptions are gone: " + text);
-        require(text.contains("Minecraft crashed. Description: Initializing game") && text.contains("Duplicate registration diorama:compass_pin") && text.contains("Crash report: " + crash),
+        require(text.contains("Minecraft crashed. Description: Initializing game") && text.contains("Caused by: java.lang.IllegalStateException: Adding duplicate key 'ResourceKey[minecraft:item / diorama:compass_pin]'")
+                && text.contains("first frame in the mod's code: dev.diorama.feature.CompassPin.register(CompassPin.java:19)") && !text.contains("gatherExceptions") && text.contains("Crash report: " + crash),
                 "the crash report's cause and path are shown: " + text);
     }
 

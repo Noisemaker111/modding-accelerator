@@ -124,12 +124,22 @@ final class Game {
             for (int i = 0; i < report.size(); i++) {
                 if (!report.get(i).startsWith("Description:")) continue;
                 out.append("\nMinecraft crashed. ").append(report.get(i).strip());
-                int shown = 0;
-                for (int j = i + 1; j < report.size() && shown < 6; j++) {
-                    String line = report.get(j);
-                    if (line.isBlank()) { if (shown > 0) break; continue; }
-                    out.append("\n  ").append(line.strip()); shown++;
+                // The first stack: its exception, each "Caused by" (the deepest is the real cause), and the
+                // first frame in the mod's own code under the deepest cause. Loader wrapper frames say nothing.
+                String exception = null, frame = null; List<String> causes = new ArrayList<>();
+                for (int j = i + 1; j < report.size(); j++) {
+                    String line = report.get(j).strip();
+                    if (line.startsWith("A detailed walkthrough") || line.startsWith("-- ")) break;
+                    if (line.isEmpty() || line.startsWith("...")) continue;
+                    if (line.startsWith("Caused by:")) { causes.add(line); frame = null; }
+                    else if (line.startsWith("at ")) {
+                        String at = line.substring(3).replaceFirst("^[\\w.-]*//", "");
+                        if (frame == null && !at.matches("(?:java|jdk|sun|net\\.minecraft|com\\.mojang|net\\.fabricmc|net\\.neoforged|cpw|org\\.spongepowered|com\\.google|it\\.unimi)\\..*")) frame = at;
+                    } else if (exception == null) exception = line;
                 }
+                if (exception != null) out.append("\n  ").append(exception);
+                for (String causedBy : causes) out.append("\n  ").append(causedBy);
+                if (frame != null) out.append("\n  first frame in the mod's code: ").append(frame);
                 break;
             }
             out.append("\nCrash report: ").append(file);

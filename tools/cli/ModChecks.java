@@ -38,17 +38,20 @@ final class ModChecks {
             var p = Json.object(item);
             Set<Path> classes = new LinkedHashSet<>();
             for (Object c : p.get("compile") instanceof List<?> compile ? compile : List.of()) { Object d = Json.object(c).get("destination"); if (d != null) classes.add(Path.of(d.toString())); }
+            // main, client and the other shipped sets end up in one jar (Loom's split client set is the
+            // usual case: fabric.mod.json in main names client mixins and entrypoints), so they are read as one.
+            List<Path> resources = new ArrayList<>(), classDirs = new ArrayList<>(), sourceResources = new ArrayList<>(), sourceJava = new ArrayList<>();
             for (Object s : p.get("sourceSets") instanceof List<?> sourceSets ? sourceSets : List.of()) {
                 var set = Json.object(s); String name = String.valueOf(set.get("name")).toLowerCase(Locale.ROOT);
                 if (name.contains("test")) continue;
-                List<Path> resources = new ArrayList<>(), classDirs = new ArrayList<>();
                 for (String path : ProjectModel.strings(set.get("output"))) {
                     Path dir = Path.of(path);
                     if (classes.contains(dir) || dir.toString().replace('\\', '/').contains("/classes/")) classDirs.add(dir); else resources.add(dir);
                 }
-                out.add(new Set_(resources, classDirs, ProjectModel.strings(set.get("resources")).stream().map(Path::of).toList(),
-                        ProjectModel.strings(set.get("java")).stream().map(Path::of).toList()));
+                for (String path : ProjectModel.strings(set.get("resources"))) sourceResources.add(Path.of(path));
+                for (String path : ProjectModel.strings(set.get("java"))) sourceJava.add(Path.of(path));
             }
+            if (!resources.isEmpty() || !classDirs.isEmpty()) out.add(new Set_(resources, classDirs, sourceResources, sourceJava));
         }
         return out;
     }

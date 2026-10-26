@@ -65,7 +65,7 @@ public final class Modaccel {
             Path root = Path.of(options.get("root", "."));
             if (Files.isRegularFile(root) && root.toString().toLowerCase(Locale.ROOT).endsWith(".jar"))
                 throw new IllegalArgumentException("--root needs the mod's Gradle source directory, not a compiled JAR. Check out its source and run modaccel discover --root SOURCE.");
-            if (!COMMANDS.contains(options.command)) throw new IllegalArgumentException("Unknown command " + options.command + ". " + help());
+            if (!COMMANDS.contains(options.command)) throw new IllegalArgumentException(unknownCommand(options.command));
             ProjectModel project = new ProjectModel(root);
             if (!Set.of("package", "self-test").contains(options.command)) project.requireGradleBuild();
             // Commands that build, edit or start the game take the project lock; reading state and talking to a running game don't.
@@ -105,7 +105,15 @@ public final class Modaccel {
                     case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload" -> { result = new Game(build, model).run(options); exit = "reload".equals(options.command) && Boolean.TRUE.equals(result.get("restartNeeded")) ? 1 : 0; }
                     case "port" -> { result = new Port(build, model).run(options); if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model)); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "explain" -> { result = new Explain(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
-                    case "mixin-check" -> { result = new MixinCheck(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
+                    case "mixin-check" -> {
+                        result = new MixinCheck(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
+                        // Mixin applies a require = 0 injection that matches nothing without a word; the audit against the game jar names it.
+                        if (Boolean.TRUE.equals(result.get("checked"))) {
+                            var audit = new JavaTools(build).audit(model);
+                            String optional = optionalInjections(Files.readAllLines(audit.log(), java.nio.charset.StandardCharsets.UTF_8));
+                            if (!optional.isEmpty() && !(result.get("optional") instanceof List<?> seen && !seen.isEmpty())) { result.put("details", result.get("details") + "\n" + optional); if (result.get("reason") != null) result.put("reason", result.get("reason") + "\n" + optional); }
+                        }
+                    }
                     case "dependencies" -> { result = new Port(build, model).dependencies(options); exit = Boolean.TRUE.equals(result.get("ready")) ? 0 : 1; }
                     case "compile", "test" -> {
                         String name = options.command.equals("compile") ? "classes" : options.command.equals("test") ? "test" : "modaccelPure";
@@ -175,7 +183,21 @@ public final class Modaccel {
         System.exit(exit);
     }
     /** An exception as a sentence: file-system errors whose message is only a path get their meaning back. */
+    /** An unknown command, with the nearest real one when it is a slip of the keyboard. */
+    static String unknownCommand(String command) {
+        String nearest = null; int best = Integer.MAX_VALUE;
+        for (String known : new TreeSet<>(COMMANDS)) { int d = Explain.distance(known, command.toLowerCase(Locale.ROOT)); if (d < best) { best = d; nearest = known; } }
+        return "Unknown command " + command + "." + (nearest != null && best <= 2 ? " Did you mean " + nearest + "?" : "") + "\n" + help();
+    }
+    private static final java.util.regex.Pattern NO_PROJECT = java.util.regex.Pattern.compile("No project (\\S+); available projects: \\[([^\\]]*)\\]");
     static String plainError(Throwable error) {
+        // Gradle's own words for a --project that is not in the build, buried under "Could not create task": say it plainly.
+        java.util.regex.Matcher project = error.getMessage() == null ? null : NO_PROJECT.matcher(error.getMessage());
+        if (project != null && project.find()) {
+            List<String> available = new ArrayList<>(); for (String path : project.group(2).split(",\\s*")) if (!path.isBlank() && !path.equals(":")) available.add(path.strip());
+            return "There is no project " + project.group(1) + " in this build. It has " + available.size() + ": " + String.join(", ", available)
+                    + ".\nPick one with --project (modaccel setup lists them with their loader and Minecraft version).";
+        }
         // Port wraps its failure to add the undo line; the file-system cause underneath still needs words.
         Throwable cause = error;
         while (cause != null && !(cause instanceof FileSystemException)) cause = cause.getCause() == cause ? null : cause.getCause();
@@ -188,6 +210,14 @@ public final class Modaccel {
         if (cause instanceof FileSystemException other && other.getReason() != null && other.getReason().toLowerCase(Locale.ROOT).contains("used by another process"))
             return "Cannot use " + other.getFile() + ": another program has it open. Close it (the game, an editor or a file viewer), then rerun." + undo;
         return error.getMessage() == null ? error.toString() : error.getMessage();
+    }
+    /** MixinAudit's require = 0 notes, as the injections that will never run; "" when there are none. */
+    static String optionalInjections(List<String> auditLines) {
+        List<String> optional = new ArrayList<>();
+        for (String line : auditLines) if (line.contains("optional (require = 0)")) optional.add(line.strip().replaceFirst("^note:\\s*", "").replace("optional (require = 0): ", ""));
+        if (optional.isEmpty()) return "";
+        return optional.size() + (optional.size() == 1 ? " optional injection" : " optional injections") + " (require = 0) found no target in this game, so Mixin skips "
+                + (optional.size() == 1 ? "it" : "them") + " without an error and " + (optional.size() == 1 ? "it never runs" : "they never run") + ":\n  " + String.join("\n  ", optional);
     }
     /** Mod resource and metadata checks after a passing compile or test run; problems turn the pass into a failure. */
     static int withModChecks(Map<String, Object> result, Map<String, Object> model) throws IOException {
