@@ -81,7 +81,11 @@ public final class HardeningTest {
         require(summary.startsWith("mixin targets checked (2 mixins, 1 target, 4 members checked, 0 dead)") && summary.contains("1 mixin target(s) are in no jar"),
                 "skipped mixin targets are counted in the result: " + summary);
     }
-    /** An undo of a port that never finished refuses, restores nothing and names what differs. */
+    /**
+     * An undo of a port that never finished puts the backups back, keeps every file it overwrites
+     * beside them first (so a hand edit made after the port stopped is never lost), and says so.
+     * It used to refuse and leave the modder to copy the backups by hand.
+     */
     static void interruptedUndo(Path scratch) throws Exception {
         Path root = scratch.resolve("interrupted"); Files.createDirectories(root.resolve("src"));
         Files.writeString(root.resolve("settings.gradle"), "");
@@ -92,12 +96,12 @@ public final class HardeningTest {
         Json.save(transaction.resolve("transaction.json"), Json.map("root", project.root.toString(), "before", Json.map("src/A.java", Fingerprints.bytes(original)),
                 "after", Map.of(), "removed", List.of(), "plan", Json.map("edits", List.of("src/A.java"), "removals", List.of()), "status", "in-progress"));
         Files.writeString(source, "class A { half edited }\n");
-        try { Port.undo(project, transaction.toString()); throw new AssertionError("interrupted undo passed"); }
-        catch (IOException expected) {
-            require(expected.getMessage().contains("did not finish") && expected.getMessage().contains("src/A.java") && expected.getMessage().contains(backup.getParent().getParent().toString()),
-                    "interrupted undo explains, names the changed file and the backups: " + expected.getMessage());
-        }
-        require(Files.readString(source).contains("half edited"), "interrupted undo restores nothing silently");
+        Map<String, Object> undone = Port.undo(project, transaction.toString());
+        String details = String.valueOf(undone.get("details"));
+        require(Boolean.TRUE.equals(undone.get("ok")) && details.contains("stopped part-way") && details.contains("src/A.java") && details.contains(transaction.resolve("current-before-undo").toString()),
+                "interrupted undo says what it restored and where the overwritten copies are: " + details);
+        require(Arrays.equals(Files.readAllBytes(source), original), "interrupted undo restores the exact original bytes");
+        require(Files.readString(transaction.resolve("current-before-undo/src/A.java")).contains("half edited"), "the half-edited file is kept, not lost");
         Json.save(transaction.resolve("transaction.json"), Json.map("root", project.root.toString(), "before", Map.of(), "after", Map.of(), "removed", List.of(), "status", "undone"));
         try { Port.undo(project, transaction.toString()); throw new AssertionError("second undo passed"); }
         catch (IOException expected) { require(expected.getMessage().contains("already undone"), "a second undo says it was already undone"); }

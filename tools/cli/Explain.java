@@ -255,10 +255,84 @@ final class Explain {
         for (String imported : imports) if (imported.endsWith("." + first)) return imported.startsWith("java.") || imported.startsWith("javax.") ? imported + plain.substring(first.length()) : null;
         try { Class.forName("java.lang." + first); return "java.lang." + plain; } catch (ClassNotFoundException | LinkageError notInJavaLang) { return null; }
     }
+    /**
+     * Null when the JDK class has the member (or can't be read); otherwise the closest public names.
+     * A JDK at least as new as the build's would have a member the build's Java has, so a member
+     * missing here is a misspelling, not an API from a newer Java.
+     */
+    static List<String> jdkSimilar(String className, String name) { return jdkSimilar(className, name, null); }
+    /** As above, read from the JDK at javaHome (the one the build compiles with) when given, else from this runtime. */
+    static List<String> jdkSimilar(String className, String name, java.nio.file.Path javaHome) {
+        Set<String> names = javaHome == null ? runtimeMembers(className) : jdkMembers(javaHome, className);
+        if (names == null) return null;
+        if (name.equals("<init>") || names.contains(name)) return null;
+        String lower = name.toLowerCase(Locale.ROOT);
+        return names.stream().filter(candidate -> distance(candidate.toLowerCase(Locale.ROOT), lower) <= Math.max(1, name.length() / 4)
+                || candidate.toLowerCase(Locale.ROOT).startsWith(lower) && lower.length() >= 3).limit(5).toList();
+    }
+    static Set<String> runtimeMembers(String className) {
+        Class<?> type;
+        try { type = Class.forName(className, false, ClassLoader.getPlatformClassLoader()); } catch (ClassNotFoundException | LinkageError unknown) { return null; }
+        Set<String> names = new TreeSet<>();
+        try {
+            for (var method : type.getMethods()) names.add(method.getName());
+            for (var field : type.getFields()) names.add(field.getName());
+            for (var method : type.getDeclaredMethods()) names.add(method.getName());
+        } catch (LinkageError unreadable) { return null; }
+        return names;
+    }
+    /** Member names of a JDK class and its supertypes, read from another JDK's own modules image. Null when it cannot be read. */
+    static Set<String> jdkMembers(java.nio.file.Path javaHome, String className) {
+        try (var image = java.nio.file.FileSystems.newFileSystem(java.net.URI.create("jrt:/"), Map.of("java.home", javaHome.toString()))) {
+            Set<String> names = new TreeSet<>(); Deque<String> pending = new ArrayDeque<>(List.of(className.replace('.', '/'))); Set<String> seen = new HashSet<>();
+            boolean found = false;
+            while (!pending.isEmpty()) {
+                String internal = pending.pop(); if (!seen.add(internal)) continue;
+                java.nio.file.Path file = null;
+                try (var modules = java.nio.file.Files.list(image.getPath("/modules"))) {
+                    for (var module : modules.toList()) if (java.nio.file.Files.isRegularFile(module.resolve(internal + ".class"))) { file = module.resolve(internal + ".class"); break; }
+                }
+                if (file == null) continue;
+                found = true;
+                ClassInfo info = Index.parse(java.nio.file.Files.readAllBytes(file));
+                for (Member member : info.members()) names.add(member.name());
+                if (info.superName() != null) pending.add(info.superName());
+                pending.addAll(info.interfaces());
+            }
+            return found ? names : null;
+        } catch (Exception unreadable) { return null; }
+    }
+    static int distance(String a, String b) {
+        int[] previous = new int[b.length() + 1], current = new int[b.length() + 1];
+        for (int j = 0; j <= b.length(); j++) previous[j] = j;
+        for (int i = 1; i <= a.length(); i++) {
+            current[0] = i;
+            for (int j = 1; j <= b.length(); j++) current[j] = Math.min(Math.min(current[j - 1] + 1, previous[j] + 1), previous[j - 1] + (a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1));
+            int[] swap = previous; previous = current; current = swap;
+        }
+        return previous[b.length()];
+    }
     List<String> memberLines(String owner, String name, List<String> imports, String workingName, Index working, String failingName, Index failing) {
         String jdk = jdkClass(owner, imports);
-        if (jdk != null) return List.of("JDK  " + jdk + "." + (name.equals("<init>") ? "<init>" : name) + " is Java's, not a jar's: if it builds on " + workingName
-                + ", it's likely newer than the Java release " + failingName + " compiles for.");
+        if (jdk != null) {
+            int release = 0;
+            for (Object item : Json.array(model.getOrDefault("projects", List.of()))) for (Object compile : Json.array(Json.object(item).getOrDefault("compile", List.of()))) {
+                try { release = Math.max(release, Integer.parseInt(String.valueOf(Json.object(compile).get("release")).replace("1.", ""))); } catch (NumberFormatException unknown) { }
+            }
+            // Only a JDK at least as new as the build's release can say a member does not exist there: the one the build compiles with, else this runtime.
+            java.nio.file.Path home = null;
+            for (Object item : Json.array(model.getOrDefault("projects", List.of()))) for (Object compile : Json.array(Json.object(item).getOrDefault("compile", List.of())))
+                if (home == null && Json.object(compile).get("compiler") instanceof String compiler && !compiler.isBlank()) {
+                    java.nio.file.Path candidate = java.nio.file.Path.of(compiler).getParent(); if (candidate != null) candidate = candidate.getParent();
+                    if (candidate != null && java.nio.file.Files.isDirectory(candidate.resolve("lib"))) home = candidate;
+                }
+            List<String> similar = home != null ? jdkSimilar(jdk, name, home) : Runtime.version().feature() >= release ? jdkSimilar(jdk, name) : null;
+            String where = home != null ? "the JDK this build compiles with (" + home + ")" : "Java " + Runtime.version().feature() + " (this modaccel's runtime)";
+            if (similar != null) return List.of("JDK  " + jdk + " has no member named " + name + " in " + where
+                    + ", so it is not a version difference: check the spelling." + (similar.isEmpty() ? "" : " Similar: " + String.join(", ", similar)));
+            return List.of("JDK  " + jdk + "." + (name.equals("<init>") ? "<init>" : name) + " is Java's, not a jar's: if it builds on " + workingName
+                    + ", it's likely newer than the Java release " + failingName + " compiles for.");
+        }
         List<String> out = new ArrayList<>();
         for (String[] side : List.of(new String[] {workingName, "w"}, new String[] {failingName, "f"})) {
             Index index = side[1].equals("w") ? working : failing;
@@ -420,7 +494,39 @@ final class Explain {
             for (String word : name.split("(?<=[a-z0-9])(?=[A-Z])|_|(?<=[A-Z])(?=[A-Z][a-z])")) if (!word.isEmpty()) words.add(word.toLowerCase(Locale.ROOT));
             return words;
         }
-        static int distance(String a, String b) {
+        static Set<String> runtimeMembers(String className) {
+        Class<?> type;
+        try { type = Class.forName(className, false, ClassLoader.getPlatformClassLoader()); } catch (ClassNotFoundException | LinkageError unknown) { return null; }
+        Set<String> names = new TreeSet<>();
+        try {
+            for (var method : type.getMethods()) names.add(method.getName());
+            for (var field : type.getFields()) names.add(field.getName());
+            for (var method : type.getDeclaredMethods()) names.add(method.getName());
+        } catch (LinkageError unreadable) { return null; }
+        return names;
+    }
+    /** Member names of a JDK class and its supertypes, read from another JDK's own modules image. Null when it cannot be read. */
+    static Set<String> jdkMembers(java.nio.file.Path javaHome, String className) {
+        try (var image = java.nio.file.FileSystems.newFileSystem(java.net.URI.create("jrt:/"), Map.of("java.home", javaHome.toString()))) {
+            Set<String> names = new TreeSet<>(); Deque<String> pending = new ArrayDeque<>(List.of(className.replace('.', '/'))); Set<String> seen = new HashSet<>();
+            boolean found = false;
+            while (!pending.isEmpty()) {
+                String internal = pending.pop(); if (!seen.add(internal)) continue;
+                java.nio.file.Path file = null;
+                try (var modules = java.nio.file.Files.list(image.getPath("/modules"))) {
+                    for (var module : modules.toList()) if (java.nio.file.Files.isRegularFile(module.resolve(internal + ".class"))) { file = module.resolve(internal + ".class"); break; }
+                }
+                if (file == null) continue;
+                found = true;
+                ClassInfo info = Index.parse(java.nio.file.Files.readAllBytes(file));
+                for (Member member : info.members()) names.add(member.name());
+                if (info.superName() != null) pending.add(info.superName());
+                pending.addAll(info.interfaces());
+            }
+            return found ? names : null;
+        } catch (Exception unreadable) { return null; }
+    }
+    static int distance(String a, String b) {
             int[] previous = new int[b.length() + 1], current = new int[b.length() + 1];
             for (int j = 0; j <= b.length(); j++) previous[j] = j;
             for (int i = 1; i <= a.length(); i++) {
