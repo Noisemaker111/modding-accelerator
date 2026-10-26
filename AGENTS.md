@@ -1,6 +1,6 @@
 # Modding Accelerator
 
-Rules for every agent: `C:\Users\Jk101\.config\opencode-normal\AGENTS.md`. This file holds only what is specific to this repo.
+This file holds only what is specific to this project.
 
 ## Goal
 
