@@ -161,9 +161,34 @@ gradle.afterProject { p ->
         p.tasks.register('modaccelPure', Test) {
             testClassesDirs = sets.test.output.classesDirs
             classpath = sets.test.runtimeClasspath
-            useJUnitPlatform { includeTags 'pure'; includeEngines 'junit-jupiter' }
+            // modaccel.allTests is set by FastLane when no game or loader is on the test classpath (plain Java, server plugins).
+            useJUnitPlatform { if (System.getProperty('modaccel.allTests', '') != 'true') includeTags 'pure'; includeEngines 'junit-jupiter' }
             outputs.upToDateWhen { false }
+            // FastLane reports an empty run itself, with the reason; Gradle 9's own failure would only add a tail.
+            if (delegate.hasProperty('failOnNoDiscoveredTests')) failOnNoDiscoveredTests = false
             testLogging { events 'passed', 'failed', 'skipped' }
+        }
+    }
+    // plugin-check: build the plugin's jar with its own task and resolve MockBukkit with the plugin's Paper API
+    // in a detached configuration, so the build's own configurations are never changed. Off unless asked for.
+    def pluginSpec = System.getProperty('modaccel.pluginCheck', '')
+    if (pluginSpec && !p.tasks.findByName('modaccelPluginClasspath')) {
+        def spec = new JsonSlurper().parse(new File(pluginSpec))
+        def urls = p.repositories.withType(org.gradle.api.artifacts.repositories.MavenArtifactRepository).collect { it.url.toString().replaceAll('/+$', '') }
+        // MockBukkit and its libraries are on Maven Central, the Paper API on PaperMC's repository.
+        if (!urls.any { it.contains('repo.maven.apache.org') || it.contains('repo1.maven.org') }) p.repositories.mavenCentral()
+        if (!urls.any { it.contains('repo.papermc.io') }) p.repositories.maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+        def jarName = spec.jarTask ? spec.jarTask.toString().replaceAll('^.*:', '') : ['shadowJar', 'reobfJar', 'jar'].find { p.tasks.findByName(it) != null }
+        p.tasks.register('modaccelPluginClasspath') {
+            if (jarName) dependsOn jarName
+            outputs.upToDateWhen { false }
+            doLast {
+                def jar = jarName ? p.tasks.getByName(jarName) : null
+                def archive = jar == null ? null : jar.hasProperty('archiveFile') ? jar.archiveFile.get().asFile : jar.outputs.files.files.find { it.name.endsWith('.jar') }
+                def deps = spec.coordinates.collect { p.dependencies.create(it) }
+                def config = p.configurations.detachedConfiguration(deps as org.gradle.api.artifacts.Dependency[])
+                new File(spec.output.toString()).text = JsonOutput.toJson([jar: archive?.absolutePath, jarTask: jar?.path, files: config.resolve().collect { it.absolutePath }])
+            }
         }
     }
     // A cached test task is build evidence, not a fresh logic check.

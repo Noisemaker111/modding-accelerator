@@ -35,6 +35,11 @@ final class Port {
         // --direct keeps the one-jump map (A -> B joined in one diff); an explicit --map is used as given.
         route = options.has("direct") || options.values.containsKey("map") ? null : Route.plan(build.harness, from, to);
         Set<String> actual = versions(model);
+        PluginCheck.Api plugin = actual.isEmpty() ? PluginCheck.api(model) : null;
+        if (plugin != null)
+            throw new IllegalArgumentException("This is a server plugin: it builds against " + plugin.kind() + " " + plugin.version() + " (Paper " + PluginCheck.line(plugin.version()) + "), not a mod. "
+                    + "port does not move plugins between Paper versions yet. The move is usually config only: the " + plugin.kind() + " version in the build script, api-version in plugin.yml, "
+                    + "and the Java version (Paper 1.21.x runs on Java 21, 26.x on Java 25). Then modaccel compile --task :jar and modaccel plugin-check show whether it builds and enables. Nothing was changed.");
         if (!actual.equals(Set.of(to)) && !actual.equals(Set.of(from))) {
             String builds = actual.isEmpty() ? "no Minecraft version modaccel could read" : "Minecraft " + String.join(", ", actual);
             throw new IllegalArgumentException("--from " + from + " does not match this project: it builds for " + builds + ". "

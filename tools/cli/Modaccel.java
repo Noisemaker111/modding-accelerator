@@ -35,7 +35,7 @@ public final class Modaccel {
                 if (switches.contains(key)) flags.add(key);
                 // --undo with no transaction undoes the newest port.
                 else if (key.equals("undo") && (i + 1 == args.length || args[i + 1].startsWith("--"))) values.put(key, "latest");
-                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only").contains(key)) {
+                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only", "plugins").contains(key)) {
                     if (++i == args.length || args[i].startsWith("--")) throw new IllegalArgumentException("Missing value for --" + key);
                     values.put(key, args[i]);
                 } else throw new IllegalArgumentException("Unknown option --" + key + ". Run modaccel help" + (command.equals("help") ? "" : " " + command) + " for the options it takes.");
@@ -50,7 +50,7 @@ public final class Modaccel {
         String get(String key, String fallback) { return values.getOrDefault(key, fallback); }
         boolean has(String key) { return flags.contains(key); }
     }
-    static final Set<String> COMMANDS = Set.of("support", "discover", "doctor", "setup", "compile", "fast", "test", "port", "explain", "dependencies", "mixin-check",
+    static final Set<String> COMMANDS = Set.of("support", "discover", "doctor", "setup", "compile", "fast", "test", "port", "explain", "dependencies", "mixin-check", "plugin-check",
             "ui-check", "world-check", "mp-check", "eval", "reload", "game-status", "game-stop", "package", "self-test", "help");
     public static void main(String[] args) {
         int exit = 2; Options options = null; Report report = null; ProjectLock lock = null;
@@ -114,6 +114,7 @@ public final class Modaccel {
                             if (!optional.isEmpty() && !(result.get("optional") instanceof List<?> seen && !seen.isEmpty())) { result.put("details", result.get("details") + "\n" + optional); if (result.get("reason") != null) result.put("reason", result.get("reason") + "\n" + optional); }
                         }
                     }
+                    case "plugin-check" -> { result = new PluginCheck(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "dependencies" -> { result = new Port(build, model).dependencies(options); exit = Boolean.TRUE.equals(result.get("ready")) ? 0 : 1; }
                     case "compile", "test" -> {
                         String name = options.command.equals("compile") ? "classes" : options.command.equals("test") ? "test" : "modaccelPure";
@@ -291,6 +292,13 @@ public final class Modaccel {
                     + "Every class the mod's mixin configs target is loaded, so Mixin applies the mixins; nothing opens a window or a world. Mixin's debug\n"
                     + "injector check is on, so an injection that matches fewer places than it expects is reported as dead. Each finding is Mixin's own message,\n"
                     + "with the mixin's source file. Exit 1 when a mixin would stop the game or is dead; --refresh records the launch again.";
+            case "plugin-check" -> "Load and enable a Paper/Bukkit plugin on MockBukkit, a fake Paper server, without a real server: modaccel plugin-check --root SOURCE [--project :module] [--task :shadowJar] [--plugins FOLDER] --json\n"
+                    + "The plugin's own jar task builds the jar (shadowJar, reobfJar or jar; --task picks another). MockBukkit for the plugin's Paper API line\n"
+                    + "(knowledge/mockbukkit.json) loads that jar in a fresh JVM, the way Paper does, and checks: plugin.yml / paper-plugin.yml parses and its\n"
+                    + "api-version is not newer than the server; the main class loads and onLoad, onEnable, 100 ticks of its tasks and onDisable run without\n"
+                    + "an exception; every plugin.yml command has a handler; every declared permission registers; every registered listener's handlers are\n"
+                    + "valid; hard dependencies are present (put their jars in --plugins FOLDER). Failures name the file and line. Code through server\n"
+                    + "internals (net.minecraft, CraftBukkit) or API MockBukkit lacks is reported unchecked, never passed. Exit 1 on a failure or anything unchecked.";
             case "dependencies" -> "Report target dependencies without editing: modaccel dependencies --root SOURCE --to 1.21.6 [--selection FILE] --json\nEach non-loader dependency is resolved, explicitly selected, or blocked with the selection entry to add in .modaccel/dependencies.json.";
             case "ui-check" -> "Capture the target client: modaccel ui-check --root SOURCE --screen net.minecraft.client.gui.screen.TitleScreen --json\nInspect the receipt's framebuffer capture; add --assert METHOD for behavior checks, or --expect-change PERCENT to require the action to visibly change the frame.\n"
                     + "--screen opens a new instance of that screen; leave it out to capture what the running client shows now.\n"
@@ -310,7 +318,8 @@ public final class Modaccel {
                     + "members. Leading import lines are allowed. Start the game first with ui-check or world-check.";
             case "world-check" -> "Check a loaded save: modaccel world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.";
             case "fast", "test" -> "Run the mod's logic tests without the game: modaccel fast --root SOURCE [--project :module]\n"
-                    + "fast runs JUnit 5 tests tagged @Tag(\"pure\") (tests that never touch a Minecraft class), reusing compiled code when nothing changed;\n"
+                    + "fast runs JUnit 5 tests, reusing compiled code when nothing changed. With no Minecraft or loader on the test classpath\n"
+                    + "(plain Java, a Paper/Bukkit plugin) every test runs; with Minecraft present only tests tagged @Tag(\"pure\") run.\n"
                     + "test runs the project's whole test task. Both fail when no test ran, and check the mod's resources and metadata afterwards.\n"
                     + "The build needs JUnit: testImplementation(\"org.junit.jupiter:junit-jupiter:5.11.4\") and testRuntimeOnly(\"org.junit.platform:junit-platform-launcher:1.11.4\").";
             case "compile" -> "Compile the mod and check what the game reads at start-up: modaccel compile --root SOURCE [--project :module]\n"
@@ -318,7 +327,9 @@ public final class Modaccel {
                     + "pack.mcmeta), a fabric.mod.json Fabric's strict reader refuses or with an invalid id, an invalid mods.toml id, a missing\n"
                     + "mixin config, a missing class in a \"required\" mixin config, a missing entrypoint or access widener. Anything that depends on\n"
                     + "the game version or on how the jar is assembled, JSON nothing in the game reads, a MOD_ID that differs from the metadata,\n"
-                    + "and items made by a recipe without a translation or model are warnings.";
+                    + "and items made by a recipe without a translation or model are warnings.\n"
+                    + "Build a jar with the project's own task: modaccel compile --root SOURCE --task :jar. That is the build path for\n"
+                    + "Paper/Bukkit plugins (the jar lands in build/libs); then modaccel plugin-check loads it.";
             default -> "modaccel <command> --root SOURCE [--project :module] [--json]\n"
                     + "  support                what works today        discover, doctor   what kind of build this is\n"
                     + "  setup                  evaluate the build      compile            compile + resource/metadata checks\n"
@@ -326,6 +337,7 @@ public final class Modaccel {
                     + "  port                   move to another version explain            explain compiler errors\n"
                     + "  dependencies           target dependencies     ui-check, world-check, mp-check   real game checks\n"
                     + "  eval, reload           talk to the running game          game-status, game-stop\n"
+                    + "  plugin-check           Paper/Bukkit plugin on a fake Paper server (MockBukkit), no real server\n"
                     + "  package, self-test     build or test modaccel itself\n"
                     + "Run modaccel help COMMAND for one command (port, fast, compile, mixin-check, explain, ui-check, eval, reload ...).\n"
                     + "--root is the mod's Gradle source checkout (the folder with gradlew); a multi-version build needs --project, e.g. --project :1.21.6.";

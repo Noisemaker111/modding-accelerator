@@ -5,7 +5,10 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/** Real two-module gate: a cached pure run must never hide a class with the same name in another module. */
+/**
+ * Real FastLane gate. Two modules: a cached pure run must never hide a class with the same name in another module.
+ * A plain project (no game on the test classpath): every test runs untagged, and an empty run says why.
+ */
 public final class FastLaneIsolationTest {
     record Run(int exit, String output) { }
 
@@ -41,6 +44,36 @@ public final class FastLaneIsolationTest {
         Files.writeString(b, test("fromB", true));
         require(run(home, jar, root), 0, 2, 0, "restored module B");
         System.out.println("PASS FastLane module isolation; fixture " + root);
+        plain(home, jar, runs);
+    }
+
+    /** No Minecraft on the test classpath: untagged tests run on the Gradle and the reuse path; zero tests is explained. */
+    static void plain(Path home, Path jar, Path runs) throws Exception {
+        Path root = Files.createTempDirectory(runs, "fastlane-plain-");
+        Path wrapper = root.resolve("gradle/wrapper"); Files.createDirectories(wrapper);
+        Files.copy(home.resolve("gradle/wrapper/gradle-wrapper.jar"), wrapper.resolve("gradle-wrapper.jar"));
+        Files.copy(home.resolve("gradle/wrapper/gradle-wrapper.properties"), wrapper.resolve("gradle-wrapper.properties"));
+        Files.writeString(root.resolve("settings.gradle"), "rootProject.name = 'fastlane-plain'\n");
+        Files.writeString(root.resolve("build.gradle"), """
+                apply plugin: 'java'
+                repositories { mavenCentral() }
+                dependencies {
+                    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+                    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+                }
+                tasks.withType(Test).configureEach { useJUnitPlatform() }
+                """);
+        Path test = root.resolve("src/test/java/plain/PlainTest.java"); Files.createDirectories(test.getParent());
+        Files.writeString(test, "package plain; import org.junit.jupiter.api.Test; import static org.junit.jupiter.api.Assertions.*; "
+                + "class PlainTest { @Test void one() { assertEquals(2, 1 + 1); } @Test void two() { assertTrue(true); } }\n");
+        Run cold = run(home, jar, root); require(cold, 0, 2, 0, "plain project, untagged tests, cold");
+        if (!cold.output().contains("no Minecraft or loader on the test classpath")) throw new AssertionError("plain project did not select every test\n" + cold.output());
+        require(run(home, jar, root), 0, 2, 0, "plain project, untagged tests, warm");
+        Files.writeString(test, "package plain; class PlainTest { }\n");
+        Run empty = run(home, jar, root);
+        if (empty.exit() != 1 || !empty.output().contains("Check that they are JUnit 5 tests") || empty.output().contains("No successful logic check"))
+            throw new AssertionError("an empty run must say why; got exit " + empty.exit() + "\n" + empty.output());
+        System.out.println("PASS plain project with no tests says so instead of a Gradle tail");
     }
 
     static String test(String name, boolean pass) {
