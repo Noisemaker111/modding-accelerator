@@ -81,11 +81,36 @@ gradle.afterProject { p ->
                      encoding: t.options.encoding ?: 'UTF-8', compiler: compiler,
                      arguments: t.options.compilerArgs, processors: t.options.annotationProcessorPath?.files?.collect { it.absolutePath } ?: []]
                 }
+                // A runtime file that cannot be downloaded (ForgeGradle on Apple silicon asks Maven Central
+                // for lwjgl-freetype natives-macos-patch, which only Mojang hosts) must not stop setup or a
+                // compile, which never read it. Keep what resolved and name what did not, so a launch or a
+                // test run that needs the full runtime can refuse with the real coordinate.
+                def runtimeOf = { s ->
+                    if (planning) return [files: [], unresolved: []]
+                    try {
+                        return [files: s.runtimeClasspath.files.collect { it.absolutePath }, unresolved: []]
+                    } catch (Exception failure) {
+                        def config = p.configurations.findByName(s.runtimeClasspathConfigurationName)
+                        def view = config?.incoming?.artifactView { lenient = true }
+                        def files = (s.output.files.toList() + (view ? view.files.files.toList() : [])).collect { it.absolutePath }.unique()
+                        def unresolved = []
+                        view?.artifacts?.failures?.each { f -> unresolved << (f.message ?: f.toString()) }
+                        if (!unresolved) {
+                            def cause = failure
+                            while (cause.cause != null && cause.cause != cause) cause = cause.cause
+                            unresolved << (cause.message ?: failure.message ?: failure.toString())
+                        }
+                        return [files: files, unresolved: unresolved.unique()]
+                    }
+                }
                 def sourceSets = sets ? sets.toList().collect { s ->
-                    [name: s.name, sources: s.allSource.srcDirs.collect { it.absolutePath },
+                    def runtime = runtimeOf(s)
+                    def set = [name: s.name, sources: s.allSource.srcDirs.collect { it.absolutePath },
                      java: s.java.srcDirs.collect { it.absolutePath }, resources: s.resources.srcDirs.collect { it.absolutePath },
                      classesTask: s.classesTaskName,
-                     runtime: planning ? [] : s.runtimeClasspath.files.collect { it.absolutePath }, output: s.output.files.collect { it.absolutePath }]
+                     runtime: runtime.files, output: s.output.files.collect { it.absolutePath }]
+                    if (runtime.unresolved) set.runtimeUnresolved = runtime.unresolved
+                    set
                 } : []
                 // NeoGradle adds dependencies to live configurations while they resolve; snapshot first.
                 def configurations = p.configurations.toList()
