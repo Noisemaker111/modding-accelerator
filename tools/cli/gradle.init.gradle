@@ -10,7 +10,9 @@ gradle.projectsEvaluated {
     def state = new File(root.projectDir, '.modaccel/portable')
     def selected = System.getProperty('modaccel.project', '')
     def planning = System.getProperty('modaccel.metadataMode', '') == 'plan'
-    def targetProjects = root.allprojects.findAll { !selected || it.path == selected }
+    // explain names two projects, the one that fails and one that builds, separated by a comma.
+    def selectedPaths = selected ? selected.split(',')*.trim() : []
+    def targetProjects = root.allprojects.findAll { !selected || it.path in selectedPaths }
     if (selected && !targetProjects) throw new GradleException("No project ${selected}; available projects: ${root.allprojects*.path}")
     def launchDirectory = { p, t ->
         def directory = t.workingDir
