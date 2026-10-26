@@ -35,8 +35,33 @@ final class Build {
                 "-Dorg.gradle.daemon.registry.base=" + daemons()), project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log("stop-daemons"), 120);
         report.stage("stop-daemons", result, Json.map("registry", daemons().toString())); return result;
     }
+    static final int WARM_TIMEOUT = 900, COLD_TIMEOUT = 2700;
+    static final String TIMEOUT_VARIABLE = "MODACCEL_GRADLE_TIMEOUT";
+    /** No evaluated model yet: Gradle may still download the game, mappings and every dependency. */
+    boolean coldSetup() {
+        return !Files.isRegularFile(project.state().resolve("model.json")) && !Files.isRegularFile(project.state().resolve("plan-model.json"));
+    }
+    /** Seconds one Gradle invocation may take: MODACCEL_GRADLE_TIMEOUT when set, else longer for a cold first setup. */
+    static int gradleTimeout(boolean cold, String configured) {
+        if (configured != null && !configured.isBlank()) {
+            try { int seconds = Integer.parseInt(configured.strip()); if (seconds > 0) return seconds; }
+            catch (NumberFormatException invalid) { }
+            throw new IllegalArgumentException(TIMEOUT_VARIABLE + " must be a whole number of seconds above 0; got " + configured);
+        }
+        return cold ? COLD_TIMEOUT : WARM_TIMEOUT;
+    }
+    static String timeoutMessage(int seconds, boolean cold, Path log) {
+        return "Gradle stopped at modaccel's " + seconds + " s limit for " + (cold ? "a cold first setup (no evaluated build yet, so Gradle was still downloading and preparing the game and dependencies)" : "one build step")
+                + ". Nothing is wrong with the project yet; it was cut off. Raise the limit with the " + TIMEOUT_VARIABLE + " environment variable (seconds), for example "
+                + TIMEOUT_VARIABLE + "=" + seconds * 2 + ", then rerun; a warm rerun reuses what was downloaded.\nLog: " + log;
+    }
+    Run.Result timed(List<String> command, String stage) throws Exception {
+        boolean cold = coldSetup(); int seconds = gradleTimeout(cold, System.getenv(TIMEOUT_VARIABLE));
+        try { return Run.command(command, project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log(stage), seconds); }
+        catch (Run.Timeout timeout) { throw new IOException(timeoutMessage(timeout.seconds, cold, timeout.log), timeout); }
+    }
     Run.Result gradle(List<String> arguments, String stage) throws Exception {
-        Run.Result result = Run.command(command(arguments), project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log(stage), 900);
+        Run.Result result = timed(command(arguments), stage);
         report.stage(stage, result, Json.map("java", jdk.version(), "gradle", project.wrapperVersion())); return result;
     }
     /**
@@ -50,7 +75,7 @@ final class Build {
         command.replaceAll(argument -> argument.equals("--no-configuration-cache") ? "--configuration-cache" : argument);
         // modaccel's own invocations need every selected project configured; a compile doesn't.
         command.removeIf(argument -> argument.startsWith("-Dmodaccel.") || argument.equals("-Dfabric.loom.ci=true") || argument.equals("--no-configure-on-demand"));
-        Run.Result result = Run.command(command, project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log(stage), 900);
+        Run.Result result = timed(command, stage);
         report.stage(stage, result, Json.map("java", jdk.version(), "gradle", project.wrapperVersion(), "configurationCache", true)); return result;
     }
     List<String> command(List<String> arguments) throws IOException {
@@ -101,7 +126,7 @@ final class Build {
             }
         }
         Run.Result result = gradle(planning ? List.of("-Dmodaccel.metadataMode=plan", "modaccelMetadata") : List.of("modaccelMetadata"), planning ? "metadata-plan" : "metadata");
-        if (result.exit() != 0) throw new IOException("Build discovery failed. " + Run.tail(result.log()) + "\nLog: " + result.log());
+        if (result.exit() != 0) throw new IOException("Build discovery failed. " + Run.gradleFailure(result.log()) + "\nLog: " + result.log());
         Map<String, Object> value = Json.read(model);
         Json.save(stamp, Json.map("key", key, "at", System.currentTimeMillis())); return value;
     }

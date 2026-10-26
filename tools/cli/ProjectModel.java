@@ -10,7 +10,18 @@ import java.util.regex.*;
 public final class ProjectModel {
     static final Set<String> IGNORED = Set.of(".git", ".gradle", ".modaccel", ".runs", ".tools", "build", "out", "node_modules", ".idea");
     final Path root;
-    ProjectModel(Path root) throws IOException { this.root = root.toRealPath(); }
+    ProjectModel(Path root) throws IOException {
+        if (!Files.exists(root)) throw new IOException("--root " + root.toAbsolutePath().normalize() + " does not exist. Pass the mod's Gradle source folder, the one with build.gradle or settings.gradle.");
+        if (!Files.isDirectory(root)) throw new IOException("--root " + root.toAbsolutePath().normalize() + " is a file, not a folder. Pass the mod's Gradle source folder, the one with build.gradle or settings.gradle.");
+        this.root = root.toRealPath();
+    }
+    static final List<String> BUILD_FILES = List.of("settings.gradle", "settings.gradle.kts", "build.gradle", "build.gradle.kts");
+    /** A folder that holds no Gradle build fails here, plainly, instead of deep inside discovery or Gradle. */
+    void requireGradleBuild() throws IOException {
+        for (String name : BUILD_FILES) if (Files.isRegularFile(root.resolve(name))) return;
+        throw new IOException("No Gradle build in " + root + ": none of " + String.join(", ", BUILD_FILES) + " is there. "
+                + "Pass --root with the mod's source checkout (the folder that holds its Gradle wrapper and build script), not a parent folder or a compiled JAR.");
+    }
     Path state() { return root.resolve(".modaccel/portable"); }
     String wrapperVersion() throws IOException {
         Path props = root.resolve("gradle/wrapper/gradle-wrapper.properties");
@@ -68,6 +79,32 @@ public final class ProjectModel {
         int result = 0;
         while (matcher.find()) result = Math.max(result, javaNumber(matcher.group(1)));
         return result;
+    }
+    /**
+     * The Fabric Loom version the build applies, read from its own files: a loom_version-style property,
+     * a plugins { id "fabric-loom" version ... } line, or a version catalog entry. "" when it is not stated plainly.
+     */
+    String loomVersion() throws IOException {
+        Properties props = properties(root.resolve("gradle.properties"));
+        String version = loomVersion(props, inputs().stream().map(file -> { try { return read(file); } catch (IOException unreadable) { return ""; } }).toList());
+        return version;
+    }
+    static String loomVersion(Properties props, List<String> scripts) {
+        for (String key : List.of("loom_version", "loomVersion", "fabric_loom_version")) if (!props.getProperty(key, "").isBlank()) return props.getProperty(key).strip();
+        Pattern plugin = Pattern.compile("id\\s*\\(?\\s*[\"'](?:fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?)[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"']([^\"']+)[\"']");
+        Pattern catalog = Pattern.compile("(?m)^\\s*(?:fabric-)?loom\\s*=\\s*\"([^\"]+)\"");
+        for (String script : scripts) {
+            Matcher found = plugin.matcher(script);
+            if (found.find()) {
+                String value = found.group(1);
+                Matcher property = Pattern.compile("^\\$\\{?(?:project\\.)?([A-Za-z_][A-Za-z0-9_]*)\\}?$").matcher(value);
+                if (property.find()) value = props.getProperty(property.group(1), "");
+                if (!value.isBlank() && !value.contains("$")) return value.strip();
+            }
+            found = catalog.matcher(script);
+            if (found.find()) return found.group(1).strip();
+        }
+        return "";
     }
     private static int javaNumber(String value) {
         if (value == null || !value.trim().matches("(?:1[._])?\\d{1,2}")) return 0;

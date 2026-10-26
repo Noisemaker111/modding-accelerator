@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased: hardening pass
+
+modaccel no longer fails, stops or passes without saying why.
+
+- **Port tool fixes from the five-mod trial** (PR #1, adapted): static `@Inject` handlers on
+  static targets pass the mixin audit; a compile-only integration with no target release is
+  kept instead of blocking; a dependency release built by a newer Loom than the project's is
+  skipped for one it can read; Modrinth's shared multi-loader version numbers use the exact
+  version id (Serene Seasons resolved to the Forge jar); `fabric.mod.json` keeps its layout and
+  only `depends.minecraft` changes, and the packaged manifest is read back; the ui-check frame
+  hook no longer crashes clients without Fabric API; the client agent can report which mods
+  loaded and waits past the title fade.
+- **A missing dependency names itself.** Gradle's "What went wrong" block is shown with every
+  coordinate it could not resolve and the hosts it searched.
+- **The mixin audit never passes on nothing.** A port with mixins but no game jar fails with
+  the reason; a mod with no mixins says "no mixins to audit"; targets in no jar are counted.
+- **Undo of an interrupted port** refuses, restores nothing and names the changed files and
+  the backup folder. The restore plan is written before the first edit.
+- **A port that fails for a non-compiler reason** says so with Gradle's failure block instead
+  of "0 compiler errors remain ... semantic migration".
+- **NeoForge mod dependencies** are listed as unchecked in the port and dependencies results.
+- **mp-check's dedicated server** records the real server pid (the process on its port) and,
+  when it dies, its exit code, crash report summary and log.
+- **Dependency lookups** keep the real network error and the repositories tried instead of
+  "not published"; Modrinth full releases are preferred over newer betas, and a beta that is
+  the only choice is named in the result.
+- **A bad `--root`** or a folder without a Gradle build gets a plain message.
+- **Gradle timeouts** name the limit and whether it was a cold first setup (now 45 min; warm
+  steps keep 15 min); `MODACCEL_GRADLE_TIMEOUT` raises it.
+
 ## 0.1.0-beta.1 - 2026-10-24
 
 First published beta. It is a Gradle source-checkout tool: point it at a mod project, name the
