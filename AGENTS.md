@@ -9,7 +9,7 @@ Anyone brings an unfamiliar mod source project (a Gradle checkout; compiled JARs
 ## Where the truth is
 
 - `ROADMAP.md` holds the phases and numbered steps. Only statuses there are claims; update it when a step changes. `README.md` is the public goal and support table; `PLAN.md` the evidence behind the steps.
-- `coverage/ledger.json` records port runs. A run that is not in the ledger did not happen. `python bench/progress.py` renders it to `docs/index.html` (the bench page). After any port run, or any change to the rules or the router, record it in the ledger and regenerate `docs/index.html` and `docs/porting-map.html` in the same change, so a hop turns green only once a port on it has been seen working.
+- `coverage/ledger.json` records port runs. A run that is not in the ledger did not happen. `python bench/progress.py` renders it to `docs/index.html` (the bench page). After any port run, or any change to the rules or the router, record it in the ledger in the same change, so a hop turns green only once a port on it has been seen working. Regenerate `docs/index.html` and `docs/porting-map.html` only in the final commit before a milestone merge (see "Branches and PRs").
 - `coverage/changes/` is the change index (every neighbouring-release diff 1.14.4 → 26.3 in Mojang names) and its `index.json` the families, hubs, rule coverage and best ledger run. Refresh: `java tools/ChangeIndex.java`, `python bench/change_routes.py`, `python bench/porting_map.py`.
 - Rules mined from Stonecutter mods are the `source: "stonecutter"` rules in `knowledge/fixes.json`; regenerate with `python bench/stonecutter_mine.py extract` then `python bench/stonecutter_rules.py`.
 - Trial trees live under `.runs/beta-trials/`; logs under `.runs/logs`, history in `.runs/index.jsonl`.
@@ -24,6 +24,7 @@ Run builds and game launches through modaccel, never raw Gradle or a manual laun
 
 - One PR per feature or support area (e.g. "Paper plugin support", "Porting"), not one per step. Keep it a draft and add commits as steps land; the PR body is the checklist.
 - Merge when it reaches a milestone worth shipping (a new rung on SCOPE.md's ladder, or a big porting jump such as every 1.14 mod reaching 1.16), with Jon's approval and CI green on all 3 OS.
+- PR CI finishes in under 5 minutes on every OS. A check that is slower runs nightly or on demand, not on the PR.
 - Porting work goes on one long-running branch, `porting`, merged at those jumps.
 - Small fixes outside any feature may go in one hardening/fixes PR at a time.
 - Every port run gets its ledger row in that branch. Regenerate `docs/index.html` and `docs/porting-map.html` once, in the final commit before merge, so the site changes only when a milestone lands.
