@@ -53,6 +53,9 @@ jobs:
       - name: Multi-module FastLane isolation
         working-directory: portable workspace
         run: java tools/tests/FastLaneIsolationTest.java . build/distributions/modaccel.jar
+      - name: Runtime-only file that does not download
+        working-directory: portable workspace
+        run: java tools/tests/RuntimeNativesTest.java . build/distributions/modaccel.jar
       - name: Port rewrites before compilation
         working-directory: portable workspace
         run: |
