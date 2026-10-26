@@ -5,7 +5,7 @@ import java.util.jar.*;
 import java.util.zip.*;
 
 final class Installation {
-    static final List<String> RESOURCES = List.of("tools/cli/gradle.init.gradle", "tools/cli/Json.java", "tools/cli/Relocate.java", "tools/agent/PortableAgent.java", "tools/agent/Console.java", "tools/agent/HotReload.java", "tools/runner/PureTests.java",
+    static final List<String> RESOURCES = List.of("tools/cli/gradle.init.gradle", "tools/cli/Json.java", "tools/cli/Relocate.java", "tools/cli/QuietOptions.java", "tools/agent/PortableAgent.java", "tools/agent/Console.java", "tools/agent/HotReload.java", "tools/runner/PureTests.java",
             "tools/VersionMap.java", "tools/MixinAudit.java", "tools/tests/PortableTests.java", "tools/tests/JdkDownloadsTest.java", "tools/tests/DependenciesTest.java", "tools/tests/FabricMetadataTest.java", "knowledge/fixes.json", "knowledge/structural.json", "knowledge/port-corpus.json");
     static Path home() throws Exception {
         Path location = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI());

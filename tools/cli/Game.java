@@ -268,7 +268,7 @@ final class Game {
     String fingerprint() throws Exception {
         return Fingerprints.bytes((Fingerprints.build(model, build.project, build.init) + Fingerprints.files(List.of(
                 build.harness.resolve("tools/agent/PortableAgent.java"), build.harness.resolve("tools/agent/Console.java"), build.harness.resolve("tools/agent/HotReload.java"), build.harness.resolve("tools/cli/Json.java"),
-                build.harness.resolve("tools/cli/Relocate.java")))).getBytes(StandardCharsets.UTF_8));
+                build.harness.resolve("tools/cli/Relocate.java"), build.harness.resolve("tools/cli/QuietOptions.java")))).getBytes(StandardCharsets.UTF_8));
     }
     private static void verifyWorld(Map<String, Object> status, Path expected) throws Exception {
         if (!Boolean.TRUE.equals(status.get("integratedServer"))) throw new IOException("Expected an integrated world; client is connected elsewhere");
@@ -444,13 +444,13 @@ final class Game {
         Path asm = null;
         for (String path : jars) if (Path.of(path).getFileName().toString().matches("asm-[0-9].*\\.jar")) { asm = Path.of(path); break; }
         if (asm == null) throw new IOException("No ASM library in the actual build classpath; this client cannot use the portable agent yet.");
-        Path source = build.harness.resolve("tools/agent/PortableAgent.java"), console = build.harness.resolve("tools/agent/Console.java"), reload = build.harness.resolve("tools/agent/HotReload.java"), json = build.harness.resolve("tools/cli/Json.java");
-        String key = Fingerprints.files(List.of(source, console, reload, json, asm, build.harness.resolve("tools/cli/Relocate.java"))) + "-private-asm-redefine";
+        Path source = build.harness.resolve("tools/agent/PortableAgent.java"), console = build.harness.resolve("tools/agent/Console.java"), reload = build.harness.resolve("tools/agent/HotReload.java"), json = build.harness.resolve("tools/cli/Json.java"), quiet = build.harness.resolve("tools/cli/QuietOptions.java");
+        String key = Fingerprints.files(List.of(source, console, reload, json, quiet, asm, build.harness.resolve("tools/cli/Relocate.java"))) + "-private-asm-redefine";
         Path dir = build.project.state().resolve("agent/" + key); Files.createDirectories(dir);
         Path jar = dir.resolve("modaccel-agent.jar"); if (Files.exists(jar)) return jar;
         Path classes = dir.resolve("classes"); Files.createDirectories(classes);
         var result = Run.command(List.of(Runtimes.ensureAtLeast(build.harness, 17).home().resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
-                "--release", "8", "-cp", asm.toString(), "-d", classes.toString(), source.toString(), console.toString(), reload.toString(), json.toString()), build.project.root, Map.of(), build.report.log("agent-compile"), 120);
+                "--release", "8", "-cp", asm.toString(), "-d", classes.toString(), source.toString(), console.toString(), reload.toString(), json.toString(), quiet.toString()), build.project.root, Map.of(), build.report.log("agent-compile"), 120);
         build.report.stage("agent-compile", result, Map.of());
         if (result.exit() != 0) throw new IOException("Could not build client control: " + Run.tail(result.log()));
         Manifest manifest = new Manifest(); manifest.getMainAttributes().putValue("Manifest-Version", "1.0"); manifest.getMainAttributes().putValue("Premain-Class", "PortableAgent");
