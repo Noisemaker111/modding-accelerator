@@ -10,6 +10,8 @@ import org.gradle.api.tasks.testing.Test
 // modaccel asks for :modaccelMetadata and :<project>:modaccelProjectMetadata by path; an
 // unqualified task name would make Gradle configure every project to look for it.
 def selected = System.getProperty('modaccel.project', '')
+// explain names two projects, the one that fails and one that builds, separated by a comma.
+def selectedPaths = selected ? selected.split(',')*.trim() : []
 def planning = System.getProperty('modaccel.metadataMode', '') == 'plan'
 // Test hook for modaccel's fallback: behave like an init script that registers too late
 // whenever Gradle is configuring on demand, so the retry without it can be exercised.
@@ -20,8 +22,9 @@ gradle.rootProject { root ->
     if (simulateMiss) return
     def state = new File(root.projectDir, '.modaccel/portable')
     root.tasks.register('modaccelMetadata') {
-        if (selected && root.findProject(selected) == null) throw new GradleException("No project ${selected}; available projects: ${root.allprojects*.path}")
-        def targetPaths = selected ? [selected] : root.allprojects*.path
+        def missing = selectedPaths.findAll { root.findProject(it) == null }
+        if (missing) throw new GradleException("No project ${missing.join(', ')}; available projects: ${root.allprojects*.path}")
+        def targetPaths = selected ? selectedPaths : root.allprojects*.path
         // Path dependencies make Gradle configure exactly these projects, even on demand.
         dependsOn targetPaths.collect { metadataPath(it) }
         doLast {
@@ -36,7 +39,7 @@ gradle.rootProject { root ->
 }
 gradle.afterProject { p ->
     if (simulateMiss) return
-    if (selected && p.path != selected) return
+    if (selected && !(p.path in selectedPaths)) return
     def root = p.rootProject
     def state = new File(root.projectDir, '.modaccel/portable')
     def launchDirectory = { t ->
