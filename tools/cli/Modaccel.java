@@ -308,22 +308,18 @@ public final class Modaccel {
                     + "An expression is returned; statements return what they return. 'mc' is the Minecraft instance, print(x) adds output,\n"
                     + "vars is a map kept between snippets; call(objectOrClass, \"name\", args...) and field(objectOrClass, \"name\") reach private\n"
                     + "members. Leading import lines are allowed. Start the game first with ui-check or world-check.";
-            case "fast" -> "Run the project's game-free JUnit 5 tests in seconds: modaccel fast --root SOURCE --json\n"
-                    + "With no Minecraft or loader on the test classpath (plain Java, a Paper/Bukkit plugin) every test runs.\n"
-                    + "With Minecraft present (Fabric, NeoForge, Forge) only tests tagged @Tag(\"pure\") run; use `modaccel test` for the whole suite.\n"
-                    + "When nothing runs, the result says why: no test classes, or no tests tagged pure.";
-            case "compile" -> "Compile the project's classes: modaccel compile --root SOURCE --json\n"
-                    + "Build a jar with the project's own task: modaccel compile --root SOURCE --task :jar --json\n"
-                    + "That is the build path for Paper/Bukkit plugins (the jar lands in build/libs); mods use `modaccel package`.";
             case "world-check" -> "Check a loaded save: modaccel world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.";
             case "fast", "test" -> "Run the mod's logic tests without the game: modaccel fast --root SOURCE [--project :module]\n"
-                    + "fast runs JUnit 5 tests tagged @Tag(\"pure\") (tests that never touch a Minecraft class), reusing compiled code when nothing changed;\n"
+                    + "fast runs JUnit 5 tests, reusing compiled code when nothing changed. With no Minecraft or loader on the test classpath\n"
+                    + "(plain Java, a Paper/Bukkit plugin) every test runs; with Minecraft present only tests tagged @Tag(\"pure\") run.\n"
                     + "test runs the project's whole test task. Both fail when no test ran, and check the mod's resources and metadata afterwards.\n"
                     + "The build needs JUnit: testImplementation(\"org.junit.jupiter:junit-jupiter:5.11.4\") and testRuntimeOnly(\"org.junit.platform:junit-platform-launcher:1.11.4\").";
             case "compile" -> "Compile the mod and check what the game reads at start-up: modaccel compile --root SOURCE [--project :module]\n"
                     + "After javac, every JSON file in the resources must parse, fabric.mod.json / neoforge.mods.toml must name a valid mod id, mixin\n"
                     + "configs and their classes, and entrypoints that exist, and the code's MOD_ID must match the metadata. Items made by a recipe\n"
-                    + "without a translation or model are warnings.";
+                    + "without a translation or model are warnings.\n"
+                    + "Build a jar with the project's own task: modaccel compile --root SOURCE --task :jar. That is the build path for\n"
+                    + "Paper/Bukkit plugins (the jar lands in build/libs); then modaccel plugin-check loads it.";
             default -> "modaccel <command> --root SOURCE [--project :module] [--json]\n"
                     + "  support                what works today        discover, doctor   what kind of build this is\n"
                     + "  setup                  evaluate the build      compile            compile + resource/metadata checks\n"

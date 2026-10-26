@@ -103,11 +103,8 @@ final class FastLane {
         boolean ok = run.exit() == 0 && executed > 0 && failed == 0;
         String details;
         if (ok) details = TestResults.text(counts) + (selection == null ? "" : " (" + selection.label + ")");
-        else if (failed > 0) details = TestResults.text(counts) + "
-Log: " + run.log();
-        else if (run.exit() != 0) details = Run.gradleFailure(run.log(), model) + "
-No tests ran." + "
-Log: " + run.log();
+        else if (failed > 0) details = TestResults.text(counts) + "\nLog: " + run.log();
+        else if (run.exit() != 0) details = Run.gradleFailure(run.log(), model) + "\nNo tests ran." + "\nLog: " + run.log();
         else details = noTests(model, selection != Selection.ALL);
         return Json.map("ok", ok, "tier", "logic", "gameVerified", false, "selection", selection == null ? "custom task" : selection.label,
                 "tests", counts, "log", run.log().toString(), "details", details);
