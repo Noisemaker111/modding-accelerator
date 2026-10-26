@@ -125,7 +125,8 @@ final class ServerCheck {
         Path serverDir = build.project.state().resolve("server-check/paper-" + minecraft);
         Path result = work.resolve("result.json"), checkSpec = work.resolve("check-spec.json");
         List<String> serverCommand = List.of(serverJdk.java().toString(), "-Xms512M", "-Xmx2G", "-DIReallyKnowWhatIAmDoingISwear=true", "-Dpaper.disableChannelLimit=true",
-                "-jar", paper.jar().toString(), "--nogui");
+                // Before 1.13 the server's option parser has no --nogui and prints its help instead; it takes the bare word.
+                "-jar", paper.jar().toString(), compare(minecraft, "1.13") < 0 ? "nogui" : "--nogui");
         List<String> extraPlugins = new ArrayList<>();
         if (options.values.containsKey("plugins")) {
             Path folder = build.project.root.resolve(options.get("plugins", "")).normalize();

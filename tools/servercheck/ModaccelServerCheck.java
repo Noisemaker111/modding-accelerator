@@ -752,6 +752,7 @@ public final class ModaccelServerCheck {
         final Map<Integer, ItemStack> inventory = new ConcurrentHashMap<>();
         volatile double x, y, z; volatile float yaw, pitch; volatile boolean spawned; volatile String disconnectReason;
         int entityId, minY = -64, sections = 24;
+        final List<int[]> dimensions = new ArrayList<>();
         final CountDownLatch ready = new CountDownLatch(1);
         Bot(String name) { this.name = name; }
 
@@ -781,8 +782,12 @@ public final class ModaccelServerCheck {
         void handle(Session s, Packet packet) throws Exception {
             if (packet instanceof ClientboundLoginPacket login) {
                 entityId = login.getEntityId();
-                String dimension = login.getCommonPlayerSpawnInfo().getWorldName().asString();
-                if (dimension.contains("nether") || dimension.contains("end")) { minY = 0; sections = 16; }
+                int type = login.getCommonPlayerSpawnInfo().getDimension();
+                if (type >= 0 && type < dimensions.size()) { minY = dimensions.get(type)[0]; sections = dimensions.get(type)[1] >> 4; }
+                else {
+                    String dimension = login.getCommonPlayerSpawnInfo().getWorldName().asString();
+                    if (dimension.contains("nether") || dimension.contains("end")) { minY = 0; sections = 16; }
+                }
             } else if (packet instanceof ClientboundPlayerPositionPacket p) {
                 var rel = p.getRelatives();
                 x = (rel.contains(PositionElement.X) ? x : 0) + p.getPosition().getX();
@@ -798,7 +803,18 @@ public final class ModaccelServerCheck {
                 String body = c.getUnsignedContent() != null ? plain(c.getUnsignedContent()) : c.getContent();
                 add("chat", decorate(c.getChatType(), plain(c.getName()), body, plain(c.getTargetName())));
             } else if (packet instanceof ClientboundDisguisedChatPacket c) add("chat", decorate(c.getChatType(), plain(c.getName()), plain(c.getMessage()), plain(c.getTargetName())));
-            else if (packet instanceof ClientboundRegistryDataPacket r) { if (r.getRegistry().asString().equals("minecraft:chat_type")) for (var entry : r.getEntries()) chatTypes.add(entry.getId().asString()); }
+            else if (packet instanceof ClientboundRegistryDataPacket r) {
+                if (r.getRegistry().asString().equals("minecraft:chat_type")) for (var entry : r.getEntries()) chatTypes.add(entry.getId().asString());
+                // Each dimension's floor and height, in registry order; the login packet names one by index. A server before 1.18
+                // (through ViaProxy) has an overworld from 0 to 256, not -64 to 320. Entries the bot already knows come without data.
+                if (r.getRegistry().asString().equals("minecraft:dimension_type")) for (var entry : r.getEntries()) {
+                    String name = entry.getId().asString();
+                    int[] fallback = name.contains("nether") || name.contains("end") ? new int[] {0, 256} : new int[] {-64, 384};
+                    if (entry.getData() instanceof Map<?, ?> data && data.get("min_y") instanceof Number floor && data.get("height") instanceof Number height)
+                        dimensions.add(new int[] {floor.intValue(), height.intValue()});
+                    else dimensions.add(fallback);
+                }
+            }
             else if (packet instanceof ClientboundSetTitleTextPacket t) add("title", plain(t.getText()));
             else if (packet instanceof ClientboundSetSubtitleTextPacket t) add("title", plain(t.getText()));
             else if (packet instanceof ClientboundSetActionBarTextPacket t) add("actionbar", plain(t.getText()));
