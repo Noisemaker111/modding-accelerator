@@ -27,8 +27,8 @@ modaccel no longer fails, stops or passes without saying why.
   "not published"; Modrinth full releases are preferred over newer betas, and a beta that is
   the only choice is named in the result.
 - **A bad `--root`** or a folder without a Gradle build gets a plain message.
-- **Gradle timeouts** name the limit and whether it was a cold first setup (now 45 min; warm
-  steps keep 15 min); `MODACCEL_GRADLE_TIMEOUT` raises it.
+- **Gradle timeouts** name the limit and whether it was a cold first setup (15 min each, now
+  that a cold IAS setup finishes in about 76 s); `MODACCEL_GRADLE_TIMEOUT` raises it.
 
 ## 0.1.0-beta.1 - 2026-10-24
 

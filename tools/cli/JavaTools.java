@@ -2,12 +2,12 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-/** One compiled copy of the existing mapping and mixin tools, shared by all projects. */
+/** One compiled copy of the mapping, mixin and game-prep tools, shared by all projects. */
 final class JavaTools {
     final Build build; final Runtimes.Jdk jdk; final Path classes;
     JavaTools(Build build) throws Exception {
         this.build = build; jdk = Runtimes.ensureAtLeast(build.harness, 25);
-        List<Path> sources = List.of(build.harness.resolve("tools/VersionMap.java"), build.harness.resolve("tools/MixinAudit.java"));
+        List<Path> sources = List.of(build.harness.resolve("tools/VersionMap.java"), build.harness.resolve("tools/MixinAudit.java"), build.harness.resolve("tools/GamePrep.java"));
         classes = build.harness.resolve(".modaccel/portable-tools/" + Fingerprints.files(sources));
         Path ready = classes.resolve("ready");
         if (!Files.exists(ready)) {

@@ -157,7 +157,22 @@ public final class PortableTests {
             }
         }
         check(portBuild.command(List.of("help")).contains("-Dfabric.loom.ci=true"), "port Gradle skips dependency source remapping");
+        check(!portBuild.command(List.of("help")).contains("--no-configure-on-demand"), "modaccel's Gradle runs keep the build's configure-on-demand");
+        Path missed = scratch.resolve("missed.log");
+        Files.writeString(missed, "* What went wrong:\nCannot locate tasks that match ':modaccelMetadata' as task 'modaccelMetadata' not found in root project 'diorama'.\n");
+        check(Build.selectionFailed(missed), "a task-selection failure is recognized for the configure-on-demand retry");
+        Files.writeString(missed, "* What went wrong:\nExecution failed for task ':compileJava'.\n");
+        check(!Build.selectionFailed(missed), "a compile failure does not trigger the configure-on-demand retry");
         check(build.command(List.of("help")).contains("-Dfabric.loom.ci=true"), "verification Gradle also skips dependency source remapping");
+        Path ngGame = scratch.resolve("ng/.gradle/repositories/ng_dummy_ng/net/neoforged/neoforge/21.1.248/neoforge-21.1.248.jar");
+        Map<String, Object> ngModel = Json.map("projects", List.of(Json.map("path", ":", "plugins", List.of("net.neoforged.gradle.userdev.UserDevPlugin"),
+                "compile", List.of(Json.map("task", ":compileJava", "classpath", List.of(ngGame.toString()))))));
+        check("21.1.248".equals(OwnCompile.neoforgeVersion(ngModel)), "a NeoGradle build waiting on NeoForm's game jar gets the installer-made jar");
+        Files.createDirectories(ngGame.getParent());
+        try (var zip = new java.util.zip.ZipOutputStream(Files.newOutputStream(ngGame))) { zip.putNextEntry(new java.util.zip.ZipEntry("net/minecraft/client/Minecraft.class")); zip.closeEntry(); }
+        check(OwnCompile.neoforgeVersion(ngModel) == null, "once NeoForm has built the game jar, the Gradle compile is used");
+        check(OwnCompile.neoforgeVersion(Json.map("projects", List.of(Json.map("path", ":", "compile", List.of(Json.map("task", ":compileJava", "classpath", List.of(scratch.resolve("minecraft-merged.jar").toString()))))))) == null,
+                "a Fabric build keeps the Gradle compile");
         Path transaction = project.state().resolve("ports/test-undo"), backup = transaction.resolve("before/src/custom/Food.java"); Files.createDirectories(backup.getParent());
         byte[] original = "class Food { int n = 1; }\r\n// original 🧱".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         Files.write(backup, original); Map<String, Object> before = Json.map("src/custom/Food.java", Fingerprints.bytes(original));

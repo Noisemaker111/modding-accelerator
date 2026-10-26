@@ -35,7 +35,7 @@ final class Build {
                 "-Dorg.gradle.daemon.registry.base=" + daemons()), project.root, Map.of("JAVA_HOME", jdk.home().toString()), report.log("stop-daemons"), 120);
         report.stage("stop-daemons", result, Json.map("registry", daemons().toString())); return result;
     }
-    static final int WARM_TIMEOUT = 900, COLD_TIMEOUT = 2700;
+    static final int WARM_TIMEOUT = 900, COLD_TIMEOUT = 900;
     static final String TIMEOUT_VARIABLE = "MODACCEL_GRADLE_TIMEOUT";
     /** No evaluated model yet: Gradle may still download the game, mappings and every dependency. */
     boolean coldSetup() {
@@ -61,8 +61,37 @@ final class Build {
         catch (Run.Timeout timeout) { throw new IOException(timeoutMessage(timeout.seconds, cold, timeout.log), timeout); }
     }
     Run.Result gradle(List<String> arguments, String stage) throws Exception {
-        Run.Result result = timed(command(arguments), stage);
-        report.stage(stage, result, Json.map("java", jdk.version(), "gradle", project.wrapperVersion())); return result;
+        List<String> command = command(arguments);
+        Run.Result result = timed(command, stage);
+        boolean fallback = result.exit() != 0 && configuresOnDemand() && selectionFailed(result.log());
+        report.stage(stage, result, Json.map("java", jdk.version(), "gradle", project.wrapperVersion(), "configureOnDemand", configuresOnDemand(),
+                "selectionFailure", fallback));
+        if (!fallback) return result;
+        // The init script registers modaccel's tasks as each project configures. If a build still hides
+        // a task from Gradle's on-demand selection, configure every project once, as before, and say so.
+        command.add(command.indexOf("-I") + 2, "--no-configure-on-demand");
+        Run.Result retry = timed(command, stage + "-all-projects");
+        report.stage(stage + "-all-projects", retry, Json.map("java", jdk.version(), "gradle", project.wrapperVersion(), "configureOnDemand", false,
+                "fallback", "Gradle could not select a task while configuring on demand; retried once with --no-configure-on-demand", "firstLog", result.log().toString()));
+        System.err.println("Note: " + stage + " could not select its task with configure-on-demand; retried with every project configured (receipt stage " + stage + "-all-projects).");
+        return retry;
+    }
+    static final java.util.regex.Pattern SELECTION_FAILURE = java.util.regex.Pattern.compile("Task '[^']*' not found in |Cannot locate tasks? that match ");
+    static boolean selectionFailed(Path log) throws IOException {
+        return Files.exists(log) && SELECTION_FAILURE.matcher(Files.readString(log, java.nio.charset.StandardCharsets.UTF_8)).find();
+    }
+    Boolean configureOnDemand;
+    /** True when the build or the user's Gradle home turns on org.gradle.configureondemand. */
+    boolean configuresOnDemand() throws IOException {
+        if (configureOnDemand != null) return configureOnDemand;
+        String key = "org.gradle.configureondemand"; String value = "";
+        Path gradleHome = Path.of(System.getenv().getOrDefault("GRADLE_USER_HOME", Path.of(System.getProperty("user.home"), ".gradle").toString()));
+        // The user's Gradle home overrides the build's own setting.
+        for (Path properties : List.of(project.root.resolve("gradle.properties"), gradleHome.resolve("gradle.properties"))) {
+            String set = ProjectModel.properties(properties).getProperty(key, "").trim();
+            if (!set.isEmpty()) value = set;
+        }
+        return configureOnDemand = value.equalsIgnoreCase("true");
     }
     /**
      * A compile with nothing of modaccel's in it, so Gradle can reuse its configuration cache:
@@ -73,8 +102,7 @@ final class Build {
         List<String> command = new ArrayList<>(command(tasks));
         int init = command.indexOf("-I"); if (init >= 0) { command.remove(init + 1); command.remove(init); }
         command.replaceAll(argument -> argument.equals("--no-configuration-cache") ? "--configuration-cache" : argument);
-        // modaccel's own invocations need every selected project configured; a compile doesn't.
-        command.removeIf(argument -> argument.startsWith("-Dmodaccel.") || argument.equals("-Dfabric.loom.ci=true") || argument.equals("--no-configure-on-demand"));
+        command.removeIf(argument -> argument.startsWith("-Dmodaccel.") || argument.equals("-Dfabric.loom.ci=true"));
         Run.Result result = timed(command, stage);
         report.stage(stage, result, Json.map("java", jdk.version(), "gradle", project.wrapperVersion(), "configurationCache", true)); return result;
     }
@@ -82,10 +110,11 @@ final class Build {
         Path wrapper = project.root.resolve("gradle/wrapper/gradle-wrapper.jar");
         if (!Files.isRegularFile(wrapper)) throw new IOException("Missing " + wrapper + "; restore this project's Gradle wrapper jar.");
         List<String> command = new ArrayList<>(List.of(jdk.java().toString(), "-cp", wrapper.toString(), "org.gradle.wrapper.GradleWrapperMain",
-                "--console=plain", "--no-configuration-cache", "-I", init.toString(),
-                // The init script registers its tasks and captures launches once every selected project
-                // has configured; a build with org.gradle.configureondemand=true would never get there.
-                "--no-configure-on-demand"));
+                // The init script registers its tasks as each project configures, so a build with
+                // org.gradle.configureondemand=true configures only the projects a command names.
+                "--console=plain", "--no-configuration-cache", "-I", init.toString()));
+        // Test hook: make the init script miss under configure-on-demand to exercise the fallback.
+        if ("true".equals(System.getenv("MODACCEL_SIMULATE_COD_MISS"))) command.add("-Dmodaccel.simulateCodMiss=true");
         List<String> toolchains = new ArrayList<>();
         Path projectCache = harness.resolve(".modaccel/jdks").toAbsolutePath().normalize();
         Path userCache = Path.of(System.getProperty("user.home"), ".modaccel/jdks").toAbsolutePath().normalize();
@@ -125,7 +154,7 @@ final class Build {
                 report.stages.add(Json.map("name", "metadata", "cache", "hit", "seconds", 0)); return Json.read(model);
             }
         }
-        Run.Result result = gradle(planning ? List.of("-Dmodaccel.metadataMode=plan", "modaccelMetadata") : List.of("modaccelMetadata"), planning ? "metadata-plan" : "metadata");
+        Run.Result result = gradle(planning ? List.of("-Dmodaccel.metadataMode=plan", ":modaccelMetadata") : List.of(":modaccelMetadata"), planning ? "metadata-plan" : "metadata");
         if (result.exit() != 0) throw new IOException("Build discovery failed. " + Run.gradleFailure(result.log()) + "\nLog: " + result.log());
         Map<String, Object> value = Json.read(model);
         Json.save(stamp, Json.map("key", key, "at", System.currentTimeMillis())); return value;
