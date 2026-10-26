@@ -46,5 +46,8 @@ for h in ledger["hops"]:
         text = h["detail"].lower()
         check("assert" in text and "frame" not in text, f"{h['mod']} {h['from']} -> {h['to']} is behaviour only with an assertion on the mod's own state")
 apple = next(h for h in ledger["hops"] if h["mod"] == "AppleSkin" and h["from"] == "1.21.5" and h["to"] == "1.21.6")
-check(apple["status"] == "load" and apple["remarked"]["was"] == "behaviour", "AppleSkin 1.21.5 -> 1.21.6 is re-marked to load, with the reason")
+check(apple["remarked"]["was"] == "behaviour", "AppleSkin 1.21.5 -> 1.21.6 keeps the record of its re-mark to load, with the reason")
+check(apple["status"] == "behaviour" and apple.get("promoted", {}).get("test") == "tools/tests/AppleSkinHudCheck.java"
+      and (Path(__file__).resolve().parent.parent / apple["promoted"]["test"]).is_file(),
+      "AppleSkin 1.21.5 -> 1.21.6 is behaviour again only through a named test that exists")
 print(checks, "ledger rule checks passed")
