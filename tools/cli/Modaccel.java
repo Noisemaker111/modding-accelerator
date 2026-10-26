@@ -33,7 +33,7 @@ public final class Modaccel {
                 String key = args[i]; if (!key.startsWith("--")) throw new IllegalArgumentException("Expected --option; got " + key);
                 key = key.substring(2);
                 if (switches.contains(key)) flags.add(key);
-                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout").contains(key)) {
+                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only").contains(key)) {
                     if (++i == args.length || args[i].startsWith("--")) throw new IllegalArgumentException("Missing value for --" + key);
                     values.put(key, args[i]);
                 } else throw new IllegalArgumentException("Unknown option --" + key);
@@ -75,7 +75,9 @@ public final class Modaccel {
                 // Refuse before evaluating a build that predates official names; nothing is changed.
                 exit = 1;
             } else {
-                Build build = new Build(project, home, options.get("project", ""), report);
+                // explain reads two projects' classpaths: the one that fails and the one it's compared with.
+                String selected = options.command.equals("explain") && options.values.containsKey("against") ? options.get("project", "") + "," + options.get("against", "") : options.get("project", "");
+                Build build = new Build(project, home, selected, report);
                 Map<String, Object> model = Set.of("game-status", "game-stop", "eval").contains(options.command) || options.command.equals("port") && options.values.containsKey("undo") ? Json.map()
                         : build.model(options.has("refresh"), options.command.equals("port"));
                 switch (options.command) {
@@ -83,6 +85,7 @@ public final class Modaccel {
                     case "fast" -> { result = FastLane.run(build, model, options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload" -> { result = new Game(build, model).run(options); exit = "reload".equals(options.command) && Boolean.TRUE.equals(result.get("restartNeeded")) ? 1 : 0; }
                     case "port" -> { result = new Port(build, model).run(options); if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model)); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
+                    case "explain" -> { result = new Explain(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "dependencies" -> { result = new Port(build, model).dependencies(options); exit = Boolean.TRUE.equals(result.get("ready")) ? 0 : 1; }
                     case "compile", "test" -> {
                         String name = options.command.equals("compile") ? "classes" : options.command.equals("test") ? "test" : "modaccelPure";
@@ -144,6 +147,10 @@ public final class Modaccel {
                     + "  modaccel port --root SOURCE --undo TRANSACTION\n"
                     + "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n"
                     + "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
+            case "explain" -> "Explain a port's compiler errors: modaccel explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n"
+                    + "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n"
+                    + "class, method or field it names as each project's jars have it: where a missing class lives, a member's signatures, or similar names.\n"
+                    + "--only keeps errors whose source path contains TEXT.";
             case "dependencies" -> "Report target dependencies without editing: modaccel dependencies --root SOURCE --to 1.21.6 [--selection FILE] --json\nEach non-loader dependency is resolved, explicitly selected, or blocked with the selection entry to add in .modaccel/dependencies.json.";
             case "ui-check" -> "Capture the target client: modaccel ui-check --root SOURCE --screen net.minecraft.client.gui.screen.TitleScreen --json\nInspect the receipt's framebuffer capture; add --assert METHOD for behavior checks, or --expect-change PERCENT to require the action to visibly change the frame.\n"
                     + "--screen opens a new instance of that screen; leave it out to capture what the running client shows now.\n"
@@ -162,7 +169,7 @@ public final class Modaccel {
                     + "vars is a map kept between snippets; call(objectOrClass, \"name\", args...) and field(objectOrClass, \"name\") reach private\n"
                     + "members. Leading import lines are allowed. Start the game first with ui-check or world-check.";
             case "world-check" -> "Check a loaded save: modaccel world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.";
-            default -> "modaccel <support|discover|doctor|setup|compile|fast|test|port|dependencies|ui-check|world-check|mp-check|eval|reload|game-status|game-stop|package|self-test> [--root SOURCE] [--project :module] [--task :task] [--refresh] [--json]\n"
+            default -> "modaccel <support|discover|doctor|setup|compile|fast|test|port|explain|dependencies|ui-check|world-check|mp-check|eval|reload|game-status|game-stop|package|self-test> [--root SOURCE] [--project :module] [--task :task] [--refresh] [--json]\n"
                     + "Use modaccel help port or modaccel port --help for port, undo and client examples. Input is a Gradle source checkout with a wrapper.";
         };
     }
