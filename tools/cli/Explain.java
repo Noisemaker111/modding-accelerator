@@ -68,7 +68,7 @@ final class Explain {
                 + (only.isEmpty() ? "" : " matching " + only) + ", " + failingName + " beside " + workingName + ".";
         // Once it compiles, what's left is what the compiler can't see: mixins aimed at methods or
         // fields the game doesn't have, which otherwise fail one at a time as the client starts.
-        int dead = 0;
+        int dead = 0; boolean auditFailed = false;
         if (shown == 0 && exit == 0 && only.isEmpty() && !options.values.containsKey("log")) {
             Run.Result audit = new JavaTools(build).audit(Json.map("projects", List.of(failing)));
             String lastAudited = "";
@@ -83,9 +83,11 @@ final class Explain {
                 if (subject != null) for (String explained : memberLines(subject[0], subject[1], List.of(), workingName, workingApi, failingName, failingApi)) out.append("    ").append(explained).append('\n');
             }
             summary += " Mixin audit: " + dead + " dead target" + (dead == 1 ? "" : "s") + ".";
-            if (audit.exit() != 0 && dead == 0) summary += " The audit itself failed: " + Run.tail(audit.log());
+            if (audit.exit() != 0 && dead == 0) { auditFailed = true; summary += " The audit itself failed: " + Run.tail(audit.log()); }
         }
-        return Json.map("ok", shown == 0 && dead == 0, "errors", shown, "deadMixinTargets", dead, "files", perFile, "log", log.toString(), "tasks", tasks,
+        // A compile that failed is not ok just because --only filtered its errors out, nor is an audit that never ran.
+        if (shown == 0 && exit != 0) summary += " The compile still failed (exit " + exit + "); see the log.";
+        return Json.map("ok", exit == 0 && shown == 0 && dead == 0 && !auditFailed, "errors", shown, "deadMixinTargets", dead, "files", perFile, "log", log.toString(), "tasks", tasks,
                 "details", summary + (shown == 0 && dead == 0 ? "" : "\n" + out.toString().stripTrailing()));
     }
 
@@ -171,7 +173,7 @@ final class Explain {
         if (message.startsWith("cannot find symbol") && !symbol.isEmpty()) {
             String[] parts = symbol.split("\\s+", 2); String kind = parts[0], name = parts.length > 1 ? parts[1].replaceFirst("\\(.*$", "").replaceFirst("<.*$", "") : "";
             String owner = owner(location);
-            if (kind.equals("class") || kind.equals("interface") || (kind.equals("variable") && Character.isUpperCase(name.charAt(0)) && (owner.isEmpty() || location.startsWith("class ") || location.startsWith("package ")))) {
+            if (kind.equals("class") || kind.equals("interface") || (kind.equals("variable") && !name.isEmpty() && Character.isUpperCase(name.charAt(0)) && (owner.isEmpty() || location.startsWith("class ") || location.startsWith("package ")))) {
                 out.addAll(classLines(name, imports, workingName, working, failingName, failing));
                 if (kind.equals("class") || kind.equals("interface")) return out;
             }
