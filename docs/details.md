@@ -630,6 +630,35 @@ Both clients passed real world/HUD/tooltip tests, including large-value counters
 `modaccel -Repo <repo> port -Fix -Log <original failing log> -Task runClientGameTest -Max 1`.
 The test mod stays in the gametest source set and is excluded from the shipped mod.
 
+### What is this called on the other version?
+
+```
+modaccel explain --root <repo> --project :failing --against :building [--only TEXT]
+```
+
+For a build with one project per Minecraft version (Stonecutter, or a multi-loader layout),
+`explain` compiles the failing project and sets each compiler error beside both projects' actual
+jars. For a missing class it shows where that class lives in each, which catches moved packages.
+For a missing or changed method or field, it shows every signature by that name, otherwise similar
+names, and when nothing is similar, the members only the failing side has. Errors in Stonecutter's
+generated sources point back at `src/`. Once nothing fails to compile, it runs the mixin audit and
+explains each dead target the same way. On Diorama's 1.20.1 port, run against 1.21.1:
+
+```
+src/gameshim/java/dev/diorama/gameshim/ShimWorldSave.java
+  28: cannot find symbol: method openWorld(String,()->{ thro[...]"); })
+    1.21.1  WorldOpenFlows: void openWorld(String, Runnable)
+    1.20.1  WorldOpenFlows: no openWorld. Only in 1.20.1: void loadLevel(Screen, String)
+
+src/main/java/dev/diorama/mixin/GameRendererMixin.java
+  28: @Inject method 'render(Lnet/minecraft/client/DeltaTracker;Z)V' not found in net.minecraft.client.renderer.GameRenderer
+    1.21.1  GameRenderer: void render(DeltaTracker, boolean)
+    1.20.1  GameRenderer: void render(float, long, boolean)
+```
+
+It reads signatures, not behaviour, and Mojang's names have no parameter names. 16–22 s a run
+on Diorama's 22 projects with a warm daemon.
+
 ### Can this repo even build at the target?
 
 Before any code work, ask the toolbox:
