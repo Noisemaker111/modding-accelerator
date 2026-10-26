@@ -618,6 +618,7 @@ def main():
     parser.add_argument("--cache", type=Path, default=default_cache(), help="where fresh clones go (outside the repo)")
     parser.add_argument("--out", type=Path, default=HERE / "results", help="where latest.json and REPORT.md go")
     parser.add_argument("--compile-nodes", action="store_true", help="CI mode: no game; setup and compile every node the entry lists")
+    parser.add_argument("--resume", action="store_true", help="keep the mods already in <label>.json and run only the rest (after an interrupted run)")
     parser.add_argument("--keep-leftovers", action="store_true", help="report left-over processes without killing them")
     ARGS = parser.parse_args()
     TOOL = ARGS.modaccel.resolve()
@@ -642,6 +643,17 @@ def main():
                "modaccelCommit": subprocess.run(["git", "-C", str(TOOL), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip(),
                "mods": []}
     ARGS.out.mkdir(parents=True, exist_ok=True)
+    previous = ARGS.out / f"{ARGS.label}.json"
+    if ARGS.resume and previous.exists():
+        earlier = json.loads(previous.read_text(encoding="utf-8"))
+        summary["mods"] = earlier["mods"]
+        summary["startedAt"] = earlier["startedAt"]
+        summary["resumedAt"] = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
+        if earlier.get("modaccelCommit") != summary["modaccelCommit"]:
+            sys.exit(f"--resume: {previous} was made with modaccel {earlier.get('modaccelCommit')}, this run uses {summary['modaccelCommit']}")
+        done = {m["id"] for m in earlier["mods"]}
+        mods = [m for m in mods if m["id"] not in done]
+        print(f"resuming {previous}: {len(done)} mods kept, {len(mods)} to run", flush=True)
     for mod in mods:
         print(f"== {mod['name']}", flush=True)
         try:
