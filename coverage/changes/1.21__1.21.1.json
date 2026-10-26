@@ -1,0 +1,18 @@
+{
+  "from": "1.21", "to": "1.21.1",
+  "names": "official",
+  "linked": "exact",
+  "oldSize": 73977, "broken": 4, "breakingShare": 0.0001,
+  "counts": {"classesAdded": 0, "classesRemoved": 0, "classesRenamed": 0, "methodsAdded": 11, "methodsRemoved": 1, "methodsRenamed": 0, "methodsChanged": 3, "fieldsAdded": 0, "fieldsRemoved": 0, "fieldsRenamed": 0, "fieldsChanged": 0, "methodsChangedApi": 3, "methodsAddedApi": 9, "methodsRemovedApi": 1},
+  "classesAdded": [],
+  "classesRemoved": [],
+  "classesRenamed": [],
+  "members": {
+    "net.minecraft.commands.arguments.EntityArgument": {"methodsAdded": ["parse(StringReader)EntitySelector", "parse(StringReader,Object)EntitySelector"], "methodsChanged": ["parse(StringReader)EntitySelector -> private parse(StringReader,boolean)EntitySelector"]},
+    "net.minecraft.commands.arguments.GameProfileArgument": {"methodsAdded": ["parse(StringReader,Object)GameProfileArgument.Result", "parse(StringReader)GameProfileArgument.Result"], "methodsChanged": ["parse(StringReader)GameProfileArgument.Result -> private parse(StringReader,boolean)GameProfileArgument.Result"]},
+    "net.minecraft.commands.arguments.MessageArgument": {"methodsAdded": ["parse(StringReader,Object)MessageArgument.Message"]},
+    "net.minecraft.commands.arguments.ScoreHolderArgument": {"methodsAdded": ["parse(StringReader)ScoreHolderArgument.Result", "parse(StringReader,Object)ScoreHolderArgument.Result"], "methodsChanged": ["parse(StringReader)ScoreHolderArgument.Result -> private parse(StringReader,boolean)ScoreHolderArgument.Result"]},
+    "net.minecraft.commands.arguments.selector.EntitySelectorParser": {"methodsAdded": ["allowSelectors(Object)boolean"], "methodsRemoved": ["<init>(StringReader)void"]},
+    "net.minecraft.world.level.block.entity.BlockEntity": {"methodsAdded": ["private validateBlockState(BlockState)void", "isValidBlockState(BlockState)boolean", "private getNameForReporting()String"]}
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "from": "1.16.2", "to": "1.16.3",
+  "names": "official",
+  "linked": "exact",
+  "oldSize": 44208, "broken": 0, "breakingShare": 0.0000,
+  "counts": {"classesAdded": 0, "classesRemoved": 0, "classesRenamed": 0, "methodsAdded": 2, "methodsRemoved": 0, "methodsRenamed": 0, "methodsChanged": 0, "fieldsAdded": 1, "fieldsRemoved": 0, "fieldsRenamed": 0, "fieldsChanged": 0, "methodsAddedApi": 1},
+  "classesAdded": [],
+  "classesRemoved": [],
+  "classesRenamed": [],
+  "members": {
+    "net.minecraft.world.entity.ai.navigation.PathNavigation": {"fieldsAdded": ["private isStuck:boolean"], "methodsAdded": ["private timeoutPath()void", "isStuck()boolean"]}
+  }
+}

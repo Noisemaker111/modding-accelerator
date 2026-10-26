@@ -9,6 +9,91 @@ import javax.imageio.ImageIO;
 public final class PortableTests {
     static int count;
     static void check(boolean condition, String message) { if (!condition) throw new AssertionError(message); count++; System.out.println("PASS " + message); }
+    /** Hub routing from the change index, rule ranges, the pre-1.14.4 refusal and errors named by update. */
+    static void routeChecks(Path home, Port port, Path scratch) throws Exception {
+        Route forward = Route.plan(home, "1.20.1", "1.21.6");
+        check(forward != null && forward.waypoints.equals(List.of("1.20.1", "1.20.2", "1.20.4", "1.20.6", "1.21.1", "1.21.3", "1.21.4", "1.21.5", "1.21.6"))
+                && forward.steps().size() == 12 && forward.hops.size() == 8, "1.20.1 -> 1.21.6 routes through every family hub between, one hop each: " + (forward == null ? null : forward.waypoints));
+        Route back = Route.plan(home, "1.21.6", "1.21.1");
+        check(back.waypoints.equals(List.of("1.21.6", "1.21.5", "1.21.4", "1.21.3", "1.21.1")) && back.steps().get(0).equals("1.21.6 -> 1.21.5"), "a backport walks the same hubs in reverse");
+        Route late = Route.plan(home, "1.21.6", "26.3");
+        check(late.mappedChain().get(late.mappedChain().size() - 1).equals("1.21.11") && late.linkOf("1.21.11 -> 26.1").equals("by-name"),
+                "a route into 26.x joins ids only up to 1.21.11 and marks the rest by-name");
+        Route zombie = Route.plan(home, "1.21.1", "1.21.6");
+        check(zombie.stepsCovered("1.21.1 -> 1.21.4 (mojmap)", "mojmap").equals(List.of("1.21.1 -> 1.21.2", "1.21.2 -> 1.21.3", "1.21.3 -> 1.21.4")),
+                "a rule runs on the updates its jump covers");
+        check(zombie.stepsCovered("1.21.1 -> 1.21.4 (mojmap)", "yarn").isEmpty() && back.stepsCovered("1.21.1 -> 1.21.4 (mojmap)", "mojmap").isEmpty()
+                && forward.stepsCovered("1.21.6 -> 26.3 (official names)", "mojmap").isEmpty(), "a rule for other names, the other direction or updates not crossed does not run");
+        Map<String, Object> refused = Route.blocked(home, "1.12.2", "1.20.1");
+        check(refused != null && "blocked".equals(refused.get("tier")) && String.valueOf(refused.get("details")).contains("1.14.4") && Route.blocked(home, "1.20.1", "1.21.6") == null,
+                "releases before 1.14.4 are refused with the reason; later ones are not: " + (refused == null ? null : refused.get("details")));
+        check(Route.plan(home, "1.21.1-rc1", "1.21.6") == null, "a release outside the index falls back to the one-jump map");
+        port.route = zombie;
+        Path log = scratch.resolve("route errors.log");
+        Files.writeString(log, "C:\\mod\\src\\A.java:10: error: cannot find symbol\n        int y = level.getMinBuildHeight();\n                     ^\n"
+                + "  symbol:   method getMinBuildHeight()\n  location: variable level of type Level\n"
+                + "C:\\mod\\src\\B.java:5: error: incompatible types: int cannot be converted to String\n");
+        Map<String, Object> history = Json.map("history", List.of(Json.map("kind", "method", "owner", "net.minecraft.world.level.Level", "name", "getMinBuildHeight", "desc", "()I",
+                "what", "removed", "was", "net.minecraft.world.level.Level.getMinBuildHeight", "to", null, "step", "1.21.1 -> 1.21.2")));
+        List<Object> named = port.namedErrors(log, history);
+        var first = Json.object(named.get(0)); var placed = Json.object(Json.array(first.get("changedIn")).get(0));
+        check(named.size() == 2 && "1.21.1 -> 1.21.2".equals(placed.get("step")) && "1.21.1 -> 1.21.3".equals(placed.get("hop")) && String.valueOf(placed.get("change")).contains("removed"),
+                "a remaining error names the update and hop that removed its symbol");
+        var second = Json.object(named.get(1));
+        check(Json.array(second.get("changedIn")).isEmpty() && second.get("why") != null, "an error the history cannot place is still listed, with the reason");
+    }
+    /**
+     * Rules learned from Stonecutter switches (bench/stonecutter_rules.py): each one names switches that exist in
+     * coverage/stonecutter/switches in two or more mods, its match finds its own compiler error, Port's rewrite
+     * turns its test source into the recorded result, and its jump lands on an update a route in that direction crosses.
+     */
+    static void learnedRuleChecks(Path home) throws Exception {
+        int learned = 0;
+        Map<String, Map<String, Object>> switches = new HashMap<>();
+        for (Object item : Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules"))) {
+            var rule = Json.object(item);
+            if (!"stonecutter".equals(rule.get("source"))) continue;
+            String id = Json.text(rule, "id", "?");
+            Set<String> mods = new HashSet<>();
+            for (Object e : Json.array(rule.get("examples"))) {
+                var example = Json.object(e); String mod = Json.text(example, "mod", "");
+                // The packaged jar ships knowledge/ but not the mined switch data; there only the rewrites are checked.
+                Path mined = home.resolve("coverage/stonecutter/switches/" + mod.replace("/", "__") + ".json");
+                if (!Files.isRegularFile(mined)) { mods.add(mod); continue; }
+                var data = switches.computeIfAbsent(mod, m -> {
+                    try { return Json.read(mined); }
+                    catch (IOException failure) { throw new UncheckedIOException(failure); }
+                });
+                boolean found = false;
+                for (Object r : Json.array(data.get("rows"))) {
+                    var row = Json.object(r);
+                    if (row.get("file").equals(example.get("file")) && ((Number) row.get("line")).intValue() == ((Number) example.get("line")).intValue()) found = true;
+                }
+                if (!found) throw new AssertionError(id + ": example " + mod + " " + example.get("file") + ":" + example.get("line") + " is not a mined switch");
+                mods.add(mod);
+            }
+            if (mods.size() < 2) throw new AssertionError(id + ": a learned rule needs the same change in two or more mods, has " + mods);
+            var test = Json.object(rule.get("test"));
+            if (!java.util.regex.Pattern.compile(rule.get("match").toString()).matcher(test.get("error").toString()).find()) throw new AssertionError(id + ": match misses its test error");
+            String after = Port.rewrite(rule, test.get("before").toString());
+            if (after.equals(test.get("before")) || !after.equals(test.get("after"))) throw new AssertionError(id + ": rewrite gave\n" + after + "\nexpected\n" + test.get("after"));
+            String[] range = Json.text(rule, "jump", "").replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
+            String names = Json.text(rule, "jump", "").contains("yarn") ? "yarn" : "mojmap";
+            Route route = Route.plan(home, range[0], range[1]);
+            if (route == null || route.stepsCovered(Json.text(rule, "jump", ""), names).isEmpty()) throw new AssertionError(id + ": no route " + Json.text(rule, "jump", "") + " runs it");
+            learned++;
+        }
+        for (Object item : Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules"))) {
+            var rule = Json.object(item); if (!"glstatemanager-opengl".equals(rule.get("id"))) continue;
+            String log = "HUD.java:3: error: cannot find symbol\nimport com.mojang.blaze3d.platform.GlStateManager;\n  symbol:   class GlStateManager\n  location: package com.mojang.blaze3d.platform\n";
+            check(java.util.regex.Pattern.compile(rule.get("match").toString()).matcher(log).find()
+                    && Port.rewrite(rule, "import com.mojang.blaze3d.platform.GlStateManager;\nimport com.mojang.blaze3d.platform.NativeImage;\n")
+                        .equals("import com.mojang.blaze3d.opengl.GlStateManager;\nimport com.mojang.blaze3d.platform.NativeImage;\n")
+                    && !Route.plan(home, "1.20.1", "1.21.6").stepsCovered(Json.text(rule, "jump", ""), "yarn").isEmpty(),
+                    "GlStateManager's 1.21.5 package move is rewritten in yarn and mojmap sources, so javac no longer stops at the import");
+        }
+        check(learned >= 30, learned +" rules learned from Stonecutter switches name real switches in two or more mods, match their error, rewrite their example and run on their update");
+    }
     public static void main(String[] args) throws Exception {
         Path home = Path.of(args[0]), scratch = Path.of(args[1]); Files.createDirectories(scratch);
         Path existingArgs = scratch.resolve("existing loom args.txt");
@@ -59,6 +144,8 @@ public final class PortableTests {
         check(((Number)TestResults.read(model, "modaccelPure", "fresh-run").get("executed")).intValue() == 0, "old successful XML cannot make an empty run pass");
         Build build = new Build(project, home, "", new Modaccel.Report(root, "test")); Port port = new Port(build, model);
         Build portBuild = new Build(project, home, "", new Modaccel.Report(root, "port"));
+        routeChecks(home, new Port(portBuild, model), scratch);
+        learnedRuleChecks(home);
         for (var groups : List.of(List.of("net.minecraftforge"), List.of("net.fabricmc", "net.neoforged"), List.<String>of())) {
             var dependencies = groups.stream().map(group -> Json.map("group", group)).toList();
             try {
@@ -70,7 +157,22 @@ public final class PortableTests {
             }
         }
         check(portBuild.command(List.of("help")).contains("-Dfabric.loom.ci=true"), "port Gradle skips dependency source remapping");
+        check(!portBuild.command(List.of("help")).contains("--no-configure-on-demand"), "modaccel's Gradle runs keep the build's configure-on-demand");
+        Path missed = scratch.resolve("missed.log");
+        Files.writeString(missed, "* What went wrong:\nCannot locate tasks that match ':modaccelMetadata' as task 'modaccelMetadata' not found in root project 'diorama'.\n");
+        check(Build.selectionFailed(missed), "a task-selection failure is recognized for the configure-on-demand retry");
+        Files.writeString(missed, "* What went wrong:\nExecution failed for task ':compileJava'.\n");
+        check(!Build.selectionFailed(missed), "a compile failure does not trigger the configure-on-demand retry");
         check(build.command(List.of("help")).contains("-Dfabric.loom.ci=true"), "verification Gradle also skips dependency source remapping");
+        Path ngGame = scratch.resolve("ng/.gradle/repositories/ng_dummy_ng/net/neoforged/neoforge/21.1.248/neoforge-21.1.248.jar");
+        Map<String, Object> ngModel = Json.map("projects", List.of(Json.map("path", ":", "plugins", List.of("net.neoforged.gradle.userdev.UserDevPlugin"),
+                "compile", List.of(Json.map("task", ":compileJava", "classpath", List.of(ngGame.toString()))))));
+        check("21.1.248".equals(OwnCompile.neoforgeVersion(ngModel)), "a NeoGradle build waiting on NeoForm's game jar gets the installer-made jar");
+        Files.createDirectories(ngGame.getParent());
+        try (var zip = new java.util.zip.ZipOutputStream(Files.newOutputStream(ngGame))) { zip.putNextEntry(new java.util.zip.ZipEntry("net/minecraft/client/Minecraft.class")); zip.closeEntry(); }
+        check(OwnCompile.neoforgeVersion(ngModel) == null, "once NeoForm has built the game jar, the Gradle compile is used");
+        check(OwnCompile.neoforgeVersion(Json.map("projects", List.of(Json.map("path", ":", "compile", List.of(Json.map("task", ":compileJava", "classpath", List.of(scratch.resolve("minecraft-merged.jar").toString()))))))) == null,
+                "a Fabric build keeps the Gradle compile");
         Path transaction = project.state().resolve("ports/test-undo"), backup = transaction.resolve("before/src/custom/Food.java"); Files.createDirectories(backup.getParent());
         byte[] original = "class Food { int n = 1; }\r\n// original 🧱".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         Files.write(backup, original); Map<String, Object> before = Json.map("src/custom/Food.java", Fingerprints.bytes(original));

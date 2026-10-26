@@ -11,7 +11,7 @@ The limited Fabric beta is a starting point, not the finished scope.
 ## Where the work is (update this block when a phase step changes)
 
 ROADMAP.md holds the phases and numbered steps; only statuses there are claims.
-Live board: `docs/progress.html`, rendered from `coverage/ledger.json` by
+Live board: `docs/index.html` (the bench page; `docs/progress.html` now points there), rendered from `coverage/ledger.json` by
 `python bench/progress.py`. A port run that is not in the ledger did not happen.
 
 - Phase 1 step 7 (doing): AppleSkin 1.20.1 → 1.21.6. Loom 1.8→1.10 and Gradle
@@ -30,6 +30,28 @@ Live board: `docs/progress.html`, rendered from `coverage/ledger.json` by
 - Phase 3 step 14 (doing): `VersionMap <v> <v> --from-names yarn --to-names mojmap` converts one
   version's names (1.21.6: 9,357 classes); applying it to a whole tree is still missing. A 26.3
   build of AppleSkin's own 26.3-fabric checkout compiles in 14s.
+
+- Phase 2 step 11a/11b (done): the change index and the router. `coverage/changes/` holds every
+  neighbouring-release diff 1.14.4 → 26.3 in Mojang names plus `index.json` (families, hubs, rule
+  coverage, best ledger run); `docs/porting-map.html` shows it. Refresh: `java tools/ChangeIndex.java`,
+  `python bench/change_routes.py`, `python bench/porting_map.py`. `port` now routes A → hubs → B
+  (`tools/cli/Route.java`), joins one map across every update (`VersionMap --chain`), filters rules by
+  the updates crossed and names each remaining error's update; `--direct` keeps the one-jump map.
+  Next: step 12 (an untouched 1.20.1 mod to 1.21.6, loaded) and a behaviour check on a routed port.
+
+- Phase 2 step 11c (done): rules learned from 33 Stonecutter mods (5,045 switches) are the
+  `source: "stonecutter"` rules in knowledge/fixes.json; regenerate with `python bench/stonecutter_mine.py
+  extract` then `python bench/stonecutter_rules.py`. Zombie → 26.3 went 69 → 50 errors. AppleSkin 1.20.1 → 1.21.6
+  used to stop at one GlStateManager import (router and --direct alike; step 7 moved it by hand); the
+  `glstatemanager-opengl` rule moves it and the port now shows 37 errors through the router.
+
+## Branches and PRs
+- One PR per feature or support area (e.g. "Paper plugin support", "Porting"), not one per step. Keep it a draft and add commits as steps land; the PR body is the checklist.
+- Merge when it reaches a milestone worth shipping (a new rung on SCOPE.md's ladder, or a big porting jump such as every 1.14 mod reaching 1.16), with Jon's approval and CI green on all 3 OS.
+- Porting work goes on one long-running branch, `porting`, merged at those jumps.
+- Small fixes outside any feature may go in one hardening/fixes PR at a time.
+- Every port run gets its ledger row in that branch. Regenerate docs/index.html and docs/porting-map.html once, in the final commit before merge, so the site changes only when a milestone lands.
+- Agents work in their own worktree and never edit the same files as another agent.
 
 Read README.md for the public goal/support table and PLAN.md for the evidence
 behind the steps above. Finish the pending final game check before claiming

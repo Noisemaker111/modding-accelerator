@@ -1,0 +1,213 @@
+{
+ "repo": "IMB11-Mods/SkinShuffle",
+ "commit": "1930d54f6af334f0c18ac95fbdb517c5ee22d0bd",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "neoforge"
+ ],
+ "versions": [
+  "26.1"
+ ],
+ "files": 4,
+ "switches": 5,
+ "versionSwitches": 2,
+ "rows": [
+  {
+   "file": "src/main/java/dev/imb11/skinshuffle/client/skin/ResourceSkin.java",
+   "line": 78,
+   "method": "saveToConfig",
+   "condition": "<1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.4",
+     "code": "try (ResourceTexture.TextureData data = ResourceTexture.TextureData.load(resourceManager, getTexture())) {\n            var nativeImage = data.getImage();\n            nativeImage.writeTo(configSkin.getFile());\n        } catch (IOException e) {\n            throw new RuntimeException(\"Failed to save ResourceSkin to config.\", e);\n        }"
+    },
+    {
+     "condition": null,
+     "code": "try (var resource = new SimpleTexture(getTexture())) {\n            var resourceTex = resource.loadContents(resourceManager);\n            var image = resourceTex.image();\n            image.writeToFile(configSkin.getFile());\n        } catch (IOException e) {\n            throw new RuntimeException(\"Failed to save ResourceSkin to config.\", e);\n        }"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "load",
+      "loadContents"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "load",
+      "resource"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "load"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "load"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "image",
+      "load"
+     ]
+    },
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "load"
+     ]
+    }
+   ],
+   "older": "try (ResourceTexture.TextureData data = ResourceTexture.TextureData.load(resourceManager, getTexture())) {\n            var nativeImage = data.getImage();\n            nativeImage.writeTo(configSkin.getFile());\n        } catch (IOException e) {\n            throw new RuntimeException(\"Failed to save ResourceSkin to config.\", e);\n        }",
+   "newer": "try (var resource = new SimpleTexture(getTexture())) {\n            var resourceTex = resource.loadContents(resourceManager);\n            var image = resourceTex.image();\n            image.writeToFile(configSkin.getFile());\n        } catch (IOException e) {\n            throw new RuntimeException(\"Failed to save ResourceSkin to config.\", e);\n        }",
+   "removed": [
+    "ResourceTexture",
+    "TextureData",
+    "data",
+    "getImage",
+    "load",
+    "nativeImage",
+    "writeTo"
+   ],
+   "added": [
+    "SimpleTexture",
+    "image",
+    "loadContents",
+    "resource",
+    "resourceTex",
+    "writeToFile"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/imb11/skinshuffle/compat/ModMenuCompat.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package dev.imb11.skinshuffle.compat;\n\nimport com.terraformersmc.modmenu.api.ConfigScreenFactory;\nimport com.terraformersmc.modmenu.api.ModMenuApi;\nimport dev.imb11.skinshuffle.client.gui.GeneratedScreens;\nimport net.minecraft.client.gui.screens.Screen;\n\npublic class ModMenuCompat implements ModMenuApi {\n    @Override\n    public ConfigScreenFactory<?> getModConfigScreenFactory() {\n        return (ConfigScreenFactory<Screen>) GeneratedScreens::getCarouselScreen;\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/imb11/skinshuffle/fabric/SkinShuffleFabric.java",
+   "line": 4,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;\nimport net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/imb11/skinshuffle/fabric/SkinShuffleFabric.java",
+   "line": 17,
+   "method": "registerKeyMapping",
+   "condition": "fabric | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "return KeyMappingHelper.registerKeyMapping(keyMapping);"
+    },
+    {
+     "condition": null,
+     "code": "return keyMapping;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/imb11/skinshuffle/util/SkinTextureSafetyUtil.java",
+   "line": 14,
+   "method": "processTexture",
+   "condition": ">1.21.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.21.3",
+     "code": "return net.minecraft.client.renderer.texture.SkinTextureDownloader.processLegacySkin(image, null);"
+    },
+    {
+     "condition": null,
+     "code": "try (net.minecraft.client.texture.PlayerSkinTexture tex = new net.minecraft.client.texture.PlayerSkinTexture(null, null, null, false, null)) {\n                return tex.remapTexture(image);\n            }"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "SkinTextureDownloader"
+     ]
+    }
+   ],
+   "older": "try (net.minecraft.client.texture.PlayerSkinTexture tex = new net.minecraft.client.texture.PlayerSkinTexture(null, null, null, false, null)) {\n                return tex.remapTexture(image);\n            }",
+   "newer": "return net.minecraft.client.renderer.texture.SkinTextureDownloader.processLegacySkin(image, null);",
+   "removed": [
+    "PlayerSkinTexture",
+    "remapTexture",
+    "tex"
+   ],
+   "added": [
+    "SkinTextureDownloader",
+    "processLegacySkin",
+    "renderer"
+   ]
+  }
+ ]
+}

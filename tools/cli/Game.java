@@ -14,16 +14,87 @@ final class Game {
     final Build build; final Map<String, Object> model;
     Game(Build build, Map<String, Object> model) { this.build = build; this.model = model; }
     Map<String, Object> session() throws Exception {
+        Map<String, Object> value = recorded();
+        return value != null && alive(value) ? value : null;
+    }
+    /** The last game started for this project, running or not. */
+    Map<String, Object> recorded() throws Exception {
         Path file = build.project.state().resolve("agent.json");
         if (!Files.exists(file)) return null;
         Map<String, Object> value = Json.read(file);
         if (!build.project.root.toString().equals(value.get("root"))) throw new IOException("Game session belongs to a different project.");
-        long pid = ((Number)value.get("pid")).longValue();
-        var process = ProcessHandle.of(pid);
-        if (process.isEmpty() || !process.get().isAlive()) return null;
-        String recorded = Json.text(value, "processStart", "");
-        if (recorded.isEmpty() || !process.get().info().startInstant().map(Instant::toString).orElse("").equals(recorded)) return null;
         return value;
+    }
+    static boolean alive(Map<String, Object> session) {
+        var process = ProcessHandle.of(((Number)session.get("pid")).longValue());
+        if (process.isEmpty() || !process.get().isAlive()) return false;
+        String recorded = Json.text(session, "processStart", "");
+        return !recorded.isEmpty() && process.get().info().startInstant().map(Instant::toString).orElse("").equals(recorded);
+    }
+    /** Why there's no game to talk to: the last one crashed or exited, or none was started. */
+    String noGame(String then) throws Exception {
+        Map<String, Object> last = recorded();
+        if (last == null || Json.text(last, "processStart", "").isEmpty()) return "No running game for this project. Start one with ui-check or world-check, then " + then + ".";
+        return exited(last) + "\nStart a new one with ui-check or world-check, then " + then + ".";
+    }
+    /**
+     * What became of a game whose process is gone, read from its log: a JVM fatal error (with
+     * its hs_err file), a Minecraft crash report, or neither. Only named lines are copied, since
+     * an hs_err file's command line and environment can hold an access token.
+     */
+    static String exited(Map<String, Object> session) {
+        StringBuilder out = new StringBuilder("The game started for this project (pid " + session.get("pid") + ") has exited");
+        Path log = Path.of(Json.text(session, "log", ""));
+        List<String> lines = lines(log);
+        int fatal = -1, crashed = -1;
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).contains("A fatal error has been detected by the Java Runtime Environment")) fatal = i;
+            if (lines.get(i).contains("Game crashed! Crash report saved to:")) crashed = i;
+        }
+        if (fatal >= 0) {
+            out.append(": the JVM crashed.");
+            String file = null;
+            for (int i = fatal + 1; i < lines.size() && lines.get(i).startsWith("#"); i++) {
+                String line = lines.get(i).substring(1).strip(), next = i + 1 < lines.size() ? lines.get(i + 1).replaceFirst("^#\\s*", "") : "";
+                if (line.matches("(EXCEPTION_|SIG|Internal Error|Out of Memory|There is insufficient memory).*")) out.append("\n  ").append(line);
+                else if (line.startsWith("JRE version:")) out.append("\n  ").append(line);
+                else if (line.equals("Problematic frame:")) out.append("\n  Problematic frame: ").append(next);
+                else if (line.startsWith("An error report file with more information is saved as:")) file = next.strip();
+            }
+            List<String> report = file == null ? List.of() : lines(Path.of(file));
+            for (int i = 0; i < report.size(); i++) {
+                java.util.regex.Matcher thread = java.util.regex.Pattern.compile("^Current thread \\(\\w+\\):\\s+\\w+ \"([^\"]+)\"").matcher(report.get(i));
+                if (thread.find()) out.append("\n  Thread: ").append(thread.group(1));
+                if (report.get(i).equals("Current CompileTask:") && i + 1 < report.size()) out.append("\n  Compiling: ").append(report.get(i + 1).strip());
+            }
+            if (file != null) out.append("\n  Crash file: ").append(file);
+        } else if (crashed >= 0) {
+            out.append(": Minecraft crashed.");
+            String file = lines.get(crashed).replaceFirst(".*Crash report saved to:\\s*(#@!@#\\s*)?", "").strip();
+            List<String> report = lines(Path.of(file));
+            for (int i = 0; i < report.size(); i++) {
+                if (!report.get(i).startsWith("Description:")) continue;
+                out.append("\n  ").append(report.get(i));
+                // The exception follows a blank line, then its first frames.
+                int shown = 0;
+                for (int j = i + 1; j < report.size() && shown < 6; j++) {
+                    String line = report.get(j);
+                    if (line.isBlank()) { if (shown > 0) break; continue; }
+                    out.append("\n  ").append(line.strip()); shown++;
+                }
+                break;
+            }
+            out.append("\n  Crash report: ").append(file);
+        } else {
+            out.append(" without a crash report. Last lines of its log:");
+            for (String line : lines.subList(Math.max(0, lines.size() - 8), lines.size())) out.append("\n  ").append(line);
+        }
+        return out.append("\nGame log: ").append(log).toString();
+    }
+    private static List<String> lines(Path file) {
+        // Decoded leniently: a dying JVM writes its banner in the platform charset.
+        try { return new String(Files.readAllBytes(file), StandardCharsets.UTF_8).lines().toList(); }
+        catch (IOException | InvalidPathException unreadable) { return List.of(); }
     }
     /**
      * Reusable visual gate: a key, click or screen action must change the real frame by at
@@ -53,16 +124,25 @@ final class Game {
     }
     static Map<String, Object> request(Map<String, Object> session, Map<String, Object> request) throws Exception {
         request.put("token", session.get("token"));
+        Map<String, Object> result;
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress("127.0.0.1", ((Number)session.get("port")).intValue()), 2000); socket.setSoTimeout(135000);
             var output = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
             output.println(Json.write(request));
             var input = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             String line = input.readLine(); if (line == null) throw new IOException("Game closed its control connection; check " + session.get("log"));
-            var result = Json.object(Json.parse(line));
-            if (!Boolean.TRUE.equals(result.get("ok"))) throw new IOException("Game action failed: " + result.get("error"));
-            return result;
-        } catch (IOException failure) { throw new IOException(failure.getMessage() + "\nGame log: " + session.get("log"), failure); }
+            result = Json.object(Json.parse(line));
+        } catch (IOException failure) {
+            // A dropped connection usually means the game died. A dying JVM keeps the socket
+            // until its crash file is written, so give it a moment to finish exiting.
+            var process = ProcessHandle.of(((Number)session.get("pid")).longValue());
+            if (!(failure instanceof SocketTimeoutException) && process.isPresent())
+                try { process.get().onExit().get(10, TimeUnit.SECONDS); } catch (Exception stillRunning) { }
+            if (!alive(session)) throw new IOException(failure.getMessage() + "\n" + exited(session), failure);
+            throw new IOException(failure.getMessage() + "\nGame log: " + session.get("log"), failure);
+        }
+        if (!Boolean.TRUE.equals(result.get("ok"))) throw new IOException("Game action failed: " + result.get("error") + "\nGame log: " + session.get("log"));
+        return result;
     }
     Map<String, Object> run(Modaccel.Options options) throws Exception {
         if (options.command.equals("mp-check") && !options.values.containsKey("server")) {
@@ -82,7 +162,7 @@ final class Game {
         }
         String command = options.command; Map<String, Object> current = session();
         if (command.equals("eval")) {
-            if (current == null) throw new IOException("No running game for this project. Start one with ui-check or world-check, then eval against it.");
+            if (current == null) throw new IOException(noGame("eval against it"));
             boolean until = options.values.containsKey("until");
             String code = until ? options.get("until", "") : options.values.containsKey("file") ? Files.readString(Path.of(options.get("file", ""))) : options.get("code", "");
             if (code.isBlank()) throw new IllegalArgumentException("eval needs --code SNIPPET, --file PATH or --until CONDITION");
@@ -103,7 +183,7 @@ final class Game {
             return answer;
         }
         if (command.equals("reload")) {
-            if (current == null) throw new IOException("No running game for this project. Start one with ui-check or world-check, then reload into it.");
+            if (current == null) throw new IOException(noGame("reload into it"));
             List<String> tasks = options.values.containsKey("task") ? List.of(options.get("task", "")) : build.tasks(model, "classes");
             if (tasks.isEmpty()) throw new IOException("No classes task in the selected project. Select --project :module.");
             Run.Result compiled = build.compileCached(tasks, "compile");
@@ -128,16 +208,24 @@ final class Game {
             answer.put("restartNeeded", !restart.isEmpty());
             return answer;
         }
-        if (command.equals("game-status")) return current == null ? Json.map("running", false) : request(current, Json.map("command", "status"));
+        if (command.equals("game-status")) {
+            if (current != null) return request(current, Json.map("command", "status"));
+            Map<String, Object> last = recorded();
+            return last == null || Json.text(last, "processStart", "").isEmpty() ? Json.map("running", false) : Json.map("running", false, "details", exited(last));
+        }
         if (command.equals("game-stop")) {
             Map<String, Object> result;
-            if (current == null) result = Json.map("running", false);
-            else {
+            if (current == null) {
+                Map<String, Object> last = recorded();
+                result = last == null || Json.text(last, "processStart", "").isEmpty() ? Json.map("running", false) : Json.map("running", false, "details", exited(last));
+            } else {
                 var process = ProcessHandle.of(((Number)current.get("pid")).longValue());
                 result = request(current, Json.map("command", "quit"));
                 if (process.isPresent()) process.get().onExit().get(20, TimeUnit.SECONDS);
                 result.put("stopped", true);
             }
+            // A stopped game didn't crash; later commands shouldn't say it exited.
+            Files.deleteIfExists(build.project.state().resolve("agent.json"));
             // The daemons that prepared, launched and recompiled the game hold a gigabyte or more each.
             Run.Result daemons = build.stopDaemons();
             result.put("gradleDaemonsStopped", daemons == null || daemons.exit() == 0); return result;

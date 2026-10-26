@@ -1,160 +1,151 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Modding Accelerator 0.1.0-beta.1, shown</title>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modding Accelerator bench</title>
+<meta name="description" content="The Minecraft mods and versions Modding Accelerator is tested on, every port it ran, and how fast each part was.">
 <style>
-  :root {
-    --surface: #ffffff;
-    --ink: #0b0b0b;
-    --ink-2: #52514e;
-    --ink-3: #8a8983;
-    --rule: #ecebe7;
-    --tile: #f6f5f2;
-    --old: #b9b7b0;
-    --new: #2a78d6;
-    --yes: #1f7a3a;
-    --warn: #a35a00;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--surface); color: var(--ink); width: 1200px;
-         font-family: "Segoe UI", system-ui, sans-serif; padding: 44px 56px 36px; }
-  code { font-family: "Cascadia Mono", Consolas, monospace; font-size: 0.92em; background: var(--tile); padding: 1px 5px; border-radius: 4px; }
-  h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.01em; }
-  h1 em { font-style: normal; color: var(--new); }
-  .sub { margin-top: 8px; font-size: 17px; color: var(--ink-2); max-width: 980px; line-height: 1.45; }
 
-  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 26px; }
-  .tile { background: var(--tile); border-radius: 10px; padding: 16px 18px; }
-  .tile b { display: block; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
-  .tile span { display: block; margin-top: 5px; font-size: 13.5px; color: var(--ink-2); line-height: 1.35; }
+:root {
+  --bg:#ffffff; --ink:#111111; --ink2:#4a4a4a; --ink3:#8a8a8a; --rule:#dcdcdc; --head:#f5f6f8; --chip:#ffffff;
+  --hi:#a8d4ff; --hi-edge:#3d8bf0; --hi-ink:#06213f; --best:#e3e5e8;
+  --green:#1f9d55; --yellow:#e2b200; --red:#d64545; --grey:#b9b9b9; --link:#1f63d6;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#121212; --ink:#f1f1f1; --ink2:#c4c4c4; --ink3:#8c8c8c; --rule:#333333; --head:#1b1c1e; --chip:#1d1d1d;
+  --hi:#173a63; --hi-edge:#5aa2ff; --hi-ink:#e6f1ff; --best:#2a2c30;
+  --green:#3cc17a; --yellow:#f0c534; --red:#ef6b6b; --grey:#555555; --link:#7fb0ff;
+} }
+:root[data-theme="dark"] {
+  --bg:#121212; --ink:#f1f1f1; --ink2:#c4c4c4; --ink3:#8c8c8c; --rule:#333333; --head:#1b1c1e; --chip:#1d1d1d;
+  --hi:#173a63; --hi-edge:#5aa2ff; --hi-ink:#e6f1ff; --best:#2a2c30;
+  --green:#3cc17a; --yellow:#f0c534; --red:#ef6b6b; --grey:#555555; --link:#7fb0ff;
+}
+* { box-sizing:border-box }
+html { -webkit-text-size-adjust:100% }
+body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif }
+main { max-width:1120px; margin:0 auto; padding:28px 16px 48px }
+a { color:var(--link) }
+h1 { font-size:34px; margin:0; letter-spacing:-.01em; font-weight:600 }
+h2 { font-size:24px; margin:40px 0 8px; font-weight:600 }
+p { margin:6px 0; color:var(--ink2) }
+.top { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap }
+.top nav { display:flex; gap:16px; align-items:center; font-size:15px }
+.lede { font-size:18px; max-width:780px; margin-top:10px }
+.small { font-size:13.5px; color:var(--ink3) }
+.mono { font-family:"Cascadia Mono",Consolas,ui-monospace,monospace; font-size:14px }
+button { font:inherit; cursor:pointer; border:1px solid var(--rule); background:var(--chip); color:var(--ink); border-radius:8px; padding:7px 12px }
+button:hover { border-color:var(--ink3) }
+.theme { font-size:14px; padding:4px 10px }
+/* the benchmark table */
+.tbl { width:100%; border-collapse:separate; border-spacing:0; margin-top:12px; font-size:18px }
+.tbl th { font-weight:500; font-size:18px; text-align:center; padding:14px 10px; border-bottom:1px solid var(--rule); vertical-align:bottom }
+.tbl th.l, .tbl td.l { text-align:left }
+.tbl td { padding:14px 10px; border-bottom:1px solid var(--rule); text-align:center; vertical-align:middle }
+.tbl td.l b { font-weight:500 }
+.tbl td .sub, .tbl th .sub { display:block; font-size:14px; color:var(--ink3); font-weight:400 }
+.tbl tr.headrow td { background:var(--head) }
+.tbl .hi { background:var(--hi); color:var(--hi-ink); border-left:3px solid var(--hi-edge); border-right:3px solid var(--hi-edge); font-weight:600 }
+.tbl th.hi { border-top:3px solid var(--hi-edge); border-radius:8px 8px 0 0; background:transparent; color:var(--ink) }
+.tbl tr:last-child td.hi { border-bottom:3px solid var(--hi-edge) }
+.tbl .hi .sub { color:var(--hi-ink); opacity:.75 }
+.tbl .best { background:var(--best); font-weight:600 }
+.dot { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:7px; vertical-align:-1px }
+.st-green { background:var(--green) } .st-yellow { background:var(--yellow) } .st-red { background:var(--red) } .st-grey { background:var(--grey) }
+.foot { margin-top:40px; padding-top:14px; border-top:1px solid var(--rule); font-size:13.5px; color:var(--ink3) }
+@media (max-width: 720px) {
+  body { font-size:16px }
+  main { padding:18px 16px 40px }
+  h1 { font-size:28px }
+  h2 { font-size:21px }
+  .tbl, .tbl th { font-size:16px }
+  /* tables become one card per row on a phone */
+  .tbl.stack thead { display:none }
+  .tbl.stack, .tbl.stack tbody, .tbl.stack tr, .tbl.stack td { display:block; width:100% }
+  .tbl.stack tr { border-bottom:1px solid var(--rule); padding:8px 0 }
+  .tbl.stack td { border:0; padding:3px 0; text-align:left }
+  .tbl.stack td[data-k]::before { content:attr(data-k) ": "; color:var(--ink3); font-weight:400 }
+  .tbl.stack td.hi { border:0; border-left:4px solid var(--hi-edge); padding-left:8px; border-radius:0 }
+  .tbl.stack tr:last-child td.hi { border-bottom:0 }
+}
 
-  section { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--rule); }
-  h2 { font-size: 21px; font-weight: 700; }
-  .lede { margin-top: 4px; font-size: 14.5px; color: var(--ink-2); line-height: 1.45; }
-  .key { display: flex; gap: 22px; margin-top: 10px; font-size: 13.5px; color: var(--ink-2); }
-  .key span::before { content: ""; display: inline-block; width: 12px; height: 12px;
-         border-radius: 3px; margin-right: 7px; vertical-align: -1px; background: var(--c); }
-
-  .row { display: grid; grid-template-columns: 250px 1fr 92px; align-items: center;
-         column-gap: 18px; margin-top: 11px; }
-  .mod b { display: block; font-size: 15.5px; }
-  .mod span { font-size: 12.5px; color: var(--ink-3); }
-  .bars { display: flex; flex-direction: column; gap: 4px; }
-  .bar { display: flex; align-items: center; gap: 8px; height: 18px; }
-  .fill { height: 18px; border-radius: 0 4px 4px 0; min-width: 4px; background: var(--c); }
-  .val { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
-  .bar.new .val { color: var(--ink); font-weight: 700; font-size: 13.5px; }
-  .x { text-align: right; font-size: 28px; font-weight: 700; color: var(--new); letter-spacing: -0.02em; }
-
-  table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 14.5px; }
-  th { text-align: left; font-size: 12.5px; font-weight: 600; color: var(--ink-3); padding: 0 10px 8px;
-       border-bottom: 1px solid var(--rule); }
-  td { padding: 9px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.4; }
-  td.c, th.c { text-align: center; }
-  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .ok { color: var(--yes); font-weight: 700; }
-  .no { color: var(--ink-3); }
-  .warn { color: var(--warn); font-weight: 600; }
-  .small { font-size: 12.5px; color: var(--ink-3); }
-
-  .limits { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 34px; }
-  .limits p { font-size: 14px; color: var(--ink-2); line-height: 1.45; }
-  .limits p b { color: var(--ink); }
-
-  .try { margin-top: 26px; background: var(--tile); border-radius: 10px; padding: 18px 22px; }
-  .try b { font-size: 15px; }
-  .try code { display: inline-block; margin-top: 6px; font-size: 13.5px; }
-  .foot { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--rule);
-          font-size: 12.5px; line-height: 1.5; color: var(--ink-3); }
-</style>
-</head>
-<body>
-
-<h1>Move a Minecraft mod to a new version, and see <em>what actually works</em>.</h1>
-<p class="sub"><b style="color:var(--ink)">Goal: any Minecraft version to any other, and any loader to any other.</b><br>One command takes a Gradle source project, rewrites it for another Minecraft version, builds it, audits its mixins and then drives the real game for screenshots and assertions. Every run ends with a checked result or a named list of what is left. Beta, published 24 October 2026.</p>
-
-<div class="tiles">
-  <div class="tile"><b>75 s</b><span>first NeoForge port in a fresh repo, 19 API errors repaired on the way (14 s when repeated)</span></div>
-  <div class="tile"><b>2.3 s</b><span>answer after a one-file edit in a 2,102-source Forge repo, against 137 s for its own warm build</span></div>
-  <div class="tile"><b>3 loaders</b><span>Fabric and NeoForge ports end to end; Forge runs the loop and checks</span></div>
-  <div class="tile"><b>3 OS green</b><span>Windows, Linux and macOS portable checks in hosted CI; game checks on Windows</span></div>
+.nw { white-space:nowrap }
+td.what { font-size:15px; color:var(--ink2); max-width:460px; line-height:1.4 }
+td.none { color:var(--ink3) }
+.facts { display:flex; gap:28px; flex-wrap:wrap; margin-top:18px }
+.facts div { font-size:15px; color:var(--ink2) }
+.facts b { display:block; font-size:30px; color:var(--ink); font-weight:600 }
+.wide { overflow-x:auto }
+.room { border:1px dashed var(--rule); border-radius:10px; padding:14px 16px; margin-top:12px; color:var(--ink2) }
+@media (max-width: 720px) {
+  td.what { max-width:none }
+  .tbl.speed td.none, .tbl.speed tr.headrow td.hi { display:none }
+  .tbl.speed td.old { color:var(--ink3) }
+  .tbl.speed tr.headrow td { background:none; padding-top:14px; font-size:18px }
+  .tbl.speed td[data-k]::before { content:attr(data-k) ": " }
+}
+</style></head><body>
+<main>
+<div class="top">
+  <h1>Bench</h1>
+  <nav><a href="porting-map.html">Porting map</a><a href="https://github.com/Noisemaker111/modding-accelerator">GitHub</a><button class="theme" id="theme" type="button">Dark</button></nav>
+</div>
+<p class="lede">The mods and Minecraft versions Modding Accelerator is tested on, every port it has run, and how long each part took. Only runs with a receipt are here. To see the route between two versions, open the <a href="porting-map.html">porting map</a>.</p>
+<div class="facts">
+  <div><b>15</b>real mods</div>
+  <div><b>8</b>Minecraft versions</div>
+  <div><b>19</b>ports run</div>
+  <div><b>5</b>load or work in the game</div>
 </div>
 
-<section>
-  <h2>Their own build, next to this</h2>
-  <p class="lede">Open-source mods, unchanged. Grey is the mod's own Gradle build with the daemon already warm; blue is the whole <code>modaccel</code> check. Bars are time, capped at 350 s.</p>
-  <div class="key"><span style="--c:var(--old)">their build</span><span style="--c:var(--new)">modaccel</span></div>
-  <div id="rows"></div>
-</section>
+<h2 id="tested">What we test</h2>
+<p>Untouched open-source mods. The highlighted column is the furthest a port of that mod has got.</p>
+<table class="tbl stack"><thead><tr><th class="l">Mod</th><th>Loader</th><th>Versions</th><th class="hi l">Furthest it got</th><th>Last run</th></tr></thead>
+<tbody><tr><td class='l'><b>AppleSkin</b><span class='sub'>ported by modaccel</span></td><td data-k='Loader'>Fabric, NeoForge</td><td data-k='Versions'>1.20.1, 1.21.5, 1.21.6, 1.21.9, 26.3</td><td class='hi l' data-k='Furthest it got'><span class='dot st-green'></span>Behaviour checked in the game<span class='sub'>1.21.5 → 1.21.6</span></td><td data-k='Last run' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>F3Nope</b><span class='sub'>ported by modaccel</span></td><td data-k='Loader'>Fabric</td><td data-k='Versions'>1.21.5, 1.21.6</td><td class='hi l' data-k='Furthest it got'><span class='dot st-green'></span>Behaviour checked in the game<span class='sub'>1.21.5 → 1.21.6</span></td><td data-k='Last run' class='nw'>2026-10-24</td></tr><tr><td class='l'><b>ZombieApocalypseAddon</b><span class='sub'>ported by modaccel</span></td><td data-k='Loader'>NeoForge</td><td data-k='Versions'>1.21.1, 1.21.4, 1.21.6, 26.3</td><td class='hi l' data-k='Furthest it got'><span class='dot st-green'></span>Behaviour checked in the game<span class='sub'>1.21.1 → 1.21.4</span></td><td data-k='Last run' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>Jade</b><span class='sub'>ported by modaccel</span></td><td data-k='Loader'>NeoForge</td><td data-k='Versions'>1.21.1, 1.21.6</td><td class='hi l' data-k='Furthest it got'><span class='dot st-red'></span>Stops with named errors<span class='sub'>1.21.1 → 1.21.6</span></td><td data-k='Last run' class='nw'>2026-10-24</td></tr><tr><td class='l'><b>Notes (MattCzyr)</b><span class='sub'>ported by modaccel</span></td><td data-k='Loader'>NeoForge</td><td data-k='Versions'>1.21, 1.21.6</td><td class='hi l' data-k='Furthest it got'><span class='dot st-red'></span>Stops with named errors<span class='sub'>1.21 → 1.21.6</span></td><td data-k='Last run' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>PrettyPipes</b><span class='sub'>ported by modaccel</span></td><td data-k='Loader'>NeoForge</td><td data-k='Versions'>1.21.1, 1.21.4</td><td class='hi l' data-k='Furthest it got'><span class='dot st-red'></span>Stops with named errors<span class='sub'>1.21.1 → 1.21.4</span></td><td data-k='Last run' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>Reactive (hjake123)</b><span class='sub'>ported by modaccel</span></td><td data-k='Loader'>NeoForge</td><td data-k='Versions'>1.21.1, 1.21.4</td><td class='hi l' data-k='Furthest it got'><span class='dot st-red'></span>Stops with named errors<span class='sub'>1.21.1 → 1.21.4</span></td><td data-k='Last run' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>Artifacts</b><span class='sub'>version bump by hand, errors counted</span></td><td data-k='Loader'>Fabric</td><td data-k='Versions'>1.21.1, 1.21.4</td><td class='hi l' data-k='Furthest it got'><span class='dot st-grey'></span>Bump measured<span class='sub'>97 compile errors, repaired by hand</span></td><td data-k='Last run' class='nw'>2026-10-21</td></tr><tr><td class='l'><b>Diorama</b><span class='sub'>their own build, then modaccel fast</span></td><td data-k='Loader'>Fabric, NeoForge</td><td data-k='Versions'>26.3</td><td class='hi l' data-k='Furthest it got'><span class='dot st-grey'></span>Edit loop measured<span class='sub'>no port run yet</span></td><td data-k='Last run' class='nw'>2026-10-22</td></tr><tr><td class='l'><b>MineColonies</b><span class='sub'>their own build, then modaccel fast</span></td><td data-k='Loader'>Forge</td><td data-k='Versions'>1.20.1</td><td class='hi l' data-k='Furthest it got'><span class='dot st-grey'></span>Edit loop measured<span class='sub'>no port run yet</span></td><td data-k='Last run' class='nw'>2026-10-22</td></tr><tr><td class='l'><b>Polymer</b><span class='sub'>version bump by hand, errors counted</span></td><td data-k='Loader'>Fabric</td><td data-k='Versions'>1.21.5, 1.21.6</td><td class='hi l' data-k='Furthest it got'><span class='dot st-grey'></span>Bump measured<span class='sub'>8 compile errors, repaired by hand</span></td><td data-k='Last run' class='nw'>2026-10-21</td></tr><tr><td class='l'><b>Terrestria</b><span class='sub'>version bump by hand, errors counted</span></td><td data-k='Loader'>Fabric</td><td data-k='Versions'>1.21.5, 1.21.6</td><td class='hi l' data-k='Furthest it got'><span class='dot st-grey'></span>Bump measured<span class='sub'>99 compile errors, repaired by hand</span></td><td data-k='Last run' class='nw'>2026-10-21</td></tr><tr><td class='l'><b>Traveler&#x27;s Backpack</b><span class='sub'>version bump by hand, errors counted</span></td><td data-k='Loader'>Fabric</td><td data-k='Versions'>1.21.4, 1.21.5</td><td class='hi l' data-k='Furthest it got'><span class='dot st-grey'></span>Bump measured<span class='sub'>6 compile errors, repaired by hand</span></td><td data-k='Last run' class='nw'>2026-10-21</td></tr><tr><td class='l'><b>Traverse</b><span class='sub'>version bump by hand, errors counted</span></td><td data-k='Loader'>Fabric</td><td data-k='Versions'>1.21.5, 1.21.6</td><td class='hi l' data-k='Furthest it got'><span class='dot st-grey'></span>Bump measured<span class='sub'>68 compile errors, repaired by hand</span></td><td data-k='Last run' class='nw'>2026-10-21</td></tr><tr><td class='l'><b>Trinkets</b><span class='sub'>version bump by hand, errors counted</span></td><td data-k='Loader'>Fabric</td><td data-k='Versions'>1.21.5, 1.21.6</td><td class='hi l' data-k='Furthest it got'><span class='dot st-grey'></span>Bump measured<span class='sub'>21 compile errors, repaired by hand</span></td><td data-k='Last run' class='nw'>2026-10-21</td></tr></tbody></table>
+<p class="small">Versions touched: 1.20.1, 1.21, 1.21.1, 1.21.4, 1.21.5, 1.21.6, 1.21.9, 26.3.</p>
 
-<section>
-  <h2>Ports that were actually checked</h2>
-  <p class="lede">A port counts only when the build passes, mixin targets verify, the packaged metadata declares the new game version, and a real client loads the result. Anything less is reported as a stop with the errors that remain.</p>
-  <table>
-    <tr><th>Mod</th><th>Jump</th><th>What the tool did</th><th class="c">Left for a person</th></tr>
-    <tr><td><b>F3Nope</b><div class="small">Fabric</div></td><td class="small">1.21.5 ↔ 1.21.6</td><td>Port and backport, packaged build, mixin audit, real client; a visual gate caught an overlay that was invisible despite a passing build.</td><td class="c ok">0</td></tr>
-    <tr><td><b>AppleSkin</b><div class="small">Fabric</div></td><td class="small">1.21.5 ↔ 1.21.6</td><td>Both directions, plus a save roundtrip proving the world reloads at the same position.</td><td class="c ok">0</td></tr>
-    <tr><td><b>ZombieApocalypseAddon</b><div class="small">NeoForge, 71 files</div></td><td class="small">1.21.1 → 1.21.4</td><td>Loader and game ranges rewritten, 19 API errors repaired by rules, built and audited. The jar loads in a 1.21.4 client and its <code>/za</code> command runs.</td><td class="c ok">0</td></tr>
-    <tr><td><b>ZombieApocalypseAddon</b><div class="small">NeoForge, five minors</div></td><td class="small">1.21.1 → 1.21.6</td><td>38 reported errors reduced to 9 by rules (NBT, UUID codecs, day/night, entity snapping, sound holders).</td><td class="c warn">9</td></tr>
-    <tr><td><b>Jade</b><div class="small">NeoForge</div></td><td class="small">1.21.1 → 1.21.6</td><td>Reaches the target and names the 1.21.6 GUI rewrite instead of shipping a build that would keep the old game.</td><td class="c warn">98</td></tr>
-  </table>
-  <p class="small" style="margin-top:10px">The 9 and 98 are semantic, not missing renames: 1.21.6 replaced <code>SavedData.Factory</code> with a codec per data class, moved owner identity to <code>OwnableEntity</code>, and rewrote the GUI matrix and render pipeline.</p>
-</section>
+<h2 id="runs">Latest runs</h2>
+<p>Every port modaccel has run, newest first, from <span class="mono">coverage/ledger.json</span>.</p>
+<table class="tbl stack"><thead><tr><th class="l">Mod</th><th>Port</th><th class="hi l">Reached</th><th class="l">What happened</th><th>Date</th></tr></thead>
+<tbody><tr><td class='l'><b>ZombieApocalypseAddon</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21.1 → 1.21.4</td><td class='hi l' data-k='Reached'><span class='dot st-green'></span>Loads in the real game</td><td class='l what' data-k='What happened'>Hub router, three families in one command (1.21.1 -&gt; hub 1.21.3 -&gt; 1.21.4), fresh copy of upstream 1bb67d4. One map joined across 1.21.1, 1.21.2, 1.21.3 and 1.21.4; rules ran only on the updates their jump covers. 34 errors to 2 to 0, packaged build and mixin audit in 165s (warm Gradle and mapping caches, fresh project). ui-check loaded it in a real 1.21.4 client (NeoForge 21.4.161, 3 mods) in 34s. Behaviour not checked on this run.</td><td data-k='Date' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>ZombieApocalypseAddon</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21.1 → 1.21.6</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>Hub router (1.21.1 -&gt; 1.21.3 -&gt; 1.21.4 -&gt; 1.21.5 -&gt; 1.21.6), fresh copy of upstream 1bb67d4: 98 errors to 12 to 9 in 78s warm, the same counts as the one-jump path (--direct, 88s). The difference is the report: all 9 are placed on update 1.21.4 -&gt; 1.21.5 by the joined map (SavedData.Factory and SavedData.save removed, OwnableEntity.getOwnerUUID, Saddleable.equipSaddle and Entity.isInWaterOrBubble removed, TamableAnimal.setOwnerUUID renamed).</td><td data-k='Date' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>ZombieApocalypseAddon</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21.1 → 26.3</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>Hub router across nine hops (1.21.1 -&gt; 1.21.3 -&gt; 1.21.4 -&gt; 1.21.5 -&gt; 1.21.8 -&gt; 1.21.10 -&gt; 1.21.11 -&gt; 26.1.2 -&gt; 26.2 -&gt; 26.3), fresh copy: one map joined by intermediary ids to 1.21.11, then rules; 100+ errors to 69 in 140s warm. The one-jump path (identity map into 26.3) stops after two rounds at 100+ (93 listed). Of the 69: 4 placed on their update by owner, 24 by name in the 26.x step files, 35 by name only (owner differs, often a supertype such as Entity), 6 unplaced.</td><td data-k='Date' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>ZombieApocalypseAddon</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21.1 → 26.3</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>Routed port with learned rules: 69 errors before, 50 after (130s / 123s). Five learned rules fired: entity type constants to EntityTypes (26.2), GameProfile.getName to name() (1.21.9), command and player permission levels (1.21.11), registry lookups (1.21.2). 26 errors went away; 7 that the missing names had hidden surfaced (EntityType.create and convertTo take more arguments now). Warm Gradle and mapping caches, fresh upstream copy each run; before = rules as of the hub router, after = plus the 38 rules learned from Stonecutter switches (bench/stonecutter_rules.py).</td><td data-k='Date' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>ZombieApocalypseAddon</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21.1 → 1.21.6</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>Routed port with learned rules: 9 errors before and after (126s / 84s), all on 1.21.4 -&gt; 1.21.5 (SavedData factory, isInWaterOrBubble, owner UUID, saddle). The switches show those in one mod or none, so no rule was learned for them. Warm Gradle and mapping caches, fresh upstream copy each run; before = rules as of the hub router, after = plus the 38 rules learned from Stonecutter switches (bench/stonecutter_rules.py).</td><td data-k='Date' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>Notes (MattCzyr)</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21 → 1.21.6</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>Untouched mod, neoforge-1.21.1 branch @d1e9c39, no third-party dependencies: 14 errors before and after (366s / 253s). No learned rule matched: its errors are the HUD layer API (LayeredDraw), float drawString, scroll bar position and RegistryAccess.registry, which the mined switches show in one mod or none. Warm Gradle and mapping caches, fresh upstream copy each run; before = rules as of the hub router, after = plus the 38 rules learned from Stonecutter switches (bench/stonecutter_rules.py).</td><td data-k='Date' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>AppleSkin</b><span class='sub'>Fabric</span></td><td data-k='Port' class='nw'>1.20.1 → 1.21.6</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>Re-run through the router (Loom 1.10 and Gradle 8.13 by hand, JEI disabled as in step 7). Without help javac stops at one import, com.mojang.blaze3d.platform.GlStateManager, which moved to com.mojang.blaze3d.opengl in 1.21.5; --direct stops at the same 1, and so did step 7&#x27;s first run, whose 61 came after that import was moved by hand. With the new glstatemanager-opengl rule the real count shows: 37 errors, 10 rules applied (87s), same with and without the learned Stonecutter rules (99s), which are mojmap-only. Left: render pipeline (setShaderColor x9, blend and depth state, texture ids), the exhaustion getter, food component effects, tooltip component, networking receivers. Warm Gradle and mapping caches, fresh copies.</td><td data-k='Date' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>Reactive (hjake123)</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21.1 → 1.21.4</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>Untouched mod, branch 1.21 @e2ca3d6: stopped before compiling. Build discovery fails on flywheel-neoforge-1.21.4:1.0.0-9, which does not exist; the mod compiles against Create, which has no 1.21.4 release. A real dependency blocker, but it is reported as a Gradle failure, not a named dependency blocker.</td><td data-k='Date' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>PrettyPipes</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21.1 → 1.21.4</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>Untouched mod, branch 1.21 @8ae52f0: stopped before compiling. Its JEI coordinates are built from ${minecraft_version}, so the target step moves the name to jei-1.21.4-* but keeps version 19.64.0.453, which does not exist, and a selection to JEI 20.0.0.4 was not picked up. Tool gap: dependency setup does not follow property-built NeoForge coordinates.</td><td data-k='Date' class='nw'>2026-10-25</td></tr><tr><td class='l'><b>F3Nope</b><span class='sub'>Fabric</span></td><td data-k='Port' class='nw'>1.21.5 → 1.21.6</td><td class='hi l' data-k='Reached'><span class='dot st-green'></span>Behaviour checked in the game</td><td class='l what' data-k='What happened'>Three overlay lines inspected in the real client; a visual gate caught an invisible overlay that a passing build missed.</td><td data-k='Date' class='nw'>2026-10-24</td></tr><tr><td class='l'><b>AppleSkin</b><span class='sub'>Fabric</span></td><td data-k='Port' class='nw'>1.21.5 → 1.21.6</td><td class='hi l' data-k='Reached'><span class='dot st-green'></span>Behaviour checked in the game</td><td class='l what' data-k='What happened'>Port and backport; opening the inventory changed 95.6% of the frame, and a save reloaded at the same position.</td><td data-k='Date' class='nw'>2026-10-24</td></tr><tr><td class='l'><b>ZombieApocalypseAddon</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21.1 → 1.21.4</td><td class='hi l' data-k='Reached'><span class='dot st-green'></span>Behaviour checked in the game</td><td class='l what' data-k='What happened'>19 API errors repaired by rules, packaged metadata rewritten, jar loaded and its /za dashboard rendered in a real 1.21.4 world.</td><td data-k='Date' class='nw'>2026-10-24</td></tr><tr><td class='l'><b>F3Nope</b><span class='sub'>Fabric</span></td><td data-k='Port' class='nw'>1.21.6 → 1.21.5 <span class=sub>backport</span></td><td class='hi l' data-k='Reached'><span class='dot st-green'></span>Loads in the real game</td><td class='l what' data-k='What happened'>Backport of the untouched upstream snapshot; built, audited and loaded in the 1.21.5 client.</td><td data-k='Date' class='nw'>2026-10-24</td></tr><tr><td class='l'><b>AppleSkin</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21.6 → 26.3</td><td class='hi l' data-k='Reached'><span class='dot st-yellow'></span>Builds, mixins checked</td><td class='l what' data-k='What happened'>First port into the unobfuscated game, to a packaged build with the mixin audit passing in 66s. The tool resolved NeoForge 26.3.0.97, moved NeoGradle 7.0.185 to 7.1.39, Java 21 to 25 and archivesBaseName to base.archivesName, and compiled with no mapping at all. Rule families took 82 errors to 1: ResourceLocation to Identifier, GuiGraphics to GuiGraphicsExtractor, the GameRules and RenderType moves, InputConstants keys, HUD state on mc.gui.hud, and the tooltip extract/rename set. The last error is the removed debug-text event, which needs a new debug screen entry; that one file was written by hand and is marked in the tree. Next rung: load it in a real 26.3 client.</td><td data-k='Date' class='nw'>2026-10-24</td></tr><tr><td class='l'><b>AppleSkin</b><span class='sub'>Fabric</span></td><td data-k='Port' class='nw'>26.3 → 26.3</td><td class='hi l' data-k='Reached'><span class='dot st-yellow'></span>Builds, mixins checked</td><td class='l what' data-k='What happened'>Its own 26.3-fabric checkout compiled through the tool in 14s (Loom 1.17, Java 25, no mappings). The build path reaches the newest game; porting into 26.3 still needs a name bridge from yarn to the unobfuscated names.</td><td data-k='Date' class='nw'>2026-10-24</td></tr><tr><td class='l'><b>AppleSkin</b><span class='sub'>Fabric</span></td><td data-k='Port' class='nw'>1.21.6 → 1.21.9</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>Guided debug HUD migration; the remaining changes are named rather than guessed.</td><td data-k='Date' class='nw'>2026-10-24</td></tr><tr><td class='l'><b>ZombieApocalypseAddon</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21.1 → 1.21.6</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>38 reported errors reduced to 9 by rules; the rest is the 1.21.6 SavedData codec and owner/saddling API.</td><td data-k='Date' class='nw'>2026-10-24</td></tr><tr><td class='l'><b>Jade</b><span class='sub'>NeoForge</span></td><td data-k='Port' class='nw'>1.21.1 → 1.21.6</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>98 errors left in the 1.21.6 GUI rewrite; the port refuses to ship a build against the old game.</td><td data-k='Date' class='nw'>2026-10-24</td></tr><tr><td class='l'><b>AppleSkin</b><span class='sub'>Fabric</span></td><td data-k='Port' class='nw'>1.20.1 → 1.21.6</td><td class='hi l' data-k='Reached'><span class='dot st-red'></span>Stops with named errors</td><td class='l what' data-k='What happened'>Five-minor jump. Loom 1.8 to 1.10 and Gradle 8.10 to 8.13 first, JEI dropped because upstream 1.21.6 has none. Mappings went through, then seven rules cleared 11 sites (Identifier.of/ofVanilla, food components, debug HUD), taking the error count from 62 to 51 with no new error. The rest is structural: render pipeline (texture colour and depth), the removed exhaustion getter, tooltip component methods, and payload records.</td><td data-k='Date' class='nw'>2026-10-24</td></tr></tbody></table>
+<div class="room"><b>Real-mod runner.</b> A runner that takes six real mods through every step is being built. Its runs will show up here, in the table above, once they are recorded in the ledger.</div>
 
-<section>
-  <h2>Where it sits next to the existing tools</h2>
-  <p class="lede">Each row is a real option a Minecraft modder has today. The columns are the jobs, not the feature lists.</p>
-  <table>
-    <tr><th>Option</th><th>What it is for</th><th class="c">Moves a mod to a new version</th><th class="c">Sees the real game</th><th class="c">Proves behaviour</th><th class="c">Runs in CI</th></tr>
-    <tr><td><b>Fabric / NeoForge GameTest</b></td><td>Official in-game test suites</td><td class="c no">-</td><td class="c ok">yes</td><td class="c ok">yes</td><td class="c ok">yes</td></tr>
-    <tr><td><b>Loom + IDE hotswap</b></td><td>Fast manual dev loop</td><td class="c no">-</td><td class="c no">your eyes</td><td class="c no">-</td><td class="c no">-</td></tr>
-    <tr><td><b>HeadlessMC</b></td><td>Headless client for scripts and CI</td><td class="c no">-</td><td class="c ok">screenshots</td><td class="c no">scripted</td><td class="c ok">yes</td></tr>
-    <tr><td><b>MC-Runtime-Test</b></td><td>Client in CI across versions</td><td class="c no">-</td><td class="c ok">yes</td><td class="c ok">yes</td><td class="c ok">yes</td></tr>
-    <tr><td><b>mc-mod-porter</b></td><td>Rename tables and port notes</td><td class="c ok">manual</td><td class="c no">-</td><td class="c no">-</td><td class="c no">-</td></tr>
-    <tr><td><b>Modding Accelerator</b><div class="small">this beta</div></td><td>Port and verify in one command</td><td class="c ok">yes, source checkout</td><td class="c ok">yes</td><td class="c ok">assertions</td><td class="c ok">green on 3 OS</td></tr>
-  </table>
-</section>
+<h2 id="earlier">Earlier runs</h2>
+<p>Before modaccel ported anything: each mod's version pins bumped by hand to see how much breaks, and how long their own build takes.</p>
+<table class="tbl stack"><thead><tr><th class="l">Mod</th><th>Version</th><th class="hi">Compile errors</th><th>Their first build</th><th>Build after bump</th><th>Date</th></tr></thead>
+<tbody><tr><td class='l'><b>Trinkets</b><span class='sub'>Fabric, version pins bumped by hand</span></td><td data-k='Port' class='nw'>1.21.5 → 1.21.6</td><td class='hi' data-k='Compile errors'>21</td><td data-k='Their first build'>5.4 min</td><td data-k='Build after bump'>2.6 min</td><td data-k='Date' class='nw'>2026-10-21</td></tr><tr><td class='l'><b>Traverse</b><span class='sub'>Fabric, version pins bumped by hand</span></td><td data-k='Port' class='nw'>1.21.5 → 1.21.6</td><td class='hi' data-k='Compile errors'>68</td><td data-k='Their first build'>5.5 min</td><td data-k='Build after bump'>115s</td><td data-k='Date' class='nw'>2026-10-21</td></tr><tr><td class='l'><b>Terrestria</b><span class='sub'>Fabric, version pins bumped by hand</span></td><td data-k='Port' class='nw'>1.21.5 → 1.21.6</td><td class='hi' data-k='Compile errors'>99</td><td data-k='Their first build'>2.4 min</td><td data-k='Build after bump'>89s</td><td data-k='Date' class='nw'>2026-10-21</td></tr><tr><td class='l'><b>Traveler&#x27;s Backpack</b><span class='sub'>Fabric, version pins bumped by hand</span></td><td data-k='Port' class='nw'>1.21.4 → 1.21.5</td><td class='hi' data-k='Compile errors'>6</td><td data-k='Their first build'>5.6 min</td><td data-k='Build after bump'>2.7 min</td><td data-k='Date' class='nw'>2026-10-21</td></tr><tr><td class='l'><b>Polymer</b><span class='sub'>Fabric, version pins bumped by hand</span></td><td data-k='Port' class='nw'>1.21.5 → 1.21.6</td><td class='hi' data-k='Compile errors'>8</td><td data-k='Their first build'>7.9 min</td><td data-k='Build after bump'>3.1 min</td><td data-k='Date' class='nw'>2026-10-21</td></tr><tr><td class='l'><b>Artifacts</b><span class='sub'>Fabric, version pins bumped by hand</span></td><td data-k='Port' class='nw'>1.21.1 → 1.21.4</td><td class='hi' data-k='Compile errors'>97</td><td data-k='Their first build'>9.5 min</td><td data-k='Build after bump'>2.8 min</td><td data-k='Date' class='nw'>2026-10-21</td></tr><tr><td class='l'><b>Diorama</b><span class='sub'>Fabric, NeoForge, their build as it is</span></td><td data-k='Port' class='nw'>26.3</td><td class='hi' data-k='Compile errors'>0</td><td data-k='Their first build'>3.4 min</td><td data-k='Build after bump'>8.2s</td><td data-k='Date' class='nw'>2026-10-22</td></tr><tr><td class='l'><b>MineColonies</b><span class='sub'>Forge, their build as it is</span></td><td data-k='Port' class='nw'>1.20.1</td><td class='hi' data-k='Compile errors'>—</td><td data-k='Their first build'>5.5 min</td><td data-k='Build after bump'>—</td><td data-k='Date' class='nw'>2026-10-22</td></tr></tbody></table>
 
-<section>
-  <h2>What this does not claim</h2>
-  <div class="limits">
-    <p><b>Loader changes are not supported.</b> Fabric stays Fabric; a port changes the Minecraft version inside one loader.</p>
-    <p><b>Source checkouts only.</b> A compiled mod JAR cannot be ported by this tool.</p>
-    <p><b>No pixel goldens.</b> Frames are captured for a person or an agent to inspect; nothing compares them to last week's.</p>
-    <p><b>Big jumps stop honestly.</b> The 1.21.6 storage and GUI families still need a human; the tool names them.</p>
-    <p><b>First use costs more.</b> The first NeoForge port in a repo pays about 40 s of per-project Minecraft setup.</p>
-    <p><b>Measured on one machine.</b> Ryzen 9 3900X, Windows 11; the numbers are this repo's own, not a third-party head-to-head.</p>
-  </div>
-</section>
+<h2 id="speed">Speed over time</h2>
+<p>Each column is a day something was measured, and the highlighted column is the latest number. Most numbers were measured once, so this history is still thin: the full run log (<span class="mono">.runs/index.jsonl</span>) is kept on the machine and not committed.</p>
+<div class="wide"><table class="tbl stack speed"><thead><tr><th class="l">What</th><th>10/21</th><th>10/22</th><th>10/23</th><th>10/24</th><th class='hi'>Latest</th></tr></thead>
+<tbody><tr class='headrow'><td class='l' colspan='5'><b>Setup</b></td><td class='hi'></td></tr><tr><td class='l'>A mod's own first build, cold</td><td class='old' data-k='10/21'>5.5 min<span class=sub>median of 6 mods</span></td><td class='old' data-k='10/22'>5.5 min<span class=sub>MineColonies, Forge</span></td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='hi' data-k='Latest'>5.5 min<span class='sub'>10/22, MineColonies, Forge</span></td></tr><tr><td class='l'>Toolchain check before building</td><td class='none'><span class='sub'>—</span></td><td class='old' data-k='10/22'>5.2s<span class=sub>Diorama, ready</span></td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='hi' data-k='Latest'>5.2s<span class='sub'>10/22, Diorama, ready</span></td></tr><tr class='headrow'><td class='l' colspan='5'><b>Compile</b></td><td class='hi'></td></tr><tr><td class='l'>Build after a version bump, warm caches</td><td class='old' data-k='10/21'>2.6 min<span class=sub>median of 6 mods</span></td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='hi' data-k='Latest'>2.6 min<span class='sub'>10/21, median of 6 mods</span></td></tr><tr><td class='l'>Port to a packaged build, mixins checked</td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='old' data-k='10/24'>66s<span class=sub>AppleSkin 1.21.6 → 26.3</span></td><td class='hi' data-k='Latest'>66s<span class='sub'>10/24, AppleSkin 1.21.6 → 26.3</span></td></tr><tr><td class='l'>A mod's own build through modaccel</td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='old' data-k='10/24'>14s<span class=sub>AppleSkin, 26.3</span></td><td class='hi' data-k='Latest'>14s<span class='sub'>10/24, AppleSkin, 26.3</span></td></tr><tr><td class='l'>One-file edit, the mod's own build</td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='old' data-k='10/23'>8.6s<span class=sub>median of 8 mods</span></td><td class='none'><span class='sub'>—</span></td><td class='hi' data-k='Latest'>8.6s<span class='sub'>10/23, median of 8 mods</span></td></tr><tr><td class='l'>One-file edit, modaccel fast</td><td class='none'><span class='sub'>—</span></td><td class='old' data-k='10/22'>2.3s<span class=sub>MineColonies</span></td><td class='old' data-k='10/23'>4.0s<span class=sub>median of 8 mods</span></td><td class='none'><span class='sub'>—</span></td><td class='hi' data-k='Latest'>4.0s<span class='sub'>10/23, median of 8 mods</span></td></tr><tr class='headrow'><td class='l' colspan='5'><b>Game start</b></td><td class='hi'></td></tr><tr><td class='l'>Client start, cold</td><td class='old' data-k='10/21'>36s<span class=sub>Fabric 26.3, with one check</span></td><td class='old' data-k='10/22'>18s<span class=sub>NeoForge 1.21.1</span></td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='hi' data-k='Latest'>18s<span class='sub'>10/22, NeoForge 1.21.1</span></td></tr><tr><td class='l'>Dedicated server start</td><td class='none'><span class='sub'>—</span></td><td class='old' data-k='10/22'>24s</td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='hi' data-k='Latest'>24s<span class='sub'>10/22</span></td></tr><tr class='headrow'><td class='l' colspan='5'><b>Checks</b></td><td class='hi'></td></tr><tr><td class='l'>Logic tests, no Minecraft</td><td class='old' data-k='10/21'>0.8s</td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='hi' data-k='Latest'>0.8s<span class='sub'>10/21</span></td></tr><tr><td class='l'>Screen change and a screenshot</td><td class='old' data-k='10/21'>1.5s<span class=sub>Fabric 26.3</span></td><td class='old' data-k='10/22'>1.5s<span class=sub>NeoForge 1.21.1</span></td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='hi' data-k='Latest'>1.5s<span class='sub'>10/22, NeoForge 1.21.1</span></td></tr><tr><td class='l'>Block entity in a live world</td><td class='old' data-k='10/21'>2.1s</td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='hi' data-k='Latest'>2.1s<span class='sub'>10/21</span></td></tr><tr><td class='l'>Scripted scenario and a screenshot</td><td class='old' data-k='10/21'>2.9s</td><td class='old' data-k='10/22'>4.1s<span class=sub>multiplayer, warm client</span></td><td class='none'><span class='sub'>—</span></td><td class='none'><span class='sub'>—</span></td><td class='hi' data-k='Latest'>4.1s<span class='sub'>10/22, multiplayer, warm client</span></td></tr></tbody></table></div>
+<p class="small">Ryzen 9 3900X, Windows 11, JDK 25 (JDK 21 for NeoForge 1.21.1), Minecraft 26.3 unless a row says otherwise. Cold includes downloads and first setup; compare an edit with warm numbers, never cold.</p>
 
-<div class="try">
-  <b>Try it on a mod you have.</b><br>
-  <code>Download 0.1.0-beta.1 → github.com/Noisemaker111/modding-accelerator/releases/tag/v0.1.0-beta.1</code><br>
-  <code>./modaccel support</code> &nbsp; <code>./modaccel port --root /path/to/mod --from 1.21.5 --to 1.21.6 --fix</code>
-</div>
+<h2 id="loaders">Changing loader</h2>
+<p>Keeping the game version and moving to another loader is a separate job. None of it is built yet.</p>
+<table class="tbl stack"><thead><tr><th class="l">From</th><th>Fabric</th><th>NeoForge</th><th>Forge</th><th>Quilt</th></tr></thead>
+<tbody><tr><td class='l'><b>Fabric</b></td><td class='none'><span class='sub'>·</span></td><td data-k='to NeoForge' title='Different metadata, entrypoints, events, registries and mixin namespaces. First step: one small mod, measured.'><span class='dot st-grey'></span><span class='small'>not built yet</span></td><td data-k='to Forge' title=''><span class='dot st-grey'></span><span class='small'>not built yet</span></td><td data-k='to Quilt' title='Closest pair: same metadata shape and mostly the same API.'><span class='dot st-grey'></span><span class='small'>not built yet</span></td></tr><tr><td class='l'><b>NeoForge</b></td><td data-k='to Fabric' title='Same work in reverse; no adapter exists yet.'><span class='dot st-grey'></span><span class='small'>not built yet</span></td><td class='none'><span class='sub'>·</span></td><td data-k='to Forge' title=''><span class='dot st-grey'></span><span class='small'>not built yet</span></td><td data-k='to Quilt' title=''><span class='dot st-grey'></span><span class='small'>not built yet</span></td></tr><tr><td class='l'><b>Forge</b></td><td data-k='to Fabric' title=''><span class='dot st-grey'></span><span class='small'>not built yet</span></td><td data-k='to NeoForge' title='Close lineage and a mechanical name mapping; the build scripts differ.'><span class='dot st-grey'></span><span class='small'>not built yet</span></td><td class='none'><span class='sub'>·</span></td><td data-k='to Quilt' title=''><span class='dot st-grey'></span><span class='small'>not built yet</span></td></tr><tr><td class='l'><b>Quilt</b></td><td data-k='to Fabric' title=''><span class='dot st-grey'></span><span class='small'>not built yet</span></td><td data-k='to NeoForge' title=''><span class='dot st-grey'></span><span class='small'>not built yet</span></td><td data-k='to Forge' title=''><span class='dot st-grey'></span><span class='small'>not built yet</span></td><td class='none'><span class='sub'>·</span></td></tr></tbody></table>
 
-<p class="foot">Beta, 24 October 2026. Port and loop numbers come from this repository's receipts (<code>result.json</code> per run); the comparison notes are in <code>bench/alternatives.md</code>. Nothing here is published as a finished product: it is one person's lab that now works across Fabric and NeoForge on real mods.</p>
+<h2 id="green">What counts as working</h2>
+<table class="tbl stack"><tbody>
+<tr><td class="l"><span class="dot st-red"></span><b>Stops with named errors</b></td><td class="l">The port refuses to guess and lists what is left.</td></tr>
+<tr><td class="l"><span class="dot st-yellow"></span><b>Builds, mixins checked</b></td><td class="l">The project compiles and the mixin audit passes. Not called working.</td></tr>
+<tr><td class="l"><span class="dot st-green"></span><b>Loads in the real game</b></td><td class="l">A real client or server starts with the jar and lists the mod.</td></tr>
+<tr><td class="l"><span class="dot st-green"></span><b>Behaviour checked in the game</b></td><td class="l">Something you can see is asserted: a screen changed, a command ran, a save reloaded.</td></tr>
+</tbody></table>
 
+<p class="foot">Made by <span class="mono">bench/bench_page.py</span> from <span class="mono">coverage/ledger.json</span>, <span class="mono">bench/data.json</span>, <span class="mono">bench/port/results.json</span> and <span class="mono">bench/mods/results.json</span>. Newest measurement 2026-10-24. The plan is in <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/ROADMAP.md">ROADMAP.md</a>.</p>
+</main>
 <script>
-// Their build vs modaccel. Both measured on the same machine; see bench/data.json.
-const ROWS = [
-  { mod: 'MineColonies', what: 'Forge 1.20.1, 2,102 sources', old: 328.3, now: 23.9, note: 'first check; later edits 2.3s' },
-  { mod: "Traveler's Backpack", what: 'Fabric 1.21.5', old: 335.1, now: 6.4, note: 'one-file edit' },
-  { mod: 'Artifacts', what: 'Fabric 1.21.4', old: 567.5, now: 4.2, note: 'one-file edit' },
-  { mod: 'Polymer', what: 'Fabric 1.21.6', old: 474.4, now: 3.8, note: 'one-file edit' },
-  { mod: 'Diorama', what: 'Fabric 26.3, Stonecutter', old: 204.5, now: 2.1, note: 'fast lane' },
-];
-const CAP = 350, fmt = s => s >= 60 ? Math.round(s / 6) / 10 + ' min' : (+s.toFixed(1)) + ' s';
-document.getElementById('rows').innerHTML = ROWS.map(d => `
-  <div class="row">
-    <div class="mod"><b>${d.mod}</b><span>${d.what}</span></div>
-    <div class="bars">
-      <div class="bar"><div class="fill" style="--c:var(--old);width:${Math.min(d.old, CAP) / CAP * 100}%${d.old > CAP ? ';border-right:6px double var(--surface)' : ''}"></div><span class="val">${fmt(d.old)}</span></div>
-      <div class="bar new"><div class="fill" style="--c:var(--new);width:${Math.min(d.now, CAP) / CAP * 100}%"></div><span class="val">${fmt(d.now)} · ${d.note}</span></div>
-    </div>
-    <div class="x">${Math.round(d.old / d.now)}x</div>
-  </div>`).join('');
+
+(function () {
+  const btn = document.getElementById("theme"), root = document.documentElement;
+  let saved = null; try { saved = localStorage.getItem("ma-theme"); } catch (e) {}
+  if (saved) root.dataset.theme = saved;
+  const dark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const label = () => btn.textContent = dark() ? "Light" : "Dark";
+  btn.onclick = () => { root.dataset.theme = dark() ? "light" : "dark"; try { localStorage.setItem("ma-theme", root.dataset.theme); } catch (e) {} label(); };
+  label();
+})();
+
 </script>
-</body>
-</html>
+</body></html>

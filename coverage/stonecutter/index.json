@@ -1,0 +1,944 @@
+{
+ "about": "Stonecutter switches mined from real multi-version mods (coverage/stonecutter/mods.json). Each switch is one human-written example: this code on one side of a version boundary, that code on the other.",
+ "generated": "2026-10-25",
+ "mods": [
+  {
+   "repo": "SunkenInTime/diorama",
+   "commit": "8d490b41faf1",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "1.21",
+    "1.21.1",
+    "1.21.3",
+    "1.21.4",
+    "1.21.5",
+    "1.21.6",
+    "1.21.8",
+    "1.21.9",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "files": 62,
+   "switches": 260,
+   "versionSwitches": 243,
+   "twoSided": 162
+  },
+  {
+   "repo": "isXander/Controlify",
+   "commit": "f756225fcf94",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge",
+    "quilt"
+   ],
+   "versions": [
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 70,
+   "switches": 92,
+   "versionSwitches": 69,
+   "twoSided": 55
+  },
+  {
+   "repo": "isXander/Zoomify",
+   "commit": "4abaf61b97e9",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "26.1",
+    "26.2",
+    "26.3",
+    "26.4"
+   ],
+   "files": 5,
+   "switches": 6,
+   "versionSwitches": 5,
+   "twoSided": 3
+  },
+  {
+   "repo": "isXander/YetAnotherConfigLib",
+   "commit": "97f89e5bd0ef",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 16,
+   "switches": 34,
+   "versionSwitches": 28,
+   "twoSided": 21
+  },
+  {
+   "repo": "Faboslav/friends-and-foes",
+   "commit": "ede6ba999e4b",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.4",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "files": 286,
+   "switches": 1541,
+   "versionSwitches": 1526,
+   "twoSided": 893
+  },
+  {
+   "repo": "FemaleGenderMod/FemaleGenderMod",
+   "commit": "6f6ec1f9760c",
+   "names": "mojmap",
+   "loaders": [
+    "fabric"
+   ],
+   "versions": [],
+   "files": 7,
+   "switches": 9,
+   "versionSwitches": 9,
+   "twoSided": 4
+  },
+  {
+   "repo": "Leawind/Third-Person",
+   "commit": "7c9ba2a54d41",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.20.1",
+    "1.20.4",
+    "1.21",
+    "1.21.11",
+    "26.1",
+    "26.2"
+   ],
+   "files": 23,
+   "switches": 52,
+   "versionSwitches": 41,
+   "twoSided": 22
+  },
+  {
+   "repo": "Mirsario/Minecraft-CameraOverhaul",
+   "commit": "51bae6f73d4b",
+   "names": "unknown",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge",
+    "quilt"
+   ],
+   "versions": [
+    "1.14.4",
+    "1.15",
+    "1.16",
+    "1.17",
+    "1.18",
+    "1.19",
+    "1.19.3",
+    "1.20",
+    "1.20.6",
+    "1.21",
+    "1.21.2",
+    "1.21.5",
+    "1.21.9",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 12,
+   "switches": 38,
+   "versionSwitches": 31,
+   "twoSided": 15
+  },
+  {
+   "repo": "MinecraftFreecam/Freecam",
+   "commit": "aad378b5a30c",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.17.1",
+    "1.18.2",
+    "1.19.4",
+    "1.20.6",
+    "1.21.11",
+    "26.2",
+    "26.3"
+   ],
+   "files": 24,
+   "switches": 64,
+   "versionSwitches": 51,
+   "twoSided": 23
+  },
+  {
+   "repo": "TeamMidnightDust/MidnightLib",
+   "commit": "bd2aa72c2862",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "1.21.1",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 11,
+   "switches": 47,
+   "versionSwitches": 37,
+   "twoSided": 22
+  },
+  {
+   "repo": "TeamMidnightDust/MidnightControls",
+   "commit": "719dfdfe9f13",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.21.11",
+    "26.1",
+    "26.2"
+   ],
+   "files": 19,
+   "switches": 28,
+   "versionSwitches": 15,
+   "twoSided": 10
+  },
+  {
+   "repo": "chrrs/scribble",
+   "commit": "bf88a49b43ce",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 2,
+   "switches": 6,
+   "versionSwitches": 6,
+   "twoSided": 5
+  },
+  {
+   "repo": "Bawnorton/Neruina",
+   "commit": "61c3f8f4c3db",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.5",
+    "1.21.6",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "files": 26,
+   "switches": 70,
+   "versionSwitches": 65,
+   "twoSided": 48
+  },
+  {
+   "repo": "IMB11-Mods/SkinShuffle",
+   "commit": "1930d54f6af3",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "26.1"
+   ],
+   "files": 4,
+   "switches": 5,
+   "versionSwitches": 2,
+   "twoSided": 2
+  },
+  {
+   "repo": "Skidamek/AutoModpack",
+   "commit": "dcedad1da8f2",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "1.18.2",
+    "1.19.2",
+    "1.20.1",
+    "1.21.1",
+    "1.21.4",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 45,
+   "switches": 169,
+   "versionSwitches": 166,
+   "twoSided": 119
+  },
+  {
+   "repo": "mrbuilder1961/ChatPatches",
+   "commit": "987cf24502ad",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1.2",
+    "26.2",
+    "26.3",
+    "26.4"
+   ],
+   "files": 17,
+   "switches": 167,
+   "versionSwitches": 164,
+   "twoSided": 66
+  },
+  {
+   "repo": "NikitaCartes/EasyAuth",
+   "commit": "89e473a150ee",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "1.19.4",
+    "1.20",
+    "1.20.2",
+    "1.20.3",
+    "1.20.5",
+    "1.21",
+    "1.21.2",
+    "1.21.5",
+    "1.21.6",
+    "1.21.9",
+    "1.21.11",
+    "26.1",
+    "26.2"
+   ],
+   "files": 44,
+   "switches": 232,
+   "versionSwitches": 202,
+   "twoSided": 129
+  },
+  {
+   "repo": "Octol1ttle/FlightAssistant",
+   "commit": "266e2f2f1459",
+   "names": "unknown",
+   "loaders": [
+    "fabric",
+    "neoforge",
+    "quilt"
+   ],
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.6",
+    "1.21.9",
+    "1.21.11"
+   ],
+   "files": 32,
+   "switches": 47,
+   "versionSwitches": 39,
+   "twoSided": 11
+  },
+  {
+   "repo": "PigCart/particle-rain",
+   "commit": "c01178778bb0",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.9",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 30,
+   "switches": 108,
+   "versionSwitches": 101,
+   "twoSided": 64
+  },
+  {
+   "repo": "The-Fireplace-Minecraft-Mods/In-Game-Account-Switcher",
+   "commit": "e2716598866b",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.20.1"
+   ],
+   "files": 18,
+   "switches": 58,
+   "versionSwitches": 56,
+   "twoSided": 42
+  },
+  {
+   "repo": "Wilyicaro/Legacy-Minecraft",
+   "commit": "f49505dab974",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.21.11",
+    "26.1.2"
+   ],
+   "files": 190,
+   "switches": 565,
+   "versionSwitches": 500,
+   "twoSided": 285
+  },
+  {
+   "repo": "Trainguy9512/locomotion",
+   "commit": "d1cab66e949d",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.21.5",
+    "1.21.11"
+   ],
+   "files": 6,
+   "switches": 9,
+   "versionSwitches": 9,
+   "twoSided": 6
+  },
+  {
+   "repo": "meza/Inventory-Sorter",
+   "commit": "fbe3e9423ac4",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.20.2",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 36,
+   "switches": 144,
+   "versionSwitches": 24,
+   "twoSided": 0
+  },
+  {
+   "repo": "DrexHD/Vanish",
+   "commit": "7a30b8c6c7ed",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "quilt"
+   ],
+   "versions": [
+    "1.21.1",
+    "1.21.4",
+    "1.21.5",
+    "1.21.8",
+    "1.21.9",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 21,
+   "switches": 44,
+   "versionSwitches": 44,
+   "twoSided": 34
+  },
+  {
+   "repo": "Clickism/ClickVillagers",
+   "commit": "1e3b1859e6c5",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "1.21.1",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 18,
+   "switches": 46,
+   "versionSwitches": 43,
+   "twoSided": 18
+  },
+  {
+   "repo": "North-West-Wind/AutoFish",
+   "commit": "5aed37400a20",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.16.5",
+    "1.17.1",
+    "1.18.2",
+    "1.19.2",
+    "1.19.4",
+    "1.20.1",
+    "1.21.1",
+    "1.21.11",
+    "26.1.2",
+    "26.2"
+   ],
+   "files": 10,
+   "switches": 40,
+   "versionSwitches": 40,
+   "twoSided": 31
+  },
+  {
+   "repo": "Polyfrost/OverflowAnimationsV2",
+   "commit": "352231fe7c17",
+   "names": "mojmap",
+   "loaders": [
+    "fabric"
+   ],
+   "versions": [
+    "1.8.9",
+    "1.21.4",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 143,
+   "switches": 804,
+   "versionSwitches": 804,
+   "twoSided": 372
+  },
+  {
+   "repo": "TeamMidnightDust/CullLeaves",
+   "commit": "c2ed2b6503ff",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 5,
+   "switches": 22,
+   "versionSwitches": 17,
+   "twoSided": 12
+  },
+  {
+   "repo": "godemperoroftheworld/strawgolem",
+   "commit": "d54940ebecab",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.19.2",
+    "1.19.4",
+    "1.20.1",
+    "1.20.4",
+    "1.20.6",
+    "1.21.1",
+    "1.21.2",
+    "1.21.4",
+    "1.21.5",
+    "1.21.6"
+   ],
+   "files": 23,
+   "switches": 38,
+   "versionSwitches": 29,
+   "twoSided": 24
+  },
+  {
+   "repo": "decce6/Ixeris",
+   "commit": "98f5e507bb2a",
+   "names": "unknown",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.16.5",
+    "1.18.2",
+    "1.19.2",
+    "1.20.1",
+    "1.20.4",
+    "1.21.1",
+    "1.21.8",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 39,
+   "switches": 77,
+   "versionSwitches": 53,
+   "twoSided": 26
+  },
+  {
+   "repo": "Zolo101/RenderScale",
+   "commit": "0cf438686360",
+   "names": "mojmap",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.3",
+    "1.21.4",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1",
+    "26.2",
+    "26.3"
+   ],
+   "files": 38,
+   "switches": 136,
+   "versionSwitches": 120,
+   "twoSided": 25
+  },
+  {
+   "repo": "DeDiamondPro/Resourcify",
+   "commit": "35f2d71eb7e2",
+   "names": "unknown",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge"
+   ],
+   "versions": [
+    "1.20.1",
+    "1.21.1",
+    "1.21.4",
+    "1.21.5",
+    "1.21.8",
+    "1.21.10",
+    "1.21.11",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "files": 15,
+   "switches": 43,
+   "versionSwitches": 33,
+   "twoSided": 19
+  },
+  {
+   "repo": "not-coded/WayFix",
+   "commit": "7e926f0c6b4b",
+   "names": "yarn",
+   "loaders": [
+    "fabric",
+    "forge",
+    "neoforge",
+    "quilt"
+   ],
+   "versions": [
+    "1.16.5",
+    "1.17.1",
+    "1.18.2",
+    "1.19",
+    "1.19.2",
+    "1.19.3",
+    "1.20.1",
+    "1.20.4",
+    "1.20.6",
+    "1.21",
+    "1.21.9"
+   ],
+   "files": 12,
+   "switches": 44,
+   "versionSwitches": 27,
+   "twoSided": 13
+  }
+ ],
+ "totals": {
+  "mods": 33,
+  "switches": 5045,
+  "versionSwitches": 4599,
+  "twoSided": 2581,
+  "repeatedPairs": 57
+ },
+ "boundary": "A comparison >=V or <V flips on the update into V; >V or <=V on the update out of V. window is every update between the mod's nearest supported releases either side, because a mod that skips releases cannot say which one changed the API. confirmed lists the updates in that window whose change file (coverage/changes) names an identifier that differs between the branches (Mojang-named mods only).",
+ "steps": {
+  "1.14.4 -> 1.15": {
+   "switches": 6,
+   "mods": 1,
+   "confirmed": 0
+  },
+  "1.15.2 -> 1.16": {
+   "switches": 1,
+   "mods": 1,
+   "confirmed": 0
+  },
+  "1.16.4 -> 1.16.5": {
+   "switches": 4,
+   "mods": 1,
+   "confirmed": 0
+  },
+  "1.16.5 -> 1.17": {
+   "switches": 15,
+   "mods": 3,
+   "confirmed": 3
+  },
+  "1.17 -> 1.17.1": {
+   "switches": 7,
+   "mods": 4,
+   "confirmed": 0
+  },
+  "1.17.1 -> 1.18": {
+   "switches": 4,
+   "mods": 4,
+   "confirmed": 2
+  },
+  "1.18.1 -> 1.18.2": {
+   "switches": 14,
+   "mods": 4,
+   "confirmed": 4
+  },
+  "1.18.2 -> 1.19": {
+   "switches": 22,
+   "mods": 5,
+   "confirmed": 7
+  },
+  "1.19.1 -> 1.19.2": {
+   "switches": 21,
+   "mods": 4,
+   "confirmed": 0
+  },
+  "1.19.2 -> 1.19.3": {
+   "switches": 28,
+   "mods": 4,
+   "confirmed": 42
+  },
+  "1.19.3 -> 1.19.4": {
+   "switches": 45,
+   "mods": 6,
+   "confirmed": 20
+  },
+  "1.19.4 -> 1.20": {
+   "switches": 36,
+   "mods": 3,
+   "confirmed": 29
+  },
+  "1.20 -> 1.20.1": {
+   "switches": 43,
+   "mods": 7,
+   "confirmed": 0
+  },
+  "1.20.1 -> 1.20.2": {
+   "switches": 246,
+   "mods": 10,
+   "confirmed": 162
+  },
+  "1.20.2 -> 1.20.3": {
+   "switches": 53,
+   "mods": 5,
+   "confirmed": 150
+  },
+  "1.20.3 -> 1.20.4": {
+   "switches": 13,
+   "mods": 3,
+   "confirmed": 0
+  },
+  "1.20.4 -> 1.20.5": {
+   "switches": 277,
+   "mods": 10,
+   "confirmed": 286
+  },
+  "1.20.5 -> 1.20.6": {
+   "switches": 29,
+   "mods": 6,
+   "confirmed": 0
+  },
+  "1.20.6 -> 1.21": {
+   "switches": 78,
+   "mods": 11,
+   "confirmed": 166
+  },
+  "1.21 -> 1.21.1": {
+   "switches": 355,
+   "mods": 9,
+   "confirmed": 1
+  },
+  "1.21.1 -> 1.21.2": {
+   "switches": 274,
+   "mods": 15,
+   "confirmed": 415
+  },
+  "1.21.2 -> 1.21.3": {
+   "switches": 441,
+   "mods": 3,
+   "confirmed": 0
+  },
+  "1.21.3 -> 1.21.4": {
+   "switches": 110,
+   "mods": 12,
+   "confirmed": 183
+  },
+  "1.21.4 -> 1.21.5": {
+   "switches": 288,
+   "mods": 13,
+   "confirmed": 252
+  },
+  "1.21.5 -> 1.21.6": {
+   "switches": 297,
+   "mods": 14,
+   "confirmed": 210
+  },
+  "1.21.6 -> 1.21.7": {
+   "switches": 7,
+   "mods": 3,
+   "confirmed": 0
+  },
+  "1.21.7 -> 1.21.8": {
+   "switches": 12,
+   "mods": 4,
+   "confirmed": 0
+  },
+  "1.21.8 -> 1.21.9": {
+   "switches": 536,
+   "mods": 17,
+   "confirmed": 333
+  },
+  "1.21.9 -> 1.21.10": {
+   "switches": 50,
+   "mods": 6,
+   "confirmed": 0
+  },
+  "1.21.10 -> 1.21.11": {
+   "switches": 330,
+   "mods": 24,
+   "confirmed": 174
+  },
+  "1.21.11 -> 26.1": {
+   "switches": 598,
+   "mods": 22,
+   "confirmed": 268
+  },
+  "26.1 -> 26.1.1": {
+   "switches": 21,
+   "mods": 4,
+   "confirmed": 0
+  },
+  "26.1.1 -> 26.1.2": {
+   "switches": 1,
+   "mods": 1,
+   "confirmed": 0
+  },
+  "26.1.2 -> 26.2": {
+   "switches": 397,
+   "mods": 24,
+   "confirmed": 137
+  },
+  "26.2 -> 26.3": {
+   "switches": 531,
+   "mods": 20,
+   "confirmed": 135
+  }
+ }
+}

@@ -1,0 +1,3301 @@
+{
+ "repo": "The-Fireplace-Minecraft-Mods/In-Game-Account-Switcher",
+ "commit": "e2716598866b0aba93a595517b5225e88a9674b2",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge"
+ ],
+ "versions": [
+  "1.20.1"
+ ],
+ "files": 18,
+ "switches": 58,
+ "versionSwitches": 56,
+ "rows": [
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 23,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.authlib.services.MinecraftServicesDiscoveryService;\nimport com.mojang.authlib.services.ProfileResult;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.authlib.yggdrasil.ProfileResult;\nimport com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "services"
+     ]
+    }
+   ],
+   "older": "import com.mojang.authlib.yggdrasil.ProfileResult;\nimport com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;",
+   "newer": "import com.mojang.authlib.services.MinecraftServicesDiscoveryService;\nimport com.mojang.authlib.services.ProfileResult;",
+   "removed": [
+    "YggdrasilAuthenticationService",
+    "yggdrasil"
+   ],
+   "added": [
+    "MinecraftServicesDiscoveryService",
+    "services"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 76,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.authlib.services.FriendsService;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.authlib.yggdrasil.FriendsService;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "services"
+     ]
+    }
+   ],
+   "older": "import com.mojang.authlib.yggdrasil.FriendsService;",
+   "newer": "import com.mojang.authlib.services.FriendsService;",
+   "removed": [
+    "yggdrasil"
+   ],
+   "added": [
+    "services"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 75,
+   "method": "(imports)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "//? if >=26.3 {\nimport com.mojang.authlib.services.FriendsService;\n//?} else {\n/*import com.mojang.authlib.yggdrasil.FriendsService;*/\n//?}\nimport net.minecraft.client.gui.screens.social.RemoteFriendListUpdateHandler;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 198,
+   "method": "onInit",
+   "condition": "<1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.21.10",
+     "code": "if (IASConfig.serversButton && screen instanceof JoinMultiplayerScreen) {\n            // Calculate the position.\n            int width = screen.width;\n            int height = screen.height;\n            Integer x = Expression.parsePosition(IASConfig.serversButtonX, width, height);\n            Integer y = Expression.parsePosition(IASConfig.serversButtonY, width, height);\n\n            // Couldn't parse position.\n            if (x == null || y == null) {\n                // Use default position.\n                x = width / 2 + 158;\n                y = height - 30;\n\n                // Move out of any overlapping elements.\n                for (int i = 0; i < 64; i++) {\n                    boolean overlapping = false;\n                    for (GuiEventListener child : screen.children()) {\n                        // Skip if doesn't have pos.\n                        if (!(child instanceof LayoutElement le) || child instanceof AbstractSelectionList<?>) continue;\n\n                        // Skip if not overlapping.\n                        int x1 = le.getX() - 4;\n                        int y1 = le.getY() - 4;\n                        int x2 = x1 + le.getWidth() + 8;\n                        int y2 = y1 + le.getHeight() + 8;\n                        if (x < x1 || y < y1 || (x + 20) > x2 || (y + 20) > y2) continue;\n\n                        // Otherwise move.\n                        x = Math.max(x, x2);\n                        overlapping = true;\n                    }\n                    if (overlapping) continue;\n                    break;\n                }\n            }\n\n            // Add the button.\n            ImageButton button = new ImageButton(x, y, 20, 20, BUTTON, btn -> minecraft.setScreen(new AccountScreen(screen)), Component.literal(\"In-Game Account Switcher\"));\n            button.setTooltip(Tooltip.create(button.getMessage()));\n            button.setTooltipDelay(Duration.ofMillis(250L));\n            buttonAdder.accept(button);\n        }"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 258,
+   "method": "onInit",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "textY = cx == null || cy == null ? height / 4 + 178 : cy;"
+    },
+    {
+     "condition": null,
+     "code": "textY = cx == null || cy == null ? height / 4 + 164 : cy;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "textY = cx == null || cy == null ? height / 4 + 164 : cy;",
+   "newer": "textY = cx == null || cy == null ? height / 4 + 178 : cy;",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 284,
+   "method": "onInit",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "ToastManager manager = minecraft.gui.toastManager();"
+    },
+    {
+     "condition": null,
+     "code": "ToastManager manager = minecraft.getToastManager();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "gui"
+     ]
+    },
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "getToastManager",
+      "toastManager"
+     ]
+    }
+   ],
+   "older": "ToastManager manager = minecraft.getToastManager();",
+   "newer": "ToastManager manager = minecraft.gui.toastManager();",
+   "removed": [
+    "getToastManager"
+   ],
+   "added": [
+    "gui",
+    "toastManager"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 298,
+   "method": "onInit",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "final SystemToast toast = new SystemToast(NICK_WARN, Component.literal(\"In-Game Account Switcher\"), Component.translatable(key, name));"
+    },
+    {
+     "condition": null,
+     "code": "final SystemToast toast = SystemToast.multiline(minecraft, NICK_WARN, Component.literal(\"In-Game Account Switcher\"), Component.translatable(key, name));"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "multiline"
+     ]
+    },
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "multiline"
+     ]
+    }
+   ],
+   "older": "final SystemToast toast = SystemToast.multiline(minecraft, NICK_WARN, Component.literal(\"In-Game Account Switcher\"), Component.translatable(key, name));",
+   "newer": "final SystemToast toast = new SystemToast(NICK_WARN, Component.literal(\"In-Game Account Switcher\"), Component.translatable(key, name));",
+   "removed": [
+    "minecraft",
+    "multiline"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 365,
+   "method": "account",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "MinecraftServicesDiscoveryService service = MinecraftServicesDiscoveryService.create(minecraft.getProxy(), online);\n            //?} else\n            /*YggdrasilAuthenticationService service = online ? new YggdrasilAuthenticationService(minecraft.getProxy()) : YggdrasilAuthenticationService.createOffline(minecraft.getProxy());*/\n            Services services = Services.create(service, minecraft.gameDirectory);\n            CompletableFuture<ProfileResult> profile = CompletableFuture.completedFuture(online ? services.sessionService().fetchProfile(data.uuid(), true) : null);"
+    },
+    {
+     "condition": null,
+     "code": "YggdrasilAuthenticationService service = new YggdrasilAuthenticationService(minecraft.getProxy());\n            CompletableFuture<ProfileResult> profile = CompletableFuture.completedFuture(online ? minecraft.getMinecraftSessionService().fetchProfile(data.uuid(), true) : null);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "create",
+      "getMinecraftSessionService",
+      "services"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "create"
+     ]
+    },
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "create",
+      "sessionService"
+     ]
+    }
+   ],
+   "older": "YggdrasilAuthenticationService service = new YggdrasilAuthenticationService(minecraft.getProxy());\n            CompletableFuture<ProfileResult> profile = CompletableFuture.completedFuture(online ? minecraft.getMinecraftSessionService().fetchProfile(data.uuid(), true) : null);",
+   "newer": "MinecraftServicesDiscoveryService service = MinecraftServicesDiscoveryService.create(minecraft.getProxy(), online);\n            //?} else\n            /*YggdrasilAuthenticationService service = online ? new YggdrasilAuthenticationService(minecraft.getProxy()) : YggdrasilAuthenticationService.createOffline(minecraft.getProxy());*/\n            Services services = Services.create(service, minecraft.gameDirectory);\n            CompletableFuture<ProfileResult> profile = CompletableFuture.completedFuture(online ? services.sessionService().fetchProfile(data.uuid(), true) : null);",
+   "removed": [
+    "getMinecraftSessionService"
+   ],
+   "added": [
+    "MinecraftServicesDiscoveryService",
+    "Services",
+    "create",
+    "createOffline",
+    "gameDirectory",
+    "services",
+    "sessionService"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 378,
+   "method": "account",
+   "condition": ">=1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "final GameConfig config = new GameConfig(new GameConfig.UserData(user, minecraft.getProxy()), originalConfig.display, originalConfig.location, originalConfig.game, originalConfig.quickPlay);"
+    },
+    {
+     "condition": null,
+     "code": "final GameConfig config = new GameConfig(new GameConfig.UserData(user, originalConfig.user.userProperties, originalConfig.user.profileProperties, minecraft.getProxy()), originalConfig.display, originalConfig.location, originalConfig.game, originalConfig.quickPlay);"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "profileProperties",
+      "userProperties"
+     ]
+    }
+   ],
+   "older": "final GameConfig config = new GameConfig(new GameConfig.UserData(user, originalConfig.user.userProperties, originalConfig.user.profileProperties, minecraft.getProxy()), originalConfig.display, originalConfig.location, originalConfig.game, originalConfig.quickPlay);",
+   "newer": "final GameConfig config = new GameConfig(new GameConfig.UserData(user, minecraft.getProxy()), originalConfig.display, originalConfig.location, originalConfig.game, originalConfig.quickPlay);",
+   "removed": [
+    "profileProperties",
+    "userProperties"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 383,
+   "method": "account",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "UserApiService apiService = online ? MinecraftAccessor.ias$createUserApiService(service, config) : UserApiService.OFFLINE;"
+    },
+    {
+     "condition": null,
+     "code": "UserApiService apiService = online ? accessor.ias$createUserApiService(service, config) : UserApiService.OFFLINE;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "UserApiService apiService = online ? accessor.ias$createUserApiService(service, config) : UserApiService.OFFLINE;",
+   "newer": "UserApiService apiService = online ? MinecraftAccessor.ias$createUserApiService(service, config) : UserApiService.OFFLINE;",
+   "removed": [
+    "accessor"
+   ],
+   "added": [
+    "MinecraftAccessor"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 395,
+   "method": "account",
+   "condition": ">= 26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2",
+     "code": "FriendsService friends = service.createFriendsService(data.token());\n            RemoteFriendListUpdateHandler friendList = new RemoteFriendListUpdateHandler(friends, minecraft);\n            PlayerSocialManager social = new PlayerSocialManager(minecraft, apiService, friends, friendList);"
+    },
+    {
+     "condition": null,
+     "code": "PlayerSocialManager social = new PlayerSocialManager(minecraft, apiService);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "data"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "token"
+     ]
+    },
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "RemoteFriendListUpdateHandler",
+      "friends"
+     ]
+    }
+   ],
+   "older": "PlayerSocialManager social = new PlayerSocialManager(minecraft, apiService);",
+   "newer": "FriendsService friends = service.createFriendsService(data.token());\n            RemoteFriendListUpdateHandler friendList = new RemoteFriendListUpdateHandler(friends, minecraft);\n            PlayerSocialManager social = new PlayerSocialManager(minecraft, apiService, friends, friendList);",
+   "removed": [],
+   "added": [
+    "FriendsService",
+    "RemoteFriendListUpdateHandler",
+    "createFriendsService",
+    "data",
+    "friendList",
+    "friends",
+    "service",
+    "token"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 410,
+   "method": "account",
+   "condition": ">=1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "accessor.ias$services(services);"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/IASMinecraft.java",
+   "line": 418,
+   "method": "account",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "accessor.ias$remoteFriendListUpdateHandler().close();\n                accessor.ias$remoteFriendListUpdateHandler(friendList);\n                if (social.isFriendListEnabled()) {\n                    friendList.start();\n                }"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/mixins/JoinMultiplayerScreenMixin.java",
+   "line": 22,
+   "method": "(imports)",
+   "condition": ">=1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "package ru.vidtu.ias.mixins;\n\nimport net.minecraft.client.gui.components.AbstractSelectionList;\nimport net.minecraft.client.gui.components.Button;\nimport net.minecraft.client.gui.components.ImageButton;\nimport net.minecraft.client.gui.components.Tooltip;\nimport net.minecraft.client.gui.components.events.GuiEventListener;\nimport net.minecraft.client.gui.layouts.LayoutElement;\nimport net.minecraft.client.gui.screens.Screen;\nimport net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;\nimport net.minecraft.network.chat.Component;\nimport org.jetbrains.annotations.ApiStatus;\nimport org.jetbrains.annotations.Contract;\nimport org.jspecify.annotations.NullMarked;\nimport org.jspecify.annotations.Nullable;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Unique;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\nimport ru.vidtu.ias.IASMinecraft;\nimport ru.vidtu.ias.config.IASConfig;\nimport ru.vidtu.ias.screen.AccountScreen;\nimport ru.vidtu.ias.utils.Expression;\n\nimport java.time.Duration;\n\n/**\n * A dirty hacky mixin that adds the button on the server list properly, despite Mojang not clearing the widgets.\n *\n * @author VidTu\n * @apiNote Internal use only\n */\n@ApiStatus.Internal\n@Mixin(JoinMultiplayerScreen.class)\n@NullMarked\npublic final class JoinMultiplayerScreenMixin extends Screen {\n    /**\n     * Previously added button, {@code null} if none.\n     */\n    @Nullable\n    @Unique\n    private Button ias_button;\n\n    /**\n     * An instance of this class cannot be created.\n     *\n     * @throws AssertionError Always\n     * @deprecated Always throws\n     */\n    // @ApiStatus.ScheduledForRemoval // Can't annotate this without logging in the console.\n    @Deprecated\n    @Contract(value = \"-> fail\", pure = true)\n    private JoinMultiplayerScreenMixin() {\n        //noinspection DataFlowIssue // <- Never called. (Mixin)\n        super(null);\n        throw new AssertionError(\"IAS: No instances.\");\n    }\n\n    @Inject(method = \"repositionElements\", at = @At(\"RETURN\"))\n    private void ias_repositionElements_return(CallbackInfo ci) {\n        // Skip adding, if disabled.\n        if (!IASConfig.serversButton) return;\n\n        // Calculate the position.\n        Integer x = Expression.parsePosition(IASConfig.serversButtonX, this.width, this.height);\n        Integer y = Expression.parsePosition(IASConfig.serversButtonY, this.width, this.height);\n\n        // Couldn't parse position.\n        if (x == null || y == null) {\n            // Use default position.\n            x = width / 2 + 158;\n            y = height - 30;\n\n            // Move out of any overlapping elements.\n            for (int i = 0; i < 64; i++) {\n                boolean overlapping = false;\n                for (GuiEventListener child : this.children()) {\n                    // Skip if doesn't have pos.\n                    if (!(child instanceof LayoutElement le) || child instanceof AbstractSelectionList<?> || child == this.ias_button) continue;\n\n                    // Skip if not overlapping.\n                    int x1 = le.getX() - 4;\n                    int y1 = le.getY() - 4;\n                    int x2 = x1 + le.getWidth() + 8;\n                    int y2 = y1 + le.getHeight() + 8;\n                    if (x < x1 || y < y1 || (x + 20) > x2 || (y + 20) > y2) continue;\n\n                    // Otherwise move.\n                    x = Math.max(x, x2);\n                    overlapping = true;\n                }\n                if (overlapping) continue;\n                break;\n            }\n        }\n\n        // Add or move the button.\n        if (this.ias_button != null) {\n            this.ias_button.setX(x);\n            this.ias_button.setY(y);\n        } else {\n            Button button = this.ias_button = new ImageButton(x, y, 20, 20, IASMinecraft.BUTTON, btn -> {\n                //$ set_screen minecraft 'new AccountScreen(this)'\n       "
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/mixins/MinecraftAccessor.java",
+   "line": 23,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.authlib.services.MinecraftServicesDiscoveryService;\nimport com.mojang.authlib.services.ProfileResult;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.authlib.yggdrasil.ProfileResult;\nimport com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "services"
+     ]
+    }
+   ],
+   "older": "import com.mojang.authlib.yggdrasil.ProfileResult;\nimport com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;",
+   "newer": "import com.mojang.authlib.services.MinecraftServicesDiscoveryService;\nimport com.mojang.authlib.services.ProfileResult;",
+   "removed": [
+    "YggdrasilAuthenticationService",
+    "yggdrasil"
+   ],
+   "added": [
+    "MinecraftServicesDiscoveryService",
+    "services"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/mixins/MinecraftAccessor.java",
+   "line": 46,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.authlib.services.FriendsService;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.authlib.yggdrasil.FriendsService;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "services"
+     ]
+    }
+   ],
+   "older": "import com.mojang.authlib.yggdrasil.FriendsService;",
+   "newer": "import com.mojang.authlib.services.FriendsService;",
+   "removed": [
+    "yggdrasil"
+   ],
+   "added": [
+    "services"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/mixins/MinecraftAccessor.java",
+   "line": 45,
+   "method": "(imports)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "//? if >=26.3 {\nimport com.mojang.authlib.services.FriendsService;\n//?} else {\n/*import com.mojang.authlib.yggdrasil.FriendsService;*/\n//?}\nimport net.minecraft.client.gui.screens.social.RemoteFriendListUpdateHandler;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/mixins/MinecraftAccessor.java",
+   "line": 62,
+   "method": "(class body)",
+   "condition": ">=1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "/**\n     * Sets the game services.\n     *\n     * @param services New services\n     * @see Minecraft#services()\n     */\n    @Accessor(\"services\")\n    @Mutable\n    void ias$services(Services services);"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/mixins/MinecraftAccessor.java",
+   "line": 112,
+   "method": "(class body)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "/**\n     * Gets the remote friend list update handler.\n     *\n     * @return Current remote friend list update handler\n     */\n    @Accessor(\"remoteFriendListUpdateHandler\")\n    RemoteFriendListUpdateHandler ias$remoteFriendListUpdateHandler();\n\n    /**\n     * Gets the remote friend list update handler.\n     *\n     * @param friendList Current remote friend list update handler\n     */\n    @Accessor(\"remoteFriendListUpdateHandler\")\n    @Mutable\n    void ias$remoteFriendListUpdateHandler(RemoteFriendListUpdateHandler friendList);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/mixins/MinecraftAccessor.java",
+   "line": 180,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "static UserApiService ias$createUserApiService(MinecraftServicesDiscoveryService service, GameConfig config) {\n        throw null;\n    }"
+    },
+    {
+     "condition": null,
+     "code": "static UserApiService ias$createUserApiService(YggdrasilAuthenticationService service, GameConfig config) {\n        throw null;\n    }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "static UserApiService ias$createUserApiService(YggdrasilAuthenticationService service, GameConfig config) {\n        throw null;\n    }",
+   "newer": "static UserApiService ias$createUserApiService(MinecraftServicesDiscoveryService service, GameConfig config) {\n        throw null;\n    }",
+   "removed": [
+    "YggdrasilAuthenticationService"
+   ],
+   "added": [
+    "MinecraftServicesDiscoveryService"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/mixins/MinecraftAccessor.java",
+   "line": 179,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "//? if >=26.3 {\n    static UserApiService ias$createUserApiService(MinecraftServicesDiscoveryService service, GameConfig config) {\n        throw null;\n    }\n    //?} else {\n    /*static UserApiService ias$createUserApiService(YggdrasilAuthenticationService service, GameConfig config) {\n        throw null;\n    }*/\n    //?}"
+    },
+    {
+     "condition": null,
+     "code": "UserApiService ias$createUserApiService(YggdrasilAuthenticationService service, GameConfig config);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "UserApiService ias$createUserApiService(YggdrasilAuthenticationService service, GameConfig config);",
+   "newer": "//? if >=26.3 {\n    static UserApiService ias$createUserApiService(MinecraftServicesDiscoveryService service, GameConfig config) {\n        throw null;\n    }\n    //?} else {\n    /*static UserApiService ias$createUserApiService(YggdrasilAuthenticationService service, GameConfig config) {\n        throw null;\n    }*/\n    //?}",
+   "removed": [],
+   "added": [
+    "MinecraftServicesDiscoveryService"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IFabric.java",
+   "line": 92,
+   "method": "onInitializeClient",
+   "condition": ">=26.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "ScreenEvents.afterExtract(screen).register((scr, graphics, mouseX, mouseY, delta) -> IASMinecraft.onDraw(scr, font, graphics));\n                //?} else\n                /*ScreenEvents.afterRender(screen).register((scr, graphics, mouseX, mouseY, delta) -> IASMinecraft.onDraw(scr, font, graphics));*/\n            }\n        });\n\n        // Done.\n        LOGGER.info(\"IAS: Loaded. ({} ms)\", (System.nanoTime() - start) / 1_000_000L);\n    }\n\n    @Contract(pure = true)\n    @Override\n    public String toString() {\n        return \"IAS/IFabric{}\";\n    }\n}"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IForge.java",
+   "line": 57,
+   "method": "(imports)",
+   "condition": "hacky_neoforge | >=1.19.2 && (!1.20.2) | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "hacky_neoforge",
+     "code": "/*/*¹*\n     * Creates and loads a new mod.\n     *\n     * @param container Current mod container\n     * @param bus       Loading event bus\n     * @apiNote Do not call, called by Forge\n     ¹*/\n    public IForge(net.minecraftforge.fml.ModContainer container, net.minecraftforge.eventbus.api.IEventBus bus) {\n        // Validate.\n        assert container != null : \"IAS: Parameter 'container' is null. (bus: \" + bus + \", mod: \" + this + ')';\n        assert bus != null : \"IAS: Parameter 'bus' is null. (container: \" + container + \", mod: \" + this + ')';\n    */"
+    },
+    {
+     "condition": ">=1.19.2 && (!1.20.2)",
+     "code": "/**\n     * Creates and loads a new mod.\n     *\n     * @param ctx Loading context\n     * @apiNote Do not call, called by Forge\n     */\n    public IForge(FMLJavaModLoadingContext ctx) {\n        // Validate.\n        assert ctx != null : \"IAS: Parameter 'ctx' is null. (mod: \" + this + ')';"
+    },
+    {
+     "condition": null,
+     "code": "/*/*¹*\n     * Creates a new mod.\n     *\n     * @apiNote Do not call, called by Forge\n     ¹*/\n    public IForge() {\n    */"
+    }
+   ],
+   "boundary": [
+    "1.19.1 -> 1.19.2",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3"
+   ],
+   "window": [
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IForge.java",
+   "line": 114,
+   "method": "(imports)",
+   "condition": "hacky_neoforge | 1.20.2 | >=1.19.2 | >=1.18.2 | >=1.17.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "hacky_neoforge",
+     "code": "/*container.registerExtensionPoint(net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class, () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory((minecraft, screen) -> new ConfigScreen(screen)));\n        container.registerExtensionPoint(net.minecraftforge.fml.IExtensionPoint.DisplayTest.class, () -> new net.minecraftforge.fml.IExtensionPoint.DisplayTest(() -> net.minecraftforge.fml.IExtensionPoint.DisplayTest.IGNORESERVERONLY, (version, fromServer) -> true));\n        */"
+    },
+    {
+     "condition": "1.20.2",
+     "code": "/*net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class, () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory((minecraft, screen) -> new ConfigScreen(screen)));\n        net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(net.minecraftforge.fml.IExtensionPoint.DisplayTest.class, () -> new net.minecraftforge.fml.IExtensionPoint.DisplayTest(() -> net.minecraftforge.fml.IExtensionPoint.DisplayTest.IGNORESERVERONLY, (version, fromServer) -> true));\n        */"
+    },
+    {
+     "condition": ">=1.19.2",
+     "code": "ctx.registerExtensionPoint(net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class, () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory(ConfigScreen::new));\n        ctx.registerDisplayTest(net.minecraftforge.fml.IExtensionPoint.DisplayTest.IGNORE_SERVER_VERSION);"
+    },
+    {
+     "condition": ">=1.18.2",
+     "code": "/*net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(net.minecraftforge.client.ConfigGuiHandler.ConfigGuiFactory.class, () -> new net.minecraftforge.client.ConfigGuiHandler.ConfigGuiFactory(ConfigScreen::new));\n        net.minecraftforge.fml.ModLoadingContext.get().registerDisplayTest(net.minecraftforge.fml.IExtensionPoint.DisplayTest.IGNORE_SERVER_VERSION);\n        */"
+    },
+    {
+     "condition": ">=1.17.1",
+     "code": "/*net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(net.minecraftforge.fmlclient.ConfigGuiHandler.ConfigGuiFactory.class, () -> new net.minecraftforge.fmlclient.ConfigGuiHandler.ConfigGuiFactory((minecraft, screen) -> new ConfigScreen(screen)));\n        net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(net.minecraftforge.fml.IExtensionPoint.DisplayTest.class, () -> new net.minecraftforge.fml.IExtensionPoint.DisplayTest(() -> net.minecraftforge.fmllegacy.network.FMLNetworkConstants.IGNORESERVERONLY, (version, fromServer) -> true));\n        */"
+    },
+    {
+     "condition": null,
+     "code": "/*net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(net.minecraftforge.fml.ExtensionPoint.CONFIGGUIFACTORY, () -> (minecraft, screen) -> new ConfigScreen(screen));\n        net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(net.minecraftforge.fml.ExtensionPoint.DISPLAYTEST, () -> org.apache.commons.lang3.tuple.Pair.of(() -> net.minecraftforge.fml.network.FMLNetworkConstants.IGNORESERVERONLY, (version, fromServer) -> true));\n        */"
+    }
+   ],
+   "boundary": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.19.1 -> 1.19.2",
+    "1.18.1 -> 1.18.2",
+    "1.17 -> 1.17.1"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.18.1 -> 1.18.2",
+    "1.18.2 -> 1.19",
+    "1.19 -> 1.19.1",
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IForge.java",
+   "line": 22,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "package ru.vidtu.ias.platform;\n\nimport net.minecraft.client.gui.screens.Screen;\nimport net.minecraftforge.api.distmarker.Dist;\nimport net.minecraftforge.client.event.ScreenEvent;\nimport net.minecraftforge.event.GameShuttingDownEvent;\nimport net.minecraftforge.fml.common.Mod;\nimport net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;\nimport net.minecraftforge.fml.loading.FMLEnvironment;\nimport org.apache.logging.log4j.LogManager;\nimport org.apache.logging.log4j.Logger;\nimport org.jetbrains.annotations.ApiStatus;\nimport org.jetbrains.annotations.Contract;\nimport org.jspecify.annotations.NullMarked;\nimport ru.vidtu.ias.IAS;\nimport ru.vidtu.ias.IASMinecraft;\nimport ru.vidtu.ias.screen.ConfigScreen;\n\n/**\n * Main IAS class for Forge.\n *\n * @author VidTu\n * @apiNote Internal use only\n * @see IAS\n */\n@ApiStatus.Internal\n@Mod(\"ias\")\n@NullMarked\npublic final class IForge {\n    /**\n     * Logger for this class.\n     */\n    private static final Logger LOGGER = LogManager.getLogger(\"IAS/IForge\");\n\n    //? if hacky_neoforge {\n    /*/*¹*\n     * Creates and loads a new mod.\n     *\n     * @param container Current mod container\n     * @param bus       Loading event bus\n     * @apiNote Do not call, called by Forge\n     ¹*/\n    public IForge(net.minecraftforge.fml.ModContainer container, net.minecraftforge.eventbus.api.IEventBus bus) {\n        // Validate.\n        assert container != null : \"IAS: Parameter 'container' is null. (bus: \" + bus + \", mod: \" + this + ')';\n        assert bus != null : \"IAS: Parameter 'bus' is null. (container: \" + container + \", mod: \" + this + ')';\n    *///?} elif >=1.19.2 && (!1.20.2) {\n    /**\n     * Creates and loads a new mod.\n     *\n     * @param ctx Loading context\n     * @apiNote Do not call, called by Forge\n     */\n    public IForge(FMLJavaModLoadingContext ctx) {\n        // Validate.\n        assert ctx != null : \"IAS: Parameter 'ctx' is null. (mod: \" + this + ')';\n    //?} else {\n    /*/*¹*\n     * Creates a new mod.\n     *\n     * @apiNote Do not call, called by Forge\n     ¹*/\n    public IForge() {\n    *///?}\n        // Log.\n        long start = System.nanoTime();\n        LOGGER.info(\"IAS: Loading... (platform: forge)\");\n\n        // Not sure how long the Forge does have the \"clientSideOnly\" field in the TOML,\n        // so I'll do an additional exception check here.\n        if (FMLEnvironment.dist != Dist.CLIENT) {\n            throw new UnsupportedOperationException(\"IAS: You've tried to load the In-Game Account Switcher mod on a server. This won't work.\");\n        }\n\n        // Init the mod.\n        IASMinecraft.init();\n\n        // Register the shutdown handler.\n        GameShuttingDownEvent.BUS.addListener(event -> IAS.close());\n\n        // Register screen handlers.\n        ScreenEvent.Init.Post.BUS.addListener(event -> {\n            Screen screen = event.getScreen();\n            IASMinecraft.onInit(screen.getMinecraft(), screen, event::addListener);\n        });\n        ScreenEvent.Render.Post.BUS.addListener(event -> {\n            Screen screen = event.getScreen();\n            IASMinecraft.onDraw(screen, screen.getFont(), event.getGuiGraphics());\n        });\n\n        // Register the config screen.\n        //? if hacky_neoforge {\n        /*container.registerExtensionPoint(net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class, () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory((minecraft, screen) -> new ConfigScreen(screen)));\n        container.registerExtensionPoint(net.minecraftforge.fml.IExtensionPoint.DisplayTest.class, () -> new net.minecraftforge.fml.IExtensionPoint.DisplayTest(() -> net.minecraftforge.fml.IExtensionPoint.DisplayTest.IGNORESERVERONLY, (version, fromServer) -> true));\n        *///?} elif 1.20.2 {\n        /*net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class, () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory((minecraft, scree"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 30,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_DOWN"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_DOWN"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_DOWN",
+   "newer": "InputConstants.KEY_DOWN",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_DOWN"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_DOWN"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_PAGEDOWN"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_PAGE_DOWN"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_PAGE_DOWN",
+   "newer": "InputConstants.KEY_PAGEDOWN",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_PAGE_DOWN"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_PAGEDOWN"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 32,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_UP"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_UP"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_UP",
+   "newer": "InputConstants.KEY_UP",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_UP"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_UP"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 33,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_PAGEUP"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_PAGE_UP"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_PAGE_UP",
+   "newer": "InputConstants.KEY_PAGEUP",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_PAGE_UP"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_PAGEUP"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 34,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_C"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_C"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_C",
+   "newer": "InputConstants.KEY_C",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_C"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_C"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 35,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_DELETE"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_DELETE"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_DELETE",
+   "newer": "InputConstants.KEY_DELETE",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_DELETE"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_DELETE"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 36,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_MINUS"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_KP_SUBTRACT"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_KP_SUBTRACT",
+   "newer": "InputConstants.KEY_MINUS",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_KP_SUBTRACT"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_MINUS"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 37,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_N"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_N"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_N",
+   "newer": "InputConstants.KEY_N",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_N"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_N"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 38,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_ADD"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_KP_ADD"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_KP_ADD",
+   "newer": "InputConstants.KEY_ADD",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_KP_ADD"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_ADD"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 39,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_R"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_R"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_R",
+   "newer": "InputConstants.KEY_R",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_R"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_R"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 40,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_MULTIPLY"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_KP_MULTIPLY"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_KP_MULTIPLY",
+   "newer": "InputConstants.KEY_MULTIPLY",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_KP_MULTIPLY"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_MULTIPLY"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 41,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_Y"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_Y"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_Y",
+   "newer": "InputConstants.KEY_Y",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_Y"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_Y"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 42,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_LALT"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_LEFT_ALT"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_LEFT_ALT",
+   "newer": "InputConstants.KEY_LALT",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_LEFT_ALT"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_LALT"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 43,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_RALT"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_RIGHT_ALT"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_RIGHT_ALT",
+   "newer": "InputConstants.KEY_RALT",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_RIGHT_ALT"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_RALT"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 44,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_RETURN"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_ENTER"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_ENTER",
+   "newer": "InputConstants.KEY_RETURN",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_ENTER"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_RETURN"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IInput.java",
+   "line": 45,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "InputConstants.KEY_NUMPADENTER"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.GLFW_KEY_KP_ENTER"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.GLFW_KEY_KP_ENTER",
+   "newer": "InputConstants.KEY_NUMPADENTER",
+   "removed": [
+    "GLFW",
+    "GLFW_KEY_KP_ENTER"
+   ],
+   "added": [
+    "InputConstants",
+    "KEY_NUMPADENTER"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IModMenu.java",
+   "line": 22,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package ru.vidtu.ias.platform;\n\nimport com.google.errorprone.annotations.DoNotCall;\nimport com.terraformersmc.modmenu.api.ConfigScreenFactory;\nimport com.terraformersmc.modmenu.api.ModMenuApi;\nimport org.jetbrains.annotations.ApiStatus;\nimport org.jetbrains.annotations.Contract;\nimport org.jspecify.annotations.NullMarked;\nimport ru.vidtu.ias.config.IASConfig;\nimport ru.vidtu.ias.screen.ConfigScreen;\n\n/**\n * IAS entrypoint for the ModMenu API.\n *\n * @author VidTu\n * @apiNote Internal use only\n * @see IFabric\n * @see IASConfig\n */\n@ApiStatus.Internal\n@NullMarked\npublic final class IModMenu implements ModMenuApi {\n    /**\n     * Creates a new entrypoint.\n     *\n     * @apiNote Do not call, called by ModMenu\n     */\n    @Contract(pure = true)\n    public IModMenu() {\n        // Empty.\n    }\n\n    /**\n     * Gets the ModMenu config screen factory.\n     *\n     * @return Config screen factory for ModMenu\n     * @apiNote Do not call, called by ModMenu\n     */\n    @DoNotCall(\"Called by ModMenu\")\n    @Contract(pure = true)\n    @Override\n    public ConfigScreenFactory<?> getModConfigScreenFactory() {\n        return ConfigScreen::new;\n    }\n\n    @Contract(pure = true)\n    @Override\n    public String toString() {\n        return \"IAS/IModMenu{}\";\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/INeoForge.java",
+   "line": 102,
+   "method": "(imports)",
+   "condition": ">=1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.6",
+     "code": "container.registerExtensionPoint(net.neoforged.neoforge.client.gui.IConfigScreenFactory.class, (modOrGame, parent) -> new ConfigScreen(parent)); // Implicit NPE for 'container'"
+    },
+    {
+     "condition": null,
+     "code": "/*container.registerExtensionPoint(net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory.class, () -> new net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory((game, screen) -> new ConfigScreen(screen))); // Implicit NPE for 'container'\n        container.registerExtensionPoint(net.neoforged.fml.IExtensionPoint.DisplayTest.class, () -> new net.neoforged.fml.IExtensionPoint.DisplayTest(() -> net.neoforged.fml.IExtensionPoint.DisplayTest.IGNORESERVERONLY, (version, fromServer) -> true));\n        */"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "parent"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "parent"
+     ]
+    }
+   ],
+   "older": "/*container.registerExtensionPoint(net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory.class, () -> new net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory((game, screen) -> new ConfigScreen(screen))); // Implicit NPE for 'container'\n        container.registerExtensionPoint(net.neoforged.fml.IExtensionPoint.DisplayTest.class, () -> new net.neoforged.fml.IExtensionPoint.DisplayTest(() -> net.neoforged.fml.IExtensionPoint.DisplayTest.IGNORESERVERONLY, (version, fromServer) -> true));\n        */",
+   "newer": "container.registerExtensionPoint(net.neoforged.neoforge.client.gui.IConfigScreenFactory.class, (modOrGame, parent) -> new ConfigScreen(parent)); // Implicit NPE for 'container'",
+   "removed": [
+    "ConfigScreenFactory",
+    "ConfigScreenHandler",
+    "DisplayTest",
+    "IExtensionPoint",
+    "IGNORESERVERONLY",
+    "fml",
+    "fromServer",
+    "game",
+    "screen",
+    "version"
+   ],
+   "added": [
+    "IConfigScreenFactory",
+    "gui",
+    "modOrGame",
+    "parent"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/INeoForge.java",
+   "line": 50,
+   "method": "(imports)",
+   "condition": ">=1.20.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.6",
+     "code": "@Mod(value = \"ias\", dist = Dist.CLIENT)\n//?} else\n/*@Mod(\"ias\")*/\n@NullMarked\npublic final class INeoForge {\n    /**\n     * Logger for this class.\n     */\n    private static final Logger LOGGER = LogManager.getLogger(\"IAS/INeoForge\");\n\n    /**\n     * Creates and loads a new mod.\n     *\n     * @param dist      Current physical side\n     * @param container Mod container\n     * @param bus       Mod-specific event bus\n     * @apiNote Do not call, called by NeoForge\n     */\n    public INeoForge(Dist dist, ModContainer container, IEventBus bus) {\n        // Validate.\n        assert dist != null : \"HCsCR: Parameter 'dist' is null. (container: \" + container + \", bus: \" + bus + \", mod: \" + this + ')';\n        assert container != null : \"HCsCR: Parameter 'container' is null. (dist: \" + dist + \", bus: \" + bus + \", mod: \" + this + ')';\n        assert bus != null : \"HCsCR: Parameter 'bus' is null. (dist: \" + dist + \", container: \" + container + \", mod: \" + this + ')';\n\n        // Log.\n        long start = System.nanoTime();\n        LOGGER.info(\"IAS: Loading... (platform: neoforge)\");\n\n        // Not sure how long the Forge does have the \"clientSideOnly\" field in the TOML,\n        // so I'll do an additional exception check here.\n        if (dist != Dist.CLIENT) { // Implicit null-UOE for 'dist'\n            throw new UnsupportedOperationException(\"IAS: You've tried to load the In-Game Account Switcher mod on a server. This won't work.\");\n        }\n\n        // Init the mod.\n        IASMinecraft.init();\n\n        // Register the shutdown handler.\n        NeoForge.EVENT_BUS.addListener(GameShuttingDownEvent.class, event -> IAS.close());\n\n        // Register screen handlers.\n        NeoForge.EVENT_BUS.addListener(ScreenEvent.Init.Post.class, event -> {\n            Screen screen = event.getScreen();\n            IASMinecraft.onInit(screen.getMinecraft(), screen, event::addListener);\n        });\n        NeoForge.EVENT_BUS.addListener(ScreenEvent.Render.Post.class, event -> {\n            Screen screen = event.getScreen();\n            IASMinecraft.onDraw(screen, screen.getFont(), event.getGuiGraphics());\n        });\n\n        // Register the config screen.\n        //? if >=1.20.6 {\n        container.registerExtensionPoint(net.neoforged.neoforge.client.gui.IConfigScreenFactory.class, (modOrGame, parent) -> new ConfigScreen(parent)); // Implicit NPE for 'container'\n        //?} else {\n        /*container.registerExtensionPoint(net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory.class, () -> new net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory((game, screen) -> new ConfigScreen(screen))); // Implicit NPE for 'container'\n        container.registerExtensionPoint(net.neoforged.fml.IExtensionPoint.DisplayTest.class, () -> new net.neoforged.fml.IExtensionPoint.DisplayTest(() -> net.neoforged.fml.IExtensionPoint.DisplayTest.IGNORESERVERONLY, (version, fromServer) -> true));\n        *///?}\n\n        // Done.\n        LOGGER.info(\"IAS: Loaded. ({} ms)\", (System.nanoTime() - start) / 1_000_000L);\n    }\n\n    // TODO(VidTu): Remove when migration finishes.\n    // MIGRATION NOTICE: This class doesn't support annotation-based events, because I don't like them.\n\n    @Contract(pure = true)\n    @Override\n    public String toString() {\n        return \"IAS/INeoForge{}\";\n    }\n}\n*/"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/platform/IStonecutter.java",
+   "line": 126,
+   "method": "renderMultilineLabelCentered",
+   "condition": ">=1.21.11 | >=1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.11",
+     "code": "label.visitLines(net.minecraft.client.gui.TextAlignment.CENTER, x, y, 9, graphics.textRenderer());"
+    },
+    {
+     "condition": ">=1.21.10",
+     "code": "label.render(graphics, MultiLineLabel.Align.CENTER, x, y, 9, /*unused=*/false, -1);\n        //?} else\n        label.renderCentered(graphics, x, y);\n    */"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11",
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.1 -> 1.20.2",
+     "names": [
+      "render"
+     ]
+    },
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "minecraft",
+      "render"
+     ]
+    },
+    {
+     "step": "1.20.4 -> 1.20.5",
+     "names": [
+      "render"
+     ]
+    },
+    {
+     "step": "1.20.6 -> 1.21",
+     "names": [
+      "render",
+      "renderCentered"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "render"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "gui",
+      "render"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "render"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "minecraft",
+      "render"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "render",
+      "renderCentered"
+     ]
+    },
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "Align",
+      "TextAlignment",
+      "render",
+      "textRenderer",
+      "visitLines"
+     ]
+    }
+   ],
+   "older": "label.render(graphics, MultiLineLabel.Align.CENTER, x, y, 9, /*unused=*/false, -1);\n        //?} else\n        label.renderCentered(graphics, x, y);\n    */",
+   "newer": "label.visitLines(net.minecraft.client.gui.TextAlignment.CENTER, x, y, 9, graphics.textRenderer());",
+   "removed": [
+    "Align",
+    "MultiLineLabel",
+    "render",
+    "renderCentered",
+    "unused"
+   ],
+   "added": [
+    "TextAlignment",
+    "client",
+    "gui",
+    "minecraft",
+    "net",
+    "textRenderer",
+    "visitLines"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/AccountEntry.java",
+   "line": 133,
+   "method": "(class body)",
+   "condition": ">=26.1 | >=1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.1",
+     "code": "public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float delta) {"
+    },
+    {
+     "condition": ">=1.21.10",
+     "code": "public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean hovered, float delta) {"
+    },
+    {
+     "condition": null,
+     "code": "public void render(GuiGraphics graphics, int index, int y, int x, int width, int height, int mouseX, int mouseY, boolean hovered, float delta) {"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1",
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.11 -> 26.1",
+     "names": [
+      "GuiGraphics",
+      "GuiGraphicsExtractor",
+      "extractContent",
+      "renderContent"
+     ]
+    }
+   ],
+   "older": "public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean hovered, float delta) {",
+   "newer": "public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float delta) {",
+   "removed": [
+    "GuiGraphics",
+    "renderContent"
+   ],
+   "added": [
+    "GuiGraphicsExtractor",
+    "extractContent"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/AccountEntry.java",
+   "line": 151,
+   "method": "extractContent",
+   "condition": ">=1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "int x = this.getContentX();\n        int y = this.getContentY();\n        int width = this.getContentWidth();\n        int height = this.getContentHeight();"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/AccountList.java",
+   "line": 22,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.authlib.services.ProfileResult;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.authlib.yggdrasil.ProfileResult;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "services"
+     ]
+    }
+   ],
+   "older": "import com.mojang.authlib.yggdrasil.ProfileResult;",
+   "newer": "import com.mojang.authlib.services.ProfileResult;",
+   "removed": [
+    "yggdrasil"
+   ],
+   "added": [
+    "services"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/AccountScreen.java",
+   "line": 299,
+   "method": "(class body)",
+   "condition": ">=1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {\n        int key = event.key();\n        boolean shift = event.hasShiftDown();\n        boolean control = event.hasControlDown();\n        boolean select = event.isSelection();"
+    },
+    {
+     "condition": null,
+     "code": "public boolean keyPressed(int key, int scan, int mods) {\n        boolean shift = Screen.hasShiftDown();\n        boolean control = Screen.hasControlDown();\n        boolean select = net.minecraft.client.gui.navigation.CommonInputs.selected(key);"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "input"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "gui"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "event",
+      "gui"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "CommonInputs",
+      "KeyEvent"
+     ]
+    }
+   ],
+   "older": "public boolean keyPressed(int key, int scan, int mods) {\n        boolean shift = Screen.hasShiftDown();\n        boolean control = Screen.hasControlDown();\n        boolean select = net.minecraft.client.gui.navigation.CommonInputs.selected(key);",
+   "newer": "public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {\n        int key = event.key();\n        boolean shift = event.hasShiftDown();\n        boolean control = event.hasControlDown();\n        boolean select = event.isSelection();",
+   "removed": [
+    "CommonInputs",
+    "Screen",
+    "gui",
+    "mods",
+    "navigation",
+    "scan",
+    "selected"
+   ],
+   "added": [
+    "KeyEvent",
+    "event",
+    "input",
+    "isSelection"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/DeletePopupScreen.java",
+   "line": 175,
+   "method": "(class body)",
+   "condition": ">=1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {\n        boolean select = event.isSelection();"
+    },
+    {
+     "condition": null,
+     "code": "public boolean keyPressed(int key, int scan, int mods) {\n        boolean select = net.minecraft.client.gui.navigation.CommonInputs.selected(key);"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "input",
+      "key"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "gui"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "key"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "event",
+      "gui"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "CommonInputs",
+      "KeyEvent"
+     ]
+    }
+   ],
+   "older": "public boolean keyPressed(int key, int scan, int mods) {\n        boolean select = net.minecraft.client.gui.navigation.CommonInputs.selected(key);",
+   "newer": "public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {\n        boolean select = event.isSelection();",
+   "removed": [
+    "CommonInputs",
+    "gui",
+    "key",
+    "mods",
+    "navigation",
+    "scan",
+    "selected"
+   ],
+   "added": [
+    "KeyEvent",
+    "event",
+    "input",
+    "isSelection"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/LoginPopupScreen.java",
+   "line": 473,
+   "method": "currentScreen",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "return this.minecraft.gui.screen();"
+    },
+    {
+     "condition": null,
+     "code": "return this.minecraft.screen;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "gui"
+     ]
+    }
+   ],
+   "older": "return this.minecraft.screen;",
+   "newer": "return this.minecraft.gui.screen();",
+   "removed": [],
+   "added": [
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/MicrosoftCryptPopupScreen.java",
+   "line": 197,
+   "method": "(class body)",
+   "condition": ">= 1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.10",
+     "code": "public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {\n        int key = event.key();\n        boolean alt = event.hasAltDown();"
+    },
+    {
+     "condition": null,
+     "code": "public boolean keyPressed(int key, int scan, int mods) {\n        boolean alt = Screen.hasAltDown();"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "minecraft"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "input"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "event",
+      "minecraft"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "KeyEvent"
+     ]
+    }
+   ],
+   "older": "public boolean keyPressed(int key, int scan, int mods) {\n        boolean alt = Screen.hasAltDown();",
+   "newer": "public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {\n        int key = event.key();\n        boolean alt = event.hasAltDown();",
+   "removed": [
+    "Screen",
+    "mods",
+    "scan"
+   ],
+   "added": [
+    "KeyEvent",
+    "client",
+    "event",
+    "input",
+    "minecraft",
+    "net"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/MicrosoftPopupScreen.java",
+   "line": 37,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import org.lwjgl.sdl.SDLVideo;"
+    },
+    {
+     "condition": null,
+     "code": "import org.lwjgl.glfw.GLFW;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "import org.lwjgl.glfw.GLFW;",
+   "newer": "import org.lwjgl.sdl.SDLVideo;",
+   "removed": [
+    "GLFW",
+    "glfw"
+   ],
+   "added": [
+    "SDLVideo",
+    "sdl"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/MicrosoftPopupScreen.java",
+   "line": 509,
+   "method": "stage",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "SDLVideo.SDL_FlashWindow(ptr, SDLVideo.SDL_FLASH_BRIEFLY);\n                    SDLVideo.SDL_RaiseWindow(ptr);"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.glfwRequestWindowAttention(ptr);\n                    GLFW.glfwFocusWindow(ptr);\n                    GLFW.glfwRequestWindowAttention(ptr);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.glfwRequestWindowAttention(ptr);\n                    GLFW.glfwFocusWindow(ptr);\n                    GLFW.glfwRequestWindowAttention(ptr);",
+   "newer": "SDLVideo.SDL_FlashWindow(ptr, SDLVideo.SDL_FLASH_BRIEFLY);\n                    SDLVideo.SDL_RaiseWindow(ptr);",
+   "removed": [
+    "GLFW",
+    "glfwFocusWindow",
+    "glfwRequestWindowAttention"
+   ],
+   "added": [
+    "SDLVideo",
+    "SDL_FLASH_BRIEFLY",
+    "SDL_FlashWindow",
+    "SDL_RaiseWindow"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/MicrosoftPopupScreen.java",
+   "line": 586,
+   "method": "currentScreen",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "return this.minecraft.gui.screen();"
+    },
+    {
+     "condition": null,
+     "code": "return this.minecraft.screen;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11",
+    "1.21.11 -> 26.1",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "gui"
+     ]
+    }
+   ],
+   "older": "return this.minecraft.screen;",
+   "newer": "return this.minecraft.gui.screen();",
+   "removed": [],
+   "added": [
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/OfflinePopupScreen.java",
+   "line": 305,
+   "method": "(class body)",
+   "condition": ">=1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {\n        int key = event.key();\n        boolean res = super.keyPressed(event);"
+    },
+    {
+     "condition": null,
+     "code": "public boolean keyPressed(int key, int scan, int mods) {\n        boolean res = super.keyPressed(key, scan, mods);"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "minecraft"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "input"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "event",
+      "minecraft"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "KeyEvent"
+     ]
+    }
+   ],
+   "older": "public boolean keyPressed(int key, int scan, int mods) {\n        boolean res = super.keyPressed(key, scan, mods);",
+   "newer": "public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {\n        int key = event.key();\n        boolean res = super.keyPressed(event);",
+   "removed": [
+    "mods",
+    "scan"
+   ],
+   "added": [
+    "KeyEvent",
+    "client",
+    "event",
+    "input",
+    "minecraft",
+    "net"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/OfflinePopupScreen.java",
+   "line": 320,
+   "method": "(class body)",
+   "condition": ">=1.21.10 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.21.10",
+     "code": "public boolean keyReleased(net.minecraft.client.input.KeyEvent event) {\n        int key = event.key();\n        boolean res = super.keyReleased(event);"
+    },
+    {
+     "condition": null,
+     "code": "public boolean keyReleased(int key, int scan, int mods) {\n        boolean res = super.keyReleased(key, scan, mods);"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.20.2 -> 1.20.3",
+     "names": [
+      "minecraft"
+     ]
+    },
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "input"
+     ]
+    },
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "event",
+      "minecraft"
+     ]
+    },
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "KeyEvent"
+     ]
+    }
+   ],
+   "older": "public boolean keyReleased(int key, int scan, int mods) {\n        boolean res = super.keyReleased(key, scan, mods);",
+   "newer": "public boolean keyReleased(net.minecraft.client.input.KeyEvent event) {\n        int key = event.key();\n        boolean res = super.keyReleased(event);",
+   "removed": [
+    "mods",
+    "scan"
+   ],
+   "added": [
+    "KeyEvent",
+    "client",
+    "event",
+    "input",
+    "minecraft",
+    "net"
+   ]
+  },
+  {
+   "file": "src/main/java/ru/vidtu/ias/screen/PopupButton.java",
+   "line": 147,
+   "method": "extractContents",
+   "condition": "1.21.10",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "1.21.10",
+     "code": "// Change cursor.\n        if (this.isHovered()) {\n            graphics.requestCursor(this.isActive() ? com.mojang.blaze3d.platform.cursor.CursorTypes.POINTING_HAND : com.mojang.blaze3d.platform.cursor.CursorTypes.NOT_ALLOWED);\n        }"
+    }
+   ],
+   "boundary": [
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6",
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10",
+    "1.21.10 -> 1.21.11"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,1173 @@
+{
+ "repo": "not-coded/WayFix",
+ "commit": "7e926f0c6b4bc57d1532a39c135999fd7485451e",
+ "names": "yarn",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge",
+  "quilt"
+ ],
+ "versions": [
+  "1.16.5",
+  "1.17.1",
+  "1.18.2",
+  "1.19",
+  "1.19.2",
+  "1.19.3",
+  "1.20.1",
+  "1.20.4",
+  "1.20.6",
+  "1.21",
+  "1.21.9"
+ ],
+ "files": 12,
+ "switches": 44,
+ "versionSwitches": 27,
+ "rows": [
+  {
+   "file": "src/main/java/net/notcoded/wayfix/config/ModClothConfig.java",
+   "line": 18,
+   "method": "(imports)",
+   "condition": "<1.19",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.19",
+     "code": "import net.minecraft.text.TranslatableText;"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18.2 -> 1.19"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/config/ModClothConfig.java",
+   "line": 98,
+   "method": "getText",
+   "condition": ">=1.19 | <1.19",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19",
+     "code": "return Text.translatable(\"wayfix.option.\" + key);"
+    },
+    {
+     "condition": "<1.19",
+     "code": "return new TranslatableText(\"wayfix.option.\" + key);"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18.2 -> 1.19"
+   ],
+   "older": "return new TranslatableText(\"wayfix.option.\" + key);",
+   "newer": "return Text.translatable(\"wayfix.option.\" + key);",
+   "removed": [
+    "TranslatableText"
+   ],
+   "added": [
+    "Text",
+    "translatable"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/compat/MixinPlugin.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.loader.api.FabricLoader;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/compat/MixinPlugin.java",
+   "line": 27,
+   "method": "shouldApplyMixin",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "if(mixinClassName.equals(\"net.notcoded.wayfix.mixin.MonitorFixWindowMixin\")\n                && FabricLoader.getInstance().isModLoaded(\"vulkanmod\")\n        ) {\n            WindowHelper.enabled = false;\n            return false;\n        }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/GLXMixin.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": "((forge || neoforge) && (1.16.5 || >=1.20.1)) || fabric",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "((forge || neoforge) && (1.16.5 || >=1.20.1)) || fabric",
+     "code": "import org.lwjgl.glfw.GLFW;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;\n\nimport java.util.function.LongSupplier;\n\nimport static net.notcoded.wayfix.WayFix.supportsWayland;"
+    }
+   ],
+   "boundary": [
+    "1.16.4 -> 1.16.5",
+    "1.16.5 -> 1.17",
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.16.4 -> 1.16.5",
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/GLXMixin.java",
+   "line": 23,
+   "method": "(class body)",
+   "condition": "((forge || neoforge) && (1.16.5 || >=1.20.1)) || fabric",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "((forge || neoforge) && (1.16.5 || >=1.20.1)) || fabric",
+     "code": "@Inject(method = \"_initGlfw\", at = @At(\"HEAD\"), remap = false)\n    private static void preGLFWInit(CallbackInfoReturnable<LongSupplier> cir) {\n        if (supportsWayland()) {\n            GLFW.glfwInitHint(GLFW.GLFW_PLATFORM, GLFW.GLFW_PLATFORM_WAYLAND); // enable wayland backend if supported\n        }\n    }"
+    }
+   ],
+   "boundary": [
+    "1.16.4 -> 1.16.5",
+    "1.16.5 -> 1.17",
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.16.4 -> 1.16.5",
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 20,
+   "method": "(imports)",
+   "condition": "forge || neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge || neoforge",
+     "code": "import net.notcoded.wayfix.platforms.ModPlatform;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 27,
+   "method": "(imports)",
+   "condition": ">1.16.5 <1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.16.5 <1.20.1",
+     "code": "/*import com.mojang.blaze3d.systems.RenderSystem;\nimport static net.notcoded.wayfix.WayFix.supportsWayland;\n*/"
+    }
+   ],
+   "boundary": [
+    "1.16.5 -> 1.17",
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 32,
+   "method": "(imports)",
+   "condition": ">1.16.5 <1.19.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.16.5 <1.19.2",
+     "code": "/*import java.util.function.LongSupplier;\n*/"
+    }
+   ],
+   "boundary": [
+    "1.16.5 -> 1.17",
+    "1.19.1 -> 1.19.2"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 36,
+   "method": "(imports)",
+   "condition": "1.19.2 || 1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "1.19.2 || 1.19.3",
+     "code": "/*import net.minecraft.util.TimeSupplier;\n*/"
+    }
+   ],
+   "boundary": [
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 24,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "import net.notcoded.wayfix.platforms.forge.WayFixForge;\n\n//? if >1.16.5 <1.20.1 {\n/*import com.mojang.blaze3d.systems.RenderSystem;\nimport static net.notcoded.wayfix.WayFix.supportsWayland;\n*///?}\n\n//? if >1.16.5 <1.19.2 {\n/*import java.util.function.LongSupplier;\n*///?}\n\n//? if 1.19.2 || 1.19.3 {\n/*import net.minecraft.util.TimeSupplier;\n*///?}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 42,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import net.notcoded.wayfix.platforms.neoforge.WayFixNeoForge;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 61,
+   "method": "(class body)",
+   "condition": ">1.16.5 <1.19.2 | 1.19.2 || 1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.16.5 <1.19.2",
+     "code": "/*¹@Redirect(method = \"<init>\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/RenderSystem;initBackendSystem()Ljava/util/function/LongSupplier;\"))\n    private LongSupplier preGLFWInit(){\n    ¹*/"
+    },
+    {
+     "condition": "1.19.2 || 1.19.3",
+     "code": "/*¹@Redirect(method = \"<init>\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/RenderSystem;initBackendSystem()Lnet/minecraft/util/TimeSupplier$Nanoseconds;\"))\n    private TimeSupplier.Nanoseconds preGLFWInit(){\n    ¹*/"
+    }
+   ],
+   "boundary": [
+    "1.16.5 -> 1.17",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.19 -> 1.19.1",
+    "1.19.1 -> 1.19.2",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 60,
+   "method": "(class body)",
+   "condition": ">1.16.5 <1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">1.16.5 <1.20.1",
+     "code": "/*//? if >1.16.5 <1.19.2 {\n    /*¹@Redirect(method = \"<init>\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/RenderSystem;initBackendSystem()Ljava/util/function/LongSupplier;\"))\n    private LongSupplier preGLFWInit(){\n    ¹*///?} elif 1.19.2 || 1.19.3 {\n    /*¹@Redirect(method = \"<init>\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/RenderSystem;initBackendSystem()Lnet/minecraft/util/TimeSupplier$Nanoseconds;\"))\n    private TimeSupplier.Nanoseconds preGLFWInit(){\n    ¹*///?}\n        if (supportsWayland()) {\n            GLFW.glfwInitHint(GLFW.GLFW_PLATFORM, GLFW.GLFW_PLATFORM_WAYLAND); // enable wayland backend if supported\n        }\n        return RenderSystem.initBackendSystem();\n    }\n    */"
+    }
+   ],
+   "boundary": [
+    "1.16.5 -> 1.17",
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 58,
+   "method": "(class body)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "//? if >1.16.5 <1.20.1 {\n    /*//? if >1.16.5 <1.19.2 {\n    /*¹@Redirect(method = \"<init>\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/RenderSystem;initBackendSystem()Ljava/util/function/LongSupplier;\"))\n    private LongSupplier preGLFWInit(){\n    ¹*///?} elif 1.19.2 || 1.19.3 {\n    /*¹@Redirect(method = \"<init>\", at = @At(value = \"INVOKE\", target = \"Lcom/mojang/blaze3d/systems/RenderSystem;initBackendSystem()Lnet/minecraft/util/TimeSupplier$Nanoseconds;\"))\n    private TimeSupplier.Nanoseconds preGLFWInit(){\n    ¹*///?}\n        if (supportsWayland()) {\n            GLFW.glfwInitHint(GLFW.GLFW_PLATFORM, GLFW.GLFW_PLATFORM_WAYLAND); // enable wayland backend if supported\n        }\n        return RenderSystem.initBackendSystem();\n    }\n    *///?}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 90,
+   "method": "(class body)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "/*platform = new WayFixNeoForge.NeoForgePlatform();\n        */"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 94,
+   "method": "(class body)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "/*platform = new WayFixForge.ForgePlatform();\n        */"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/MinecraftClientMixin.java",
+   "line": 85,
+   "method": "(class body)",
+   "condition": "forge || neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge || neoforge",
+     "code": "@Inject(method = \"<clinit>\", at = @At(\"HEAD\"))\n    private static void initMod(CallbackInfo ci) {\n        ModPlatform platform;\n\n        //? if neoforge {\n        /*platform = new WayFixNeoForge.NeoForgePlatform();\n        *///?}\n\n        //? if forge {\n        /*platform = new WayFixForge.ForgePlatform();\n        *///?}\n\n        WayFix.init(platform);\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/TitleScreenMixin.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import net.notcoded.wayfix.platforms.neoforge.WayFixNeoForge;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/TitleScreenMixin.java",
+   "line": 19,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "import net.notcoded.wayfix.platforms.forge.WayFixForge;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/TitleScreenMixin.java",
+   "line": 32,
+   "method": "init",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "WayFixNeoForge.checkEarlyWindow();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/TitleScreenMixin.java",
+   "line": 36,
+   "method": "init",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "WayFixForge.checkEarlyWindow();"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/WindowMixin.java",
+   "line": 24,
+   "method": "(imports)",
+   "condition": ">=1.20 | 1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20",
+     "code": "import net.minecraft.client.util.Icons;\nimport net.minecraft.resource.ResourcePack;\nimport java.io.IOException;"
+    },
+    {
+     "condition": "1.19.3",
+     "code": "import java.util.ArrayList;\nimport java.util.Arrays;\nimport net.minecraft.resource.InputSupplier;"
+    }
+   ],
+   "boundary": [
+    "1.19.4 -> 1.20",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.19.2 -> 1.19.3"
+   ],
+   "older": "import java.util.ArrayList;\nimport java.util.Arrays;\nimport net.minecraft.resource.InputSupplier;",
+   "newer": "import net.minecraft.client.util.Icons;\nimport net.minecraft.resource.ResourcePack;\nimport java.io.IOException;",
+   "removed": [
+    "ArrayList",
+    "Arrays",
+    "InputSupplier"
+   ],
+   "added": [
+    "IOException",
+    "Icons",
+    "ResourcePack",
+    "client"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/WindowMixin.java",
+   "line": 35,
+   "method": "(imports)",
+   "condition": "<1.20",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.20",
+     "code": "import java.io.InputStream;"
+    }
+   ],
+   "boundary": [
+    "1.19.4 -> 1.20"
+   ],
+   "window": [
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/WindowMixin.java",
+   "line": 47,
+   "method": "(class body)",
+   "condition": "forge || (neoforge && 1.20.4) | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge || (neoforge && 1.20.4)",
+     "code": "@Redirect(method = \"<init>\", at = @At(value = \"INVOKE\", target = \"Lorg/lwjgl/glfw/GLFW;glfwDefaultWindowHints()V\", remap = false))"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"<init>\", at = @At(value = \"INVOKE\", target = \"Lorg/lwjgl/glfw/GLFW;glfwDefaultWindowHints()V\", shift = At.Shift.AFTER, remap = false))\n    private void onWindowHints(CallbackInfo ci) {"
+    }
+   ],
+   "boundary": [
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/WindowMixin.java",
+   "line": 53,
+   "method": "onWindowHints",
+   "condition": "forge || (neoforge && 1.20.4)",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge || (neoforge && 1.20.4)",
+     "code": "private void onWindowHints() {\n        GLFW.glfwDefaultWindowHints();"
+    }
+   ],
+   "boundary": [
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5"
+   ],
+   "window": [
+    "1.20.1 -> 1.20.2",
+    "1.20.2 -> 1.20.3",
+    "1.20.3 -> 1.20.4",
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/WindowMixin.java",
+   "line": 67,
+   "method": "(class body)",
+   "condition": ">=1.20 | 1.19.3 | <1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20",
+     "code": "private void injectIcon(ResourcePack resourcePack, Icons icons, CallbackInfo ci) {"
+    },
+    {
+     "condition": "1.19.3",
+     "code": "private void injectIcon(InputSupplier<InputStream> smallIconSupplier, InputSupplier<InputStream> bigIconSupplier, CallbackInfo ci) {"
+    },
+    {
+     "condition": "<1.19.3",
+     "code": "private void injectIcon(InputStream icon16, InputStream icon32, CallbackInfo ci) {"
+    }
+   ],
+   "boundary": [
+    "1.19.4 -> 1.20",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.19.2 -> 1.19.3"
+   ],
+   "older": "private void injectIcon(InputSupplier<InputStream> smallIconSupplier, InputSupplier<InputStream> bigIconSupplier, CallbackInfo ci) {",
+   "newer": "private void injectIcon(ResourcePack resourcePack, Icons icons, CallbackInfo ci) {",
+   "removed": [
+    "InputStream",
+    "InputSupplier",
+    "bigIconSupplier",
+    "smallIconSupplier"
+   ],
+   "added": [
+    "Icons",
+    "ResourcePack",
+    "icons",
+    "resourcePack"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/mixin/WindowMixin.java",
+   "line": 77,
+   "method": "injectIcon",
+   "condition": ">=1.20 | 1.19.3 | <1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20",
+     "code": "try {\n                DesktopFileInjector.setIcon(icons.getIcons(resourcePack));\n            } catch (IOException ignored) { }"
+    },
+    {
+     "condition": "1.19.3",
+     "code": "DesktopFileInjector.setIcon(new ArrayList<>(Arrays.asList(smallIconSupplier, bigIconSupplier)));"
+    },
+    {
+     "condition": "<1.19.3",
+     "code": "DesktopFileInjector.setIcon(icon16, icon32);"
+    }
+   ],
+   "boundary": [
+    "1.19.4 -> 1.20",
+    "1.19.2 -> 1.19.3",
+    "1.19.3 -> 1.19.4"
+   ],
+   "window": [
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1",
+    "1.19.2 -> 1.19.3"
+   ],
+   "older": "DesktopFileInjector.setIcon(new ArrayList<>(Arrays.asList(smallIconSupplier, bigIconSupplier)));",
+   "newer": "try {\n                DesktopFileInjector.setIcon(icons.getIcons(resourcePack));\n            } catch (IOException ignored) { }",
+   "removed": [
+    "ArrayList",
+    "Arrays",
+    "asList",
+    "bigIconSupplier",
+    "smallIconSupplier"
+   ],
+   "added": [
+    "IOException",
+    "getIcons",
+    "icons",
+    "ignored",
+    "resourcePack"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/platforms/fabric/ModMenuIntegration.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package net.notcoded.wayfix.platforms.fabric;\n\nimport com.terraformersmc.modmenu.api.ConfigScreenFactory;\nimport com.terraformersmc.modmenu.api.ModMenuApi;\nimport net.notcoded.wayfix.config.ModClothConfig;\n\npublic class ModMenuIntegration implements ModMenuApi {\n    @Override\n    public ConfigScreenFactory<?> getModConfigScreenFactory() {\n        return ModClothConfig::buildScreen;\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/platforms/fabric/WayFixFabric.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "package net.notcoded.wayfix.platforms.fabric;\n\nimport net.fabricmc.api.ClientModInitializer;\nimport net.fabricmc.loader.api.FabricLoader;\nimport net.notcoded.wayfix.WayFix;\nimport net.notcoded.wayfix.platforms.ModPlatform;\n\npublic class WayFixFabric implements ClientModInitializer {\n\t@Override\n\tpublic void onInitializeClient() {\n\t\tWayFix.init(new FabricPlatform());\n\t}\n\n    public static class FabricPlatform implements ModPlatform {\n\n        @Override\n        public String getModLoader() {\n            return \"Fabric\";\n        }\n\n        @Override\n        public boolean isModLoaded(String modId) {\n            return FabricLoader.getInstance().isModLoaded(modId);\n        }\n\n        @Override\n        public boolean isDevelopmentEnvironment() {\n            return FabricLoader.getInstance().isDevelopmentEnvironment();\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/platforms/forge/WayFixForge.java",
+   "line": 14,
+   "method": "(imports)",
+   "condition": ">=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.1",
+     "code": "import net.minecraft.text.Text;\nimport net.minecraft.client.MinecraftClient;\nimport net.minecraft.client.toast.SystemToast;\nimport net.minecraftforge.fml.loading.FMLConfig;"
+    }
+   ],
+   "boundary": [
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/platforms/forge/WayFixForge.java",
+   "line": 20,
+   "method": "(imports)",
+   "condition": ">=1.19 | 1.18.2 | 1.17.1 | 1.16.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19",
+     "code": "import net.minecraftforge.client.ConfigScreenHandler;"
+    },
+    {
+     "condition": "1.18.2",
+     "code": "/*import net.minecraftforge.client.ConfigGuiHandler;\n*/"
+    },
+    {
+     "condition": "1.17.1",
+     "code": "/*import net.minecraftforge.fmlclient.ConfigGuiHandler;\n*/"
+    },
+    {
+     "condition": "1.16.5",
+     "code": "/*import net.minecraftforge.fml.ExtensionPoint;\n*/"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19",
+    "1.18.1 -> 1.18.2",
+    "1.17 -> 1.17.1",
+    "1.17.1 -> 1.18",
+    "1.16.4 -> 1.16.5",
+    "1.16.5 -> 1.17"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2",
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.16.4 -> 1.16.5"
+   ],
+   "older": "/*import net.minecraftforge.client.ConfigGuiHandler;\n*/",
+   "newer": "import net.minecraftforge.client.ConfigScreenHandler;",
+   "removed": [
+    "ConfigGuiHandler"
+   ],
+   "added": [
+    "ConfigScreenHandler"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/platforms/forge/WayFixForge.java",
+   "line": 39,
+   "method": "(imports)",
+   "condition": ">=1.20.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.20.1",
+     "code": "try {\n            if(!FMLConfig.getBoolConfigValue(FMLConfig.ConfigValue.EARLY_WINDOW_CONTROL)) return;\n            FMLConfig.updateConfig(FMLConfig.ConfigValue.EARLY_WINDOW_CONTROL, false);\n\n            MinecraftClient.getInstance().getToastManager().add(new SystemToast(SystemToast.Type.WORLD_BACKUP,\n                    Text.translatable(\"wayfix.toast.restart-game.title\"),\n                    Text.translatable(\"wayfix.toast.restart-game.description\"))\n            );\n        } catch(Exception | Error ignored) { }"
+    }
+   ],
+   "boundary": [
+    "1.20 -> 1.20.1"
+   ],
+   "window": [
+    "1.19.3 -> 1.19.4",
+    "1.19.4 -> 1.20",
+    "1.20 -> 1.20.1"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/platforms/forge/WayFixForge.java",
+   "line": 73,
+   "method": "(imports)",
+   "condition": ">=1.19 | >1.16.5 <1.19 | 1.16.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19",
+     "code": "ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () ->\n                new ConfigScreenHandler.ConfigScreenFactory(\n                        (client, parent) -> ModClothConfig.buildScreen(parent)\n                )\n        );"
+    },
+    {
+     "condition": ">1.16.5 <1.19",
+     "code": "/*ModLoadingContext.get().registerExtensionPoint(ConfigGuiHandler.ConfigGuiFactory.class, () ->\n                new ConfigGuiHandler.ConfigGuiFactory((client, parent) -> ModClothConfig.buildScreen(parent)\n        ));\n        */"
+    },
+    {
+     "condition": "1.16.5",
+     "code": "/*ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.CONFIGGUIFACTORY, () ->\n                (client, parent) -> ModClothConfig.buildScreen(parent)\n        );\n        */"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19",
+    "1.16.5 -> 1.17",
+    "1.16.4 -> 1.16.5"
+   ],
+   "window": [
+    "1.18.2 -> 1.19",
+    "1.16.5 -> 1.17",
+    "1.17 -> 1.17.1",
+    "1.16.4 -> 1.16.5"
+   ],
+   "older": "/*ModLoadingContext.get().registerExtensionPoint(ConfigGuiHandler.ConfigGuiFactory.class, () ->\n                new ConfigGuiHandler.ConfigGuiFactory((client, parent) -> ModClothConfig.buildScreen(parent)\n        ));\n        */",
+   "newer": "ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () ->\n                new ConfigScreenHandler.ConfigScreenFactory(\n                        (client, parent) -> ModClothConfig.buildScreen(parent)\n                )\n        );",
+   "removed": [
+    "ConfigGuiFactory",
+    "ConfigGuiHandler"
+   ],
+   "added": [
+    "ConfigScreenFactory",
+    "ConfigScreenHandler"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/platforms/forge/WayFixForge.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "forge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "forge",
+     "code": "package net.notcoded.wayfix.platforms.forge;\n\nimport net.minecraftforge.api.distmarker.Dist;\nimport net.minecraftforge.api.distmarker.OnlyIn;\nimport net.minecraftforge.fml.DistExecutor;\nimport net.minecraftforge.fml.ModList;\nimport net.minecraftforge.fml.ModLoadingContext;\nimport net.minecraftforge.fml.common.Mod;\nimport net.minecraftforge.fml.loading.FMLLoader;\nimport net.notcoded.wayfix.config.ModClothConfig;\nimport net.notcoded.wayfix.platforms.ModPlatform;\n\n//? if >=1.20.1 {\nimport net.minecraft.text.Text;\nimport net.minecraft.client.MinecraftClient;\nimport net.minecraft.client.toast.SystemToast;\nimport net.minecraftforge.fml.loading.FMLConfig;\n//?}\n//? if >=1.19 {\nimport net.minecraftforge.client.ConfigScreenHandler;\n//?} elif 1.18.2 {\n/*import net.minecraftforge.client.ConfigGuiHandler;\n*///?} elif 1.17.1 {\n/*import net.minecraftforge.fmlclient.ConfigGuiHandler;\n*///?} elif 1.16.5 {\n/*import net.minecraftforge.fml.ExtensionPoint;\n*///?}\n\n@Mod(\"wayfix\")\n@OnlyIn(Dist.CLIENT)\npublic class WayFixForge {\n\tpublic WayFixForge() {\n        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> ConfigScreen::setupConfigScreen);\n\t}\n\n    public static void checkEarlyWindow() {\n\n        //? if >=1.20.1 {\n        try {\n            if(!FMLConfig.getBoolConfigValue(FMLConfig.ConfigValue.EARLY_WINDOW_CONTROL)) return;\n            FMLConfig.updateConfig(FMLConfig.ConfigValue.EARLY_WINDOW_CONTROL, false);\n\n            MinecraftClient.getInstance().getToastManager().add(new SystemToast(SystemToast.Type.WORLD_BACKUP,\n                    Text.translatable(\"wayfix.toast.restart-game.title\"),\n                    Text.translatable(\"wayfix.toast.restart-game.description\"))\n            );\n        } catch(Exception | Error ignored) { }\n\n        //?}\n    }\n\n    public static class ForgePlatform implements ModPlatform {\n        @Override\n        public String getModLoader() {\n            return \"Forge\";\n        }\n\n        @Override\n        public boolean isModLoaded(String modId) {\n            return ModList.get().isLoaded(modId);\n        }\n\n        @Override\n        public boolean isDevelopmentEnvironment() {\n            return !FMLLoader.isProduction();\n        }\n    }\n}\n\nclass ConfigScreen {\n    static void setupConfigScreen() {\n        //? if >=1.19 {\n        ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () ->\n                new ConfigScreenHandler.ConfigScreenFactory(\n                        (client, parent) -> ModClothConfig.buildScreen(parent)\n                )\n        );\n        //?} elif >1.16.5 <1.19 {\n        /*ModLoadingContext.get().registerExtensionPoint(ConfigGuiHandler.ConfigGuiFactory.class, () ->\n                new ConfigGuiHandler.ConfigGuiFactory((client, parent) -> ModClothConfig.buildScreen(parent)\n        ));\n        *///?} elif 1.16.5 {\n        /*ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.CONFIGGUIFACTORY, () ->\n                (client, parent) -> ModClothConfig.buildScreen(parent)\n        );\n        *///?}\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/platforms/neoforge/WayFixNeoForge.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": "<1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.20.6",
+     "code": "/*import net.neoforged.neoforge.client.ConfigScreenHandler;\n*/"
+    },
+    {
+     "condition": null,
+     "code": "import net.neoforged.neoforge.client.gui.IConfigScreenFactory;"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ],
+   "older": "/*import net.neoforged.neoforge.client.ConfigScreenHandler;\n*/",
+   "newer": "import net.neoforged.neoforge.client.gui.IConfigScreenFactory;",
+   "removed": [
+    "ConfigScreenHandler"
+   ],
+   "added": [
+    "IConfigScreenFactory",
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/platforms/neoforge/WayFixNeoForge.java",
+   "line": 24,
+   "method": "(imports)",
+   "condition": "<1.20.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.20.6",
+     "code": "/*ConfigScreenHandler.ConfigScreenFactory.class,\n                () -> new ConfigScreenHandler.ConfigScreenFactory(\n                        ((client, parent) -> ModClothConfig.buildScreen(parent))\n                )\n                */"
+    },
+    {
+     "condition": null,
+     "code": "IConfigScreenFactory.class,\n                () -> (client, parent) -> ModClothConfig.buildScreen(parent)"
+    }
+   ],
+   "boundary": [
+    "1.20.5 -> 1.20.6"
+   ],
+   "window": [
+    "1.20.4 -> 1.20.5",
+    "1.20.5 -> 1.20.6"
+   ],
+   "older": "/*ConfigScreenHandler.ConfigScreenFactory.class,\n                () -> new ConfigScreenHandler.ConfigScreenFactory(\n                        ((client, parent) -> ModClothConfig.buildScreen(parent))\n                )\n                */",
+   "newer": "IConfigScreenFactory.class,\n                () -> (client, parent) -> ModClothConfig.buildScreen(parent)",
+   "removed": [
+    "ConfigScreenFactory",
+    "ConfigScreenHandler"
+   ],
+   "added": [
+    "IConfigScreenFactory"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/platforms/neoforge/WayFixNeoForge.java",
+   "line": 1,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "package net.notcoded.wayfix.platforms.neoforge;\n\nimport net.minecraft.client.MinecraftClient;\nimport net.minecraft.client.toast.SystemToast;\nimport net.minecraft.text.Text;\nimport net.neoforged.fml.ModList;\nimport net.neoforged.fml.loading.FMLConfig;\nimport net.neoforged.fml.ModLoadingContext;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.fml.loading.FMLLoader;\nimport net.notcoded.wayfix.WayFix;\nimport net.notcoded.wayfix.config.ModClothConfig;\nimport net.notcoded.wayfix.platforms.ModPlatform;\n//? if <1.20.6 {\n/*import net.neoforged.neoforge.client.ConfigScreenHandler;\n*///?} else {\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;\n//?}\n@Mod(\"wayfix\")\npublic class WayFixNeoForge {\n\tpublic WayFixNeoForge() {\n        ModLoadingContext.get().registerExtensionPoint(\n                //? if <1.20.6 {\n                /*ConfigScreenHandler.ConfigScreenFactory.class,\n                () -> new ConfigScreenHandler.ConfigScreenFactory(\n                        ((client, parent) -> ModClothConfig.buildScreen(parent))\n                )\n                *///?} else {\n                IConfigScreenFactory.class,\n                () -> (client, parent) -> ModClothConfig.buildScreen(parent)\n                //?}\n        );\n\t}\n\n    public static void checkEarlyWindow() {\n        if(!FMLConfig.getBoolConfigValue(FMLConfig.ConfigValue.EARLY_WINDOW_CONTROL)) return;\n        FMLConfig.updateConfig(FMLConfig.ConfigValue.EARLY_WINDOW_CONTROL, false);\n\n        try {\n            MinecraftClient.getInstance().getToastManager().add(new SystemToast(SystemToast.Type.WORLD_BACKUP,\n                    Text.translatable(\"wayfix.toast.restart-game.title\"),\n                    Text.translatable(\"wayfix.toast.restart-game.description\"))\n            );\n        } catch (Exception | Error ignored) {\n            WayFix.LOGGER.warn(\"Restart your game! The early loading screen has been disabled.\");\n        }\n\n    }\n\n    public static class NeoForgePlatform implements ModPlatform {\n        @Override\n        public String getModLoader() {\n            return \"NeoForge\";\n        }\n\n        @Override\n        public boolean isModLoaded(String modId) {\n            return ModList.get().isLoaded(modId);\n        }\n\n        @Override\n        public boolean isDevelopmentEnvironment() {\n            return !FMLLoader.isProduction();\n        }\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/util/DesktopFileInjector.java",
+   "line": 5,
+   "method": "(imports)",
+   "condition": ">=1.19.3 | <1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.3",
+     "code": "import net.minecraft.resource.InputSupplier;\nimport java.util.List;"
+    },
+    {
+     "condition": "<1.19.3",
+     "code": "import java.util.ArrayList;\nimport java.util.Arrays;\nimport java.io.ByteArrayInputStream;"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "older": "import java.util.ArrayList;\nimport java.util.Arrays;\nimport java.io.ByteArrayInputStream;",
+   "newer": "import net.minecraft.resource.InputSupplier;\nimport java.util.List;",
+   "removed": [
+    "ArrayList",
+    "Arrays",
+    "ByteArrayInputStream"
+   ],
+   "added": [
+    "InputSupplier",
+    "List",
+    "minecraft",
+    "net",
+    "resource"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/util/DesktopFileInjector.java",
+   "line": 78,
+   "method": "(class body)",
+   "condition": ">=1.18.2 | <1.18.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.18.2",
+     "code": "icon16Byte = icon16.readAllBytes();\n            icon32Byte = icon32.readAllBytes();"
+    },
+    {
+     "condition": "<1.18.2",
+     "code": "/*icon16Byte = IOUtils.toByteArray(icon16);\n            icon32Byte = IOUtils.toByteArray(icon32);\n            */"
+    }
+   ],
+   "boundary": [
+    "1.18.1 -> 1.18.2"
+   ],
+   "window": [
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ],
+   "older": "/*icon16Byte = IOUtils.toByteArray(icon16);\n            icon32Byte = IOUtils.toByteArray(icon32);\n            */",
+   "newer": "icon16Byte = icon16.readAllBytes();\n            icon32Byte = icon32.readAllBytes();",
+   "removed": [
+    "IOUtils",
+    "toByteArray"
+   ],
+   "added": [
+    "readAllBytes"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/util/DesktopFileInjector.java",
+   "line": 54,
+   "method": "(class body)",
+   "condition": ">=1.19.3 | <1.19.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.19.3",
+     "code": "public static void setIcon(List<InputSupplier<InputStream>> icons) {\n        if(!WayFix.config.injectIcon) return;\n        for (InputSupplier<InputStream> supplier : icons) {\n            try {\n                BufferedImage image = ImageIO.read(supplier.get());\n                Path target = getIconFileLocation(image.getWidth(), image.getHeight());\n                injectFile(target, IOUtils.toByteArray(supplier.get()));\n\n            } catch (Exception e) {\n                return;\n            }\n        }\n        updateIconSystem();\n    }"
+    },
+    {
+     "condition": "<1.19.3",
+     "code": "public static void setIcon(InputStream icon16, InputStream icon32) {\n        if(!WayFix.config.injectIcon) return;\n        byte[] icon16Byte;\n        byte[] icon32Byte;\n\n        try {\n            // https://stackoverflow.com/questions/58534138/does-files-readallbytes-closes-the-inputstream-after-reading-the-file\n            //? if >=1.18.2 {\n            icon16Byte = icon16.readAllBytes();\n            icon32Byte = icon32.readAllBytes();\n            //?} elif <1.18.2 {\n            /*icon16Byte = IOUtils.toByteArray(icon16);\n            icon32Byte = IOUtils.toByteArray(icon32);\n            *///?}\n        } catch (IOException e) {\n            e.printStackTrace();\n            return;\n        }\n\n        ArrayList<byte[]> icons = new ArrayList<>(Arrays.asList(icon16Byte, icon32Byte));\n        for(byte[] bytes : icons) {\n            try {\n                BufferedImage image = ImageIO.read(new ByteArrayInputStream(bytes));\n                Path target = getIconFileLocation(image.getWidth(), image.getHeight());\n                injectFile(target, bytes);\n            } catch (IOException e) {\n                e.printStackTrace();\n                return;\n            }\n        }\n\n        updateIconSystem();\n    }"
+    }
+   ],
+   "boundary": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "window": [
+    "1.19.2 -> 1.19.3"
+   ],
+   "older": "public static void setIcon(InputStream icon16, InputStream icon32) {\n        if(!WayFix.config.injectIcon) return;\n        byte[] icon16Byte;\n        byte[] icon32Byte;\n\n        try {\n            // https://stackoverflow.com/questions/58534138/does-files-readallbytes-closes-the-inputstream-after-reading-the-file\n            //? if >=1.18.2 {\n            icon16Byte = icon16.readAllBytes();\n            icon32Byte = icon32.readAllBytes();\n            //?} elif <1.18.2 {\n            /*icon16Byte = IOUtils.toByteArray(icon16);\n            icon32Byte = IOUtils.toByteArray(icon32);\n            *///?}\n        } catch (IOException e) {\n            e.printStackTrace();\n            return;\n        }\n\n        ArrayList<byte[]> icons = new ArrayList<>(Arrays.asList(icon16Byte, icon32Byte));\n        for(byte[] bytes : icons) {\n            try {\n                BufferedImage image = ImageIO.read(new ByteArrayInputStream(bytes));\n                Path target = getIconFileLocation(image.getWidth(), image.getHeight());\n                injectFile(target, bytes);\n            } catch (IOException e) {\n                e.printStackTrace();\n                return;\n            }\n        }\n\n        updateIconSystem();\n    }",
+   "newer": "public static void setIcon(List<InputSupplier<InputStream>> icons) {\n        if(!WayFix.config.injectIcon) return;\n        for (InputSupplier<InputStream> supplier : icons) {\n            try {\n                BufferedImage image = ImageIO.read(supplier.get());\n                Path target = getIconFileLocation(image.getWidth(), image.getHeight());\n                injectFile(target, IOUtils.toByteArray(supplier.get()));\n\n            } catch (Exception e) {\n                return;\n            }\n        }\n        updateIconSystem();\n    }",
+   "removed": [
+    "ArrayList",
+    "Arrays",
+    "ByteArrayInputStream",
+    "IOException",
+    "asList",
+    "bytes",
+    "icon16",
+    "icon16Byte",
+    "icon32",
+    "icon32Byte",
+    "printStackTrace",
+    "readAllBytes"
+   ],
+   "added": [
+    "Exception",
+    "InputSupplier",
+    "List",
+    "get",
+    "supplier"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/util/WindowHelper.java",
+   "line": 6,
+   "method": "(imports)",
+   "condition": "<1.19",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<1.19",
+     "code": "import org.apache.commons.io.IOUtils;"
+    }
+   ],
+   "boundary": [
+    "1.18.2 -> 1.19"
+   ],
+   "window": [
+    "1.18.2 -> 1.19"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/util/WindowHelper.java",
+   "line": 51,
+   "method": "getWindowPos",
+   "condition": ">=1.18.2 | <1.18.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.18.2",
+     "code": "String result = new String(process.getInputStream().readAllBytes());"
+    },
+    {
+     "condition": "<1.18.2",
+     "code": "String result = new String(IOUtils.toByteArray(process.getInputStream()));"
+    }
+   ],
+   "boundary": [
+    "1.18.1 -> 1.18.2"
+   ],
+   "window": [
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ],
+   "older": "String result = new String(IOUtils.toByteArray(process.getInputStream()));",
+   "newer": "String result = new String(process.getInputStream().readAllBytes());",
+   "removed": [
+    "IOUtils",
+    "toByteArray"
+   ],
+   "added": [
+    "readAllBytes"
+   ]
+  },
+  {
+   "file": "src/main/java/net/notcoded/wayfix/util/WindowHelper.java",
+   "line": 79,
+   "method": "setWindowID",
+   "condition": ">=1.18.2 | <1.18.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=1.18.2",
+     "code": "String result = new String(process.getInputStream().readAllBytes());"
+    },
+    {
+     "condition": "<1.18.2",
+     "code": "String result = new String(IOUtils.toByteArray(process.getInputStream()));"
+    }
+   ],
+   "boundary": [
+    "1.18.1 -> 1.18.2"
+   ],
+   "window": [
+    "1.17.1 -> 1.18",
+    "1.18 -> 1.18.1",
+    "1.18.1 -> 1.18.2"
+   ],
+   "older": "String result = new String(IOUtils.toByteArray(process.getInputStream()));",
+   "newer": "String result = new String(process.getInputStream().readAllBytes());",
+   "removed": [
+    "IOUtils",
+    "toByteArray"
+   ],
+   "added": [
+    "readAllBytes"
+   ]
+  }
+ ]
+}

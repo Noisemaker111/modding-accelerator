@@ -1,0 +1,2966 @@
+{
+ "repo": "isXander/Controlify",
+ "commit": "f756225fcf94970458589cb5122b97671f450a75",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "forge",
+  "neoforge",
+  "quilt"
+ ],
+ "versions": [
+  "26.1",
+  "26.2",
+  "26.3"
+ ],
+ "files": 70,
+ "switches": 92,
+ "versionSwitches": 69,
+ "rows": [
+  {
+   "file": "src/fabric/java/dev/isxander/controlify/fabric/compatibility/ModMenuIntegration.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "mod_menu",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "mod_menu",
+     "code": "import com.terraformersmc.modmenu.api.ConfigScreenFactory;\nimport com.terraformersmc.modmenu.api.ModMenuApi;\nimport dev.isxander.controlify.gui.screen.ControlifySettingsScreen;\n\npublic class ModMenuIntegration implements ModMenuApi {\n\t@Override\n\tpublic ConfigScreenFactory<?> getModConfigScreenFactory() {\n\t\treturn ControlifySettingsScreen::new;\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/framework/CEntityTypes.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.world.entity.EntityTypes;\n\npublic final class CEntityTypes extends EntityTypes {\n}"
+    },
+    {
+     "condition": null,
+     "code": "import com.google.common.collect.ImmutableSet;\nimport net.minecraft.resources.ResourceKey;\nimport net.minecraft.world.entity.Entity;\nimport net.minecraft.world.entity.EntityDimensions;\nimport net.minecraft.world.entity.EntityType;\nimport net.minecraft.world.entity.MobCategory;\nimport net.minecraft.world.flag.FeatureFlagSet;\nimport net.minecraft.world.level.block.Block;\nimport net.minecraft.world.level.storage.loot.LootTable;\n\nimport java.util.Optional;\n\npublic final class CEntityTypes extends EntityType<Entity> {\n\tprivate CEntityTypes(EntityFactory<Entity> factory, MobCategory category, boolean serialize, boolean summon, boolean fireImmune, boolean canSpawnFarFromPlayer, ImmutableSet<Block> immuneTo, EntityDimensions dimensions, float spawnDimensionsScale, int clientTrackingRange, int updateInterval, String descriptionId, Optional<ResourceKey<LootTable>> lootTable, FeatureFlagSet requiredFeatures, boolean allowedInPeaceful) {\n\t\tsuper(factory, category, serialize, summon, fireImmune, canSpawnFarFromPlayer, immuneTo, dimensions, spawnDimensionsScale, clientTrackingRange, updateInterval, descriptionId, lootTable, requiredFeatures, allowedInPeaceful);\n\t}\n}"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "EntityTypes",
+      "immuneTo",
+      "level"
+     ]
+    }
+   ],
+   "older": "import com.google.common.collect.ImmutableSet;\nimport net.minecraft.resources.ResourceKey;\nimport net.minecraft.world.entity.Entity;\nimport net.minecraft.world.entity.EntityDimensions;\nimport net.minecraft.world.entity.EntityType;\nimport net.minecraft.world.entity.MobCategory;\nimport net.minecraft.world.flag.FeatureFlagSet;\nimport net.minecraft.world.level.block.Block;\nimport net.minecraft.world.level.storage.loot.LootTable;\n\nimport java.util.Optional;\n\npublic final class CEntityTypes extends EntityType<Entity> {\n\tprivate CEntityTypes(EntityFactory<Entity> factory, MobCategory category, boolean serialize, boolean summon, boolean fireImmune, boolean canSpawnFarFromPlayer, ImmutableSet<Block> immuneTo, EntityDimensions dimensions, float spawnDimensionsScale, int clientTrackingRange, int updateInterval, String descriptionId, Optional<ResourceKey<LootTable>> lootTable, FeatureFlagSet requiredFeatures, boolean allowedInPeaceful) {\n\t\tsuper(factory, category, serialize, summon, fireImmune, canSpawnFarFromPlayer, immuneTo, dimensions, spawnDimensionsScale, clientTrackingRange, updateInterval, descriptionId, lootTable, requiredFeatures, allowedInPeaceful);\n\t}\n}",
+   "newer": "import net.minecraft.world.entity.EntityTypes;\n\npublic final class CEntityTypes extends EntityTypes {\n}",
+   "removed": [
+    "Block",
+    "Entity",
+    "EntityDimensions",
+    "EntityFactory",
+    "EntityType",
+    "FeatureFlagSet",
+    "ImmutableSet",
+    "LootTable",
+    "MobCategory",
+    "Optional",
+    "ResourceKey",
+    "String",
+    "allowedInPeaceful",
+    "block",
+    "canSpawnFarFromPlayer",
+    "category",
+    "clientTrackingRange",
+    "collect",
+    "com",
+    "common",
+    "descriptionId",
+    "dimensions",
+    "factory",
+    "fireImmune",
+    "flag",
+    "google",
+    "immuneTo",
+    "java",
+    "level",
+    "loot",
+    "lootTable",
+    "requiredFeatures",
+    "resources",
+    "serialize",
+    "spawnDimensionsScale",
+    "storage",
+    "summon",
+    "updateInterval",
+    "util"
+   ],
+   "added": [
+    "EntityTypes"
+   ]
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/framework/CTestUtil.java",
+   "line": 155,
+   "method": "clearToasts",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "minecraft.gui.toastManager().clear();"
+    },
+    {
+     "condition": null,
+     "code": "minecraft.getToastManager().clear();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "getToastManager",
+      "toastManager"
+     ]
+    }
+   ],
+   "older": "minecraft.getToastManager().clear();",
+   "newer": "minecraft.gui.toastManager().clear();",
+   "removed": [
+    "getToastManager"
+   ],
+   "added": [
+    "gui",
+    "toastManager"
+   ]
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/framework/CTestUtil.java",
+   "line": 164,
+   "method": "isToastPresent",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "var toastManager = minecraft.gui.toastManager();"
+    },
+    {
+     "condition": null,
+     "code": "var toastManager = minecraft.getToastManager();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "getToastManager"
+     ]
+    }
+   ],
+   "older": "var toastManager = minecraft.getToastManager();",
+   "newer": "var toastManager = minecraft.gui.toastManager();",
+   "removed": [
+    "getToastManager"
+   ],
+   "added": [
+    "gui"
+   ]
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/framework/TestUnitWorldContext.java",
+   "line": 46,
+   "method": "TestUnitWorldContext",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "this.world.getConnection().waitForChunksDownload();"
+    },
+    {
+     "condition": null,
+     "code": "this.world.getClientLevel().waitForChunksDownload();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "this.world.getClientLevel().waitForChunksDownload();",
+   "newer": "this.world.getConnection().waitForChunksDownload();",
+   "removed": [
+    "getClientLevel"
+   ],
+   "added": [
+    "getConnection"
+   ]
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/framework/TestUnitWorldContext.java",
+   "line": 74,
+   "method": "allocateRegion",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "getWorld().getConnection().waitForChunksRender();"
+    },
+    {
+     "condition": null,
+     "code": "getWorld().getClientLevel().waitForChunksRender();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "getWorld().getClientLevel().waitForChunksRender();",
+   "newer": "getWorld().getConnection().waitForChunksRender();",
+   "removed": [
+    "getClientLevel"
+   ],
+   "added": [
+    "getConnection"
+   ]
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/mixin/SDLEventHandlerAccessor.java",
+   "line": 11,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.blaze3d.platform.SDLEventHandler;\nimport org.lwjgl.sdl.SDL_Event;\nimport org.spongepowered.asm.mixin.gen.Invoker;\n\n@Mixin(SDLEventHandler.class)\npublic interface SDLEventHandlerAccessor {\n\t@Invoker(\"handleMouseMotionEvent\")\n\tvoid controlify_test$handleMouseMotionEvent(SDL_Event event);\n}"
+    },
+    {
+     "condition": null,
+     "code": "@Mixin(dev.isxander.controlify.utils.DummyMixinTarget.class)\npublic interface SDLEventHandlerAccessor { }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "SDLEventHandler"
+     ]
+    }
+   ],
+   "older": "@Mixin(dev.isxander.controlify.utils.DummyMixinTarget.class)\npublic interface SDLEventHandlerAccessor { }",
+   "newer": "import com.mojang.blaze3d.platform.SDLEventHandler;\nimport org.lwjgl.sdl.SDL_Event;\nimport org.spongepowered.asm.mixin.gen.Invoker;\n\n@Mixin(SDLEventHandler.class)\npublic interface SDLEventHandlerAccessor {\n\t@Invoker(\"handleMouseMotionEvent\")\n\tvoid controlify_test$handleMouseMotionEvent(SDL_Event event);\n}",
+   "removed": [
+    "DummyMixinTarget",
+    "controlify",
+    "dev",
+    "isxander",
+    "utils"
+   ],
+   "added": [
+    "Invoker",
+    "SDLEventHandler",
+    "SDL_Event",
+    "asm",
+    "blaze3d",
+    "com",
+    "controlify_test",
+    "event",
+    "gen",
+    "handleMouseMotionEvent",
+    "lwjgl",
+    "mixin",
+    "mojang",
+    "org",
+    "platform",
+    "sdl",
+    "spongepowered"
+   ]
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/mixin/SystemToastMixin.java",
+   "line": 30,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Unique private Component controlify_test$cachedTitle;\n\n\t@Inject(\n\t\tmethod = \"update(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/Component;)V\",\n\t\tat = @At(\"HEAD\")\n\t)\n\tprivate void cacheText(Component title, Component message, CallbackInfo ci) {\n\t\tthis.controlify_test$cachedTitle = title;\n\t\tthis.controlify_test$cachedMessage = message;\n\t}\n\n\t@Override\n\tpublic Component controlify_test$getTitle() {\n\t\treturn controlify_test$cachedTitle;\n\t}"
+    },
+    {
+     "condition": null,
+     "code": "@Shadow private Component title;\n\n\t@Inject(\n\t\tmethod = \"<init>(Lnet/minecraft/client/gui/components/toasts/SystemToast$SystemToastId;Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/Component;)V\",\n\t\tat = @At(\"RETURN\")\n\t)\n\tprivate void cacheTextCtr(SystemToast.SystemToastId id, Component title, Component message, CallbackInfo ci) {\n\t\tthis.controlify_test$cachedMessage = message;\n\t}\n\n\t@WrapOperation(\n\t\tmethod = \"multiline\",\n\t\tat = @At(\n\t\t\tvalue = \"NEW\",\n\t\t\ttarget = \"(Lnet/minecraft/client/gui/components/toasts/SystemToast$SystemToastId;Lnet/minecraft/network/chat/Component;Ljava/util/List;I)Lnet/minecraft/client/gui/components/toasts/SystemToast;\"\n\t\t)\n\t)\n\tprivate static SystemToast cacheTextStatic(\n\t\tSystemToast.SystemToastId id, Component title, List<FormattedCharSequence> messageLines, int width,\n\t\tOperation<SystemToast> original,\n\t\t@Local(argsOnly = true, name = \"message\") Component message\n\t) {\n\t\tvar toast = original.call(id, title, messageLines, width);\n\t\t((SystemToastMixin) (Object) toast).controlify_test$cachedMessage = message;\n\t\treturn toast;\n\t}\n\n\t@Inject(method = \"reset\", at = @At(\"RETURN\"))\n\tprivate void cacheTextReset(Component title, Component message, CallbackInfo ci) {\n\t\tthis.controlify_test$cachedMessage = message;\n\t}\n\n\t@Override\n\tpublic Component controlify_test$getTitle() {\n\t\treturn title;\n\t}"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "name"
+     ]
+    }
+   ],
+   "older": "@Shadow private Component title;\n\n\t@Inject(\n\t\tmethod = \"<init>(Lnet/minecraft/client/gui/components/toasts/SystemToast$SystemToastId;Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/Component;)V\",\n\t\tat = @At(\"RETURN\")\n\t)\n\tprivate void cacheTextCtr(SystemToast.SystemToastId id, Component title, Component message, CallbackInfo ci) {\n\t\tthis.controlify_test$cachedMessage = message;\n\t}\n\n\t@WrapOperation(\n\t\tmethod = \"multiline\",\n\t\tat = @At(\n\t\t\tvalue = \"NEW\",\n\t\t\ttarget = \"(Lnet/minecraft/client/gui/components/toasts/SystemToast$SystemToastId;Lnet/minecraft/network/chat/Component;Ljava/util/List;I)Lnet/minecraft/client/gui/components/toasts/SystemToast;\"\n\t\t)\n\t)\n\tprivate static SystemToast cacheTextStatic(\n\t\tSystemToast.SystemToastId id, Component title, List<FormattedCharSequence> messageLines, int width,\n\t\tOperation<SystemToast> original,\n\t\t@Local(argsOnly = true, name = \"message\") Component message\n\t) {\n\t\tvar toast = original.call(id, title, messageLines, width);\n\t\t((SystemToastMixin) (Object) toast).controlify_test$cachedMessage = message;\n\t\treturn toast;\n\t}\n\n\t@Inject(method = \"reset\", at = @At(\"RETURN\"))\n\tprivate void cacheTextReset(Component title, Component message, CallbackInfo ci) {\n\t\tthis.controlify_test$cachedMessage = message;\n\t}\n\n\t@Override\n\tpublic Component controlify_test$getTitle() {\n\t\treturn title;\n\t}",
+   "newer": "@Unique private Component controlify_test$cachedTitle;\n\n\t@Inject(\n\t\tmethod = \"update(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/Component;)V\",\n\t\tat = @At(\"HEAD\")\n\t)\n\tprivate void cacheText(Component title, Component message, CallbackInfo ci) {\n\t\tthis.controlify_test$cachedTitle = title;\n\t\tthis.controlify_test$cachedMessage = message;\n\t}\n\n\t@Override\n\tpublic Component controlify_test$getTitle() {\n\t\treturn controlify_test$cachedTitle;\n\t}",
+   "removed": [
+    "FormattedCharSequence",
+    "List",
+    "Local",
+    "Object",
+    "Operation",
+    "Shadow",
+    "SystemToast",
+    "SystemToastId",
+    "SystemToastMixin",
+    "WrapOperation",
+    "argsOnly",
+    "cacheTextCtr",
+    "cacheTextReset",
+    "cacheTextStatic",
+    "call",
+    "messageLines",
+    "name",
+    "original",
+    "target",
+    "toast",
+    "value",
+    "width"
+   ],
+   "added": [
+    "Unique",
+    "cacheText",
+    "cachedTitle"
+   ]
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/tests/AdaptiveTriggerTests.java",
+   "line": 56,
+   "method": "runTest",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "world.getConnection().waitForChunksRender();"
+    },
+    {
+     "condition": null,
+     "code": "world.getClientLevel().waitForChunksRender();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "world.getClientLevel().waitForChunksRender();",
+   "newer": "world.getConnection().waitForChunksRender();",
+   "removed": [
+    "getClientLevel"
+   ],
+   "added": [
+    "getConnection"
+   ]
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/tests/KeyboardLayoutTests.java",
+   "line": 37,
+   "method": "runTest",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "world.getConnection().waitForChunksRender();"
+    },
+    {
+     "condition": null,
+     "code": "world.getClientLevel().waitForChunksRender();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "world.getClientLevel().waitForChunksRender();",
+   "newer": "world.getConnection().waitForChunksRender();",
+   "removed": [
+    "getClientLevel"
+   ],
+   "added": [
+    "getConnection"
+   ]
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/tests/RumbleTests.java",
+   "line": 52,
+   "method": "runTest",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "world.getWorld().getConnection().waitForChunksRender();"
+    },
+    {
+     "condition": null,
+     "code": "world.getWorld().getClientLevel().waitForChunksRender();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "world.getWorld().getClientLevel().waitForChunksRender();",
+   "newer": "world.getWorld().getConnection().waitForChunksRender();",
+   "removed": [
+    "getClientLevel"
+   ],
+   "added": [
+    "getConnection"
+   ]
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/tests/ServerPolicyTests.java",
+   "line": 36,
+   "method": "runTest",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "connection.waitForChunksDownload();"
+    },
+    {
+     "condition": null,
+     "code": "connection.getClientLevel().waitForChunksDownload();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "connection.getClientLevel().waitForChunksDownload();",
+   "newer": "connection.waitForChunksDownload();",
+   "removed": [
+    "getClientLevel"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/tests/VirtualControllerInputTests.java",
+   "line": 22,
+   "method": "(imports)",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.blaze3d.platform.SDLEventHandler;\nimport dev.isxander.controlify.Controlify;\nimport dev.isxander.controlify.InputMode;\nimport dev.isxander.controlify.gametest.mixin.SDLEventHandlerAccessor;\nimport org.lwjgl.sdl.SDL_Event;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/gametest/java/dev/isxander/controlify/gametest/tests/VirtualControllerInputTests.java",
+   "line": 66,
+   "method": "runTest",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "context.runOnClient(client -> {\n\t\t\t\tControlify.instance().setInputMode(InputMode.CONTROLLER);\n\t\t\t\ttry (var event = SDL_Event.calloc()) {\n\t\t\t\t\tvar handler = new SDLEventHandler(client, client.getWindow());\n\t\t\t\t\t((SDLEventHandlerAccessor) handler).controlify_test$handleMouseMotionEvent(event);\n\t\t\t\t}\n\t\t\t\tif (Controlify.instance().currentInputMode() != InputMode.CONTROLLER) {\n\t\t\t\t\tthrow new AssertionError(\"Cancelled SDL mouse input changed Controlify input mode\");\n\t\t\t\t}\n\t\t\t});"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/ControlifyCompat.java",
+   "line": 27,
+   "method": "init",
+   "condition": "simple_voice_chat",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "simple_voice_chat",
+     "code": "try {\n\t\t\twrapCompatCall(\n\t\t\t\t\tSIMPLE_VOICE_CHAT,\n\t\t\t\t\tdev.isxander.controlify.compatibility.simplevoicechat.SimpleVoiceChatCompat::init\n\t\t\t);\n\t\t} catch (NoClassDefFoundError e) {\n\t\t\tdisabledMods.add(SIMPLE_VOICE_CHAT);\n\t\t}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/ControlifyCompat.java",
+   "line": 38,
+   "method": "init",
+   "condition": "fancy_menu",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fancy_menu",
+     "code": "try {\n\t\t\twrapCompatCall(\n\t\t\t\t\tFANCY_MENU,\n\t\t\t\t\tdev.isxander.controlify.compatibility.fancymenu.FancyMenuCompat::registerActions\n\t\t\t);\n\t\t} catch (NoClassDefFoundError e) {\n\t\t\tdisabledMods.add(FANCY_MENU);\n\t\t}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/fancymenu/FancyMenuCompat.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "fancy_menu",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fancy_menu",
+     "code": "import de.keksuccino.fancymenu.customization.action.ActionRegistry;\n\npublic final class FancyMenuCompat {\n\tpublic static void registerActions() {\n\t\tActionRegistry.register(new OpenControlifySettingsAction());\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/fancymenu/OpenControlifySettingsAction.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "fancy_menu",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fancy_menu",
+     "code": "import de.keksuccino.fancymenu.customization.action.Action;\nimport dev.isxander.controlify.gui.screen.ControlifySettingsScreen;\nimport dev.isxander.controlify.utils.MinecraftUtil;\nimport net.minecraft.network.chat.Component;\nimport org.jetbrains.annotations.NotNull;\nimport org.jetbrains.annotations.Nullable;\n\npublic class OpenControlifySettingsAction extends Action {\n\tpublic OpenControlifySettingsAction() {\n\t\tsuper(\"controlify:open-settings\");\n\t}\n\n\t@Override\n\tpublic boolean hasValue() {\n\t\treturn false;\n\t}\n\n\t@Override\n\tpublic void execute(@Nullable String s) {\n\t\tMinecraftUtil.setScreen(new ControlifySettingsScreen(MinecraftUtil.getScreen()));\n\t}\n\n\t@Override\n\tpublic @NotNull Component getDisplayName() {\n\t\treturn Component.translatable(\"controlify.gui.button\");\n\t}\n\n\t@Override\n\tpublic @NotNull Component getDescription() {\n\t\treturn Component.empty();\n\t}\n\n\t@Override\n\tpublic @Nullable Component getValueDisplayName() {\n\t\treturn null;\n\t}\n\n\t@Override\n\tpublic @Nullable String getValuePreset() {\n\t\treturn \"\";\n\t}\n\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/iris/mixins/BaseOptionElementWidgetMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "iris",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "iris",
+     "code": "import dev.isxander.controlify.compatibility.iris.screenop.BaseOptionElementComponentProcessor;\nimport dev.isxander.controlify.screenop.ComponentProcessor;\nimport dev.isxander.controlify.screenop.ComponentProcessorProvider;\nimport net.irisshaders.iris.gui.NavigationController;\nimport net.irisshaders.iris.gui.element.widget.BaseOptionElementWidget;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.Unique;\n\n@Mixin(BaseOptionElementWidget.class)\npublic abstract class BaseOptionElementWidgetMixin implements ComponentProcessorProvider {\n\t@Shadow public abstract boolean applyPreviousValue();\n\t@Shadow public abstract boolean applyNextValue();\n\n\t@Shadow protected NavigationController navigation;\n\t@Unique private final BaseOptionElementComponentProcessor processor\n\t\t\t= new BaseOptionElementComponentProcessor(this::cycle);\n\n\t@Override\n\tpublic ComponentProcessor componentProcessor() {\n\t\treturn processor;\n\t}\n\n\t@Unique private void cycle(boolean reverse) {\n\t\tboolean needsUpdate = reverse ? applyPreviousValue() : applyNextValue();\n\t\tif (needsUpdate) {\n\t\t\tnavigation.refresh();\n\t\t}\n\t}\n\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/iris/screenop/BaseOptionElementComponentProcessor.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "iris",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "iris",
+     "code": "import dev.isxander.controlify.screenop.compat.AbstractSliderComponentProcessor;\n\nimport java.util.function.Consumer;\n\npublic class BaseOptionElementComponentProcessor extends AbstractSliderComponentProcessor {\n\tprivate final Consumer<Boolean> cycleMethod;\n\n\tpublic BaseOptionElementComponentProcessor(Consumer<Boolean> cycleMethod) {\n\t\tthis.cycleMethod = cycleMethod;\n\t}\n\n\t@Override\n\tprotected void incrementSlider(boolean reverse) {\n\t\tthis.cycleMethod.accept(reverse);\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/rso/mixins/AbstractFrameAccessor.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "reeses_sodium_options",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "reeses_sodium_options",
+     "code": "import me.flashyreese.mods.reeses_sodium_options.client.gui.frame.AbstractFrame;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.gen.Accessor;\n\nimport java.util.List;\n\nimport net.caffeinemc.mods.sodium.client.gui.options.control.ControlElement;\n\n@Mixin(AbstractFrame.class)\npublic interface AbstractFrameAccessor {\n\t@Accessor\n\tList<ControlElement<?>> getControlElements();\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/rso/mixins/SodiumVideoOptionsScreenMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "reeses_sodium_options",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "reeses_sodium_options",
+     "code": "import com.llamalad7.mixinextras.injector.ModifyExpressionValue;\nimport dev.isxander.controlify.compatibility.sodium.screenop.SodiumGuiScreenProcessor;\nimport dev.isxander.controlify.compatibility.sodium.screenop.SodiumScreenOperations;\nimport dev.isxander.controlify.screenop.ScreenProcessor;\nimport dev.isxander.controlify.screenop.ScreenProcessorProvider;\nimport me.flashyreese.mods.reeses_sodium_options.client.gui.SodiumVideoOptionsScreen;\nimport me.flashyreese.mods.reeses_sodium_options.client.gui.frame.AbstractFrame;\nimport me.flashyreese.mods.reeses_sodium_options.client.gui.frame.tab.Tab;\nimport me.flashyreese.mods.reeses_sodium_options.client.gui.frame.tab.TabFrame;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.client.gui.screens.Screen;\nimport net.minecraft.network.chat.Component;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.Unique;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.ModifyArg;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\nimport java.util.List;\nimport java.util.Optional;\n\nimport net.caffeinemc.mods.sodium.client.gui.widgets.FlatButtonWidget;\nimport net.caffeinemc.mods.sodium.client.gui.options.control.ControlElement;\n\n@Mixin(SodiumVideoOptionsScreen.class)\npublic abstract class SodiumVideoOptionsScreenMixin extends Screen implements ScreenProcessorProvider, SodiumScreenOperations {\n\t@Shadow\n\tprivate FlatButtonWidget applyButton;\n\t@Shadow\n\tprivate FlatButtonWidget closeButton;\n\t@Shadow\n\tprivate FlatButtonWidget undoButton;\n\n\t@Unique private final SodiumGuiScreenProcessor controlify$screenProcessor\n\t\t\t= new SodiumGuiScreenProcessor((SodiumVideoOptionsScreen) (Object) this, this);\n\n\t@Unique private TabFrame tabFrame;\n\n\tprotected SodiumVideoOptionsScreenMixin(Component title) {\n\t\tsuper(title);\n\t}\n\n\t@Inject(method = \"init\", at = @At(\"RETURN\"))\n\tprivate void notifyProcessorRebuild(CallbackInfo ci) {\n\t\tcontrolify$screenProcessor.onRebuildGUI();\n\t\tfocusOnFirstControl();\n\t}\n\n\t@ModifyExpressionValue(\n\t\t\tmethod = \"lambda$parentBasicFrameBuilder$9\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lme/flashyreese/mods/reeses_sodium_options/client/gui/frame/tab/TabFrame$Builder;build()Lme/flashyreese/mods/reeses_sodium_options/client/gui/frame/tab/TabFrame;\"\n\t\t\t)\n\t)\n\tprivate TabFrame storeBuiltTabFrame(TabFrame original) {\n\t\treturn tabFrame = original;\n\t}\n\n\t@ModifyArg(\n\t\t\tmethod = \"lambda$parentBasicFrameBuilder$9\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lme/flashyreese/mods/reeses_sodium_options/client/gui/frame/tab/TabFrame$Builder;onSetTab(Ljava/lang/Runnable;)Lme/flashyreese/mods/reeses_sodium_options/client/gui/frame/tab/TabFrame$Builder;\"\n\t\t\t)\n\t)\n\tprivate Runnable setInitialFocusOnTabChange(Runnable onSetTab) {\n\t\treturn () -> {\n\t\t\tonSetTab.run();\n\t\t\tMinecraft.getInstance().\n\t\t\t\t\t/*? if >=1.21.2 {*/ schedule /*?} else {*/ /*tell *//*?}*/(this::focusOnFirstControl);\n\t\t};\n\t}\n\n\t@Unique private void focusOnFirstControl() {\n\t\tAbstractFrame tabContentsFrame = ((TabFrameAccessor) tabFrame).getSelectedFrame();\n\t\tList<ControlElement<?>> controlElements = ((AbstractFrameAccessor) tabContentsFrame).getControlElements();\n\t\tif (!controlElements.isEmpty()) {\n\t\t\tSystem.out.println(controlElements.get(0).getOption().getName().getString());\n\t\t\tsetInitialFocus(controlElements.get(0));\n\t\t}\n\t}\n\n\t@Override\n\tpublic ScreenProcessor<?> screenProcessor() {\n\t\treturn controlify$screenProcessor;\n\t}\n\n\t@Override\n\tpublic void controlify$nextPage() {\n\t\tvar accessor = (TabFrameAccessor) this.tabFrame;\n\t\tList<Tab<?>> tabs = accessor.getTabs();\n\t\tOptional<Tab<?>> selectedTab = getSelectedTab(accessor);\n\t\tif (selectedTab.isEmpty()) return;\n\n\t\tvar currentIndex = tabs.indexOf(selectedTab.get());\n\t\tvar nextIndex = (currentIndex + 1) % tabs.size();\n\n\t\ttabFrame.setTab(Optional.of(tabs.get(nextIndex)));\n\t}\n\n\t@Override\n\tpublic void cont"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/rso/mixins/TabFrameAccessor.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "reeses_sodium_options",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "reeses_sodium_options",
+     "code": "import me.flashyreese.mods.reeses_sodium_options.client.gui.frame.AbstractFrame;\nimport me.flashyreese.mods.reeses_sodium_options.client.gui.frame.tab.Tab;\nimport me.flashyreese.mods.reeses_sodium_options.client.gui.frame.tab.TabFrame;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.gen.Accessor;\n\nimport java.util.List;\nimport java.util.Optional;\n\n@Mixin(TabFrame.class)\npublic interface TabFrameAccessor {\n\t@Accessor\n\tList<Tab<?>> getTabs();\n\n\t@Accessor\n\tOptional<Tab<?>>\n\tgetSelectedTab();\n\n\t@Accessor\n\tAbstractFrame getSelectedFrame();\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/simplevoicechat/mixins/KeyEventsAccessor.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "simple_voice_chat",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "simple_voice_chat",
+     "code": "import de.maxhenkel.voicechat.voice.client.KeyEvents;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.gen.Invoker;\n\n@Mixin(KeyEvents.class)\npublic interface KeyEventsAccessor {\n\t@Invoker\n\tboolean invokeCheckConnected();\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/simplevoicechat/mixins/PTTKeyHandlerMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "simple_voice_chat",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "simple_voice_chat",
+     "code": "import com.llamalad7.mixinextras.injector.ModifyExpressionValue;\nimport de.maxhenkel.voicechat.voice.client.PTTKeyHandler;\nimport dev.isxander.controlify.compatibility.simplevoicechat.SimpleVoiceChatCompat;\nimport org.objectweb.asm.Opcodes;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\n\n@Mixin(PTTKeyHandler.class)\npublic class PTTKeyHandlerMixin {\n\t@ModifyExpressionValue(\n\t\t\tmethod = {\n\t\t\t\t\t\"isPTTDown()Z\",\n\t\t\t\t\t\"isAnyDown()Z\",\n\t\t\t},\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"FIELD\",\n\t\t\t\t\ttarget = \"Lde/maxhenkel/voicechat/voice/client/PTTKeyHandler;pttKeyDown:Z\",\n\t\t\t\t\topcode = Opcodes.GETFIELD\n\t\t\t)\n\t)\n\tprivate boolean isControllerPTTDown(boolean keyDown) {\n\t\treturn keyDown || SimpleVoiceChatCompat.isPTTDown();\n\t}\n\n\t@ModifyExpressionValue(\n\t\t\tmethod = {\n\t\t\t\t\t\"isWhisperDown()Z\",\n\t\t\t\t\t\"isAnyDown()Z\",\n\t\t\t},\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"FIELD\",\n\t\t\t\t\ttarget = \"Lde/maxhenkel/voicechat/voice/client/PTTKeyHandler;whisperKeyDown:Z\",\n\t\t\t\t\topcode = Opcodes.GETFIELD\n\t\t\t)\n\t)\n\tprivate boolean isControllerWhisperDown(boolean keyDown) {\n\t\treturn keyDown || SimpleVoiceChatCompat.isWhisperDown();\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/simplevoicechat/SimpleVoiceChatCompat.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "simple_voice_chat",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "simple_voice_chat",
+     "code": "import de.maxhenkel.voicechat.voice.client.ClientManager;\nimport de.maxhenkel.voicechat.voice.client.KeyEvents;\nimport dev.isxander.controlify.api.event.ControlifyEvents;\nimport dev.isxander.controlify.api.bind.ControlifyBindApi;\nimport dev.isxander.controlify.api.bind.InputBindingSupplier;\nimport dev.isxander.controlify.compatibility.simplevoicechat.mixins.KeyEventsAccessor;\nimport dev.isxander.controlify.controller.ControllerEntity;\nimport dev.isxander.controlify.utils.MinecraftUtil;\nimport net.minecraft.network.chat.CommonComponents;\nimport net.minecraft.network.chat.Component;\n\npublic class SimpleVoiceChatCompat {\n\tprivate static InputBindingSupplier pttHoldSupplier, pttToggleSupplier;\n\tprivate static InputBindingSupplier whisperHoldSupplier, whisperToggleSupplier;\n\n\tprivate static boolean pttDown, whisperDown;\n\n\tpublic static void init() {\n\t\tComponent category = Component.translatable(\"key.categories.voicechat\");\n\t\tpttHoldSupplier = ControlifyBindApi.get().registerBinding(builder -> builder\n\t\t\t\t.id(\"voicechat\", \"ptt_hold\")\n\t\t\t\t.category(category)\n\t\t\t\t.addKeyCorrelation(KeyEvents.KEY_PTT));\n\t\tpttToggleSupplier = ControlifyBindApi.get().registerBinding(builder -> builder\n\t\t\t\t.id(\"voicechat\", \"ptt_toggle\")\n\t\t\t\t.category(category)\n\t\t\t\t.addKeyCorrelation(KeyEvents.KEY_PTT));\n\t\twhisperHoldSupplier = ControlifyBindApi.get().registerBinding(builder -> builder\n\t\t\t\t.name(Component.translatable(\"key.whisper\").append(CommonComponents.SPACE).append(Component.translatable(\"controlify.compat.svc.hold\")))\n\t\t\t\t.id(\"voicechat\", \"whisper_hold\")\n\t\t\t\t.category(category)\n\t\t\t\t.addKeyCorrelation(KeyEvents.KEY_WHISPER));\n\t\twhisperToggleSupplier = ControlifyBindApi.get().registerBinding(builder -> builder\n\t\t\t\t.name(Component.translatable(\"key.whisper\").append(CommonComponents.SPACE).append(Component.translatable(\"controlify.compat.svc.toggle\")))\n\t\t\t\t.id(\"voicechat\", \"whisper_toggle\")\n\t\t\t\t.category(category)\n\t\t\t\t.addKeyCorrelation(KeyEvents.KEY_WHISPER));\n\t\tControlifyBindApi.get().registerBinding(builder -> builder\n\t\t\t\t.id(\"voicechat\", \"mute_microphone\")\n\t\t\t\t.category(category)\n\t\t\t\t.keyEmulation(KeyEvents.KEY_MUTE));\n\n\t\tControlifyEvents.ACTIVE_CONTROLLER_TICKED.register(event -> {\n\t\t\tControllerEntity controller = event.controller();\n\n\t\t\tvar pttHold = pttHoldSupplier.on(controller);\n\t\t\tvar pttToggle = pttToggleSupplier.on(controller);\n\t\t\tvar whisperHold = whisperHoldSupplier.on(controller);\n\t\t\tvar whisperToggle = whisperToggleSupplier.on(controller);\n\n\t\t\tif (pttToggle.justPressed()) {\n\t\t\t\tpttDown = !pttDown;\n\t\t\t\tcheckConnected();\n\t\t\t}\n\t\t\tif (whisperToggle.justPressed()) {\n\t\t\t\twhisperDown = !whisperDown;\n\t\t\t\tcheckConnected();\n\t\t\t}\n\n\t\t\tif (pttHold.justPressed() || whisperHold.justPressed()) {\n\t\t\t\tcheckConnected();\n\t\t\t}\n\t\t\tif (pttHold.digitalNow()) {\n\t\t\t\tpttDown = true;\n\t\t\t} else if (pttHold.justReleased()) {\n\t\t\t\tpttDown = false;\n\t\t\t}\n\t\t\tif (whisperHold.digitalNow()) {\n\t\t\t\twhisperDown = true;\n\t\t\t} else if (whisperHold.justReleased()) {\n\t\t\t\twhisperDown = false;\n\t\t\t}\n\n\t\t\tcontroller.dualSense().ifPresent(ds -> {\n\t\t\t\tds.setMuteLight(ClientManager.getPlayerStateManager().isMuted());\n\t\t\t});\n\t\t});\n\t}\n\n\tpublic static boolean isPTTDown() {\n\t\treturn pttDown;\n\t}\n\n\tpublic static boolean isWhisperDown() {\n\t\treturn whisperDown;\n\t}\n\n\tprivate static void checkConnected() {\n\t\tif (MinecraftUtil.getOverlay() == null && MinecraftUtil.getScreen() == null) {\n\t\t\t((KeyEventsAccessor) ClientManager.instance().getKeyEvents()).invokeCheckConnected();\n\t\t}\n\t}\n\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/sodium/mixins/AbstractWidgetMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "sodium",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "sodium",
+     "code": "import com.llamalad7.mixinextras.injector.ModifyExpressionValue;\nimport dev.isxander.controlify.Controlify;\nimport net.minecraft.client.InputType;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.injection.At;\n\nimport net.caffeinemc.mods.sodium.client.gui.widgets.AbstractWidget;\n\n@Mixin(AbstractWidget.class)\npublic class AbstractWidgetMixin {\n\t@ModifyExpressionValue(method = \"setFocused\", at = @At(value = \"INVOKE\", target = \"Lnet/minecraft/client/Minecraft;getLastInputType()Lnet/minecraft/client/InputType;\"))\n\tprivate InputType forceSetFocusedOnController(InputType type) {\n\t\tif (Controlify.instance().currentInputMode().isController()) {\n\t\t\treturn InputType.KEYBOARD_ARROW;\n\t\t}\n\t\treturn type;\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/sodium/mixins/CycleControlElementMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "sodium",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "sodium",
+     "code": "import dev.isxander.controlify.compatibility.sodium.screenop.CycleControlProcessor;\nimport dev.isxander.controlify.screenop.ComponentProcessor;\nimport dev.isxander.controlify.screenop.ComponentProcessorProvider;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.Unique;\n\n@Mixin(targets = \"net.caffeinemc.mods.sodium.client.gui.options.control.CyclingControl$CyclingControlElement\")\npublic abstract class CycleControlElementMixin implements ComponentProcessorProvider {\n\t@Shadow protected abstract void cycleControl(boolean reverse);\n\n\t@Unique private final ComponentProcessor controlify$componentProcessor\n\t\t\t= new CycleControlProcessor(this::cycleControl);\n\n\t@Override\n\tpublic ComponentProcessor componentProcessor() {\n\t\treturn controlify$componentProcessor;\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/sodium/mixins/FlatButtonWidgetAccessor.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "sodium",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "sodium",
+     "code": "import org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.gen.Invoker;\n\nimport net.caffeinemc.mods.sodium.client.gui.widgets.FlatButtonWidget;\n\n@Mixin(FlatButtonWidget.class)\npublic interface FlatButtonWidgetAccessor {\n\t@Invoker\n\tvoid invokeDoAction();\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/sodium/mixins/FlatButtonWidgetMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "sodium",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "sodium",
+     "code": "import com.llamalad7.mixinextras.injector.ModifyExpressionValue;\nimport dev.isxander.controlify.api.bind.InputBinding;\nimport dev.isxander.controlify.gui.ButtonGuideRenderer;\nimport it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;\nimport net.minecraft.network.chat.Component;\nimport org.objectweb.asm.Opcodes;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.Unique;\nimport org.spongepowered.asm.mixin.injection.At;\n\nimport java.util.Map;\nimport java.util.Optional;\n\nimport net.caffeinemc.mods.sodium.client.gui.widgets.FlatButtonWidget;\n\n@Mixin(FlatButtonWidget.class)\npublic class FlatButtonWidgetMixin implements ButtonGuideRenderer<FlatButtonWidget> {\n\t@Shadow\n\tprivate boolean enabled;\n\t@Shadow\n\tprivate boolean visible;\n\n\t@Unique private RenderData<FlatButtonWidget> renderData = null;\n\t@Unique private final Map<InputBinding, Component> controllerMessages = new Object2ObjectArrayMap<>(2);\n\n\t@ModifyExpressionValue(\n\t\t\tmethod = \"extractRenderState\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"FIELD\",\n\t\t\t\t\ttarget = \"Lnet/caffeinemc/mods/sodium/client/gui/widgets/FlatButtonWidget;label:Lnet/minecraft/network/chat/Component;\",\n\t\t\t\t\topcode = Opcodes.GETFIELD\n\t\t\t)\n\t)\n\tprivate Component modifyRenderedLabel(Component actualLabel) {\n\t\treturn getControllerMessage(actualLabel);\n\t}\n\n\t@Unique private Component getControllerMessage(Component actualLabel) {\n\t\tif (!shouldRender())\n\t\t\treturn actualLabel;\n\n\t\treturn getBind().map(bind -> controllerMessages\n\t\t\t\t.computeIfAbsent(bind, b -> renderData.getControllerMessage(b, actualLabel)))\n\t\t\t\t.orElse(actualLabel);\n\t}\n\n\t@Unique protected boolean shouldRender() {\n\t\treturn renderData != null\n\t\t\t\t&& enabled\n\t\t\t\t&& visible\n\t\t\t\t&& renderData.shouldRender((FlatButtonWidget) (Object) this);\n\t}\n\n\t@Unique private Optional<InputBinding> getBind() {\n\t\tif (renderData == null) return Optional.empty();\n\t\treturn renderData.getBind();\n\t}\n\n\t@Override\n\tpublic void controlify$setButtonGuide(RenderData<FlatButtonWidget> renderData) {\n\t\tthis.renderData = renderData;\n\t\tthis.controllerMessages.clear();\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/sodium/mixins/SliderControlElementMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "sodium",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "sodium",
+     "code": "import dev.isxander.controlify.compatibility.sodium.screenop.SliderControlProcessor;\nimport dev.isxander.controlify.screenop.ComponentProcessor;\nimport dev.isxander.controlify.screenop.ComponentProcessorProvider;\nimport net.caffeinemc.mods.sodium.client.config.structure.IntegerOption;\nimport net.caffeinemc.mods.sodium.client.gui.ColorTheme;\nimport net.caffeinemc.mods.sodium.client.gui.options.control.AbstractOptionList;\nimport net.caffeinemc.mods.sodium.client.gui.options.control.ControlElement;\nimport net.caffeinemc.mods.sodium.client.util.Dim2i;\nimport net.minecraft.util.Mth;\nimport org.spongepowered.asm.mixin.*;\n\n@Mixin(targets = \"net.caffeinemc.mods.sodium.client.gui.options.control.SliderControl$SliderControlElement\")\npublic abstract class SliderControlElementMixin extends ControlElement implements ComponentProcessorProvider {\n\t@Shadow @Final private IntegerOption option;\n\n\t@Unique private final ComponentProcessor controlify$componentProcessor\n\t\t\t= new SliderControlProcessor(this::controlify$incrementSlider);\n\n\tpublic SliderControlElementMixin(AbstractOptionList list, Dim2i dim, ColorTheme theme) {\n\t\tsuper(list, dim, theme);\n\t}\n\n\t@Override\n\tpublic ComponentProcessor componentProcessor() {\n\t\treturn controlify$componentProcessor;\n\t}\n\n\t@Unique private void controlify$incrementSlider(boolean reverse) {\n\t\tvar range = option.getSteppedValidator();\n\t\toption.modifyValue(Mth.clamp(\n\t\t\t\toption.getValidatedValue() + (reverse ? -range.step() : range.step()),\n\t\t\t\trange.min(), range.max()\n\t\t));\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/sodium/mixins/TickBoxControlElementMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "sodium",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "sodium",
+     "code": "import dev.isxander.controlify.compatibility.sodium.screenop.TickBoxControlProcessor;\nimport dev.isxander.controlify.screenop.ComponentProcessor;\nimport dev.isxander.controlify.screenop.ComponentProcessorProvider;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.Unique;\n\n@Mixin(targets = \"net.caffeinemc.mods.sodium.client.gui.options.control.TickBoxControl$TickBoxControlElement\")\npublic abstract class TickBoxControlElementMixin implements ComponentProcessorProvider {\n\t@Shadow\n\tprotected abstract void toggleControl();\n\n\t@Unique private final ComponentProcessor controlify$componentProcessor\n\t\t\t= new TickBoxControlProcessor(this::toggleControl);\n\n\t@Override\n\tpublic ComponentProcessor componentProcessor() {\n\t\treturn controlify$componentProcessor;\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/sodium/mixins/VideoSettingsScreenMixin.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Shadow private net.caffeinemc.mods.sodium.client.gui.widgets.KeyBoundButtonWidget applyButton;\n\t@Shadow private net.caffeinemc.mods.sodium.client.gui.widgets.KeyBoundButtonWidget closeButton;\n\t@Shadow private net.caffeinemc.mods.sodium.client.gui.widgets.KeyBoundButtonWidget undoButton;"
+    },
+    {
+     "condition": null,
+     "code": "@Shadow private FlatButtonWidget applyButton;\n\t@Shadow private FlatButtonWidget closeButton;\n\t@Shadow private FlatButtonWidget undoButton;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "@Shadow private FlatButtonWidget applyButton;\n\t@Shadow private FlatButtonWidget closeButton;\n\t@Shadow private FlatButtonWidget undoButton;",
+   "newer": "@Shadow private net.caffeinemc.mods.sodium.client.gui.widgets.KeyBoundButtonWidget applyButton;\n\t@Shadow private net.caffeinemc.mods.sodium.client.gui.widgets.KeyBoundButtonWidget closeButton;\n\t@Shadow private net.caffeinemc.mods.sodium.client.gui.widgets.KeyBoundButtonWidget undoButton;",
+   "removed": [
+    "FlatButtonWidget"
+   ],
+   "added": [
+    "KeyBoundButtonWidget",
+    "caffeinemc",
+    "client",
+    "gui",
+    "mods",
+    "net",
+    "sodium",
+    "widgets"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/sodium/mixins/VideoSettingsScreenMixin.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "sodium",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "sodium",
+     "code": "import dev.isxander.controlify.compatibility.sodium.screenop.SodiumGuiScreenProcessor;\nimport dev.isxander.controlify.compatibility.sodium.screenop.SodiumScreenOperations;\nimport dev.isxander.controlify.screenop.ScreenProcessor;\nimport dev.isxander.controlify.screenop.ScreenProcessorProvider;\nimport net.caffeinemc.mods.sodium.client.config.ConfigManager;\nimport net.caffeinemc.mods.sodium.client.config.structure.Page;\nimport net.caffeinemc.mods.sodium.client.gui.VideoSettingsScreen;\nimport net.caffeinemc.mods.sodium.client.gui.widgets.FlatButtonWidget;\nimport net.caffeinemc.mods.sodium.client.gui.widgets.OptionListWidget;\nimport net.minecraft.client.gui.screens.Screen;\nimport net.minecraft.network.chat.Component;\nimport org.spongepowered.asm.mixin.*;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\nimport java.util.List;\n\n@Mixin(VideoSettingsScreen.class)\npublic abstract class VideoSettingsScreenMixin extends Screen implements ScreenProcessorProvider, SodiumScreenOperations {\n\t//? if >=26.2 {\n\t@Shadow private net.caffeinemc.mods.sodium.client.gui.widgets.KeyBoundButtonWidget applyButton;\n\t@Shadow private net.caffeinemc.mods.sodium.client.gui.widgets.KeyBoundButtonWidget closeButton;\n\t@Shadow private net.caffeinemc.mods.sodium.client.gui.widgets.KeyBoundButtonWidget undoButton;\n\t//?} else {\n\t/*@Shadow private FlatButtonWidget applyButton;\n\t@Shadow private FlatButtonWidget closeButton;\n\t@Shadow private FlatButtonWidget undoButton;\n\t*///?}\n\t@Shadow private OptionListWidget optionList;\n\n\t@Unique private Page controlify$currentPage = null;\n\t@Unique private final SodiumGuiScreenProcessor controlify$screenProcessor\n\t\t\t= new SodiumGuiScreenProcessor((VideoSettingsScreen) (Object) this, this);\n\n\tprotected VideoSettingsScreenMixin(Component title) {\n\t\tsuper(title);\n\t}\n\n\t@Inject(method = \"init\", at = @At(\"RETURN\"))\n\tprivate void controlify$onInit(CallbackInfo ci) {\n\t\tif (optionList != null && !optionList.getControls().isEmpty()) {\n\t\t\tthis.setInitialFocus(optionList.getControls().get(0));\n\t\t}\n\t\tcontrolify$screenProcessor.onRebuildGUI();\n\t}\n\n\t@Inject(method = \"onSectionFocused\", at = @At(\"HEAD\"))\n\tprivate void controlify$trackCurrentPage(Page page, CallbackInfo ci) {\n\t\tcontrolify$currentPage = page;\n\t}\n\n\t@Override\n\tpublic ScreenProcessor<?> screenProcessor() {\n\t\treturn controlify$screenProcessor;\n\t}\n\n\t@Override\n\tpublic void controlify$nextPage() {\n\t\tList<Page> pages = controlify$getAllPages();\n\t\tif (pages.isEmpty()) return;\n\t\tint currentIndex = controlify$currentPage != null ? pages.indexOf(controlify$currentPage) : -1;\n\t\tint nextIndex = (currentIndex + 1) % pages.size();\n\t\tjumpToPage(pages.get(nextIndex));\n\t}\n\n\t@Override\n\tpublic void controlify$prevPage() {\n\t\tList<Page> pages = controlify$getAllPages();\n\t\tif (pages.isEmpty()) return;\n\t\tint currentIndex = controlify$currentPage != null ? pages.indexOf(controlify$currentPage) : 0;\n\t\tint nextIndex = (currentIndex - 1 + pages.size()) % pages.size();\n\t\tjumpToPage(pages.get(nextIndex));\n\t}\n\n\t@Unique private List<Page> controlify$getAllPages() {\n\t\treturn ConfigManager.CONFIG.getModOptions().stream()\n\t\t\t\t.flatMap(mod -> mod.pages().stream())\n\t\t\t\t.toList();\n\t}\n\n\t@Shadow public abstract void jumpToPage(Page page);\n\n\t@Override\n\tpublic FlatButtonWidget controlify$getApplyButton() {\n\t\treturn applyButton;\n\t}\n\n\t@Override\n\tpublic FlatButtonWidget controlify$getCloseButton() {\n\t\treturn closeButton;\n\t}\n\n\t@Override\n\tpublic FlatButtonWidget controlify$getUndoButton() {\n\t\treturn undoButton;\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/sodium/screenop/SodiumGuiScreenProcessor.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "sodium",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "sodium",
+     "code": "import dev.isxander.controlify.api.buttonguide.ButtonGuideApi;\nimport dev.isxander.controlify.api.buttonguide.ButtonGuidePredicate;\nimport dev.isxander.controlify.bindings.ControlifyBindings;\nimport dev.isxander.controlify.compatibility.sodium.mixins.FlatButtonWidgetAccessor;\nimport dev.isxander.controlify.controller.ControllerEntity;\nimport dev.isxander.controlify.screenop.ScreenProcessor;\nimport net.minecraft.client.gui.screens.Screen;\n\npublic class SodiumGuiScreenProcessor extends ScreenProcessor<Screen> {\n\tprivate final SodiumScreenOperations operations;\n\n\tpublic SodiumGuiScreenProcessor(Screen screen, SodiumScreenOperations operations) {\n\t\tsuper(screen);\n\t\tthis.operations = operations;\n\t}\n\n\t@Override\n\tprotected void handleComponentNavigation(ControllerEntity controller) {\n\t\tsuper.handleComponentNavigation(controller);\n\t}\n\n\t@Override\n\tprotected void handleButtons(ControllerEntity controller) {\n\t\tif (ControlifyBindings.GUI_ABSTRACT_ACTION_1.on(controller).justPressed()) {\n\t\t\t((FlatButtonWidgetAccessor) operations.controlify$getApplyButton()).invokeDoAction();\n\t\t}\n\t\tif (ControlifyBindings.GUI_ABSTRACT_ACTION_2.on(controller).justPressed()) {\n\t\t\t((FlatButtonWidgetAccessor) operations.controlify$getUndoButton()).invokeDoAction();\n\t\t}\n\n\t\tif (ControlifyBindings.GUI_NEXT_TAB.on(controller).justPressed()) {\n\t\t\toperations.controlify$nextPage();\n\t\t}\n\n\t\tif (ControlifyBindings.GUI_PREV_TAB.on(controller).justPressed()) {\n\t\t\toperations.controlify$prevPage();\n\t\t}\n\n\t\tsuper.handleButtons(controller);\n\t}\n\n\tpublic void onRebuildGUI() {\n\t\tButtonGuideApi.addGuideToButton(\n\t\t\t\toperations.controlify$getApplyButton(),\n\t\t\t\tControlifyBindings.GUI_ABSTRACT_ACTION_1,\n\t\t\t\tButtonGuidePredicate.always()\n\t\t);\n\t\tButtonGuideApi.addGuideToButton(\n\t\t\t\toperations.controlify$getUndoButton(),\n\t\t\t\tControlifyBindings.GUI_ABSTRACT_ACTION_2,\n\t\t\t\tButtonGuidePredicate.always()\n\t\t);\n\n\t\tButtonGuideApi.addGuideToButton(\n\t\t\t\toperations.controlify$getCloseButton(),\n\t\t\t\tControlifyBindings.GUI_BACK,\n\t\t\t\tButtonGuidePredicate.always()\n\t\t);\n\n\t\tsuper.onWidgetRebuild();\n\t}\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/compatibility/sodium/screenop/SodiumScreenOperations.java",
+   "line": 9,
+   "method": "(imports)",
+   "condition": "sodium",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "sodium",
+     "code": "import net.caffeinemc.mods.sodium.client.gui.widgets.FlatButtonWidget;\n\npublic interface SodiumScreenOperations {\n\tvoid controlify$nextPage();\n\n\tvoid controlify$prevPage();\n\n\tFlatButtonWidget controlify$getApplyButton();\n\n\tFlatButtonWidget controlify$getCloseButton();\n\n\tFlatButtonWidget controlify$getUndoButton();\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/contextual/ContextualPredicate.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.advancements.predicates.*;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.advancements.criterion.*;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraft.advancements.criterion.*;",
+   "newer": "import net.minecraft.advancements.predicates.*;",
+   "removed": [
+    "criterion"
+   ],
+   "added": [
+    "predicates"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/Controlify.java",
+   "line": 719,
+   "method": "hideMouse",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": ", 0, 0"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/driver/sdl/SDLNativesLoader.java",
+   "line": 30,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "true"
+    },
+    {
+     "condition": null,
+     "code": "false"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "false",
+   "newer": "true",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/driver/sdl/SDLNativesLoader.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": "natives_in_jar | else",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "natives_in_jar",
+     "code": "true"
+    },
+    {
+     "condition": null,
+     "code": "false"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/gui/guide/InGameButtonGuide.java",
+   "line": 32,
+   "method": "extractRenderState",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "boolean hideGui = minecraft.gui.hud.isHidden();"
+    },
+    {
+     "condition": null,
+     "code": "boolean hideGui = minecraft.options.hideGui;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "hud"
+     ]
+    }
+   ],
+   "older": "boolean hideGui = minecraft.options.hideGui;",
+   "newer": "boolean hideGui = minecraft.gui.hud.isHidden();",
+   "removed": [
+    "options"
+   ],
+   "added": [
+    "gui",
+    "hud",
+    "isHidden"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/gui/screen/ProfileSelectionScreen.java",
+   "line": 93,
+   "method": "init",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "ScrollableLayout scrollable = new ScrollableLayout(\n\t\t\t\tthis.minecraft,\n\t\t\t\tscrollContent,\n\t\t\t\tthis.layout.getContentHeight(),\n\t\t\t\tScrollableLayout.ReserveStrategy.RIGHT\n\t\t);\n\t\tscrollable.setScrollbarSpacing(0);"
+    },
+    {
+     "condition": null,
+     "code": "ScrollableLayout scrollable = new ScrollableLayout(this.minecraft, scrollContent, this.layout.getContentHeight());"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "setScrollbarSpacing"
+     ]
+    }
+   ],
+   "older": "ScrollableLayout scrollable = new ScrollableLayout(this.minecraft, scrollContent, this.layout.getContentHeight());",
+   "newer": "ScrollableLayout scrollable = new ScrollableLayout(\n\t\t\t\tthis.minecraft,\n\t\t\t\tscrollContent,\n\t\t\t\tthis.layout.getContentHeight(),\n\t\t\t\tScrollableLayout.ReserveStrategy.RIGHT\n\t\t);\n\t\tscrollable.setScrollbarSpacing(0);",
+   "removed": [],
+   "added": [
+    "RIGHT",
+    "ReserveStrategy",
+    "setScrollbarSpacing"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/gui/screen/RadialMenuEditScreen.java",
+   "line": 234,
+   "method": "createScrollable",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "ScrollableLayout scrollable = new ScrollableLayout(\n\t\t\t\tminecraft,\n\t\t\t\tcontent,\n\t\t\t\theight,\n\t\t\t\tScrollableLayout.ReserveStrategy.RIGHT\n\t\t);\n\t\tscrollable.setScrollbarSpacing(0);"
+    },
+    {
+     "condition": null,
+     "code": "ScrollableLayout scrollable = new ScrollableLayout(minecraft, content, height);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "setScrollbarSpacing"
+     ]
+    }
+   ],
+   "older": "ScrollableLayout scrollable = new ScrollableLayout(minecraft, content, height);",
+   "newer": "ScrollableLayout scrollable = new ScrollableLayout(\n\t\t\t\tminecraft,\n\t\t\t\tcontent,\n\t\t\t\theight,\n\t\t\t\tScrollableLayout.ReserveStrategy.RIGHT\n\t\t);\n\t\tscrollable.setScrollbarSpacing(0);",
+   "removed": [],
+   "added": [
+    "RIGHT",
+    "ReserveStrategy",
+    "setScrollbarSpacing"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/ingame/InGameInputHandler.java",
+   "line": 174,
+   "method": "handleKeybinds",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "//minecraft.levelRenderer.needsUpdate();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/ingame/InGameInputHandler.java",
+   "line": 179,
+   "method": "handleKeybinds",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "minecraft.gui.hud.toggle();"
+    },
+    {
+     "condition": null,
+     "code": "minecraft.options.hideGui = !minecraft.options.hideGui;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "hideGui",
+      "hud"
+     ]
+    }
+   ],
+   "older": "minecraft.options.hideGui = !minecraft.options.hideGui;",
+   "newer": "minecraft.gui.hud.toggle();",
+   "removed": [
+    "hideGui",
+    "options"
+   ],
+   "added": [
+    "gui",
+    "hud",
+    "toggle"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/ingame/InGameInputHandler.java",
+   "line": 242,
+   "method": "handleKeybinds",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "this.minecraft.gameRenderer.mainRenderTarget(),"
+    },
+    {
+     "condition": null,
+     "code": "this.minecraft.getMainRenderTarget(),"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "getMainRenderTarget",
+      "mainRenderTarget"
+     ]
+    }
+   ],
+   "older": "this.minecraft.getMainRenderTarget(),",
+   "newer": "this.minecraft.gameRenderer.mainRenderTarget(),",
+   "removed": [
+    "getMainRenderTarget"
+   ],
+   "added": [
+    "gameRenderer",
+    "mainRenderTarget"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/ingame/InGameInputHandler.java",
+   "line": 248,
+   "method": "handleKeybinds",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "this.minecraft.gui.hud.getChat()"
+    },
+    {
+     "condition": null,
+     "code": "this.minecraft.gui.getChat()"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "hud"
+     ]
+    }
+   ],
+   "older": "this.minecraft.gui.getChat()",
+   "newer": "this.minecraft.gui.hud.getChat()",
+   "removed": [],
+   "added": [
+    "hud"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/ingame/InGameInputHandler.java",
+   "line": 541,
+   "method": "dropItem",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "Objects.requireNonNull(Minecraft.getInstance().gameMode).dropItem(player, all);\n\t\treturn !player.getInventory().getSelectedItem().isEmpty();"
+    },
+    {
+     "condition": null,
+     "code": "if (player.drop(all)) {\n\t\t\tplayer.swing(InteractionHand.MAIN_HAND);\n\t\t\treturn true;\n\t\t}\n\t\treturn false;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "drop",
+      "dropItem",
+      "getInstance",
+      "isEmpty",
+      "swing"
+     ]
+    }
+   ],
+   "older": "if (player.drop(all)) {\n\t\t\tplayer.swing(InteractionHand.MAIN_HAND);\n\t\t\treturn true;\n\t\t}\n\t\treturn false;",
+   "newer": "Objects.requireNonNull(Minecraft.getInstance().gameMode).dropItem(player, all);\n\t\treturn !player.getInventory().getSelectedItem().isEmpty();",
+   "removed": [
+    "InteractionHand",
+    "MAIN_HAND",
+    "drop",
+    "swing"
+   ],
+   "added": [
+    "Minecraft",
+    "Objects",
+    "dropItem",
+    "gameMode",
+    "getInstance",
+    "getInventory",
+    "getSelectedItem",
+    "isEmpty",
+    "requireNonNull"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/core/GuiMixin.java",
+   "line": 29,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "net.minecraft.client.gui.Gui.class"
+    },
+    {
+     "condition": null,
+     "code": "Minecraft.class"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "Minecraft.class",
+   "newer": "net.minecraft.client.gui.Gui.class",
+   "removed": [
+    "Minecraft"
+   ],
+   "added": [
+    "Gui",
+    "client",
+    "gui",
+    "minecraft",
+    "net"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/core/HudMixin.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "net.minecraft.client.gui.Hud.class"
+    },
+    {
+     "condition": null,
+     "code": "net.minecraft.client.gui.Gui.class"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "Hud"
+     ]
+    }
+   ],
+   "older": "net.minecraft.client.gui.Gui.class",
+   "newer": "net.minecraft.client.gui.Hud.class",
+   "removed": [
+    "Gui"
+   ],
+   "added": [
+    "Hud"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/core/InputConstantsMixin.java",
+   "line": 11,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.blaze3d.platform.InputConstants;\nimport org.lwjgl.sdl.SDLMouse;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n@Mixin(InputConstants.class)\npublic class InputConstantsMixin {\n\t@Inject(method = \"releaseMouse\", at = @At(\"HEAD\"))\n\tprivate static void ensureMouseVisible(CallbackInfo ci) {\n\t\tSDLMouse.SDL_ShowCursor();\n\t}\n}"
+    },
+    {
+     "condition": null,
+     "code": "@Mixin(dev.isxander.controlify.utils.DummyMixinTarget.class)\npublic class InputConstantsMixin {\n}"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "@Mixin(dev.isxander.controlify.utils.DummyMixinTarget.class)\npublic class InputConstantsMixin {\n}",
+   "newer": "import com.mojang.blaze3d.platform.InputConstants;\nimport org.lwjgl.sdl.SDLMouse;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n@Mixin(InputConstants.class)\npublic class InputConstantsMixin {\n\t@Inject(method = \"releaseMouse\", at = @At(\"HEAD\"))\n\tprivate static void ensureMouseVisible(CallbackInfo ci) {\n\t\tSDLMouse.SDL_ShowCursor();\n\t}\n}",
+   "removed": [
+    "DummyMixinTarget",
+    "controlify",
+    "dev",
+    "isxander",
+    "utils"
+   ],
+   "added": [
+    "CallbackInfo",
+    "Inject",
+    "InputConstants",
+    "SDLMouse",
+    "SDL_ShowCursor",
+    "asm",
+    "blaze3d",
+    "callback",
+    "com",
+    "ensureMouseVisible",
+    "injection",
+    "lwjgl",
+    "method",
+    "mixin",
+    "mojang",
+    "org",
+    "platform",
+    "sdl",
+    "spongepowered"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/core/KeyboardHandlerMixin.java",
+   "line": 11,
+   "method": "(imports)",
+   "condition": "<26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.3",
+     "code": "import com.llamalad7.mixinextras.injector.wrapoperation.Operation;\nimport com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;\nimport com.mojang.blaze3d.platform.Window;\nimport dev.isxander.controlify.Controlify;\nimport dev.isxander.controlify.InputMode;\nimport net.minecraft.client.KeyboardHandler;\nimport net.minecraft.client.Minecraft;\nimport org.lwjgl.glfw.*;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.Unique;\nimport org.spongepowered.asm.mixin.injection.At;\n\n@Mixin(KeyboardHandler.class)\npublic class KeyboardHandlerMixin {\n\t@Shadow @Final private Minecraft minecraft;\n\n\t@WrapOperation(\n\t\t\tmethod = \"setup\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lcom/mojang/blaze3d/platform/InputConstants;setupKeyboardCallbacks(Lcom/mojang/blaze3d/platform/Window;Lorg/lwjgl/glfw/GLFWKeyCallbackI;Lorg/lwjgl/glfw/GLFWCharCallbackI;Lorg/lwjgl/glfw/GLFWPreeditCallbackI;Lorg/lwjgl/glfw/GLFWIMEStatusCallbackI;)V\"\n\t\t\t)\n\t)\n\tprivate void wrapKeyboardEvents(\n\t\t\tWindow window,\n\t\t\tGLFWKeyCallbackI keyPressCallback,\n\t\t\tGLFWCharCallbackI charTypedCallback,\n\t\t\tGLFWPreeditCallbackI preeditCallback,\n\t\t\tGLFWIMEStatusCallbackI imeStatusCallback,\n\t\t\tOperation<Void> original\n\t) {\n\t\toriginal.call(\n\t\t\t\twindow,\n\t\t\t\t(GLFWKeyCallbackI) (w, k, s, a, m) -> {\n\t\t\t\t\tonKeyboardInput();\n\t\t\t\t\tkeyPressCallback.invoke(w, k, s, a, m);\n\t\t\t\t},\n\t\t\t\t(GLFWCharCallbackI) (w, c) -> {\n\t\t\t\t\tonKeyboardInput();\n\t\t\t\t\tcharTypedCallback.invoke(w, c);\n\t\t\t\t},\n\t\t\t\t(GLFWPreeditCallbackI) (w, pc, s, bc, bs, fb, c) -> {\n\t\t\t\t\tonKeyboardInput();\n\t\t\t\t\tpreeditCallback.invoke(w, pc, s, bc, bs, fb, c);\n\t\t\t\t},\n\t\t\t\timeStatusCallback\n\t\t);\n\t}\n\n\t@Unique private void onKeyboardInput() {\n\t\tminecraft.execute(() -> {\n\t\t\tif (Controlify.instance().currentInputMode() != InputMode.MIXED) {\n\t\t\t\tControlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE);\n\t\t\t}\n\t\t});\n\t}\n}"
+    },
+    {
+     "condition": null,
+     "code": "@Mixin(dev.isxander.controlify.utils.DummyMixinTarget.class)\npublic class KeyboardHandlerMixin {\n}"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "execute",
+      "target",
+      "value"
+     ]
+    }
+   ],
+   "older": "import com.llamalad7.mixinextras.injector.wrapoperation.Operation;\nimport com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;\nimport com.mojang.blaze3d.platform.Window;\nimport dev.isxander.controlify.Controlify;\nimport dev.isxander.controlify.InputMode;\nimport net.minecraft.client.KeyboardHandler;\nimport net.minecraft.client.Minecraft;\nimport org.lwjgl.glfw.*;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.Unique;\nimport org.spongepowered.asm.mixin.injection.At;\n\n@Mixin(KeyboardHandler.class)\npublic class KeyboardHandlerMixin {\n\t@Shadow @Final private Minecraft minecraft;\n\n\t@WrapOperation(\n\t\t\tmethod = \"setup\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lcom/mojang/blaze3d/platform/InputConstants;setupKeyboardCallbacks(Lcom/mojang/blaze3d/platform/Window;Lorg/lwjgl/glfw/GLFWKeyCallbackI;Lorg/lwjgl/glfw/GLFWCharCallbackI;Lorg/lwjgl/glfw/GLFWPreeditCallbackI;Lorg/lwjgl/glfw/GLFWIMEStatusCallbackI;)V\"\n\t\t\t)\n\t)\n\tprivate void wrapKeyboardEvents(\n\t\t\tWindow window,\n\t\t\tGLFWKeyCallbackI keyPressCallback,\n\t\t\tGLFWCharCallbackI charTypedCallback,\n\t\t\tGLFWPreeditCallbackI preeditCallback,\n\t\t\tGLFWIMEStatusCallbackI imeStatusCallback,\n\t\t\tOperation<Void> original\n\t) {\n\t\toriginal.call(\n\t\t\t\twindow,\n\t\t\t\t(GLFWKeyCallbackI) (w, k, s, a, m) -> {\n\t\t\t\t\tonKeyboardInput();\n\t\t\t\t\tkeyPressCallback.invoke(w, k, s, a, m);\n\t\t\t\t},\n\t\t\t\t(GLFWCharCallbackI) (w, c) -> {\n\t\t\t\t\tonKeyboardInput();\n\t\t\t\t\tcharTypedCallback.invoke(w, c);\n\t\t\t\t},\n\t\t\t\t(GLFWPreeditCallbackI) (w, pc, s, bc, bs, fb, c) -> {\n\t\t\t\t\tonKeyboardInput();\n\t\t\t\t\tpreeditCallback.invoke(w, pc, s, bc, bs, fb, c);\n\t\t\t\t},\n\t\t\t\timeStatusCallback\n\t\t);\n\t}\n\n\t@Unique private void onKeyboardInput() {\n\t\tminecraft.execute(() -> {\n\t\t\tif (Controlify.instance().currentInputMode() != InputMode.MIXED) {\n\t\t\t\tControlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE);\n\t\t\t}\n\t\t});\n\t}\n}",
+   "newer": "@Mixin(dev.isxander.controlify.utils.DummyMixinTarget.class)\npublic class KeyboardHandlerMixin {\n}",
+   "removed": [
+    "Controlify",
+    "Final",
+    "GLFWCharCallbackI",
+    "GLFWIMEStatusCallbackI",
+    "GLFWKeyCallbackI",
+    "GLFWPreeditCallbackI",
+    "InputMode",
+    "KEYBOARD_MOUSE",
+    "KeyboardHandler",
+    "MIXED",
+    "Minecraft",
+    "Operation",
+    "Shadow",
+    "Unique",
+    "Void",
+    "Window",
+    "WrapOperation",
+    "asm",
+    "blaze3d",
+    "call",
+    "charTypedCallback",
+    "client",
+    "com",
+    "currentInputMode",
+    "execute",
+    "glfw",
+    "imeStatusCallback",
+    "injection",
+    "injector",
+    "instance",
+    "invoke",
+    "keyPressCallback",
+    "llamalad7",
+    "lwjgl",
+    "method",
+    "minecraft",
+    "mixin",
+    "mixinextras",
+    "mojang",
+    "net"
+   ],
+   "added": [
+    "DummyMixinTarget",
+    "utils"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/core/MouseHandlerMixin.java",
+   "line": 27,
+   "method": "(imports)",
+   "condition": "<26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.3",
+     "code": "import org.lwjgl.glfw.GLFWCursorPosCallbackI;\nimport org.lwjgl.glfw.GLFWDropCallbackI;\nimport org.lwjgl.glfw.GLFWMouseButtonCallbackI;\nimport org.lwjgl.glfw.GLFWScrollCallbackI;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/core/MouseHandlerMixin.java",
+   "line": 40,
+   "method": "(class body)",
+   "condition": "<26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.3",
+     "code": "@WrapOperation(\n\t\t\tmethod = \"setup\",\n\t\t\tat = @At(\n\t\t\t\t\tvalue = \"INVOKE\",\n\t\t\t\t\ttarget = \"Lcom/mojang/blaze3d/platform/InputConstants;setupMouseCallbacks(Lcom/mojang/blaze3d/platform/Window;Lorg/lwjgl/glfw/GLFWCursorPosCallbackI;Lorg/lwjgl/glfw/GLFWMouseButtonCallbackI;Lorg/lwjgl/glfw/GLFWScrollCallbackI;Lorg/lwjgl/glfw/GLFWDropCallbackI;)V\"\n\t\t\t)\n\t)\n\tprivate void wrapMouseEvents(\n\t\t\tWindow window,\n\t\t\tGLFWCursorPosCallbackI onMoveCallback,\n\t\t\tGLFWMouseButtonCallbackI onPressCallback,\n\t\t\tGLFWScrollCallbackI onScrollCallback,\n\t\t\tGLFWDropCallbackI onDropCallback,\n\t\t\tOperation<Void> operation\n\t) {\n\t\toperation.call(\n\t\t\t\twindow,\n\t\t\t\t(GLFWCursorPosCallbackI) (w, x, y) -> {\n\t\t\t\t\tonMouse(w);\n\t\t\t\t\tonMoveCallback.invoke(w, x, y);\n\t\t\t\t},\n\t\t\t\t(GLFWMouseButtonCallbackI) (w, b, a, m) -> {\n\t\t\t\t\tonMouse(w);\n\t\t\t\t\tonPressCallback.invoke(w, b, a, m);\n\t\t\t\t},\n\t\t\t\t(GLFWScrollCallbackI) (w, dx, dy) -> {\n\t\t\t\t\tonMouse(w);\n\t\t\t\t\tonScrollCallback.invoke(w, dx, dy);\n\t\t\t\t},\n\t\t\t\tonDropCallback\n\t\t);\n\t}\n\n\t@Unique private void onMouse(long window) {\n\t\tif (window == minecraft.getWindow().handle()) {\n\t\t\tminecraft.execute(() -> {\n\t\t\t\tif (Controlify.instance().currentInputMode() != InputMode.MIXED) {\n\t\t\t\t\tControlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE);\n\t\t\t\t} else {\n\t\t\t\t\tControlify.instance().showCursorTemporarily();\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\t}"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/core/MouseHandlerMixin.java",
+   "line": 92,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "target = \"Lcom/mojang/blaze3d/platform/InputConstants;releaseMouse(Lcom/mojang/blaze3d/platform/Window;DD)V\""
+    },
+    {
+     "condition": null,
+     "code": "target = \"Lcom/mojang/blaze3d/platform/InputConstants;grabOrReleaseMouse(Lcom/mojang/blaze3d/platform/Window;IDD)V\""
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "target = \"Lcom/mojang/blaze3d/platform/InputConstants;grabOrReleaseMouse(Lcom/mojang/blaze3d/platform/Window;IDD)V\"",
+   "newer": "target = \"Lcom/mojang/blaze3d/platform/InputConstants;releaseMouse(Lcom/mojang/blaze3d/platform/Window;DD)V\"",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/core/SDLEventHandlerMixin.java",
+   "line": 11,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.blaze3d.platform.SDLEventHandler;\nimport dev.isxander.controlify.Controlify;\nimport dev.isxander.controlify.InputMode;\nimport net.minecraft.client.Minecraft;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n@Mixin(SDLEventHandler.class)\npublic class SDLEventHandlerMixin {\n\t@Shadow\n\t@Final\n\tprivate Minecraft minecraft;\n\n\t// React only once the event reaches vanilla dispatch. Fabric client tests\n\t// cancel these handlers at HEAD to suppress real keyboard and mouse input.\n\t@Inject(method = {\n\t\t\"handleKeyEvent\",\n\t\t\"handleTextInputEvent\",\n\t\t\"handleTextEditingEvent\",\n\t\t\"handleTextEditingCandidatesEvent\",\n\t}, at = @At(\n\t\tvalue = \"INVOKE\",\n\t\ttarget = \"Lnet/minecraft/client/Minecraft;execute(Ljava/lang/Runnable;)V\"\n\t))\n\tprivate void onKeyboardInput(CallbackInfo ci) {\n\t\tminecraft.execute(() -> {\n\t\t\tif (Controlify.instance().currentInputMode() != InputMode.MIXED) {\n\t\t\t\tControlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE);\n\t\t\t}\n\t\t});\n\t}\n\n\t@Inject(method = {\n\t\t\"handleMouseMotionEvent\",\n\t\t\"handleMouseButtonEvent\",\n\t\t\"handleMouseWheelEvent\",\n\t}, at = @At(\n\t\tvalue = \"INVOKE\",\n\t\ttarget = \"Lnet/minecraft/client/Minecraft;execute(Ljava/lang/Runnable;)V\"\n\t))\n\tprivate void onMouseInput(CallbackInfo ci) {\n\t\tminecraft.execute(() -> {\n\t\t\tif (Controlify.instance().currentInputMode() != InputMode.MIXED) {\n\t\t\t\tControlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE);\n\t\t\t} else {\n\t\t\t\tControlify.instance().showCursorTemporarily();\n\t\t\t}\n\t\t});\n\t}\n}"
+    },
+    {
+     "condition": null,
+     "code": "@Mixin(dev.isxander.controlify.utils.DummyMixinTarget.class)\npublic class SDLEventHandlerMixin { }"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "SDLEventHandler",
+      "execute",
+      "target",
+      "value"
+     ]
+    }
+   ],
+   "older": "@Mixin(dev.isxander.controlify.utils.DummyMixinTarget.class)\npublic class SDLEventHandlerMixin { }",
+   "newer": "import com.mojang.blaze3d.platform.SDLEventHandler;\nimport dev.isxander.controlify.Controlify;\nimport dev.isxander.controlify.InputMode;\nimport net.minecraft.client.Minecraft;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n@Mixin(SDLEventHandler.class)\npublic class SDLEventHandlerMixin {\n\t@Shadow\n\t@Final\n\tprivate Minecraft minecraft;\n\n\t// React only once the event reaches vanilla dispatch. Fabric client tests\n\t// cancel these handlers at HEAD to suppress real keyboard and mouse input.\n\t@Inject(method = {\n\t\t\"handleKeyEvent\",\n\t\t\"handleTextInputEvent\",\n\t\t\"handleTextEditingEvent\",\n\t\t\"handleTextEditingCandidatesEvent\",\n\t}, at = @At(\n\t\tvalue = \"INVOKE\",\n\t\ttarget = \"Lnet/minecraft/client/Minecraft;execute(Ljava/lang/Runnable;)V\"\n\t))\n\tprivate void onKeyboardInput(CallbackInfo ci) {\n\t\tminecraft.execute(() -> {\n\t\t\tif (Controlify.instance().currentInputMode() != InputMode.MIXED) {\n\t\t\t\tControlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE);\n\t\t\t}\n\t\t});\n\t}\n\n\t@Inject(method = {\n\t\t\"handleMouseMotionEvent\",\n\t\t\"handleMouseButtonEvent\",\n\t\t\"handleMouseWheelEvent\",\n\t}, at = @At(\n\t\tvalue = \"INVOKE\",\n\t\ttarget = \"Lnet/minecraft/client/Minecraft;execute(Ljava/lang/Runnable;)V\"\n\t))\n\tprivate void onMouseInput(CallbackInfo ci) {\n\t\tminecraft.execute(() -> {\n\t\t\tif (Controlify.instance().currentInputMode() != InputMode.MIXED) {\n\t\t\t\tControlify.instance().setInputMode(InputMode.KEYBOARD_MOUSE);\n\t\t\t} else {\n\t\t\t\tControlify.instance().showCursorTemporarily();\n\t\t\t}\n\t\t});\n\t}\n}",
+   "removed": [
+    "DummyMixinTarget",
+    "utils"
+   ],
+   "added": [
+    "CallbackInfo",
+    "Controlify",
+    "Final",
+    "Inject",
+    "InputMode",
+    "KEYBOARD_MOUSE",
+    "MIXED",
+    "Minecraft",
+    "SDLEventHandler",
+    "Shadow",
+    "asm",
+    "blaze3d",
+    "callback",
+    "client",
+    "com",
+    "currentInputMode",
+    "execute",
+    "injection",
+    "instance",
+    "method",
+    "minecraft",
+    "mixin",
+    "mojang",
+    "net",
+    "onKeyboardInput",
+    "onMouseInput",
+    "org",
+    "platform",
+    "setInputMode",
+    "showCursorTemporarily",
+    "spongepowered",
+    "target",
+    "value"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/bind/GuiAccessor.java",
+   "line": 16,
+   "method": "(class body)",
+   "condition": ">=26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Accessor(\"screen\")\n\tvoid controlify$setScreenField(Screen screen);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/bind/GuiMixin.java",
+   "line": 18,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "net.minecraft.client.gui.Gui.class"
+    },
+    {
+     "condition": null,
+     "code": "net.minecraft.client.Minecraft.class"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "net.minecraft.client.Minecraft.class",
+   "newer": "net.minecraft.client.gui.Gui.class",
+   "removed": [
+    "Minecraft"
+   ],
+   "added": [
+    "Gui",
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/bind/HudMixin.java",
+   "line": 17,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "net.minecraft.client.gui.Hud.class"
+    },
+    {
+     "condition": null,
+     "code": "net.minecraft.client.gui.Gui.class"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "Hud"
+     ]
+    }
+   ],
+   "older": "net.minecraft.client.gui.Gui.class",
+   "newer": "net.minecraft.client.gui.Hud.class",
+   "removed": [
+    "Gui"
+   ],
+   "added": [
+    "Hud"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/guide/ingame/HudMixin.java",
+   "line": 20,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "net.minecraft.client.gui.Hud.class"
+    },
+    {
+     "condition": null,
+     "code": "net.minecraft.client.gui.Gui.class"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "Hud"
+     ]
+    }
+   ],
+   "older": "net.minecraft.client.gui.Gui.class",
+   "newer": "net.minecraft.client.gui.Hud.class",
+   "removed": [
+    "Gui"
+   ],
+   "added": [
+    "Hud"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/guide/screen/TabNavigationBarMixin.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "@Inject(method = \"extractWidgetRenderState\", at = @At(\"RETURN\"))"
+    },
+    {
+     "condition": null,
+     "code": "@Inject(method = \"extractRenderState\", at = @At(\"RETURN\"))"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "@Inject(method = \"extractRenderState\", at = @At(\"RETURN\"))",
+   "newer": "@Inject(method = \"extractWidgetRenderState\", at = @At(\"RETURN\"))",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/screenop/GuiMixin.java",
+   "line": 20,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "net.minecraft.client.gui.Gui.class"
+    },
+    {
+     "condition": null,
+     "code": "net.minecraft.client.Minecraft.class"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "net.minecraft.client.Minecraft.class",
+   "newer": "net.minecraft.client.gui.Gui.class",
+   "removed": [
+    "Minecraft"
+   ],
+   "added": [
+    "Gui",
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/screenop/impl/chat/CommandSuggestionsMixin.java",
+   "line": 34,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "\"extractUsage\","
+    },
+    {
+     "condition": null,
+     "code": "\"renderUsage\","
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "\"renderUsage\",",
+   "newer": "\"extractUsage\",",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/screenop/impl/outofgame/JoinMultiplayerScreenAccessor.java",
+   "line": 16,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "\"joinButton\""
+    },
+    {
+     "condition": null,
+     "code": "\"selectButton\""
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "\"selectButton\"",
+   "newer": "\"joinButton\"",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/screenop/impl/sign/SignEditScreenMixin.java",
+   "line": 16,
+   "method": "(imports)",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "import com.llamalad7.mixinextras.expression.Definition;\nimport com.llamalad7.mixinextras.expression.Expression;\nimport com.llamalad7.mixinextras.injector.ModifyExpressionValue;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/screenop/impl/sign/SignEditScreenMixin.java",
+   "line": 31,
+   "method": "(class body)",
+   "condition": "<26.2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.2",
+     "code": "@Definition(id = \"sign\", method = \"Lnet/minecraft/client/gui/GuiGraphicsExtractor;sign(Lnet/minecraft/client/model/Model$Simple;FLnet/minecraft/world/level/block/state/properties/WoodType;IIII)V\")\n\t@Expression(\"?.sign(?, ?, ?, ?, @(66), ?, @(168))\")\n\t@ModifyExpressionValue(method = \"extractSignBackground\", at = @At(\"MIXINEXTRAS:EXPRESSION\"))\n\tprivate int modifySignRenderY(int original) {\n\t\treturn (int) (original - calculateOverlap());\n\t}"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/virtualmouse/GuiMixin.java",
+   "line": 20,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "net.minecraft.client.gui.Gui.class"
+    },
+    {
+     "condition": null,
+     "code": "net.minecraft.client.Minecraft.class"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "net.minecraft.client.Minecraft.class",
+   "newer": "net.minecraft.client.gui.Gui.class",
+   "removed": [
+    "Minecraft"
+   ],
+   "added": [
+    "Gui",
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/virtualmouse/MouseHandlerAccessor.java",
+   "line": 16,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "@Invoker(\"onMove\")\n\tvoid controlify$invokeOnMove(long window, double xpos, double ypos, double xrel, double yrel);"
+    },
+    {
+     "condition": null,
+     "code": "@Invoker(\"onMove\")\n\tvoid controlify$invokeOnMove(long window, double x, double y);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "@Invoker(\"onMove\")\n\tvoid controlify$invokeOnMove(long window, double x, double y);",
+   "newer": "@Invoker(\"onMove\")\n\tvoid controlify$invokeOnMove(long window, double xpos, double ypos, double xrel, double yrel);",
+   "removed": [],
+   "added": [
+    "xpos",
+    "xrel",
+    "ypos",
+    "yrel"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/virtualmouse/MouseHandlerMixin.java",
+   "line": 23,
+   "method": "(class body)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "target = \"Lcom/mojang/blaze3d/platform/InputConstants;releaseMouse(Lcom/mojang/blaze3d/platform/Window;DD)V\""
+    },
+    {
+     "condition": null,
+     "code": "target = \"Lcom/mojang/blaze3d/platform/InputConstants;grabOrReleaseMouse(Lcom/mojang/blaze3d/platform/Window;IDD)V\""
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "target = \"Lcom/mojang/blaze3d/platform/InputConstants;grabOrReleaseMouse(Lcom/mojang/blaze3d/platform/Window;IDD)V\"",
+   "newer": "target = \"Lcom/mojang/blaze3d/platform/InputConstants;releaseMouse(Lcom/mojang/blaze3d/platform/Window;DD)V\"",
+   "removed": [],
+   "added": []
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/mixins/feature/virtualmouse/MouseHandlerMixin.java",
+   "line": 30,
+   "method": "(class body)",
+   "condition": "<26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<26.3",
+     "code": "int cursorMode,"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/reacharound/ReachAroundMode.java",
+   "line": 22,
+   "method": "(class body)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "minecraft.hasSingleplayerServer()"
+    },
+    {
+     "condition": null,
+     "code": "minecraft.isSingleplayer()"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "isSingleplayer"
+     ]
+    }
+   ],
+   "older": "minecraft.isSingleplayer()",
+   "newer": "minecraft.hasSingleplayerServer()",
+   "removed": [
+    "isSingleplayer"
+   ],
+   "added": [
+    "hasSingleplayerServer"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/screenop/compat/vanilla/PauseScreenProcessor.java",
+   "line": 37,
+   "method": "handleButtons",
+   "condition": "<26.3 >>",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<26.3 >>",
+     "code": "}"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/screenop/compat/vanilla/TitleScreenProcessor.java",
+   "line": 37,
+   "method": "handleButtons",
+   "condition": "<26.3 >>",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "<26.3 >>",
+     "code": "playClackSound();"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/CursorUtils.java",
+   "line": 11,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import org.lwjgl.sdl.SDLMouse;"
+    },
+    {
+     "condition": null,
+     "code": "import org.lwjgl.glfw.GLFW;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "import org.lwjgl.glfw.GLFW;",
+   "newer": "import org.lwjgl.sdl.SDLMouse;",
+   "removed": [
+    "GLFW",
+    "glfw"
+   ],
+   "added": [
+    "SDLMouse",
+    "sdl"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/CursorUtils.java",
+   "line": 23,
+   "method": "setVisibility",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "if (visible) {\n\t\t\tSDLMouse.SDL_ShowCursor();\n\t\t\tSDLMouse.SDL_SetWindowRelativeMouseMode(window.handle(), false);\n\t\t} else {\n\t\t\tSDLMouse.SDL_HideCursor();\n\t\t}"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.glfwSetInputMode(\n\t\t\twindow.handle(),\n\t\t\tGLFW.GLFW_CURSOR,\n\t\t\tvisible\n\t\t\t\t? GLFW.GLFW_CURSOR_NORMAL\n\t\t\t\t: GLFW.GLFW_CURSOR_HIDDEN\n\t\t);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.glfwSetInputMode(\n\t\t\twindow.handle(),\n\t\t\tGLFW.GLFW_CURSOR,\n\t\t\tvisible\n\t\t\t\t? GLFW.GLFW_CURSOR_NORMAL\n\t\t\t\t: GLFW.GLFW_CURSOR_HIDDEN\n\t\t);",
+   "newer": "if (visible) {\n\t\t\tSDLMouse.SDL_ShowCursor();\n\t\t\tSDLMouse.SDL_SetWindowRelativeMouseMode(window.handle(), false);\n\t\t} else {\n\t\t\tSDLMouse.SDL_HideCursor();\n\t\t}",
+   "removed": [
+    "GLFW",
+    "GLFW_CURSOR",
+    "GLFW_CURSOR_HIDDEN",
+    "GLFW_CURSOR_NORMAL",
+    "glfwSetInputMode"
+   ],
+   "added": [
+    "SDLMouse",
+    "SDL_HideCursor",
+    "SDL_SetWindowRelativeMouseMode",
+    "SDL_ShowCursor"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/CursorUtils.java",
+   "line": 42,
+   "method": "setPosition",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "SDLMouse.SDL_WarpMouseInWindow(window.handle(), x, y);"
+    },
+    {
+     "condition": null,
+     "code": "GLFW.glfwSetCursorPos(window.handle(), x, y);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "GLFW.glfwSetCursorPos(window.handle(), x, y);",
+   "newer": "SDLMouse.SDL_WarpMouseInWindow(window.handle(), x, y);",
+   "removed": [
+    "GLFW",
+    "glfwSetCursorPos"
+   ],
+   "added": [
+    "SDLMouse",
+    "SDL_WarpMouseInWindow"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/CUtil.java",
+   "line": 39,
+   "method": "openUri",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "Blaze3D.openUri(URI.create(uri));"
+    },
+    {
+     "condition": null,
+     "code": "Util.getPlatform().openUri(uri);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "create"
+     ]
+    }
+   ],
+   "older": "Util.getPlatform().openUri(uri);",
+   "newer": "Blaze3D.openUri(URI.create(uri));",
+   "removed": [
+    "Util",
+    "getPlatform"
+   ],
+   "added": [
+    "Blaze3D",
+    "URI",
+    "create"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/DebugOverlayHelper.java",
+   "line": 40,
+   "method": "reloadChunks",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "mc.levelExtractor.allChanged();"
+    },
+    {
+     "condition": null,
+     "code": "mc.levelRenderer.allChanged();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "levelExtractor",
+      "levelRenderer"
+     ]
+    }
+   ],
+   "older": "mc.levelRenderer.allChanged();",
+   "newer": "mc.levelExtractor.allChanged();",
+   "removed": [
+    "levelRenderer"
+   ],
+   "added": [
+    "levelExtractor"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/DebugOverlayHelper.java",
+   "line": 79,
+   "method": "getChat",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "return mc.gui.hud.getChat();"
+    },
+    {
+     "condition": null,
+     "code": "return mc.gui.getChat();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "hud"
+     ]
+    }
+   ],
+   "older": "return mc.gui.getChat();",
+   "newer": "return mc.gui.hud.getChat();",
+   "removed": [],
+   "added": [
+    "hud"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/InitialScreenRegistryDuck.java",
+   "line": 18,
+   "method": "get",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "return (InitialScreenRegistryDuck) Minecraft.getInstance().gui;"
+    },
+    {
+     "condition": null,
+     "code": "return (InitialScreenRegistryDuck) Minecraft.getInstance();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "return (InitialScreenRegistryDuck) Minecraft.getInstance();",
+   "newer": "return (InitialScreenRegistryDuck) Minecraft.getInstance().gui;",
+   "removed": [],
+   "added": [
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/MinecraftUtil.java",
+   "line": 26,
+   "method": "setScreen",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "minecraft.gui.setScreen(screen);"
+    },
+    {
+     "condition": null,
+     "code": "minecraft.setScreen(screen);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "minecraft.setScreen(screen);",
+   "newer": "minecraft.gui.setScreen(screen);",
+   "removed": [],
+   "added": [
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/MinecraftUtil.java",
+   "line": 34,
+   "method": "forceSetScreen",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "((GuiAccessor) minecraft.gui).controlify$setScreenField(screen);"
+    },
+    {
+     "condition": null,
+     "code": "minecraft.screen = screen;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "minecraft.screen = screen;",
+   "newer": "((GuiAccessor) minecraft.gui).controlify$setScreenField(screen);",
+   "removed": [],
+   "added": [
+    "GuiAccessor",
+    "controlify",
+    "gui",
+    "setScreenField"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/MinecraftUtil.java",
+   "line": 43,
+   "method": "getScreen",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "return minecraft.gui.screen();"
+    },
+    {
+     "condition": null,
+     "code": "return minecraft.screen;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "return minecraft.screen;",
+   "newer": "return minecraft.gui.screen();",
+   "removed": [],
+   "added": [
+    "gui"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/MinecraftUtil.java",
+   "line": 52,
+   "method": "getOverlay",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "return minecraft.gui.overlay();"
+    },
+    {
+     "condition": null,
+     "code": "return minecraft.getOverlay();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "getOverlay",
+      "overlay"
+     ]
+    }
+   ],
+   "older": "return minecraft.getOverlay();",
+   "newer": "return minecraft.gui.overlay();",
+   "removed": [
+    "getOverlay"
+   ],
+   "added": [
+    "gui",
+    "overlay"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/MinecraftUtil.java",
+   "line": 62,
+   "method": "sendToast",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "SystemToast.add(minecraft.gui.toastManager(), toastId, title, message);"
+    },
+    {
+     "condition": null,
+     "code": "SystemToast toast = SystemToast.multiline(minecraft, toastId, title, message);\n\t\tminecraft.getToastManager().addToast(toast);"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "add",
+      "getToastManager",
+      "multiline",
+      "toastManager"
+     ]
+    }
+   ],
+   "older": "SystemToast toast = SystemToast.multiline(minecraft, toastId, title, message);\n\t\tminecraft.getToastManager().addToast(toast);",
+   "newer": "SystemToast.add(minecraft.gui.toastManager(), toastId, title, message);",
+   "removed": [
+    "addToast",
+    "getToastManager",
+    "multiline",
+    "toast"
+   ],
+   "added": [
+    "add",
+    "gui",
+    "toastManager"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/predicates/ClientEntityPredicate.java",
+   "line": 11,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.advancements.predicates.*;\nimport net.minecraft.advancements.predicates.entity.*;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.advancements.criterion.*;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "entity"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.advancements.criterion.*;",
+   "newer": "import net.minecraft.advancements.predicates.*;\nimport net.minecraft.advancements.predicates.entity.*;",
+   "removed": [
+    "criterion"
+   ],
+   "added": [
+    "entity",
+    "predicates"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/predicates/ClientPredicateUtils.java",
+   "line": 11,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.advancements.predicates.*;\nimport net.minecraft.advancements.predicates.entity.*;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.advancements.criterion.*;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [
+    {
+     "step": "26.1.2 -> 26.2",
+     "names": [
+      "entity"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.advancements.criterion.*;",
+   "newer": "import net.minecraft.advancements.predicates.*;\nimport net.minecraft.advancements.predicates.entity.*;",
+   "removed": [
+    "criterion"
+   ],
+   "added": [
+    "entity",
+    "predicates"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/predicates/EntityEquipmentPredicate.java",
+   "line": 13,
+   "method": "(imports)",
+   "condition": ">=26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.2",
+     "code": "import net.minecraft.advancements.predicates.ItemPredicate;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.advancements.criterion.ItemPredicate;"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraft.advancements.criterion.ItemPredicate;",
+   "newer": "import net.minecraft.advancements.predicates.ItemPredicate;",
+   "removed": [
+    "criterion"
+   ],
+   "added": [
+    "predicates"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/render/BaseRenderState.java",
+   "line": 19,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.renderpearl.api.pipeline.RenderPipeline;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.blaze3d.pipeline.RenderPipeline;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "import com.mojang.blaze3d.pipeline.RenderPipeline;",
+   "newer": "import com.mojang.renderpearl.api.pipeline.RenderPipeline;",
+   "removed": [
+    "blaze3d"
+   ],
+   "added": [
+    "api",
+    "renderpearl"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/utils/render/CGuiElementRenderState.java",
+   "line": 17,
+   "method": "(imports)",
+   "condition": ">=26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": "import com.mojang.renderpearl.api.pipeline.RenderPipeline;"
+    },
+    {
+     "condition": null,
+     "code": "import com.mojang.blaze3d.pipeline.RenderPipeline;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "import com.mojang.blaze3d.pipeline.RenderPipeline;",
+   "newer": "import com.mojang.renderpearl.api.pipeline.RenderPipeline;",
+   "removed": [
+    "blaze3d"
+   ],
+   "added": [
+    "api",
+    "renderpearl"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/virtualmouse/VirtualMouseHandler.java",
+   "line": 232,
+   "method": "updateMouse",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": ",relX, relY"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/dev/isxander/controlify/virtualmouse/VirtualMouseHandler.java",
+   "line": 345,
+   "method": "snapToPoint",
+   "condition": ">=26.3",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">=26.3",
+     "code": ",relX, relY"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  }
+ ]
+}

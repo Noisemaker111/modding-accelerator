@@ -4,7 +4,7 @@ Goal: any Minecraft version to any other, and any loader to any other, from a Gr
 checkout, with checks that prove it works. Version changes and loader changes are separate jobs.
 
 Status words: **done** (ran and checked), **doing** (current step), **next**, **later**.
-Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/progress.html
+Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/ (bench page)
 (numbers come from `coverage/ledger.json`, one row per port that was actually run).
 
 ## Phase 1 — Neighbouring versions (1.21.x), Fabric and NeoForge
@@ -27,7 +27,29 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/pro
 
 ## Phase 2 — Big jumps across families (1.16.5, 1.18.2, 1.20.1 → 1.21.x)
 
-11. Chain mappings across more than one family in a single port, with one record per hop. **later**
+11a. Change index and hub-and-spoke families: every release from 1.14.4 to 26.3 diffed against the
+    next in Mojang's names (`coverage/changes/`, `tools/ChangeIndex.java`), 24 families cut where an
+    update breaks 1% or more of the game's names, each with a hub picked by Modrinth mod count, rule
+    coverage and the best ledger run per step, shown at `docs/porting-map.html`. Releases before
+    1.14.4 are listed as blocked (no official mappings). **done**
+11b. Router: `port` chains hops X → family hub → hub → … → Y from `coverage/changes/index.json`, one
+    record per hop; renames inside a family applied from the index. **done** — `port --from A --to B
+    --fix` walks the hubs, joins every update's renames and moves into one map by intermediary ids
+    (`VersionMap --chain`), runs only the rules whose jump covers an update it crosses, builds once,
+    and names the update behind each error left. Releases before 1.14.4 are refused. ZombieApocalypseAddon
+    1.21.1 → 1.21.4 (three families) builds and loads; → 1.21.6 stops at the same 9 errors as the
+    one-jump path, all placed on 1.21.4 → 1.21.5; → 26.3 stops at 69 instead of 100+.
+11. Chain mappings across more than one family in a single port, with one record per hop. **done**
+    with 11b up to 1.21.11; updates into 26.x have no shared ids, so there the router relies on
+    rules and names errors from the step files by name only.
+11c. Learn rules from Stonecutter mods: 33 open-source multi-version mods pinned in
+    `coverage/stonecutter/mods.json`, 5,045 `//? if` switches extracted with file, method and the
+    update their boundary falls on (`bench/stonecutter_mine.py`). Changes made the same way in two or
+    more mods became 38 rules in `knowledge/fixes.json` (22 forward, 16 backports), each with its
+    switches as examples and a test that self-test re-runs (`bench/stonecutter_rules.py`). **done** —
+    ZombieApocalypseAddon 1.21.1 → 26.3 stops at 50 errors instead of 69; → 1.21.6 (9) and the
+    untouched Notes 1.21 → 1.21.6 (14) are unchanged, their errors have no repeated switch. The map
+    shows rules learned per update.
 12. Prove one untouched mod from 1.20.1 (or older) to 1.21.6 to a build, then to a loaded client. **later**
 13. Publish the family list each jump still needs, so a stop is a shopping list. **later**
 
@@ -62,3 +84,6 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/pro
 | Are version and loader changes the same job? | No; separate records, separate claims | 2026-10-24 |
 | Does a passing build prove a port? | No; loader-refused jars, invisible UI and unloaded mods all passed builds | 2026-10-24 |
 | What counts as progress? | A row in `coverage/ledger.json` with a receipt, shown on the progress page | 2026-10-24 |
+| What do we support, and how does a new kind of project get in? | `SCOPE.md`: platforms by side, a six-rung support ladder, intake through the `bench-new-mod` skill | 2026-10-25 |
+| Plugin ↔ mod conversion? | Not for now; it's a rewrite, not a port, and hybrid servers already exist | 2026-10-25 |
+| Ports between Paper versions? | Yes, as rung 5 for Paper once rungs 2–3 land | 2026-10-25 |

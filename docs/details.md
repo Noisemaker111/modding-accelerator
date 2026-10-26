@@ -260,6 +260,13 @@ Minecraft 1.20.5 to 1.21.11, whose C2 compiler crashes on some code (JDK-8358534
 into world creation with that crash, and the fixed build ran 3.5 minutes without it. A running
 client on another runtime is refused rather than reused.
 
+When the client dies, the command that was talking to it and every later `eval`, `reload`,
+`game-status` and `game-stop` say how: a JVM crash with its error, problematic frame, crashing
+thread, the method being compiled if a JIT compiler crashed, and the hs_err file; a Minecraft
+crash with its description, exception and crash report; or, with neither, the last lines of
+the game log. Only those lines are read from the hs_err file, whose command line can hold an
+access token. `game-stop` forgets the session, so a stopped game isn't reported as exited.
+
 Local checks cover Windows PowerShell/Git Bash, Fabric 1.21.5/1.21.6/26.3 and NeoForge 1.21.1.
 An isolated Linux VPS passed source/packaged core checks and real Gradle/JUnit checks
 from paths with spaces. A deliberately failing test failed twice; after restoration,
@@ -567,6 +574,23 @@ lab server  up   port 25565 pid 29536  3m40s   dedicated server
 
 Every long step prints its own `[  24.2s] what it is doing` line, so a command is never silent
 while it waits on a port, a build or a game.
+
+## Porting map
+
+`docs/porting-map.html` lists every Java release from 1.0 to 26.3. From 1.14.4 on, each neighbouring
+pair of releases is diffed in Mojang's own names (`java tools/ChangeIndex.java`), joined across
+versions by Fabric's intermediary ids; 26.1 and later ship unobfuscated, so those steps are matched
+by name and are a best guess. "Names that break" counts public classes, methods and fields that are
+renamed, removed or change signature. "modaccel handles" counts the renames `port --fix` rewrites
+from the mappings plus the ones an automatic rule in `knowledge/` names; how-tos are counted
+separately. An update that breaks 1% or more of the old names starts a new family, and each
+family's hub is its release with the most mods on Modrinth. Before 1.14.4 there are no official
+names, so families are grouped by version number, marked estimated, and nothing is measured.
+
+A line is green only when `coverage/ledger.json` has a port across that whole hop that loaded or
+passed a behaviour check in the game; yellow when a ROADMAP step marked doing covers it; red
+otherwise, with the reason shown. Refresh: `java tools/ChangeIndex.java`, then
+`python bench/change_routes.py` and `python bench/porting_map.py`.
 
 ## Porting, measured
 

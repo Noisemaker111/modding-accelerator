@@ -26,7 +26,7 @@ public final class Modaccel {
     static final class Options {
         final Map<String, String> values = new LinkedHashMap<>(); final Set<String> flags = new HashSet<>(); String command = "fast";
         Options(String[] args) {
-            Set<String> switches = Set.of("json", "refresh", "help", "dry-run", "fix", "expect-world", "save-roundtrip", "jbr");
+            Set<String> switches = Set.of("json", "refresh", "help", "dry-run", "fix", "direct", "expect-world", "save-roundtrip", "jbr");
             int i = 0; if (args.length > 0 && !args[0].startsWith("-")) command = args[i++];
             if (command.equals("help") && i < args.length && !args[i].startsWith("-")) values.put("command", args[i++]);
             for (; i < args.length; i++) {
@@ -56,14 +56,24 @@ public final class Modaccel {
             if (Files.isRegularFile(root) && root.toString().toLowerCase(Locale.ROOT).endsWith(".jar"))
                 throw new IllegalArgumentException("--root needs the mod's Gradle source directory, not a compiled JAR. Check out its source and run modaccel discover --root SOURCE.");
             ProjectModel project = new ProjectModel(root);
+            if (!Set.of("package", "self-test").contains(options.command)) project.requireGradleBuild();
             report = new Report(project.root, options.command); Map<String, Object> result;
             long discovered = System.nanoTime();
-            if (options.command.equals("discover")) { result = project.discover(); result.put("support", Support.discovered(result)); exit = 0; }
+            if (options.command.equals("discover")) {
+                result = project.discover(); result.put("support", Support.discovered(result)); exit = 0;
+                if (Json.array(result.get("builds")).isEmpty()) result.put("details", "No build.gradle or build.gradle.kts file was found, so there are no build hints"
+                        + (Boolean.TRUE.equals(result.get("stonecutter")) ? " (a Stonecutter build names its scripts build.<variant>.gradle.kts)" : "")
+                        + ". Run modaccel setup to evaluate the build itself.");
+            }
             else if (options.command.equals("package")) { result = Installation.pack(home, report); exit = 0; }
             else if (options.command.equals("self-test")) { result = Installation.test(home, report); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
             else if (options.command.equals("doctor")) {
                 result = project.discover(); result.put("support", Support.discovered(result)); result.put("jdks", Runtimes.installed(home).stream().map(j -> Json.map("home", j.home().toString(), "version", j.version())).toList());
                 result.put("selectedJava", Runtimes.forGradle(home, project.wrapperVersion()).home().toString()); exit = 0;
+            } else if (options.command.equals("port") && !options.values.containsKey("undo")
+                    && (result = Route.blocked(home, options.get("from", ""), options.get("to", ""))) != null) {
+                // Refuse before evaluating a build that predates official names; nothing is changed.
+                exit = 1;
             } else {
                 // explain reads two projects' classpaths: the one that fails and the one it's compared with.
                 String selected = options.command.equals("explain") && options.values.containsKey("against") ? options.get("project", "") + "," + options.get("against", "") : options.get("project", "");
@@ -81,9 +91,12 @@ public final class Modaccel {
                         String name = options.command.equals("compile") ? "classes" : options.command.equals("test") ? "test" : "modaccelPure";
                         List<String> tasks = options.values.containsKey("task") ? List.of(options.get("task", "")) : build.tasks(model, name);
                         if (tasks.isEmpty()) throw new IOException("No " + name + " task in the selected projects. Select --project :module or --task :module:task.");
+                        // A NeoGradle mod whose game jar is not built yet compiles against NeoForge's installer-made jar.
+                        if (options.command.equals("compile") && !options.values.containsKey("task") && (result = OwnCompile.run(build, model, tasks)) != null) { exit = 0; break; }
                         Run.Result run = build.gradle(tasks, options.command); exit = run.exit() == 0 ? 0 : 1;
                         result = Json.map("tier", options.command.equals("compile") ? "compile" : "logic", "tasks", tasks, "log", run.log().toString(),
                                 "gameVerified", false, "details", Run.tail(run.log()));
+                        if (run.exit() != 0) result.put("reason", Run.gradleFailure(run.log()) + "\nLog: " + run.log());
                         if (options.command.equals("fast") || options.command.equals("test")) {
                             Map<String, Object> counts = TestResults.readTasks(model, tasks, report.id);
                             result.put("tests", counts); if (((Number)counts.get("failed")).intValue() > 0) exit = 1;
@@ -105,10 +118,19 @@ public final class Modaccel {
             }
         } catch (Exception error) {
             try {
-                var value = Json.map("error", error.getMessage() == null ? error.toString() : error.getMessage());
+                String reported = error.getMessage() == null ? error.toString() : error.getMessage();
+                // A dedicated server that died mid-check is the likelier cause of a client failure: say so with the error.
+                if (report != null) for (Object stage : report.stages)
+                    if ("server-exit".equals(Json.object(stage).get("name"))) reported += "\n" + Json.object(stage).get("details");
+                var value = Json.map("error", reported);
                 if (report != null) value = report.finish(2, value);
                 if (options != null && options.has("json")) System.out.println(Json.write(value));
-                else if (options != null && options.command.equals("eval")) System.err.println("eval: failed\n" + String.valueOf(error.getMessage()).replaceFirst("^Game action failed: ", "").replaceFirst("\nGame log: .*$", ""));
+                else if (options != null && options.command.equals("eval")) {
+                    // A snippet's own error doesn't need the game log; a game that died does.
+                    String message = String.valueOf(error.getMessage());
+                    if (message.startsWith("Game action failed: ")) message = message.substring("Game action failed: ".length()).replaceFirst("\nGame log: .*$", "");
+                    System.err.println("eval: failed\n" + message);
+                }
                 else System.err.println(Json.write(value));
             } catch (IOException secondary) { System.err.println(error + "; could not save receipt: " + secondary); }
             exit = 2;
@@ -123,6 +145,7 @@ public final class Modaccel {
                     + "  modaccel dependencies --root SOURCE --to 1.21.6 --json\n"
                     + "  modaccel port --root SOURCE --from 1.21.5 --to 1.21.6 --fix --json\n"
                     + "  modaccel port --root SOURCE --undo TRANSACTION\n"
+                    + "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n"
                     + "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
             case "explain" -> "Explain a port's compiler errors: modaccel explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n"
                     + "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n"

@@ -1,0 +1,33 @@
+{
+  "from": "1.21.6", "to": "1.21.7",
+  "names": "official",
+  "linked": "exact",
+  "oldSize": 83974, "broken": 4, "breakingShare": 0.0000,
+  "counts": {"classesAdded": 1, "classesRemoved": 0, "classesRenamed": 0, "methodsAdded": 11, "methodsRemoved": 4, "methodsRenamed": 0, "methodsChanged": 3, "fieldsAdded": 8, "fieldsRemoved": 1, "fieldsRenamed": 0, "fieldsChanged": 1, "classesAddedApi": 1, "methodsAddedApi": 7, "fieldsAddedApi": 6, "methodsRemovedApi": 2, "methodsChangedApi": 2},
+  "classesAdded": ["net.minecraft.client.renderer.item.TrackingItemStackRenderState"],
+  "classesRemoved": [],
+  "classesRenamed": [],
+  "members": {
+    "com.mojang.blaze3d.opengl.DirectStateAccess": {"methodsAdded": ["copyBufferSubData(int,int,int,int,int)void"]},
+    "com.mojang.blaze3d.opengl.DirectStateAccess$Core": {"methodsAdded": ["copyBufferSubData(int,int,int,int,int)void"]},
+    "com.mojang.blaze3d.opengl.DirectStateAccess$Emulated": {"methodsAdded": ["copyBufferSubData(int,int,int,int,int)void"]},
+    "com.mojang.blaze3d.opengl.GlCommandEncoder": {"methodsAdded": ["copyToBuffer(GpuBufferSlice,GpuBufferSlice)void"]},
+    "com.mojang.blaze3d.opengl.GlDevice": {"methodsAdded": ["private amdDummyShaderWorkaround()void"]},
+    "com.mojang.blaze3d.pipeline.BlendFunction": {"fieldsAdded": ["INVERT:BlendFunction"]},
+    "com.mojang.blaze3d.systems.CommandEncoder": {"methodsAdded": ["copyToBuffer(GpuBufferSlice,GpuBufferSlice)void"]},
+    "com.mojang.blaze3d.vertex.VertexFormat": {"fieldsAdded": ["private USE_STAGING_BUFFER_WORKAROUND:boolean", "private UPLOAD_STAGING_BUFFER:GpuBuffer"], "methodsAdded": ["private uploadToBuffer(GpuBuffer,ByteBuffer,int,Supplier)GpuBuffer", "private uploadToBufferWithWorkaround(GpuBuffer,ByteBuffer,int,Supplier)GpuBuffer"]},
+    "net.minecraft.Util": {"methodsAdded": ["isAarch64()boolean"]},
+    "net.minecraft.client.gui.GuiGraphics": {"methodsAdded": ["textHighlight(int,int,int,int)void"]},
+    "net.minecraft.client.gui.components.EditBox": {"methodsRemoved": ["private renderHighlight(GuiGraphics,int,int,int,int)void"]},
+    "net.minecraft.client.gui.components.MultiLineEditBox": {"methodsRemoved": ["private renderHighlight(GuiGraphics,int,int,int,int)void"]},
+    "net.minecraft.client.gui.render.GuiRenderer": {"methodsChanged": ["private renderItemToAtlas(ItemStackRenderState,PoseStack,int,int,int)void -> private renderItemToAtlas(TrackingItemStackRenderState,PoseStack,int,int,int)void"]},
+    "net.minecraft.client.gui.render.state.GuiItemRenderState": {"fieldsChanged": ["private itemStackRenderState:ItemStackRenderState -> private itemStackRenderState:TrackingItemStackRenderState"], "methodsChanged": ["itemStackRenderState()ItemStackRenderState -> itemStackRenderState()TrackingItemStackRenderState", "<init>(String,Matrix3x2f,ItemStackRenderState,int,int,ScreenRectangle)void -> <init>(String,Matrix3x2f,TrackingItemStackRenderState,int,int,ScreenRectangle)void"]},
+    "net.minecraft.client.renderer.RenderPipelines": {"fieldsAdded": ["GUI_INVERT:RenderPipeline"]},
+    "net.minecraft.client.renderer.item.ItemStackRenderState": {"fieldsRemoved": ["private modelIdentityElements:List"], "methodsRemoved": ["getModelIdentity()Object", "clearModelIdentity()void"]},
+    "net.minecraft.client.renderer.texture.TextureAtlas": {"methodsAdded": ["private createTexture(int,int,int)void"]},
+    "net.minecraft.sounds.SoundEvents": {"fieldsAdded": ["MUSIC_DISC_LAVA_CHICKEN:Holder.Reference"]},
+    "net.minecraft.world.entity.decoration.PaintingVariants": {"fieldsAdded": ["DENNIS:ResourceKey"]},
+    "net.minecraft.world.item.Items": {"fieldsAdded": ["MUSIC_DISC_LAVA_CHICKEN:Item"]},
+    "net.minecraft.world.item.JukeboxSongs": {"fieldsAdded": ["LAVA_CHICKEN:ResourceKey"]}
+  }
+}

@@ -500,3 +500,26 @@ Measured here: the JDK download is 134.6 MB and this connection pulled 20 MB in 
 The rest of a first run is Gradle and Minecraft: Loom fetches the game jars and libraries
 (typically 200-400 MB) on top. A truly cold machine has not been run end to end; the numbers
 above are measured transfer rate x measured sizes, not a timed cold install.
+
+## Hub router: one command across families (2026-10-25)
+
+`port --from A --to B --fix` now plans A → each family hub between → B from
+`coverage/changes/index.json` and records one entry per hop. `VersionMap --chain` loads each
+release once and follows every class, method and field of A through each update by its
+intermediary id, so A→B→C names resolve to the final name, moves follow the member, and a
+removal keeps the update that removed it (history in A's names). Measured on 1.21.1 → 1.21.6
+(mojmap): the joined map has the same renames and removals as the one-jump diff (184 classes
+renamed, 385 removed) plus 30 signature changes on moved methods, built in 7.6s with warm caches.
+So inside the intermediary era the router does not reduce errors by itself; what it adds is the
+per-update attribution, rule filtering by the updates crossed, and a joined map up to 1.21.11 on
+routes into 26.x, where the one-jump path had only an identity map.
+
+ZombieApocalypseAddon (upstream 1bb67d4, fresh copies, warm Gradle and mapping caches):
+- 1.21.1 → 1.21.4 (three families): 34 → 2 → 0, build + mixin audit 165s; the real 1.21.4
+  client lists it (NeoForge 21.4.161, 3 mods). Behaviour unverified on this run.
+- 1.21.1 → 1.21.6: 98 → 12 → 9 on both paths (router 78s, `--direct` 88s); the router places all
+  nine on 1.21.4 → 1.21.5.
+- 1.21.1 → 26.3: router 100+ → 69 in 140s; one-jump path stops at 100+ (93 listed) after two
+  rounds. Of the 69, 4 are placed by owner, 24 by name from the 26.x step files, 35 by name only
+  (owner differs, usually a supertype; the report says so), 6 unplaced.
+Releases before 1.14.4 are refused before the build is evaluated, in 0.09s, with nothing changed.

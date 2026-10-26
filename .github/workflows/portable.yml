@@ -50,8 +50,9 @@ jobs:
       - name: Port rewrites before compilation
         working-directory: portable workspace
         run: |
-          javac --release 21 -d .runs/preflight-tests tools/VersionMap.java tools/tests/PortPreflightTest.java
+          javac --release 21 -d .runs/preflight-tests tools/VersionMap.java tools/tests/PortPreflightTest.java tools/tests/ChainMapTest.java
           java -cp .runs/preflight-tests PortPreflightTest
+          java -cp .runs/preflight-tests ChainMapTest
       - name: Outcome receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4

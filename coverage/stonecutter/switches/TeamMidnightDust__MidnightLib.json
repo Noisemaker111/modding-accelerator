@@ -1,0 +1,1598 @@
+{
+ "repo": "TeamMidnightDust/MidnightLib",
+ "commit": "bd2aa72c2862c67ff5b72ba49b152a3a69d1f9a9",
+ "names": "mojmap",
+ "loaders": [
+  "fabric",
+  "neoforge"
+ ],
+ "versions": [
+  "1.21.1",
+  "1.21.5",
+  "1.21.8",
+  "1.21.10",
+  "1.21.11",
+  "26.1",
+  "26.2",
+  "26.3"
+ ],
+ "files": 11,
+ "switches": 47,
+ "versionSwitches": 37,
+ "rows": [
+  {
+   "file": "src/main/java/eu/midnightdust/core/MidnightLib.java",
+   "line": 13,
+   "method": "(imports)",
+   "condition": "fabric | neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.api.ClientModInitializer;\n\nimport com.terraformersmc.modmenu.api.ConfigScreenFactory;\nimport com.terraformersmc.modmenu.api.ModMenuApi;\n\nimport java.util.HashMap;\nimport java.util.Map;\n\npublic class MidnightLib implements ClientModInitializer {"
+    },
+    {
+     "condition": "neoforge",
+     "code": "import com.mojang.brigadier.builder.LiteralArgumentBuilder;\nimport eu.midnightdust.lib.config.AutoCommand;\nimport eu.midnightdust.lib.util.PlatformFunctions;\nimport net.minecraft.commands.CommandSourceStack;\n\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.ModList;\nimport net.neoforged.fml.common.Mod;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;\nimport net.neoforged.neoforge.client.gui.IConfigScreenFactory;\nimport net.neoforged.neoforge.event.RegisterCommandsEvent;\n\nimport java.util.ConcurrentModificationException;\n\n@Mod(\"midnightlib\")\npublic class MidnightLib {"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/core/MidnightLib.java",
+   "line": 51,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "public static class ModMenuInit implements ModMenuApi {\n        @Override\n        public ConfigScreenFactory<?> getModConfigScreenFactory() {\n            return parent -> MidnightLibConfig.getScreen(parent, MOD_ID);\n        }\n\n        @Override\n        public Map<String, ConfigScreenFactory<?>> getProvidedConfigScreenFactories() {\n            HashMap<String, ConfigScreenFactory<?>> map = new HashMap<>();\n            MidnightConfig.configInstances.forEach((modid, cClass) -> {\n                if (!MidnightLib.hiddenMods.contains(modid))\n                    map.put(modid, parent -> MidnightConfig.getScreen(parent, modid));\n            });\n            return map;\n        }\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/core/MidnightLib.java",
+   "line": 77,
+   "method": "(class body)",
+   "condition": ">= 1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.6",
+     "code": "@EventBusSubscriber(modid = MOD_ID, value = Dist.CLIENT)"
+    },
+    {
+     "condition": null,
+     "code": "/*@EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)\n        */"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ],
+   "confirmed": [],
+   "older": "/*@EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)\n        */",
+   "newer": "@EventBusSubscriber(modid = MOD_ID, value = Dist.CLIENT)",
+   "removed": [
+    "Bus",
+    "MOD",
+    "bus"
+   ],
+   "added": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/core/MidnightLib.java",
+   "line": 70,
+   "method": "(class body)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "public static List<LiteralArgumentBuilder<CommandSourceStack>> commands = new ArrayList<>();\n\n        public MidnightLib() {\n            if (PlatformFunctions.isClientEnv()) this.onInitializeClient();\n        }\n\n        //? if >= 1.21.6 {\n        @EventBusSubscriber(modid = MOD_ID, value = Dist.CLIENT)\n        //?} else {\n        /*@EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)\n        *///?}\n        public static class MidnightLibBusEvents {\n            @SubscribeEvent\n            public static void onPostInit(FMLClientSetupEvent event) {\n                ModList.get().forEachModContainer((modid, modContainer) -> {\n                    if (MidnightConfig.configInstances.containsKey(modid) && !MidnightLib.hiddenMods.contains(modid)) {\n                        modContainer.registerExtensionPoint(IConfigScreenFactory.class, (minecraftClient, screen) -> MidnightConfig.getScreen(screen, modid));\n                    }\n                });\n                new AutoCommand().onInitializeServer();\n            }\n        }\n\n        @EventBusSubscriber(modid = MOD_ID)\n        public static class MidnightLibEvents {\n            @SubscribeEvent\n            public static void registerCommands(RegisterCommandsEvent event) {\n                try {\n                    commands.forEach(command -> event.getDispatcher().register(command));\n                }\n                catch (ConcurrentModificationException ignored) {}\n            }\n        }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/AutoCommand.java",
+   "line": 18,
+   "method": "(imports)",
+   "condition": ">= 1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": "import net.minecraft.server.permissions.*;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/AutoCommand.java",
+   "line": 21,
+   "method": "(class body)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "implements DedicatedServerModInitializer"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/AutoCommand.java",
+   "line": 48,
+   "method": "AutoCommand",
+   "condition": ">= 1.21.11 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.11",
+     "code": ".permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS))"
+    },
+    {
+     "condition": null,
+     "code": ".hasPermission(2)"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.10 -> 1.21.11",
+     "names": [
+      "HasCommandLevel",
+      "Permission",
+      "PermissionLevel",
+      "permissions"
+     ]
+    }
+   ],
+   "older": ".hasPermission(2)",
+   "newer": ".permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS))",
+   "removed": [],
+   "added": [
+    "GAMEMASTERS",
+    "HasCommandLevel",
+    "Permission",
+    "PermissionLevel",
+    "permissions"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/ButtonEntry.java",
+   "line": 18,
+   "method": "(imports)",
+   "condition": ">= 26.3-rc-2",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.3-rc-2",
+     "code": "import java.net.URI;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/ButtonEntry.java",
+   "line": 21,
+   "method": "(imports)",
+   "condition": ">= 1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "import net.minecraft.client.input.MouseButtonEvent;\nimport net.minecraft.world.item.ItemStack;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/ButtonEntry.java",
+   "line": 25,
+   "method": "(imports)",
+   "condition": ">= 26.1-pre.1",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.1-pre.1",
+     "code": "import net.minecraft.core.Holder;\nimport net.minecraft.core.component.DataComponentMap;\nimport net.minecraft.core.component.DataComponents;"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/ButtonEntry.java",
+   "line": 57,
+   "method": "(class body)",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "public void extractContent(GuiGraphicsExtractor context, int mouseX, int mouseY, boolean hovered, float tickDelta) {\n    int y = this.getY();"
+    },
+    {
+     "condition": null,
+     "code": "public void extractRenderState(GuiGraphicsExtractor context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "extractRenderState",
+      "getY",
+      "index"
+     ]
+    }
+   ],
+   "older": "public void extractRenderState(GuiGraphicsExtractor context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {",
+   "newer": "public void extractContent(GuiGraphicsExtractor context, int mouseX, int mouseY, boolean hovered, float tickDelta) {\n    int y = this.getY();",
+   "removed": [
+    "entryHeight",
+    "entryWidth",
+    "extractRenderState",
+    "index"
+   ],
+   "added": [
+    "extractContent",
+    "getY"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/ButtonEntry.java",
+   "line": 73,
+   "method": "extractContent",
+   "condition": ">= 1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.4",
+     "code": "getValue"
+    },
+    {
+     "condition": null,
+     "code": "get"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "get",
+      "getValue"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "get"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "get"
+     ]
+    }
+   ],
+   "older": "get",
+   "newer": "getValue",
+   "removed": [
+    "get"
+   ],
+   "added": [
+    "getValue"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/ButtonEntry.java",
+   "line": 73,
+   "method": "extractContent",
+   "condition": ">= 1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.4",
+     "code": "getValue"
+    },
+    {
+     "condition": null,
+     "code": "get"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "get",
+      "getValue"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "get"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "get"
+     ]
+    }
+   ],
+   "older": "get",
+   "newer": "getValue",
+   "removed": [
+    "get"
+   ],
+   "added": [
+    "getValue"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/ButtonEntry.java",
+   "line": 74,
+   "method": "extractContent",
+   "condition": ">= 26.1-pre.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.1-pre.1",
+     "code": "new ItemStack(Holder.direct(item, DataComponentMap.builder().set(DataComponents.ITEM_MODEL, Identifier.tryParse(this.info.tempValue)).build()))"
+    },
+    {
+     "condition": null,
+     "code": "item.getDefaultInstance()"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/ButtonEntry.java",
+   "line": 75,
+   "method": "extractContent",
+   "condition": ">= 26.1-pre.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.1-pre.1",
+     "code": "fakeItem"
+    },
+    {
+     "condition": null,
+     "code": "renderItem"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/ButtonEntry.java",
+   "line": 80,
+   "method": "(class body)",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {"
+    },
+    {
+     "condition": null,
+     "code": "public boolean mouseClicked(double d, double e, int i) {"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "MouseButtonEvent"
+     ]
+    }
+   ],
+   "older": "public boolean mouseClicked(double d, double e, int i) {",
+   "newer": "public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {",
+   "removed": [],
+   "added": [
+    "MouseButtonEvent",
+    "click",
+    "doubled"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/ButtonEntry.java",
+   "line": 86,
+   "method": "mouseClicked",
+   "condition": ">= 26.3-rc-2 | >= 26.2 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.3-rc-2",
+     "code": "ConfirmLinkScreen.confirmLinkNow(Minecraft.getInstance().gui.screen(), URI.create(this.info.comment.url()), true);"
+    },
+    {
+     "condition": ">= 26.2",
+     "code": "ConfirmLinkScreen.confirmLinkNow(Minecraft.getInstance().gui.screen(), this.info.comment.url(), true);"
+    },
+    {
+     "condition": null,
+     "code": "ConfirmLinkScreen.confirmLinkNow(Minecraft.getInstance().screen, this.info.comment.url(), true);"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3",
+    "26.1.2 -> 26.2"
+   ],
+   "window": [
+    "26.2 -> 26.3",
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/ButtonEntry.java",
+   "line": 93,
+   "method": "mouseClicked",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "return super.mouseClicked(click, doubled);"
+    },
+    {
+     "condition": null,
+     "code": "return super.mouseClicked(d, e, i);"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [],
+   "older": "return super.mouseClicked(d, e, i);",
+   "newer": "return super.mouseClicked(click, doubled);",
+   "removed": [],
+   "added": [
+    "click",
+    "doubled"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightColorChooser.java",
+   "line": 15,
+   "method": "(imports)",
+   "condition": "< 1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 1.21.11",
+     "code": "//import net.minecraft.client.Minecraft;"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightColorChooser.java",
+   "line": 18,
+   "method": "(imports)",
+   "condition": ">= 1.21.8 | >= 1.21.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.8",
+     "code": "import net.minecraft.client.renderer.RenderPipelines;"
+    },
+    {
+     "condition": ">= 1.21.5",
+     "code": "import net.minecraft.client.renderer.RenderType;"
+    }
+   ],
+   "boundary": [
+    "1.21.7 -> 1.21.8",
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "RenderPipelines"
+     ]
+    }
+   ],
+   "older": "import net.minecraft.client.renderer.RenderType;",
+   "newer": "import net.minecraft.client.renderer.RenderPipelines;",
+   "removed": [
+    "RenderType"
+   ],
+   "added": [
+    "RenderPipelines"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightColorChooser.java",
+   "line": 23,
+   "method": "(imports)",
+   "condition": "<= 1.21.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "<= 1.21.5",
+     "code": "import com.mojang.blaze3d.systems.RenderSystem;"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightColorChooser.java",
+   "line": 92,
+   "method": "extractBackground",
+   "condition": ">= 1.21.8 | 1.21.5 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.8",
+     "code": "graphics.nextStratum();"
+    },
+    {
+     "condition": "1.21.5",
+     "code": "graphics.flush();\n        RenderSystem.getDevice().createCommandEncoder().clearDepthTexture(this.minecraft.getMainRenderTarget().getDepthTexture(), 1.0d);"
+    },
+    {
+     "condition": null,
+     "code": "//graphics.flush();\n        //RenderSystem.clear(256, Minecraft.ON_OSX);"
+    }
+   ],
+   "boundary": [
+    "1.21.7 -> 1.21.8",
+    "1.21.4 -> 1.21.5",
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "flush",
+      "nextStratum"
+     ]
+    }
+   ],
+   "older": "graphics.flush();\n        RenderSystem.getDevice().createCommandEncoder().clearDepthTexture(this.minecraft.getMainRenderTarget().getDepthTexture(), 1.0d);",
+   "newer": "graphics.nextStratum();",
+   "removed": [
+    "RenderSystem",
+    "clearDepthTexture",
+    "createCommandEncoder",
+    "flush",
+    "getDepthTexture",
+    "getDevice",
+    "getMainRenderTarget",
+    "minecraft"
+   ],
+   "added": [
+    "nextStratum"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightColorChooser.java",
+   "line": 104,
+   "method": "extractBackground",
+   "condition": ">= 1.21.8",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.8",
+     "code": "graphics.nextStratum();"
+    }
+   ],
+   "boundary": [
+    "1.21.7 -> 1.21.8"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightColorChooser.java",
+   "line": 111,
+   "method": "extractBackground",
+   "condition": ">= 1.21.8 | >= 1.21.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.8",
+     "code": "RenderPipelines.GUI_TEXTURED,"
+    },
+    {
+     "condition": ">= 1.21.5",
+     "code": "RenderType::guiTextured,"
+    }
+   ],
+   "boundary": [
+    "1.21.7 -> 1.21.8",
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "guiTextured"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "RenderPipelines"
+     ]
+    }
+   ],
+   "older": "RenderType::guiTextured,",
+   "newer": "RenderPipelines.GUI_TEXTURED,",
+   "removed": [
+    "RenderType",
+    "guiTextured"
+   ],
+   "added": [
+    "GUI_TEXTURED",
+    "RenderPipelines"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightColorChooser.java",
+   "line": 120,
+   "method": "extractRenderState",
+   "condition": ">= 1.21.8 | >= 1.21.5",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.8",
+     "code": "RenderPipelines.GUI_TEXTURED,"
+    },
+    {
+     "condition": ">= 1.21.5",
+     "code": "RenderType::guiTextured,"
+    }
+   ],
+   "boundary": [
+    "1.21.7 -> 1.21.8",
+    "1.21.4 -> 1.21.5"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "guiTextured"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "RenderPipelines"
+     ]
+    }
+   ],
+   "older": "RenderType::guiTextured,",
+   "newer": "RenderPipelines.GUI_TEXTURED,",
+   "removed": [
+    "RenderType",
+    "guiTextured"
+   ],
+   "added": [
+    "GUI_TEXTURED",
+    "RenderPipelines"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfig.java",
+   "line": 33,
+   "method": "(imports)",
+   "condition": "< 1.21.6",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.21.6",
+     "code": "//? fabric\nimport net.fabricmc.api.*;\n//? neoforge\n/*import net.neoforged.api.distmarker.*;*/"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfig.java",
+   "line": 53,
+   "method": "(class body)",
+   "condition": ">= 1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.4",
+     "code": "new TypeAdapter<Identifier>() {\n                     public void write(JsonWriter out, Identifier id) throws IOException { out.value(id.toString()); }\n                     public Identifier read(JsonReader in) throws IOException { return Identifier.parse(in.nextString()); }\n                 }"
+    },
+    {
+     "condition": null,
+     "code": "new Identifier.Serializer()"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.1 -> 1.21.2",
+     "names": [
+      "parse",
+      "read",
+      "toString",
+      "value",
+      "write"
+     ]
+    },
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "toString"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "Serializer",
+      "parse",
+      "read",
+      "toString",
+      "value"
+     ]
+    }
+   ],
+   "older": "new Identifier.Serializer()",
+   "newer": "new TypeAdapter<Identifier>() {\n                     public void write(JsonWriter out, Identifier id) throws IOException { out.value(id.toString()); }\n                     public Identifier read(JsonReader in) throws IOException { return Identifier.parse(in.nextString()); }\n                 }",
+   "removed": [
+    "Serializer"
+   ],
+   "added": [
+    "IOException",
+    "JsonReader",
+    "JsonWriter",
+    "TypeAdapter",
+    "nextString",
+    "out",
+    "parse",
+    "read",
+    "toString",
+    "value",
+    "write"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfig.java",
+   "line": 174,
+   "method": "textField",
+   "condition": ">= 1.21 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21",
+     "code": "isError()"
+    },
+    {
+     "condition": null,
+     "code": "error().isPresent()"
+    }
+   ],
+   "boundary": [
+    "1.20.6 -> 1.21"
+   ],
+   "window": [
+    "1.20.6 -> 1.21",
+    "1.21 -> 1.21.1"
+   ],
+   "confirmed": [],
+   "older": "error().isPresent()",
+   "newer": "isError()",
+   "removed": [
+    "error",
+    "isPresent"
+   ],
+   "added": [
+    "isError"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfig.java",
+   "line": 214,
+   "method": "getEnumTranslatableText",
+   "condition": "< 1.21.11",
+   "kind": "version",
+   "single": true,
+   "branches": [
+    {
+     "condition": "< 1.21.11",
+     "code": "//if (value instanceof OptionEnum option) return option.getCaption();"
+    }
+   ],
+   "boundary": [
+    "1.21.10 -> 1.21.11"
+   ],
+   "window": [
+    "1.21.10 -> 1.21.11"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfig.java",
+   "line": 312,
+   "method": "(class body)",
+   "condition": "< 1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.21.6",
+     "code": "/*? fabric {*/ @Environment(EnvType.CLIENT) /*?} else {*/ /*@OnlyIn(Dist.CLIENT) *//*?}*/\n    public static Screen getScreen(Screen parent, String modid) {"
+    },
+    {
+     "condition": null,
+     "code": "public static MidnightConfigScreen getScreen(Screen parent, String modid) {"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ],
+   "confirmed": [],
+   "older": "/*? fabric {*/ @Environment(EnvType.CLIENT) /*?} else {*/ /*@OnlyIn(Dist.CLIENT) *//*?}*/\n    public static Screen getScreen(Screen parent, String modid) {",
+   "newer": "public static MidnightConfigScreen getScreen(Screen parent, String modid) {",
+   "removed": [
+    "CLIENT",
+    "Dist",
+    "EnvType",
+    "Environment",
+    "OnlyIn",
+    "fabric"
+   ],
+   "added": [
+    "MidnightConfigScreen"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigListWidget.java",
+   "line": 11,
+   "method": "(imports)",
+   "condition": ">= 1.21.6 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.6",
+     "code": "import net.minecraft.client.renderer.RenderPipelines;"
+    },
+    {
+     "condition": null,
+     "code": "import net.minecraft.client.renderer.RenderType;"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8"
+   ],
+   "confirmed": [],
+   "older": "import net.minecraft.client.renderer.RenderType;",
+   "newer": "import net.minecraft.client.renderer.RenderPipelines;",
+   "removed": [
+    "RenderType"
+   ],
+   "added": [
+    "RenderPipelines"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigListWidget.java",
+   "line": 26,
+   "method": "(class body)",
+   "condition": ">= 1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.4",
+     "code": "scrollBarX()"
+    },
+    {
+     "condition": null,
+     "code": "getScrollbarPosition()"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "getScrollbarPosition",
+      "scrollBarX"
+     ]
+    }
+   ],
+   "older": "getScrollbarPosition()",
+   "newer": "scrollBarX()",
+   "removed": [
+    "getScrollbarPosition"
+   ],
+   "added": [
+    "scrollBarX"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigListWidget.java",
+   "line": 36,
+   "method": "extractListSeparators",
+   "condition": ">= 1.21.6 | >= 1.21.4",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.6",
+     "code": "RenderPipelines.GUI_TEXTURED,"
+    },
+    {
+     "condition": ">= 1.21.4",
+     "code": "RenderType::guiTextured,"
+    }
+   ],
+   "boundary": [
+    "1.21.5 -> 1.21.6",
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.5 -> 1.21.6",
+    "1.21.6 -> 1.21.7",
+    "1.21.7 -> 1.21.8",
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.5 -> 1.21.6",
+     "names": [
+      "guiTextured"
+     ]
+    },
+    {
+     "step": "1.21.4 -> 1.21.5",
+     "names": [
+      "RenderPipelines"
+     ]
+    }
+   ],
+   "older": "RenderType::guiTextured,",
+   "newer": "RenderPipelines.GUI_TEXTURED,",
+   "removed": [
+    "RenderType",
+    "guiTextured"
+   ],
+   "added": [
+    "GUI_TEXTURED",
+    "RenderPipelines"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigScreen.java",
+   "line": 28,
+   "method": "(imports)",
+   "condition": ">= 1.21.9",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "import net.minecraft.client.input.KeyEvent;"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigScreen.java",
+   "line": 32,
+   "method": "(imports)",
+   "condition": ">= 26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.3",
+     "code": "import org.lwjgl.sdl.*;\nimport org.lwjgl.system.MemoryUtil;\nimport org.lwjgl.system.Pointer;"
+    },
+    {
+     "condition": null,
+     "code": "import org.lwjgl.util.tinyfd.TinyFileDialogs;\nimport org.lwjgl.PointerBuffer;\nimport java.util.concurrent.CompletableFuture;\nimport net.minecraft.util.Util;"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [],
+   "older": "import org.lwjgl.util.tinyfd.TinyFileDialogs;\nimport org.lwjgl.PointerBuffer;\nimport java.util.concurrent.CompletableFuture;\nimport net.minecraft.util.Util;",
+   "newer": "import org.lwjgl.sdl.*;\nimport org.lwjgl.system.MemoryUtil;\nimport org.lwjgl.system.Pointer;",
+   "removed": [
+    "CompletableFuture",
+    "PointerBuffer",
+    "TinyFileDialogs",
+    "Util",
+    "concurrent",
+    "java",
+    "minecraft",
+    "net",
+    "tinyfd",
+    "util"
+   ],
+   "added": [
+    "MemoryUtil",
+    "Pointer",
+    "sdl",
+    "system"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigScreen.java",
+   "line": 89,
+   "method": "tick",
+   "condition": "< 1.21.4 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": "< 1.21.4",
+     "code": "list.getScrollAmount()"
+    },
+    {
+     "condition": null,
+     "code": "list.scrollAmount()"
+    }
+   ],
+   "boundary": [
+    "1.21.3 -> 1.21.4"
+   ],
+   "window": [
+    "1.21.1 -> 1.21.2",
+    "1.21.2 -> 1.21.3",
+    "1.21.3 -> 1.21.4",
+    "1.21.4 -> 1.21.5"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.3 -> 1.21.4",
+     "names": [
+      "getScrollAmount"
+     ]
+    }
+   ],
+   "older": "list.getScrollAmount()",
+   "newer": "list.scrollAmount()",
+   "removed": [
+    "getScrollAmount"
+   ],
+   "added": [
+    "scrollAmount"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigScreen.java",
+   "line": 115,
+   "method": "(class body)",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "public boolean keyPressed(KeyEvent input) {\n        return this.tabNavigation.keyPressed(input) || super.keyPressed(input);\n    }"
+    },
+    {
+     "condition": null,
+     "code": "public boolean keyPressed(int key, int scanCode, int modifiers) {\n        return this.tabNavigation.keyPressed(key) || super.keyPressed(key, scanCode, modifiers);\n    }"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [
+    {
+     "step": "1.21.8 -> 1.21.9",
+     "names": [
+      "KeyEvent"
+     ]
+    }
+   ],
+   "older": "public boolean keyPressed(int key, int scanCode, int modifiers) {\n        return this.tabNavigation.keyPressed(key) || super.keyPressed(key, scanCode, modifiers);\n    }",
+   "newer": "public boolean keyPressed(KeyEvent input) {\n        return this.tabNavigation.keyPressed(input) || super.keyPressed(input);\n    }",
+   "removed": [
+    "key",
+    "modifiers",
+    "scanCode"
+   ],
+   "added": [
+    "KeyEvent",
+    "input"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigScreen.java",
+   "line": 143,
+   "method": "init",
+   "condition": ">= 26.2-pre.3 | >= 26.1-pre.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.2-pre.3",
+     "code": "tabNavigation.arrangeElements(this.width);"
+    },
+    {
+     "condition": ">= 26.1-pre.3",
+     "code": "tabNavigation.updateWidth(this.width);\n        tabNavigation.arrangeElements();"
+    },
+    {
+     "condition": null,
+     "code": "tabNavigation.setWidth(this.width);\n        tabNavigation.arrangeElements();"
+    }
+   ],
+   "boundary": [
+    "26.1.2 -> 26.2",
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "26.1 -> 26.1.1",
+    "26.1.1 -> 26.1.2",
+    "26.1.2 -> 26.2",
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigScreen.java",
+   "line": 215,
+   "method": "updateList",
+   "condition": ">= 26.1-pre.1 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.1-pre.1",
+     "code": "textField.setResponder(s -> {if (!processor.test(s)) textField.setValue(info.tempValue);});"
+    },
+    {
+     "condition": null,
+     "code": "textField.setFilter(processor);"
+    }
+   ],
+   "boundary": [
+    "1.21.11 -> 26.1"
+   ],
+   "window": [
+    "1.21.11 -> 26.1"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/config/MidnightConfigScreen.java",
+   "line": 310,
+   "method": "openFilePicker",
+   "condition": ">= 26.3 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 26.3",
+     "code": "try (MemoryStack stack = MemoryStack.stackPush()) {\n            SDL_DialogFileFilter.Buffer filters = SDL_DialogFileFilter.malloc(1, stack);\n            filters.get(0).name(stack.UTF8(Component.translatable(translationPrefix + info.fieldName + \".fileFilter\").getString())).pattern(stack.UTF8(Arrays.stream(info.entry.fileExtensions()).reduce((total, ext) -> total + \";\" + ext).orElse(\"\")));\n\n            SDL_DialogFileCallbackI onConfirm = (userdata, filelist, filter) -> {\n                if (filelist != MemoryUtil.NULL) {\n                    long ptr = filelist;\n                    long fptr = MemoryUtil.memGetAddress(filelist);\n                    List<String> files = new ArrayList<>();\n                    while (fptr != MemoryUtil.NULL) {\n                        files.add(MemoryUtil.memUTF8(fptr));\n                        ptr += Pointer.POINTER_SIZE;\n                        fptr = MemoryUtil.memGetAddress(ptr);\n                    }\n                    if (files.isEmpty()) return;\n                    if (multiSelect) {\n                        var list = (List<?>) info.value;\n                        list.clear();\n                        for (int i = 0; i < files.size(); i++) {\n                            info.writeList(i, files.get(i));\n                        }\n                        info.listIndex = 0;\n                        info.tempValue = info.toTemporaryValue();\n                    }\n                    else {\n                        info.setValue(files.get(0));\n                    }\n\n                    updateList();\n                }\n            };\n            if (info.entry.selectionMode() == JFileChooser.DIRECTORIES_ONLY) {\n                SDLDialog.SDL_ShowOpenFolderDialog(onConfirm, MemoryUtil.NULL, MemoryUtil.NULL, info.tempValue, multiSelect);\n            } else {\n                SDLDialog.SDL_ShowOpenFileDialog(onConfirm, MemoryUtil.NULL, MemoryUtil.NULL, filters, info.tempValue, multiSelect);\n            }\n        }"
+    },
+    {
+     "condition": null,
+     "code": "CompletableFuture.runAsync(() -> {\n            try (MemoryStack stack = MemoryStack.stackPush()) {\n                String title = Component.translatable(translationPrefix + info.fieldName + \".fileChooser\").getString();\n                String result;\n                if (info.entry.selectionMode() == JFileChooser.DIRECTORIES_ONLY) {\n                    result = TinyFileDialogs.tinyfd_selectFolderDialog(title, info.tempValue);\n                } else {\n                    PointerBuffer pointers = stack.mallocPointer(info.entry.fileExtensions().length);\n                    for (String filter : info.entry.fileExtensions())\n                        pointers.put(stack.UTF8(\"*.\" + filter));\n                    pointers.flip();\n                    result = TinyFileDialogs.tinyfd_openFileDialog(title, info.tempValue, pointers, Component.translatable(translationPrefix + info.fieldName + \".fileFilter\").getString(), multiSelect);\n                }\n\n                if (result != null) {\n                    List<String> files = List.of(result.split(\"\\\\|\"));\n                    if (files.isEmpty()) return;\n                    if (multiSelect) {\n                        var list = (List<?>) info.value;\n                        list.clear();\n                        for (int i = 0; i < files.size(); i++) {\n                            info.writeList(i, files.get(i));\n                        }\n                        info.listIndex = 0;\n                        info.tempValue = info.toTemporaryValue();\n                    } else {\n                        info.setValue(files.get(0));\n                    }\n\n                    updateList();\n                }\n            }\n        }, Util.backgroundExecutor());"
+    }
+   ],
+   "boundary": [
+    "26.2 -> 26.3"
+   ],
+   "window": [
+    "26.2 -> 26.3"
+   ],
+   "confirmed": [
+    {
+     "step": "26.2 -> 26.3",
+     "names": [
+      "add",
+      "name"
+     ]
+    }
+   ],
+   "older": "CompletableFuture.runAsync(() -> {\n            try (MemoryStack stack = MemoryStack.stackPush()) {\n                String title = Component.translatable(translationPrefix + info.fieldName + \".fileChooser\").getString();\n                String result;\n                if (info.entry.selectionMode() == JFileChooser.DIRECTORIES_ONLY) {\n                    result = TinyFileDialogs.tinyfd_selectFolderDialog(title, info.tempValue);\n                } else {\n                    PointerBuffer pointers = stack.mallocPointer(info.entry.fileExtensions().length);\n                    for (String filter : info.entry.fileExtensions())\n                        pointers.put(stack.UTF8(\"*.\" + filter));\n                    pointers.flip();\n                    result = TinyFileDialogs.tinyfd_openFileDialog(title, info.tempValue, pointers, Component.translatable(translationPrefix + info.fieldName + \".fileFilter\").getString(), multiSelect);\n                }\n\n                if (result != null) {\n                    List<String> files = List.of(result.split(\"\\\\|\"));\n                    if (files.isEmpty()) return;\n                    if (multiSelect) {\n                        var list = (List<?>) info.value;\n                        list.clear();\n                        for (int i = 0; i < files.size(); i++) {\n                            info.writeList(i, files.get(i));\n                        }\n                        info.listIndex = 0;\n                        info.tempValue = info.toTemporaryValue();\n                    } else {\n                        info.setValue(files.get(0));\n                    }\n\n                    updateList();\n                }\n            }\n        }, Util.backgroundExecutor());",
+   "newer": "try (MemoryStack stack = MemoryStack.stackPush()) {\n            SDL_DialogFileFilter.Buffer filters = SDL_DialogFileFilter.malloc(1, stack);\n            filters.get(0).name(stack.UTF8(Component.translatable(translationPrefix + info.fieldName + \".fileFilter\").getString())).pattern(stack.UTF8(Arrays.stream(info.entry.fileExtensions()).reduce((total, ext) -> total + \";\" + ext).orElse(\"\")));\n\n            SDL_DialogFileCallbackI onConfirm = (userdata, filelist, filter) -> {\n                if (filelist != MemoryUtil.NULL) {\n                    long ptr = filelist;\n                    long fptr = MemoryUtil.memGetAddress(filelist);\n                    List<String> files = new ArrayList<>();\n                    while (fptr != MemoryUtil.NULL) {\n                        files.add(MemoryUtil.memUTF8(fptr));\n                        ptr += Pointer.POINTER_SIZE;\n                        fptr = MemoryUtil.memGetAddress(ptr);\n                    }\n                    if (files.isEmpty()) return;\n                    if (multiSelect) {\n                        var list = (List<?>) info.value;\n                        list.clear();\n                        for (int i = 0; i < files.size(); i++) {\n                            info.writeList(i, files.get(i));\n                        }\n                        info.listIndex = 0;\n                        info.tempValue = info.toTemporaryValue();\n                    }\n                    else {\n                        info.setValue(files.get(0));\n                    }\n\n                    updateList();\n                }\n            };\n            if (info.entry.selectionMode() == JFileChooser.DIRECTORIES_ONLY) {\n                SDLDialog.SDL_ShowOpenFolderDialog(onConfirm, MemoryUtil.NULL, MemoryUtil.NULL, info.tempValue, multiSelect);\n            } else {\n                SDLDialog.SDL_ShowOpenFileDialog(onConfirm, MemoryUtil.NULL, MemoryUtil.NULL, filters, info.tempValue, multiSelect);\n            }\n        }",
+   "removed": [
+    "CompletableFuture",
+    "PointerBuffer",
+    "TinyFileDialogs",
+    "Util",
+    "backgroundExecutor",
+    "flip",
+    "length",
+    "mallocPointer",
+    "pointers",
+    "put",
+    "result",
+    "runAsync",
+    "split",
+    "tinyfd_openFileDialog",
+    "tinyfd_selectFolderDialog",
+    "title"
+   ],
+   "added": [
+    "ArrayList",
+    "Arrays",
+    "Buffer",
+    "MemoryUtil",
+    "NULL",
+    "POINTER_SIZE",
+    "Pointer",
+    "SDLDialog",
+    "SDL_DialogFileCallbackI",
+    "SDL_DialogFileFilter",
+    "SDL_ShowOpenFileDialog",
+    "SDL_ShowOpenFolderDialog",
+    "add",
+    "ext",
+    "filelist",
+    "filters",
+    "fptr",
+    "malloc",
+    "memGetAddress",
+    "memUTF8",
+    "name",
+    "onConfirm",
+    "orElse",
+    "pattern",
+    "ptr",
+    "reduce",
+    "stream",
+    "total",
+    "userdata"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/util/PlatformFunctions.java",
+   "line": 8,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import net.fabricmc.api.EnvType;\nimport net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;\nimport net.fabricmc.loader.api.FabricLoader;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/util/PlatformFunctions.java",
+   "line": 13,
+   "method": "(imports)",
+   "condition": "neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "neoforge",
+     "code": "import eu.midnightdust.core.MidnightLib;\nimport net.neoforged.fml.ModList;\nimport net.neoforged.fml.loading.FMLEnvironment;\nimport net.neoforged.fml.loading.FMLPaths;"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/util/PlatformFunctions.java",
+   "line": 45,
+   "method": "(class body)",
+   "condition": ">= 1.21.9 | else",
+   "kind": "version",
+   "single": false,
+   "branches": [
+    {
+     "condition": ">= 1.21.9",
+     "code": "return FMLEnvironment.getDist().isClient();"
+    },
+    {
+     "condition": null,
+     "code": "/*return FMLEnvironment.dist.isClient();\n        */"
+    }
+   ],
+   "boundary": [
+    "1.21.8 -> 1.21.9"
+   ],
+   "window": [
+    "1.21.8 -> 1.21.9",
+    "1.21.9 -> 1.21.10"
+   ],
+   "confirmed": [],
+   "older": "/*return FMLEnvironment.dist.isClient();\n        */",
+   "newer": "return FMLEnvironment.getDist().isClient();",
+   "removed": [
+    "dist"
+   ],
+   "added": [
+    "getDist"
+   ]
+  },
+  {
+   "file": "src/main/java/eu/midnightdust/lib/util/PlatformFunctions.java",
+   "line": 21,
+   "method": "(class body)",
+   "condition": "fabric | neoforge",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "public static String getPlatformName() {\n        return \"fabric\";\n    }\n    public static Path getConfigDirectory() {\n        return FabricLoader.getInstance().getConfigDir();\n    }\n    public static boolean isClientEnv() {\n        return FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;\n    }\n    public static boolean isModLoaded(String modid) {\n        return FabricLoader.getInstance().isModLoaded(modid);\n    }\n    public static void registerCommand(LiteralArgumentBuilder<CommandSourceStack> command) {\n        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated, registrationEnvironment) -> dispatcher.register(command));\n    }"
+    },
+    {
+     "condition": "neoforge",
+     "code": "public static String getPlatformName() {\n        return \"neoforge\";\n    }\n    public static Path getConfigDirectory() {\n        return FMLPaths.CONFIGDIR.get();\n    }\n    public static boolean isClientEnv() {\n        //? if >= 1.21.9 {\n        return FMLEnvironment.getDist().isClient();\n        //?} else {\n         /*return FMLEnvironment.dist.isClient();\n        *///?}\n    }\n    public static boolean isModLoaded(String modid) {\n        return ModList.get().isLoaded(modid);\n    }\n    public static void registerCommand(LiteralArgumentBuilder<CommandSourceStack> command) {\n        MidnightLib.commands.add(command);\n    }"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/test/java/eu/midnightdust/test/config/MidnightConfigExample.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import com.google.common.collect.Lists;\nimport eu.midnightdust.lib.config.MidnightConfigListWidget;\nimport eu.midnightdust.lib.config.MidnightConfigScreen;\nimport eu.midnightdust.test.MidnightLibExtras;\nimport eu.midnightdust.lib.config.MidnightConfig;\nimport net.fabricmc.loader.api.FabricLoader;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.util.StringRepresentable;\n\nimport javax.swing.*;\nimport java.text.SimpleDateFormat;\nimport java.util.ArrayList;\nimport java.util.Date;\nimport java.util.List;\nimport java.util.Objects;\nimport java.util.function.Supplier;\n\n/** Every option in a MidnightConfig class has to be public and static, so we can access it from other classes.\n * The config class also has to extend MidnightConfig\n */\n@SuppressWarnings({\"unused\", \"DefaultAnnotationParam\"})\npublic class MidnightConfigExample extends MidnightConfig {\n    public static final String TEXT = \"text\";\n    public static final String NUMBERS = \"numbers\";\n    public static final String SLIDERS = \"sliders\";\n    public static final String LISTS = \"lists\";\n    public static final String FILES = \"files\";\n    public static final String CONDITIONS = \"conditions\";\n    public static final String EXTRAS = \"extras\";\n\n    @Comment(category = TEXT, name = \"§bUTC Time: %s\")\n    public static Supplier<Object[]> utcTime = () -> {                     // use the return value to format the comment\n        Date now = new Date();\n        SimpleDateFormat sdf = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\");\n        return new Object[]{sdf.format(now)};\n    };\n    @Comment(category = TEXT, name = \"OS: §6%s, Arch: §6%s\")\n    public static String[] platformInfo = {\n            System.getProperty(\"os.name\"),\n            System.getProperty(\"os.arch\")\n    };\n    @Comment(category = TEXT, name = \"Minecraft %s, %s mods loaded\")\n    public static List<String> gameInfo = List.of(\n        FabricLoader.getInstance().getRawGameVersion(),\n        String.valueOf(FabricLoader.getInstance().getAllMods().size())\n    );\n    @Comment(category = TEXT) public static Comment text1;                       // Comments are rendered like an option without a button and are excluded from the config file\n    @Comment(category = TEXT, centered = true) public static Comment text2;      // Centered comments are the same as normal ones - just centered!\n    @Comment(category = TEXT) public static Comment spacer1;                     // Comments containing the word \"spacer\" will just appear as a blank line\n    @Entry(category = TEXT) public static boolean showInfo = true;               // Example for a boolean option\n    @Entry(category = TEXT, name=\"I am a (non-primitive) Boolean\") public static Boolean nonPrimitive = true;           // Example for a non-primative boolean option\n    @Entry(category = TEXT) public static String name = \"Hello World!\";          // Example for a string option, which is in a category!\n    @Entry(category = TEXT, width = 7, min = 7, isColor = true, name = \"I am a color!\") public static String titleColor = \"#ffffff\"; // The isColor property adds a color chooser for a hexadecimal color\n    @Entry(category = TEXT, idMode = 0) public static Identifier id = Identifier.withDefaultNamespace(\"diamond\");          // Example for an identifier with matching items displayed next to it!\n    @Entry(category = TEXT) public static ModPlatform modPlatform = ModPlatform.FABRIC;   // Example for an enum option\n    public enum ModPlatform {                               // Enums allow the user to cycle through predefined options\n        QUILT, FABRIC, FORGE, NEOFORGE, VANILLA\n    }\n    @Entry(category = TEXT) public static GraphicsSteps graphicsSteps = GraphicsSteps.FABULOUS;   // Example for an enum option with TranslatableOption\n\n    @Comment(category = TEXT, name = \"§nMidnightLib Wiki\", centered = true, url = \"https://www.midnightdust.eu/wiki/midnightlib/\") public static Comment wiki; // Example for a comment with a url\n\n    @Ent"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/test/java/eu/midnightdust/test/MidnightLibExtras.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import com.google.common.collect.Lists;\nimport com.mojang.blaze3d.platform.InputConstants;\nimport eu.midnightdust.lib.config.EntryInfo;\nimport eu.midnightdust.lib.config.MidnightConfigListWidget;\nimport eu.midnightdust.lib.config.MidnightConfigScreen;\nimport net.minecraft.ChatFormatting;\nimport net.minecraft.client.KeyMapping;\nimport net.minecraft.client.Minecraft;\nimport net.minecraft.client.gui.GuiGraphicsExtractor;\nimport net.minecraft.client.gui.components.AbstractButton;\nimport net.minecraft.client.gui.components.Button;\nimport net.minecraft.client.gui.components.SpriteIconButton;\nimport net.minecraft.client.gui.components.Tooltip;\nimport net.minecraft.client.input.KeyEvent;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.network.chat.MutableComponent;\nimport net.minecraft.resources.Identifier;\nimport org.jetbrains.annotations.Nullable;\n\n/*\n Pre-made additional (niche) functionality that is not included in MidnightLib to keep the file size small.\n Feel free to copy the parts you need :)\n*/\npublic class MidnightLibExtras {\n    public static class KeybindButton extends Button.Plain {\n        public static Button focusedButton;\n\n        public static void add(KeyMapping binding, MidnightConfigListWidget list, MidnightConfigScreen screen) {\n            KeybindButton editButton = new KeybindButton(screen.width - 185, 0, 150, 20, binding);\n            SpriteIconButton resetButton = SpriteIconButton.builder(Component.translatable(\"controls.reset\"), (button -> {\n                binding.setKey(binding.getDefaultKey());\n                screen.updateList();\n            }), true).sprite(Identifier.fromNamespaceAndPath(\"midnightlib\",\"icon/reset\"), 12, 12).size(20, 20).build();\n            resetButton.setPosition(screen.width - 205 + 150 + 25, 0);\n            editButton.resetButton = resetButton;\n            editButton.updateMessage(false);\n            EntryInfo info = new EntryInfo(null, screen.modid);\n\n            list.addButton(Lists.newArrayList(editButton, resetButton), Component.translatable(binding.getName()), info);\n        }\n\n        private final KeyMapping binding;\n        private @Nullable AbstractButton resetButton;\n        public KeybindButton(int x, int y, int width, int height, KeyMapping binding) {\n            super(x, y, width, height, binding.getTranslatedKeyMessage(), (button) -> {\n                ((KeybindButton) button).updateMessage(true);\n                focusedButton = button;\n            }, (textSupplier) -> binding.isUnbound() ? Component.translatable(\"narrator.controls.unbound\", binding.getName()) : Component.translatable(\"narrator.controls.bound\", binding.getName(), textSupplier.get()));\n            this.binding = binding;\n            updateMessage(false);\n        }\n\n        @Override\n        public boolean keyPressed(KeyEvent input) {\n            if (focusedButton == this) {\n                if (input.key() == 256) {\n                    this.binding.setKey(InputConstants.UNKNOWN);\n                } else {\n                    this.binding.setKey(InputConstants.getKey(input));\n                }\n                updateMessage(false);\n\n                focusedButton = null;\n                return true;\n            }\n            return super.keyPressed(input);\n        }\n\n        public void updateMessage(boolean focused) {\n            boolean hasConflicts = false;\n            MutableComponent conflictingBindings = Component.empty();\n            if (focused) this.setMessage(Component.literal(\"> \").append(this.binding.getTranslatedKeyMessage().copy().withStyle(ChatFormatting.WHITE, ChatFormatting.UNDERLINE)).append(\" <\").withStyle(ChatFormatting.YELLOW));\n            else {\n                this.setMessage(this.binding.getTranslatedKeyMessage());\n\n                if (!this.binding.isUnbound()) {\n                    for(KeyMapping keyBinding : Minecraft.getInstance().options.keyMappings) {\n                        if (keyBinding != this.binding && this.binding.equals(keyBinding)) {\n                   "
+    }
+   ],
+   "boundary": [],
+   "window": []
+  },
+  {
+   "file": "src/test/java/eu/midnightdust/test/MidnightLibTest.java",
+   "line": 3,
+   "method": "(imports)",
+   "condition": "fabric",
+   "kind": "constant",
+   "single": false,
+   "branches": [
+    {
+     "condition": "fabric",
+     "code": "import eu.midnightdust.lib.config.MidnightConfig;\nimport eu.midnightdust.test.config.MidnightConfigExample;\nimport net.fabricmc.api.ModInitializer;\n\npublic class MidnightLibTest implements ModInitializer {\n    @Override\n    public void onInitialize() {\n        MidnightConfig.register(\"modid\", MidnightConfigExample.class);\n    }\n}"
+    }
+   ],
+   "boundary": [],
+   "window": []
+  }
+ ]
+}
