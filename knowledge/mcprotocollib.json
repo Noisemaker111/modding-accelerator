@@ -1,0 +1,7 @@
+{
+  "note": "The bot server-check joins with (tools/servercheck/ModaccelServerCheck.java): MCProtocolLib from GeyserMC, one release per Minecraft version, because each version speaks its own protocol. minecraft is the exact server version the release joins; a version missing here is reported as unchecked with this list. repositories are searched in order (main lists some modules whose jars live only in maven-releases). Only versions the bot has been seen joining are listed: adding one means running server-check on that version first.",
+  "repositories": ["https://repo.opencollab.dev/maven-releases/", "https://repo.opencollab.dev/main/"],
+  "releases": [
+    { "minecraft": "26.3", "version": "26.3-2" }
+  ]
+}

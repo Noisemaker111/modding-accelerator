@@ -1,0 +1,23 @@
+# AgentCraft against the real Capy backend, with your own key. NOT run by modaccel or CI: a real run uses your
+# Capy account and its credits. To run it, give the key one of two ways (never in a scenario or in git):
+#   environment:   set CAPY_API_KEY=capy_...          (PowerShell: $env:CAPY_API_KEY = "capy_...")
+#   or a line      CAPY_API_KEY=capy_...   in <plugin checkout>/.modaccel/secrets.properties (gitignored)
+# then: modaccel server-check --root <agentcraft checkout> --file bench/server-plugins/agentcraft-live.scenario
+# The key is passed to the server as ${secret:CAPY_API_KEY} and shows only in that masked form in receipts and logs.
+# Without it, the run fails at once with "needs secret CAPY_API_KEY" and nothing passes.
+server-env AGENTCRAFT_BACKEND=capy
+server-env CAPY_API_KEY=${secret:CAPY_API_KEY}
+
+expect-log ~Enabling AgentCraft v0.1.0~ within 1s
+join
+rcon op ${bot}
+
+command /agent spawn Claude Opus 5.5
+expect-chat ~Summoned Claude Opus 5\.5 as @claude~ within 5s
+expect-entity mannequin named ~^Claude Opus 5\.5$~ near 3 within 5s
+
+say @claude reply with the single word capybara and nothing else
+expect-chat ~Claude Opus 5\.5 is on it \(Capy thread \w+\)~ within 30s
+expect-chat ~^<Claude Opus 5\.5> .*(?i:capybara)~ within 600s
+expect-inventory written_book ~(?i:capybara)~ within 10s
+expect-no-log ~at dev\.agentcraft\.|\[AgentCraft\] .*(?i:error|exception)|Could not pass event .* to AgentCraft~

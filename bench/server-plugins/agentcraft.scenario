@@ -1,0 +1,32 @@
+# AgentCraft on a real Paper server, with a bot player, against AgentCraft's own mock Capy backend
+# (test/mock-capy.mjs in its repo: a scripted run with two messages, "Looking into it, one sec!" then "Done! ...").
+# What its README and test/e2e/bot.mjs say an agent does, and what this checks the plugin really did:
+#   /agent spawn summons a mannequin with the model's name and an @handle under it;
+#   an @handle mention in chat starts a thread on the backend, with the model id the plugin picked;
+#   the speech bubble above the agent shows it thinking; the reply comes back in chat;
+#   and every message of the run lands in the player's inventory as a written book.
+needs node
+background capy: node test/mock-capy.mjs ${port:capy}
+wait-port ${port:capy} within 15s
+server-env AGENTCRAFT_BACKEND=capy
+server-env CAPY_API_KEY=capy_mock
+server-env CAPY_BASE_URL=http://127.0.0.1:${port:capy}/api/v1
+
+expect-log ~Enabling AgentCraft v0.1.0~ within 1s
+join
+rcon op ${bot}
+
+command /agent spawn Claude Opus 5.5
+expect-chat ~Summoned Claude Opus 5\.5 as @claude~ within 5s
+expect-entity mannequin named ~^Claude Opus 5\.5$~ near 3 within 5s
+expect-entity mannequin named ~^@claude$~ near 3 within 5s
+
+say @claude build me a capybara fan site
+expect-chat ~Claude Opus 5\.5 is on it \(Capy thread jam_\w+\)~ within 10s
+expect-http GET http://127.0.0.1:${port:capy}/_log ~"modelId":"claude-code/claude-opus-5-5"~ within 5s
+expect-entity text_display named ~thinking~ near 6 within 10s
+expect-chat ~^<Claude Opus 5\.5> \*?\*?Done!~ within 15s
+expect-inventory written_book ~Looking into it, one sec!~ within 5s
+expect-inventory written_book ~Done! I read your note~ within 5s
+# No stack frame from the plugin and no error it logged, anywhere in the server log.
+expect-no-log ~at dev\.agentcraft\.|\[AgentCraft\] .*(?i:error|exception)|Could not pass event .* to AgentCraft~

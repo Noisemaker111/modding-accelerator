@@ -279,6 +279,76 @@ empty-cache setup speed and Forge framebuffer checks remain unfinished.
 SHA-256 checksums locally; nothing is published. The older Windows lanes described below remain available through their
 existing verbs (`ui`, `node`, `world`, `mp`, and single-dash `port` options).
 
+### Real Stonecutter mods in CI
+
+`bench/real-mods/manifest.json` pins real mods (repo, commit, `--project`, loader). In CI,
+`python bench/real-mods/run.py --compile-nodes --only ID` clones one entry fresh and runs only
+modaccel on it: doctor, then setup and compile of each listed node. No game is started.
+
+- **Every PR** (`portable.yml`, job `stonecutter-sample`, must finish in under 5 minutes): three
+  representative nodes, each its own job on Windows, Linux and macOS: Diorama `:26.3`, Diorama
+  `:1.21.1` and In-Game Account Switcher `:26.3-fabric`. The Gradle home is cached per node and OS.
+- **Nightly and on demand** (`stonecutter-nightly.yml`, job `stonecutter-nodes`, not a merge
+  blocker): every node of Diorama (22) and In-Game Account Switcher (12), on all three OS. Moved
+  off PRs because a cold run takes 10-40 minutes per mod and OS.
+
+A node that fails upstream is listed under `known_failures` with the exact error it must show;
+a different error, or the node passing, is reported. The full game loop of `run.py` (ui-check,
+world-check, reload, eval) is not run in CI.
+
+### Mods: the mod's own effect, asserted in the real client
+
+Two local checks (not in PR CI: they start the game) assert what a ported mod itself does, through
+`ui-check` and `eval` only, and each breaks the mod on purpose in a copy and requires the same check to fail:
+
+- `java tools/tests/AppleSkinHudCheck.java . build/distributions/modaccel.jar <AppleSkin 1.21.6 port>`:
+  the player is set to 2 health, food 17, saturation 0; the health AppleSkin's HUD estimates a golden
+  carrot restores (the flashing hearts) must match what natural regeneration really heals after eating
+  it, within 0.01 (seen: +12.000002 estimated, +12.000001 healed). Break: its slow-regeneration step
+  estimates 1.5 instead of 1 → +13.000002, fails. 75 s with a cold client, 2 minutes for the never-launched broken copy.
+- `java tools/tests/ZombieAiCheck.java . build/distributions/modaccel.jar <ZombieApocalypseAddon 1.21.4 port>`:
+  a summoned zombie must carry the mod's goals (ZombieEatFoodGoal, ZombieMountZombieHorseGoal,
+  ZombieHuntGoal) and scaling tag, and after the mod's `/zhunt on` and `/zhunt berserker on` it must
+  target a pig three blocks away (a vanilla zombie never does). Break: no goal injection → fails.
+  About 50 s warm, 3 minutes for the never-launched broken copy.
+
+The server-check bot is not used for these: MCProtocolLib has no 1.21.4 release, and a vanilla bot
+joining a modded NeoForge server is unverified. The first launch of a never-launched NeoForge copy is
+refused once as "Project changed during verification" (its launch writes files its own classpath
+names); both checks launch again once when that exact message appears.
+
+### Plugins on a real Paper server (`server-check`)
+
+`modaccel server-check --root PLUGIN [--file SCENARIO]` builds the plugin jar with its own task,
+downloads the real Paper server for the plugin's Minecraft version from PaperMC's API (once per
+version, SHA-256 checked, cached in `~/.modaccel/servers`), starts it headless in
+offline mode on 127.0.0.1 with a flat world on a fixed seed, and joins a bot player. **modaccel
+writes `eula=true` for that server only**: it is a throwaway local test server that nobody else can
+join, and the world is wiped every run. The bot is MCProtocolLib; it speaks Minecraft 26.3 only
+today (`knowledge/mcprotocollib.json` lists the versions it has been seen joining).
+
+A scenario is one step per line (`modaccel help server-check` lists them): `join`, `say`,
+`command /...`, `rcon ...`, helper processes (`background NAME: CMD`, e.g. a mock backend) and
+`server-env` for the server's environment, then expect steps on what really happened: chat, titles
+and the action bar the bot receives, the server log, an HTTP endpoint, entities near the bot, blocks,
+the bot's inventory (book pages included) and position. `within Ns` waits until it is true; `for Ns`
+requires it the whole time. Every expect step must pass, a scenario with none fails, and a failure
+says what was expected and what came instead.
+
+Secrets: write `${secret:NAME}` in the scenario and give the value as an environment variable or a
+line `NAME=value` in the plugin checkout's `.modaccel/secrets.properties` (modaccel writes a
+`.gitignore` there so the folder stays out of git). Values are masked as `${secret:NAME}` in
+receipts, logs and the server's files; a missing one fails at once with "needs secret NAME".
+For AgentCraft's real Capy backend, set `CAPY_API_KEY` and run
+`bench/server-plugins/agentcraft-live.scenario` (not run by modaccel or CI: it spends your credits).
+
+Merge gate: the `server-check` CI job runs `tools/tests/ServerCheckFixtures.java` on a fresh pinned
+AgentCraft clone on Windows, Linux and macOS: its scenario cold and warm, the bot's own scenario
+(`tools/tests/server-check-bot.scenario`) with a secret it then greps for in every file, the same
+scenario without the secret, and two breaks made on purpose (the spawn does nothing but still says
+"Summoned"; the chat shows the first message instead of the final reply), each of which must fail at
+the step that catches it.
+
 > **Not a finished product, and not the only option:** what is still missing is in
 > [`ROADMAP.md`](ROADMAP.md), and how it compares to existing tools (including where they win) is
 > in [`bench/alternatives.md`](bench/alternatives.md).
@@ -587,9 +657,13 @@ separately. An update that breaks 1% or more of the old names starts a new famil
 family's hub is its release with the most mods on Modrinth. Before 1.14.4 there are no official
 names, so families are grouped by version number, marked estimated, and nothing is measured.
 
-A line is green only when `coverage/ledger.json` has a port across that whole hop that loaded or
-passed a behaviour check in the game; yellow when a ROADMAP step marked doing covers it; red
-otherwise, with the reason shown. Refresh: `java tools/ChangeIndex.java`, then
+Colours are per loader: pick the loader on the page. A run proves only its own loader and the
+updates it crossed, so a NeoForge port colours nothing for Fabric. A line is green only when
+`coverage/ledger.json` has a port on that loader across that whole hop that loaded or passed a
+behaviour check in the game; yellow when a ROADMAP step marked doing for that loader covers it;
+red otherwise, with the reason shown. "Loaded" means the loader's own mod list held the mod;
+"behaviour" means an assertion on the mod's own state passed (a frame change or a reloaded save
+is not behaviour). Refresh: `java tools/ChangeIndex.java`, then
 `python bench/change_routes.py` and `python bench/porting_map.py`.
 
 ## Porting, measured
@@ -653,6 +727,35 @@ Both clients passed real world/HUD/tooltip tests, including large-value counters
 `bench/port-tests/Install-ClientTest.ps1 -Repo <repo>`, then
 `modaccel -Repo <repo> port -Fix -Log <original failing log> -Task runClientGameTest -Max 1`.
 The test mod stays in the gametest source set and is excluded from the shipped mod.
+
+### What is this called on the other version?
+
+```
+modaccel explain --root <repo> --project :failing --against :building [--only TEXT]
+```
+
+For a build with one project per Minecraft version (Stonecutter, or a multi-loader layout),
+`explain` compiles the failing project and sets each compiler error beside both projects' actual
+jars. For a missing class it shows where that class lives in each, which catches moved packages.
+For a missing or changed method or field, it shows every signature by that name, otherwise similar
+names, and when nothing is similar, the members only the failing side has. Errors in Stonecutter's
+generated sources point back at `src/`. Once nothing fails to compile, it runs the mixin audit and
+explains each dead target the same way. On Diorama's 1.20.1 port, run against 1.21.1:
+
+```
+src/gameshim/java/dev/diorama/gameshim/ShimWorldSave.java
+  28: cannot find symbol: method openWorld(String,()->{ thro[...]"); })
+    1.21.1  WorldOpenFlows: void openWorld(String, Runnable)
+    1.20.1  WorldOpenFlows: no openWorld. Only in 1.20.1: void loadLevel(Screen, String)
+
+src/main/java/dev/diorama/mixin/GameRendererMixin.java
+  28: @Inject method 'render(Lnet/minecraft/client/DeltaTracker;Z)V' not found in net.minecraft.client.renderer.GameRenderer
+    1.21.1  GameRenderer: void render(DeltaTracker, boolean)
+    1.20.1  GameRenderer: void render(float, long, boolean)
+```
+
+It reads signatures, not behaviour, and Mojang's names have no parameter names. 16–22 s a run
+on Diorama's 22 projects with a warm daemon.
 
 ### Can this repo even build at the target?
 

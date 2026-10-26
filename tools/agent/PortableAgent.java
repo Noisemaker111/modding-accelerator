@@ -20,6 +20,7 @@ public final class PortableAgent {
     private static Object lastScreen; private static long screenSince;
     private static final Map<String, Object> identity = new LinkedHashMap<String, Object>();
     public static void premain(String args, Instrumentation instrumentation) {
+        QuietOptions.seedThisGame(); // no narrator, no sound: before Minecraft reads options.txt
         // Only JDK classes are referenced by transformed game code. Isolated loaders
         // need neither our jar on their mod path nor access to our implementation classes.
         HotReload.install(instrumentation);
@@ -42,7 +43,10 @@ public final class PortableAgent {
                                             super.visitLdcInsn("modaccel.frame");
                                             super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Properties", "get", "(Ljava/lang/Object;)Ljava/lang/Object;", false);
                                             super.visitTypeInsn(Opcodes.CHECKCAST, "java/util/function/Consumer");
-                                            super.visitVarInsn(Opcodes.ALOAD, 0);
+                                            // Not ALOAD 0: the shipped game's stack frames mark `this` dead before some
+                                            // returns, and with no mixin recomputing them (a mod without Fabric API) the
+                                            // verifier rejects the class. The singleton getter needs no local.
+                                            super.visitMethodInsn(Opcodes.INVOKESTATIC, name, "getInstance", "()L" + name + ";", false);
                                             super.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/function/Consumer", "accept", "(Ljava/lang/Object;)V", true);
                                         }
                                         super.visitInsn(opcode);
@@ -155,7 +159,8 @@ public final class PortableAgent {
                             "f3Handled", optionalField(field(client, "keyboard"), "switchF3State"));
             done.complete(Json.map("ok", true, "identity", identity, "screen", screen == null ? "" : screen.getClass().getName(), "inWorld", inWorld(),
                     "integratedServer", singleplayer != null, "level", hasLevel, "worldPath", singleplayer == null ? "" : worldPath(singleplayer),
-                    "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput));
+                    "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput,
+                    "gameDirectory", gameDirectory(), "narrator", narrator(), "masterVolume", masterVolume()));
         } else if (command.equals("resize")) {
             int width = number(request, "width"), height = number(request, "height");
             if (width < 320 || width > 7680 || height < 240 || height > 4320) throw new IllegalArgumentException("Unsupported frame size");
@@ -206,19 +211,21 @@ public final class PortableAgent {
             Object gui = optionalField(client, "gui");
             if (overlay == null && gui != null) try { overlay = call(gui, "overlay"); } catch (Exception ignored) {}
             String screenName = current == null ? "" : current.getClass().getSimpleName();
-            // Loading screens and the title screen's initial fade are transitional frames.
+            // Loading screens and the title screen's initial fade are transitional frames. The title
+            // fades its background over 2 s and then its buttons over 2 more (1.21.6), so wait 4.5 s.
             boolean transition = screenName.equals("MessageScreen") || screenName.equals("GenericMessageScreen")
                     || screenName.equals("LevelLoadingScreen") || screenName.equals("ProgressScreen") || screenName.equals("ReceivingLevelScreen")
-                    || System.nanoTime() - screenSince < (screenName.equals("TitleScreen") ? 2500000000L : 1000000000L);
-            String expectedScreen = Json.text(request, "expectScreen", "");
+                    || System.nanoTime() - screenSince < (screenName.equals("TitleScreen") ? 4500000000L : 1000000000L);
+            String expectedScreen = Json.text(request, "expectScreen", ""), leaveScreen = Json.text(request, "leaveScreen", "");
             boolean outcomePending = !expectedScreen.isEmpty() && (current == null || !expectedScreen.equals(current.getClass().getName()))
+                    || !leaveScreen.isEmpty() && current != null && leaveScreen.equals(current.getClass().getName())
                     || Boolean.TRUE.equals(request.get("expectWorld")) && !inWorld()
                     || Boolean.TRUE.equals(request.get("requireScreen")) && current == null;
             if (overlay != null || transition || outcomePending) {
                 long deadline = request.containsKey("deadline") ? ((Number)request.get("deadline")).longValue() : System.nanoTime() + 120000000000L;
                 request.put("deadline", deadline);
                 if (System.nanoTime() >= deadline) throw new IOException("Game did not reach the requested state; expected screen="
-                        + (Boolean.TRUE.equals(request.get("requireScreen")) ? "open" : expectedScreen)
+                        + (Boolean.TRUE.equals(request.get("requireScreen")) ? "open" : leaveScreen.isEmpty() ? expectedScreen : "not " + leaveScreen)
                         + ", world=" + request.get("expectWorld") + "; current screen=" + screenName);
                 pending.add(new Runnable() { public void run() { try { perform(request, done); } catch (Throwable e) { done.complete(Json.map("ok", false, "error", cause(e))); } } });
                 return;
@@ -328,9 +335,12 @@ public final class PortableAgent {
             done.complete(Json.map("ok", true, "typed", value.length()));
         } else if (command.equals("expect-value")) {
             String getter = Json.text(request, "getter", ""), expected = Json.text(request, "value", "");
-            Object actual = call(screen(), getter);
+            Object showing = screen();
+            if (showing == null) throw new IllegalStateException("No screen is open to read " + getter + " from");
+            Object actual = call(showing, getter);
             if (!expected.equals(String.valueOf(actual))) throw new AssertionError("Screen " + getter + " expected " + expected + "; got " + actual);
-            done.complete(Json.map("ok", true, "getter", getter, "expected", expected, "actual", actual));
+            // The CLI counts this as the mod's behaviour only when the screen is the mod's own class.
+            done.complete(Json.map("ok", true, "getter", getter, "expected", expected, "actual", actual, "screenClass", showing.getClass().getName()));
         } else if (command.equals("assert")) {
             String[] target = Json.text(request, "method", "").split("#", -1);
             if (target.length != 2) throw new IllegalArgumentException("Assertion must be class#staticMethod");
@@ -342,6 +352,37 @@ public final class PortableAgent {
             done.complete(Json.map("ok", true, "assertion", request.get("method")));
         } else if (command.equals("reload")) {
             done.complete(HotReload.reload(client.getClass().getClassLoader()));
+        } else if (command.equals("mods")) {
+            // Ask the running loader itself which mods it loaded, with their versions. The CLI
+            // compares this list with the project's own metadata; nothing here reads a log.
+            Map<String, Object> all = new TreeMap<String, Object>(), loaded = new LinkedHashMap<String, Object>(), versions = new LinkedHashMap<String, Object>();
+            String loaderName = "unknown";
+            Class<?> fabricType = optionalClass("net.fabricmc.loader.api.FabricLoader");
+            Class<?> neoType = fabricType == null ? optionalClass("net.neoforged.fml.ModList") : null;
+            Class<?> forgeType = fabricType == null && neoType == null ? optionalClass("net.minecraftforge.fml.ModList") : null;
+            if (fabricType != null) {
+                loaderName = "fabric";
+                Object fabric = fabricType.getMethod("getInstance").invoke(null);
+                // Through the public API interfaces: the loader's implementation classes are not public.
+                Class<?> containerType = load("net.fabricmc.loader.api.ModContainer"), metaType = load("net.fabricmc.loader.api.metadata.ModMetadata"), versionType = load("net.fabricmc.loader.api.Version");
+                for (Object container : (Collection<?>)fabricType.getMethod("getAllMods").invoke(fabric)) {
+                    Object meta = containerType.getMethod("getMetadata").invoke(container);
+                    all.put(String.valueOf(metaType.getMethod("getId").invoke(meta)), String.valueOf(versionType.getMethod("getFriendlyString").invoke(metaType.getMethod("getVersion").invoke(meta))));
+                }
+            } else if (neoType != null || forgeType != null) {
+                Class<?> listType = neoType != null ? neoType : forgeType; loaderName = neoType != null ? "neoforge" : "forge";
+                Object list = listType.getMethod("get").invoke(null);
+                if (list == null) throw new IllegalStateException("The loader's mod list is not built yet");
+                for (Object info : (Collection<?>)listType.getMethod("getMods").invoke(list))
+                    all.put(String.valueOf(publicCall(info, "getModId")), String.valueOf(publicCall(info, "getVersion")));
+            }
+            Object ids = request.get("ids");
+            if (ids instanceof List) for (Object id : (List<?>)ids) {
+                String name = String.valueOf(id);
+                loaded.put(name, loaderName.equals("unknown") ? null : all.containsKey(name));
+                if (all.containsKey(name)) versions.put(name, all.get(name));
+            }
+            done.complete(Json.map("ok", true, "loader", loaderName, "loaded", loaded, "versions", versions, "all", all));
         } else if (command.equals("quit")) {
             if (pauseField != null) pauseField.setBoolean(pauseOptions, originalPauseOnLostFocus);
             done.complete(Json.map("ok", true, "stopping", true)); call(client, "scheduleStop", "stop");
@@ -376,10 +417,52 @@ public final class PortableAgent {
         return ((Path)path).toAbsolutePath().normalize().toString();
     }
     private static int number(Map<String, Object> request, String key) { return ((Number)request.get(key)).intValue(); }
+    /** The live narrator setting (OFF when quiet), read back from the game's options. */
+    private static String narrator() {
+        try {
+            Object options = field(client, "options"); Object option = null;
+            for (String name : new String[] {"narrator", "getNarrator"}) try { option = options.getClass().getMethod(name).invoke(options); break; } catch (NoSuchMethodException next) { }
+            if (option == null) option = optionalField(options, "narrator");
+            for (String name : new String[] {"get", "getValue"}) try { return String.valueOf(option.getClass().getMethod(name).invoke(option)); } catch (NoSuchMethodException next) { }
+            return String.valueOf(option);
+        } catch (Exception unknown) { return "unknown: " + cause(unknown); }
+    }
+    /** The live master volume (0.0 when quiet). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object masterVolume() {
+        try {
+            Object options = field(client, "options");
+            for (java.lang.reflect.Method method : options.getClass().getMethods())
+                if ((method.getName().equals("getSoundSourceVolume") || method.getName().equals("getSoundVolume") || method.getName().equals("getFinalSoundCategoryVolume"))
+                        && method.getParameterCount() == 1 && method.getParameterTypes()[0].isEnum())
+                    return method.invoke(options, Enum.valueOf((Class) method.getParameterTypes()[0], "MASTER"));
+            return "unknown: no volume getter";
+        } catch (Exception unknown) { return "unknown: " + cause(unknown); }
+    }
+    /** Where the running game keeps saves: the recorded launch directory is not always it (Forge, NeoGradle, Architectury). */
+    private static String gameDirectory() {
+        try { return ((java.io.File) field(client, "gameDirectory", "runDirectory")).getAbsolutePath(); } catch (Exception unknown) { return ""; }
+    }
     private static Object optionalField(Object owner, String name) { try { return field(owner, name); } catch (Exception ignored) { return null; } }
     private static Class<?> load(String... names) throws ClassNotFoundException {
         for (String name : names) try { return Class.forName(name, true, client.getClass().getClassLoader()); } catch (ClassNotFoundException ignored) {}
         throw new ClassNotFoundException(Arrays.toString(names));
+    }
+    private static Class<?> optionalClass(String name) {
+        try { return load(name); } catch (ClassNotFoundException absent) { return null; } catch (LinkageError unusable) { return null; }
+    }
+    /** A no-argument method called through a public class or interface that declares it: the loaders' implementation classes may not be public. */
+    private static Object publicCall(Object owner, String name) throws Exception {
+        Deque<Class<?>> types = new ArrayDeque<Class<?>>(); types.add(owner.getClass());
+        Set<Class<?>> seen = new HashSet<Class<?>>();
+        while (!types.isEmpty()) {
+            Class<?> type = types.poll();
+            if (!seen.add(type)) continue;
+            if (Modifier.isPublic(type.getModifiers())) try { return type.getMethod(name).invoke(owner); } catch (NoSuchMethodException absent) { } catch (IllegalAccessException hidden) { }
+            if (type.getSuperclass() != null) types.add(type.getSuperclass());
+            types.addAll(Arrays.asList(type.getInterfaces()));
+        }
+        throw new NoSuchMethodException(owner.getClass().getName() + "." + name + " through a public type");
     }
     private static Object field(Object owner, String... names) throws Exception {
         for (String name : names) for (Class<?> type = owner.getClass(); type != null; type = type.getSuperclass()) try {

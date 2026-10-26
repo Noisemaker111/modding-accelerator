@@ -62,10 +62,19 @@ public final class DependenciesTest {
         } catch (IOException expected) { require(expected.getMessage().contains("no direct source repository"), "website homepage diagnostic"); }
         finally { Files.deleteIfExists(websiteJar); }
         selections();
+        modrinthIds();
         versions();
         mixinTargets();
         loaders();
         System.out.println("unindexed dependency identity, homepage, ambiguity, exact hash, explicit selection, version ranges, dead mixin targets and loader guards: PASS");
+    }
+    static void modrinthIds() {
+        Map<String, Object> current = Json.map("id", "S5y2NO2L", "version_number", "21.5.0.1");
+        Map<String, Object> fabric = Json.map("id", "i9QFEv4n", "version_number", "21.6.0.0");
+        List<Object> multiloader = List.of(Json.map("id", "FuJOYqfx", "version_number", "21.6.0.0"), fabric, Json.map("id", "i0GLDKIN", "version_number", "21.6.0.0"));
+        require(Dependencies.modrinthNeedsId("21.5.0.1", current, fabric, multiloader), "a version number shared by several loaders uses the exact Modrinth id");
+        require(Dependencies.modrinthNeedsId("S5y2NO2L", current, fabric, List.of(fabric)), "a project that pinned a Modrinth id keeps an id");
+        require(!Dependencies.modrinthNeedsId("21.5.0.1", current, fabric, List.of(fabric)), "a unique version number stays a version number");
     }
     static void mixinTargets() throws Exception {
         String text = "@ModifyReturnValue(method = {\"method_5260\", \"method_5236\"}, at = @At(\"RETURN\"))\n";

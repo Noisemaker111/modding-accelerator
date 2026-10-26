@@ -32,10 +32,10 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 | Rung | Means | Fabric | NeoForge | Forge | Stonecutter | Paper |
 |---|---|---|---|---|---|---|
 | 1 Build | Fast, warm build of the jar | yes | yes | yes | yes | yes (1.8 s jar) |
-| 2 Tests | Logic tests in seconds, no game | yes | yes | yes | yes | needs the plain-test fix |
-| 3 Run check | Loads in the real game/server, screenshot or command proof | yes | yes | partial | yes (26.3 node) | no (needs a server check) |
-| 4 Multiplayer check | Dedicated server plus client, or server plus bot | partial | partial | no | no | no (bot exists in their repo) |
-| 5 Version port | `port --from --to`, routed through hubs | yes (1.14.4+) | yes (1.14.4+) | no | via its nodes | no (often just config) |
+| 2 Tests | Logic tests in seconds, no game | yes | yes | yes | yes | yes (all 17 AgentCraft tests, 2-5 s warm) |
+| 3 Run check | Loads in the real game/server, screenshot or command proof | yes | yes | partial | yes (26.3 node) | yes, on MockBukkit (a fake Paper server, no real server): `plugin-check` |
+| 4 Multiplayer check | Dedicated server plus client, or server plus bot | partial | partial | no | no | yes, real Paper server plus a bot player: `server-check` (bot speaks 26.3 only) |
+| 5 Version port | `port --from --to`, routed through hubs | yes (1.14.4+) | yes (1.14.4+) | no | via its nodes | no: config only, done by hand (AgentCraft 26.3 to 1.21.10 passes `plugin-check`); `port` refuses plugins and names the edits |
 | 6 Platform change | e.g. Fabric → NeoForge | later | later | later | n/a | not planned |
 
 ## 3. Policy
@@ -67,7 +67,27 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 
 ## 5. Where AgentCraft lands
 
-- Paper plugin, server side, at rung 1 today.
-- Next is rung 2: the plain-test fix, about half a day, measured at 2–4 s against 8–11 s.
-- Then rung 3: a Paper server check, an estimated 2–3 days.
-- It becomes the first server fixture in the merge gate.
+- Paper plugin, server side, at rung 3.
+- Rung 1: `modaccel compile --task :jar` builds the plugin jar (about 3 s warm).
+- Rung 2: `modaccel fast` runs every test when no Minecraft or loader is on the test classpath,
+  so AgentCraft's 17 untagged tests run in 2-5 s warm. Fabric, NeoForge and Forge still run
+  only tests tagged `pure`.
+- Rung 3: `modaccel plugin-check` builds the jar with the plugin's own task and loads it on
+  MockBukkit for the plugin's Paper API line: descriptor and api-version, main class, onLoad,
+  onEnable, plugin.yml command handlers and Brigadier commands, permissions, listeners, hard
+  dependencies, 100 ticks of its tasks, onDisable. About 4-7 s warm. It is a fake server: code
+  through server internals (net.minecraft, CraftBukkit) or API MockBukkit lacks is reported
+  unchecked, and world, entity and network behaviour are not proven. A real Paper server check
+  stays a later, optional step.
+- It is the first server fixture in the merge gate: `bench/server-plugins/manifest.json`, run by
+  `tools/tests/ServerPluginFixtures.java` in the server-plugins CI job, which also breaks the
+  plugin on purpose in a throwaway copy and requires each break to fail.
+- Rung 4: `modaccel server-check` starts the real Paper server (downloaded once from PaperMC's
+  API, SHA-256 checked, headless, offline, 127.0.0.1 only, EULA accepted only for that throwaway
+  test server) with the plugin jar, joins a protocol bot (MCProtocolLib, Minecraft 26.3 only) and
+  runs a scenario of chat, commands and RCON with expect steps on chat, titles, the server log,
+  HTTP, entities, blocks, inventory and position. AgentCraft against its own mock backend: an agent
+  is summoned as a real mannequin, answers in chat and leaves its messages as written books. Two
+  breaks made on purpose fail at the step that catches them. About 25 s warm, about 55 s cold.
+  The real Capy backend needs your key and is not run (`bench/server-plugins/agentcraft-live.scenario`).
+- Next: rung 5 (`port` between Paper versions, config only), and more bot versions.

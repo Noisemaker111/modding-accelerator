@@ -15,6 +15,21 @@ public final class Json {
         if (parser.at != source.length()) throw new IllegalArgumentException("Trailing JSON at " + parser.at);
         return value;
     }
+    /** As parse, but a syntax error says where, as "line L, column C: what was expected". */
+    public static Object parseReporting(String source) {
+        Json parser = new Json(source);
+        try {
+            Object value = parser.value();
+            parser.space();
+            if (parser.at != source.length()) throw new IllegalArgumentException("more text after the end of the JSON value");
+            return value;
+        } catch (IllegalArgumentException invalid) {
+            int line = 1, column = 1, end = Math.min(parser.at, source.length());
+            for (int i = 0; i < end; i++) { if (source.charAt(i) == '\n') { line++; column = 1; } else column++; }
+            String message = String.valueOf(invalid.getMessage()).replaceFirst(" at \\d+$", "");
+            throw new IllegalArgumentException("line " + line + ", column " + column + ": " + Character.toLowerCase(message.charAt(0)) + message.substring(1), invalid);
+        }
+    }
     @SuppressWarnings("unchecked") public static Map<String, Object> object(Object value) {
         if (!(value instanceof Map)) throw new IllegalArgumentException("Expected a JSON object");
         return (Map<String, Object>) value;
@@ -79,13 +94,14 @@ public final class Json {
                 space(); if (!take('"')) throw new IllegalArgumentException("Expected object key");
                 String key = string(); space(); require(':');
                 if (map.containsKey(key)) throw new IllegalArgumentException("Duplicate JSON key: " + key);
-                map.put(key, value()); space(); if (take('}')) return map; require(',');
+                map.put(key, value()); space(); if (take('}')) return map;
+                if (!take(',')) { throw new IllegalArgumentException("Expected ',' or '}' after the value of \"" + key + "\""); }
             } while (true);
         }
         if (c == '[') {
             List<Object> list = new ArrayList<Object>();
             space(); if (take(']')) return list;
-            do { list.add(value()); space(); if (take(']')) return list; require(','); } while (true);
+            do { list.add(value()); space(); if (take(']')) return list; if (!take(',')) { throw new IllegalArgumentException("Expected ',' or ']' in a list"); } } while (true);
         }
         at--;
         for (String literal : Arrays.asList("true", "false", "null")) if (source.startsWith(literal, at)) {

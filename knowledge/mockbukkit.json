@@ -1,0 +1,9 @@
+{
+  "note": "MockBukkit release per Paper API line, for plugin-check (tools/cli/PluginCheck.java). paperApi is the Paper API MockBukkit was built against (its gradle.properties paper.api.full-version); the plugin's own Paper API joins it and Gradle keeps the newer. java is the lowest Java that runs that MockBukkit. A Paper line missing here is reported as unchecked.",
+  "releases": [
+    { "paper": "26.3", "artifact": "org.mockbukkit.mockbukkit:mockbukkit-v26.3", "version": "4.118.0", "paperApi": "26.3.build.200-stable", "java": 25 },
+    { "paper": "26.2", "artifact": "org.mockbukkit.mockbukkit:mockbukkit-v26.2", "version": "4.117.0", "paperApi": "26.2.build.111-stable", "java": 25 },
+    { "paper": "26.1", "artifact": "org.mockbukkit.mockbukkit:mockbukkit-v26.1.2", "version": "4.115.0", "paperApi": "26.1.2.build.72-stable", "java": 25 },
+    { "paper": "1.21", "artifact": "org.mockbukkit.mockbukkit:mockbukkit-v1.21", "version": "4.116.3", "paperApi": "1.21.11-R0.1-SNAPSHOT", "java": 21 }
+  ]
+}

@@ -16,9 +16,18 @@ Anyone brings an unfamiliar mod source project (a Gradle checkout; compiled JARs
 
 ## Commands
 
-The portable command: `modaccel.cmd` on Windows, `./modaccel` on POSIX, or `java -jar modaccel.jar`. `help` lists the verbs and `support` the version table. The main verbs: `port --from OLD --to NEW --fix` (routes A → hubs → B, joins one map across every update, filters rules by the updates crossed and names each remaining error's update; `--direct` keeps the one-jump map), `fast`, `ui-check`, `world-check`, `mp-check`, `eval` (runs Java in the owned client), `reload` (swaps recompiled classes in and says when a restart is needed), `game-status`, `game-stop`.
+The portable command: `modaccel.cmd` on Windows, `./modaccel` on POSIX, or `java -jar modaccel.jar`. `help` lists the verbs and `support` the version table. The main verbs: `port --from OLD --to NEW --fix` (routes A → hubs → B, joins one map across every update, filters rules by the updates crossed and names each remaining error's update; `--direct` keeps the one-jump map), `mixin-check` (Mixin applies every mixin, no game launch), `fast`, `ui-check`, `world-check`, `mp-check`, `eval` (runs Java in the owned client), `reload` (swaps recompiled classes in and says when a restart is needed), `game-status`, `game-stop`.
 
 Run builds and game launches through modaccel, never raw Gradle or a manual launch, and never add `--no-daemon`. Package locally; publishing needs Jon's approval.
+
+## Branches and PRs
+
+- One PR per feature or support area (e.g. "Paper plugin support", "Porting"), not one per step. Keep it a draft and add commits as steps land; the PR body is the checklist.
+- Merge when it reaches a milestone worth shipping (a new rung on SCOPE.md's ladder, or a big porting jump such as every 1.14 mod reaching 1.16), with Jon's approval and CI green on all 3 OS.
+- Porting work goes on one long-running branch, `porting`, merged at those jumps.
+- Small fixes outside any feature may go in one hardening/fixes PR at a time.
+- Every port run gets its ledger row in that branch. Regenerate `docs/index.html` and `docs/porting-map.html` once, in the final commit before merge, so the site changes only when a milestone lands.
+- Agents work in their own worktree and never edit the same files as another agent.
 
 ## What counts as evidence
 

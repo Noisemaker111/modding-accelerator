@@ -20,6 +20,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Map and bench colour per loader
+        working-directory: portable workspace
+        run: python bench/test_ledger_rule.py
       - name: Portable core and JDK archive outcomes
         working-directory: portable workspace
         run: java tools/cli/Bootstrap.java . self-test --json
@@ -47,6 +53,9 @@ jobs:
       - name: Multi-module FastLane isolation
         working-directory: portable workspace
         run: java tools/tests/FastLaneIsolationTest.java . build/distributions/modaccel.jar
+      - name: Runtime-only file that does not download
+        working-directory: portable workspace
+        run: java tools/tests/RuntimeNativesTest.java . build/distributions/modaccel.jar
       - name: Port rewrites before compilation
         working-directory: portable workspace
         run: |
@@ -62,4 +71,140 @@ jobs:
             portable workspace/.runs
             portable workspace/.modaccel
           include-hidden-files: true
+          if-no-files-found: ignore
+  server-plugins:
+    # Every PR, under 5 minutes: pinned server plugins (bench/server-plugins/manifest.json) on fresh clones through
+    # the packaged command: fast, the jar, and plugin-check on MockBukkit, including each break made on purpose.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Package without PowerShell
+        run: java tools/cli/Bootstrap.java . package --json
+      - name: Server plugins through modaccel
+        run: java tools/tests/ServerPluginFixtures.java . build/distributions/modaccel.jar
+      - name: Outcome receipts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-plugins-${{ runner.os }}-outcomes
+          path: |
+            .runs
+          include-hidden-files: true
+          if-no-files-found: ignore
+  server-check:
+    # Every PR, under 5 minutes: AgentCraft on a real headless Paper server with a bot player
+    # (tools/tests/ServerCheckFixtures.java): its scenario cold and warm, the bot's own scenario with a
+    # secret that must stay masked, the missing-secret failure, and each break made on purpose.
+    # The Paper jar and Gradle home are cached; "cold" here means a fresh world and server folder.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Paper, Gradle and JDK caches
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+            .modaccel/jdks
+            ~/.modaccel/servers
+          key: server-check-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json') }}
+      - name: Package without PowerShell
+        run: java tools/cli/Bootstrap.java . package --json
+      - name: Plugins on a real Paper server through modaccel
+        run: java tools/tests/ServerCheckFixtures.java . build/distributions/modaccel.jar
+      - name: Stop the plugin's Gradle daemon so Windows can read its cache locks
+        if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
+      - name: Save caches on a miss, even when the check fails
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+            .modaccel/jdks
+            ~/.modaccel/servers
+          key: server-check-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json') }}
+      - name: Outcome receipts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-check-${{ runner.os }}-outcomes
+          path: |
+            .runs
+          include-hidden-files: true
+          if-no-files-found: ignore
+  stonecutter-sample:
+    # Every PR, under 5 minutes: three representative Stonecutter nodes, fresh pinned clones,
+    # setup and compile through modaccel, one job per node and OS. No game. Every node of both
+    # mods compiles nightly in stonecutter-nightly.yml (not a merge blocker).
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        mod: [diorama-26.3, diorama-1.21.1, ias-26.3-fabric]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Gradle and JDK caches
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+            .modaccel/jdks
+          key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
+      - name: Setup and compile the node
+        run: python bench/real-mods/run.py --compile-nodes --only ${{ matrix.mod }} --cache "${{ runner.temp }}/real-mods" --out "${{ runner.temp }}/real-mods-results" --label ${{ matrix.mod }}
+      - name: Save caches on a miss, even when the node fails
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+            .modaccel/jdks
+          key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
+      - name: Node results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sample-${{ runner.os }}-${{ matrix.mod }}
+          path: ${{ runner.temp }}/real-mods-results
           if-no-files-found: ignore

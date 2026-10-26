@@ -1,0 +1,39 @@
+{
+  "note": "Server plugins the merge gate puts through modaccel on fresh pinned clones (tools/tests/ServerPluginFixtures.java, the server-plugins CI job). Kept apart from bench/real-mods, which the real-mod runner owns. fast.executed is the exact count fast must run with no @Tag(\"pure\") in the project; jar is the plugin's own Gradle task and the file it must produce. pluginCheck: plugin-check must pass on the untouched clone, cold and warm, with each expects line in its output, then fail on each break made on purpose in one throwaway copy (missing main class, a plugin.yml command with no handler, an exception in onEnable, a missing hard dependency) and pass again with the command wired up.",
+  "plugins": [
+    {
+      "id": "agentcraft",
+      "name": "AgentCraft",
+      "repo": "https://github.com/mezotv/agentcraft",
+      "commit": "eca1d9165de1c0e0e58c3e7cad26bb9a8a405ab4",
+      "platform": "paper",
+      "side": "server",
+      "minecraft": "26.3",
+      "fast": { "executed": 17, "failed": 0 },
+      "jar": { "task": ":jar", "file": "build/libs/agentcraft-0.1.0.jar" },
+      "pluginCheck": { "name": "AgentCraft", "expects": [
+        "PASS enable: onEnable finished without an exception.",
+        "Brigadier registered /agent",
+        "2 permission(s) registered: agentcraft.use (true), agentcraft.admin (op)",
+        "3 listener(s) registered with 9 event handler(s)",
+        "PASS tasks: 100 server ticks",
+        "PASS disable"
+      ] },
+      "serverCheck": {
+        "scenario": "bench/server-plugins/agentcraft.scenario",
+        "breaks": [
+          { "name": "spawn does nothing but still says Summoned",
+            "file": "src/main/java/dev/agentcraft/command/AgentCommands.java",
+            "find": "Agent agent = factory.spawn(player.getLocation(), model);",
+            "replace": "var agent = new Object() { String handle() { return model.handle(); } };",
+            "failsAt": "expect-entity mannequin" },
+          { "name": "chat shows the first message instead of the final reply",
+            "file": "src/main/java/dev/agentcraft/agent/ConversationService.java",
+            "find": "replies()), last, color);",
+            "replace": "replies()), conversation.replies().get(0), color);",
+            "failsAt": "Done!" }
+        ]
+      }
+    }
+  ]
+}
