@@ -114,6 +114,27 @@ public final class PortableTests {
                 "a Forge test classpath has the game");
         check(!FastLane.gameFree(Json.map("projects", List.of())), "no test source set is never treated as game-free");
     }
+    /** plugin-check picks MockBukkit by the plugin's own Paper API line, and refuses a line it has no MockBukkit for. */
+    static void pluginCheckChecks(Path home) throws Exception {
+        Map<String, Object> paper = Json.map("projects", List.of(Json.map("compile", List.of(Json.map("classpath", List.of(
+                "/home/u/.gradle/caches/modules-2/files-2.1/net.kyori/adventure-api/4.24.0/x/adventure-api-4.24.0.jar",
+                "C:\\Users\\u\\.gradle\\caches\\modules-2\\files-2.1\\io.papermc.paper\\paper-api\\26.3.build.214-stable\\x\\paper-api-26.3.build.214-stable.jar"))))));
+        var api = PluginCheck.api(paper);
+        check(api != null && api.kind().equals("paper-api") && api.version().equals("26.3.build.214-stable"), "plugin-check reads the Paper API version from the compile class path: " + api);
+        var spigot = PluginCheck.api(Json.map("projects", List.of(Json.map("compile", List.of(Json.map("classpath", List.of("/m2/org/spigotmc/spigot-api/1.21.4-R0.1-SNAPSHOT/spigot-api-1.21.4-R0.1-SNAPSHOT.jar")))))));
+        check(spigot != null && spigot.kind().equals("spigot-api") && PluginCheck.line(spigot.version()).equals("1.21"), "a Spigot plugin is checked on the Paper line of its version: " + spigot);
+        check(PluginCheck.api(testModel("/m2/net/fabricmc/fabric-loader-0.16.14.jar")) == null, "a Fabric mod has no server API, so plugin-check says it is not a plugin");
+        var r263 = PluginCheck.release(home, "26.3.build.214-stable");
+        var r121 = PluginCheck.release(home, "1.21.10-R0.1-SNAPSHOT");
+        check(r263 != null && r263.artifact().endsWith("mockbukkit-v26.3") && r263.java() == 25, "Paper 26.3 is checked on MockBukkit for 26.3: " + r263);
+        check(r121 != null && r121.artifact().endsWith("mockbukkit-v1.21") && r121.java() == 21, "Paper 1.21.10 is checked on MockBukkit for 1.21: " + r121);
+        check(PluginCheck.release(home, "1.20.6-R0.1-SNAPSHOT") == null, "a Paper line with no MockBukkit release in the table is not guessed (it is reported unchecked)");
+        String text = PluginCheck.text(Json.map("failed", true, "plugin", Json.map("name", "X", "version", "1"), "server", Json.map("paperApi", "26.3"),
+                "checks", List.of(Json.map("name", "commands", "status", "fail", "details", "/x has no handler.", "file", Path.of("/p/src/main/resources/plugin.yml").toAbsolutePath().toString(), "line", 9)),
+                "unchecked", List.of("uses NMS"), "warnings", List.of()), Path.of("/p").toAbsolutePath());
+        check(text.startsWith("plugin-check FAILED for X 1") && text.contains("FAIL commands: /x has no handler. (src/main/resources/plugin.yml:9)") && text.contains("UNCHECKED uses NMS"),
+                "a plugin-check failure names the check, the file relative to the project and the line: " + text);
+    }
     public static void main(String[] args) throws Exception {
         Path home = Path.of(args[0]), scratch = Path.of(args[1]); Files.createDirectories(scratch);
         Path existingArgs = scratch.resolve("existing loom args.txt");
@@ -250,6 +271,7 @@ public final class PortableTests {
         check(Boolean.TRUE.equals(Port.verifyModMetadata(metadataRoot, neoModel, "1.21.4").get("ok")),
                 "packaged metadata that accepts the target version passes the loader check");
         fastLaneChecks();
+        pluginCheckChecks(home);
         System.out.println(count + " portable checks passed");
     }
     public static final class LaunchProbe {

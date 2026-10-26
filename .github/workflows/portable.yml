@@ -72,6 +72,34 @@ jobs:
             portable workspace/.modaccel
           include-hidden-files: true
           if-no-files-found: ignore
+  server-plugins:
+    # Every PR, under 5 minutes: pinned server plugins (bench/server-plugins/manifest.json) on fresh clones through
+    # the packaged command: fast, the jar, and plugin-check on MockBukkit, including each break made on purpose.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Package without PowerShell
+        run: java tools/cli/Bootstrap.java . package --json
+      - name: Server plugins through modaccel
+        run: java tools/tests/ServerPluginFixtures.java . build/distributions/modaccel.jar
+      - name: Outcome receipts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-plugins-${{ runner.os }}-outcomes
+          path: |
+            .runs
+          include-hidden-files: true
+          if-no-files-found: ignore
   stonecutter-sample:
     # Every PR, under 5 minutes: three representative Stonecutter nodes, fresh pinned clones,
     # setup and compile through modaccel, one job per node and OS. No game. Every node of both

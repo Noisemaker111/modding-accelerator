@@ -13,7 +13,7 @@ import java.util.regex.*;
  */
 public final class ServerPluginFixtures {
     record Run(int exit, String output, double seconds) { }
-    record Plugin(String id, String repo, String commit, int executed, int failed, String task, String file) { }
+    record Plugin(String id, String repo, String commit, int executed, int failed, String task, String file, String checkName, List<String> checkExpects) { }
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) throw new IllegalArgumentException("Usage: java ServerPluginFixtures.java <checkout> <modaccel.jar>");
@@ -46,8 +46,74 @@ public final class ServerPluginFixtures {
                     throw new AssertionError(plugin.id() + ": " + built + " has no plugin.yml or paper-plugin.yml");
             }
             System.out.printf(Locale.ROOT, "PASS %s compile --task %s: %s in %.1fs%n", plugin.id(), plugin.task(), plugin.file(), build.seconds());
+            if (plugin.checkName() != null) pluginCheck(home, jar, root, plugin);
         }
         System.out.println("PASS server-plugin fixtures: " + plugins.size());
+    }
+
+    /**
+     * plugin-check passes on the untouched plugin, then each break made on purpose in one throwaway copy must fail
+     * with its own message and file:line, and a wired-up command must pass again: the check decides, not the fixture.
+     */
+    static void pluginCheck(Path home, Path jar, Path root, Plugin plugin) throws Exception {
+        for (String label : List.of("cold", "warm")) {
+            Run check = modaccel(home, jar, root, "plugin-check");
+            if (check.exit() != 0 || !check.output().contains("plugin-check passed for " + plugin.checkName()) || check.output().contains("FAIL ") || check.output().contains("UNCHECKED "))
+                throw new AssertionError(plugin.id() + " plugin-check " + label + ": expected a pass with nothing unchecked; got exit " + check.exit() + "\n" + check.output());
+            for (String expected : plugin.checkExpects()) if (!check.output().contains(expected))
+                throw new AssertionError(plugin.id() + " plugin-check " + label + ": expected \"" + expected + "\"\n" + check.output());
+            System.out.printf(Locale.ROOT, "PASS %s plugin-check %s in %.1fs%n", plugin.id(), label, check.seconds());
+        }
+        Path copy = Files.createTempDirectory(root.getParent(), plugin.id() + "-broken-").resolve(plugin.id());
+        copyTree(root, copy);
+        Path yml = copy.resolve("src/main/resources/plugin.yml");
+        String descriptor = Files.readString(yml, StandardCharsets.UTF_8);
+        Matcher mainMatch = Pattern.compile("(?m)^main:\\s*(\\S+)").matcher(descriptor);
+        if (!mainMatch.find()) throw new AssertionError(plugin.id() + ": plugin.yml has no main:");
+        String main = mainMatch.group(1);
+        Path mainSource = copy.resolve("src/main/java/" + main.replace('.', '/') + ".java");
+        String source = Files.readString(mainSource, StandardCharsets.UTF_8);
+        if (descriptor.contains("\ncommands:") || descriptor.contains("\ndepend:")) throw new AssertionError(plugin.id() + ": the break cases expect no commands: or depend: in plugin.yml");
+        Matcher enable = Pattern.compile("public void onEnable\\(\\)\\s*\\{\\r?\\n").matcher(source);
+        if (!enable.find()) throw new AssertionError(plugin.id() + ": " + mainSource + " has no onEnable() { line");
+        String command = "commands:\n  modaccelcheck:\n    description: added by the plugin-check gate\n    usage: /modaccelcheck\n";
+        String simple = main.substring(main.lastIndexOf('.') + 1);
+        record Break(String name, String yml, String java, int exit, List<String> expects) { }
+        List<Break> breaks = List.of(
+                new Break("missing main class", descriptor.replace("main: " + main, "main: " + main + "Missing"), source, 1,
+                        List.of("FAIL main-class", "has no class " + main + "Missing", "plugin.yml:" + line(descriptor, "main:"))),
+                new Break("command in plugin.yml with no handler", descriptor + command, source, 1,
+                        List.of("FAIL commands: /modaccelcheck is declared in plugin.yml but nothing handles it", "plugin.yml:" + (descriptor.lines().count() + 2))),
+                new Break("exception in onEnable", descriptor, source.substring(0, enable.end()) + "        if (getServer() != null) throw new IllegalStateException(\"broken on purpose\");\n" + source.substring(enable.end()), 1,
+                        List.of("FAIL enable: onEnable threw java.lang.IllegalStateException: broken on purpose", simple + ".java:" + (source.substring(0, enable.end()).lines().count() + 1))),
+                new Break("missing hard dependency", descriptor + "depend: [ModaccelMissingDependency]\n", source, 1,
+                        List.of("FAIL dependencies: plugin.yml needs the plugin ModaccelMissingDependency", "plugin.yml:" + (descriptor.lines().count() + 1))),
+                new Break("command in plugin.yml with an executor (control)", descriptor + command,
+                        source.substring(0, enable.end()) + "        getCommand(\"modaccelcheck\").setExecutor((sender, cmd, label, args) -> true);\n" + source.substring(enable.end()), 0,
+                        List.of("plugin-check passed for " + plugin.checkName(), "1 command(s) in plugin.yml all have a handler")));
+        for (Break b : breaks) {
+            Files.writeString(yml, b.yml(), StandardCharsets.UTF_8); Files.writeString(mainSource, b.java(), StandardCharsets.UTF_8);
+            Run check = modaccel(home, jar, copy, "plugin-check");
+            boolean expected = check.exit() == b.exit() && b.expects().stream().allMatch(check.output()::contains);
+            if (!expected) throw new AssertionError(plugin.id() + " plugin-check with " + b.name() + ": expected exit " + b.exit() + " and " + b.expects() + "; got exit " + check.exit() + "\n" + check.output());
+            System.out.printf(Locale.ROOT, "PASS %s plugin-check %s: exit %d in %.1fs%n", plugin.id(), b.name(), check.exit(), check.seconds());
+        }
+        modaccel(home, jar, copy, "game-stop");
+    }
+    static int line(String text, String prefix) {
+        List<String> lines = text.lines().toList();
+        for (int i = 0; i < lines.size(); i++) if (lines.get(i).startsWith(prefix)) return i + 1;
+        throw new AssertionError("no line starts with " + prefix);
+    }
+    static void copyTree(Path from, Path to) throws IOException {
+        try (var walk = Files.walk(from)) {
+            for (Path p : walk.toList()) {
+                Path rel = from.relativize(p);
+                if (rel.getNameCount() > 0 && Set.of(".git", ".gradle", "build", ".modaccel", ".runs").contains(rel.getName(0).toString())) continue;
+                Path target = to.resolve(rel.toString());
+                if (Files.isDirectory(p)) Files.createDirectories(target); else Files.copy(p, target, StandardCopyOption.COPY_ATTRIBUTES);
+            }
+        }
     }
 
     /** The manifest is ours and flat; a field reader keeps this file free of a JSON dependency. */
@@ -59,9 +125,16 @@ public final class ServerPluginFixtures {
             String entry = "\"id\":" + entries[i];
             Matcher fast = Pattern.compile("\"fast\"\\s*:\\s*\\{([^}]*)}").matcher(entry), jar = Pattern.compile("\"jar\"\\s*:\\s*\\{([^}]*)}").matcher(entry);
             if (!fast.find() || !jar.find()) throw new IOException("Plugin entry needs fast and jar: " + entry);
+            Matcher check = Pattern.compile("\"pluginCheck\"\\s*:\\s*\\{([^}]*)}").matcher(entry);
+            String checkName = null; List<String> expects = List.of();
+            if (check.find()) {
+                checkName = field(check.group(1), "name");
+                Matcher list = Pattern.compile("\"expects\"\\s*:\\s*\\[([^\\]]*)]").matcher(check.group(1));
+                if (list.find()) { expects = new ArrayList<>(); Matcher s = Pattern.compile("\"((?:[^\"\\\\]|\\\\.)*)\"").matcher(list.group(1)); while (s.find()) expects.add(s.group(1).replace("\\\"", "\"")); }
+            }
             plugins.add(new Plugin(field(entry, "id"), field(entry, "repo"), field(entry, "commit"),
                     Integer.parseInt(number(fast.group(1), "executed")), Integer.parseInt(number(fast.group(1), "failed")),
-                    field(jar.group(1), "task"), field(jar.group(1), "file")));
+                    field(jar.group(1), "task"), field(jar.group(1), "file"), checkName, expects));
         }
         return plugins;
     }

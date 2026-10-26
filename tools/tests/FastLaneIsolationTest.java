@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Real FastLane gate. Two modules: a cached pure run must never hide a class with the same name in another module.
  * A plain project (no game on the test classpath): every test runs untagged, and an empty run says why.
- * Then the pinned server plugins in bench/server-plugins/manifest.json (ServerPluginFixtures, same directory).
  */
 public final class FastLaneIsolationTest {
     record Run(int exit, String output) { }
@@ -46,7 +45,6 @@ public final class FastLaneIsolationTest {
         require(run(home, jar, root), 0, 2, 0, "restored module B");
         System.out.println("PASS FastLane module isolation; fixture " + root);
         plain(home, jar, runs);
-        ServerPluginFixtures.run(home, jar);
     }
 
     /** No Minecraft on the test classpath: untagged tests run on the Gradle and the reuse path; zero tests is explained. */
