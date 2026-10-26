@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "modaccel-site-preview",
+  "main": "dist/server/fetch.js",
+  "compatibility_date": "2026-07-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "dist/client",
+    "html_handling": "drop-trailing-slash",
+  },
+  "workers_dev": false,
+  "dev": { "ip": "127.0.0.1", "port": 8787 },
+}

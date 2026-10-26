@@ -1,0 +1,56 @@
+verifyDepsBeforeRun: error
+
+overrides:
+  "@foldkit/vite-plugin>@effect/platform-node": 4.0.6
+  "@foldkit/vite-plugin>@effect/platform-node-shared": 4.0.6
+
+# Foldkit peer-pins effect and @effect/platform-browser to exactly 4.0.0.
+# These allowances travel with patches/@foldkit__vite-plugin@0.28.0.patch (from rat-stack).
+peerDependencyRules:
+  allowedVersions:
+    "foldkit>effect": 4.0.6
+    "foldkit>@effect/platform-browser": 4.0.6
+    "@foldkit/ui>effect": 4.0.6
+    "@foldkit/vite-plugin>effect": 4.0.6
+
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  esbuild: true
+  lefthook: set this to true or false
+  workerd: true
+
+# Exact fresh pins that pnpm's release-age check would otherwise hold back.
+minimumReleaseAgeExclude:
+  - "@yielded/effect-tsrs@0.2.0"
+  - "@yielded/effect-tsrs-linux-x64@0.2.0"
+  - "@yielded/effect-tsrs-linux-arm64@0.2.0"
+  - "@yielded/effect-tsrs-darwin-x64@0.2.0"
+  - "@yielded/effect-tsrs-darwin-arm64@0.2.0"
+  - "@yielded/effect-tsrs-win32-x64@0.2.0"
+  - alchemy@2.0.0-beta.84
+  - effect@4.0.6
+  - "@foldkit/oxlint-plugin@0.15.3"
+  - foldkit@0.169.0
+  - "@foldkit/ui@0.169.0"
+  - "@foldkit/vite-plugin@0.28.0"
+  - "@effect/platform-browser@4.0.6"
+  - "@effect/platform-node@4.0.6"
+  - "@effect/platform-node-shared@4.0.6"
+  - "@effect/vitest@4.0.6"
+  - "@alchemy.run/cloudflare-runtime@2.0.0-beta.84"
+  - "@alchemy.run/node-utils@2.0.0-beta.84"
+  - "@alchemy.run/acme@2.0.0-beta.84"
+  - "@alchemy.run/cloudflare@2.0.0-beta.84"
+  - "@alchemy.run/docker@2.0.0-beta.84"
+  - "@alchemy.run/sigil@0.1.0-alpha.1"
+  - "@distilled.cloud/acme@1.0.0-rc.17"
+  - "@distilled.cloud/aws4signer@1.0.0-rc.17"
+  - "@distilled.cloud/cloudflare@1.0.0-rc.17"
+  - "@distilled.cloud/core@1.0.0-rc.17"
+  - "@distilled.cloud/iceberg@1.0.0-rc.17"
+
+patchedDependencies:
+  "@foldkit/vite-plugin@0.28.0": patches/@foldkit__vite-plugin@0.28.0.patch

@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*.ts", "test/**/*.ts", "*.config.ts"],
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "allowedUnstableApis": [
+          "@effect/vitest",
+          "effect/FileSystem",
+          "effect/Path",
+          "effect/ai/McpProtocol",
+          "effect/ai/McpServer",
+          "effect/http-api/HttpApiBuilder",
+          "effect/http/Etag",
+          "effect/http/HttpPlatform",
+          "effect/http/HttpRouter"
+        ]
+      }
+    ],
+    "allowImportingTsExtensions": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "noEmit": true,
+    "types": ["node", "vite/client"]
+  }
+}
