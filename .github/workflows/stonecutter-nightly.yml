@@ -1,0 +1,63 @@
+name: Stonecutter nodes (nightly)
+# Every node of Diorama and In-Game Account Switcher: setup and compile through modaccel on fresh
+# pinned clones, Windows, Linux and macOS, no game. One job per node and OS, so each job is one
+# cold node (a few minutes; Forge decompiles take the longest) instead of a whole mod's 30+.
+# No Gradle cache: a node is measured from first use, and per-node caches would evict the PR
+# sample caches. Runs nightly and on demand, never blocks a merge; PRs run stonecutter-sample.
+on:
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      nodes: ${{ steps.nodes.outputs.nodes }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: nodes
+        run: echo "nodes=$(python3 bench/real-mods/run.py --only diorama-all,ias-all --matrix)" >> "$GITHUB_OUTPUT"
+  node:
+    needs: plan
+    name: ${{ matrix.target.mod }} ${{ matrix.target.node }} (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        target: ${{ fromJSON(needs.plan.outputs.nodes) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      MOD: ${{ matrix.target.mod }}
+      NODE: ${{ matrix.target.node }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Setup and compile the node
+        shell: bash
+        run: python bench/real-mods/run.py --compile-nodes --only "$MOD" --node "$NODE" --cache "$RUNNER_TEMP/real-mods" --out "$RUNNER_TEMP/real-mods-results" --label "$MOD"
+      - name: Artifact name
+        if: always()
+        id: name
+        shell: bash
+        run: echo "value=stonecutter-${{ runner.os }}-$MOD-${NODE//:/}" >> "$GITHUB_OUTPUT"
+      - name: Node results and Gradle logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.name.outputs.value }}
+          path: |
+            ${{ runner.temp }}/real-mods-results
+            ${{ runner.temp }}/real-mods/logs
+            ${{ runner.temp }}/real-mods/*/.runs/portable/*/*.log
+            ${{ runner.temp }}/real-mods/*/.runs/portable/*/result.json
+          include-hidden-files: true
+          if-no-files-found: ignore

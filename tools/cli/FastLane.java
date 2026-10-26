@@ -17,10 +17,13 @@ final class FastLane {
         Path stamp = build.project.state().resolve("fast-stamp.json");
         Set<Path> outputs = new TreeSet<>(); Set<String> classpath = new LinkedHashSet<>(); List<String> roots = new ArrayList<>();
         int release = 17;
+        boolean partialRuntime = false;
         for (Object item : Json.array(model.get("projects"))) {
             var p = Json.object(item);
             for (Object c : Json.array(p.get("compile"))) outputs.add(Path.of(Json.object(c).get("destination").toString()));
             for (Object s : Json.array(p.get("sourceSets"))) if ("test".equals(Json.object(s).get("name"))) {
+                // Setup kept going past a runtime file that did not download; only Gradle can run these tests.
+                if (!ProjectModel.strings(Json.object(s).get("runtimeUnresolved")).isEmpty()) partialRuntime = true;
                 classpath.addAll(ProjectModel.strings(Json.object(s).get("runtime")));
                 roots.addAll(ProjectModel.strings(Json.object(s).get("output"))); // includes resources; JUnit discovers only classes
             }
@@ -31,7 +34,7 @@ final class FastLane {
         }
         String key = Fingerprints.build(model, build.project, build.init);
         boolean reuse = false;
-        if (Files.exists(stamp) && !options.has("refresh")) {
+        if (Files.exists(stamp) && !options.has("refresh") && !partialRuntime) {
             var cached = Json.read(stamp);
             reuse = key.equals(cached.get("inputs")) && Fingerprints.files(outputs).equals(cached.get("outputs"));
         }
@@ -62,12 +65,12 @@ final class FastLane {
         build.report.stage("pure-tests", run, Json.map("compiledOutputs", "verified reuse"));
         if (!Files.exists(result)) return Json.map("ok", false, "tier", "logic", "gameVerified", false, "selection", selection.label,
                 "tests", Json.map("executed", 0, "failed", 0, "skipped", 0), "log", run.log().toString(),
-                "details", "The test JVM stopped before reporting any result. " + Run.tail(run.log()));
+                "details", "The test runner failed: " + Run.tail(run.log()));
         Map<String, Object> counts = Json.read(result);
-        int executed = ((Number)counts.get("executed")).intValue(), failed = ((Number)counts.get("failed")).intValue();
-        boolean ok = run.exit() == 0 && Boolean.TRUE.equals(counts.get("ok"));
-        String details = ok ? passed(executed, selection) : executed == 0 ? none(selection, testClasses(model))
-                : failed + " of " + executed + " tests failed: " + Json.write(counts.get("failures"));
+        int executed = ((Number)counts.get("executed")).intValue();
+        boolean ok = run.exit() == 0 && Boolean.TRUE.equals(counts.get("ok")) && executed > 0;
+        String details = executed == 0 ? noTests(model, selection == Selection.PURE)
+                : TestResults.text(counts) + " (" + selection.label + "; code unchanged since the last build, so tests reran without Gradle)";
         return Json.map("ok", ok, "tier", "logic", "gameVerified", false, "selection", selection.label, "tests", counts,
                 "reuse", "compiled outputs verified by content; tests rerun in a fresh JVM", "details", details);
     }
@@ -90,31 +93,6 @@ final class FastLane {
                 }
         return anyTest;
     }
-    /** Compiled top-level test classes, to tell "no tests at all" from "tests exist but none matched". */
-    static long testClasses(Map<String, Object> model) throws IOException {
-        long count = 0;
-        for (Object item : Json.array(model.get("projects")))
-            for (Object s : Json.array(Json.object(item).get("sourceSets")))
-                if ("test".equals(Json.object(s).get("name")))
-                    for (String root : ProjectModel.strings(Json.object(s).get("output"))) {
-                        Path dir = Path.of(root); if (!Files.isDirectory(dir)) continue;
-                        try (var files = Files.walk(dir)) {
-                            count += files.filter(f -> f.toString().endsWith(".class") && !f.getFileName().toString().contains("$")).count();
-                        }
-                    }
-        return count;
-    }
-    static String passed(int executed, Selection selection) {
-        return executed + " test" + (executed == 1 ? "" : "s") + " passed (" + (selection == null ? "custom task" : selection.label) + ").";
-    }
-    static String none(Selection selection, long classes) {
-        if (selection == null) return "No tests ran in the requested task, so no logic has been verified.";
-        if (classes == 0) return "No tests found: the test source set has no compiled test classes. Add JUnit 5 tests under src/test/java"
-                + (selection == Selection.PURE ? ", tagged @Tag(\"pure\") when they never touch Minecraft." : ".");
-        if (selection == Selection.ALL) return "No tests ran: " + classes + " test classes compiled, but JUnit Jupiter found no tests in them (fast runs JUnit 5 Jupiter tests).";
-        return "No tests tagged pure ran. Minecraft or a mod loader is on the test classpath, so fast runs only game-free tests: "
-                + "tag those with @Tag(\"pure\"), or use `modaccel test` for the whole suite (" + classes + " test classes found).";
-    }
     static Map<String, Object> gradle(Build build, Map<String, Object> model, List<String> tasks, Selection selection) throws Exception {
         var arguments = new ArrayList<>(List.of("-Dmodaccel.recompile=true"));
         if (selection == Selection.ALL) arguments.add("-Dmodaccel.allTests=true");
@@ -123,11 +101,44 @@ final class FastLane {
         var counts = TestResults.readTasks(model, tasks, build.report.id);
         int executed = ((Number)counts.get("executed")).intValue(), failed = ((Number)counts.get("failed")).intValue();
         boolean ok = run.exit() == 0 && executed > 0 && failed == 0;
-        String details = ok ? passed(executed, selection)
-                : failed > 0 ? failed + " of " + executed + " tests failed. " + Run.tail(run.log())
-                : run.exit() != 0 ? "Tests did not run: the Gradle build failed. " + Run.tail(run.log())
-                : none(selection, testClasses(model));
+        String details;
+        if (ok) details = TestResults.text(counts) + (selection == null ? "" : " (" + selection.label + ")");
+        else if (failed > 0) details = TestResults.text(counts) + "
+Log: " + run.log();
+        else if (run.exit() != 0) details = Run.gradleFailure(run.log(), model) + "
+No tests ran." + "
+Log: " + run.log();
+        else details = noTests(model, selection != Selection.ALL);
         return Json.map("ok", ok, "tier", "logic", "gameVerified", false, "selection", selection == null ? "custom task" : selection.label,
                 "tests", counts, "log", run.log().toString(), "details", details);
+    }
+    /**
+     * Why nothing ran, in the words a newcomer needs: no test files at all, or test files none of which
+     * is tagged pure (fast runs only those, since they must not need the game).
+     */
+    static String noTests(Map<String, Object> model, boolean pure) throws IOException {
+        int files = 0, tagged = 0; List<String> folders = new ArrayList<>();
+        for (Object item : Json.array(model.get("projects"))) for (Object s : Json.array(Json.object(item).get("sourceSets"))) {
+            var set = Json.object(s);
+            if (!String.valueOf(set.get("name")).toLowerCase(Locale.ROOT).equals("test")) continue;
+            for (String dir : ProjectModel.strings(set.get("java"))) {
+                folders.add(dir);
+                if (!Files.isDirectory(Path.of(dir))) continue;
+                try (var walk = Files.walk(Path.of(dir))) {
+                    for (Path file : walk.filter(f -> f.toString().endsWith(".java") || f.toString().endsWith(".kt")).toList()) {
+                        files++;
+                        if (Files.readString(file).matches("(?s).*@Tag\\(\\s*\"pure\"\\s*\\).*")) tagged++;
+                    }
+                }
+            }
+        }
+        String example = "\nA pure test is a JUnit 5 test that never touches a Minecraft class, for example:\n"
+                + "  @org.junit.jupiter.api.Tag(\"pure\") class MathTest { @org.junit.jupiter.api.Test void adds() { org.junit.jupiter.api.Assertions.assertEquals(4, 2 + 2); } }\n"
+                + "The build needs JUnit: testImplementation(\"org.junit.jupiter:junit-jupiter:5.11.4\") and testRuntimeOnly(\"org.junit.platform:junit-platform-launcher:1.11.4\").";
+        if (files == 0) return "No tests ran: this project has no test files" + (folders.isEmpty() ? " (it has no test source set)" : " in " + folders.get(folders.size() - 1))
+                + ", so no logic was checked." + (pure ? example : "");
+        if (pure && tagged == 0) return "No tests ran: found " + files + " test file(s), but none is tagged @Tag(\"pure\"). fast runs only pure tests, since they run without the game;"
+                + " tag the ones that never touch a Minecraft class, or run modaccel test for all of them." + example;
+        return "No tests ran, though " + files + " test file(s) exist" + (pure ? " (" + tagged + " tagged pure)" : "") + ". Check that they are JUnit 5 tests (org.junit.jupiter) with @Test methods.";
     }
 }

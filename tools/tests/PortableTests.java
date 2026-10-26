@@ -98,7 +98,7 @@ public final class PortableTests {
         return Json.map("projects", List.of(Json.map("sourceSets", List.of(Json.map("name", "main", "runtime", List.of()),
                 Json.map("name", "test", "runtime", List.of(runtime), "output", List.of())))));
     }
-    /** Which tests fast selects, and that an empty run always says why instead of printing a Gradle tail. */
+    /** Which tests fast selects (empty-run wording is covered by StrangerTest.noTests and FastLaneIsolationTest.plain). */
     static void fastLaneChecks() throws Exception {
         String junit = "/home/u/.gradle/caches/modules-2/files-2.1/org.junit.jupiter/junit-jupiter-api/5.13.4/x/junit-jupiter-api-5.13.4.jar";
         check(FastLane.gameFree(testModel(junit, "/home/u/.gradle/caches/modules-2/files-2.1/io.papermc.paper/paper-api/26.3.build.214-stable/x/paper-api-26.3.build.214-stable.jar")),
@@ -113,11 +113,6 @@ public final class PortableTests {
         check(!FastLane.gameFree(testModel(junit, "/home/u/.gradle/caches/forge_gradle/minecraft_user_repo/net/minecraftforge/forge/1.20.1-47.3.0/forge-1.20.1-47.3.0.jar")),
                 "a Forge test classpath has the game");
         check(!FastLane.gameFree(Json.map("projects", List.of())), "no test source set is never treated as game-free");
-        String noneAll = FastLane.none(FastLane.Selection.ALL, 0), nonePure = FastLane.none(FastLane.Selection.PURE, 23), untaggedAll = FastLane.none(FastLane.Selection.ALL, 4);
-        check(noneAll.startsWith("No tests found") && !noneAll.contains("pure"), "an empty plain project says no tests were found: " + noneAll);
-        check(nonePure.startsWith("No tests tagged pure ran") && nonePure.contains("@Tag(\"pure\")") && nonePure.contains("23 test classes"),
-                "a mod with only untagged tests is told to tag game-free ones pure: " + nonePure);
-        check(untaggedAll.contains("4 test classes") && untaggedAll.contains("Jupiter"), "compiled classes with no Jupiter tests are named as such: " + untaggedAll);
     }
     public static void main(String[] args) throws Exception {
         Path home = Path.of(args[0]), scratch = Path.of(args[1]); Files.createDirectories(scratch);
@@ -133,6 +128,18 @@ public final class PortableTests {
         check(saved.stream().mapToInt(String::length).sum() < 8000 && saved.contains(launch.get(1)), "saved launches keep existing argument files at the top level");
         Object json = Json.parse(Json.write(Json.map("unicode", "mod 🧱", "path", "C:\\mods with spaces\\test", "rows", List.of(1, true, "\n\""))));
         check(Json.object(json).get("unicode").equals("mod 🧱"), "structured results preserve Unicode and quoted paths");
+        Path quietDir = scratch.resolve("quiet game"); Files.createDirectories(quietDir);
+        Files.writeString(quietDir.resolve("options.txt"), "version:5023\r\nnarrator:2\r\nguiScale:2\r\nsoundCategory_master:1.0\r\nonboardAccessibility:true\r\nkey_key.jump:key.keyboard.space\r\n");
+        Path quietFile = QuietOptions.seed(QuietOptions.gameDirectory("net.minecraft.client.main.Main --username Dev --gameDir " + quietDir + " --assetsDir x", "/elsewhere"));
+        List<String> quiet = Files.readAllLines(quietFile);
+        check(quiet.containsAll(List.of("narrator:0", "onboardAccessibility:false", "soundCategory_master:0.0", "tutorialStep:none", "skipMultiplayerWarning:true", "joinedFirstServer:true")),
+                "seeded options.txt has no narrator, no sound, no tutorial or first-server prompts: " + quiet);
+        check(quiet.containsAll(List.of("version:5023", "guiScale:2", "key_key.jump:key.keyboard.space")) && quiet.indexOf("version:5023") == 0 && quiet.size() == 9,
+                "seeding options.txt keeps every other key and its order");
+        Path freshQuiet = QuietOptions.seed(scratch.resolve("fresh quiet"));
+        check(Files.readAllLines(freshQuiet).equals(List.of("narrator:0", "onboardAccessibility:false", "soundCategory_master:0.0", "tutorialStep:none", "skipMultiplayerWarning:true", "joinedFirstServer:true")),
+                "a first launch gets a quiet options.txt");
+        check(QuietOptions.gameDirectory("Main --version 26.3", "/work/run").equals(Path.of("/work/run")), "without --gameDir the working directory is the game directory");
         Path dark = scratch.resolve("frame dark.png"), half = scratch.resolve("frame half.png");
         BufferedImage left = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB), right = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB);
         for (int y = 0; y < 5; y++) for (int x = 0; x < 10; x++) right.setRGB(x, y, 0xFFFFFF);
@@ -182,7 +189,22 @@ public final class PortableTests {
             }
         }
         check(portBuild.command(List.of("help")).contains("-Dfabric.loom.ci=true"), "port Gradle skips dependency source remapping");
+        check(!portBuild.command(List.of("help")).contains("--no-configure-on-demand"), "modaccel's Gradle runs keep the build's configure-on-demand");
+        Path missed = scratch.resolve("missed.log");
+        Files.writeString(missed, "* What went wrong:\nCannot locate tasks that match ':modaccelMetadata' as task 'modaccelMetadata' not found in root project 'diorama'.\n");
+        check(Build.selectionFailed(missed), "a task-selection failure is recognized for the configure-on-demand retry");
+        Files.writeString(missed, "* What went wrong:\nExecution failed for task ':compileJava'.\n");
+        check(!Build.selectionFailed(missed), "a compile failure does not trigger the configure-on-demand retry");
         check(build.command(List.of("help")).contains("-Dfabric.loom.ci=true"), "verification Gradle also skips dependency source remapping");
+        Path ngGame = scratch.resolve("ng/.gradle/repositories/ng_dummy_ng/net/neoforged/neoforge/21.1.248/neoforge-21.1.248.jar");
+        Map<String, Object> ngModel = Json.map("projects", List.of(Json.map("path", ":", "plugins", List.of("net.neoforged.gradle.userdev.UserDevPlugin"),
+                "compile", List.of(Json.map("task", ":compileJava", "classpath", List.of(ngGame.toString()))))));
+        check("21.1.248".equals(OwnCompile.neoforgeVersion(ngModel)), "a NeoGradle build waiting on NeoForm's game jar gets the installer-made jar");
+        Files.createDirectories(ngGame.getParent());
+        try (var zip = new java.util.zip.ZipOutputStream(Files.newOutputStream(ngGame))) { zip.putNextEntry(new java.util.zip.ZipEntry("net/minecraft/client/Minecraft.class")); zip.closeEntry(); }
+        check(OwnCompile.neoforgeVersion(ngModel) == null, "once NeoForm has built the game jar, the Gradle compile is used");
+        check(OwnCompile.neoforgeVersion(Json.map("projects", List.of(Json.map("path", ":", "compile", List.of(Json.map("task", ":compileJava", "classpath", List.of(scratch.resolve("minecraft-merged.jar").toString()))))))) == null,
+                "a Fabric build keeps the Gradle compile");
         Path transaction = project.state().resolve("ports/test-undo"), backup = transaction.resolve("before/src/custom/Food.java"); Files.createDirectories(backup.getParent());
         byte[] original = "class Food { int n = 1; }\r\n// original 🧱".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         Files.write(backup, original); Map<String, Object> before = Json.map("src/custom/Food.java", Fingerprints.bytes(original));

@@ -253,10 +253,14 @@ def main():
 
     ledger = load(ROOT / "coverage" / "ledger.json")
     def best_run(a, b):
+        """The best run per loader that crossed a → b: a run proves only its own loader."""
+        return {l: r for l in ledger_rule.LOADERS if (r := best_run_on(a, b, l))}
+
+    def best_run_on(a, b, loader):
         fwd = order[a] < order[b]
         best = None
         for h in ledger["hops"]:
-            if h["from"] not in order or h["to"] not in order:
+            if h["from"] not in order or h["to"] not in order or h["loader"] != loader:
                 continue
             lo, hi = order[h["from"]], order[h["to"]]
             if (lo < hi) != fwd:
@@ -315,12 +319,14 @@ def main():
         if "**doing**" in m.group(2):
             for a, b in re.findall(r"(\d+\.\d+(?:\.\d+)?)\s*(?:→|->)\s*(\d+\.\d+(?:\.\d+)?)", m.group(2)):
                 if a in order and b in order:
-                    doing.append({"step": m.group(1), "from": a, "to": b, "text": " ".join(m.group(2).split())[:160]})
+                    full = " ".join(m.group(2).split())
+                    item = {"step": m.group(1), "from": a, "to": b, "text": full}
+                    doing.append({**item, "text": full[:160], "loaders": sorted(ledger_rule.doing_loader(item, ledger["hops"]))})
     every = [v["id"] for v in meta["versions"]]
-    step_status = ledger_rule.step_statuses(every, set(early), ledger["hops"], doing)
+    step_status = ledger_rule.all_statuses(every, set(early), ledger["hops"], doing)
 
     def hop_status(a, b):
-        return ledger_rule.hop_status(every, step_status, a, b)
+        return {l: ledger_rule.hop_status(every, step_status[l], a, b) for l in ledger_rule.LOADERS}
 
     hubs = [f["hub"] for f in fam_out]
     hub_hops = []
@@ -360,7 +366,11 @@ def main():
         c = s["coverage"]
         print(f"  {s['from']:>8} -> {s['to']:<8} {100*s['breakingShare']:5.1f}% {'NEW FAMILY' if s['newFamily'] else '          '} "
               f"listed {c['listed']:5} mapped {c['mappings']:4} rule {c['rule']:3} note {c['note']:3} left {c['left']:5}"
-              f"  run: {s['bestRun']['mod'] + ' ' + s['bestRun']['status'] if s['bestRun'] else '-'}")
+              f"  run: {runs_said(s['bestRun'])}")
+
+
+def runs_said(best):
+    return ", ".join(f"{loader} {run['mod']} {run['status']}" for loader, run in best.items()) or "-"
 
 
 if __name__ == "__main__":

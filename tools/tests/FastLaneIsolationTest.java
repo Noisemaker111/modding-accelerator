@@ -73,7 +73,7 @@ public final class FastLaneIsolationTest {
         require(run(home, jar, root), 0, 2, 0, "plain project, untagged tests, warm");
         Files.writeString(test, "package plain; class PlainTest { }\n");
         Run empty = run(home, jar, root);
-        if (empty.exit() != 1 || !empty.output().contains("JUnit Jupiter found no tests") || empty.output().contains("No successful logic check"))
+        if (empty.exit() != 1 || !empty.output().contains("Check that they are JUnit 5 tests") || empty.output().contains("No successful logic check"))
             throw new AssertionError("an empty run must say why; got exit " + empty.exit() + "\n" + empty.output());
         System.out.println("PASS plain project with no tests says so instead of a Gradle tail");
     }

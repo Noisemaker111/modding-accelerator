@@ -2,7 +2,7 @@
 
 **Use this to:**
 
-- **Test logic fast.** Compile and run pure tests without launching the game — about a second in a warm repo.
+- **Test logic fast.** Compile and run pure tests without launching the game — 4.2–8.3 s in a warm repo (measured on F3Nope), about 48 s the first time.
 - **Check a screen faster.** Swap the edit into a running client and get a 1280×720 capture in about 1.5 s, against 22–28 s for a restart.
 - **Compile and prove a port.** Build, audit mixin targets, check the packaged metadata, then load the result in a real client.
 - **Auto-port a mod, on some versions.** Fabric 1.21.5 ↔ 1.21.6 and NeoForge 1.21.1 → 1.21.4 with no hand edits; NeoForge 1.21.6 → 26.3 reaches a packaged build too, with one file written by hand; larger jumps stop with the errors that remain.
@@ -26,14 +26,14 @@ are the roadmap below, not current capability.
 
 | Area | Verified today | Next |
 |---|---|---|
-| One version hop | Fabric 1.21.5 ↔ 1.21.6 ports and backports; NeoForge 1.21.1 → 1.21.4 automatic (75 s first, 14 s repeat); NeoForge 1.21.6 → 26.3 packaged build in 66 s, 82 compile errors to 0 | 1.21.1 → 1.21.6: 9 named errors left (SavedData codec, owner/saddling); then the 1.21.6 GUI rewrite |
+| One version hop | Fabric 1.21.5 ↔ 1.21.6 ports and backports; NeoForge 1.21.1 → 1.21.4 automatic (75 s first on the original snapshot, 165 s on newer upstream; 14 s repeat); NeoForge 1.21.6 → 26.3 packaged build in 66 s, rules took 82 compile errors to 1 and the last file was written by hand | 1.21.1 → 1.21.6: 9 named errors left (SavedData codec, owner/saddling); then the 1.21.6 GUI rewrite |
 | Unobfuscated 26.x | The build follows the game: NeoForge, NeoGradle 7.1, Java 25, Gradle 9 archive names, no mappings | One file (the removed debug-text event) still needed a hand rewrite; a load check in a real 26.3 client |
 | Version chains | A repeated port reuses the same project state | Any version to any other, including multi-hop chains (1.20.1 → 1.21.6) with one record per hop |
 | Version families | 1.21.x Fabric and NeoForge; 1.20.1 Forge runs the loop and checks | Older families (1.16–1.19), Quilt, backports across major versions |
 | Loaders | Fabric and NeoForge ports end to end; Forge fast lane and checks | Any loader to any loader (Fabric ↔ NeoForge ↔ Forge ↔ Quilt): unbuilt; first step is one small Fabric → NeoForge mod, measured |
 | Project shapes | One Gradle project; Stonecutter nodes listed and built | Multi-module orchestration, Stonecutter repairs in shared sources, Kotlin sources |
 | Platforms | Game checks on Windows; portable checks on Windows, Linux and macOS in CI | Linux and macOS game rendering |
-| Verification | Build, mixins, packaged metadata, real client, inspected captures, `--expect-change`, save roundtrip | Behaviour assertions for items, entities and multiplayer; optional pixel goldens |
+| Verification | Build, mixins, packaged metadata, real client, the loader's own mod list (every game check fails if a mod id or version is missing), inspected captures, `--assert` and `--expect-value` on the mod's own code count as behaviour (`--expect-change` and save roundtrip don't) | Behaviour assertions for items, entities and multiplayer; the dedicated server's mod list; optional pixel goldens |
 
 The ordered plan is in [`ROADMAP.md`](ROADMAP.md); the current resume point and evidence are in
 [`PLAN.md`](PLAN.md).

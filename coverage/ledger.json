@@ -1,5 +1,5 @@
 {
-  "note": "Every entry is a port that was actually run. status: stop = named errors remain; build = packaged build + mixin audit passed; load = the real client or server loaded it; behaviour = something observable was asserted in the game. Add an entry only with a receipt.",
+  "note": "Every entry is a port that was actually run. status: stop = named errors remain; build = packaged build + mixin audit passed; load = the real client or server loaded it; behaviour = an assertion on the mod's own state passed in the game (a frame change or a reloaded save is not behaviour). A run proves only its own loader and the updates it crossed. Add an entry only with a receipt; remarked says when and why a status was lowered.",
   "versions": [
     "1.12.2",
     "1.16.5",
@@ -33,9 +33,14 @@
       "loader": "fabric",
       "from": "1.21.5",
       "to": "1.21.6",
-      "status": "behaviour",
-      "detail": "Three overlay lines inspected in the real client; a visual gate caught an invisible overlay that a passing build missed.",
-      "date": "2026-10-24"
+      "status": "load",
+      "detail": "Three overlay lines inspected in the real client; a visual gate caught an invisible overlay that a passing build missed. Re-marked from behaviour to load on 2026-10-26: The overlay lines were read off a screenshot by a person and the gate was a frame-change percentage; no assertion on F3Nope's own state or text ran.",
+      "date": "2026-10-24",
+      "remarked": {
+        "was": "behaviour",
+        "date": "2026-10-26",
+        "why": "The overlay lines were read off a screenshot by a person and the gate was a frame-change percentage; no assertion on F3Nope's own state or text ran."
+      }
     },
     {
       "mod": "F3Nope",
@@ -51,9 +56,14 @@
       "loader": "fabric",
       "from": "1.21.5",
       "to": "1.21.6",
-      "status": "behaviour",
-      "detail": "Port and backport; opening the inventory changed 95.6% of the frame, and a save reloaded at the same position.",
-      "date": "2026-10-24"
+      "status": "load",
+      "detail": "Port and backport; opening the inventory changed 95.6% of the frame, and a save reloaded at the same position. Re-marked from behaviour to load on 2026-10-26: Opening the inventory changes the frame and a save reloads at the same position with or without AppleSkin, so neither checks its behaviour. Nothing asserted AppleSkin's own state (its HUD overlay, saturation or tooltip values).",
+      "date": "2026-10-24",
+      "remarked": {
+        "was": "behaviour",
+        "date": "2026-10-26",
+        "why": "Opening the inventory changes the frame and a save reloads at the same position with or without AppleSkin, so neither checks its behaviour. Nothing asserted AppleSkin's own state (its HUD overlay, saturation or tooltip values)."
+      }
     },
     {
       "mod": "AppleSkin",
@@ -69,9 +79,14 @@
       "loader": "neoforge",
       "from": "1.21.1",
       "to": "1.21.4",
-      "status": "behaviour",
-      "detail": "19 API errors repaired by rules, packaged metadata rewritten, jar loaded and its /za dashboard rendered in a real 1.21.4 world.",
-      "date": "2026-10-24"
+      "status": "load",
+      "detail": "19 API errors repaired by rules, packaged metadata rewritten, jar loaded and its /za dashboard rendered in a real 1.21.4 world. Re-marked from behaviour to load on 2026-10-26: The /za dashboard was read off a screenshot by a person; no assertion on the mod's own state (its config, wave or registry values) ran.",
+      "date": "2026-10-24",
+      "remarked": {
+        "was": "behaviour",
+        "date": "2026-10-26",
+        "why": "The /za dashboard was read off a screenshot by a person; no assertion on the mod's own state (its config, wave or registry values) ran."
+      }
     },
     {
       "mod": "ZombieApocalypseAddon",

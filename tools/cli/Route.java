@@ -31,7 +31,33 @@ final class Route {
                     "details", "Blocked: Minecraft " + version + " is before " + FIRST_MAPPED + ". " + reason
                             + " modaccel ports between " + FIRST_MAPPED + " and the newest indexed release; nothing was changed.");
         }
+        for (String version : List.of(from, to)) {
+            String unknown = unknownRelease(harness, version);
+            if (unknown != null) return Json.map("ok", false, "tier", "blocked", "sourcesChanged", false, "gameVerified", false,
+                    "blocked", List.of(Json.map("version", version, "reason", unknown)), "reason", unknown, "details", unknown);
+        }
         return null;
+    }
+
+    /**
+     * A plain release number that is older than the newest release modaccel knows but is not one of
+     * them is a typo (1.21.66, 26.0): say so before any build or download. Newer numbers pass, since
+     * the list can be behind a fresh release; snapshots and pre-releases pass too.
+     */
+    static String unknownRelease(Path harness, String version) throws IOException {
+        if (!version.matches("\\d+(\\.\\d+)+")) return null;
+        Path index = index(harness);
+        if (!Files.isRegularFile(index)) return null;
+        List<String> known = new ArrayList<>();
+        for (Object item : Json.array(Json.read(index).get("allVersions"))) known.add(String.valueOf(Json.object(item).get("id")));
+        if (known.isEmpty() || known.contains(version) || known.contains(version.replaceFirst("\\.0$", ""))) return null;
+        String newest = known.get(known.size() - 1);
+        if (Versions.compare(version, newest) > 0) return null;
+        List<String> near = new ArrayList<>();
+        for (String id : known) if (Versions.compare(id, version) < 0) { near.clear(); near.add(id); }
+        for (String id : known) if (Versions.compare(id, version) > 0) { near.add(id); break; }
+        return "Minecraft " + version + " is not a Java Edition release (modaccel's list runs from " + known.get(0) + " to " + newest + "). "
+                + "Check the number; the nearest releases are " + String.join(" and ", near) + ". Nothing was changed.";
     }
 
     static String blockedReason(Path harness, String version) throws IOException {

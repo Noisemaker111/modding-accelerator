@@ -523,3 +523,25 @@ ZombieApocalypseAddon (upstream 1bb67d4, fresh copies, warm Gradle and mapping c
   rounds. Of the 69, 4 are placed by owner, 24 by name from the 26.x step files, 35 by name only
   (owner differs, usually a supertype; the report says so), 6 unplaced.
 Releases before 1.14.4 are refused before the build is evaluated, in 0.09s, with nothing changed.
+
+## Mixin check by Mixin itself, no game launch (2026-10-26)
+
+`mixin-check` (and `port`, right after the build) now applies every mixin with the real Mixin
+library against the real game jar, in the mod's own dev launch, with no window and no world:
+Fabric through Knot (as fabric-loader-junit sets it up), NeoForge through FML's unit-test launch
+target (as junit-fml does), which a small agent switches to the checked side and stops before
+NeoForge bootstraps. Every target class is loaded; `-Dmixin.debug.injectors=true` makes Mixin
+report injections that match fewer places than they expect. Each failure is in Mixin's words with
+the source file and handler line. The old bytecode audit stays only as a labelled hint.
+
+Measured on Windows (warm = launch recorded and caches hot; cold = first run on a copy):
+- Architectury API `:fabric`: hand audit 34 "dead" → Mixin 62/62 applied, 0 dead. Warm 10s, cold 87s.
+- Diorama `:1.21.1`: 8/8 applied, 0 dead. Warm 4s, cold 26s.
+- Jade (NeoForge 1.21.1, FML 4.0.24): 6/6 applied, 3 of them client mixins. Warm 8s, first 66s.
+- AppleSkin with one target renamed: fails with "Critical injection failure ... renderFoodRenamed",
+  InGameHudMixin.java:16. Warm 5s.
+- Jade with one target renamed: fails the same way, FontMixin.java:25. Cold 286s (fresh NeoGradle copy).
+- Diorama at 0faa5ae (before PR #19's fix) `:1.20.1`: fails on GameRendererMixin.java:30,
+  `render(Lnet/minecraft/client/DeltaTracker;Z)V` is not in 1.20.1's GameRenderer. Cold 24s, warm 6s.
+- F3Nope `port --from 1.21.5 --to 1.21.6 --fix` on a fresh clone: built, 1/1 applied, 89s total.
+Not covered yet: NeoForge on FML 10+ (26.x), Forge, and the server-side pass on a real mod.

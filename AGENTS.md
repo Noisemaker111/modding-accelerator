@@ -13,9 +13,6 @@ The limited Fabric beta is a starting point, not the finished scope.
 ROADMAP.md holds the phases and numbered steps; only statuses there are claims.
 Live board: `docs/index.html` (the bench page; `docs/progress.html` now points there), rendered from `coverage/ledger.json` by
 `python bench/progress.py`. A port run that is not in the ledger did not happen.
-After any port run, or any change to the rules or the router, record it in the ledger and regenerate
-`docs/index.html` and `docs/porting-map.html` in the same change, so a hop turns green only once a port
-on it has been seen working.
 
 - Phase 1 step 7 (doing): AppleSkin 1.20.1 → 1.21.6. Loom 1.8→1.10 and Gradle
   8.10→8.13 done by hand, JEI dropped (upstream 1.21.6 has none), mappings went
@@ -48,6 +45,14 @@ on it has been seen working.
   used to stop at one GlStateManager import (router and --direct alike; step 7 moved it by hand); the
   `glstatemanager-opengl` rule moves it and the port now shows 37 errors through the router.
 
+## Branches and PRs
+- One PR per feature or support area (e.g. "Paper plugin support", "Porting"), not one per step. Keep it a draft and add commits as steps land; the PR body is the checklist.
+- Merge when it reaches a milestone worth shipping (a new rung on SCOPE.md's ladder, or a big porting jump such as every 1.14 mod reaching 1.16), with Jon's approval and CI green on all 3 OS.
+- Porting work goes on one long-running branch, `porting`, merged at those jumps.
+- Small fixes outside any feature may go in one hardening/fixes PR at a time.
+- Every port run gets its ledger row in that branch. Regenerate docs/index.html and docs/porting-map.html once, in the final commit before merge, so the site changes only when a milestone lands.
+- Agents work in their own worktree and never edit the same files as another agent.
+
 Read README.md for the public goal/support table and PLAN.md for the evidence
 behind the steps above. Finish the pending final game check before claiming
 the current automatic semantic port works. Do not treat a passing build, mixin
@@ -65,7 +70,7 @@ Current input is a Gradle source checkout; compiled-JAR conversion is unsupporte
 
 Use the portable command for current work: `modaccel.cmd` on Windows,
 `./modaccel` on POSIX, or `java -jar modaccel.jar`. See `help` and `support`.
-Use `port --from OLD --to NEW --fix`, `fast`, `ui-check`, `world-check`,
+Use `port --from OLD --to NEW --fix`, `mixin-check` (Mixin applies every mixin, no game launch), `fast`, `ui-check`, `world-check`,
 `mp-check`, `eval`, `reload`, `game-status`, and `game-stop`. `eval` runs Java in the
 owned client; `reload` swaps recompiled classes into it and says when a restart is
 needed (mixins, mod metadata, or a changed class shape without `--jbr`). Package locally;

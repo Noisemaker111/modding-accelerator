@@ -279,6 +279,23 @@ empty-cache setup speed and Forge framebuffer checks remain unfinished.
 SHA-256 checksums locally; nothing is published. The older Windows lanes described below remain available through their
 existing verbs (`ui`, `node`, `world`, `mp`, and single-dash `port` options).
 
+### Real Stonecutter mods in CI
+
+`bench/real-mods/manifest.json` pins real mods (repo, commit, `--project`, loader). In CI,
+`python bench/real-mods/run.py --compile-nodes --only ID` clones one entry fresh and runs only
+modaccel on it: doctor, then setup and compile of each listed node. No game is started.
+
+- **Every PR** (`portable.yml`, job `stonecutter-sample`, must finish in under 5 minutes): three
+  representative nodes, each its own job on Windows, Linux and macOS: Diorama `:26.3`, Diorama
+  `:1.21.1` and In-Game Account Switcher `:26.3-fabric`. The Gradle home is cached per node and OS.
+- **Nightly and on demand** (`stonecutter-nightly.yml`, job `stonecutter-nodes`, not a merge
+  blocker): every node of Diorama (22) and In-Game Account Switcher (12), on all three OS. Moved
+  off PRs because a cold run takes 10-40 minutes per mod and OS.
+
+A node that fails upstream is listed under `known_failures` with the exact error it must show;
+a different error, or the node passing, is reported. The full game loop of `run.py` (ui-check,
+world-check, reload, eval) is not run in CI.
+
 > **Not a finished product, and not the only option:** what is still missing is in
 > [`ROADMAP.md`](ROADMAP.md), and how it compares to existing tools (including where they win) is
 > in [`bench/alternatives.md`](bench/alternatives.md).
@@ -587,9 +604,13 @@ separately. An update that breaks 1% or more of the old names starts a new famil
 family's hub is its release with the most mods on Modrinth. Before 1.14.4 there are no official
 names, so families are grouped by version number, marked estimated, and nothing is measured.
 
-A line is green only when `coverage/ledger.json` has a port across that whole hop that loaded or
-passed a behaviour check in the game; yellow when a ROADMAP step marked doing covers it; red
-otherwise, with the reason shown. Refresh: `java tools/ChangeIndex.java`, then
+Colours are per loader: pick the loader on the page. A run proves only its own loader and the
+updates it crossed, so a NeoForge port colours nothing for Fabric. A line is green only when
+`coverage/ledger.json` has a port on that loader across that whole hop that loaded or passed a
+behaviour check in the game; yellow when a ROADMAP step marked doing for that loader covers it;
+red otherwise, with the reason shown. "Loaded" means the loader's own mod list held the mod;
+"behaviour" means an assertion on the mod's own state passed (a frame change or a reloaded save
+is not behaviour). Refresh: `java tools/ChangeIndex.java`, then
 `python bench/change_routes.py` and `python bench/porting_map.py`.
 
 ## Porting, measured
@@ -653,6 +674,35 @@ Both clients passed real world/HUD/tooltip tests, including large-value counters
 `bench/port-tests/Install-ClientTest.ps1 -Repo <repo>`, then
 `modaccel -Repo <repo> port -Fix -Log <original failing log> -Task runClientGameTest -Max 1`.
 The test mod stays in the gametest source set and is excluded from the shipped mod.
+
+### What is this called on the other version?
+
+```
+modaccel explain --root <repo> --project :failing --against :building [--only TEXT]
+```
+
+For a build with one project per Minecraft version (Stonecutter, or a multi-loader layout),
+`explain` compiles the failing project and sets each compiler error beside both projects' actual
+jars. For a missing class it shows where that class lives in each, which catches moved packages.
+For a missing or changed method or field, it shows every signature by that name, otherwise similar
+names, and when nothing is similar, the members only the failing side has. Errors in Stonecutter's
+generated sources point back at `src/`. Once nothing fails to compile, it runs the mixin audit and
+explains each dead target the same way. On Diorama's 1.20.1 port, run against 1.21.1:
+
+```
+src/gameshim/java/dev/diorama/gameshim/ShimWorldSave.java
+  28: cannot find symbol: method openWorld(String,()->{ thro[...]"); })
+    1.21.1  WorldOpenFlows: void openWorld(String, Runnable)
+    1.20.1  WorldOpenFlows: no openWorld. Only in 1.20.1: void loadLevel(Screen, String)
+
+src/main/java/dev/diorama/mixin/GameRendererMixin.java
+  28: @Inject method 'render(Lnet/minecraft/client/DeltaTracker;Z)V' not found in net.minecraft.client.renderer.GameRenderer
+    1.21.1  GameRenderer: void render(DeltaTracker, boolean)
+    1.20.1  GameRenderer: void render(float, long, boolean)
+```
+
+It reads signatures, not behaviour, and Mojang's names have no parameter names. 16–22 s a run
+on Diorama's 22 projects with a warm daemon.
 
 ### Can this repo even build at the target?
 

@@ -5,8 +5,9 @@ import java.util.jar.*;
 import java.util.zip.*;
 
 final class Installation {
-    static final List<String> RESOURCES = List.of("tools/cli/gradle.init.gradle", "tools/cli/Json.java", "tools/cli/Relocate.java", "tools/agent/PortableAgent.java", "tools/agent/Console.java", "tools/agent/HotReload.java", "tools/runner/PureTests.java",
-            "tools/VersionMap.java", "tools/MixinAudit.java", "tools/tests/PortableTests.java", "tools/tests/JdkDownloadsTest.java", "tools/tests/DependenciesTest.java", "tools/tests/FabricMetadataTest.java", "knowledge/fixes.json", "knowledge/structural.json", "knowledge/port-corpus.json", "coverage/changes/index.json");
+    static final List<String> RESOURCES = List.of("tools/cli/gradle.init.gradle", "tools/cli/Json.java", "tools/cli/Relocate.java", "tools/cli/QuietOptions.java", "tools/agent/PortableAgent.java", "tools/agent/Console.java", "tools/agent/HotReload.java", "tools/runner/PureTests.java",
+            "tools/VersionMap.java", "tools/MixinAudit.java", "tools/mixincheck/ModaccelMixinCheck.java", "tools/mixincheck/ModaccelMixinErrors.java", "tools/mixincheck/ModaccelLaunchRecorder.java", "tools/mixincheck/ModaccelNeoForgeTarget.java",
+            "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinErrorHandler.java", "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinInfo.java", "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinConfig.java", "tools/GamePrep.java", "tools/tests/PortableTests.java", "tools/tests/JdkDownloadsTest.java", "tools/tests/DependenciesTest.java", "tools/tests/FabricMetadataTest.java", "tools/tests/HardeningTest.java", "tools/tests/MixinCheckTest.java", "tools/tests/TrustTest.java", "tools/tests/StrangerTest.java", "knowledge/fixes.json", "knowledge/structural.json", "knowledge/port-corpus.json", "coverage/changes/index.json");
     static Path home() throws Exception {
         Path location = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         if (!location.toString().endsWith(".jar")) return Path.of(System.getProperty("modaccel.home", ".")).toAbsolutePath().normalize();
@@ -30,7 +31,12 @@ final class Installation {
         try (var files = Files.list(harness.resolve("tools/cli"))) { files.filter(p -> p.toString().endsWith(".java") && !p.getFileName().toString().equals("Bootstrap.java")).sorted().forEach(p -> command.add(p.toString())); }
         var compile = Run.command(command, report.root, Map.of(), report.log("package-compile"), 120); report.stage("package-compile", compile, Map.of());
         if (compile.exit() != 0) throw new IOException(Run.tail(compile.log()));
-        Manifest manifest = new Manifest(); manifest.getMainAttributes().putValue("Manifest-Version", "1.0"); manifest.getMainAttributes().putValue("Main-Class", "Modaccel");
+        // The entry point is built for Java 8 so `java -jar` on an old Java says which Java it needs instead of a class-version stack trace.
+        var launcher = Run.command(List.of(command.get(0), "--release", "8", "-nowarn", "-Xlint:-options", "-encoding", "UTF-8", "-d", classes.toString(), harness.resolve("tools/launcher/ModaccelLauncher.java").toString()),
+                report.root, Map.of(), report.log("package-launcher"), 60);
+        report.stage("package-launcher", launcher, Map.of());
+        Manifest manifest = new Manifest(); manifest.getMainAttributes().putValue("Manifest-Version", "1.0");
+        manifest.getMainAttributes().putValue("Main-Class", launcher.exit() == 0 ? "ModaccelLauncher" : "Modaccel");
         Path target = directory.resolve("modaccel.jar"), temporary = directory.resolve("modaccel.jar.tmp");
         try (var output = new JarOutputStream(Files.newOutputStream(temporary), manifest); var files = Files.walk(classes)) {
             for (Path file : files.filter(Files::isRegularFile).sorted().toList()) {
@@ -100,7 +106,7 @@ final class Installation {
     static Map<String, Object> test(Path harness, Modaccel.Report report) throws Exception {
         Runtimes.Jdk jdk = Runtimes.ensureAtLeast(harness, 17); Path classes = report.directory.resolve("test-classes"); Files.createDirectories(classes);
         Path own = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-        var compile = Run.command(List.of(jdk.home().resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(), "--release", "17", "-encoding", "UTF-8", "-cp", own.toString(), "-d", classes.toString(), harness.resolve("tools/tests/PortableTests.java").toString(), harness.resolve("tools/tests/JdkDownloadsTest.java").toString(), harness.resolve("tools/tests/DependenciesTest.java").toString(), harness.resolve("tools/tests/FabricMetadataTest.java").toString()),
+        var compile = Run.command(List.of(jdk.home().resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(), "--release", "17", "-encoding", "UTF-8", "-cp", own.toString(), "-d", classes.toString(), harness.resolve("tools/tests/PortableTests.java").toString(), harness.resolve("tools/tests/JdkDownloadsTest.java").toString(), harness.resolve("tools/tests/DependenciesTest.java").toString(), harness.resolve("tools/tests/FabricMetadataTest.java").toString(), harness.resolve("tools/tests/HardeningTest.java").toString(), harness.resolve("tools/tests/MixinCheckTest.java").toString(), harness.resolve("tools/tests/TrustTest.java").toString(), harness.resolve("tools/tests/StrangerTest.java").toString()),
                 report.root, Map.of(), report.log("test-compile"), 120); report.stage("test-compile", compile, Map.of());
         if (compile.exit() != 0) throw new IOException(Run.tail(compile.log()));
         var run = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "PortableTests", harness.toString(), report.directory.resolve("fixtures").toString()),
@@ -111,7 +117,15 @@ final class Installation {
                 report.root, Map.of(), report.log("dependency-tests"), 120); report.stage("dependency-tests", dependencyRun, Map.of());
         var metadataRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "FabricMetadataTest"),
                 report.root, Map.of(), report.log("manifest-tests"), 120); report.stage("manifest-tests", metadataRun, Map.of());
-        return Json.map("ok", run.exit() == 0 && jdkRun.exit() == 0 && dependencyRun.exit() == 0 && metadataRun.exit() == 0,
-                "details", Run.tail(run.log()) + "\n" + Run.tail(jdkRun.log()) + "\n" + Run.tail(dependencyRun.log()) + "\n" + Run.tail(metadataRun.log()));
+        var hardeningRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "HardeningTest"),
+                report.root, Map.of(), report.log("hardening-tests"), 120); report.stage("hardening-tests", hardeningRun, Map.of());
+        var trustRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "TrustTest"),
+                report.root, Map.of(), report.log("trust-tests"), 120); report.stage("trust-tests", trustRun, Map.of());
+        var mixinRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "MixinCheckTest", harness.toString()),
+                report.root, Map.of(), report.log("mixin-check-tests"), 120); report.stage("mixin-check-tests", mixinRun, Map.of());
+        var strangerRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "StrangerTest", harness.toString()),
+                report.root, Map.of(), report.log("stranger-tests"), 120); report.stage("stranger-tests", strangerRun, Map.of());
+        return Json.map("ok", run.exit() == 0 && jdkRun.exit() == 0 && dependencyRun.exit() == 0 && metadataRun.exit() == 0 && hardeningRun.exit() == 0 && mixinRun.exit() == 0 && trustRun.exit() == 0 && strangerRun.exit() == 0,
+                "details", Run.tail(run.log()) + "\n" + Run.tail(jdkRun.log()) + "\n" + Run.tail(dependencyRun.log()) + "\n" + Run.tail(metadataRun.log()) + "\n" + Run.tail(hardeningRun.log()) + "\n" + Run.tail(mixinRun.log()) + "\n" + Run.tail(trustRun.log()) + "\n" + Run.tail(strangerRun.log()));
     }
 }

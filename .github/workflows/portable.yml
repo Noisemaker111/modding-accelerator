@@ -20,6 +20,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Map and bench colour per loader
+        working-directory: portable workspace
+        run: python bench/test_ledger_rule.py
       - name: Portable core and JDK archive outcomes
         working-directory: portable workspace
         run: java tools/cli/Bootstrap.java . self-test --json
@@ -47,6 +53,9 @@ jobs:
       - name: Multi-module FastLane isolation
         working-directory: portable workspace
         run: java tools/tests/FastLaneIsolationTest.java . build/distributions/modaccel.jar
+      - name: Runtime-only file that does not download
+        working-directory: portable workspace
+        run: java tools/tests/RuntimeNativesTest.java . build/distributions/modaccel.jar
       - name: Port rewrites before compilation
         working-directory: portable workspace
         run: |
@@ -62,4 +71,53 @@ jobs:
             portable workspace/.runs
             portable workspace/.modaccel
           include-hidden-files: true
+          if-no-files-found: ignore
+  stonecutter-sample:
+    # Every PR, under 5 minutes: three representative Stonecutter nodes, fresh pinned clones,
+    # setup and compile through modaccel, one job per node and OS. No game. Every node of both
+    # mods compiles nightly in stonecutter-nightly.yml (not a merge blocker).
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        mod: [diorama-26.3, diorama-1.21.1, ias-26.3-fabric]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Gradle and JDK caches
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+            .modaccel/jdks
+          key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
+      - name: Setup and compile the node
+        run: python bench/real-mods/run.py --compile-nodes --only ${{ matrix.mod }} --cache "${{ runner.temp }}/real-mods" --out "${{ runner.temp }}/real-mods-results" --label ${{ matrix.mod }}
+      - name: Save caches on a miss, even when the node fails
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+            .modaccel/jdks
+          key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
+      - name: Node results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sample-${{ runner.os }}-${{ matrix.mod }}
+          path: ${{ runner.temp }}/real-mods-results
           if-no-files-found: ignore
