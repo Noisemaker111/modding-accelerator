@@ -323,6 +323,18 @@ public final class Modaccel {
                     + "(plain Java, a Paper/Bukkit plugin) every test runs; with Minecraft present only tests tagged @Tag(\"pure\") run.\n"
                     + "test runs the project's whole test task. Both fail when no test ran, and check the mod's resources and metadata afterwards.\n"
                     + "The build needs JUnit: testImplementation(\"org.junit.jupiter:junit-jupiter:5.11.4\") and testRuntimeOnly(\"org.junit.platform:junit-platform-launcher:1.11.4\").";
+            case "server-check" -> "Run a plugin on a real headless Paper server with a bot player and check what it really did: modaccel server-check --root SOURCE [--file SCENARIO] [--server-version 26.3] [--refresh] --json\n"
+                    + "The plugin's jar task builds the jar; the real Paper server for its Minecraft version is downloaded once from PaperMC's API\n"
+                    + "(SHA-256 checked, cached), started headless in offline mode on 127.0.0.1 with a flat fixed-seed world, and stopped after.\n"
+                    + "modaccel accepts Minecraft's EULA only for that throwaway local test server. A protocol bot (MCProtocolLib; Minecraft 26.3 today,\n"
+                    + "knowledge/mcprotocollib.json) joins as ModaccelBot. The scenario (--file, else .modaccel/server-check.scenario) is one step per line:\n"
+                    + "  join, leave, say TEXT, command /CMD, rcon CMD, wait Ns, server-env K=V, server-property K=V, background NAME: CMD, wait-port P\n"
+                    + "  expect-chat|expect-title|expect-actionbar|expect-log|expect-rcon CMD|expect-http GET URL  ~regex~ [within Ns]\n"
+                    + "  expect-entity TYPE [named ~re~] [near R], expect-block X Y Z ID[props] (~ is relative), expect-inventory ITEM [count N] [~re~],\n"
+                    + "  expect-position X Y Z [tolerance T], and expect-no-chat|-log|-entity|-inventory ... [within|for Ns].\n"
+                    + "${bot}, ${port:NAME} and ${secret:NAME} expand; secrets come from the environment or .modaccel/secrets.properties (keep it\n"
+                    + "out of git), are masked as ${secret:NAME} in every receipt and server file, and a missing one fails with \"needs secret NAME\".\n"
+                    + "Every expect step must pass; a scenario without one fails. Exit 1 names the step, what it expected and what came instead.";
             case "compile" -> "Compile the mod and check what the game reads at start-up: modaccel compile --root SOURCE [--project :module]\n"
                     + "After javac, every JSON file in the resources must parse, fabric.mod.json / neoforge.mods.toml must name a valid mod id, mixin\n"
                     + "configs and their classes, and entrypoints that exist, and the code's MOD_ID must match the metadata. Items made by a recipe\n"
@@ -337,6 +349,7 @@ public final class Modaccel {
                     + "  dependencies           target dependencies     ui-check, world-check, mp-check   real game checks\n"
                     + "  eval, reload           talk to the running game          game-status, game-stop\n"
                     + "  plugin-check           Paper/Bukkit plugin on a fake Paper server (MockBukkit), no real server\n"
+                    + "  server-check           plugin on a real Paper server with a bot player and a scenario\n"
                     + "  package, self-test     build or test modaccel itself\n"
                     + "Run modaccel help COMMAND for one command (port, fast, compile, mixin-check, explain, ui-check, eval, reload ...).\n"
                     + "--root is the mod's Gradle source checkout (the folder with gradlew); a multi-version build needs --project, e.g. --project :1.21.6.";

@@ -102,6 +102,9 @@ final class ServerCheck {
             try (var files = Files.list(folder)) { files.filter(f -> f.toString().endsWith(".jar")).sorted().forEach(f -> extraPlugins.add(f.toAbsolutePath().toString())); }
         }
         List<String> serverPlugins = new ArrayList<>(List.of(jar)); serverPlugins.addAll(extraPlugins);
+        // .modaccel holds secrets.properties and the server's logs; keep the whole folder out of the plugin's git.
+        Path ignore = build.project.root.resolve(".modaccel/.gitignore");
+        if (!Files.exists(ignore)) { Files.createDirectories(ignore.getParent()); Files.writeString(ignore, "# Written by modaccel: secrets and test-server files stay out of git.\n*\n"); }
         Json.save(checkSpec, Json.map("root", build.project.root.toString(), "scenario", scenario.toString(), "result", result.toString(), "logDir", work.toString(),
                 "secretsFile", build.project.root.resolve(".modaccel/secrets.properties").toString(), "ids", paper.ids().toString(), "lang", paper.lang().toString(),
                 "botLibrary", "MCProtocolLib " + bot.version() + ", Minecraft " + bot.minecraft(),
