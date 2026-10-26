@@ -135,6 +135,10 @@ jobs:
         run: java tools/cli/Bootstrap.java . package --json
       - name: Plugins on a real Paper server through modaccel
         run: java tools/tests/ServerCheckFixtures.java . build/distributions/modaccel.jar
+      - name: Stop the plugin's Gradle daemon so Windows can read its cache locks
+        if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
       - name: Save caches on a miss, even when the check fails
         if: always() && steps.cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
