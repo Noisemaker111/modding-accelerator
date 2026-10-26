@@ -21,7 +21,7 @@ jobs:
         run: echo "nodes=$(python3 bench/real-mods/run.py --only diorama-all,ias-all --matrix)" >> "$GITHUB_OUTPUT"
   node:
     needs: plan
-    name: ${{ matrix.mod }} ${{ matrix.node }} (${{ matrix.os }})
+    name: ${{ matrix.target.mod }} ${{ matrix.target.node }} (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
