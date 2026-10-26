@@ -161,6 +161,8 @@ public final class ModaccelServerCheck {
     }
 
     static Server server; static Bot bot;
+    /** Where the bot connects: the server itself, or ViaProxy in front of it when the server runs another version. */
+    static int joinPort;
     static long actionMark; static int chatMark, logMark; static String lastAction = "the start";
     static int assertions;
 
@@ -300,7 +302,7 @@ public final class ModaccelServerCheck {
             case "join" -> {
                 if (!rest.isBlank()) botName = rest.strip();
                 if (bot != null) throw new ScenarioError("The bot is already in the game.");
-                bot = Bot.join(botName, server.port, 60);
+                bot = Bot.join(botName, joinPort, 60);
                 markAction("join");
                 return "joined as " + botName + " at " + bot.positionText() + " (protocol " + bot.protocolVersion + ")";
             }
@@ -522,11 +524,46 @@ public final class ModaccelServerCheck {
     static void startServer(Map<String, Object> step) throws Exception {
         long begin = System.nanoTime();
         server = new Server(Json.object(spec.get("server")));
+        joinPort = server.port;
         Map<String, Object> started = new LinkedHashMap<>();
+        if (spec.get("proxy") instanceof Map<?, ?> proxy) {
+            long proxyBegin = System.nanoTime();
+            joinPort = viaProxy(Json.object(proxy), server.port);
+            started.put("proxySeconds", (System.nanoTime() - proxyBegin) / 1e9);
+        }
         started.put("seconds", (System.nanoTime() - begin) / 1e9); started.put("port", server.port); started.put("log", server.log.toString());
         step.put("serverStart", started);
         markAction("the server start");
         logMark = 0;
+    }
+
+    /**
+     * ViaProxy between the bot and a server of another version: it listens on a free local port, translates to
+     * targetVersion, offline and unsigned like the test server. Ready once it says it bound the port and the port answers.
+     */
+    static int viaProxy(Map<String, Object> proxy, int target) throws Exception {
+        int port = freePort();
+        Path dir = Path.of(proxy.get("dir").toString()); Files.createDirectories(dir);
+        List<String> command = new ArrayList<>();
+        for (Object o : Json.array(proxy.get("command"))) command.add(o.toString());
+        command.addAll(List.of("--bind-address", "127.0.0.1:" + port, "--target-address", "127.0.0.1:" + target, "--target-version", proxy.get("targetVersion").toString()));
+        ProcessBuilder builder = new ProcessBuilder(command).directory(dir.toFile()).redirectErrorStream(true);
+        builder.environment().put("VP_RUN_DIR", dir.toString());
+        Path log = logDir.resolve("viaproxy.log");
+        Process process = builder.start();
+        helpers.add(process); helperLogs.put("viaproxy", log);
+        List<String> lines = new ArrayList<>();
+        pump(process.getInputStream(), log, lines);
+        long deadline = System.nanoTime() + 60_000_000_000L;
+        while (System.nanoTime() < deadline) {
+            boolean bound; synchronized (lines) { bound = lines.stream().anyMatch(l -> l.contains("Binding proxy server to")); }
+            if (bound) try (Socket s = new Socket()) { s.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 250); return port; } catch (IOException notYet) { }
+            if (!process.isAlive()) break;
+            Thread.sleep(100);
+        }
+        List<String> tail; synchronized (lines) { tail = new ArrayList<>(lines.subList(Math.max(0, lines.size() - 15), lines.size())); }
+        throw new ScenarioError("ViaProxy, which lets the bot join a Minecraft " + proxy.get("targetVersion") + " server, " + (process.isAlive() ? "did not open its port in 60 seconds" : "exited (exit " + process.exitValue() + ")")
+                + ". Last log lines:\n  " + String.join("\n  ", tail) + "\n  Log: " + log);
     }
 
     static final class Server {
@@ -544,7 +581,7 @@ public final class ModaccelServerCheck {
             props.put("server-ip", "127.0.0.1"); props.put("server-port", Integer.toString(port));
             props.put("online-mode", "false"); props.put("enforce-secure-profile", "false"); props.put("prevent-proxy-connections", "false");
             props.put("enable-rcon", "true"); props.put("rcon.port", Integer.toString(rconPort)); props.put("rcon.password", rconPassword); props.put("broadcast-rcon-to-ops", "false");
-            props.put("level-seed", "modaccel"); props.put("level-type", "minecraft\\:flat"); props.put("generate-structures", "false");
+            props.put("level-seed", "modaccel"); props.put("level-type", flatWorld(Json.text(s, "minecraft", ""))); props.put("generate-structures", "false");
             props.put("gamemode", "creative"); props.put("difficulty", "peaceful"); props.put("spawn-protection", "0"); props.put("allow-flight", "true");
             props.put("view-distance", "4"); props.put("simulation-distance", "4"); props.put("max-players", "4"); props.put("motd", "modaccel server-check");
             props.put("white-list", "false"); props.put("enforce-whitelist", "false"); props.put("enable-status", "true"); props.put("sync-chunk-writes", "false"); props.put("network-compression-threshold", "-1");
@@ -573,6 +610,12 @@ public final class ModaccelServerCheck {
                 for (String l : lines) if (l.contains("Error occurred while enabling") || l.contains("Could not load plugin") || l.contains("Could not load 'plugins"))
                     throw new ScenarioError("The server started, but a plugin did not load or enable:\n  " + l + "\n  Log: " + log);
             }
+        }
+        /** 1.19 named world presets minecraft:flat; older servers call the flat world type flat. */
+        static String flatWorld(String minecraft) {
+            String[] p = minecraft.split("\\.");
+            try { int major = Integer.parseInt(p[0]), minor = p.length > 1 ? Integer.parseInt(p[1]) : 0; return major > 1 || minor >= 19 ? "minecraft\\:flat" : "flat"; }
+            catch (NumberFormatException unknown) { return "minecraft\\:flat"; }
         }
         List<String> tail(int n) { synchronized (lines) { return new ArrayList<>(lines.subList(Math.max(0, lines.size() - n), lines.size())); } }
         List<String> since(int mark, int n) { synchronized (lines) { List<String> l = lines.subList(Math.min(mark, lines.size()), lines.size()); return l.isEmpty() ? List.of("(nothing)") : new ArrayList<>(l.subList(Math.max(0, l.size() - n), l.size())); } }

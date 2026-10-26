@@ -301,6 +301,7 @@ final class Game {
             result.put("gradleDaemonsStopped", daemons == null || daemons.exit() == 0); return result;
         }
         String fingerprint = fingerprint();
+        Map<String, String> inputsBefore = Fingerprints.each(model, build.project, build.init);
         if (current != null && !fingerprint.equals(current.get("fingerprint")))
             throw new IOException("A game is already running for this project, started from an older build (the code or resources changed since). "
                     + "A check against it would test the old code, so this one did nothing. Run modaccel game-stop --root \"" + build.project.root + "\""
@@ -408,7 +409,11 @@ final class Game {
         if (options.values.containsKey("expect-screen") && !options.get("expect-screen", "").equals(result.get("screen"))) throw new IOException("Expected screen " + options.get("expect-screen", "") + "; got " + result.get("screen"));
         var image = ImageIO.read(shot.toFile());
         if (image == null || image.getWidth() != 1280 || image.getHeight() != 720) throw new IOException("Saved capture is not a 1280x720 PNG: " + shot);
-        if (!fingerprint.equals(fingerprint())) throw new IOException("Project changed during verification; the capture cannot verify the current build.");
+        if (!fingerprint.equals(fingerprint())) {
+            List<String> changed = Fingerprints.changed(inputsBefore, Fingerprints.each(model, build.project, build.init));
+            throw new IOException("Project changed during verification; the capture cannot verify the current build. Changed: "
+                    + (changed.isEmpty() ? "a modaccel agent file" : String.join(", ", changed.subList(0, Math.min(10, changed.size())))));
+        }
         build.report.stages.add(Json.map("name", "framebuffer-check", "seconds", (System.nanoTime() - captureStart) / 1e9));
         result.putAll(Json.map("tier", command.equals("mp-check") ? "dedicated-client" : command.equals("world-check") ? "integrated-world" : "client-render", "capture", captured, "fingerprint", fingerprint, "actions", actions,
                 "actionOrder", List.of("screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-value", "capture"),

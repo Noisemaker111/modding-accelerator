@@ -155,9 +155,18 @@ final class Build {
             }
         }
         Run.Result result = gradle(planning ? List.of("-Dmodaccel.metadataMode=plan", ":modaccelMetadata") : List.of(":modaccelMetadata"), planning ? "metadata-plan" : "metadata");
-        if (result.exit() != 0) throw new IOException("Build discovery failed. " + Run.gradleFailure(result.log()) + "\nLog: " + result.log());
+        if (result.exit() != 0) { String why = Run.gradleFailure(result.log()); throw new IOException(discoveryHeadline(why) + "\n" + why + "\nLog: " + result.log()); }
         Map<String, Object> value = Json.read(model);
         Json.save(stamp, Json.map("key", key, "at", System.currentTimeMillis())); return value;
+    }
+    /** What stopped modaccel reading the build, in a few words, ahead of Gradle's own detail. */
+    static String discoveryHeadline(String why) {
+        if (why.startsWith("Gradle could not resolve")) return "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build.";
+        java.util.regex.Matcher plugin = java.util.regex.Pattern.compile("Plugin \\[id: '([^']+)'(?:, version: '([^']+)')?\\] was not found").matcher(why);
+        if (plugin.find()) return "Missing build plugin: this project's build uses the Gradle plugin " + plugin.group(1) + (plugin.group(2) == null ? "" : " " + plugin.group(2))
+                + ", and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle).";
+        if (why.startsWith("Gradle could not reach")) return "No connection to a repository: Gradle could not download what this project's build needs, so modaccel could not read the build.";
+        return "Could not read this project's build: Gradle stopped while loading it, before any code was compiled.";
     }
     static boolean classpathExists(Map<String, Object> model) {
         for (Object p : Json.array(model.get("projects"))) {

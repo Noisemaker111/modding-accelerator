@@ -1,0 +1,8 @@
+{
+  "note": "server-check's bot speaks one protocol, the newest release in knowledge/mcprotocollib.json. A server on any other Minecraft version is joined through ViaProxy (github.com/ViaVersion/ViaProxy, GPL-3.0, run as its own process, never bundled), which translates between the bot's protocol and the server's. The jar is downloaded from the GitHub release and used only if its SHA-256 matches. Its own --list-versions output names the versions it can reach.",
+  "version": "3.4.14",
+  "url": "https://github.com/ViaVersion/ViaProxy/releases/download/v3.4.14/ViaProxy-3.4.14.jar",
+  "file": "ViaProxy-3.4.14.jar",
+  "sha256": "2894bbfb2f4342f8fde887af6c689313efd5b0e46a8006775eea0e21e2948ab5",
+  "java": 17
+}

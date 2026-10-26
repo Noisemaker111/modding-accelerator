@@ -101,14 +101,18 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
   server-check:
-    # Every PR, under 5 minutes: AgentCraft on a real headless Paper server with a bot player
-    # (tools/tests/ServerCheckFixtures.java): its scenario cold and warm, the bot's own scenario with a
-    # secret that must stay masked, the missing-secret failure, and each break made on purpose.
-    # The Paper jar and Gradle home are cached; "cold" here means a fresh world and server folder.
+    # Every PR, under 5 minutes: plugins on real headless Paper servers with a bot player
+    # (tools/tests/ServerCheckFixtures.java), one part per job so the parts run side by side:
+    # scenario: AgentCraft's scenario cold and warm. bot: the bot's own scenario with a secret that
+    # must stay masked, and the missing-secret failure. breaks: each break made on purpose.
+    # versions-*: a plugin built for 1.8.8 on older Paper servers, the bot joining through ViaProxy.
+    # The Paper jars, ViaProxy and Gradle home are cached; "cold" here means a fresh world and server folder.
+    name: server-check (${{ matrix.part }}, ${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
+        part: [scenario, bot, breaks, versions-new, versions-old]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
@@ -130,11 +134,12 @@ jobs:
             ~/.gradle/jdks
             .modaccel/jdks
             ~/.modaccel/servers
-          key: server-check-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json') }}
+            ~/.modaccel/tools
+          key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
       - name: Package without PowerShell
         run: java tools/cli/Bootstrap.java . package --json
       - name: Plugins on a real Paper server through modaccel
-        run: java tools/tests/ServerCheckFixtures.java . build/distributions/modaccel.jar
+        run: java tools/tests/ServerCheckFixtures.java . build/distributions/modaccel.jar "${{ matrix.part == 'versions-new' && 'versions:1.21.4,1.20.1' || matrix.part == 'versions-old' && 'versions:1.16.5,1.12.2,1.8.8' || matrix.part }}"
       - name: Stop the plugin's Gradle daemon so Windows can read its cache locks
         if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
         shell: pwsh
@@ -149,12 +154,13 @@ jobs:
             ~/.gradle/jdks
             .modaccel/jdks
             ~/.modaccel/servers
-          key: server-check-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json') }}
+            ~/.modaccel/tools
+          key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
       - name: Outcome receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: server-check-${{ runner.os }}-outcomes
+          name: server-check-${{ runner.os }}-${{ matrix.part }}-outcomes
           path: |
             .runs
           include-hidden-files: true

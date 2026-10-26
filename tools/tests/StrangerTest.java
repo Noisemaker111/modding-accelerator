@@ -371,8 +371,8 @@ public final class StrangerTest {
         require(new Modaccel.Options(new String[] {"fast", "--project", ":"}).get("project", "").equals(":"), "the root project stays ':'");
         require(Modaccel.unknownCommand("complie").startsWith("Unknown command complie. Did you mean compile?"), "a typed command slip gets the real one");
         require(!Modaccel.unknownCommand("xyzzy").contains("Did you mean"), "no guess for nonsense");
-        // Gradle's message for --project :26.4, as Diorama's build printed it under "Build discovery failed".
-        String noProject = Modaccel.plainError(new java.io.IOException("Build discovery failed. A problem occurred configuring root project 'diorama'.\n> Could not create task ':modaccelMetadata'.\n   > No project :26.4; available projects: [:, :26.2, :26.3, :26.3-neoforge]\nLog: x"));
+        // Gradle's message for --project :26.4, as Diorama's build printed it.
+        String noProject = Modaccel.plainError(new java.io.IOException(Build.discoveryHeadline("A problem") + "\nA problem occurred configuring root project 'diorama'.\n> Could not create task ':modaccelMetadata'.\n   > No project :26.4; available projects: [:, :26.2, :26.3, :26.3-neoforge]\nLog: x"));
         require(noProject.startsWith("There is no project :26.4 in this build. It has 3: :26.2, :26.3, :26.3-neoforge."), "a wrong --project lists the real ones plainly: " + noProject);
         try { new Modaccel.Options(new String[] {"fast", "--nope", "x"}); throw new AssertionError("an unknown option passed"); }
         catch (IllegalArgumentException expected) { require(expected.getMessage().contains("modaccel help fast"), "an unknown option points to the command's help: " + expected.getMessage()); }

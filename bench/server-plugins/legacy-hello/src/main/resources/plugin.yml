@@ -1,0 +1,7 @@
+name: LegacyHello
+version: '1.0'
+main: dev.modaccel.legacyhello.LegacyHello
+description: server-check's test plugin for old servers.
+commands:
+  hello:
+    description: Answers the sender with its name and the server's version.

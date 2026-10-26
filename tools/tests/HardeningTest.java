@@ -52,6 +52,12 @@ public final class HardeningTest {
         String text = Run.gradleFailure(log);
         require(text.startsWith("Gradle could not resolve 2 dependencies: com.simibubi.create:create-1.21.1:6.0.4-55, dev.engine-room.flywheel:flywheel-neoforge-api-1.21.1:1.0.2."),
                 "missing dependencies are named with their full coordinates: " + text);
+        require(Build.discoveryHeadline(text).startsWith("Missing dependency:"), "a build that cannot be read for a missing library says so first: " + Build.discoveryHeadline(text));
+        require(Build.discoveryHeadline(Run.unreachable(List.of("> Could not GET 'https://maven.example.com/a.pom'.", "Caused by: java.net.UnknownHostException: maven.example.com"))).startsWith("No connection"),
+                "a network failure is headed as one");
+        // Gradle's words when a build's plugins { } block names a plugin no repository has, as a real build printed them.
+        String plugin = Build.discoveryHeadline("Plugin [id: 'com.example.ghost', version: '1.0'] was not found in any of the following sources:");
+        require(plugin.startsWith("Missing build plugin: this project's build uses the Gradle plugin com.example.ghost 1.0,"), "a missing Gradle plugin is named: " + plugin);
         require(text.contains("https://maven.createmod.net") && text.contains("https://maven.neoforged.net"), "the searched repositories are named");
         require(text.contains("Execution failed for task ':compileJava'.") && !text.contains("Gradle footer"), "Gradle's own failure block is shown, not the footer");
         Path plain = scratch.resolve("plain.log"); Files.writeString(plain, "Caused by: java.lang.IllegalStateException: boom\n" + "tail\n".repeat(30));

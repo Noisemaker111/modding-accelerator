@@ -1,5 +1,13 @@
 {
   "note": "Server plugins the merge gate puts through modaccel on fresh pinned clones (tools/tests/ServerPluginFixtures.java, the server-plugins CI job). Kept apart from bench/real-mods, which the real-mod runner owns. fast.executed is the exact count fast must run with no @Tag(\"pure\") in the project; jar is the plugin's own Gradle task and the file it must produce. pluginCheck: plugin-check must pass on the untouched clone, cold and warm, with each expects line in its output, then fail on each break made on purpose in one throwaway copy (missing main class, a plugin.yml command with no handler, an exception in onEnable, a missing hard dependency) and pass again with the command wired up.",
+  "legacy": {
+    "note": "The bot on servers it cannot speak to directly (it joins through ViaProxy): LegacyHello, kept in this repo and built against the Spigot 1.8.8 API, so one jar loads on every Paper line. The versions part of ServerCheckFixtures runs its scenario on each version, then the break on the first.",
+    "dir": "bench/server-plugins/legacy-hello",
+    "scenario": "bench/server-plugins/legacy-hello.scenario",
+    "versions": ["1.21.4", "1.20.1", "1.16.5", "1.12.2", "1.8.8"],
+    "break": { "name": "the command answers someone else", "file": "src/main/java/dev/modaccel/legacyhello/LegacyHello.java",
+      "find": "\"Hello, \" + sender.getName()", "replace": "\"Hello, nobody\"", "failsAt": "expect-chat ~^Hello, ModaccelBot" }
+  },
   "plugins": [
     {
       "id": "agentcraft",

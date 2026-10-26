@@ -11,19 +11,24 @@ import java.util.concurrent.TimeUnit;
  * with every expect line passing. The bot's own scenario (tools/tests/server-check-bot.scenario) must pass with its
  * secret from .modaccel/secrets.properties, leave that secret nowhere in receipts, logs or server files, and fail with
  * "needs secret" without it. Then each break made on purpose must fail at the step the manifest names.
- * Usage: java ServerCheckFixtures.java <checkout> <modaccel.jar>
+ * Usage: java ServerCheckFixtures.java <checkout> <modaccel.jar> [scenario|bot|breaks|versions[:V,V]]
+ * With a part named, only that part runs, so CI runs the parts side by side; with none, all of them run.
+ * versions: the bot's own scenario on older Paper servers, the bot joining through ViaProxy.
  */
 public final class ServerCheckFixtures {
     record Run(int exit, String output, double seconds) { }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) throw new IllegalArgumentException("Usage: java ServerCheckFixtures.java <checkout> <modaccel.jar>");
+        if (args.length < 2 || args.length > 3) throw new IllegalArgumentException("Usage: java ServerCheckFixtures.java <checkout> <modaccel.jar> [scenario|bot|breaks|versions]");
+        String only = args.length == 3 && args[2].startsWith("versions:") ? args[2].substring("versions:".length()) : null;
+        Set<String> parts = args.length == 3 ? Set.of(only != null ? "versions" : args[2]) : Set.of("scenario", "bot", "breaks", "versions");
+        if (!Set.of("scenario", "bot", "breaks", "versions").containsAll(parts)) throw new IllegalArgumentException("Unknown part " + args[2] + "; use scenario, bot, breaks, versions or versions:V,V");
         Path home = Path.of(args[0]).toRealPath(), jar = Path.of(args[1]).toAbsolutePath().normalize();
         if (!Files.isRegularFile(jar)) throw new IOException("Missing package: " + jar);
         @SuppressWarnings("unchecked") List<Object> plugins = (List<Object>) ((Map<String, Object>) new Parser(Files.readString(home.resolve("bench/server-plugins/manifest.json"))).value()).get("plugins");
         int checked = 0;
         Path runs = home.resolve(".runs"); Files.createDirectories(runs);
-        for (Object item : plugins) {
+        for (Object item : parts.equals(Set.of("versions")) ? List.of() : plugins) {
             @SuppressWarnings("unchecked") Map<String, Object> plugin = (Map<String, Object>) item;
             @SuppressWarnings("unchecked") Map<String, Object> check = (Map<String, Object>) plugin.get("serverCheck");
             if (check == null) continue;
@@ -34,7 +39,7 @@ public final class ServerCheckFixtures {
             Path scenario = home.resolve(check.get("scenario").toString());
             long expects = Files.readAllLines(scenario).stream().filter(l -> l.strip().startsWith("expect-")).count();
 
-            for (String label : List.of("cold", "warm")) {
+            if (parts.contains("scenario")) for (String label : List.of("cold", "warm")) {
                 Run run = modaccel(home, jar, root, Map.of(), "server-check", "--file", scenario.toString());
                 long passed = count(run.output(), "\"status\":\"pass\"");
                 if (run.exit() != 0 || !run.output().contains("server-check passed") || passed != expects)
@@ -44,6 +49,7 @@ public final class ServerCheckFixtures {
 
             // The bot itself, with a secret from the gitignored secrets file; then without it.
             Path bot = home.resolve("tools/tests/server-check-bot.scenario");
+            if (parts.contains("bot")) {
             long botExpects = Files.readAllLines(bot).stream().filter(l -> l.strip().startsWith("expect-")).count();
             String secret = "modaccel-" + UUID.randomUUID();
             Path secrets = root.resolve(".modaccel/secrets.properties"); Files.createDirectories(secrets.getParent());
@@ -64,8 +70,10 @@ public final class ServerCheckFixtures {
             if (without.exit() != 1 || !without.output().contains("needs secret BOT_SECRET") || without.output().contains("\"status\":\"pass\""))
                 throw new AssertionError(id + " bot scenario without its secret: expected exit 1 with \"needs secret BOT_SECRET\" and nothing run; got exit " + without.exit() + "\n" + without.output());
             System.out.printf(Locale.ROOT, "PASS %s bot scenario without BOT_SECRET fails: needs secret BOT_SECRET (%.1fs)%n", id, without.seconds());
+            }
 
             // Each break made on purpose in a throwaway copy must fail at the step the manifest names.
+            if (parts.contains("breaks")) {
             Path copy = Files.createTempDirectory(root.getParent(), id + "-broken-").resolve(id);
             copyTree(root, copy);
             for (Object b : (List<?>) check.get("breaks")) {
@@ -83,10 +91,47 @@ public final class ServerCheckFixtures {
                 System.out.printf(Locale.ROOT, "PASS %s break \"%s\" fails at: %s (%.1fs)%n", id, brk.get("name"), failed, run.seconds());
                 Files.writeString(file, original, StandardCharsets.UTF_8);
             }
+            }
             checked++;
         }
-        if (checked == 0) throw new AssertionError("bench/server-plugins/manifest.json has no plugin with a serverCheck entry");
-        System.out.println("PASS server-check fixtures: " + checked);
+        if (checked == 0 && !parts.equals(Set.of("versions"))) throw new AssertionError("bench/server-plugins/manifest.json has no plugin with a serverCheck entry");
+        if (parts.contains("versions")) versions(home, jar, runs, only == null ? null : List.of(only.split(",")));
+        System.out.println("PASS server-check fixtures: " + String.join(", ", new TreeSet<>(parts)));
+    }
+
+    /**
+     * The bot on servers it does not speak to directly: manifest.json's legacy plugin (built against the 1.8.8 API, kept in
+     * this repo) and its scenario must pass on each listed Paper version, joined through ViaProxy; then the break made on
+     * purpose must fail at its step on the first version.
+     */
+    @SuppressWarnings("unchecked")
+    static void versions(Path home, Path jar, Path runs, List<String> only) throws Exception {
+        Map<String, Object> legacy = (Map<String, Object>) ((Map<String, Object>) new Parser(Files.readString(home.resolve("bench/server-plugins/manifest.json"))).value()).get("legacy");
+        Path root = Files.createTempDirectory(runs, "server-check-legacy-").resolve("legacy");
+        copyTree(home.resolve(legacy.get("dir").toString()), root);
+        Path scenario = home.resolve(legacy.get("scenario").toString());
+        long expects = Files.readAllLines(scenario).stream().filter(l -> l.strip().startsWith("expect-")).count();
+        List<Object> versions = (List<Object>) legacy.get("versions");
+        if (only != null && !versions.stream().map(String::valueOf).toList().containsAll(only)) throw new IllegalArgumentException("versions:" + only + " names a version manifest.json's legacy entry does not list: " + versions);
+        for (Object version : versions) {
+            if (only != null && !only.contains(version.toString())) continue;
+            Run run = modaccel(home, jar, root, Map.of(), "server-check", "--file", scenario.toString(), "--server-version", version.toString());
+            long passed = count(run.output(), "\"status\":\"pass\"");
+            if (run.exit() != 0 || passed != expects || !run.output().contains("through ViaProxy"))
+                throw new AssertionError("legacy plugin on Paper " + version + ": expected exit 0, all " + expects + " expect lines passing and the bot through ViaProxy; got exit " + run.exit() + ", " + passed + " passing\n" + run.output());
+            System.out.printf(Locale.ROOT, "PASS legacy plugin on Paper %s through ViaProxy: %d expect lines in %.1fs (%s)%n", version, expects, run.seconds(), times(run.output()));
+        }
+        if (only != null && !only.contains(versions.get(0).toString())) return; // the break runs with the first version
+        Map<String, Object> brk = (Map<String, Object>) legacy.get("break");
+        Path file = root.resolve(brk.get("file").toString());
+        String original = Files.readString(file, StandardCharsets.UTF_8), find = brk.get("find").toString();
+        if (!original.contains(find)) throw new AssertionError("legacy break: no " + find + " in " + file);
+        Files.writeString(file, original.replace(find, brk.get("replace").toString()), StandardCharsets.UTF_8);
+        Run run = modaccel(home, jar, root, Map.of(), "server-check", "--file", scenario.toString(), "--server-version", versions.get(0).toString());
+        String failed = failedStep(run.output());
+        if (run.exit() != 1 || failed == null || !failed.contains(brk.get("failsAt").toString()))
+            throw new AssertionError("legacy break \"" + brk.get("name") + "\": expected exit 1 failing at " + brk.get("failsAt") + "; got exit " + run.exit() + ", failing step " + failed + "\n" + run.output());
+        System.out.printf(Locale.ROOT, "PASS legacy break \"%s\" fails at: %s on Paper %s (%.1fs)%n", brk.get("name"), failed, versions.get(0), run.seconds());
     }
 
     static long count(String text, String needle) { long n = 0; for (int i = text.indexOf(needle); i >= 0; i = text.indexOf(needle, i + 1)) n++; return n; }
