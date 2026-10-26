@@ -64,9 +64,13 @@ public final class StrangerTest {
         write(resources.resolve("data/compasspin/recipe/broken.json"), "{\n  \"type\": \"minecraft:crafting_shaped\"\n  \"result\": {}\n}");
         write(sourceResources.resolve("data/compasspin/recipe/broken.json"), "{\n  \"type\": \"minecraft:crafting_shaped\"\n  \"result\": {}\n}");
         write(resources.resolve("assets/compasspin/lang/en_us.json"), "{\"item.compasspin.other\": \"Other\"}");
-        write(java.resolve("dev/pin/PinMod.java"), "package dev.pin;\n// public static final String MOD_ID = \"old\";\npublic class PinMod {\n    public static final String MOD_ID = \"compass_pin\";\n}\n");
+        // Diorama 1.21.1's gameshim: a NeoForge shim spells the Fabric id "compass-pin-shim" with '_', which NeoForge requires.
+        write(project.resolve("build/resources/gameshim/fabric.mod.json"), "{\"schemaVersion\": 1, \"id\": \"compass-pin-shim\"}");
+        write(java.resolve("dev/pin/neoforge/Shim.java"), "package dev.pin.neoforge;\n@Mod(\"compass_pin_shim\") class Shim {}\n");
+        write(java.resolve("dev/pin/PinMod.java"),"package dev.pin;\n// public static final String MOD_ID = \"old\";\npublic class PinMod {\n    public static final String MOD_ID = \"compass_pin\";\n}\n");
         Map<String, Object> model = Json.map("projects", List.of(Json.map("path", ":", "compile", List.of(Json.map("destination", classes.toString())), "sourceSets", List.of(
                 Json.map("name", "main", "output", List.of(classes.toString(), resources.toString()), "resources", List.of(sourceResources.toString()), "java", List.of(java.toString())),
+                Json.map("name", "gameshim", "output", List.of(project.resolve("build/resources/gameshim").toString())),
                 Json.map("name", "test", "output", List.of(project.resolve("build/resources/test").toString()))))));
         Map<String, Object> result = ModChecks.run(model);
         String problems = String.join("\n", ProjectModel.strings(result.get("problems"))), warnings = String.join("\n", ProjectModel.strings(result.get("warnings")));
@@ -74,7 +78,7 @@ public final class StrangerTest {
         require(problems.contains(sourceResources.resolve("data/compasspin/recipe/broken.json") + ": invalid JSON, line 3, column 3"), "the broken recipe is named by its source file, line and column: " + problems);
         require(problems.contains("lists mixin \"GoneMixin\" (client), but there is no compiled class dev.pin.mixin.GoneMixin") && !problems.contains("\"TitleMixin\""), "only the uncompiled mixin is a problem: " + problems);
         require(problems.contains("entrypoint dev.pin.PinMod names no compiled class"), "an entrypoint in the mod's own package must be compiled: " + problems);
-        require(problems.contains("PinMod.java:4: the code says the mod id is \"compass_pin\"") && !problems.contains("\"old\""), "a MOD_ID that disagrees with fabric.mod.json is found, a commented-out one is not: " + problems);
+        require(problems.contains("PinMod.java:4: the code says the mod id is \"compass_pin\"") && !problems.contains("\"old\"") && !problems.contains("compass_pin_shim"), "a MOD_ID that disagrees with fabric.mod.json is found, a commented-out one is not: " + problems);
         require(warnings.contains("compasspin:pin is made by") && warnings.contains("has no item model"), "a crafted item with no model is a warning: " + warnings);
         require(warnings.contains("no \"item.compasspin.pin\" entry"), "a crafted item with no name is a warning: " + warnings);
         require(ModChecks.text(result).startsWith(ProjectModel.strings(result.get("problems")).size() + " problems the game would hit at start-up:"), "the text leads with the problem count");
@@ -105,16 +109,17 @@ public final class StrangerTest {
 
     /** A Java typo came back as Gradle's tail twice over; a test without JUnit got raw javac errors and no hint. */
     static void compilerErrors() {
+        Path modRoot = Path.of(System.getProperty("java.io.tmpdir"), "mods", "diorama").toAbsolutePath();
         List<String> typo = List.of("> Task :compileJava FAILED",
-                "C:\\mods\\diorama\\src\\main\\java\\dev\\diorama\\feature\\PinMath.java:7: error: cannot find symbol",
+                modRoot.resolve("src/main/java/dev/diorama/feature/PinMath.java") + ":7: error: cannot find symbol",
                 "        return Math.rond(distance);",
                 "                   ^",
                 "  symbol:   method rond(double)",
                 "  location: class Math",
                 "1 error", "", "FAILURE: Build failed with an exception.");
-        String text = Run.compilerErrors(typo, Path.of("C:\\mods\\diorama"));
+        String text = Run.compilerErrors(typo, modRoot);
         require(text.startsWith("The code does not compile (1 error):") && text.contains("PinMath.java:7  cannot find symbol: method rond(double) (in class Math)") && text.contains("return Math.rond(distance);")
-                && !text.contains("C:\\mods\\diorama\\src"), "a typo is file:line, message, symbol and code, relative to the mod: " + text);
+                && !text.contains(modRoot.toString()), "a typo is file:line, message, symbol and code, relative to the mod: " + text);
         List<String> junit = List.of("/home/me/mod/src/test/java/dev/PinMathTest.java:3: error: package org.junit.jupiter.api does not exist", "import org.junit.jupiter.api.Test;", "                            ^");
         require(Run.compilerErrors(junit, null).contains("testImplementation(\"org.junit.jupiter:junit-jupiter:5.11.4\")"), "a test without JUnit gets the dependency lines to add");
         require(Run.compilerErrors(List.of("BUILD SUCCESSFUL"), null).isEmpty(), "no errors, no text");

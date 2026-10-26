@@ -190,7 +190,8 @@ final class ModChecks {
                 Matcher match = constant.matcher(text);
                 while (match.find()) {
                     String id = match.group(1) != null ? match.group(1) : match.group(2);
-                    if (ids.contains(id)) continue;
+                    // NeoForge ids cannot hold '-', so a shim for it spells the Fabric id "a-b" as "a_b": the same mod.
+                    if (ids.contains(id) || ids.stream().anyMatch(known -> known.replace('-', '_').equals(id.replace('-', '_')))) continue;
                     int line = 1; for (int i = 0; i < match.start(); i++) if (text.charAt(i) == '\n') line++;
                     problems.add(file + ":" + line + ": the code says the mod id is \"" + id + "\", but the mod metadata says " + String.join(", ", ids.stream().map(i -> "\"" + i + "\"").toList())
                             + ". Textures, translations, recipes and registry names are looked up under the id the code uses; make them match.");
