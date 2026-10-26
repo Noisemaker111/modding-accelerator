@@ -138,6 +138,9 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 .more { margin-top:12px }
 .privbox { display:flex; gap:8px; align-items:center; margin-top:10px; font-size:14px; color:var(--ink2) }
 #detail { scroll-margin-top:12px }
+.loaderpick { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin-top:12px }
+.loaderpick label { margin:0; font-size:15px; color:var(--ink2) }
+.loaderpick select { width:auto; min-width:140px }
 @media (max-width: 720px) {
   .pick { grid-template-columns:1fr auto 1fr }
   .vrow { gap:10px }
@@ -163,6 +166,8 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
     <button class="swap" id="swap" type="button" title="Swap" aria-label="Swap the two versions">⇄</button>
     <div><label for="to">I want it on</label><select id="to"></select></div>
   </div>
+  <div class="loaderpick"><label for="loader">Loader</label><select id="loader"><option value="fabric">Fabric</option><option value="neoforge">NeoForge</option><option value="forge">Forge</option><option value="quilt">Quilt</option></select>
+  <span class="small">A port proves only its own loader, so the colours are for this loader alone.</span></div>
 </div>
 
 <div id="route"></div>
@@ -172,7 +177,7 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 <div class="legend">
   <span><b class="hubmark">1.20.1</b> boxed: a popular version, good to port through</span>
   <span><b class="pickmark">1.20.1</b> with a <b>from</b> or <b>to</b> tag: your two picks</span>
-  <span><span class="ln st-green"></span>a mod was moved across and works in the game</span>
+  <span><span class="ln st-green"></span>a mod on the picked loader was moved across and works in the game</span>
   <span><span class="ln st-yellow"></span>it builds, or we're working on it</span>
   <span><span class="ln st-red"></span>not tried yet, or not possible yet</span>
   <span><span style="color:var(--ink3)">grey versions</span>: before 1.14.4, our numbers are guesses</span>
@@ -210,7 +215,9 @@ const WORST = { red: 0, yellow: 1, green: 2 };
 
 // ---- colours: bench/ledger_rule.py gives every update a colour per direction from
 // coverage/ledger.json and the ROADMAP's "doing" steps; a hop takes its worst update ----
-const stepSt = (i, fwd) => IX.stepStatus[ALL[i] + "__" + ALL[i + 1]][fwd ? "fwd" : "back"];
+const LOADERS = { fabric: "Fabric", neoforge: "NeoForge", forge: "Forge", quilt: "Quilt" };
+let LOADER = LOADERS[new URLSearchParams(location.hash.slice(1)).get("loader")] ? new URLSearchParams(location.hash.slice(1)).get("loader") : "fabric";
+const stepSt = (i, fwd) => IX.stepStatus[LOADER][ALL[i] + "__" + ALL[i + 1]][fwd ? "fwd" : "back"];
 function status(a, b) {
   const fwd = POS[a] < POS[b], lo = Math.min(POS[a], POS[b]), hi = Math.max(POS[a], POS[b]);
   const parts = [];
@@ -231,14 +238,14 @@ function status(a, b) {
 function readiness(h) {
   if (!h.measured) return { k: "blocked", label: "Blocked" };
   const fwd = POS[h.a] < POS[h.b], lo = Math.min(POS[h.a], POS[h.b]), hi = Math.max(POS[h.a], POS[h.b]);
-  const runs = IX.runs.filter(r => POS[r.from] !== undefined && POS[r.to] !== undefined && (POS[r.from] < POS[r.to]) === fwd);
+  const runs = IX.runs.filter(r => r.loader === LOADER && POS[r.from] !== undefined && POS[r.to] !== undefined && (POS[r.from] < POS[r.to]) === fwd);
   const span = r => [Math.min(POS[r.from], POS[r.to]), Math.max(POS[r.from], POS[r.to])];
   const full = runs.filter(r => span(r)[0] <= lo && hi <= span(r)[1]).sort((x, y) => "stop build load behaviour".indexOf(y.status) - "stop build load behaviour".indexOf(x.status));
   if (full.length && full[0].status !== "stop") return { k: "ready", label: `Ran before: ${full[0].mod} ${full[0].from} → ${full[0].to}, ${RUN_SAID[full[0].status]}` };
   if (full.length) return { k: "warn", label: `Tried: ${full[0].mod} ${full[0].from} → ${full[0].to} stopped with named errors. Expect errors` };
   const part = runs.find(r => span(r)[0] < hi && span(r)[1] > lo);
   if (part) return { k: "warn", label: `Not tried across the whole hop (${part.mod} ran ${part.from} → ${part.to}). Expect errors` };
-  return { k: "warn", label: "Not tried yet: expect errors" };
+  return { k: "warn", label: `Not tried yet on ${LOADERS[LOADER]}: expect errors` };
 }
 
 // ---- sizes ---------------------------------------------------------------------------------
@@ -297,7 +304,7 @@ function render() {
   $("#detail").innerHTML = "";
   const x = $("#from").value, y = $("#to").value;
   if (!x || !y) { mark(x || null, y || null); $("#route").innerHTML = `<p class="summary">Pick ${x ? "where you want to go" : "both versions"} above, or tap two versions in the list below.</p>`; return; }
-  try { history.replaceState(null, "", "#from=" + encodeURIComponent(x) + "&to=" + encodeURIComponent(y)); } catch (e) {}
+  try { history.replaceState(null, "", "#from=" + encodeURIComponent(x) + "&to=" + encodeURIComponent(y) + "&loader=" + LOADER); } catch (e) {}
   mark(x, y);
   const out = $("#route");
   if (x === y) { out.innerHTML = `<div class="notice">Pick two different versions.</div>`; return; }
@@ -306,7 +313,7 @@ function render() {
   const sum = k => hops.reduce((t, h) => t + h[k], 0);
   const blocked = hops.filter(h => !h.measured);
   const back = POS[y] < POS[x];
-  let html = `<h2>${esc(x)} → ${esc(y)}${back ? " (backport)" : ""}</h2>
+  let html = `<h2>${esc(x)} → ${esc(y)}${back ? " (backport)" : ""} on ${LOADERS[LOADER]}</h2>
   <p class="summary">${hops.length} hop${hops.length === 1 ? "" : "s"}: ${[["green", "work"], ["yellow", "being worked on"], ["red", "not working yet or blocked"]].filter(([c]) => n(c)).map(([c, w]) => `<span class="dot st-${c}"></span>${n(c)} ${w}`).join(" &nbsp; ")}</p>
   ${blocked.length ? `<div class="notice"><b>Blocked: no official mappings for ${esc([...new Set(blocked.flatMap(h => [h.a, h.b]).filter(v => !MEASURED(v)))].slice(0, 4).join(", "))}${blocked.length > 0 ? "" : ""} yet.</b> Mojang's names start at 1.14.4. Those hops can't be measured or ported by modaccel today; they would need MCP or other legacy community mappings.</div>` : ""}
   ${(() => { const on = HUBS.filter(h => POS[h] >= Math.min(POS[x], POS[y]) && POS[h] <= Math.max(POS[x], POS[y])); return on.length > 2 ? `<p class="small">One <code>port</code> command does the whole trip from ${esc(back ? on[on.length - 1] : on[0])} to ${esc(back ? on[0] : on[on.length - 1])} (the thick line with no dots on the map), passing the ${hops.length} hops below. Each hop's colour says what has been seen working.</p>` : ""; })()}
@@ -376,7 +383,7 @@ function drawMap() {
     b.onmouseenter = () => { HOVER = FAM[b.dataset.v].hub; drawLinks(); };
     b.onmouseleave = () => { HOVER = null; drawLinks(); };
   });
-  window.addEventListener("resize", () => drawLinks());
+  if (!drawMap.listening) { drawMap.listening = true; window.addEventListener("resize", () => drawLinks()); }
 }
 function info(html) { $("#hopinfo").innerHTML = html; }
 let ROUTE = null, PICK = [], HOVER = null;
@@ -486,9 +493,12 @@ function pickers() {
   $("#from").value = POS[h.get("from")] !== undefined ? h.get("from") : "";
   $("#to").value = POS[h.get("to")] !== undefined ? h.get("to") : "";
   $("#from").onchange = $("#to").onchange = render;
+  $("#loader").value = LOADER;
+  $("#loader").onchange = () => { LOADER = $("#loader").value; drawMap(); render(); };
   $("#swap").onclick = () => { const f = $("#from").value; $("#from").value = $("#to").value; $("#to").value = f; render(); };
   window.addEventListener("hashchange", () => {
     const n = new URLSearchParams(location.hash.slice(1));
+    if (LOADERS[n.get("loader")] && n.get("loader") !== LOADER) { LOADER = n.get("loader"); $("#loader").value = LOADER; drawMap(); render(); }
     if (POS[n.get("from")] !== undefined && POS[n.get("to")] !== undefined && (n.get("from") !== $("#from").value || n.get("to") !== $("#to").value)) { $("#from").value = n.get("from"); $("#to").value = n.get("to"); render(); }
   });
 }

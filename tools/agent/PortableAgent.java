@@ -335,9 +335,12 @@ public final class PortableAgent {
             done.complete(Json.map("ok", true, "typed", value.length()));
         } else if (command.equals("expect-value")) {
             String getter = Json.text(request, "getter", ""), expected = Json.text(request, "value", "");
-            Object actual = call(screen(), getter);
+            Object showing = screen();
+            if (showing == null) throw new IllegalStateException("No screen is open to read " + getter + " from");
+            Object actual = call(showing, getter);
             if (!expected.equals(String.valueOf(actual))) throw new AssertionError("Screen " + getter + " expected " + expected + "; got " + actual);
-            done.complete(Json.map("ok", true, "getter", getter, "expected", expected, "actual", actual));
+            // The CLI counts this as the mod's behaviour only when the screen is the mod's own class.
+            done.complete(Json.map("ok", true, "getter", getter, "expected", expected, "actual", actual, "screenClass", showing.getClass().getName()));
         } else if (command.equals("assert")) {
             String[] target = Json.text(request, "method", "").split("#", -1);
             if (target.length != 2) throw new IllegalArgumentException("Assertion must be class#staticMethod");
@@ -350,29 +353,36 @@ public final class PortableAgent {
         } else if (command.equals("reload")) {
             done.complete(HotReload.reload(client.getClass().getClassLoader()));
         } else if (command.equals("mods")) {
-            // Ask the running loader, not the log, whether each of the project's mods is loaded.
-            Object ids = request.get("ids");
-            Map<String, Object> loaded = new LinkedHashMap<String, Object>(), versions = new LinkedHashMap<String, Object>();
-            String loaderName = "unknown"; Object fabric = null, neo = null; Class<?> fabricType = null, neoType = null;
-            try { fabricType = load("net.fabricmc.loader.api.FabricLoader"); fabric = fabricType.getMethod("getInstance").invoke(null); loaderName = "fabric"; } catch (Throwable notFabric) {}
-            if (fabric == null) try { neoType = load("net.neoforged.fml.ModList"); neo = neoType.getMethod("get").invoke(null); loaderName = "neoforge"; } catch (Throwable notNeoForge) {}
-            if (ids instanceof List) for (Object id : (List<?>)ids) {
-                String name = String.valueOf(id); Object present = null;
-                if (fabric != null) {
-                    present = fabricType.getMethod("isModLoaded", String.class).invoke(fabric, name);
-                    try {
-                        Object container = ((Optional<?>)fabricType.getMethod("getModContainer", String.class).invoke(fabric, name)).orElse(null);
-                        // Through the public API interfaces: the loader's implementation classes are not public.
-                        if (container != null) {
-                            Object meta = load("net.fabricmc.loader.api.ModContainer").getMethod("getMetadata").invoke(container);
-                            Object version = load("net.fabricmc.loader.api.metadata.ModMetadata").getMethod("getVersion").invoke(meta);
-                            versions.put(name, String.valueOf(load("net.fabricmc.loader.api.Version").getMethod("getFriendlyString").invoke(version)));
-                        }
-                    } catch (Throwable noVersion) {}
-                } else if (neo != null) present = neoType.getMethod("isLoaded", String.class).invoke(neo, name);
-                loaded.put(name, present);
+            // Ask the running loader itself which mods it loaded, with their versions. The CLI
+            // compares this list with the project's own metadata; nothing here reads a log.
+            Map<String, Object> all = new TreeMap<String, Object>(), loaded = new LinkedHashMap<String, Object>(), versions = new LinkedHashMap<String, Object>();
+            String loaderName = "unknown";
+            Class<?> fabricType = optionalClass("net.fabricmc.loader.api.FabricLoader");
+            Class<?> neoType = fabricType == null ? optionalClass("net.neoforged.fml.ModList") : null;
+            Class<?> forgeType = fabricType == null && neoType == null ? optionalClass("net.minecraftforge.fml.ModList") : null;
+            if (fabricType != null) {
+                loaderName = "fabric";
+                Object fabric = fabricType.getMethod("getInstance").invoke(null);
+                // Through the public API interfaces: the loader's implementation classes are not public.
+                Class<?> containerType = load("net.fabricmc.loader.api.ModContainer"), metaType = load("net.fabricmc.loader.api.metadata.ModMetadata"), versionType = load("net.fabricmc.loader.api.Version");
+                for (Object container : (Collection<?>)fabricType.getMethod("getAllMods").invoke(fabric)) {
+                    Object meta = containerType.getMethod("getMetadata").invoke(container);
+                    all.put(String.valueOf(metaType.getMethod("getId").invoke(meta)), String.valueOf(versionType.getMethod("getFriendlyString").invoke(metaType.getMethod("getVersion").invoke(meta))));
+                }
+            } else if (neoType != null || forgeType != null) {
+                Class<?> listType = neoType != null ? neoType : forgeType; loaderName = neoType != null ? "neoforge" : "forge";
+                Object list = listType.getMethod("get").invoke(null);
+                if (list == null) throw new IllegalStateException("The loader's mod list is not built yet");
+                for (Object info : (Collection<?>)listType.getMethod("getMods").invoke(list))
+                    all.put(String.valueOf(publicCall(info, "getModId")), String.valueOf(publicCall(info, "getVersion")));
             }
-            done.complete(Json.map("ok", true, "loader", loaderName, "loaded", loaded, "versions", versions));
+            Object ids = request.get("ids");
+            if (ids instanceof List) for (Object id : (List<?>)ids) {
+                String name = String.valueOf(id);
+                loaded.put(name, loaderName.equals("unknown") ? null : all.containsKey(name));
+                if (all.containsKey(name)) versions.put(name, all.get(name));
+            }
+            done.complete(Json.map("ok", true, "loader", loaderName, "loaded", loaded, "versions", versions, "all", all));
         } else if (command.equals("quit")) {
             if (pauseField != null) pauseField.setBoolean(pauseOptions, originalPauseOnLostFocus);
             done.complete(Json.map("ok", true, "stopping", true)); call(client, "scheduleStop", "stop");
@@ -437,6 +447,22 @@ public final class PortableAgent {
     private static Class<?> load(String... names) throws ClassNotFoundException {
         for (String name : names) try { return Class.forName(name, true, client.getClass().getClassLoader()); } catch (ClassNotFoundException ignored) {}
         throw new ClassNotFoundException(Arrays.toString(names));
+    }
+    private static Class<?> optionalClass(String name) {
+        try { return load(name); } catch (ClassNotFoundException absent) { return null; } catch (LinkageError unusable) { return null; }
+    }
+    /** A no-argument method called through a public class or interface that declares it: the loaders' implementation classes may not be public. */
+    private static Object publicCall(Object owner, String name) throws Exception {
+        Deque<Class<?>> types = new ArrayDeque<Class<?>>(); types.add(owner.getClass());
+        Set<Class<?>> seen = new HashSet<Class<?>>();
+        while (!types.isEmpty()) {
+            Class<?> type = types.poll();
+            if (!seen.add(type)) continue;
+            if (Modifier.isPublic(type.getModifiers())) try { return type.getMethod(name).invoke(owner); } catch (NoSuchMethodException absent) { } catch (IllegalAccessException hidden) { }
+            if (type.getSuperclass() != null) types.add(type.getSuperclass());
+            types.addAll(Arrays.asList(type.getInterfaces()));
+        }
+        throw new NoSuchMethodException(owner.getClass().getName() + "." + name + " through a public type");
     }
     private static Object field(Object owner, String... names) throws Exception {
         for (String name : names) for (Class<?> type = owner.getClass(); type != null; type = type.getSuperclass()) try {

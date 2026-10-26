@@ -95,6 +95,11 @@ def last_json(text):
     return None
 
 
+def compiled_by(call):
+    """Who compiled: Gradle, or modaccel's own javac (#22's NeoForge path), which Gradle has not confirmed."""
+    return "modaccel's own javac (Gradle not run)" if call["result"].get("tier") == "own-compile" else "Gradle"
+
+
 def short(text, limit=900):
     text = (text or "").strip()
     return text if len(text) <= limit else text[:limit] + " ..."
@@ -233,7 +238,8 @@ class ModRun:
                            hop=f"{port['from']} -> {port['to']}")
         else:
             self.put("port", "n/a", error="manifest asks for no port; the checkout runs as published")
-        self.from_call("compile", self.modaccel("compile", "compile"))
+        call = self.modaccel("compile", "compile")
+        self.from_call("compile", call, compiledBy=compiled_by(call))
         tests = test_sources(self.root)
         if tests:
             self.from_call("test", self.modaccel("test", "test"), tests=len(tests))
@@ -387,7 +393,7 @@ class ModRun:
         results, start = {}, now()
         for node in nodes:
             call = self.modaccel("compile-" + node.strip(":").replace(":", "_"), "compile", project=node)
-            results[node] = {"status": "pass" if call["exit"] == 0 else "fail", "seconds": call["seconds"]}
+            results[node] = {"status": "pass" if call["exit"] == 0 else "fail", "seconds": call["seconds"], "compiledBy": compiled_by(call)}
             if call["exit"] != 0:
                 results[node]["error"] = short(call["error"], 400)
                 results[node]["fullError"] = str(call["error"])
@@ -407,6 +413,8 @@ class ModRun:
             for verb in ("setup", "compile"):
                 call = self.modaccel(f"{verb}-{name}", verb, project=node)
                 entry[verb] = {"status": "pass" if call["exit"] == 0 else "fail", "seconds": call["seconds"]}
+                if verb == "compile":
+                    entry[verb]["compiledBy"] = compiled_by(call)
                 if call["exit"] != 0:
                     entry[verb]["error"] = short(call["error"], 600)
                     entry[verb]["fullError"] = str(call["error"])
