@@ -18,7 +18,22 @@
         "3 listener(s) registered with 9 event handler(s)",
         "PASS tasks: 100 server ticks",
         "PASS disable"
-      ] }
+      ] },
+      "serverCheck": {
+        "scenario": "bench/server-plugins/agentcraft.scenario",
+        "breaks": [
+          { "name": "spawn does nothing but still says Summoned",
+            "file": "src/main/java/dev/agentcraft/command/AgentCommands.java",
+            "find": "Agent agent = factory.spawn(player.getLocation(), model);",
+            "replace": "var agent = new Object() { String handle() { return model.handle(); } };",
+            "failsAt": "expect-entity mannequin" },
+          { "name": "chat shows the first message instead of the final reply",
+            "file": "src/main/java/dev/agentcraft/agent/ConversationService.java",
+            "find": "replies()), last, color);",
+            "replace": "replies()), conversation.replies().get(0), color);",
+            "failsAt": "Done!" }
+        ]
+      }
     }
   ]
 }

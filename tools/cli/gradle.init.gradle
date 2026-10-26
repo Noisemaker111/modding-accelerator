@@ -178,6 +178,8 @@ gradle.afterProject { p ->
         // MockBukkit and its libraries are on Maven Central, the Paper API on PaperMC's repository.
         if (!urls.any { it.contains('repo.maven.apache.org') || it.contains('repo1.maven.org') }) p.repositories.mavenCentral()
         if (!urls.any { it.contains('repo.papermc.io') }) p.repositories.maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+        // server-check's bot library (MCProtocolLib) lives on GeyserMC's repository; the spec names any extra ones.
+        (spec.repositories ?: []).each { extra -> if (!urls.any { it == extra.toString().replaceAll('/+$', '') }) p.repositories.maven { url = extra.toString() } }
         def jarName = spec.jarTask ? spec.jarTask.toString().replaceAll('^.*:', '') : ['shadowJar', 'reobfJar', 'jar'].find { p.tasks.findByName(it) != null }
         p.tasks.register('modaccelPluginClasspath') {
             if (jarName) dependsOn jarName

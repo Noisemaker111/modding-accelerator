@@ -296,6 +296,38 @@ A node that fails upstream is listed under `known_failures` with the exact error
 a different error, or the node passing, is reported. The full game loop of `run.py` (ui-check,
 world-check, reload, eval) is not run in CI.
 
+### Plugins on a real Paper server (`server-check`)
+
+`modaccel server-check --root PLUGIN [--file SCENARIO]` builds the plugin jar with its own task,
+downloads the real Paper server for the plugin's Minecraft version from PaperMC's API (once per
+version, SHA-256 checked, cached in `~/.modaccel/servers`), starts it headless in
+offline mode on 127.0.0.1 with a flat world on a fixed seed, and joins a bot player. **modaccel
+writes `eula=true` for that server only**: it is a throwaway local test server that nobody else can
+join, and the world is wiped every run. The bot is MCProtocolLib; it speaks Minecraft 26.3 only
+today (`knowledge/mcprotocollib.json` lists the versions it has been seen joining).
+
+A scenario is one step per line (`modaccel help server-check` lists them): `join`, `say`,
+`command /...`, `rcon ...`, helper processes (`background NAME: CMD`, e.g. a mock backend) and
+`server-env` for the server's environment, then expect steps on what really happened: chat, titles
+and the action bar the bot receives, the server log, an HTTP endpoint, entities near the bot, blocks,
+the bot's inventory (book pages included) and position. `within Ns` waits until it is true; `for Ns`
+requires it the whole time. Every expect step must pass, a scenario with none fails, and a failure
+says what was expected and what came instead.
+
+Secrets: write `${secret:NAME}` in the scenario and give the value as an environment variable or a
+line `NAME=value` in the plugin checkout's `.modaccel/secrets.properties` (modaccel writes a
+`.gitignore` there so the folder stays out of git). Values are masked as `${secret:NAME}` in
+receipts, logs and the server's files; a missing one fails at once with "needs secret NAME".
+For AgentCraft's real Capy backend, set `CAPY_API_KEY` and run
+`bench/server-plugins/agentcraft-live.scenario` (not run by modaccel or CI: it spends your credits).
+
+Merge gate: the `server-check` CI job runs `tools/tests/ServerCheckFixtures.java` on a fresh pinned
+AgentCraft clone on Windows, Linux and macOS: its scenario cold and warm, the bot's own scenario
+(`tools/tests/server-check-bot.scenario`) with a secret it then greps for in every file, the same
+scenario without the secret, and two breaks made on purpose (the spawn does nothing but still says
+"Summoned"; the chat shows the first message instead of the final reply), each of which must fail at
+the step that catches it.
+
 > **Not a finished product, and not the only option:** what is still missing is in
 > [`ROADMAP.md`](ROADMAP.md), and how it compares to existing tools (including where they win) is
 > in [`bench/alternatives.md`](bench/alternatives.md).

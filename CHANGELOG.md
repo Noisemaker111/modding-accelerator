@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased: plugins on a real Paper server with a bot (`server-check`)
+
+- **`modaccel server-check`** runs a Paper plugin on the real Paper server for its Minecraft version
+  (downloaded from PaperMC's API, SHA-256 checked, cached in `~/.modaccel/servers`), headless, offline,
+  127.0.0.1 only, on a flat fixed-seed world that is wiped every run. modaccel accepts the EULA only for
+  that throwaway local test server.
+- **A bot player** (MCProtocolLib; Minecraft 26.3 only for now) joins and follows a scenario file: chat,
+  commands, RCON, helper processes such as a mock backend, then expect steps on chat, titles, the action
+  bar, the server log, HTTP, entities, blocks, inventory (book pages too) and position. Failures say
+  what was expected and what came instead.
+- **Secrets** are `${secret:NAME}`, from the environment or `.modaccel/secrets.properties`, masked in
+  every receipt and server file; a missing one fails with "needs secret NAME".
+- **AgentCraft** passes against its own mock backend (an agent is summoned as a real mannequin, replies
+  in chat, and leaves its messages as books), and two breaks made on purpose fail at the step that
+  catches them. About 22 s warm, about 60 s cold, locally on Windows. CI job `server-check` on 3 OS.
+
 ## Unreleased: resource checks follow the real loaders
 
 PR #28's resource checks failed real mods the game loads. Run on 25 real mod builds, they wrongly
