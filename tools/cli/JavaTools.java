@@ -30,7 +30,7 @@ final class JavaTools {
             for (Object s : Json.array(p.get("sourceSets"))) roots.addAll(ProjectModel.strings(Json.object(s).get("java")));
         }
         Path file = build.report.directory.resolve("classpath.txt"); Files.createDirectories(file.getParent()); Files.writeString(file, String.join(File.pathSeparator, classpath));
-        List<String> args = new ArrayList<>(List.of("--root", build.project.root.toString(), "--classpath", file.toString()));
+        List<String> args = new ArrayList<>(List.of("--root", build.project.root.toString(), "--classpath", file.toString(), "--strict"));
         for (String root : roots) if (Files.isDirectory(Path.of(root))) args.addAll(List.of("--src", root));
         return run("MixinAudit", args, "mixin-audit");
     }

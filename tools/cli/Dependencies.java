@@ -65,16 +65,35 @@ final class Dependencies {
             var dep = Json.object(item); String group = Json.text(dep, "group", ""), name = Json.text(dep, "name", ""), old = Json.text(dep, "version", "");
             if (group.startsWith("net.fabricmc") || group.equals("com.mojang") || old.isEmpty() || !seen.add(group + ":" + name + ":" + old)) continue;
             Path binary = artifact(setup.project, group, name, old);
-            if (binary == null) continue;
+            if (binary == null) {
+                // Target lookup reads Fabric metadata only. A NeoForge or Forge mod jar is still a mod the
+                // port depends on, so it is listed as unchecked instead of disappearing from the result.
+                Path mod = forgeModJar(setup.project, group, name, old);
+                if (mod != null) setup.unchecked.add(Json.map("artifact", group + ":" + name, "version", old, "configuration", Json.text(dep, "configuration", ""),
+                        "file", mod.toString(), "reason", "a " + (loader.equals("neoforge") ? "NeoForge" : "Forge") + " mod; its " + setup.to + " release was not looked up, so the build decides whether " + old + " still works"));
+                continue;
+            }
             Selection selection = select(setup.selections, group, name, old);
             try {
                 if (selection != null && selection.disable()) disable(setup, group, name, old, binary, selection);
                 else if (selection != null) choose(setup, group, name, old, binary, selection);
                 else discover(setup, group, name, old, binary, Json.text(dep, "configuration", ""), loader);
             } catch (IOException failure) {
-                setup.blockers.add(blocker(group, name, old, binary, failure.getMessage(), Json.text(dep, "configuration", ""), setup.to));
+                String configuration = Json.text(dep, "configuration", "");
+                // A compile-only integration is never packaged or loaded with the mod, and authors often
+                // already compile against an older release of it. Keep it and let the compiler decide.
+                if (selection == null && compileOnly(configuration) && !(failure instanceof Target.LookupFailure)) {
+                    setup.applied.add(Json.map("artifact", group + ":" + name, "from", old, "to", old, "kept", true, "configuration", configuration,
+                            "reason", failure.getMessage() + "; kept at " + old + " because a " + configuration + " dependency is not shipped or loaded with the mod. The build decides whether the integration still compiles."));
+                    continue;
+                }
+                setup.blockers.add(blocker(group, name, old, binary, String.valueOf(failure.getMessage() == null ? failure : failure.getMessage()), configuration, setup.to));
             }
         }
+    }
+    /** compileOnly, modCompileOnly, modCompileOnlyApi: on the compile classpath only, never in the jar or the game. */
+    static boolean compileOnly(String configuration) {
+        return configuration.matches("(?i)(mod)?compileOnly(Api)?");
     }
     /** Verified selection: the coordinate must publish, and its target-game support must be proven. */
     static void choose(Target.Setup setup, String group, String name, String old, Path binary, Selection selection) throws Exception {
@@ -98,13 +117,18 @@ final class Dependencies {
         List<String> repositories = new ArrayList<>();
         if (!selection.repository().isBlank()) repositories.add(selection.repository());
         for (String repository : ProjectModel.strings(project.get("repositories"))) if (!repositories.contains(repository)) repositories.add(repository);
-        String pom = "", found = "";
+        String pom = "", found = ""; List<String> unreachable = new ArrayList<>();
         for (String repository : repositories) {
             if (!repository.startsWith("https://")) continue;
             String url = repository.replaceFirst("/+$", "") + "/" + group.replace('.', '/') + "/" + name + "/" + version + "/" + name + "-" + version + ".pom";
             try { fetch.get(url); pom = url; found = repository; break; }
+            catch (Target.LookupFailure lookup) { unreachable.add(lookup.getMessage()); }
             catch (IOException unpublished) { }
         }
+        // A repository that could not answer is not proof the artifact is missing: say which, and why.
+        if (pom.isEmpty() && !unreachable.isEmpty()) throw new Target.LookupFailure("Could not check whether " + group + ":" + name + ":" + version
+                + " is published: " + String.join("; ", unreachable) + ". Repositories tried: " + repositories
+                + ". This is a lookup failure, not proof the version is missing; retry when those repositories answer.", null);
         if (pom.isEmpty()) throw new IOException("Selected " + group + ":" + name + ":" + version + " is not published in " + repositories
                 + "; add the repository that publishes it to the source build, then retry this selection");
         Map<String, Object> evidence = Json.map("identity", "explicit selection", "repository", found, "pom", pom);
@@ -180,19 +204,110 @@ final class Dependencies {
         String hash = sha512(binary);
         var current = publishedProject(binary, hash, to, loader, url -> Target.fetch(setup.build, url));
         String query = "?game_versions=" + URLEncoder.encode(Json.write(List.of(to)), StandardCharsets.UTF_8) + "&loaders=" + URLEncoder.encode(Json.write(List.of(loader)), StandardCharsets.UTF_8);
-        var releases = Json.array(Json.parse(Target.fetch(setup.build, "https://api.modrinth.com/v2/project/" + current.get("project_id") + "/version" + query)));
-        if (releases.isEmpty()) throw new IOException("No published " + displayLoader(loader) + " target for " + group + ":" + name + " on " + to);
-        String published = Json.text(Json.object(releases.get(0)), "version_number", ""), target = mavenVersion(setup, group, name, published);
+        var listed = Json.array(Json.parse(Target.fetch(setup.build, "https://api.modrinth.com/v2/project/" + current.get("project_id") + "/version" + query)));
+        if (listed.isEmpty()) throw new IOException("No published " + displayLoader(loader) + " target for " + group + ":" + name + " on " + to);
+        // Releases first: a beta or alpha is picked only when the project published nothing else for the
+        // target, and the record says so. A selection in .modaccel/dependencies.json can name any version.
+        var releases = stableFirst(listed);
+        boolean preRelease = !stable(Json.object(releases.get(0)));
+        Map<String, Object> release = Json.object(releases.get(0)); String toolchainNote = null;
+        String loom = Json.text(setup.project, "loomVersion", "");
+        // The evaluated model does not carry Loom's version; the build's own files state it.
+        if (loom.isEmpty() && loader.equals("fabric")) loom = setup.build.project.loomVersion();
+        if (loader.equals("fabric") && !loom.isEmpty()) {
+            // The newest release can be built by a newer Loom whose files (class tweakers) this
+            // project's Loom cannot read, which fails before any code compiles. Prefer the newest
+            // release this build can consume; the project's own toolchain stays unchanged.
+            Map<String, Object> compatible = null; List<String> skipped = new ArrayList<>();
+            for (Object item : releases) {
+                var candidate = Json.object(item);
+                String built = builtWithLoom(setup.build, candidate);
+                if (built.isEmpty() || Versions.compare(minor(built), minor(loom)) <= 0) { compatible = candidate; break; }
+                skipped.add(Json.text(candidate, "version_number", "") + " (Loom " + built + ")");
+            }
+            if (compatible != null) release = compatible;
+            if (!skipped.isEmpty()) toolchainNote = (compatible != null ? "Skipped " : "Every release needs a newer Loom than this project's " + loom + ": ")
+                    + String.join(", ", skipped) + (compatible != null ? ", built with a newer Loom than this project's " + loom : "; raise loom_version if configuration fails");
+        }
+        String published = Json.text(release, "version_number", ""), target;
+        if (group.equals(MODRINTH_GROUP)) {
+            var sameGame = Json.array(Json.parse(Target.fetch(setup.build, "https://api.modrinth.com/v2/project/" + current.get("project_id")
+                    + "/version?game_versions=" + URLEncoder.encode(Json.write(List.of(to)), StandardCharsets.UTF_8))));
+            target = modrinthNeedsId(old, current, release, sameGame) ? Json.text(release, "id", "") : mavenVersion(setup, group, name, published);
+        } else target = mavenVersion(setup, group, name, published);
         if (target.isEmpty()) throw new IOException("Published target " + published + " has no verified Maven coordinate for " + group + ":" + name);
         Map<String, Object> evidence = Json.map("sourceSha512", hash, "identity", current.getOrDefault("identity", "exact artifact hash"),
                 "publishedProject", current.get("project_id"), "publishedVersion", published, "gameVersion", to, "evidence", "published " + displayLoader(loader) + " release lists " + to);
+        if (toolchainNote != null) evidence.put("toolchain", toolchainNote);
+        if (preRelease) evidence.put("preRelease", Json.text(release, "version_type", "pre-release") + ": " + group + ":" + name + " published no full release for " + to
+                + ", so its newest " + Json.text(release, "version_type", "pre-release") + " " + published + " was chosen. Pin another version with a selection if that is not wanted.");
         apply(setup, group, name, old, group, name, target, binary, evidence);
         setup.build.report.stages.add(Json.map("name", "target-mod-dependency", "artifact", group + ":" + name, "from", old, "to", target,
                 "sourceSha512", hash, "identity", evidence.get("identity"), "publishedProject", current.get("project_id"), "gameVersion", to, "configuration", configuration));
     }
+    static boolean stable(Map<String, Object> version) {
+        String type = Json.text(version, "version_type", "release");
+        return type.isEmpty() || type.equals("release");
+    }
+    /** Modrinth's newest-first list with full releases ahead of betas and alphas; the order within each stays. */
+    static List<Object> stableFirst(List<Object> versions) {
+        List<Object> ordered = new ArrayList<>();
+        for (Object item : versions) if (stable(Json.object(item))) ordered.add(item);
+        for (Object item : versions) if (!stable(Json.object(item))) ordered.add(item);
+        return ordered;
+    }
+    /** A Forge or NeoForge mod jar (it carries mods.toml): a mod dependency, not a plain library. */
+    static Path forgeModJar(Map<String, Object> project, String group, String name, String version) {
+        for (Object item : Json.array(project.get("artifacts"))) {
+            var artifact = Json.object(item);
+            if (!group.equals(artifact.get("group")) || !name.equals(artifact.get("name")) || !version.equals(artifact.get("version"))) continue;
+            Path file = Path.of(String.valueOf(artifact.get("file"))); if (!file.toString().endsWith(".jar")) continue;
+            try (var jar = new ZipFile(file.toFile())) {
+                if (jar.getEntry("META-INF/neoforge.mods.toml") != null || jar.getEntry("META-INF/mods.toml") != null) return file;
+            } catch (IOException unreadable) { }
+        }
+        return null;
+    }
+    static final String MODRINTH_GROUP = "maven.modrinth";
+    /** Modrinth's Maven serves a version number from whichever loader's release it finds first, and
+     *  multiloader projects publish one number for Fabric, NeoForge and Forge (Serene Seasons 21.6.0.0
+     *  resolved to the Forge jar). The version id is exact; use it then, or when the project pinned an id. */
+    static boolean modrinthNeedsId(String old, Map<String, Object> current, Map<String, Object> release, List<Object> sameGame) {
+        if (old.equals(Json.text(current, "id", ""))) return true;
+        String number = Json.text(release, "version_number", "");
+        return sameGame.stream().filter(v -> number.equals(Json.text(Json.object(v), "version_number", ""))).count() > 1;
+    }
+    /** "1.10.5" or "1.10-SNAPSHOT" -> "1.10". */
+    static String minor(String version) {
+        String[] parts = version.split("[.\\-+]");
+        return parts.length >= 2 ? parts[0] + "." + parts[1] : version;
+    }
+    /** The Loom version a published release's primary jar records in its manifest, or "" when unknown. */
+    static String builtWithLoom(Build build, Map<String, Object> release) {
+        try {
+            for (Object item : Json.array(release.get("files"))) {
+                var file = Json.object(item);
+                if (!Boolean.TRUE.equals(file.get("primary")) && Json.array(release.get("files")).size() > 1) continue;
+                String url = Json.text(file, "url", "");
+                if (!url.startsWith("https://")) continue;
+                try (var jar = new java.util.jar.JarFile(Target.download(build, url).toFile())) {
+                    var manifest = jar.getManifest();
+                    String value = manifest == null ? null : manifest.getMainAttributes().getValue("Fabric-Loom-Version");
+                    return value == null ? "" : value.trim();
+                }
+            }
+        } catch (Exception unreadable) { }
+        return "";
+    }
     /** The published version must exist in a declared Maven repository, with or without its build suffix. */
     static String mavenVersion(Target.Setup setup, String group, String name, String published) throws Exception {
-        Set<String> maven = new HashSet<>();
+        Set<String> maven = new HashSet<>(); List<String> unreachable = new ArrayList<>();
+        String found = mavenVersion(setup, group, name, published, maven, unreachable);
+        if (found.isEmpty() && !unreachable.isEmpty()) throw new Target.LookupFailure("Could not check the Maven coordinate for " + group + ":" + name + " " + published + ": "
+                + String.join("; ", unreachable) + ". This is a lookup failure, not proof the version is missing; retry when those repositories answer.", null);
+        return found;
+    }
+    private static String mavenVersion(Target.Setup setup, String group, String name, String published, Set<String> maven, List<String> unreachable) throws Exception {
         for (String repository : ProjectModel.strings(setup.project.get("repositories"))) {
             if (!repository.startsWith("https://")) continue;
             try {
@@ -200,7 +315,8 @@ final class Dependencies {
                 var factory = DocumentBuilderFactory.newInstance(); factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
                 var nodes = factory.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))).getElementsByTagName("version");
                 for (int i = 0; i < nodes.getLength(); i++) maven.add(nodes.item(i).getTextContent());
-            } catch (IOException unavailable) { }
+            } catch (Target.LookupFailure lookup) { unreachable.add(lookup.getMessage()); }
+            catch (IOException unavailable) { }
         }
         String base = published.split("\\+", 2)[0];
         return maven.contains(published) ? published : maven.contains(base) ? base : "";
