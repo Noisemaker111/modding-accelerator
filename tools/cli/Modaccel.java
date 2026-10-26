@@ -86,6 +86,7 @@ public final class Modaccel {
                     case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload" -> { result = new Game(build, model).run(options); exit = "reload".equals(options.command) && Boolean.TRUE.equals(result.get("restartNeeded")) ? 1 : 0; }
                     case "port" -> { result = new Port(build, model).run(options); if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model)); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "explain" -> { result = new Explain(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
+                    case "mixin-check" -> { result = new MixinCheck(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "dependencies" -> { result = new Port(build, model).dependencies(options); exit = Boolean.TRUE.equals(result.get("ready")) ? 0 : 1; }
                     case "compile", "test" -> {
                         String name = options.command.equals("compile") ? "classes" : options.command.equals("test") ? "test" : "modaccelPure";
@@ -151,6 +152,12 @@ public final class Modaccel {
                     + "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n"
                     + "class, method or field it names as each project's jars have it: where a missing class lives, a member's signatures, or similar names.\n"
                     + "--only keeps errors whose source path contains TEXT.";
+            case "mixin-check" -> "Let Mixin itself apply the mod's mixins, without starting the game: modaccel mixin-check --root SOURCE [--project :module] [--client-task :p:runClient] [--refresh] --json\n"
+                    + "The build's client launch is recorded once per build (Gradle compiles and prepares it, without downloading game assets), then started with\n"
+                    + "the loader set up as its own JUnit support does (Fabric: Knot, as fabric-loader-junit; NeoForge: the forgejunituserdev target, as junit-fml).\n"
+                    + "Every class the mod's mixin configs target is loaded, so Mixin applies the mixins; nothing opens a window or a world. Mixin's debug\n"
+                    + "injector check is on, so an injection that matches fewer places than it expects is reported as dead. Each finding is Mixin's own message,\n"
+                    + "with the mixin's source file. Exit 1 when a mixin would stop the game or is dead; --refresh records the launch again.";
             case "dependencies" -> "Report target dependencies without editing: modaccel dependencies --root SOURCE --to 1.21.6 [--selection FILE] --json\nEach non-loader dependency is resolved, explicitly selected, or blocked with the selection entry to add in .modaccel/dependencies.json.";
             case "ui-check" -> "Capture the target client: modaccel ui-check --root SOURCE --screen net.minecraft.client.gui.screen.TitleScreen --json\nInspect the receipt's framebuffer capture; add --assert METHOD for behavior checks, or --expect-change PERCENT to require the action to visibly change the frame.\n"
                     + "--screen opens a new instance of that screen; leave it out to capture what the running client shows now.\n"
@@ -169,7 +176,7 @@ public final class Modaccel {
                     + "vars is a map kept between snippets; call(objectOrClass, \"name\", args...) and field(objectOrClass, \"name\") reach private\n"
                     + "members. Leading import lines are allowed. Start the game first with ui-check or world-check.";
             case "world-check" -> "Check a loaded save: modaccel world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.";
-            default -> "modaccel <support|discover|doctor|setup|compile|fast|test|port|explain|dependencies|ui-check|world-check|mp-check|eval|reload|game-status|game-stop|package|self-test> [--root SOURCE] [--project :module] [--task :task] [--refresh] [--json]\n"
+            default -> "modaccel <support|discover|doctor|setup|compile|fast|test|port|explain|mixin-check|dependencies|ui-check|world-check|mp-check|eval|reload|game-status|game-stop|package|self-test> [--root SOURCE] [--project :module] [--task :task] [--refresh] [--json]\n"
                     + "Use modaccel help port or modaccel port --help for port, undo and client examples. Input is a Gradle source checkout with a wrapper.";
         };
     }
