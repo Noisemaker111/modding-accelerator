@@ -62,8 +62,8 @@ import java.util.regex.Pattern;
  *     in that class. The owner's superclass and interface families are walked for @At.
  *   - @Inject handler signature: the declared handler must return void, end in exactly one
  *     CallbackInfo (void target) or CallbackInfoReturnable<T> whose T is the target's return
- *     type, and take at most the target's parameters as a leading prefix of matching types;
- *     the handler is static exactly when the target is. Both signatures are printed. Handler
+ *     type, and take at most the target's parameters as a leading prefix of matching types
+ *     (static exactly when the target is). Both signatures are printed. Handler
  *     parameters annotated @Local/@Share/@Coerce are captured locals: the callback is still
  *     checked, the capture is not.
  *
@@ -104,7 +104,7 @@ public final class MixinAudit {
 		String superName;
 		final List<String> interfaces = new ArrayList<>();
 		final List<String[]> fields = new ArrayList<>();  // {name, descriptor}
-		final List<String[]> methods = new ArrayList<>(); // {name, descriptor, "static"|"instance"}
+		final List<String[]> methods = new ArrayList<>(); // {name, descriptor, "static" or ""}
 	}
 
 	/** Opens the jars once and answers "what members does this class have" from them. */
@@ -152,9 +152,8 @@ public final class MixinAudit {
 						ci.fields.add(new String[] {f.fieldName().stringValue(), f.fieldType().stringValue()});
 					}
 					for (MethodModel mm : m.methods()) {
-						boolean isStatic = (mm.flags().flagsMask() & ClassFile.ACC_STATIC) != 0;
 						ci.methods.add(new String[] {mm.methodName().stringValue(), mm.methodType().stringValue(),
-								isStatic ? "static" : "instance"});
+								mm.flags().has(java.lang.reflect.AccessFlag.STATIC) ? "static" : ""});
 					}
 				} catch (RuntimeException e) {
 					ci = null; // class format this JDK cannot read
@@ -498,21 +497,28 @@ public final class MixinAudit {
 			// and (for @Inject) the declaration below the annotation is the handler.
 			String selectorValue = attribute(text, a[3], a[4], "method");
 			List<String> chosen = selectors(selectorValue);
+			// require = 0 makes the injection optional: Mixin skips it quietly when nothing matches,
+			// so what's missing is a note, not a dead target.
+			boolean optional = "0".equals(String.valueOf(attribute(text, a[3], a[4], "require")).trim());
+			List<Finding> found = optional ? new ArrayList<>() : local;
 			for (String target : resolved) {
 				for (String selector : chosen) {
-					checkSelector(rel, line, target, name, selector, loader, local);
+					checkSelector(rel, line, target, name, selector, loader, found);
 				}
 				if (name.equals("Inject") && decl != null) {
 					List<String[]> methods = new ArrayList<>();
 					for (String selector : chosen) { methods.addAll(selectorMatches(loader, target, selector)); }
-					checkHandler(rel, line, target, decl, methods, loader, local);
+					checkHandler(rel, line, target, decl, methods, loader, found);
 				}
 			}
 			int[] at = atArgs(text, a[3], a[4]);
 			if (at != null) {
-				checkAt(rel, line, name, text.substring(at[0], at[1]), resolved, loader, local);
+				checkAt(rel, line, name, text.substring(at[0], at[1]), resolved, loader, found);
 			} else if (name.equals("Inject")) {
 				notes.add(rel + ": @" + name + " at line " + line + " has no @At this reads");
+			}
+			if (optional) {
+				for (Finding f : found) { notes.add(f.file + ":" + f.line + " optional (require = 0): " + f.message); }
 			}
 		}
 		for (Finding f : local) { findings.add(f.file + ":" + f.line + " " + f.message); }
@@ -761,16 +767,12 @@ public final class MixinAudit {
 		List<String> params = decl.params();
 		List<String> given = params.subList(0, params.size() - 1); // before the CallbackInfo
 		List<String> types = paramDescriptors(method[1]);
-		// Mixin requires an @Inject handler to be static exactly when its target is static; the
-		// handler never receives the target instance as a parameter.
-		if (method.length > 2) {
-			boolean targetStatic = method[2].equals("static");
-			if (targetStatic && !decl.isStatic()) {
-				return method[0] + " is static, so the handler must be static too";
-			}
-			if (!targetStatic && decl.isStatic()) {
-				return method[0] + " is an instance method, so the handler must not be static";
-			}
+		// Mixin wants the handler static exactly when the target is, and either way the handler
+		// takes the target's own parameters: a static target has no instance to pass.
+		boolean targetStatic = method.length > 2 && "static".equals(method[2]);
+		if (decl.isStatic() != targetStatic) {
+			return targetStatic ? method[0] + " is static, so the handler must be static too"
+					: "the handler is static but " + method[0] + " isn't";
 		}
 		if (decl.captures()) {
 			// @Local/@Share/@Coerce parameters depend on what is in scope at the point: not checked.
