@@ -33,9 +33,9 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 |---|---|---|---|---|---|---|
 | 1 Build | Fast, warm build of the jar | yes | yes | yes | yes | yes (1.8 s jar) |
 | 2 Tests | Logic tests in seconds, no game | yes | yes | yes | yes | yes (all 17 AgentCraft tests, 2-5 s warm) |
-| 3 Run check | Loads in the real game/server, screenshot or command proof | yes | yes | partial | yes (26.3 node) | no (needs a server check) |
+| 3 Run check | Loads in the real game/server, screenshot or command proof | yes | yes | partial | yes (26.3 node) | yes, on MockBukkit (a fake Paper server, no real server): `plugin-check` |
 | 4 Multiplayer check | Dedicated server plus client, or server plus bot | partial | partial | no | no | no (bot exists in their repo) |
-| 5 Version port | `port --from --to`, routed through hubs | yes (1.14.4+) | yes (1.14.4+) | no | via its nodes | no (often just config) |
+| 5 Version port | `port --from --to`, routed through hubs | yes (1.14.4+) | yes (1.14.4+) | no | via its nodes | no: config only, done by hand (AgentCraft 26.3 to 1.21.10 passes `plugin-check`); `port` refuses plugins and names the edits |
 | 6 Platform change | e.g. Fabric → NeoForge | later | later | later | n/a | not planned |
 
 ## 3. Policy
@@ -67,11 +67,19 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 
 ## 5. Where AgentCraft lands
 
-- Paper plugin, server side, at rung 2.
+- Paper plugin, server side, at rung 3.
 - Rung 1: `modaccel compile --task :jar` builds the plugin jar (about 3 s warm).
 - Rung 2: `modaccel fast` runs every test when no Minecraft or loader is on the test classpath,
   so AgentCraft's 17 untagged tests run in 2-5 s warm. Fabric, NeoForge and Forge still run
   only tests tagged `pure`.
+- Rung 3: `modaccel plugin-check` builds the jar with the plugin's own task and loads it on
+  MockBukkit for the plugin's Paper API line: descriptor and api-version, main class, onLoad,
+  onEnable, plugin.yml command handlers and Brigadier commands, permissions, listeners, hard
+  dependencies, 100 ticks of its tasks, onDisable. About 4-7 s warm. It is a fake server: code
+  through server internals (net.minecraft, CraftBukkit) or API MockBukkit lacks is reported
+  unchecked, and world, entity and network behaviour are not proven. A real Paper server check
+  stays a later, optional step.
 - It is the first server fixture in the merge gate: `bench/server-plugins/manifest.json`, run by
-  `tools/tests/ServerPluginFixtures.java` inside the FastLane gate.
-- Next is rung 3: a Paper server check, an estimated 2–3 days.
+  `tools/tests/ServerPluginFixtures.java` in the server-plugins CI job, which also breaks the
+  plugin on purpose in a throwaway copy and requires each break to fail.
+- Next: rung 5 (`port` between Paper versions, config only) or rung 4 (server plus bot).
