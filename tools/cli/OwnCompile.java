@@ -120,8 +120,13 @@ final class OwnCompile {
             moved.put(Json.text(unit, "destination", ""), out.toString());
             compiled.add(Json.map("task", task, "classes", out.toString(), "sources", sources.size()));
         }
-        return Json.map("tier", "compile", "tasks", tasks, "gameVerified", false, "ownGame", Json.map("neoforge", version, "jar", jar, "universal", universal, "transformers", ownTransformers.stream().map(Path::toString).toList()),
-                "compiled", compiled, "details", "Compiled " + compiled.size() + " source set(s) with javac against NeoForge " + version
+        return result(tasks, version, jar, universal, ownTransformers, compiled, outputs);
+    }
+    /** modaccel's own compile, not Gradle's: it says so, and port and ledger verdicts never use it. */
+    static Map<String, Object> result(List<String> tasks, String version, Object jar, Object universal, List<Path> ownTransformers, List<?> compiled, Path outputs) {
+        return Json.map("tier", "own-compile", "compiledBy", "modaccel (own javac against its own game prep), not Gradle", "gradleConfirmed", false,
+                "tasks", tasks, "gameVerified", false, "ownGame", Json.map("neoforge", version, "jar", jar, "universal", universal, "transformers", ownTransformers.stream().map(Path::toString).toList()),
+                "compiled", compiled, "details", "Own compile (modaccel's javac, not Gradle; Gradle has not confirmed it): compiled " + compiled.size() + " source set(s) against NeoForge " + version
                         + "'s installer-made game jar, without NeoForm's decompile and recompile. Classes: " + outputs
                         + ". Resources were not processed; set MODACCEL_OWN_GAME=false for the Gradle compile.");
     }

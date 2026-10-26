@@ -308,6 +308,7 @@ final class Port {
     static String preReleaseText(List<Map<String, Object>> applied) {
         StringBuilder text = new StringBuilder();
         for (var item : applied) if (item.get("preRelease") != null) text.append("\nPre-release chosen: ").append(item.get("preRelease"));
+        for (var item : applied) if (item.get("warning") != null) text.append("\nWarning: ").append(item.get("warning"));
         return text.toString();
     }
     static String blockerText(List<Map<String, Object>> blockers) {
@@ -369,6 +370,7 @@ final class Port {
         if (!Files.isDirectory(libs)) return Json.map("ok", true, "checked", false, "details", "No packaged jar to inspect.");
         Pattern block = Pattern.compile("(?s)\\[\\[dependencies\\.([^\\]]+)\\]\\]([^\\[]*?modId\\s*=\\s*\"minecraft\"[^\\[]*?versionRange\\s*=\\s*\")([^\"]+)\"");
         List<String> jars = new ArrayList<>(), ranges = new ArrayList<>();
+        String decidedBy = null;
         List<Path> candidates = new ArrayList<>();
         try (var stream = Files.list(libs)) {
             for (Path jar : stream.filter(p -> p.toString().endsWith(".jar")).toList()) {
@@ -389,7 +391,12 @@ final class Port {
                     while (match.find()) {
                         String range = match.group(3);
                         jars.add(jar.getFileName().toString()); ranges.add(range); found = true;
-                        if (!range.contains(to)) return Json.map("ok", false, "checked", true, "jar", jar.toString(), "declared", range,
+                        // Read as FML reads it: a Maven version range, not text containing the version.
+                        MavenRange.Answer answer = MavenRange.contains(range, to, classpath(model));
+                        decidedBy = answer.decidedBy();
+                        if (answer.error() != null) return Json.map("ok", false, "checked", true, "jar", jar.toString(), "declared", range, "decidedBy", decidedBy,
+                                "details", "The packaged mod's Minecraft versionRange \"" + range + "\" is not a valid Maven range (" + answer.error() + "); NeoForge refuses the mod. Fix the range and rerun.");
+                        if (!answer.contains()) return Json.map("ok", false, "checked", true, "jar", jar.toString(), "declared", range, "decidedBy", decidedBy,
                                 "details", "The packaged mod declares Minecraft " + range + " but was ported to " + to
                                         + "; NeoForge refuses it at runtime and the client would list 0 mods. Update the property behind the metadata range and rerun.");
                     }
@@ -398,8 +405,16 @@ final class Port {
                 if (found) break;
             }
         }
-        return Json.map("ok", true, "checked", !ranges.isEmpty(), "jars", jars, "ranges", ranges,
-                "details", ranges.isEmpty() ? "No Minecraft dependency range in the packaged metadata." : "Packaged metadata accepts " + to + ".");
+        return Json.map("ok", true, "checked", !ranges.isEmpty(), "jars", jars, "ranges", ranges, "decidedBy", decidedBy,
+                "details", ranges.isEmpty() ? "No Minecraft dependency range in the packaged metadata." : "Packaged metadata accepts " + to + " (range read by " + decidedBy + ").");
+    }
+    /** Every jar on the evaluated compile classpaths. */
+    static List<Path> classpath(Map<String, Object> model) {
+        Set<Path> jars = new LinkedHashSet<>();
+        for (Object item : Json.array(model.get("projects")))
+            if (Json.object(item).get("compile") instanceof List<?> compiles) for (Object c : compiles)
+                for (String path : ProjectModel.strings(Json.object(c).get("classpath"))) if (path.endsWith(".jar")) jars.add(Path.of(path));
+        return new ArrayList<>(jars);
     }
     /**
      * Fabric refuses a jar whose packaged fabric.mod.json does not accept the running game, even when

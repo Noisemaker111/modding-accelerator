@@ -188,7 +188,7 @@ public final class HardeningTest {
                 "the timeout message names the limit, the cold setup and how to raise it: " + message);
         require(!Build.timeoutMessage(900, false, scratch).contains("cold"), "a warm timeout is not called cold");
     }
-    /** The project's Loom version comes from its own files, so a dependency built by a newer Loom can be skipped. */
+    /** The project's Loom version comes from its own files, so a dependency built by a newer Loom gets a warning. */
     static void loomVersions() {
         Properties props = new Properties(); props.setProperty("loom_version", "1.10-SNAPSHOT");
         require(ProjectModel.loomVersion(props, List.of()).equals("1.10-SNAPSHOT"), "loom_version property");

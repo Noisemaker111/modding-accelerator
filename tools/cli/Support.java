@@ -48,7 +48,26 @@ final class Support {
                 "next", fabricOnly ? "Run modaccel port --from OLD --to NEW --fix --root SOURCE" :
                         "Update this loader's target dependencies in the source build, then run modaccel port --from OLD --to NEW --fix --root SOURCE");
     }
+    /**
+     * The loader a project builds against, from the loader artifact it depends on: Architectury Loom
+     * builds NeoForge and Forge projects with plugins all named net.fabricmc.loom.*, so a plugin name
+     * cannot tell them apart. Tool classpaths (Architectury's transformer pulls in Fabric Loader for
+     * every platform) don't count. Plugin names decide only when no loader artifact is declared.
+     */
     static Set<String> loaders(Map<String, Object> selected) {
+        Set<String> fromArtifacts = new TreeSet<>();
+        if (selected.get("dependencies") instanceof List<?> dependencies) for (Object entry : dependencies) {
+            Map<String, Object> dependency = Json.object(entry);
+            String coordinate = Json.text(dependency, "group", "") + ":" + Json.text(dependency, "name", "");
+            if (Json.text(dependency, "configuration", "").toLowerCase(Locale.ROOT).startsWith("architecturytransformer")) continue;
+            switch (coordinate) {
+                case "net.fabricmc:fabric-loader" -> fromArtifacts.add("fabric");
+                case "net.neoforged:neoforge", "net.neoforged:forge" -> fromArtifacts.add("neoforge");
+                case "net.minecraftforge:forge" -> fromArtifacts.add("forge");
+                default -> { }
+            }
+        }
+        if (!fromArtifacts.isEmpty()) return fromArtifacts;
         Set<String> fromPlugins = new TreeSet<>();
         if (selected.get("plugins") instanceof List<?> plugins) for (Object entry : plugins) {
             String plugin = String.valueOf(entry).toLowerCase(Locale.ROOT);

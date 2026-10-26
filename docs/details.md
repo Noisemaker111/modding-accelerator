@@ -604,9 +604,13 @@ separately. An update that breaks 1% or more of the old names starts a new famil
 family's hub is its release with the most mods on Modrinth. Before 1.14.4 there are no official
 names, so families are grouped by version number, marked estimated, and nothing is measured.
 
-A line is green only when `coverage/ledger.json` has a port across that whole hop that loaded or
-passed a behaviour check in the game; yellow when a ROADMAP step marked doing covers it; red
-otherwise, with the reason shown. Refresh: `java tools/ChangeIndex.java`, then
+Colours are per loader: pick the loader on the page. A run proves only its own loader and the
+updates it crossed, so a NeoForge port colours nothing for Fabric. A line is green only when
+`coverage/ledger.json` has a port on that loader across that whole hop that loaded or passed a
+behaviour check in the game; yellow when a ROADMAP step marked doing for that loader covers it;
+red otherwise, with the reason shown. "Loaded" means the loader's own mod list held the mod;
+"behaviour" means an assertion on the mod's own state passed (a frame change or a reloaded save
+is not behaviour). Refresh: `java tools/ChangeIndex.java`, then
 `python bench/change_routes.py` and `python bench/porting_map.py`.
 
 ## Porting, measured

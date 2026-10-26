@@ -33,7 +33,7 @@ are the roadmap below, not current capability.
 | Loaders | Fabric and NeoForge ports end to end; Forge fast lane and checks | Any loader to any loader (Fabric ↔ NeoForge ↔ Forge ↔ Quilt): unbuilt; first step is one small Fabric → NeoForge mod, measured |
 | Project shapes | One Gradle project; Stonecutter nodes listed and built | Multi-module orchestration, Stonecutter repairs in shared sources, Kotlin sources |
 | Platforms | Game checks on Windows; portable checks on Windows, Linux and macOS in CI | Linux and macOS game rendering |
-| Verification | Build, mixins, packaged metadata, real client, inspected captures, `--expect-change`, save roundtrip | Behaviour assertions for items, entities and multiplayer; optional pixel goldens |
+| Verification | Build, mixins, packaged metadata, real client, the loader's own mod list (every game check fails if a mod id or version is missing), inspected captures, `--assert` and `--expect-value` on the mod's own code count as behaviour (`--expect-change` and save roundtrip don't) | Behaviour assertions for items, entities and multiplayer; the dedicated server's mod list; optional pixel goldens |
 
 The ordered plan is in [`ROADMAP.md`](ROADMAP.md); the current resume point and evidence are in
 [`PLAN.md`](PLAN.md).

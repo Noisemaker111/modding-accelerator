@@ -20,6 +20,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Map and bench colour per loader
+        working-directory: portable workspace
+        run: python bench/test_ledger_rule.py
       - name: Portable core and JDK archive outcomes
         working-directory: portable workspace
         run: java tools/cli/Bootstrap.java . self-test --json
