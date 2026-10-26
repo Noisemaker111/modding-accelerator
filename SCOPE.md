@@ -32,7 +32,7 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 | Rung | Means | Fabric | NeoForge | Forge | Stonecutter | Paper |
 |---|---|---|---|---|---|---|
 | 1 Build | Fast, warm build of the jar | yes | yes | yes | yes | yes (1.8 s jar) |
-| 2 Tests | Logic tests in seconds, no game | yes | yes | yes | yes | needs the plain-test fix |
+| 2 Tests | Logic tests in seconds, no game | yes | yes | yes | yes | yes (all 17 AgentCraft tests, 2-5 s warm) |
 | 3 Run check | Loads in the real game/server, screenshot or command proof | yes | yes | partial | yes (26.3 node) | no (needs a server check) |
 | 4 Multiplayer check | Dedicated server plus client, or server plus bot | partial | partial | no | no | no (bot exists in their repo) |
 | 5 Version port | `port --from --to`, routed through hubs | yes (1.14.4+) | yes (1.14.4+) | no | via its nodes | no (often just config) |
@@ -67,7 +67,11 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 
 ## 5. Where AgentCraft lands
 
-- Paper plugin, server side, at rung 1 today.
-- Next is rung 2: the plain-test fix, about half a day, measured at 2–4 s against 8–11 s.
-- Then rung 3: a Paper server check, an estimated 2–3 days.
-- It becomes the first server fixture in the merge gate.
+- Paper plugin, server side, at rung 2.
+- Rung 1: `modaccel compile --task :jar` builds the plugin jar (about 3 s warm).
+- Rung 2: `modaccel fast` runs every test when no Minecraft or loader is on the test classpath,
+  so AgentCraft's 17 untagged tests run in 2-5 s warm. Fabric, NeoForge and Forge still run
+  only tests tagged `pure`.
+- It is the first server fixture in the merge gate: `bench/server-plugins/manifest.json`, run by
+  `tools/tests/ServerPluginFixtures.java` inside the FastLane gate.
+- Next is rung 3: a Paper server check, an estimated 2–3 days.

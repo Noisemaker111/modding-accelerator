@@ -118,8 +118,11 @@ gradle.projectsEvaluated {
             p.tasks.register('modaccelPure', Test) {
                 testClassesDirs = sets.test.output.classesDirs
                 classpath = sets.test.runtimeClasspath
-                useJUnitPlatform { includeTags 'pure'; includeEngines 'junit-jupiter' }
+                // modaccel.allTests is set by FastLane when no game or loader is on the test classpath (plain Java, server plugins).
+                useJUnitPlatform { if (System.getProperty('modaccel.allTests', '') != 'true') includeTags 'pure'; includeEngines 'junit-jupiter' }
                 outputs.upToDateWhen { false }
+                // FastLane reports an empty run itself, with the reason; Gradle 9's own failure would only add a tail.
+                if (delegate.hasProperty('failOnNoDiscoveredTests')) failOnNoDiscoveredTests = false
                 testLogging { events 'passed', 'failed', 'skipped' }
             }
         }

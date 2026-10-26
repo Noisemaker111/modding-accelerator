@@ -1,0 +1,16 @@
+{
+  "note": "Server plugins the merge gate puts through modaccel on fresh pinned clones (tools/tests/ServerPluginFixtures.java, run from the FastLane gate step). Kept apart from bench/real-mods, which the real-mod runner owns. fast.executed is the exact count fast must run with no @Tag(\"pure\") in the project; jar is the plugin's own Gradle task and the file it must produce.",
+  "plugins": [
+    {
+      "id": "agentcraft",
+      "name": "AgentCraft",
+      "repo": "https://github.com/mezotv/agentcraft",
+      "commit": "eca1d9165de1c0e0e58c3e7cad26bb9a8a405ab4",
+      "platform": "paper",
+      "side": "server",
+      "minecraft": "26.3",
+      "fast": { "executed": 17, "failed": 0 },
+      "jar": { "task": ":jar", "file": "build/libs/agentcraft-0.1.0.jar" }
+    }
+  ]
+}

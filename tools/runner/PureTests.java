@@ -10,10 +10,12 @@ public final class PureTests {
     public static void main(String[] args) throws Exception {
         Set<Path> roots = new LinkedHashSet<>();
         for (int i = 1; i < args.length; i++) roots.add(Paths.get(args[i]));
+        // modaccel.allTests: no game on the test classpath, so every test is game-free and none needs @Tag("pure").
         var request = LauncherDiscoveryRequestBuilder.request().selectors(DiscoverySelectors.selectClasspathRoots(roots))
-                .filters(TagFilter.includeTags("pure"), EngineFilter.includeEngines("junit-jupiter")).build();
+                .filters(EngineFilter.includeEngines("junit-jupiter"));
+        if (!Boolean.getBoolean("modaccel.allTests")) request.filters(TagFilter.includeTags("pure"));
         var listener = new SummaryGeneratingListener();
-        LauncherFactory.create().execute(request, listener);
+        LauncherFactory.create().execute(request.build(), listener);
         var summary = listener.getSummary();
         List<Object> failures = new ArrayList<>();
         summary.getFailures().forEach(f -> failures.add(Json.map("test", f.getTestIdentifier().getDisplayName(), "error", f.getException().toString())));

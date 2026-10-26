@@ -94,6 +94,31 @@ public final class PortableTests {
         }
         check(learned >= 30, learned +" rules learned from Stonecutter switches name real switches in two or more mods, match their error, rewrite their example and run on their update");
     }
+    static Map<String, Object> testModel(String... runtime) {
+        return Json.map("projects", List.of(Json.map("sourceSets", List.of(Json.map("name", "main", "runtime", List.of()),
+                Json.map("name", "test", "runtime", List.of(runtime), "output", List.of())))));
+    }
+    /** Which tests fast selects, and that an empty run always says why instead of printing a Gradle tail. */
+    static void fastLaneChecks() throws Exception {
+        String junit = "/home/u/.gradle/caches/modules-2/files-2.1/org.junit.jupiter/junit-jupiter-api/5.13.4/x/junit-jupiter-api-5.13.4.jar";
+        check(FastLane.gameFree(testModel(junit, "/home/u/.gradle/caches/modules-2/files-2.1/io.papermc.paper/paper-api/26.3.build.214-stable/x/paper-api-26.3.build.214-stable.jar")),
+                "a Paper plugin's test classpath (paper-api, JUnit) is game-free, so fast runs every test");
+        check(FastLane.gameFree(testModel(junit)), "a plain Java test classpath is game-free");
+        check(!FastLane.gameFree(testModel(junit, "C:\\Users\\u\\.gradle\\caches\\fabric-loom\\minecraftMaven\\net\\minecraft\\minecraft-merged-1.21.6\\minecraft-merged.jar",
+                "C:\\Users\\u\\.gradle\\caches\\modules-2\\files-2.1\\net.fabricmc\\fabric-loader\\0.16.14\\x\\fabric-loader-0.16.14.jar")),
+                "a Fabric test classpath has the game, so fast keeps running only tests tagged pure");
+        check(!FastLane.gameFree(testModel(junit, "/p/build/neoForge/neoFormJoined/1.21.1/artifacts/neoforge-21.1.77.jar",
+                "/home/u/.gradle/caches/modules-2/files-2.1/net.neoforged/neoforge/21.1.77/x/neoforge-21.1.77-universal.jar")),
+                "a NeoForge test classpath has the game, so fast keeps running only tests tagged pure");
+        check(!FastLane.gameFree(testModel(junit, "/home/u/.gradle/caches/forge_gradle/minecraft_user_repo/net/minecraftforge/forge/1.20.1-47.3.0/forge-1.20.1-47.3.0.jar")),
+                "a Forge test classpath has the game");
+        check(!FastLane.gameFree(Json.map("projects", List.of())), "no test source set is never treated as game-free");
+        String noneAll = FastLane.none(FastLane.Selection.ALL, 0), nonePure = FastLane.none(FastLane.Selection.PURE, 23), untaggedAll = FastLane.none(FastLane.Selection.ALL, 4);
+        check(noneAll.startsWith("No tests found") && !noneAll.contains("pure"), "an empty plain project says no tests were found: " + noneAll);
+        check(nonePure.startsWith("No tests tagged pure ran") && nonePure.contains("@Tag(\"pure\")") && nonePure.contains("23 test classes"),
+                "a mod with only untagged tests is told to tag game-free ones pure: " + nonePure);
+        check(untaggedAll.contains("4 test classes") && untaggedAll.contains("Jupiter"), "compiled classes with no Jupiter tests are named as such: " + untaggedAll);
+    }
     public static void main(String[] args) throws Exception {
         Path home = Path.of(args[0]), scratch = Path.of(args[1]); Files.createDirectories(scratch);
         Path existingArgs = scratch.resolve("existing loom args.txt");
@@ -202,6 +227,7 @@ public final class PortableTests {
         }
         check(Boolean.TRUE.equals(Port.verifyModMetadata(metadataRoot, neoModel, "1.21.4").get("ok")),
                 "packaged metadata that accepts the target version passes the loader check");
+        fastLaneChecks();
         System.out.println(count + " portable checks passed");
     }
     public static final class LaunchProbe {

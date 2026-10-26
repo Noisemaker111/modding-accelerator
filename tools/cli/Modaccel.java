@@ -148,6 +148,13 @@ public final class Modaccel {
                     + "An expression is returned; statements return what they return. 'mc' is the Minecraft instance, print(x) adds output,\n"
                     + "vars is a map kept between snippets; call(objectOrClass, \"name\", args...) and field(objectOrClass, \"name\") reach private\n"
                     + "members. Leading import lines are allowed. Start the game first with ui-check or world-check.";
+            case "fast" -> "Run the project's game-free JUnit 5 tests in seconds: modaccel fast --root SOURCE --json\n"
+                    + "With no Minecraft or loader on the test classpath (plain Java, a Paper/Bukkit plugin) every test runs.\n"
+                    + "With Minecraft present (Fabric, NeoForge, Forge) only tests tagged @Tag(\"pure\") run; use `modaccel test` for the whole suite.\n"
+                    + "When nothing runs, the result says why: no test classes, or no tests tagged pure.";
+            case "compile" -> "Compile the project's classes: modaccel compile --root SOURCE --json\n"
+                    + "Build a jar with the project's own task: modaccel compile --root SOURCE --task :jar --json\n"
+                    + "That is the build path for Paper/Bukkit plugins (the jar lands in build/libs); mods use `modaccel package`.";
             case "world-check" -> "Check a loaded save: modaccel world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.";
             default -> "modaccel <support|discover|doctor|setup|compile|fast|test|port|dependencies|ui-check|world-check|mp-check|eval|reload|game-status|game-stop|package|self-test> [--root SOURCE] [--project :module] [--task :task] [--refresh] [--json]\n"
                     + "Use modaccel help port or modaccel port --help for port, undo and client examples. Input is a Gradle source checkout with a wrapper.";
