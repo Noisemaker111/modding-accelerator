@@ -33,17 +33,27 @@ public final class Modaccel {
                 String key = args[i]; if (!key.startsWith("--")) throw new IllegalArgumentException("Expected --option; got " + key);
                 key = key.substring(2);
                 if (switches.contains(key)) flags.add(key);
+                // --undo with no transaction undoes the newest port.
+                else if (key.equals("undo") && (i + 1 == args.length || args[i + 1].startsWith("--"))) values.put(key, "latest");
                 else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only").contains(key)) {
                     if (++i == args.length || args[i].startsWith("--")) throw new IllegalArgumentException("Missing value for --" + key);
                     values.put(key, args[i]);
-                } else throw new IllegalArgumentException("Unknown option --" + key);
+                } else throw new IllegalArgumentException("Unknown option --" + key + ". Run modaccel help" + (command.equals("help") ? "" : " " + command) + " for the options it takes.");
+            }
+            // Gradle project paths start with ':'; "26.3" alone would be read as a task name.
+            for (String key : List.of("project", "against")) if (values.containsKey(key)) {
+                List<String> paths = new ArrayList<>();
+                for (String path : values.get(key).split(",")) { path = path.strip(); if (!path.isEmpty()) paths.add(path.startsWith(":") ? path : ":" + path); }
+                values.put(key, String.join(",", paths));
             }
         }
         String get(String key, String fallback) { return values.getOrDefault(key, fallback); }
         boolean has(String key) { return flags.contains(key); }
     }
+    static final Set<String> COMMANDS = Set.of("support", "discover", "doctor", "setup", "compile", "fast", "test", "port", "explain", "dependencies", "mixin-check",
+            "ui-check", "world-check", "mp-check", "eval", "reload", "game-status", "game-stop", "package", "self-test", "help");
     public static void main(String[] args) {
-        int exit = 2; Options options = null; Report report = null;
+        int exit = 2; Options options = null; Report report = null; ProjectLock lock = null;
         try {
             options = new Options(args);
             if (options.has("help") || options.command.equals("help")) { System.out.println(help(options.command.equals("help") ? options.get("command", "") : options.command)); return; }
@@ -55,9 +65,13 @@ public final class Modaccel {
             Path root = Path.of(options.get("root", "."));
             if (Files.isRegularFile(root) && root.toString().toLowerCase(Locale.ROOT).endsWith(".jar"))
                 throw new IllegalArgumentException("--root needs the mod's Gradle source directory, not a compiled JAR. Check out its source and run modaccel discover --root SOURCE.");
+            if (!COMMANDS.contains(options.command)) throw new IllegalArgumentException("Unknown command " + options.command + ". " + help());
             ProjectModel project = new ProjectModel(root);
             if (!Set.of("package", "self-test").contains(options.command)) project.requireGradleBuild();
+            // Commands that build, edit or start the game take the project lock; reading state and talking to a running game don't.
+            if (!Set.of("discover", "doctor", "package", "self-test", "game-status", "game-stop", "eval").contains(options.command)) lock = ProjectLock.acquire(project, options.command);
             report = new Report(project.root, options.command); Map<String, Object> result;
+            String interrupted = options.command.equals("port") ? null : Port.interruptedText(project);
             long discovered = System.nanoTime();
             if (options.command.equals("discover")) {
                 result = project.discover(); result.put("support", Support.discovered(result)); exit = 0;
@@ -74,6 +88,8 @@ public final class Modaccel {
                     && (result = Route.blocked(home, options.get("from", ""), options.get("to", ""))) != null) {
                 // Refuse before evaluating a build that predates official names; nothing is changed.
                 exit = 1;
+            } else if (options.command.equals("dependencies") && Route.unknownRelease(home, options.get("to", "")) != null) {
+                result = Json.map("ready", false, "reason", Route.unknownRelease(home, options.get("to", ""))); exit = 1;
             } else {
                 // explain reads two projects' classpaths: the one that fails and the one it's compared with.
                 String selected = options.command.equals("explain") && options.values.containsKey("against") ? options.get("project", "") + "," + options.get("against", "") : options.get("project", "");
@@ -82,7 +98,11 @@ public final class Modaccel {
                         : build.model(options.has("refresh"), options.command.equals("port"));
                 switch (options.command) {
                     case "setup" -> { result = summary(model, project); exit = 0; }
-                    case "fast" -> { result = FastLane.run(build, model, options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
+                    case "fast" -> {
+                        result = FastLane.run(build, model, options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
+                        if (exit == 0) exit = withModChecks(result, model);
+                    }
+                    case "mixin-check" -> { result = mixinCheck(build, model, options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload" -> { result = new Game(build, model).run(options); exit = "reload".equals(options.command) && Boolean.TRUE.equals(result.get("restartNeeded")) ? 1 : 0; }
                     case "port" -> { result = new Port(build, model).run(options); if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model)); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "explain" -> { result = new Explain(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
@@ -95,30 +115,41 @@ public final class Modaccel {
                         if (options.command.equals("compile") && !options.values.containsKey("task") && (result = OwnCompile.run(build, model, tasks)) != null) { exit = 0; break; }
                         Run.Result run = build.gradle(tasks, options.command); exit = run.exit() == 0 ? 0 : 1;
                         result = Json.map("tier", options.command.equals("compile") ? "compile" : "logic", "tasks", tasks, "log", run.log().toString(),
-                                "gameVerified", false, "details", Run.tail(run.log()));
+                                "gameVerified", false, "details", options.command.equals("compile") ? "Compiled " + String.join(", ", tasks) + "." : Run.tail(run.log()));
                         if (run.exit() != 0) result.put("reason", Run.gradleFailure(run.log()) + "\nLog: " + run.log());
-                        if (options.command.equals("fast") || options.command.equals("test")) {
+                        if (options.command.equals("test") && run.exit() == 0) {
                             Map<String, Object> counts = TestResults.readTasks(model, tasks, report.id);
-                            result.put("tests", counts); if (((Number)counts.get("failed")).intValue() > 0) exit = 1;
-                            if (((Number)counts.get("executed")).intValue() == 0) { exit = 1; result.put("reason", "No tests executed; add meaningful tests before claiming logic verified."); }
+                            result.put("tests", counts); result.put("details", TestResults.text(counts));
+                            if (((Number)counts.get("failed")).intValue() > 0) exit = 1;
+                            if (((Number)counts.get("executed")).intValue() == 0) { exit = 1; result.put("reason", FastLane.noTests(model, false)); }
                         }
+                        if (exit == 0) exit = withModChecks(result, model);
+                        // A mixin aimed at a method that does not exist compiles; say which check finds it.
+                        if (exit == 0 && result.get("modChecks") instanceof Map<?, ?> checks && checks.get("mixinClasses") instanceof Number mixins && mixins.intValue() > 0)
+                            result.put("details", result.get("details") + "\nMixin targets are not checked by " + options.command + ": modaccel mixin-check checks them against the game jar in a few seconds.");
                     }
                     default -> throw new IllegalArgumentException("Unknown command " + options.command + ". " + help());
                 }
             }
+            if (interrupted != null) result.put("warning", interrupted + " Undo it with: modaccel port --root \"" + project.root + "\" --undo");
             Map<String, Object> output = report.finish(exit, result);
             if (options.has("json")) System.out.println(Json.write(output));
             else {
                 System.out.printf("%s: %s (%.2f seconds)%n", options.command, exit == 0 ? "passed" : "failed", output.get("seconds"));
-                if (options.command.equals("setup") || options.command.equals("discover") || options.command.equals("doctor")) System.out.println(Json.write(result));
-                else System.out.println(result.getOrDefault("reason", result.getOrDefault("details", "")));
+                String text = switch (options.command) {
+                    case "setup" -> setupText(result, project);
+                    case "discover", "doctor" -> discoverText(result, project, options.command);
+                    default -> String.valueOf(result.getOrDefault("reason", result.getOrDefault("details", "")));
+                };
+                if (!text.isBlank()) System.out.println(text.strip());
+                if (result.get("warning") != null) System.out.println("Warning: " + result.get("warning"));
                 if (result.containsKey("undo")) System.out.println("Undo: modaccel port --root \"" + project.root + "\" --undo \"" + result.get("undo") + "\"");
                 if (result.containsKey("zip")) System.out.println("Package: " + result.get("zip"));
                 System.out.println("Receipt: " + output.get("receipt"));
             }
         } catch (Exception error) {
             try {
-                String reported = error.getMessage() == null ? error.toString() : error.getMessage();
+                String reported = plainError(error);
                 // A dedicated server that died mid-check is the likelier cause of a client failure: say so with the error.
                 if (report != null) for (Object stage : report.stages)
                     if ("server-exit".equals(Json.object(stage).get("name"))) reported += "\n" + Json.object(stage).get("details");
@@ -131,11 +162,118 @@ public final class Modaccel {
                     if (message.startsWith("Game action failed: ")) message = message.substring("Game action failed: ".length()).replaceFirst("\nGame log: .*$", "");
                     System.err.println("eval: failed\n" + message);
                 }
-                else System.err.println(Json.write(value));
+                else {
+                    // Words first; the receipt keeps the stages and timings for anyone who wants them.
+                    System.err.println((options == null ? "modaccel" : options.command) + ": failed\n" + reported.strip());
+                    if (value.get("receipt") != null) System.err.println("Receipt: " + value.get("receipt"));
+                }
             } catch (IOException secondary) { System.err.println(error + "; could not save receipt: " + secondary); }
             exit = 2;
+        } finally {
+            if (lock != null) try { lock.close(); } catch (IOException ignored) { }
         }
         System.exit(exit);
+    }
+    /** An exception as a sentence: file-system errors whose message is only a path get their meaning back. */
+    static String plainError(Throwable error) {
+        // Port wraps its failure to add the undo line; the file-system cause underneath still needs words.
+        Throwable cause = error;
+        while (cause != null && !(cause instanceof FileSystemException)) cause = cause.getCause() == cause ? null : cause.getCause();
+        if (cause == null) return error.getMessage() == null ? error.toString() : error.getMessage();
+        String undo = error != cause && error.getMessage() != null && error.getMessage().contains("\nUndo this port with:") ? error.getMessage().substring(error.getMessage().indexOf("\nUndo this port with:")) : "";
+        if (cause instanceof AccessDeniedException denied)
+            return "Cannot write " + denied.getFile() + ": access was denied. The file is read-only, or another program (an editor, the game, antivirus) has it open."
+                    + " Clear the read-only flag or close that program, then rerun." + undo;
+        if (cause instanceof NoSuchFileException missing) return "No such file or folder: " + missing.getFile() + (missing.getReason() == null ? "" : " (" + missing.getReason() + ")") + "." + undo;
+        if (cause instanceof FileSystemException other && other.getReason() != null && other.getReason().toLowerCase(Locale.ROOT).contains("used by another process"))
+            return "Cannot use " + other.getFile() + ": another program has it open. Close it (the game, an editor or a file viewer), then rerun." + undo;
+        return error.getMessage() == null ? error.toString() : error.getMessage();
+    }
+    /** Mod resource and metadata checks after a passing compile or test run; problems turn the pass into a failure. */
+    static int withModChecks(Map<String, Object> result, Map<String, Object> model) throws IOException {
+        Map<String, Object> checks = ModChecks.run(model);
+        result.put("modChecks", checks);
+        String text = ModChecks.text(checks);
+        String details = String.valueOf(result.getOrDefault("details", ""));
+        result.put("details", details + (details.isBlank() ? "" : "\n") + "Checked resources and metadata: " + checks.get("checked") + "." + (text.isEmpty() ? "" : "\n" + text));
+        if (Boolean.TRUE.equals(checks.get("ok"))) return 0;
+        result.put("reason", result.get("details"));
+        return 1;
+    }
+    /** Compile, then check every mixin's target class, method and injection point against the game jar, without starting the game. */
+    static Map<String, Object> mixinCheck(Build build, Map<String, Object> model, Options options) throws Exception {
+        List<String> tasks = options.values.containsKey("task") ? List.of(options.get("task", "")) : build.tasks(model, "classes");
+        if (tasks.isEmpty()) throw new IOException("No classes task in the selected projects. Select --project :module or --task :module:task.");
+        Run.Result run = build.gradle(tasks, "compile");
+        if (run.exit() != 0) return Json.map("ok", false, "tier", "compile", "reason", Run.gradleFailure(run.log()) + "\nThe mixins were not checked: the code must compile first.\nLog: " + run.log());
+        var audit = new JavaTools(build).audit(model);
+        return mixinResult(audit.log(), audit.exit());
+    }
+    /** MixinAudit's log as a verdict a person reads: problems, optional injections that will never run, and notes. */
+    static Map<String, Object> mixinResult(Path log, int exit) throws IOException {
+        List<String> findings = new ArrayList<>(), notes = new ArrayList<>();
+        for (String line : Files.readAllLines(log, java.nio.charset.StandardCharsets.UTF_8)) {
+            if (line.isBlank() || line.startsWith("# ")) continue;
+            if (line.contains("optional (require = 0)") || line.startsWith("note")) notes.add(line.strip().replaceFirst("^note:\\s*", "")); else if (line.matches("^\\S+\\.(java|kt):\\d+.*")) findings.add(line.strip());
+        }
+        String summary = Port.auditSummary(log);
+        boolean ok = exit == 0;
+        StringBuilder text = new StringBuilder();
+        if (ok) text.append("Every mixin target resolves: ").append(summary).append(". The game was not started; injection behaviour needs a game check.");
+        else if (exit == 1) {
+            text.append(findings.size()).append(findings.size() == 1 ? " mixin problem" : " mixin problems").append(" the game would hit (a crash at start-up, or an injection that silently does nothing):");
+            for (String finding : findings) text.append("\n  ").append(finding);
+        } else text.append("The mixin audit could not run: ").append(Run.failure(log).strip());
+        List<String> optional = notes.stream().filter(n -> n.contains("optional (require = 0)")).toList();
+        if (!optional.isEmpty()) text.append("\n").append(optional.size()).append(optional.size() == 1 ? " optional injection" : " optional injections")
+                .append(" (require = 0) whose target is missing: the game skips ").append(optional.size() == 1 ? "it" : "them").append(" without an error, so ").append(optional.size() == 1 ? "it never runs" : "they never run").append(":");
+        for (String note : optional) text.append("\n  ").append(note.replace("optional (require = 0): ", ""));
+        for (String note : notes) if (!optional.contains(note)) text.append("\n  note: ").append(note);
+        Map<String, Object> result = Json.map("ok", ok, "tier", "mixin-targets", "gameVerified", false, "mixinAudit", summary, "findings", findings, "notes", notes, "log", log.toString(),
+                "details", text.toString());
+        if (!ok) result.put("reason", text + "\nLog: " + log);
+        return result;
+    }
+    static String discoverText(Map<String, Object> result, ProjectModel project, String command) {
+        StringBuilder out = new StringBuilder();
+        out.append("Gradle ").append(result.getOrDefault("gradle", "?")).append(" build at ").append(project.root);
+        if (Boolean.TRUE.equals(result.get("stonecutter"))) out.append("\nStonecutter: one source tree built for several Minecraft versions; each version is its own project (select one with --project).");
+        for (Object item : Json.array(result.getOrDefault("builds", List.of()))) {
+            var hint = Json.object(item); List<String> parts = new ArrayList<>();
+            for (String key : List.of("loader", "loaders", "minecraft", "path", "file")) if (hint.get(key) != null && !String.valueOf(hint.get(key)).isBlank()) parts.add(key + " " + hint.get(key));
+            if (!parts.isEmpty()) out.append("\n  ").append(String.join(", ", parts));
+        }
+        if (command.equals("doctor")) {
+            out.append("\nJava for this build: ").append(result.getOrDefault("selectedJava", "?"));
+            List<String> installed = new ArrayList<>();
+            for (Object jdk : Json.array(result.getOrDefault("jdks", List.of()))) installed.add(String.valueOf(Json.object(jdk).get("version")));
+            if (!installed.isEmpty()) out.append("\nJDKs found: ").append(String.join(", ", installed));
+        }
+        if (result.get("details") != null) out.append('\n').append(result.get("details"));
+        out.append("\nNext: modaccel setup --root \"").append(project.root).append("\" evaluates the build (a minute or more the first time). Add --json for every field.");
+        return out.toString();
+    }
+    static String setupText(Map<String, Object> result, ProjectModel project) {
+        StringBuilder out = new StringBuilder("Gradle " + result.getOrDefault("gradle", "?") + ", Java " + result.getOrDefault("java", "?"));
+        List<Object> projects = Json.array(result.getOrDefault("projects", List.of()));
+        List<String> mods = new ArrayList<>();
+        for (Object item : projects) {
+            var p = Json.object(item);
+            // summary() keeps loaders as a set, and a model read back from JSON has a list: take either.
+            Set<String> loaders = new TreeSet<>();
+            if (p.get("loaders") instanceof Collection<?> named) for (Object loader : named) loaders.add(String.valueOf(loader));
+            if (loaders.isEmpty()) continue;
+            Object minecraft = p.get("pins") instanceof Map<?, ?> pins ? pins.get("minecraft_version") : null;
+            mods.add(p.get("path") + "  " + String.join(", ", loaders) + (minecraft == null ? "" : ", Minecraft " + minecraft));
+        }
+        out.append("\n").append(mods.size()).append(mods.size() == 1 ? " mod project:" : " mod projects:");
+        for (String mod : mods) out.append("\n  ").append(mod);
+        if (mods.size() > 1) {
+            String first = mods.get(mods.size() - 1).split("\\s+")[0];
+            out.append("\nCommands work on one of them at a time: add --project, e.g. modaccel compile --root \"").append(project.root).append("\" --project ").append(first);
+        } else out.append("\nNext: modaccel compile --root \"").append(project.root).append("\", then fast for tests.");
+        out.append("\nModel: ").append(result.get("model")).append(" (add --json for every task and pin)");
+        return out.toString();
     }
     static String help() { return help(""); }
     static String help(String command) {
@@ -169,8 +307,28 @@ public final class Modaccel {
                     + "vars is a map kept between snippets; call(objectOrClass, \"name\", args...) and field(objectOrClass, \"name\") reach private\n"
                     + "members. Leading import lines are allowed. Start the game first with ui-check or world-check.";
             case "world-check" -> "Check a loaded save: modaccel world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.";
-            default -> "modaccel <support|discover|doctor|setup|compile|fast|test|port|explain|dependencies|ui-check|world-check|mp-check|eval|reload|game-status|game-stop|package|self-test> [--root SOURCE] [--project :module] [--task :task] [--refresh] [--json]\n"
-                    + "Use modaccel help port or modaccel port --help for port, undo and client examples. Input is a Gradle source checkout with a wrapper.";
+            case "fast", "test" -> "Run the mod's logic tests without the game: modaccel fast --root SOURCE [--project :module]\n"
+                    + "fast runs JUnit 5 tests tagged @Tag(\"pure\") (tests that never touch a Minecraft class), reusing compiled code when nothing changed;\n"
+                    + "test runs the project's whole test task. Both fail when no test ran, and check the mod's resources and metadata afterwards.\n"
+                    + "The build needs JUnit: testImplementation(\"org.junit.jupiter:junit-jupiter:5.11.4\") and testRuntimeOnly(\"org.junit.platform:junit-platform-launcher:1.11.4\").";
+            case "compile" -> "Compile the mod and check what the game reads at start-up: modaccel compile --root SOURCE [--project :module]\n"
+                    + "After javac, every JSON file in the resources must parse, fabric.mod.json / neoforge.mods.toml must name a valid mod id, mixin\n"
+                    + "configs and their classes, and entrypoints that exist, and the code's MOD_ID must match the metadata. Items made by a recipe\n"
+                    + "without a translation or model are warnings.";
+            case "mixin-check" -> "Check the mixins without starting the game: modaccel mixin-check --root SOURCE [--project :module]\n"
+                    + "Compiles, then looks up every @Mixin target class, @Inject/@Redirect/... method, @At target and @Shadow member in the game jar,\n"
+                    + "including static-ness and signatures. A finding is a crash at start-up or an injection that silently does nothing;\n"
+                    + "require = 0 injections are optional and reported as notes. Whether an injection does the right thing still needs a game check.";
+            default -> "modaccel <command> --root SOURCE [--project :module] [--json]\n"
+                    + "  support                what works today        discover, doctor   what kind of build this is\n"
+                    + "  setup                  evaluate the build      compile            compile + resource/metadata checks\n"
+                    + "  fast, test             logic tests, no game    mixin-check        mixin targets against the game jar\n"
+                    + "  port                   move to another version explain            explain compiler errors\n"
+                    + "  dependencies           target dependencies     ui-check, world-check, mp-check   real game checks\n"
+                    + "  eval, reload           talk to the running game          game-status, game-stop\n"
+                    + "  package, self-test     build or test modaccel itself\n"
+                    + "Run modaccel help COMMAND for one command (port, fast, compile, mixin-check, explain, ui-check, eval, reload ...).\n"
+                    + "--root is the mod's Gradle source checkout (the folder with gradlew); a multi-version build needs --project, e.g. --project :1.21.6.";
         };
     }
     static Map<String, Object> summary(Map<String, Object> model, ProjectModel owner) {

@@ -348,7 +348,9 @@ final class Target {
                 Path root = Path.of(resource).toAbsolutePath().normalize();
                 // A model can report a Windows 8.3 or symlinked path for the same directory; compare real paths.
                 try { root = root.toRealPath(); } catch (IOException missing) { }
-                if (!root.startsWith(directory)) throw new IOException("Fabric resource root is outside the selected project: " + root);
+                if (!root.startsWith(directory)) throw new IOException("Project " + project.get("path") + " reads its resources from " + root + ", a folder it shares with other projects"
+                        + " (a Stonecutter build does this: every version node compiles the same src/). Porting one node would change the files every other node uses, so modaccel does not edit them."
+                        + " To build another Minecraft version, select the node that already targets it (modaccel setup lists them, e.g. --project :26.2), or add a node for it in settings.gradle.kts. Nothing was changed.");
                 Path file = root.resolve("fabric.mod.json");
                 if (Files.isRegularFile(file)) {
                     Path owned = file.toRealPath();
@@ -362,6 +364,17 @@ final class Target {
     }
     static void apply(List<Edit> edits) throws IOException {
         for (Edit edit : edits) if (!Files.readString(edit.file()).equals(edit.before())) throw new IOException("Target configuration changed during setup: " + edit.file());
+        requireWritable(edits);
+        write(edits);
+    }
+    static void requireWritable(List<Edit> edits) throws IOException {
+        // Every file is checked before the first is written: a read-only one stops the port with nothing changed.
+        List<String> locked = new ArrayList<>();
+        for (Edit edit : edits) if (!Files.isWritable(edit.file())) locked.add(edit.file().toString());
+        if (!locked.isEmpty()) throw new IOException("Cannot write " + String.join(", ", locked) + ": " + (locked.size() == 1 ? "it is" : "they are")
+                + " read-only. Clear the read-only flag (Windows: file Properties; macOS and Linux: chmod u+w), then rerun. Nothing was changed.");
+    }
+    static void write(List<Edit> edits) throws IOException {
         for (Edit edit : edits) Files.writeString(edit.file(), edit.after());
     }
     static String fetch(Build build, String url) throws Exception {
@@ -373,7 +386,12 @@ final class Target {
         catch (IOException transport) { throw unreachable(url, transport); }
         int status = response.statusCode();
         if (status == 429 || status >= 500) throw new LookupFailure("Target dependency lookup failed (HTTP " + status + ", the server did not answer the question): " + url, null);
-        if (status != 200) throw new IOException("Target dependency lookup failed (HTTP " + status + "): " + url);
+        if (status != 200) {
+            var version = java.util.regex.Pattern.compile("meta\\.fabricmc\\.net/v2/versions/(?:loader|yarn|intermediary)/([^/?]+)").matcher(url);
+            if (version.find() && (status == 400 || status == 404))
+                throw new IOException("Fabric has no release for Minecraft " + version.group(1) + " (" + url + " answered HTTP " + status + "). Check the version: it must be a released Minecraft version Fabric supports, such as 1.21.6 or 26.3. Nothing was changed.");
+            throw new IOException("Target dependency lookup failed (HTTP " + status + "): " + url);
+        }
         Files.createDirectories(cache.getParent()); Files.writeString(cache, response.body()); return response.body();
     }
     /** A network error names the host and the real exception, never a bare "null". */

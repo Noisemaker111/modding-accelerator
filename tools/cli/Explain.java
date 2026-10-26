@@ -247,10 +247,49 @@ final class Explain {
         for (String imported : imports) if (imported.endsWith("." + first)) return imported.startsWith("java.") || imported.startsWith("javax.") ? imported + plain.substring(first.length()) : null;
         try { Class.forName("java.lang." + first); return "java.lang." + plain; } catch (ClassNotFoundException | LinkageError notInJavaLang) { return null; }
     }
+    /**
+     * Null when the JDK class has the member (or can't be read); otherwise the closest public names.
+     * A JDK at least as new as the build's would have a member the build's Java has, so a member
+     * missing here is a misspelling, not an API from a newer Java.
+     */
+    static List<String> jdkSimilar(String className, String name) {
+        Class<?> type;
+        try { type = Class.forName(className, false, ClassLoader.getPlatformClassLoader()); } catch (ClassNotFoundException | LinkageError unknown) { return null; }
+        Set<String> names = new TreeSet<>();
+        try {
+            for (var method : type.getMethods()) names.add(method.getName());
+            for (var field : type.getFields()) names.add(field.getName());
+            for (var method : type.getDeclaredMethods()) names.add(method.getName());
+        } catch (LinkageError unreadable) { return null; }
+        if (name.equals("<init>") || names.contains(name)) return null;
+        String lower = name.toLowerCase(Locale.ROOT);
+        return names.stream().filter(candidate -> distance(candidate.toLowerCase(Locale.ROOT), lower) <= Math.max(1, name.length() / 4)
+                || candidate.toLowerCase(Locale.ROOT).startsWith(lower) && lower.length() >= 3).limit(5).toList();
+    }
+    static int distance(String a, String b) {
+        int[] previous = new int[b.length() + 1], current = new int[b.length() + 1];
+        for (int j = 0; j <= b.length(); j++) previous[j] = j;
+        for (int i = 1; i <= a.length(); i++) {
+            current[0] = i;
+            for (int j = 1; j <= b.length(); j++) current[j] = Math.min(Math.min(current[j - 1] + 1, previous[j] + 1), previous[j - 1] + (a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1));
+            int[] swap = previous; previous = current; current = swap;
+        }
+        return previous[b.length()];
+    }
     List<String> memberLines(String owner, String name, List<String> imports, String workingName, Index working, String failingName, Index failing) {
         String jdk = jdkClass(owner, imports);
-        if (jdk != null) return List.of("JDK  " + jdk + "." + (name.equals("<init>") ? "<init>" : name) + " is Java's, not a jar's: if it builds on " + workingName
-                + ", it's likely newer than the Java release " + failingName + " compiles for.");
+        if (jdk != null) {
+            int release = 0;
+            for (Object item : Json.array(model.getOrDefault("projects", List.of()))) for (Object compile : Json.array(Json.object(item).getOrDefault("compile", List.of()))) {
+                try { release = Math.max(release, Integer.parseInt(String.valueOf(Json.object(compile).get("release")).replace("1.", ""))); } catch (NumberFormatException unknown) { }
+            }
+            // Only a runtime at least as new as the build's Java can say a JDK member does not exist there.
+            List<String> similar = Runtime.version().feature() >= release ? jdkSimilar(jdk, name) : null;
+            if (similar != null) return List.of("JDK  " + jdk + " has no member named " + name + " in Java " + Runtime.version().feature()
+                    + " (this modaccel's runtime), so it is not a version difference: check the spelling." + (similar.isEmpty() ? "" : " Similar: " + String.join(", ", similar)));
+            return List.of("JDK  " + jdk + "." + (name.equals("<init>") ? "<init>" : name) + " is Java's, not a jar's: if it builds on " + workingName
+                    + ", it's likely newer than the Java release " + failingName + " compiles for.");
+        }
         List<String> out = new ArrayList<>();
         for (String[] side : List.of(new String[] {workingName, "w"}, new String[] {failingName, "f"})) {
             Index index = side[1].equals("w") ? working : failing;

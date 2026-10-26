@@ -95,9 +95,9 @@ public final class TrustTest {
                 {"[1.20,1.20.6],[1.21,1.21.4]", "1.21.2", "true"}, {"[1.20,1.20.6],[1.21,1.21.4]", "1.20.8", "false"}, {"[1.21.6,)", "1.21.6-pre1", "true"}, {"[26.1,)", "26.3", "true"}};
         for (String[] c : cases) require(MavenRange.own(c[0], c[1]) == Boolean.parseBoolean(c[2]), "Maven range " + c[0] + " contains " + c[1] + " is " + c[2]);
         try { MavenRange.own("[1.21", "1.21"); throw new AssertionError("an unbounded range was accepted"); } catch (IllegalArgumentException expected) { count++; }
-        // The same answers from maven-artifact itself, where a Gradle cache has it (every NeoForge build fetches it).
+        // The same answers from maven-artifact itself: always, never skipped. A missing jar is fetched and pinned by SHA-1.
         Path real = mavenArtifact();
-        if (real != null) {
+        {
             List<Path> classpath = List.of(real);
             for (String[] c : cases) {
                 MavenRange.Answer answer = MavenRange.contains(c[0], c[1], classpath);
@@ -108,7 +108,7 @@ public final class TrustTest {
                 String spec = "[" + a + "]";
                 require(MavenRange.contains(spec, b, classpath).contains() == MavenRange.own(spec, b), "ComparableVersion order agrees with maven-artifact for " + a + " and " + b);
             }
-        } else System.out.println("note: no maven-artifact jar in this machine's Gradle cache; checked modaccel's copy of the rules only");
+        }
         require(MavenRange.contains("[1.21,)", "1.21.4", List.of()).decidedBy().contains("copy"), "without the library, the answer says who decided");
 
         // The port's packaged-metadata check reads the range the same way.
@@ -122,10 +122,36 @@ public final class TrustTest {
         Map<String, Object> accepted = Port.verifyModMetadata(project, neo, "1.21.4");
         require(Boolean.TRUE.equals(accepted.get("ok")) && Boolean.TRUE.equals(accepted.get("checked")), "Architectury's [1.21,) accepts 1.21.4: " + accepted.get("details"));
     }
+    static final String MAVEN_ARTIFACT_SHA1 = "a130ec431ef32e12a4424f9b074735bb58e15d2d";
+    static final String MAVEN_ARTIFACT_URL = "https://repo1.maven.org/maven2/org/apache/maven/maven-artifact/3.9.9/maven-artifact-3.9.9.jar";
+    /**
+     * maven-artifact 3.9.9, the library NeoForge itself reads ranges with: from the Gradle cache when a
+     * build fetched it, else downloaded once into ~/.modaccel/test-libs. Either copy must match the
+     * pinned SHA-1. When neither can be had this throws: the comparison is never quietly skipped.
+     */
     static Path mavenArtifact() throws Exception {
-        Path cache = Path.of(System.getProperty("user.home"), ".gradle/caches/modules-2/files-2.1/org.apache.maven/maven-artifact");
-        if (!Files.isDirectory(cache)) return null;
-        try (var walk = Files.walk(cache)) { return walk.filter(p -> p.getFileName().toString().matches("maven-artifact-3\\.[0-9.]+\\.jar")).findFirst().orElse(null); }
+        Path cached = Path.of(System.getProperty("user.home"), ".gradle/caches/modules-2/files-2.1/org.apache.maven/maven-artifact/3.9.9", MAVEN_ARTIFACT_SHA1, "maven-artifact-3.9.9.jar");
+        if (Files.isRegularFile(cached) && sha1(cached).equals(MAVEN_ARTIFACT_SHA1)) return cached;
+        Path own = Path.of(System.getProperty("user.home"), ".modaccel/test-libs/maven-artifact-3.9.9.jar");
+        if (Files.isRegularFile(own) && sha1(own).equals(MAVEN_ARTIFACT_SHA1)) return own;
+        Files.createDirectories(own.getParent());
+        Path temporary = Files.createTempFile(own.getParent(), "maven-artifact-", ".tmp");
+        try {
+            var client = java.net.http.HttpClient.newBuilder().followRedirects(java.net.http.HttpClient.Redirect.NORMAL).connectTimeout(java.time.Duration.ofSeconds(20)).build();
+            var response = client.send(java.net.http.HttpRequest.newBuilder(java.net.URI.create(MAVEN_ARTIFACT_URL)).timeout(java.time.Duration.ofSeconds(60)).build(),
+                    java.net.http.HttpResponse.BodyHandlers.ofFile(temporary));
+            if (response.statusCode() != 200) throw new AssertionError("HTTP " + response.statusCode());
+            String sha = sha1(temporary);
+            if (!sha.equals(MAVEN_ARTIFACT_SHA1)) throw new AssertionError("its SHA-1 is " + sha + ", not the pinned " + MAVEN_ARTIFACT_SHA1);
+            Files.move(temporary, own, StandardCopyOption.REPLACE_EXISTING);
+            return own;
+        } catch (Exception | AssertionError failed) {
+            throw new AssertionError("The Maven range check needs maven-artifact 3.9.9 to compare against, and it could not be had: " + (failed.getMessage() == null ? failed.getClass().getSimpleName() : failed.getMessage())
+                    + ". It was not in " + cached + " or " + own + ", and the download from " + MAVEN_ARTIFACT_URL + " failed. Connect to the internet once, or put that jar at " + own + ".", failed);
+        } finally { Files.deleteIfExists(temporary); }
+    }
+    static String sha1(Path file) throws Exception {
+        return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-1").digest(Files.readAllBytes(file)));
     }
 
     /** Architectury Loom builds NeoForge projects with net.fabricmc.loom.* plugins; they were classed as Fabric. */

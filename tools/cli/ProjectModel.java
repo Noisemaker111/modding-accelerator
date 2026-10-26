@@ -19,6 +19,11 @@ public final class ProjectModel {
     /** A folder that holds no Gradle build fails here, plainly, instead of deep inside discovery or Gradle. */
     void requireGradleBuild() throws IOException {
         for (String name : BUILD_FILES) if (Files.isRegularFile(root.resolve(name))) return;
+        // A folder inside the mod (src, a module) is the commonest slip: name the checkout above it.
+        for (Path parent = root.getParent(); parent != null; parent = parent.getParent())
+            for (String name : List.of("settings.gradle", "settings.gradle.kts", "gradlew"))
+                if (Files.isRegularFile(parent.resolve(name)))
+                    throw new IOException("No Gradle build in " + root + ": it is inside the mod checkout " + parent + ". Pass --root \"" + parent + "\" instead.");
         throw new IOException("No Gradle build in " + root + ": none of " + String.join(", ", BUILD_FILES) + " is there. "
                 + "Pass --root with the mod's source checkout (the folder that holds its Gradle wrapper and build script), not a parent folder or a compiled JAR.");
     }

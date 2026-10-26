@@ -24,6 +24,8 @@ final class Port {
     }
     Map<String, Object> run(Modaccel.Options options) throws Exception {
         if (options.values.containsKey("undo")) return undo(options.get("undo", ""));
+        String pending = interruptedText(build.project);
+        if (pending != null) throw new IOException(pending + "\nUndo it before porting again, so the next port starts from the original files: modaccel port --root \"" + build.project.root + "\" --undo");
         String from = options.get("from", ""), to = options.get("to", "");
         if (from.isBlank() || to.isBlank()) throw new IllegalArgumentException("Port needs --from <version> --to <version>; --fix selects supported target dependencies and repairs sources with guarded undo.");
         if (!from.matches("[A-Za-z0-9._+\\-]+") || !to.matches("[A-Za-z0-9._+\\-]+")) throw new IllegalArgumentException("Invalid Minecraft version");
@@ -33,7 +35,11 @@ final class Port {
         // --direct keeps the one-jump map (A -> B joined in one diff); an explicit --map is used as given.
         route = options.has("direct") || options.values.containsKey("map") ? null : Route.plan(build.harness, from, to);
         Set<String> actual = versions(model);
-        if (!actual.equals(Set.of(to)) && !actual.equals(Set.of(from))) throw new IllegalArgumentException("Build targets " + actual + "; select the project matching --from or --to.");
+        if (!actual.equals(Set.of(to)) && !actual.equals(Set.of(from))) {
+            String builds = actual.isEmpty() ? "no Minecraft version modaccel could read" : "Minecraft " + String.join(", ", actual);
+            throw new IllegalArgumentException("--from " + from + " does not match this project: it builds for " + builds + ". "
+                    + (actual.size() == 1 ? "Use --from " + actual.iterator().next() + ", or select" : "Select") + " the project that builds " + from + " with --project (modaccel setup lists them). Nothing was changed.");
+        }
         Path selectionFile = selectionFile(options);
         List<Dependencies.Selection> selections = Dependencies.selections(selectionFile);
         long targetStart = System.nanoTime();
@@ -112,6 +118,7 @@ final class Port {
         }
         Path learned = options.values.containsKey("rules") ? Path.of(options.get("rules", "")).toAbsolutePath() : null;
         boolean corpusLoaded = learned != null;
+        Target.requireWritable(target);
         Path transaction = build.project.state().resolve("ports/" + build.report.id);
         Map<String, Object> before = new LinkedHashMap<>();
         Set<Path> backupPaths = new TreeSet<>(sources(build.project));
@@ -744,13 +751,63 @@ final class Port {
         Json.save(transaction.resolve("transaction.json"), Json.map("root", project.root.toString(), "before", before, "after", after, "removed", removed, "status", "complete", "patch", transaction.resolve("changes.patch").toString()));
     }
     Map<String, Object> undo(String id) throws Exception { return undo(build.project, id); }
+    /** This project's port transactions, newest first. */
+    static List<Path> transactions(ProjectModel project) throws IOException {
+        Path ports = project.state().resolve("ports");
+        if (!Files.isDirectory(ports)) return List.of();
+        try (var list = Files.list(ports)) {
+            return list.filter(p -> Files.isRegularFile(p.resolve("transaction.json"))).sorted(Comparator.comparing((Path p) -> p.getFileName().toString()).reversed()).toList();
+        }
+    }
+    /**
+     * A port that stopped part-way (killed, closed terminal, power cut) and was never undone, as a
+     * sentence naming the files it left changed; null when there is none. A command holds the
+     * project lock while it runs, so an "in-progress" record seen under the lock is a dead one.
+     */
+    static String interruptedText(ProjectModel project) throws Exception {
+        for (Path transaction : transactions(project)) {
+            Map<String, Object> state;
+            try { state = Json.read(transaction.resolve("transaction.json")); } catch (IOException | IllegalArgumentException unreadable) { continue; }
+            if (!"in-progress".equals(state.get("status"))) continue;
+            // Only the files the port planned to edit or remove count here: a source edited by hand
+            // since then must not make an old record look like an unfinished port forever.
+            Set<String> planned = new HashSet<>();
+            if (state.get("plan") instanceof Map<?, ?> plan) for (String key : List.of("edits", "removals")) planned.addAll(ProjectModel.strings(plan.get(key)));
+            List<String> changed = changedSince(project, state).stream().filter(planned::contains).toList();
+            if (changed.isEmpty()) continue;
+            return "A port of this project stopped part-way (" + transaction.getFileName().toString().replaceFirst("T(\\d\\d)-(\\d\\d)-(\\d\\d).*$", " at $1:$2:$3 UTC")
+                    + ") and left " + changed.size() + (changed.size() == 1 ? " file" : " files") + " changed: " + String.join(", ", changed) + ".";
+        }
+        return null;
+    }
+    /** Backed-up files that now differ from their backup, or are gone. */
+    static List<String> changedSince(ProjectModel project, Map<String, Object> state) throws Exception {
+        List<String> changed = new ArrayList<>();
+        for (var entry : Json.object(state.get("before")).entrySet()) {
+            Path file = project.root.resolve(entry.getKey()).normalize();
+            if (!file.startsWith(project.root)) continue;
+            if (!Files.isRegularFile(file) || !Fingerprints.bytes(Files.readAllBytes(file)).equals(entry.getValue())) changed.add(entry.getKey());
+        }
+        return changed;
+    }
     static Map<String, Object> undo(ProjectModel project, String id) throws Exception {
+        if (id.isBlank() || id.equals("latest")) {
+            // --undo with no transaction: the newest port that has not been undone.
+            Path newest = null;
+            for (Path candidate : transactions(project)) {
+                try { if (!"undone".equals(Json.read(candidate.resolve("transaction.json")).get("status"))) { newest = candidate; break; } }
+                catch (IOException | IllegalArgumentException unreadable) { }
+            }
+            if (newest == null) throw new IOException("There is no port of this project to undo" + (transactions(project).isEmpty() ? "." : ": every recorded port was already undone."));
+            id = newest.toString();
+        }
         Path transaction = Path.of(id).toAbsolutePath().normalize();
         if (!transaction.startsWith(project.state().resolve("ports"))) throw new IOException("Undo must name this project's recorded port transaction.");
         var state = Json.read(transaction.resolve("transaction.json"));
         if (!project.root.toString().equals(state.get("root"))) throw new IOException("Undo belongs to a different project.");
         String status = Json.text(state, "status", "");
         if (status.equals("undone")) throw new IOException("This port was already undone; nothing to restore. Transaction: " + transaction);
+        if (status.equals("in-progress")) return undoInterrupted(project, transaction, state);
         if (!status.equals("complete")) throw new IOException(interrupted(project, transaction, state));
         var after = Json.object(state.get("after"));
         List<String> removed = ProjectModel.strings(state.get("removed"));
@@ -769,6 +826,30 @@ final class Port {
         state.put("status", "undone"); Json.save(transaction.resolve("transaction.json"), state);
         return Json.map("ok", true, "restoredFiles", after.size(), "transaction", transaction.toString(),
                 "details", after.isEmpty() ? "The port changed no files, so there was nothing to restore." : "Restored " + after.size() + " file(s) to their state before the port.");
+    }
+    /**
+     * A port that stopped part-way recorded its backups before the first edit but never the files'
+     * state after. Every file that differs from its backup is put back, and its current copy is kept
+     * beside the backups first, so an edit made after the port stopped is never lost.
+     */
+    static Map<String, Object> undoInterrupted(ProjectModel project, Path transaction, Map<String, Object> state) throws Exception {
+        List<String> changed = changedSince(project, state);
+        Path kept = transaction.resolve("current-before-undo");
+        for (String relative : changed) {
+            Path file = project.root.resolve(relative).normalize(), backup = transaction.resolve("before").resolve(relative);
+            if (!Files.isRegularFile(backup)) throw new IOException("Refusing undo: no backup of " + relative + " in " + transaction.resolve("before") + ". Nothing was restored.");
+            if (Files.isRegularFile(file)) { Files.createDirectories(kept.resolve(relative).getParent()); Files.copy(file, kept.resolve(relative), StandardCopyOption.REPLACE_EXISTING); }
+        }
+        for (String relative : changed) {
+            Path file = project.root.resolve(relative).normalize();
+            Files.createDirectories(file.getParent());
+            Files.copy(transaction.resolve("before").resolve(relative), file, StandardCopyOption.REPLACE_EXISTING);
+        }
+        state.put("status", "undone"); state.put("undoneAfterInterruption", changed); Json.save(transaction.resolve("transaction.json"), state);
+        return Json.map("ok", true, "restoredFiles", changed.size(), "transaction", transaction.toString(), "interrupted", true,
+                "details", changed.isEmpty() ? "The port stopped before changing any file, so there was nothing to restore."
+                        : "The port had stopped part-way. Restored " + changed.size() + (changed.size() == 1 ? " file" : " files") + " to their state before it: " + String.join(", ", changed)
+                        + ".\nTheir versions from just before this undo are kept in " + kept + ", in case you edited them after the port stopped.");
     }
     /**
      * A port that never finished recorded no "after" state, so an undo cannot prove which files it

@@ -91,6 +91,52 @@ final class Game {
         }
         return out.append("\nGame log: ").append(log).toString();
     }
+    /**
+     * Why the game never showed a frame, cause first: Minecraft's crash report (its description and
+     * exception), a mixin that could not apply, or the loader refusing the mods; otherwise the log's
+     * own error lines. The wrapper exceptions around it say nothing a person needs.
+     */
+    static String startupFailure(Throwable failure, Path log) throws IOException {
+        Throwable cause = failure;
+        while ((cause instanceof ExecutionException || cause instanceof CompletionException) && cause.getCause() != null) cause = cause.getCause();
+        String what = String.valueOf(cause.getMessage()).replaceFirst("\\s*Log: .*$", "");
+        List<String> lines = lines(log);
+        StringBuilder out = new StringBuilder("The game did not start: " + what);
+        int crashed = -1, mixin = -1, incompatible = -1;
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            if (line.contains("Game crashed! Crash report saved to:")) crashed = i;
+            if (mixin < 0 && (line.contains("MixinApplyError") || line.contains("InvalidInjectionException") || line.contains("InvalidMixinException") || line.contains("MixinTargetAlreadyLoadedException"))) mixin = i;
+            if (incompatible < 0 && (line.contains("Incompatible mods found") || line.contains("Mod resolution encountered an incompatible mod set") || line.contains("Mod Loading has failed"))) incompatible = i;
+        }
+        if (mixin >= 0) {
+            out.append("\nA mixin could not be applied:");
+            for (int i = mixin; i < lines.size() && i < mixin + 3; i++) out.append("\n  ").append(lines.get(i).strip());
+            out.append("\nCheck the mixin's target class and method (modaccel mixin-check finds most of these without starting the game).");
+        }
+        if (incompatible >= 0) {
+            out.append("\nThe mod loader refused the mods:");
+            for (int i = incompatible; i < lines.size() && i < incompatible + 8 && !(i > incompatible && lines.get(i).isBlank()); i++) out.append("\n  ").append(lines.get(i).strip());
+        }
+        if (crashed >= 0) {
+            String file = lines.get(crashed).replaceFirst(".*Crash report saved to:\\s*(#@!@#\\s*)?", "").strip();
+            List<String> report = lines(Path.of(file));
+            for (int i = 0; i < report.size(); i++) {
+                if (!report.get(i).startsWith("Description:")) continue;
+                out.append("\nMinecraft crashed. ").append(report.get(i).strip());
+                int shown = 0;
+                for (int j = i + 1; j < report.size() && shown < 6; j++) {
+                    String line = report.get(j);
+                    if (line.isBlank()) { if (shown > 0) break; continue; }
+                    out.append("\n  ").append(line.strip()); shown++;
+                }
+                break;
+            }
+            out.append("\nCrash report: ").append(file);
+        }
+        if (mixin < 0 && incompatible < 0 && crashed < 0) out.append('\n').append(Run.failure(log).strip());
+        return out.append("\nGame log: ").append(log).toString();
+    }
     private static List<String> lines(Path file) {
         // Decoded leniently: a dying JVM writes its banner in the platform charset.
         try { return new String(Files.readAllBytes(file), StandardCharsets.UTF_8).lines().toList(); }
@@ -210,20 +256,33 @@ final class Game {
             return answer;
         }
         if (command.equals("game-status")) {
-            if (current != null) return request(current, Json.map("command", "status"));
+            if (current != null) {
+                Map<String, Object> status = request(current, Json.map("command", "status"));
+                String started = Json.text(current, "processStart", "");
+                try { started = LocalTime.ofInstant(Instant.parse(started), ZoneId.systemDefault()).withNano(0).toString(); } catch (RuntimeException unparsed) { }
+                String screen = Json.text(status, "screen", "");
+                status.put("running", true);
+                status.put("details", "A game is running for this project (process " + current.get("pid") + (started.isEmpty() ? "" : ", started " + started) + "), "
+                        + (Boolean.TRUE.equals(status.get("inWorld")) ? "in a world" : "not in a world") + (screen.isEmpty() ? "" : ", showing " + screen.substring(screen.lastIndexOf('.') + 1))
+                        + ".\nStop it with game-stop; reload swaps changed code into it.");
+                return status;
+            }
             Map<String, Object> last = recorded();
-            return last == null || Json.text(last, "processStart", "").isEmpty() ? Json.map("running", false) : Json.map("running", false, "details", exited(last));
+            return last == null || Json.text(last, "processStart", "").isEmpty() ? Json.map("running", false, "details", "No game is running for this project. Start one with ui-check or world-check.")
+                    : Json.map("running", false, "details", exited(last));
         }
         if (command.equals("game-stop")) {
             Map<String, Object> result;
             if (current == null) {
                 Map<String, Object> last = recorded();
-                result = last == null || Json.text(last, "processStart", "").isEmpty() ? Json.map("running", false) : Json.map("running", false, "details", exited(last));
+                result = last == null || Json.text(last, "processStart", "").isEmpty() ? Json.map("running", false, "details", "No game was running for this project; nothing to stop.")
+                        : Json.map("running", false, "details", exited(last));
             } else {
                 var process = ProcessHandle.of(((Number)current.get("pid")).longValue());
                 result = request(current, Json.map("command", "quit"));
                 if (process.isPresent()) process.get().onExit().get(20, TimeUnit.SECONDS);
                 result.put("stopped", true);
+                result.put("details", "Stopped the game (process " + current.get("pid") + ").");
             }
             // A stopped game didn't crash; later commands shouldn't say it exited.
             Files.deleteIfExists(build.project.state().resolve("agent.json"));
@@ -233,7 +292,10 @@ final class Game {
         }
         String fingerprint = fingerprint();
         if (current != null && !fingerprint.equals(current.get("fingerprint")))
-            throw new IOException("The running game has a different build. Run game-stop, then ui-check; stale game results are refused.");
+            throw new IOException("A game is already running for this project, started from an older build (the code or resources changed since). "
+                    + "A check against it would test the old code, so this one did nothing. Run modaccel game-stop --root \"" + build.project.root + "\""
+                    + (options.values.containsKey("project") ? " --project " + options.get("project", "") : "") + ", then " + command
+                    + " again; or use reload to swap changed method bodies into the running game.");
         if (current != null && options.values.containsKey("java")
                 && !javaExecutable(options.get("java", "")).toString().equals(current.get("java")))
             throw new IOException("The running game isn't on the --java runtime. Run game-stop, then start it again with --java.");
@@ -506,7 +568,7 @@ final class Game {
         try { value = awaitFirstFrame(ready, log, saved); }
         catch (Exception failure) {
             process.descendants().forEach(ProcessHandle::destroy); process.destroy();
-            throw new IOException("Client startup failed: " + failure + "\n" + Run.failure(log) + "\nLog: " + log);
+            throw new IOException(startupFailure(failure, log));
         } finally { watch.close(); }
         long pid = ((Number)value.get("pid")).longValue();
         value.put("processStart", ProcessHandle.of(pid).flatMap(p -> p.info().startInstant()).map(Instant::toString).orElseThrow());
