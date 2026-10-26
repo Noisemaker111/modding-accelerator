@@ -328,8 +328,7 @@ join, and the world is wiped every run. The bot is MCProtocolLib and speaks Mine
 (`knowledge/mcprotocollib.json`). On a server of any other version it joins through
 [ViaProxy](https://github.com/ViaVersion/ViaProxy) (pinned and SHA-256 checked in
 `knowledge/viaproxy.json`), which translates between the two; the bot then reads blocks and items
-by their 26.3 names. CI checks a plugin built for 1.8.8 on Paper 1.8.8, 1.12.2, 1.16.5, 1.20.1 and 1.21.4.
-
+by their 26.3 names.
 A scenario is one step per line (`modaccel help server-check` lists them): `join`, `say`,
 `command /...`, `rcon ...`, helper processes (`background NAME: CMD`, e.g. a mock backend) and
 `server-env` for the server's environment, then expect steps on what really happened: chat, titles
