@@ -176,8 +176,11 @@ final class Port {
                 if (state.equals(Fingerprints.files(sources(build.project)))) break;
                 var compile = build.gradle(repairTasks, (explicitTask ? "port-compile-" : "port-build-") + (round + 1)); log = compile.log(); compiled = compile.exit() == 0;
             }
+            // The mod's mixins are applied by Mixin itself against the target game (no window, no world).
+            // The hand audit still runs as a fast hint for the report, never as the verdict.
+            Map<String, Object> mixins = compiled ? mixinCheck(model, options) : null;
             var audit = compiled ? tools.audit(model) : null;
-            boolean passed = compiled && audit != null && audit.exit() == 0;
+            boolean passed = compiled && mixins != null && Boolean.TRUE.equals(mixins.get("ok"));
             boolean built = !explicitTask && compiled;
             if (passed && (!explicitTask ? roundsTried > 0 : true)) {
                 List<String> buildTasks = new ArrayList<>(build.tasks(model, "build"));
@@ -190,18 +193,20 @@ final class Port {
             }
             Map<String, Object> metadataCheck = passed ? verifyModMetadata(build.project.root, model, to) : null;
             if (metadataCheck != null && Boolean.FALSE.equals(metadataCheck.get("ok"))) passed = false;
-            Map<String, Object> result = Json.map("ok", passed, "tier", built ? "build-and-mixin-targets" : "compile-and-mixin-targets", "compiled", compiled,
-                    "built", built, "mixinTargetsVerified", audit != null && audit.exit() == 0,
+            boolean mixinsApplied = mixins != null && Boolean.TRUE.equals(mixins.get("ok")) && Boolean.TRUE.equals(mixins.get("checked"));
+            Map<String, Object> result = Json.map("ok", passed, "tier", built ? "build-and-mixin-applied" : "compile-and-mixin-applied", "compiled", compiled,
+                    "built", built, "mixinTargetsVerified", mixins != null && Boolean.TRUE.equals(mixins.get("ok")), "mixinsAppliedByMixin", mixinsApplied,
+                    "mixinCheck", mixins,
                     "modMetadata", metadataCheck,
                     "gameVerified", false, "behaviorVerified", false, "log", log.toString(), "undo", transaction.toString(),
                     "resolvedDependencies", applied, "excludedSources", removed,
                     "selectionFile", selectionFile == null ? null : selectionFile.toString(),
-                    "details", passed ? (built ? "Built and " + auditSummary(audit.log()) + ". Gameplay and behavior remain unverified."
-                            : "Compiled and " + auditSummary(audit.log()) + ". No standard build task was available; gameplay remains unverified.")
+                    "details", passed ? (built ? "Built, and " + mixinSummary(mixins) + ". Gameplay and behavior remain unverified."
+                            : "Compiled, and " + mixinSummary(mixins) + ". No standard build task was available; gameplay remains unverified.")
                             + uncheckedText(unchecked) + preReleaseText(applied)
-                            : Run.tail(audit != null && audit.exit() != 0 ? audit.log() : log));
+                            : compiled && mixins != null && !Boolean.TRUE.equals(mixins.get("ok")) ? String.valueOf(mixins.get("details")) : Run.tail(log));
             if (!unchecked.isEmpty()) result.put("uncheckedDependencies", unchecked);
-            if (audit != null) result.put("mixinAudit", auditSummary(audit.log()));
+            if (audit != null) result.put("mixinHint", Json.map("source", "modaccel's own bytecode audit (a guess: it reads class files, Mixin does not run)", "summary", auditSummary(audit.log()), "log", audit.log().toString()));
             List<Object> named = passed ? List.of() : namedErrors(log, routed ? mapInfo : null);
             if (routeRecord != null) result.put("route", hopRecords(routeRecord, routed ? mapInfo : null, named));
             if (!passed) {
@@ -212,7 +217,7 @@ final class Port {
                 }
                 Path repair = transaction.resolve("repair-request.json");
                 Json.save(repair, Json.map("root", build.project.root.toString(), "from", from, "to", to, "namespace", names, "map", map.toString(), "model", build.project.state().resolve("model.json").toString(),
-                        "log", log.toString(), "mixinLog", audit == null ? null : audit.log().toString(), "diagnostics", Run.tail(audit == null ? log : audit.log()),
+                        "log", log.toString(), "mixinCheck", mixins, "diagnostics", compiled && mixins != null ? String.valueOf(mixins.get("details")) : Run.tail(log),
                         "requirements", List.of("Preserve existing behavior, including debug hooks and rendering.", "Do not remove required injections or disable checks to make a build pass.", "Rebuild and exercise relevant real game scenarios after a semantic repair.")));
                 result.put("repairRequest", repair.toString());
                 List<Object> unresolved = compiled ? List.of() : named;
@@ -229,7 +234,7 @@ final class Port {
                     counts.forEach((step, n) -> byUpdate.append(byUpdate.length() == 0 ? " By update: " : "; ").append(step).append(": ").append(n));
                     if (byUpdate.length() > 0) byUpdate.append('.');
                 }
-                result.put("reason", failureReason(to, compiled, audit, unresolved.size(), roundsTried, byUpdate.toString(), log));
+                result.put("reason", failureReason(to, compiled, mixins, unresolved.size(), roundsTried, byUpdate.toString(), log));
             }
             if (route != null) result.put("rulesApplied", rulesApplied);
             return result;
@@ -268,15 +273,28 @@ final class Port {
      * Why a port stopped, by what actually failed: the mixin audit, a build that failed for a reason the
      * compiler did not report (shown from Gradle's own failure block), or compiler errors no rule matched.
      */
-    static String failureReason(String to, boolean compiled, Run.Result audit, int unresolved, int rounds, String byUpdate, Path log) throws IOException {
-        if (compiled && audit != null && audit.exit() != 0)
-            return "The code compiled against " + to + ", but the mixin audit did not pass: "
-                    + (audit.exit() == 1 ? "it found injections that would fail or do nothing in the game. Each one is listed in details; fix the mixin target, then rerun."
-                            : Run.failure(audit.log()).strip());
+    static String failureReason(String to, boolean compiled, Map<String, Object> mixins, int unresolved, int rounds, String byUpdate, Path log) throws IOException {
+        if (compiled && mixins != null && !Boolean.TRUE.equals(mixins.get("ok")))
+            return "The code compiled against " + to + ", but " + (Boolean.TRUE.equals(mixins.get("checked"))
+                    ? "Mixin did not apply every mixin cleanly against the " + to + " game. Each failure is listed in details in Mixin's own words; fix the mixin, then rerun."
+                    : "the mixins were not checked by Mixin, so the port cannot say they work: " + mixins.get("reason"));
         if (compiled) return "The code compiled against " + to + ", but the packaged build failed without a compiler error:\n" + Run.gradleFailure(log) + "\nLog: " + log;
         if (unresolved == 0) return "The build failed without compiler errors, so this is not a source migration and no rule can fix it:\n" + Run.gradleFailure(log) + "\nLog: " + log;
         return unresolved + " compiler error(s) remain after " + rounds + " repair round(s) and no typed rule matched."
                 + byUpdate + " This needs a semantic migration; the port stopped instead of guessing. Resolve them in source, or add a verified recipe, then rerun.";
+    }
+    /** The real Mixin check for the ported tree; a check that cannot run is an unchecked result, never a pass. */
+    Map<String, Object> mixinCheck(Map<String, Object> model, Modaccel.Options options) {
+        try { return new MixinCheck(build, model).run(options); }
+        catch (Exception failure) {
+            String reason = "The Mixin check could not run: " + failure.getMessage();
+            return Json.map("ok", false, "checked", false, "tier", "mixins-unchecked", "reason", reason, "details", reason, "gameVerified", false);
+        }
+    }
+    static String mixinSummary(Map<String, Object> mixins) {
+        if (mixins == null) return "mixins unchecked";
+        if ("no-mixins".equals(mixins.get("tier"))) return "the mod declares no mixins";
+        return "Mixin applied its mixins against the target game (" + mixins.get("details") + ")";
     }
     /** What the mixin audit actually looked at, from its summary line: never "checked" when nothing was. */
     static String auditSummary(Path log) throws IOException {

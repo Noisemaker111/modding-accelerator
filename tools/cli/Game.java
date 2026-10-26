@@ -508,9 +508,35 @@ final class Game {
         }
         return verdict;
     }
+    /**
+     * Runtime files setup could not download (recorded as runtimeUnresolved, e.g. ForgeGradle asking
+     * Maven Central for lwjgl-freetype natives-macos-patch on Apple silicon). Compiling never reads
+     * them, but the game cannot start without them, so a game check stops here and names them
+     * instead of failing deep inside the launch. Null when nothing is missing.
+     */
+    static String missingRuntime(Map<String, Object> model, String owner) {
+        Set<String> missing = new LinkedHashSet<>();
+        for (Object item : model.get("projects") instanceof List<?> projects ? projects : List.of()) {
+            var project = Json.object(item);
+            if (owner != null && !owner.isEmpty() && !owner.equals(project.get("path"))) continue;
+            for (Object set : project.get("sourceSets") instanceof List<?> sets ? sets : List.of()) {
+                var sourceSet = Json.object(set);
+                if (String.valueOf(sourceSet.get("name")).toLowerCase(Locale.ROOT).contains("test")) continue;
+                missing.addAll(ProjectModel.strings(sourceSet.get("runtimeUnresolved")));
+            }
+        }
+        if (missing.isEmpty()) return null;
+        return "The game cannot start: " + missing.size() + (missing.size() == 1 ? " runtime file" : " runtime files") + " it needs could not be downloaded when the build was set up:\n  "
+                + String.join("\n  ", missing)
+                + "\nCompiling and logic tests do not need " + (missing.size() == 1 ? "it" : "them") + ", which is why those passed. This is usually a loader or Gradle plugin asking a repository"
+                + " that does not publish the file (Forge on Apple silicon asks Maven Central for lwjgl natives-macos-patch, which only Mojang hosts)."
+                + " Add a repository that has it, or run the game check on another machine; rerun with --refresh after changing the build. The game was not started.";
+    }
     Map<String, Object> start(Modaccel.Options options, String fingerprint) throws Exception {
         Path agent = agent(); String token = UUID.randomUUID().toString();
         String task = clientTask(options);
+        String missing = missingRuntime(model, LoadedMods.owner(task));
+        if (missing != null) throw new IOException(missing);
         Path recipe = build.project.state().resolve("launch.json");
         List<String> command; Map<String, String> environment = new HashMap<>(); Path directory; String mode;
         boolean jbr = options.has("jbr");

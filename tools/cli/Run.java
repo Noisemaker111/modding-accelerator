@@ -54,6 +54,12 @@ final class Run {
      * dependencies it could not resolve and the hosts it searched, so a missing dependency names its
      * coordinate instead of hiding in a cut-off log tail. Without such a block, the log's causes and tail.
      */
+    /** gradleFailure, led by the stale-loader-cache explanation when NeoForge's own patches add a member the compile could not find. */
+    static String gradleFailure(Path log, Map<String, Object> model) throws IOException {
+        String text = gradleFailure(log);
+        String stale = LoaderPatches.staleHint(model, new String(Files.readAllBytes(log), java.nio.charset.StandardCharsets.UTF_8).lines().toList());
+        return stale.isEmpty() ? text : stale + "\n" + text;
+    }
     static String gradleFailure(Path log) throws IOException {
         if (!Files.exists(log)) return "";
         List<String> lines = new String(Files.readAllBytes(log), StandardCharsets.UTF_8).lines().toList();

@@ -12,7 +12,7 @@ final class Support {
                         Json.map("name", "dependency-blockers", "status", "available", "scope", "Unresolved dependencies stop before edits and name the selection entry to add"),
                         Json.map("name", "other-loader-target", "status", "conditional", "scope", "NeoForge version pins, loader version and declared game range resolve and rewrite; a real NeoForge mod built, loaded and ran its command on the target. Forge target setup remains manual, and larger jumps stop with the named API families that remain"),
                         Json.map("name", "api-migration", "status", "guarded", "scope", "Verified mappings and recognized recipes; unfamiliar semantic changes need guided repair"),
-                        Json.map("name", "build-and-mixin", "status", "available", "scope", "Port runs the evaluated build and mixin audit"),
+                        Json.map("name", "build-and-mixin", "status", "available", "scope", "Port runs the evaluated build, then Mixin itself applies every mixin against the target game (Fabric Knot, or NeoForge FML's unit-test launch); no window, no world"),
                         Json.map("name", "safe-undo", "status", "available", "scope", "Restores recorded original bytes; refuses to overwrite subsequent edits"),
                         Json.map("name", "logic-tests", "status", "available", "scope", "fast runs supplied pure JUnit tests; absent tests fail, and tests are not generated for arbitrary mods"),
                         Json.map("name", "game-behavior", "status", "separate-check", "scope", "ui-check and world-check capture the actual game; a meaningful assertion is required for behaviorVerified=true"),

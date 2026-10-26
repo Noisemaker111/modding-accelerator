@@ -27,12 +27,13 @@ public final class StrangerTest {
             readOnly(scratch);
             options();
             setupText(scratch);
-            mixinVerdict(scratch);
+            staleLoaderCache(scratch);
+            missingRuntime();
             jdkTypo();
             gameStartup(scratch);
             insideCheckout(scratch);
             launcher();
-            System.out.println(count + " stranger checks passed: JSON positions, resource and metadata checks, compiler errors, offline repository, test counts, no tests, one command at a time, interrupted-port undo, version typos, read-only files, --project, JDK typos, game start-up, --root inside a mod, Java 8 launcher");
+            System.out.println(count + " stranger checks passed: JSON positions, resource and metadata checks, compiler errors, offline repository, test counts, no tests, one command at a time, interrupted-port undo, version typos, read-only files, --project, JDK typos, game start-up, --root inside a mod, Java 8 launcher, setup text, stale NeoForge cache, missing runtime files");
         } finally {
             for (Path p : walk(scratch)) { p.toFile().setWritable(true); Files.deleteIfExists(p); }
         }
@@ -242,18 +243,45 @@ public final class StrangerTest {
                 "setup lists the mod projects and how to pick one: " + text);
     }
 
-    /** A mixin on a missing method compiled and passed; an optional one (require = 0) was silently never applied. Lines are MixinAudit's own, from Diorama. */
-    static void mixinVerdict(Path scratch) throws Exception {
-        Path log = scratch.resolve("mixin-audit.log");
-        Files.writeString(log, "src/main/java/dev/diorama/mixin/PauseScreenTitleMixin.java:12 @Inject method 'inti' not found in net.minecraft.client.gui.screens.TitleScreen (methods: init, <init>, tick, <clinit>, added)\n"
-                + "# 9 mixins, 9 targets, 20 members checked, 1 dead\n");
-        Map<String, Object> dead = Modaccel.mixinResult(log, 1);
-        require(Boolean.FALSE.equals(dead.get("ok")) && String.valueOf(dead.get("reason")).startsWith("1 mixin problem the game would hit") && String.valueOf(dead.get("reason")).contains("method 'inti' not found"), "a dead target fails by file and line: " + dead.get("reason"));
-        Files.writeString(log, "note: src/main/java/dev/diorama/mixin/PauseScreenTitleMixin.java:12 optional (require = 0): @Inject method 'inti' not found in net.minecraft.client.gui.screens.TitleScreen (methods: init)\n"
-                + "# 9 mixins, 9 targets, 20 members checked, 0 dead\n");
-        String optional = String.valueOf(Modaccel.mixinResult(log, 0).get("details"));
-        require(optional.contains("1 optional injection (require = 0) whose target is missing: the game skips it without an error, so it never runs") && !optional.contains("note: note:"),
-                "an optional injection with no target is said to never run: " + optional);
+    /**
+     * IAS :26.3-neoforge failed with "cannot find symbol getMinecraft()" in its generated INeoForge.java:
+     * the cached NeoForge game jar lacked NeoForge's own patch to Screen. NeoForge's patch text decides.
+     */
+    static void staleLoaderCache(Path scratch) throws Exception {
+        List<String> log = List.of("C:\\mods\\ias\\versions\\26.3-neoforge\\build\\generated\\stonecutter\\main\\java\\ru\\vidtu\\ias\\platform\\INeoForge.java:94: error: cannot find symbol",
+                "        Minecraft minecraft = screen.getMinecraft();", "                                    ^",
+                "  symbol:   method getMinecraft()", "  location: variable screen of type Screen", "1 error");
+        List<LoaderPatches.Missing> missing = LoaderPatches.missing(log);
+        require(missing.equals(List.of(new LoaderPatches.Missing("method", "getMinecraft", "Screen"))), "the missing member and its type are read from javac: " + missing);
+        Path userdev = scratch.resolve("neoforge-26.3.0.97-userdev.jar"), game = scratch.resolve("stale/neoforge-26.3.0.97-merged.jar");
+        Files.createDirectories(game.getParent());
+        try (var zip = new java.util.zip.ZipOutputStream(Files.newOutputStream(userdev))) {
+            zip.putNextEntry(new java.util.zip.ZipEntry("patches/net/minecraft/client/gui/screens/Screen.java.patch"));
+            zip.write(("--- a/net/minecraft/client/gui/screens/Screen.java\n+++ b/net/minecraft/client/gui/screens/Screen.java\n@@ -108,8 +_,12 @@\n"
+                    + "     public void tick() {\n+    public Minecraft getMinecraft() {\n+        return this.minecraft;\n+    }\n").getBytes(StandardCharsets.UTF_8));
+            zip.closeEntry();
+        }
+        try (var zip = new java.util.zip.ZipOutputStream(Files.newOutputStream(game))) { zip.putNextEntry(new java.util.zip.ZipEntry("net/minecraft/client/gui/screens/Screen.class")); zip.write(new byte[] {1}); zip.closeEntry(); }
+        String hint = LoaderPatches.hint(userdev, "26.3.0.97", missing, List.of(game));
+        require(hint.startsWith("NeoForge 26.3.0.97 adds Screen.getMinecraft() to the game (its own patch to net.minecraft.client.gui.screens.Screen)") && hint.contains("not a mistake in your code")
+                && hint.contains("Delete " + game), "a member NeoForge's patch adds is called a stale cache, naming the jar: " + hint);
+        require(LoaderPatches.hint(userdev, "26.3.0.97", List.of(new LoaderPatches.Missing("method", "getMinecrat", "Screen")), List.of(game)).isEmpty(), "a misspelt member is still the code's mistake");
+        require(!LoaderPatches.adds("+        return this.minecraft.getMinecraft();\n", new LoaderPatches.Missing("method", "getMinecraft", "Screen")), "a call on an added line is not a declaration");
+        // The real artifact, where this machine has it, says the same.
+        Path real = LoaderPatches.userdev("26.3.0.97");
+        if (real != null) require(!LoaderPatches.hint(real, "26.3.0.97", missing, List.of()).isEmpty(), "NeoForge 26.3.0.97's own userdev patch adds Screen.getMinecraft()");
+    }
+
+    /** On Apple silicon Forge's lwjgl-freetype natives-macos-patch never downloads; a game check must say so before launching. */
+    static void missingRuntime() {
+        Map<String, Object> model = Json.map("projects", List.of(
+                Json.map("path", ":1.21.1-forge", "sourceSets", List.of(Json.map("name", "main", "runtimeUnresolved", List.of("Could not find lwjgl-freetype-3.3.3-natives-macos-patch.jar (org.lwjgl:lwjgl-freetype:3.3.3).")),
+                        Json.map("name", "test", "runtimeUnresolved", List.of("test-only.jar")))),
+                Json.map("path", ":1.21.1-fabric", "sourceSets", List.of(Json.map("name", "main")))));
+        String text = Game.missingRuntime(model, ":1.21.1-forge");
+        require(text != null && text.startsWith("The game cannot start: 1 runtime file it needs could not be downloaded") && text.contains("lwjgl-freetype-3.3.3-natives-macos-patch.jar")
+                && !text.contains("test-only") && text.contains("The game was not started"), "a missing runtime file stops the game check by name: " + text);
+        require(Game.missingRuntime(model, ":1.21.1-fabric") == null, "another node with everything downloaded starts");
     }
 
     /** explain called Math.rond "likely newer than the Java release". */

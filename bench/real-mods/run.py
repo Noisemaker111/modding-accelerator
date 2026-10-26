@@ -628,6 +628,8 @@ def main():
     parser.add_argument("--compile-nodes", action="store_true", help="CI mode: no game; setup and compile every node the entry lists")
     parser.add_argument("--resume", action="store_true", help="keep the mods already in <label>.json and run only the rest (after an interrupted run)")
     parser.add_argument("--keep-leftovers", action="store_true", help="report left-over processes without killing them")
+    parser.add_argument("--node", help="with --compile-nodes and one --only mod: run just this node of its nodes list (one CI job per node)")
+    parser.add_argument("--matrix", action="store_true", help="print the --only mods' nodes as a JSON list of {mod, node} for a CI matrix, then exit")
     ARGS = parser.parse_args()
     TOOL = ARGS.modaccel.resolve()
     MODACCEL = [str(TOOL / "modaccel.cmd")] if WINDOWS else [str(TOOL / "modaccel")]
@@ -639,6 +641,15 @@ def main():
         missing = set(wanted) - {m["id"] for m in mods}
         if missing:
             sys.exit(f"unknown mod ids: {', '.join(sorted(missing))}")
+    if ARGS.matrix:
+        print(json.dumps([{"mod": m["id"], "node": n} for m in mods for n in (m.get("nodes") or [m.get("project", "")])]))
+        return
+    if ARGS.node:
+        if not ARGS.compile_nodes or len(mods) != 1:
+            sys.exit("--node needs --compile-nodes and exactly one --only mod")
+        if ARGS.node not in (mods[0].get("nodes") or []):
+            sys.exit(f"{mods[0]['id']} lists no node {ARGS.node}; its nodes: {', '.join(mods[0].get('nodes') or [])}")
+        mods = [dict(mods[0], nodes=[ARGS.node])]
     cache = ARGS.cache.resolve()
     if cache.is_relative_to(REPO):
         sys.exit("--cache must be outside the repo so clones never mix with modaccel's own files")

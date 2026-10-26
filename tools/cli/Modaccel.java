@@ -102,10 +102,10 @@ public final class Modaccel {
                         result = FastLane.run(build, model, options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                         if (exit == 0) exit = withModChecks(result, model);
                     }
-                    case "mixin-check" -> { result = mixinCheck(build, model, options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload" -> { result = new Game(build, model).run(options); exit = "reload".equals(options.command) && Boolean.TRUE.equals(result.get("restartNeeded")) ? 1 : 0; }
                     case "port" -> { result = new Port(build, model).run(options); if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model)); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "explain" -> { result = new Explain(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
+                    case "mixin-check" -> { result = new MixinCheck(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "dependencies" -> { result = new Port(build, model).dependencies(options); exit = Boolean.TRUE.equals(result.get("ready")) ? 0 : 1; }
                     case "compile", "test" -> {
                         String name = options.command.equals("compile") ? "classes" : options.command.equals("test") ? "test" : "modaccelPure";
@@ -116,7 +116,7 @@ public final class Modaccel {
                         Run.Result run = build.gradle(tasks, options.command); exit = run.exit() == 0 ? 0 : 1;
                         result = Json.map("tier", options.command.equals("compile") ? "compile" : "logic", "tasks", tasks, "log", run.log().toString(),
                                 "gameVerified", false, "details", options.command.equals("compile") ? "Compiled " + String.join(", ", tasks) + "." : Run.tail(run.log()));
-                        if (run.exit() != 0) result.put("reason", Run.gradleFailure(run.log()) + "\nLog: " + run.log());
+                        if (run.exit() != 0) result.put("reason", Run.gradleFailure(run.log(), model) + "\nLog: " + run.log());
                         if (options.command.equals("test") && run.exit() == 0) {
                             Map<String, Object> counts = TestResults.readTasks(model, tasks, report.id);
                             result.put("tests", counts); result.put("details", TestResults.text(counts));
@@ -126,7 +126,7 @@ public final class Modaccel {
                         if (exit == 0) exit = withModChecks(result, model);
                         // A mixin aimed at a method that does not exist compiles; say which check finds it.
                         if (exit == 0 && result.get("modChecks") instanceof Map<?, ?> checks && checks.get("mixinClasses") instanceof Number mixins && mixins.intValue() > 0)
-                            result.put("details", result.get("details") + "\nMixin targets are not checked by " + options.command + ": modaccel mixin-check checks them against the game jar in a few seconds.");
+                            result.put("details", result.get("details") + "\nMixin targets are not checked by " + options.command + ": modaccel mixin-check lets Mixin itself apply them, without starting the game.");
                     }
                     default -> throw new IllegalArgumentException("Unknown command " + options.command + ". " + help());
                 }
@@ -200,40 +200,6 @@ public final class Modaccel {
         result.put("reason", result.get("details"));
         return 1;
     }
-    /** Compile, then check every mixin's target class, method and injection point against the game jar, without starting the game. */
-    static Map<String, Object> mixinCheck(Build build, Map<String, Object> model, Options options) throws Exception {
-        List<String> tasks = options.values.containsKey("task") ? List.of(options.get("task", "")) : build.tasks(model, "classes");
-        if (tasks.isEmpty()) throw new IOException("No classes task in the selected projects. Select --project :module or --task :module:task.");
-        Run.Result run = build.gradle(tasks, "compile");
-        if (run.exit() != 0) return Json.map("ok", false, "tier", "compile", "reason", Run.gradleFailure(run.log()) + "\nThe mixins were not checked: the code must compile first.\nLog: " + run.log());
-        var audit = new JavaTools(build).audit(model);
-        return mixinResult(audit.log(), audit.exit());
-    }
-    /** MixinAudit's log as a verdict a person reads: problems, optional injections that will never run, and notes. */
-    static Map<String, Object> mixinResult(Path log, int exit) throws IOException {
-        List<String> findings = new ArrayList<>(), notes = new ArrayList<>();
-        for (String line : Files.readAllLines(log, java.nio.charset.StandardCharsets.UTF_8)) {
-            if (line.isBlank() || line.startsWith("# ")) continue;
-            if (line.contains("optional (require = 0)") || line.startsWith("note")) notes.add(line.strip().replaceFirst("^note:\\s*", "")); else if (line.matches("^\\S+\\.(java|kt):\\d+.*")) findings.add(line.strip());
-        }
-        String summary = Port.auditSummary(log);
-        boolean ok = exit == 0;
-        StringBuilder text = new StringBuilder();
-        if (ok) text.append("Every mixin target resolves: ").append(summary).append(". The game was not started; injection behaviour needs a game check.");
-        else if (exit == 1) {
-            text.append(findings.size()).append(findings.size() == 1 ? " mixin problem" : " mixin problems").append(" the game would hit (a crash at start-up, or an injection that silently does nothing):");
-            for (String finding : findings) text.append("\n  ").append(finding);
-        } else text.append("The mixin audit could not run: ").append(Run.failure(log).strip());
-        List<String> optional = notes.stream().filter(n -> n.contains("optional (require = 0)")).toList();
-        if (!optional.isEmpty()) text.append("\n").append(optional.size()).append(optional.size() == 1 ? " optional injection" : " optional injections")
-                .append(" (require = 0) whose target is missing: the game skips ").append(optional.size() == 1 ? "it" : "them").append(" without an error, so ").append(optional.size() == 1 ? "it never runs" : "they never run").append(":");
-        for (String note : optional) text.append("\n  ").append(note.replace("optional (require = 0): ", ""));
-        for (String note : notes) if (!optional.contains(note)) text.append("\n  note: ").append(note);
-        Map<String, Object> result = Json.map("ok", ok, "tier", "mixin-targets", "gameVerified", false, "mixinAudit", summary, "findings", findings, "notes", notes, "log", log.toString(),
-                "details", text.toString());
-        if (!ok) result.put("reason", text + "\nLog: " + log);
-        return result;
-    }
     static String discoverText(Map<String, Object> result, ProjectModel project, String command) {
         StringBuilder out = new StringBuilder();
         out.append("Gradle ").append(result.getOrDefault("gradle", "?")).append(" build at ").append(project.root);
@@ -289,6 +255,12 @@ public final class Modaccel {
                     + "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n"
                     + "class, method or field it names as each project's jars have it: where a missing class lives, a member's signatures, or similar names.\n"
                     + "--only keeps errors whose source path contains TEXT.";
+            case "mixin-check" -> "Let Mixin itself apply the mod's mixins, without starting the game: modaccel mixin-check --root SOURCE [--project :module] [--client-task :p:runClient] [--refresh] --json\n"
+                    + "The build's client launch is recorded once per build (Gradle compiles and prepares it, without downloading game assets), then started with\n"
+                    + "the loader set up as its own JUnit support does (Fabric: Knot, as fabric-loader-junit; NeoForge: the forgejunituserdev target, as junit-fml).\n"
+                    + "Every class the mod's mixin configs target is loaded, so Mixin applies the mixins; nothing opens a window or a world. Mixin's debug\n"
+                    + "injector check is on, so an injection that matches fewer places than it expects is reported as dead. Each finding is Mixin's own message,\n"
+                    + "with the mixin's source file. Exit 1 when a mixin would stop the game or is dead; --refresh records the launch again.";
             case "dependencies" -> "Report target dependencies without editing: modaccel dependencies --root SOURCE --to 1.21.6 [--selection FILE] --json\nEach non-loader dependency is resolved, explicitly selected, or blocked with the selection entry to add in .modaccel/dependencies.json.";
             case "ui-check" -> "Capture the target client: modaccel ui-check --root SOURCE --screen net.minecraft.client.gui.screen.TitleScreen --json\nInspect the receipt's framebuffer capture; add --assert METHOD for behavior checks, or --expect-change PERCENT to require the action to visibly change the frame.\n"
                     + "--screen opens a new instance of that screen; leave it out to capture what the running client shows now.\n"
@@ -315,14 +287,10 @@ public final class Modaccel {
                     + "After javac, every JSON file in the resources must parse, fabric.mod.json / neoforge.mods.toml must name a valid mod id, mixin\n"
                     + "configs and their classes, and entrypoints that exist, and the code's MOD_ID must match the metadata. Items made by a recipe\n"
                     + "without a translation or model are warnings.";
-            case "mixin-check" -> "Check the mixins without starting the game: modaccel mixin-check --root SOURCE [--project :module]\n"
-                    + "Compiles, then looks up every @Mixin target class, @Inject/@Redirect/... method, @At target and @Shadow member in the game jar,\n"
-                    + "including static-ness and signatures. A finding is a crash at start-up or an injection that silently does nothing;\n"
-                    + "require = 0 injections are optional and reported as notes. Whether an injection does the right thing still needs a game check.";
             default -> "modaccel <command> --root SOURCE [--project :module] [--json]\n"
                     + "  support                what works today        discover, doctor   what kind of build this is\n"
                     + "  setup                  evaluate the build      compile            compile + resource/metadata checks\n"
-                    + "  fast, test             logic tests, no game    mixin-check        mixin targets against the game jar\n"
+                    + "  fast, test             logic tests, no game    mixin-check        Mixin applies the mixins, no game\n"
                     + "  port                   move to another version explain            explain compiler errors\n"
                     + "  dependencies           target dependencies     ui-check, world-check, mp-check   real game checks\n"
                     + "  eval, reload           talk to the running game          game-status, game-stop\n"

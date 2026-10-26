@@ -14,10 +14,13 @@ final class FastLane {
         Path stamp = build.project.state().resolve("fast-stamp.json");
         Set<Path> outputs = new TreeSet<>(); Set<String> classpath = new LinkedHashSet<>(); List<String> roots = new ArrayList<>();
         int release = 17;
+        boolean partialRuntime = false;
         for (Object item : Json.array(model.get("projects"))) {
             var p = Json.object(item);
             for (Object c : Json.array(p.get("compile"))) outputs.add(Path.of(Json.object(c).get("destination").toString()));
             for (Object s : Json.array(p.get("sourceSets"))) if ("test".equals(Json.object(s).get("name"))) {
+                // Setup kept going past a runtime file that did not download; only Gradle can run these tests.
+                if (!ProjectModel.strings(Json.object(s).get("runtimeUnresolved")).isEmpty()) partialRuntime = true;
                 classpath.addAll(ProjectModel.strings(Json.object(s).get("runtime")));
                 roots.addAll(ProjectModel.strings(Json.object(s).get("output"))); // includes resources; JUnit discovers only classes
             }
@@ -28,7 +31,7 @@ final class FastLane {
         }
         String key = Fingerprints.build(model, build.project, build.init);
         boolean reuse = false;
-        if (Files.exists(stamp) && !options.has("refresh")) {
+        if (Files.exists(stamp) && !options.has("refresh") && !partialRuntime) {
             var cached = Json.read(stamp);
             reuse = key.equals(cached.get("inputs")) && Fingerprints.files(outputs).equals(cached.get("outputs"));
         }
@@ -70,7 +73,7 @@ final class FastLane {
         String details;
         if (ok) details = TestResults.text(counts);
         else if (failed > 0) details = TestResults.text(counts) + "\nLog: " + run.log();
-        else if (run.exit() != 0) details = Run.gradleFailure(run.log()) + "\nNo tests ran." + "\nLog: " + run.log();
+        else if (run.exit() != 0) details = Run.gradleFailure(run.log(), model) + "\nNo tests ran." + "\nLog: " + run.log();
         else details = noTests(model, true);
         return Json.map("ok", ok, "tier", "logic", "gameVerified", false, "tests", counts, "log", run.log().toString(), "details", details);
     }
