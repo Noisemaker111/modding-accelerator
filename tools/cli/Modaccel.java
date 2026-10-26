@@ -327,7 +327,7 @@ public final class Modaccel {
                     + "The plugin's jar task builds the jar; the real Paper server for its Minecraft version is downloaded once from PaperMC's API\n"
                     + "(SHA-256 checked, cached), started headless in offline mode on 127.0.0.1 with a flat fixed-seed world, and stopped after.\n"
                     + "modaccel accepts Minecraft's EULA only for that throwaway local test server. A protocol bot (MCProtocolLib, knowledge/mcprotocollib.json) joins as\n"
-                    + "ModaccelBot; on a server of another Minecraft version it joins through ViaProxy (knowledge/viaproxy.json, 1.8 and up). The scenario (--file, else .modaccel/server-check.scenario) is one step per line:\n"
+                    + "serverFakeBot; on a server of another Minecraft version it joins through ViaProxy (knowledge/viaproxy.json, 1.8 and up). The scenario (--file, else .modaccel/server-check.scenario) is one step per line:\n"
                     + "  join, leave, say TEXT, command /CMD, rcon CMD, wait Ns, server-env K=V, server-property K=V, background NAME: CMD, wait-port P\n"
                     + "  expect-chat|expect-title|expect-actionbar|expect-log|expect-rcon CMD|expect-http GET URL  ~regex~ [within Ns]\n"
                     + "  expect-entity TYPE [named ~re~] [near R], expect-block X Y Z ID[props] (~ is relative), expect-inventory ITEM [count N] [~re~],\n"

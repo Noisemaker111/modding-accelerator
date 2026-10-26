@@ -68,7 +68,7 @@ public final class ModaccelServerCheck {
     static final Map<String, String> serverProperties = new LinkedHashMap<>();
     static final List<Process> helpers = new ArrayList<>();
     static final Map<String, Path> helperLogs = new LinkedHashMap<>();
-    static String botName = "ModaccelBot";
+    static String botName = "serverFakeBot";
 
     static String mask(String text) {
         if (text == null) return null;

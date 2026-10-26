@@ -22,9 +22,9 @@ expect-entity pig named ~^Wilbur$~ near 4 within 5s
 rcon kill @e[type=minecraft:pig]
 expect-no-entity pig within 5s
 command /me waves
-expect-chat ~\* ModaccelBot waves~ within 5s
+expect-chat ~\* serverFakeBot waves~ within 5s
 say hello ${secret:BOT_SECRET}
-expect-chat ~^<ModaccelBot> hello \$\{secret:BOT_SECRET\}$~ within 5s
+expect-chat ~^<serverFakeBot> hello \$\{secret:BOT_SECRET\}$~ within 5s
 rcon say the secret is ${secret:BOT_SECRET}
 expect-log ~\[Rcon\] the secret is \$\{secret:BOT_SECRET\}~ within 5s
 expect-no-chat ~nobody said this~ for 1s
