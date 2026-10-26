@@ -78,22 +78,6 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/ (b
 22. Behaviour assertions beyond UI: items, entities, multiplayer. **later**
 23. Optional pixel comparison for regressions, off by default. **later**
 
-## Idea: versions should not matter (the ViaProxy idea)
-
-ViaProxy lets one bot written for 26.3 join any server from 1.8 up: it translates at the
-boundary, and nothing on either side knows the other's version. modaccel should work the same way.
-
-- **Our own tools:** write each one once (the bot, the in-game agent, eval, the checks) against one
-  version, and translate where it meets the game: the protocol through ViaProxy, class and method
-  names through the change index (`coverage/changes/`, `VersionMap --chain`), Java through
-  toolchains. No per-version copies of our code and no per-version lists.
-- **Mods themselves:** the same idea for mod code. Instead of only rewriting a mod's source, translate
-  its compiled classes at load time with the change index, so a jar built for one version runs on
-  another the way a 1.8 server answers a 26.3 bot. Source ports stay for what translation can't
-  cover (changed behaviour, removed features), and the checks prove either one.
-- **What done looks like:** a mod author picks any version and never thinks about which one modaccel
-  supports; a version modaccel can't reach yet is a missing translation, named exactly, not a wall.
-
 ## Decisions
 
 | Question | Choice | Date |
@@ -105,4 +89,3 @@ boundary, and nothing on either side knows the other's version. modaccel should 
 | What do we support, and how does a new kind of project get in? | `SCOPE.md`: platforms by side, a six-rung support ladder, intake through the `bench-new-mod` skill | 2026-10-25 |
 | Plugin ↔ mod conversion? | Not for now; it's a rewrite, not a port, and hybrid servers already exist | 2026-10-25 |
 | Ports between Paper versions? | Yes, as rung 5 for Paper once rungs 2–3 land | 2026-10-25 |
-| How do tools handle many versions? | Write once against one version, translate at the boundary (ViaProxy for the protocol, the change index for names); never per-version code | 2026-10-26 |
