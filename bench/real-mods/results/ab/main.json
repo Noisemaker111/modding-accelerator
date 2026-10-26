@@ -1,0 +1,531 @@
+{
+  "schema": 1,
+  "startedAt": "2026-10-25T21:22:04-04:00",
+  "platform": "win32",
+  "pinned": true,
+  "cache": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods",
+  "logs": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204",
+  "gradleUserHome": "C:\\Users\\Jk101\\.gradle",
+  "gradleCacheWarm": true,
+  "modaccel": "C:\\Users\\Jk101\\Projects\\ma-main-ab",
+  "label": "main",
+  "modaccelCommit": "80aaf19",
+  "mods": [
+    {
+      "id": "appleskin",
+      "name": "AppleSkin",
+      "repo": "https://github.com/squeek502/AppleSkin",
+      "branch": "1.21.6-fabric",
+      "commit": "a1c60fccba094969ec2de200ab4a9408164d1c93",
+      "project": "",
+      "loader": "fabric",
+      "minecraft": "1.21.6",
+      "shape": "",
+      "pinned": true,
+      "startedAt": "2026-10-25T21:22:05-04:00",
+      "cache": {
+        "freshClone": true,
+        "gradleUserHome": "C:\\Users\\Jk101\\.gradle",
+        "gradleCacheWarm": true,
+        "wrapperDistCached": true
+      },
+      "commitUsed": "a1c60fccba094969ec2de200ab4a9408164d1c93",
+      "model": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\model.json",
+      "steps": {
+        "clone": {
+          "status": "pass",
+          "seconds": 37.6,
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\clone.log"
+        },
+        "doctor": {
+          "status": "pass",
+          "seconds": 1.8,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-22-44.819312900Z-edd7bb4a\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\doctor.log"
+        },
+        "setup": {
+          "status": "pass",
+          "seconds": 168.0,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-22-46.599557400Z-f33f3d60\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\setup.log"
+        },
+        "port": {
+          "status": "n/a",
+          "seconds": 0.0,
+          "error": "manifest asks for no port; the checkout runs as published"
+        },
+        "compile": {
+          "status": "pass",
+          "seconds": 28.5,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-25-34.578687500Z-b124ba38\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\compile.log"
+        },
+        "test": {
+          "status": "n/a",
+          "seconds": 0.0,
+          "error": "no test sources (no src/test files in this checkout)"
+        },
+        "ui-check-1": {
+          "status": "pass",
+          "seconds": 117.8,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-26-03.059871600Z-fb247733\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\ui-check-1.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\build\\modaccel\\shots\\2026-10-26T01-26-03.059871600Z-fb247733.png"
+        },
+        "ui-check-2": {
+          "status": "pass",
+          "seconds": 3.4,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-28-00.989622600Z-7a6111f6\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\ui-check-2.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\build\\modaccel\\shots\\2026-10-26T01-28-00.989622600Z-7a6111f6.png"
+        },
+        "stale-refused": {
+          "status": "pass",
+          "seconds": 3.0,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-28-06.899581500Z-063826f2\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\stale-refused.log",
+          "file": "java/squeek/appleskin/AppleSkin.java",
+          "refusal": "The running game has a different build. Run game-stop, then ui-check; stale game results are refused."
+        },
+        "revert-passes": {
+          "status": "pass",
+          "seconds": 5.3,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-28-10.689484900Z-74fec54e\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\revert-passes.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\build\\modaccel\\shots\\2026-10-26T01-28-10.689484900Z-74fec54e.png"
+        },
+        "eval": {
+          "status": "pass",
+          "seconds": 5.5,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-28-15.159987500Z-a7c6534e\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\eval.log",
+          "value": "2"
+        },
+        "world-check": {
+          "status": "pass",
+          "seconds": 17.5,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-28-27.735420400Z-15817433\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\world-check.log",
+          "gameDirectory": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\run",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\build\\modaccel\\shots\\2026-10-26T01-28-27.735420400Z-15817433.png"
+        },
+        "eval-until": {
+          "status": "fail",
+          "seconds": 7.7,
+          "error": "Game action failed: Snippet did not compile:\nline 1: cannot find symbol\n  symbol:   variable mc\n  location: class ModaccelSnippet4\nGame log: C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-26-03.059871600Z-fb247733\\3-game.log",
+          "next": "Read the step log; the error above is the first thing to fix.",
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-28-46.934607400Z-7766b721\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\eval-until.log"
+        },
+        "reload": {
+          "status": "pass",
+          "seconds": 310.5,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-28-53.362994900Z-2eee18c0\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\reload.log",
+          "file": "java/squeek/appleskin/AppleSkin.java",
+          "details": "Swapped 1 class: squeek.appleskin.AppleSkin"
+        },
+        "reload-current": {
+          "status": "pass",
+          "seconds": 5.6,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-34-03.417228600Z-7f6f1d63\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\reload-current.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\build\\modaccel\\shots\\2026-10-26T01-34-03.417228600Z-7f6f1d63.png"
+        },
+        "reload-revert": {
+          "status": "pass",
+          "seconds": 17.9,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-34-09.212897900Z-126d3dcd\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\reload-revert.log"
+        },
+        "game-stop": {
+          "status": "pass",
+          "seconds": 9.3,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-34-26.738808Z-5631f7b6\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\game-stop.log"
+        },
+        "restart-unchanged": {
+          "status": "pass",
+          "seconds": 45.6,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-34-36.093806600Z-63813e57\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\restart-unchanged.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\build\\modaccel\\shots\\2026-10-26T01-34-36.093806600Z-63813e57.png"
+        },
+        "java-ui-check": {
+          "status": "pass",
+          "seconds": 43.0,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-35-26.276727300Z-6a7f796e\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\java-ui-check.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\build\\modaccel\\shots\\2026-10-26T01-35-26.276727300Z-6a7f796e.png",
+          "java": "C:\\Users\\Jk101\\tools\\jdk-21-extract\\jdk-21.0.12.1+1"
+        },
+        "game-stop-final": {
+          "status": "pass",
+          "seconds": 4.6,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\appleskin\\.runs\\portable\\2026-10-26T01-36-08.918484100Z-8c182ca0\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\appleskin\\game-stop-final.log"
+        },
+        "nodes-compile": {
+          "status": "n/a",
+          "seconds": 0.0,
+          "error": "manifest lists no per-node compile"
+        },
+        "no-leftovers": {
+          "status": "pass",
+          "seconds": 4.1
+        }
+      },
+      "ok": false,
+      "failedSteps": [
+        "eval-until"
+      ]
+    },
+    {
+      "id": "f3nope",
+      "name": "F3Nope",
+      "repo": "https://github.com/OfficiallySp/F3Nope",
+      "branch": "main",
+      "commit": "d65a2253f1102a9a5a24b7999b2a58ec70540a8b",
+      "project": "",
+      "loader": "fabric",
+      "minecraft": "1.21.6",
+      "shape": "",
+      "pinned": true,
+      "startedAt": "2026-10-25T21:36:15-04:00",
+      "cache": {
+        "freshClone": true,
+        "gradleUserHome": "C:\\Users\\Jk101\\.gradle",
+        "gradleCacheWarm": true,
+        "wrapperDistCached": true
+      },
+      "commitUsed": "d65a2253f1102a9a5a24b7999b2a58ec70540a8b",
+      "model": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\model.json",
+      "steps": {
+        "clone": {
+          "status": "pass",
+          "seconds": 22.2,
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\clone.log"
+        },
+        "doctor": {
+          "status": "pass",
+          "seconds": 1.7,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-36-39.625272800Z-307d04cd\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\doctor.log"
+        },
+        "setup": {
+          "status": "pass",
+          "seconds": 85.3,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-36-41.617533400Z-cf551f7d\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\setup.log"
+        },
+        "port": {
+          "status": "pass",
+          "seconds": 119.8,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-38-06.494127400Z-ccd21f4a\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\port.log",
+          "hop": "1.21.5 -> 1.21.6"
+        },
+        "compile": {
+          "status": "pass",
+          "seconds": 6.7,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-40-06.953302Z-a0054a68\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\compile.log"
+        },
+        "test": {
+          "status": "n/a",
+          "seconds": 0.0,
+          "error": "no test sources (no src/test files in this checkout)"
+        },
+        "ui-check-1": {
+          "status": "pass",
+          "seconds": 177.3,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-40-13.188147Z-66c59134\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\ui-check-1.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\build\\modaccel\\shots\\2026-10-26T01-40-13.188147Z-66c59134.png"
+        },
+        "ui-check-2": {
+          "status": "pass",
+          "seconds": 3.7,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-43-10.802941Z-b5a0214b\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\ui-check-2.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\build\\modaccel\\shots\\2026-10-26T01-43-10.802941Z-b5a0214b.png"
+        },
+        "stale-refused": {
+          "status": "pass",
+          "seconds": 2.5,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-43-16.302341300Z-4cfdb7c8\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\stale-refused.log",
+          "file": "src/main/java/com/f3nope/F3Nope.java",
+          "refusal": "The running game has a different build. Run game-stop, then ui-check; stale game results are refused."
+        },
+        "revert-passes": {
+          "status": "pass",
+          "seconds": 3.0,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-43-18.526936200Z-ad4cdbf7\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\revert-passes.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\build\\modaccel\\shots\\2026-10-26T01-43-18.526936200Z-ad4cdbf7.png"
+        },
+        "eval": {
+          "status": "pass",
+          "seconds": 5.2,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-43-21.751847600Z-670e2d65\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\eval.log",
+          "value": "2"
+        },
+        "world-check": {
+          "status": "pass",
+          "seconds": 16.7,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-43-33.458127100Z-3f557cf8\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\world-check.log",
+          "gameDirectory": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\run",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\build\\modaccel\\shots\\2026-10-26T01-43-33.458127100Z-3f557cf8.png"
+        },
+        "eval-until": {
+          "status": "fail",
+          "seconds": 6.6,
+          "error": "Game action failed: Snippet did not compile:\nline 1: cannot find symbol\n  symbol:   variable mc\n  location: class ModaccelSnippet4\nGame log: C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-40-13.188147Z-66c59134\\3-game.log",
+          "next": "Read the step log; the error above is the first thing to fix.",
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-43-50.542100200Z-4c6fe54e\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\eval-until.log"
+        },
+        "reload": {
+          "status": "pass",
+          "seconds": 156.4,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-43-57.521293300Z-0a88d40f\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\reload.log",
+          "file": "src/main/java/com/f3nope/F3Nope.java",
+          "details": "Swapped 1 class: com.f3nope.F3Nope"
+        },
+        "reload-current": {
+          "status": "pass",
+          "seconds": 3.9,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-46-33.589855200Z-5aac38e3\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\reload-current.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\build\\modaccel\\shots\\2026-10-26T01-46-33.589855200Z-5aac38e3.png"
+        },
+        "reload-revert": {
+          "status": "pass",
+          "seconds": 21.7,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-46-37.439689100Z-9ab50d0f\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\reload-revert.log"
+        },
+        "game-stop": {
+          "status": "pass",
+          "seconds": 8.5,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-46-59.174244800Z-c2855920\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\game-stop.log"
+        },
+        "restart-unchanged": {
+          "status": "pass",
+          "seconds": 67.4,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-47-07.397568600Z-e33f48f1\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\restart-unchanged.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\build\\modaccel\\shots\\2026-10-26T01-47-07.397568600Z-e33f48f1.png"
+        },
+        "java-ui-check": {
+          "status": "pass",
+          "seconds": 60.0,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-48-27.771578400Z-42a33ff7\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\java-ui-check.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\build\\modaccel\\shots\\2026-10-26T01-48-27.771578400Z-42a33ff7.png",
+          "java": "C:\\Users\\Jk101\\tools\\jdk-21-extract\\jdk-21.0.12.1+1"
+        },
+        "game-stop-final": {
+          "status": "pass",
+          "seconds": 21.9,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\f3nope\\.runs\\portable\\2026-10-26T01-49-32.060369400Z-0e71c537\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\f3nope\\game-stop-final.log"
+        },
+        "nodes-compile": {
+          "status": "n/a",
+          "seconds": 0.0,
+          "error": "manifest lists no per-node compile"
+        },
+        "no-leftovers": {
+          "status": "pass",
+          "seconds": 9.2
+        }
+      },
+      "ok": false,
+      "failedSteps": [
+        "eval-until"
+      ]
+    },
+    {
+      "id": "jade",
+      "name": "Jade",
+      "repo": "https://github.com/Snownee/Jade",
+      "branch": "1.21-neoforge",
+      "commit": "6701b1eea41143b2e4713ed9c6e7d57e2595a820",
+      "project": "",
+      "loader": "neoforge",
+      "minecraft": "1.21.1",
+      "shape": "",
+      "pinned": true,
+      "startedAt": "2026-10-25T21:49:56-04:00",
+      "cache": {
+        "freshClone": true,
+        "gradleUserHome": "C:\\Users\\Jk101\\.gradle",
+        "gradleCacheWarm": true,
+        "wrapperDistCached": true
+      },
+      "commitUsed": "6701b1eea41143b2e4713ed9c6e7d57e2595a820",
+      "model": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\model.json",
+      "steps": {
+        "clone": {
+          "status": "pass",
+          "seconds": 42.4,
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\clone.log"
+        },
+        "doctor": {
+          "status": "pass",
+          "seconds": 1.4,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T01-50-40.206949300Z-de029732\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\doctor.log"
+        },
+        "setup": {
+          "status": "pass",
+          "seconds": 42.0,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T01-50-41.571951100Z-af91584d\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\setup.log"
+        },
+        "port": {
+          "status": "n/a",
+          "seconds": 0.0,
+          "error": "manifest asks for no port; the checkout runs as published"
+        },
+        "compile": {
+          "status": "pass",
+          "seconds": 622.9,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T01-51-23.522381300Z-50c2c130\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\compile.log"
+        },
+        "test": {
+          "status": "n/a",
+          "seconds": 0.0,
+          "error": "no test sources (no src/test files in this checkout)"
+        },
+        "ui-check-1": {
+          "status": "pass",
+          "seconds": 88.6,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-01-46.686095500Z-e0c78dc6\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\ui-check-1.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\build\\modaccel\\shots\\2026-10-26T02-01-46.686095500Z-e0c78dc6.png"
+        },
+        "ui-check-2": {
+          "status": "pass",
+          "seconds": 4.4,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-03-15.423927800Z-3d46a412\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\ui-check-2.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\build\\modaccel\\shots\\2026-10-26T02-03-15.423927800Z-3d46a412.png"
+        },
+        "stale-refused": {
+          "status": "pass",
+          "seconds": 2.4,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-03-21.455397200Z-1139762b\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\stale-refused.log",
+          "file": "src/main/java/snownee/jade/Jade.java",
+          "refusal": "The running game has a different build. Run game-stop, then ui-check; stale game results are refused."
+        },
+        "revert-passes": {
+          "status": "pass",
+          "seconds": 3.4,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-03-23.819009800Z-706a6e8c\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\revert-passes.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\build\\modaccel\\shots\\2026-10-26T02-03-23.819009800Z-706a6e8c.png"
+        },
+        "eval": {
+          "status": "pass",
+          "seconds": 3.5,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-03-27.415990700Z-827e1f61\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\eval.log",
+          "value": "2"
+        },
+        "world-check": {
+          "status": "fail",
+          "seconds": 2.4,
+          "error": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\saves",
+          "next": "Read the step log; the error above is the first thing to fix.",
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-03-34.493767400Z-ed679908\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\world-check.log",
+          "gameDirectory": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\runs\\client"
+        },
+        "eval-until": {
+          "status": "fail",
+          "seconds": 62.8,
+          "error": "Game action failed: Still not true after 60 s; last value: false\nGame log: C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-01-46.686095500Z-e0c78dc6\\3-game.log",
+          "next": "Read the step log; the error above is the first thing to fix.",
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-03-36.997222100Z-df266470\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\eval-until.log"
+        },
+        "reload": {
+          "status": "pass",
+          "seconds": 40.1,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-04-39.786380800Z-fb4b9d9e\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\reload.log",
+          "file": "src/main/java/snownee/jade/Jade.java",
+          "details": "Swapped 1 class: snownee.jade.Jade"
+        },
+        "reload-current": {
+          "status": "pass",
+          "seconds": 3.7,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-05-19.978238200Z-cc061c9a\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\reload-current.log",
+          "capture": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\build\\modaccel\\shots\\2026-10-26T02-05-19.978238200Z-cc061c9a.png"
+        },
+        "reload-revert": {
+          "status": "pass",
+          "seconds": 30.6,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-05-23.679259Z-59d4ebef\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\reload-revert.log"
+        },
+        "game-stop": {
+          "status": "pass",
+          "seconds": 4.4,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-05-54.251997400Z-ab30cc2a\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\game-stop.log"
+        },
+        "restart-unchanged": {
+          "status": "fail",
+          "seconds": 2.7,
+          "error": "Client startup failed: java.util.concurrent.ExecutionException: java.io.IOException: Client stopped before its first rendered frame (exit 1). Log: C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-05-58.545448100Z-3786b6f6\\2-game.log\nError: Could not find or load main class cpw.mods.bootstraplauncher.BootstrapLauncher\nCaused by: java.lang.ClassNotFoundException: cpw.mods.bootstraplauncher.BootstrapLauncher\nError: Could not find or load main class cpw.mods.bootstraplauncher.BootstrapLauncher\nCaused by: java.lang.ClassNotFoundException: cpw.mods.bootstraplauncher.BootstrapLauncher\nLog: C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-05-58.545448100Z-3786b6f6\\2-game.log",
+          "next": "The client did not reach its first frame; read the game log named in the error.",
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-05-58.545448100Z-3786b6f6\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\restart-unchanged.log"
+        },
+        "java-ui-check": {
+          "status": "fail",
+          "seconds": 2.9,
+          "error": "Client startup failed: java.util.concurrent.ExecutionException: java.io.IOException: Client stopped before its first rendered frame (exit 1). Log: C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-06-04.048697500Z-66939792\\2-game.log\nError: Could not find or load main class cpw.mods.bootstraplauncher.BootstrapLauncher\nCaused by: java.lang.ClassNotFoundException: cpw.mods.bootstraplauncher.BootstrapLauncher\nError: Could not find or load main class cpw.mods.bootstraplauncher.BootstrapLauncher\nCaused by: java.lang.ClassNotFoundException: cpw.mods.bootstraplauncher.BootstrapLauncher\nLog: C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-06-04.048697500Z-66939792\\2-game.log",
+          "next": "The client did not reach its first frame; read the game log named in the error.",
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-06-04.048697500Z-66939792\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\java-ui-check.log",
+          "java": "C:\\Users\\Jk101\\tools\\jdk-21-extract\\jdk-21.0.12.1+1"
+        },
+        "game-stop-final": {
+          "status": "pass",
+          "seconds": 3.0,
+          "receipt": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\jade\\.runs\\portable\\2026-10-26T02-06-06.972008900Z-102ca10a\\result.json",
+          "log": "C:\\Users\\Jk101\\AppData\\Local\\modaccel-real-mods\\logs\\20261025-212204\\jade\\game-stop-final.log"
+        },
+        "nodes-compile": {
+          "status": "n/a",
+          "seconds": 0.0,
+          "error": "manifest lists no per-node compile"
+        },
+        "no-leftovers": {
+          "status": "pass",
+          "seconds": 4.3
+        }
+      },
+      "ok": false,
+      "failedSteps": [
+        "world-check",
+        "eval-until",
+        "restart-unchanged",
+        "java-ui-check"
+      ]
+    }
+  ],
+  "finishedAt": "2026-10-25T22:06:12-04:00"
+}
