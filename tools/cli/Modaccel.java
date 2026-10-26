@@ -82,6 +82,8 @@ public final class Modaccel {
                         String name = options.command.equals("compile") ? "classes" : options.command.equals("test") ? "test" : "modaccelPure";
                         List<String> tasks = options.values.containsKey("task") ? List.of(options.get("task", "")) : build.tasks(model, name);
                         if (tasks.isEmpty()) throw new IOException("No " + name + " task in the selected projects. Select --project :module or --task :module:task.");
+                        // A NeoGradle mod whose game jar is not built yet compiles against NeoForge's installer-made jar.
+                        if (options.command.equals("compile") && !options.values.containsKey("task") && (result = OwnCompile.run(build, model, tasks)) != null) { exit = 0; break; }
                         Run.Result run = build.gradle(tasks, options.command); exit = run.exit() == 0 ? 0 : 1;
                         result = Json.map("tier", options.command.equals("compile") ? "compile" : "logic", "tasks", tasks, "log", run.log().toString(),
                                 "gameVerified", false, "details", Run.tail(run.log()));
