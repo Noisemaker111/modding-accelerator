@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased: stranger pass
+## Unreleased: resource checks follow the real loaders
+
+PR #28's resource checks failed real mods the game loads. Run on 25 real mod builds, they wrongly
+failed Architectury (fabric, neoforge), Sodium (fabric, neoforge) and MineColonies; now none do.
+
+- **JSON is read the way Gson reads it** (Fabric Loader's strict copy, Mixin's and Minecraft's lenient
+  reader): a byte order mark, raw tabs in strings and duplicate keys (the last one wins) are fine;
+  comments and single quotes fail only fabric.mod.json, whose reader is strict. JSON Minecraft cannot
+  read even leniently fails only under assets/, data/ or pack.mcmeta; anywhere else it is a warning.
+- **Mixin configs, mixins and entrypoints are looked up the way the game finds them:** the whole
+  runtime classpath (Architectury's common jar), other projects' sources and resources beside their
+  classes folders (Sodium's common and frapi, not compiled at compile time); a copy anywhere else in
+  the checkout makes a missing one a warning. A missing mixin is a problem only in a `"required": true`
+  config (Mixin only warns otherwise); a Kotlin-adapter entrypoint is never certain.
+- **Ids follow each loader:** a NeoForge 1.21+ dotted id is a warning, not a problem; metadata for a
+  loader the build does not run on is not held to that loader's rules; a `MOD_ID` that differs from
+  the metadata is a warning (compat code keeps other mods' ids). ForgeGradle 7's shared
+  `build/sourceSets/main` output is now checked at all.
+
+## Earlier: stranger pass
 
 What an outside modder hit using modaccel on Diorama and F3Nope from the README alone, fixed.
 

@@ -314,9 +314,11 @@ public final class Modaccel {
                     + "test runs the project's whole test task. Both fail when no test ran, and check the mod's resources and metadata afterwards.\n"
                     + "The build needs JUnit: testImplementation(\"org.junit.jupiter:junit-jupiter:5.11.4\") and testRuntimeOnly(\"org.junit.platform:junit-platform-launcher:1.11.4\").";
             case "compile" -> "Compile the mod and check what the game reads at start-up: modaccel compile --root SOURCE [--project :module]\n"
-                    + "After javac, every JSON file in the resources must parse, fabric.mod.json / neoforge.mods.toml must name a valid mod id, mixin\n"
-                    + "configs and their classes, and entrypoints that exist, and the code's MOD_ID must match the metadata. Items made by a recipe\n"
-                    + "without a translation or model are warnings.";
+                    + "After javac it fails only on what the loader or game rejects: JSON Minecraft cannot read even leniently (assets/, data/,\n"
+                    + "pack.mcmeta), a fabric.mod.json Fabric's strict reader refuses or with an invalid id, an invalid mods.toml id, a missing\n"
+                    + "mixin config, a missing class in a \"required\" mixin config, a missing entrypoint or access widener. Anything that depends on\n"
+                    + "the game version or on how the jar is assembled, JSON nothing in the game reads, a MOD_ID that differs from the metadata,\n"
+                    + "and items made by a recipe without a translation or model are warnings.";
             default -> "modaccel <command> --root SOURCE [--project :module] [--json]\n"
                     + "  support                what works today        discover, doctor   what kind of build this is\n"
                     + "  setup                  evaluate the build      compile            compile + resource/metadata checks\n"
