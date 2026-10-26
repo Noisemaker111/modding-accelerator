@@ -35,7 +35,7 @@ public final class Modaccel {
                 if (switches.contains(key)) flags.add(key);
                 // --undo with no transaction undoes the newest port.
                 else if (key.equals("undo") && (i + 1 == args.length || args[i + 1].startsWith("--"))) values.put(key, "latest");
-                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only", "plugins").contains(key)) {
+                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only", "plugins", "server-version").contains(key)) {
                     if (++i == args.length || args[i].startsWith("--")) throw new IllegalArgumentException("Missing value for --" + key);
                     values.put(key, args[i]);
                 } else throw new IllegalArgumentException("Unknown option --" + key + ". Run modaccel help" + (command.equals("help") ? "" : " " + command) + " for the options it takes.");
@@ -50,7 +50,7 @@ public final class Modaccel {
         String get(String key, String fallback) { return values.getOrDefault(key, fallback); }
         boolean has(String key) { return flags.contains(key); }
     }
-    static final Set<String> COMMANDS = Set.of("support", "discover", "doctor", "setup", "compile", "fast", "test", "port", "explain", "dependencies", "mixin-check", "plugin-check",
+    static final Set<String> COMMANDS = Set.of("support", "discover", "doctor", "setup", "compile", "fast", "test", "port", "explain", "dependencies", "mixin-check", "plugin-check", "server-check",
             "ui-check", "world-check", "mp-check", "eval", "reload", "game-status", "game-stop", "package", "self-test", "help");
     public static void main(String[] args) {
         int exit = 2; Options options = null; Report report = null; ProjectLock lock = null;
@@ -115,6 +115,7 @@ public final class Modaccel {
                         }
                     }
                     case "plugin-check" -> { result = new PluginCheck(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
+                    case "server-check" -> { result = new ServerCheck(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "dependencies" -> { result = new Port(build, model).dependencies(options); exit = Boolean.TRUE.equals(result.get("ready")) ? 0 : 1; }
                     case "compile", "test" -> {
                         String name = options.command.equals("compile") ? "classes" : options.command.equals("test") ? "test" : "modaccelPure";

@@ -1,0 +1,30 @@
+# server-check's own bot, on whatever plugin's server it runs: what it reads back from a real server.
+# This is a check of modaccel, not of the plugin: every effect here comes from vanilla commands sent over RCON.
+# The secret BOT_SECRET must never appear in the receipts, logs or server files (ServerCheckFixtures greps for it).
+join
+rcon op ${bot}
+rcon tp ${bot} 8.5 -60 8.5
+expect-position 8.5 -60 8.5 tolerance 0.1 within 5s
+expect-block ~ ~-1 ~ grass_block within 5s
+rcon setblock 9 -60 8 minecraft:gold_block
+expect-block 9 -60 8 gold_block within 5s
+rcon setblock 9 -60 8 minecraft:oak_stairs[facing=east]
+expect-block 9 -60 8 oak_stairs[facing=east] within 5s
+rcon title ${bot} title "Hello bot"
+expect-title ~^Hello bot$~ within 5s
+rcon title ${bot} actionbar "On the bar"
+expect-actionbar ~^On the bar$~ within 5s
+rcon give ${bot} minecraft:diamond 3
+expect-inventory diamond count 3 within 5s
+expect-no-inventory emerald for 1s
+rcon summon minecraft:pig 11 -60 8 {CustomName:"Wilbur",NoAI:1b}
+expect-entity pig named ~^Wilbur$~ near 4 within 5s
+rcon kill @e[type=minecraft:pig]
+expect-no-entity pig within 5s
+command /me waves
+expect-chat ~\* ModaccelBot waves~ within 5s
+say hello ${secret:BOT_SECRET}
+expect-chat ~^<ModaccelBot> hello \$\{secret:BOT_SECRET\}$~ within 5s
+rcon say the secret is ${secret:BOT_SECRET}
+expect-log ~\[Rcon\] the secret is \$\{secret:BOT_SECRET\}~ within 5s
+expect-no-chat ~nobody said this~ for 1s
