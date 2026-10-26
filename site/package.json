@@ -1,0 +1,40 @@
+{
+  "name": "modaccel-site",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Modding Accelerator website: a Foldkit UI on a Cloudflare Worker, declared with Alchemy, built from rat-stack.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "data": "python scripts/export_data.py",
+    "dev": "pnpm run data && pnpm --filter @modaccel-site/web dev",
+    "build": "pnpm run data && turbo run build",
+    "preview": "pnpm run build && pnpm --filter @modaccel-site/web preview",
+    "check": "pnpm run data && turbo run typecheck && ultracite check && oxfmt --check .",
+    "fix": "ultracite fix && oxfmt .",
+    "lint": "ultracite check && oxfmt --check .",
+    "test": "pnpm run data && turbo run test",
+    "typecheck": "turbo run typecheck",
+    "infra:plan": "pnpm run data && pnpm --filter @modaccel-site/infra plan",
+    "infra:deploy": "pnpm run data && pnpm --filter @modaccel-site/infra deploy"
+  },
+  "devDependencies": {
+    "@foldkit/oxlint-plugin": "0.15.3",
+    "@oxlint/plugins": "1.88.0",
+    "@types/node": "24.19.2",
+    "@yielded/effect-tsrs": "0.2.0",
+    "effect": "4.0.6",
+    "oxfmt": "0.73.0",
+    "oxlint": "1.88.0",
+    "oxlint-tsgolint": "7.0.2004",
+    "turbo": "2.11.9",
+    "typescript": "7.0.2",
+    "ultracite": "8.0.1",
+    "vitest": "5.0.5"
+  },
+  "engines": {
+    "node": ">=24.18.0",
+    "pnpm": ">=11.1.2"
+  },
+  "packageManager": "pnpm@11.3.0"
+}

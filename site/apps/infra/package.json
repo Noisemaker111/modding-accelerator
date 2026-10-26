@@ -1,0 +1,23 @@
+{
+  "name": "@modaccel-site/infra",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "effect-tsrs diagnostics --project tsconfig.json --strict",
+    "check": "pnpm run typecheck",
+    "plan": "alchemy plan",
+    "deploy": "alchemy deploy",
+    "destroy": "alchemy destroy"
+  },
+  "dependencies": {
+    "@alchemy.run/cloudflare": "2.0.0-beta.84",
+    "@modaccel-site/web": "workspace:*",
+    "alchemy": "2.0.0-beta.84",
+    "effect": "4.0.6"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2"
+  }
+}

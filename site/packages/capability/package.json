@@ -1,0 +1,70 @@
+{
+  "name": "@modaccel-site/capability",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./call-watch": {
+      "types": "./src/call-watch.ts",
+      "import": "./dist/call-watch.js",
+      "default": "./dist/call-watch.js"
+    },
+    "./approval": {
+      "types": "./src/approval.ts",
+      "import": "./dist/approval.js",
+      "default": "./dist/approval.js"
+    },
+    "./contract": {
+      "types": "./src/contract.ts",
+      "import": "./dist/contract.js",
+      "default": "./dist/contract.js"
+    },
+    "./define": {
+      "types": "./src/define.ts",
+      "import": "./dist/define.js",
+      "default": "./dist/define.js"
+    },
+    "./implement": {
+      "types": "./src/implement.ts",
+      "import": "./dist/implement.js",
+      "default": "./dist/implement.js"
+    },
+    "./toolkit": {
+      "types": "./src/toolkit.ts",
+      "import": "./dist/toolkit.js",
+      "default": "./dist/toolkit.js"
+    },
+    "./http-api": {
+      "types": "./src/http-api.ts",
+      "import": "./dist/http-api.js",
+      "default": "./dist/http-api.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "effect-tsrs diagnostics --project tsconfig.json --strict",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "check": "pnpm run typecheck",
+    "pretest": "pnpm run --silent build"
+  },
+  "dependencies": {
+    "effect": "4.0.6"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "4.0.6",
+    "@effect/vitest": "4.0.6",
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}
