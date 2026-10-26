@@ -66,8 +66,41 @@ final class Explain {
             return Json.map("ok", false, "errors", 0, "log", log.toString(), "tasks", tasks, "details", "The compile failed without compiler errors to explain.\n" + Run.failure(log));
         String summary = shown + " compiler error" + (shown == 1 ? "" : "s") + " in " + perFile.size() + " file" + (perFile.size() == 1 ? "" : "s")
                 + (only.isEmpty() ? "" : " matching " + only) + ", " + failingName + " beside " + workingName + ".";
-        return Json.map("ok", shown == 0, "errors", shown, "files", perFile, "log", log.toString(), "tasks", tasks,
-                "details", summary + (shown == 0 ? "" : "\n" + out.toString().stripTrailing()));
+        // Once it compiles, what's left is what the compiler can't see: mixins aimed at methods or
+        // fields the game doesn't have, which otherwise fail one at a time as the client starts.
+        int dead = 0;
+        if (shown == 0 && exit == 0 && only.isEmpty() && !options.values.containsKey("log")) {
+            Run.Result audit = new JavaTools(build).audit(Json.map("projects", List.of(failing)));
+            String lastAudited = "";
+            for (String line : new String(Files.readAllBytes(audit.log()), StandardCharsets.UTF_8).lines().toList()) {
+                Matcher finding = Pattern.compile("^(\\S.*?\\.java):(\\d+) (.*)$").matcher(line);
+                if (line.startsWith("note:") || !finding.matches()) continue;
+                dead++;
+                String file = source(build.project.root.resolve(finding.group(1)).toString());
+                if (!file.equals(lastAudited)) { out.append('\n').append(file).append('\n'); lastAudited = file; }
+                out.append("  ").append(finding.group(2)).append(": ").append(finding.group(3)).append('\n');
+                String[] subject = auditSubject(finding.group(3));
+                if (subject != null) for (String explained : memberLines(subject[0], subject[1], List.of(), workingName, workingApi, failingName, failingApi)) out.append("    ").append(explained).append('\n');
+            }
+            summary += " Mixin audit: " + dead + " dead target" + (dead == 1 ? "" : "s") + ".";
+            if (audit.exit() != 0 && dead == 0) summary += " The audit itself failed: " + Run.tail(audit.log());
+        }
+        return Json.map("ok", shown == 0 && dead == 0, "errors", shown, "deadMixinTargets", dead, "files", perFile, "log", log.toString(), "tasks", tasks,
+                "details", summary + (shown == 0 && dead == 0 ? "" : "\n" + out.toString().stripTrailing()));
+    }
+
+    /** The class and member a mixin audit finding is about, as {owner, name}. */
+    static String[] auditSubject(String finding) {
+        Matcher handler = Pattern.compile("does not match ([\\w.$]+)\\.([\\w$<>]+)\\(").matcher(finding);
+        if (handler.find()) return new String[] {handler.group(1), handler.group(2)};
+        Matcher owner = Pattern.compile(" in ([\\w.$]+)").matcher(finding);
+        Matcher quoted = Pattern.compile("'([^']+)'").matcher(finding);
+        if (!owner.find() || !quoted.find()) return null;
+        String name = quoted.group(1);
+        // An @At target is Lowner;name(descriptor); a selector is name or name(descriptor).
+        if (name.startsWith("L") && name.contains(";")) name = name.substring(name.indexOf(';') + 1);
+        name = name.replaceFirst("[(:].*$", "");
+        return name.isEmpty() ? null : new String[] {owner.group(1), name};
     }
 
     Map<String, Object> project(String path) throws IOException {
