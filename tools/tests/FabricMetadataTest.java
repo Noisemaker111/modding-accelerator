@@ -25,6 +25,8 @@ public final class FabricMetadataTest {
             selected.put("dependencies", List.of(Json.map("group", "net.fabricmc")));
             require(Target.manifestEditsForModel(Json.map("projects", List.of(forge, selected)), "1.21.6").size() == 1,
                     "prepared multi-project port checks only Fabric manifest");
+            require(edits.get(0).after().equals(original.replaceFirst("(\"minecraft\"\\s*:\\s*\")~1\\.20\\.1\"", "$11.21.6\"")),
+                    "only the depends.minecraft literal changes; formatting and other fields stay byte-exact");
             var after = Json.object(Json.parse(edits.get(0).after()));
             require("1.21.6".equals(Json.object(after.get("depends")).get("minecraft")), "target exact constraint");
             require(Objects.equals(before.get("version"), after.get("version")) && Objects.equals(before.get("description"), after.get("description"))
@@ -69,6 +71,39 @@ public final class FabricMetadataTest {
             Path client = root.resolve("src/client/resources"); Files.createDirectories(client); Files.writeString(client.resolve("fabric.mod.json"), original);
             Json.array(selected.get("sourceSets")).add(Json.map("name", "client", "resources", List.of(client.toString())));
             reject(selected, "Multiple source");
+            // A formatted manifest keeps its layout: one line changes, not a re-serialized file.
+            Files.delete(client.resolve("fabric.mod.json"));
+            Json.array(selected.get("sourceSets")).remove(Json.array(selected.get("sourceSets")).size() - 1);
+            String formatted = """
+                    {
+                    	"schemaVersion": 1,
+                    	"id": "fixture",
+                    	"description": "~1.20.1 fixes",
+                    	"suggests": {
+                    		"minecraft": "~1.20.1"
+                    	},
+                    	"depends": {
+                    		"fabricloader": ">=0.14",
+                    		"minecraft": "~1.20.1"
+                    	}
+                    }
+                    """;
+            Files.writeString(manifest, formatted);
+            var formattedEdits = Target.manifestEdits(selected, "1.21.6");
+            require(formattedEdits.size() == 1, "formatted manifest edited once");
+            int dependsAt = formatted.indexOf("\"depends\"");
+            String expected = formatted.substring(0, dependsAt) + formatted.substring(dependsAt).replace("\"minecraft\": \"~1.20.1\"", "\"minecraft\": \"1.21.6\"");
+            require(formattedEdits.get(0).after().equals(expected),
+                    "formatted manifest: only depends.minecraft changes, suggests and description untouched");
+            // x-ranges are Fabric constraints too.
+            require(Versions.matches("1.21.x", "1.21.6") && !Versions.matches("1.20.x", "1.21.6") && Versions.matches(">=1.21.x", "1.21.6"), "x-range constraints");
+            // The packaged jar decides whether Fabric loads the mod, not the source manifest.
+            Path libs = root.resolve("build/libs"); Files.createDirectories(libs);
+            jar(libs.resolve("fixture-1.0-sources.jar"), "{\"depends\":{\"minecraft\":\"1.21.6\"}}");
+            jar(libs.resolve("fixture-1.0.jar"), "{\"depends\":{\"minecraft\":\">=1.21.5 <1.21.6\"}}");
+            require(Boolean.FALSE.equals(Port.verifyFabricMetadata(root, "1.21.6").get("ok")), "packaged range that refuses the target fails");
+            jar(libs.resolve("fixture-1.0.jar"), "{\"depends\":{\"minecraft\":[\">=1.21.5 <1.21.6\",\"1.21.6\"]}}");
+            require(Boolean.TRUE.equals(Port.verifyFabricMetadata(root, "1.21.6").get("ok")), "a list accepts the target when one entry does");
             System.out.println("F3Nope manifest target, guards, and byte-exact undo: PASS");
         } finally {
             try (var paths = Files.walk(root)) { for (Path p : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(p); }
@@ -89,6 +124,11 @@ public final class FabricMetadataTest {
             Object parsed = rule.getMethod("parse", String.class).invoke(null, predicate);
             Object game = value.getMethod("parse", String.class).invoke(null, version);
             return ((java.util.function.Predicate<Object>)parsed).test(game);
+        }
+    }
+    static void jar(Path file, String manifest) throws IOException {
+        try (var out = new java.util.zip.ZipOutputStream(Files.newOutputStream(file))) {
+            out.putNextEntry(new java.util.zip.ZipEntry("fabric.mod.json")); out.write(manifest.getBytes(java.nio.charset.StandardCharsets.UTF_8)); out.closeEntry();
         }
     }
     static void require(boolean condition, String label) { if (!condition) throw new AssertionError(label); }

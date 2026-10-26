@@ -41,6 +41,7 @@ final class Port {
         List<Target.Edit> target = setup == null ? Target.manifestEditsForModel(model, to) : setup.edits();
         List<Path> excluded = setup == null ? List.of() : setup.excluded;
         List<Map<String, Object>> applied = setup == null ? List.of() : setup.applied;
+        List<Map<String, Object>> unchecked = setup == null ? List.of() : setup.unchecked;
         build.report.stages.add(Json.map("name", "target-dependencies", "seconds", (System.nanoTime() - targetStart) / 1e9, "changedFiles", target.size(),
                 "resolved", applied.size(), "blocked", setup == null ? 0 : setup.blockers.size(), "selections", selections.size()));
         if (setup != null && !setup.blockers.isEmpty())
@@ -123,7 +124,11 @@ final class Port {
             Path relative = build.project.root.relativize(file), backup = transaction.resolve("before").resolve(relative);
             Files.createDirectories(backup.getParent()); Files.copy(file, backup); before.put(relative.toString().replace('\\', '/'), Fingerprints.bytes(Files.readAllBytes(file)));
         }
-        Json.save(transaction.resolve("transaction.json"), Json.map("root", build.project.root.toString(), "before", before, "after", Map.of(), "removed", List.of(), "status", "in-progress"));
+        // The restore plan is on disk before the first edit: an interrupted port still knows what it may have changed.
+        List<String> planned = new ArrayList<>();
+        for (Target.Edit edit : target) planned.add(build.project.root.relativize(edit.file().toRealPath()).toString().replace('\\', '/'));
+        Json.save(transaction.resolve("transaction.json"), Json.map("root", build.project.root.toString(), "before", before, "after", Map.of(), "removed", List.of(),
+                "plan", Json.map("edits", planned, "removals", relative(build.project.root, excluded), "backups", transaction.resolve("before").toString()), "status", "in-progress"));
         Path log; boolean compiled = false; int rounds = Integer.parseInt(options.get("rounds", "5"));
         List<String> removed = new ArrayList<>();
         if (rounds < 1 || rounds > 20) throw new IllegalArgumentException("--rounds must be 1–20");
@@ -184,9 +189,12 @@ final class Port {
                     "gameVerified", false, "behaviorVerified", false, "log", log.toString(), "undo", transaction.toString(),
                     "resolvedDependencies", applied, "excludedSources", removed,
                     "selectionFile", selectionFile == null ? null : selectionFile.toString(),
-                    "details", passed ? (built ? "Built and mixin targets checked. Gameplay and behavior remain unverified."
-                            : "Compiled and mixin targets checked. No standard build task was available; gameplay remains unverified.")
+                    "details", passed ? (built ? "Built and " + auditSummary(audit.log()) + ". Gameplay and behavior remain unverified."
+                            : "Compiled and " + auditSummary(audit.log()) + ". No standard build task was available; gameplay remains unverified.")
+                            + uncheckedText(unchecked) + preReleaseText(applied)
                             : Run.tail(audit != null && audit.exit() != 0 ? audit.log() : log));
+            if (!unchecked.isEmpty()) result.put("uncheckedDependencies", unchecked);
+            if (audit != null) result.put("mixinAudit", auditSummary(audit.log()));
             List<Object> named = passed ? List.of() : namedErrors(log, routed ? mapInfo : null);
             if (routeRecord != null) result.put("route", hopRecords(routeRecord, routed ? mapInfo : null, named));
             if (!passed) {
@@ -200,7 +208,7 @@ final class Port {
                         "log", log.toString(), "mixinLog", audit == null ? null : audit.log().toString(), "diagnostics", Run.tail(audit == null ? log : audit.log()),
                         "requirements", List.of("Preserve existing behavior, including debug hooks and rendering.", "Do not remove required injections or disable checks to make a build pass.", "Rebuild and exercise relevant real game scenarios after a semantic repair.")));
                 result.put("repairRequest", repair.toString());
-                List<Object> unresolved = named;
+                List<Object> unresolved = compiled ? List.of() : named;
                 result.put("unresolved", unresolved);
                 result.put("stoppedSafely", true);
                 StringBuilder byUpdate = new StringBuilder();
@@ -214,8 +222,7 @@ final class Port {
                     counts.forEach((step, n) -> byUpdate.append(byUpdate.length() == 0 ? " By update: " : "; ").append(step).append(": ").append(n));
                     if (byUpdate.length() > 0) byUpdate.append('.');
                 }
-                result.put("reason", unresolved.size() + " compiler error(s) remain after " + roundsTried + " repair round(s) and no typed rule matched."
-                        + byUpdate + " This needs a semantic migration; the port stopped instead of guessing. Resolve them in source, or add a verified recipe, then rerun.");
+                result.put("reason", failureReason(to, compiled, audit, unresolved.size(), roundsTried, byUpdate.toString(), log));
             }
             if (route != null) result.put("rulesApplied", rulesApplied);
             return result;
@@ -240,14 +247,50 @@ final class Port {
         }
         boolean ready = blocked.isEmpty();
         return Json.map("to", to, "selectionFile", selectionFile == null ? null : selectionFile.toString(), "selections", selections.size(),
-                "resolved", applied, "blocked", blocked, "unusedSelections", unused, "ready", ready,
-                "details", ready ? "Every target dependency resolves; port --fix can apply these changes."
-                        : blockerText(blocked));
+                "resolved", applied, "blocked", blocked, "unchecked", setup == null ? List.of() : setup.unchecked, "unusedSelections", unused, "ready", ready,
+                "details", (ready ? (setup != null && !setup.unchecked.isEmpty() ? "Every checked target dependency resolves; port --fix can apply these changes."
+                        : "Every target dependency resolves; port --fix can apply these changes.")
+                        : blockerText(blocked)) + (setup == null ? "" : uncheckedText(setup.unchecked) + preReleaseText(applied)));
     }
     Path selectionFile(Modaccel.Options options) throws IOException {
         if (options.values.containsKey("selection")) return Path.of(options.get("selection", "")).toAbsolutePath();
         Path file = build.project.root.resolve(".modaccel/dependencies.json");
         return Files.isRegularFile(file) ? file : null;
+    }
+    /**
+     * Why a port stopped, by what actually failed: the mixin audit, a build that failed for a reason the
+     * compiler did not report (shown from Gradle's own failure block), or compiler errors no rule matched.
+     */
+    static String failureReason(String to, boolean compiled, Run.Result audit, int unresolved, int rounds, String byUpdate, Path log) throws IOException {
+        if (compiled && audit != null && audit.exit() != 0)
+            return "The code compiled against " + to + ", but the mixin audit did not pass: "
+                    + (audit.exit() == 1 ? "it found injections that would fail or do nothing in the game. Each one is listed in details; fix the mixin target, then rerun."
+                            : Run.failure(audit.log()).strip());
+        if (compiled) return "The code compiled against " + to + ", but the packaged build failed without a compiler error:\n" + Run.gradleFailure(log) + "\nLog: " + log;
+        if (unresolved == 0) return "The build failed without compiler errors, so this is not a source migration and no rule can fix it:\n" + Run.gradleFailure(log) + "\nLog: " + log;
+        return unresolved + " compiler error(s) remain after " + rounds + " repair round(s) and no typed rule matched."
+                + byUpdate + " This needs a semantic migration; the port stopped instead of guessing. Resolve them in source, or add a verified recipe, then rerun.";
+    }
+    /** What the mixin audit actually looked at, from its summary line: never "checked" when nothing was. */
+    static String auditSummary(Path log) throws IOException {
+        String summary = "";
+        if (log != null && Files.exists(log)) for (String line : Files.readAllLines(log, StandardCharsets.UTF_8)) if (line.startsWith("# ")) summary = line.substring(2).strip();
+        if (summary.isEmpty()) return "the mixin audit passed without a summary";
+        if (summary.startsWith("0 mixins")) return "no mixins to audit";
+        Matcher skipped = Pattern.compile("(\\d+) targets not in the jar").matcher(summary);
+        return "mixin targets checked (" + summary.replaceFirst(",?\\s*\\d+ targets not in the jar", "") + ")"
+                + (skipped.find() ? "; " + skipped.group(1) + " mixin target(s) are in no jar on the classpath and were not checked (see the mixin-audit log)" : "");
+    }
+    static String uncheckedText(List<Map<String, Object>> unchecked) {
+        if (unchecked.isEmpty()) return "";
+        StringBuilder text = new StringBuilder("\nNot checked for the target version (" + unchecked.size() + "):");
+        for (var item : unchecked) text.append("\n  ").append(item.get("artifact")).append(" ").append(item.get("version")).append(": ").append(item.get("reason"));
+        return text.toString();
+    }
+    static String preReleaseText(List<Map<String, Object>> applied) {
+        StringBuilder text = new StringBuilder();
+        for (var item : applied) if (item.get("preRelease") != null) text.append("\nPre-release chosen: ").append(item.get("preRelease"));
+        return text.toString();
     }
     static String blockerText(List<Map<String, Object>> blockers) {
         StringBuilder text = new StringBuilder(blockers.size() + " target dependencies need a verified selection before any edit:");
@@ -296,8 +339,13 @@ final class Port {
      * range still names the old game. Check the packaged metadata, not just the compiler.
      */
     static Map<String, Object> verifyModMetadata(Path projectDir, Map<String, Object> model, String to) throws IOException {
-        boolean neoforge = false;
-        for (Object item : Json.array(model.get("projects"))) if (Support.loaders(Json.object(item)).contains("neoforge")) neoforge = true;
+        boolean neoforge = false, fabric = false;
+        for (Object item : Json.array(model.get("projects"))) {
+            Set<String> loaders = Support.loaders(Json.object(item));
+            if (loaders.contains("neoforge")) neoforge = true;
+            if (loaders.contains("fabric")) fabric = true;
+        }
+        if (!neoforge && fabric) return verifyFabricMetadata(projectDir, to);
         if (!neoforge) return null;
         Path libs = projectDir.resolve("build/libs");
         if (!Files.isDirectory(libs)) return Json.map("ok", true, "checked", false, "details", "No packaged jar to inspect.");
@@ -334,6 +382,40 @@ final class Port {
         }
         return Json.map("ok", true, "checked", !ranges.isEmpty(), "jars", jars, "ranges", ranges,
                 "details", ranges.isEmpty() ? "No Minecraft dependency range in the packaged metadata." : "Packaged metadata accepts " + to + ".");
+    }
+    /**
+     * Fabric refuses a jar whose packaged fabric.mod.json does not accept the running game, even when
+     * the source manifest used a placeholder the build expanded. Read the freshest jar, not the source.
+     */
+    static Map<String, Object> verifyFabricMetadata(Path projectDir, String to) throws IOException {
+        Path libs = projectDir.resolve("build/libs");
+        if (!Files.isDirectory(libs)) return Json.map("ok", true, "checked", false, "details", "No packaged jar to inspect.");
+        List<Path> candidates;
+        try (var stream = Files.list(libs)) {
+            candidates = new ArrayList<>(stream.filter(p -> p.toString().endsWith(".jar") && !p.getFileName().toString().matches(".*-(sources|api|javadoc|dev)\\.jar$")).toList());
+        }
+        candidates.sort(Comparator.comparingLong((Path p) -> p.toFile().lastModified()).reversed());
+        for (Path jar : candidates) {
+            try (var zip = new java.util.zip.ZipFile(jar.toFile())) {
+                var entry = zip.getEntry("fabric.mod.json");
+                if (entry == null) continue;
+                Map<String, Object> metadata;
+                try { metadata = Json.object(Json.parse(new String(zip.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8))); }
+                catch (IllegalArgumentException invalid) {
+                    return Json.map("ok", false, "checked", true, "jar", jar.toString(), "details", "The packaged fabric.mod.json is not valid JSON: " + invalid.getMessage());
+                }
+                Object depends = metadata.get("depends") instanceof Map<?, ?> map ? map.get("minecraft") : null;
+                if (depends == null) return Json.map("ok", true, "checked", true, "jar", jar.toString(), "details", "The packaged mod declares no Minecraft dependency.");
+                List<String> ranges = depends instanceof List<?> list ? list.stream().map(String::valueOf).toList() : List.of(String.valueOf(depends));
+                // A list is "any of": Fabric loads the mod when one entry accepts the game.
+                boolean accepted = ranges.stream().anyMatch(range -> Versions.matches(range, to));
+                if (!accepted) return Json.map("ok", false, "checked", true, "jar", jar.toString(), "declared", ranges,
+                        "details", "The packaged mod declares Minecraft " + String.join(" or ", ranges) + " but was ported to " + to
+                                + "; Fabric refuses to load it. Update the property or manifest behind that range and rerun.");
+                return Json.map("ok", true, "checked", true, "jar", jar.toString(), "declared", ranges, "details", "Packaged metadata accepts " + to + ".");
+            }
+        }
+        return Json.map("ok", true, "checked", false, "details", "No packaged fabric.mod.json to inspect.");
     }
     private static void excludeOtherTargets(List<String> tasks, Map<String, Object> model) {
         for (Object item : Json.array(model.get("projects"))) {
@@ -652,6 +734,9 @@ final class Port {
         if (!transaction.startsWith(project.state().resolve("ports"))) throw new IOException("Undo must name this project's recorded port transaction.");
         var state = Json.read(transaction.resolve("transaction.json"));
         if (!project.root.toString().equals(state.get("root"))) throw new IOException("Undo belongs to a different project.");
+        String status = Json.text(state, "status", "");
+        if (status.equals("undone")) throw new IOException("This port was already undone; nothing to restore. Transaction: " + transaction);
+        if (!status.equals("complete")) throw new IOException(interrupted(project, transaction, state));
         var after = Json.object(state.get("after"));
         List<String> removed = ProjectModel.strings(state.get("removed"));
         for (String relative : removed) {
@@ -667,6 +752,30 @@ final class Port {
         }
         for (String relative : after.keySet()) Files.copy(transaction.resolve("before").resolve(relative), project.root.resolve(relative), StandardCopyOption.REPLACE_EXISTING);
         state.put("status", "undone"); Json.save(transaction.resolve("transaction.json"), state);
-        return Json.map("ok", true, "restoredFiles", after.size(), "transaction", transaction.toString());
+        return Json.map("ok", true, "restoredFiles", after.size(), "transaction", transaction.toString(),
+                "details", after.isEmpty() ? "The port changed no files, so there was nothing to restore." : "Restored " + after.size() + " file(s) to their state before the port.");
+    }
+    /**
+     * A port that never finished recorded no "after" state, so an undo cannot prove which files it
+     * changed or that they were not edited since. Refuse, and name what differs from the backups.
+     */
+    static String interrupted(ProjectModel project, Path transaction, Map<String, Object> state) throws Exception {
+        Path backups = transaction.resolve("before");
+        List<String> changed = new ArrayList<>(), missing = new ArrayList<>();
+        for (var entry : Json.object(state.get("before")).entrySet()) {
+            Path file = project.root.resolve(entry.getKey()).normalize();
+            if (!file.startsWith(project.root)) continue;
+            if (!Files.isRegularFile(file)) missing.add(entry.getKey());
+            else if (!Fingerprints.bytes(Files.readAllBytes(file)).equals(entry.getValue())) changed.add(entry.getKey());
+        }
+        StringBuilder out = new StringBuilder("Refusing undo: this port did not finish (status " + Json.text(state, "status", "unknown")
+                + "), so it never recorded which files it changed and an undo could overwrite edits made since. Nothing was restored.");
+        if (changed.isEmpty() && missing.isEmpty()) out.append("\nEvery backed-up file still matches its backup, so the port changed nothing that needs restoring.");
+        else {
+            if (!changed.isEmpty()) out.append("\nDiffer from their backup: ").append(String.join(", ", changed));
+            if (!missing.isEmpty()) out.append("\nMissing now: ").append(String.join(", ", missing));
+            out.append("\nTo restore by hand, copy those files back from ").append(backups).append(" (same relative paths), after checking you made no edits to them since.");
+        }
+        return out.toString();
     }
 }

@@ -86,7 +86,7 @@ import java.util.regex.Pattern;
  */
 public final class MixinAudit {
 	private static final String USAGE = "usage: java MixinAudit [--root <dir>] [--classpath <file>]"
-			+ " [--jar <jar>]... [--src <dir>]... [--quiet]";
+			+ " [--jar <jar>]... [--src <dir>]... [--quiet] [--strict]";
 
 	/** Annotation names that name a method in the target, with the attribute that carries it. */
 	private static final Set<String> INJECTIONS = Set.of("Inject", "Redirect", "ModifyVariable",
@@ -278,7 +278,7 @@ public final class MixinAudit {
 		Path classpathFile = null;
 		List<Path> jars = new ArrayList<>();
 		List<Path> srcs = new ArrayList<>();
-		boolean quiet = false;
+		boolean quiet = false, strict = false;
 		for (int i = 0; i < args.length; i++) {
 			switch (args[i]) {
 				case "--root" -> root = arg(args, ++i);
@@ -286,6 +286,7 @@ public final class MixinAudit {
 				case "--jar" -> jars.add(Path.of(arg(args, ++i)));
 				case "--src" -> srcs.add(Path.of(arg(args, ++i)));
 				case "--quiet" -> quiet = true;
+				case "--strict" -> strict = true;
 				default -> {
 					System.err.println(USAGE);
 					System.exit(2);
@@ -303,19 +304,36 @@ public final class MixinAudit {
 		if (jars.isEmpty()) {
 			jars.addAll(glob(rootDir.resolve(".gradle/loom-cache/minecraftMaven"), "glob:**/*.jar"));
 		}
-		if (jars.isEmpty()) {
-			// Not finding the game jar means the audit could not look, not that a mixin is broken; a
-			// failure here blocked the whole fast lane on Forge repos.
-			System.out.println("note: mixins not audited, no mapped game jar found (pass --classpath or --jar)");
-			System.exit(0);
-		}
-
 		List<Path> sources = new ArrayList<>();
 		for (Path src : srcs) {
 			if (!Files.isDirectory(src)) { continue; }
 			try (var walk = Files.walk(src)) {
 				walk.filter(p -> p.toString().endsWith(".java")).forEach(sources::add);
 			}
+		}
+		int mixinSources = 0;
+		for (Path file : sources) { if (Files.readString(file, StandardCharsets.UTF_8).contains("@Mixin")) { mixinSources++; } }
+		if (mixinSources == 0) {
+			// Nothing to audit is a real answer, not a skipped check.
+			System.out.println("# 0 mixins, nothing to audit");
+			System.exit(0);
+		}
+		if (jars.isEmpty()) {
+			// NeoForge and other non-Loom builds keep the game outside loom-cache: find it by its classes.
+			jars.addAll(gameJarsOnClasspath(classpathFile));
+		}
+		if (jars.isEmpty()) {
+			if (strict) {
+				// A port must not say "mixin targets checked" when no target could be looked up.
+				System.out.println("error: " + plural(mixinSources, "mixin source") + " found but no Minecraft game jar on the compile"
+						+ " classpath, so no mixin target was checked. The port cannot claim its mixins still apply; check that the"
+						+ " build resolves the game, or pass --classpath or --jar.");
+				System.exit(3);
+			}
+			// Not finding the game jar means the audit could not look, not that a mixin is broken; a
+			// failure here blocked the whole fast lane on Forge repos.
+			System.out.println("note: mixins not audited, no mapped game jar found (pass --classpath or --jar)");
+			System.exit(0);
 		}
 		List<String> findings = new ArrayList<>();
 		try (Loader loader = Loader.open(jars)) {
@@ -374,11 +392,25 @@ public final class MixinAudit {
 	}
 
 	/** The mapped game jars the build already put on the compile classpath. */
+	/** Classpath jars that hold the game itself (net/minecraft/server/MinecraftServer.class). */
+	private static List<Path> gameJarsOnClasspath(Path file) throws IOException {
+		List<Path> out = new ArrayList<>();
+		if (file == null || !Files.isRegularFile(file)) { return out; }
+		for (String entry : Files.readString(file, StandardCharsets.UTF_8).trim().split(java.util.regex.Pattern.quote(java.io.File.pathSeparator))) {
+			String e = entry.trim();
+			if (!e.endsWith(".jar") || !Files.isRegularFile(Path.of(e))) { continue; }
+			try (var zip = new java.util.zip.ZipFile(e)) {
+				if (zip.getEntry("net/minecraft/server/MinecraftServer.class") != null) { out.add(Path.of(e)); }
+			} catch (IOException unreadable) { }
+		}
+		return out;
+	}
+
 	private static List<Path> fromClasspath(Path file) throws IOException {
 		List<Path> out = new ArrayList<>();
 		if (file == null || !Files.isRegularFile(file)) { return out; }
 		String raw = Files.readString(file, StandardCharsets.UTF_8).trim();
-		for (String entry : raw.split(";")) {
+		for (String entry : raw.split(java.util.regex.Pattern.quote(java.io.File.pathSeparator))) {
 			String e = entry.trim();
 			if (e.isEmpty()) { continue; }
 			String p = e.replace('/', '\\');
@@ -742,19 +774,18 @@ public final class MixinAudit {
 			return targetStatic ? method[0] + " is static, so the handler must be static too"
 					: "the handler is static but " + method[0] + " isn't";
 		}
-		int offset = 0;
 		if (decl.captures()) {
 			// @Local/@Share/@Coerce parameters depend on what is in scope at the point: not checked.
 			return callbackMismatch(params.get(params.size() - 1), method, loader);
 		}
-		if (given.size() - offset > types.size()) {
-			return "it takes " + (given.size() - offset) + " parameter(s) before the callback but "
+		if (given.size() > types.size()) {
+			return "it takes " + given.size() + " parameter(s) before the callback but "
 					+ method[0] + " takes " + types.size();
 		}
-		for (int i = offset; i < given.size(); i++) {
+		for (int i = 0; i < given.size(); i++) {
 			String mine = typeDescriptor(given.get(i), loader);
 			if (mine == null) { continue; } // unresolvable source type: arity decides
-			String want = types.get(i - offset);
+			String want = types.get(i);
 			if (!mine.equals(want)) {
 				return "parameter " + (i + 1) + " is " + given.get(i) + " (" + mine + ") but "
 						+ method[0] + " takes " + want + " there";

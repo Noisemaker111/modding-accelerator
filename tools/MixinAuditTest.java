@@ -1,4 +1,5 @@
 import java.nio.file.*;
+import java.util.List;
 import java.util.jar.*;
 import javax.tools.ToolProvider;
 
@@ -48,7 +49,20 @@ public final class MixinAuditTest {
 		check(root, jar, mixins, source.replace("void onTooltip", "static void onTooltip"), 1, "the handler is static");
 		// require = 0: Mixin skips an optional injection that finds nothing, so it isn't dead.
 		check(root, jar, mixins, source.replace("method = \"tooltip\", at = @At(\"HEAD\")", "method = \"removed\", at = @At(\"HEAD\"), require = 0"), 0, "optional (require = 0)");
-		System.out.println("PASS nested source types, wrong handler types, removed targets, static handlers and optional injections");
+		// No game jar: a port (--strict) must fail with the reason; the legacy lint lane keeps its note.
+		audit(List.of("--root", root.toString(), "--src", mixins.toString(), "--strict"), 3, "no Minecraft game jar");
+		audit(List.of("--root", root.toString(), "--src", mixins.toString()), 0, "mixins not audited");
+		Path none = Files.createDirectories(root.resolve("no-mixins"));
+		Files.writeString(none.resolve("Plain.java"), "class Plain {}");
+		audit(List.of("--root", root.toString(), "--src", none.toString(), "--strict"), 0, "# 0 mixins, nothing to audit");
+		System.out.println("PASS nested source types, wrong handler types, removed targets, static handlers, optional injections and a missing game jar");
+	}
+	static void audit(List<String> args, int expected, String finding) throws Exception {
+		List<String> command = new java.util.ArrayList<>(List.of(Path.of(System.getProperty("java.home"), "bin", "java").toString(), "-cp", System.getProperty("java.class.path"), "MixinAudit"));
+		command.addAll(args);
+		var process = new ProcessBuilder(command).redirectErrorStream(true).start();
+		String output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+		if (process.waitFor() != expected || !output.contains(finding)) { throw new AssertionError(args + " -> " + output); }
 	}
 	static void check(Path root, Path jar, Path mixins, String source, int expected, String finding) throws Exception {
 		Files.writeString(mixins.resolve("ExampleMixin.java"), source);

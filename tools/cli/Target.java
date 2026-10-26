@@ -10,13 +10,17 @@ import javax.xml.parsers.DocumentBuilderFactory;
 /** Resolve published Fabric pins, explicit dependency selections and one safe manifest retarget. */
 final class Target {
     record Edit(Path file, String before, String after) {}
+    /** A lookup that got no answer (network error, 5xx, 429): never evidence that something is unpublished. */
+    static final class LookupFailure extends IOException {
+        LookupFailure(String message, Throwable cause) { super(message, cause); }
+    }
     /** Accumulates every target change as text, so one file is never edited twice against stale content. */
     static final class Setup {
         final Build build; final Map<String, Object> project; final String to;
         final List<Dependencies.Selection> selections;
         final Map<String, String> replacements = new LinkedHashMap<>(), pins = new LinkedHashMap<>();
         final Map<Path, String> texts = new LinkedHashMap<>(), originals = new LinkedHashMap<>();
-        final List<Map<String, Object>> applied = new ArrayList<>(), blockers = new ArrayList<>();
+        final List<Map<String, Object>> applied = new ArrayList<>(), blockers = new ArrayList<>(), unchecked = new ArrayList<>();
         final List<Path> excluded = new ArrayList<>();
         Setup(Build build, Map<String, Object> project, String to, List<Dependencies.Selection> selections) {
             this.build = build; this.project = project; this.to = to; this.selections = selections;
@@ -270,9 +274,52 @@ final class Target {
             if (Versions.matches(constraint, setup.to)) continue;
             if (!constraint.matches("~?[0-9]+(?:\\.[0-9]+){1,2}"))
                 throw new IOException("Fabric manifest depends.minecraft has a complex constraint " + constraint + " in " + file + "; update its owner manually.");
-            depends.put("minecraft", setup.to);
-            setup.replace(file, before, Json.write(metadata) + (before.endsWith("\n") ? "\n" : ""));
+            setup.replace(file, before, retargetMinecraft(before, constraint, setup.to, file));
         }
+    }
+    /**
+     * Change only the depends.minecraft literal and keep every other byte, so the diff a mod author
+     * reviews is one line instead of a re-serialized manifest.
+     */
+    static String retargetMinecraft(String text, String constraint, String to, Path file) throws IOException {
+        Matcher depends = Pattern.compile("\"depends\"\\s*:\\s*\\{").matcher(text);
+        int start = -1, end = -1;
+        while (depends.find()) {
+            if (depth(text, depends.start()) != 1) continue;
+            if (start >= 0) throw new IOException("Fabric manifest has two depends objects in " + file + "; update its owner manually.");
+            start = depends.end(); end = closing(text, depends.end() - 1);
+        }
+        if (start < 0 || end < 0) throw new IOException("Cannot locate depends in Fabric manifest " + file + "; update its owner manually.");
+        String block = text.substring(start, end);
+        Matcher entry = Pattern.compile("(\"minecraft\"\\s*:\\s*\")" + Pattern.quote(constraint) + "\"").matcher(block);
+        if (!entry.find()) throw new IOException("Cannot locate depends.minecraft \"" + constraint + "\" in " + file + "; update its owner manually.");
+        int at = entry.start(), after = entry.end(); String key = entry.group(1);
+        if (entry.find()) throw new IOException("Fabric manifest names minecraft twice in depends in " + file + "; update its owner manually.");
+        return text.substring(0, start + at) + key + to + "\"" + text.substring(start + after);
+    }
+    /** JSON object depth at a position, ignoring braces inside strings. */
+    private static int depth(String text, int position) {
+        int depth = 0; boolean string = false;
+        for (int i = 0; i < position; i++) {
+            char c = text.charAt(i);
+            if (string) { if (c == '\\') i++; else if (c == '"') string = false; }
+            else if (c == '"') string = true;
+            else if (c == '{' || c == '[') depth++;
+            else if (c == '}' || c == ']') depth--;
+        }
+        return depth;
+    }
+    /** Index of the brace that closes the object opened at {@code open}, or -1. */
+    private static int closing(String text, int open) {
+        int depth = 0; boolean string = false;
+        for (int i = open; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (string) { if (c == '\\') i++; else if (c == '"') string = false; }
+            else if (c == '"') string = true;
+            else if (c == '{') depth++;
+            else if (c == '}' && --depth == 0) return i;
+        }
+        return -1;
     }
     private static String toRange(String to) { return to; }
     static List<Edit> manifestEditsForModel(Map<String, Object> model, String to) throws Exception {
@@ -321,16 +368,28 @@ final class Target {
         Path cache = build.project.state().resolve("metadata/" + Fingerprints.bytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
         if (Files.isRegularFile(cache) && System.currentTimeMillis() - Files.getLastModifiedTime(cache).toMillis() < 3600000) return Files.readString(cache);
         var request = HttpRequest.newBuilder(URI.create(url)).header("User-Agent", "modding-accelerator/local-port-tool").timeout(Duration.ofSeconds(30)).GET().build();
-        var response = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).followRedirects(HttpClient.Redirect.NORMAL).build().send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) throw new IOException("Target dependency lookup failed (HTTP " + response.statusCode() + "): " + url);
+        HttpResponse<String> response;
+        try { response = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).followRedirects(HttpClient.Redirect.NORMAL).build().send(request, HttpResponse.BodyHandlers.ofString()); }
+        catch (IOException transport) { throw unreachable(url, transport); }
+        int status = response.statusCode();
+        if (status == 429 || status >= 500) throw new LookupFailure("Target dependency lookup failed (HTTP " + status + ", the server did not answer the question): " + url, null);
+        if (status != 200) throw new IOException("Target dependency lookup failed (HTTP " + status + "): " + url);
         Files.createDirectories(cache.getParent()); Files.writeString(cache, response.body()); return response.body();
+    }
+    /** A network error names the host and the real exception, never a bare "null". */
+    static LookupFailure unreachable(String url, IOException transport) {
+        String host; try { host = URI.create(url).getHost(); } catch (IllegalArgumentException invalid) { host = url; }
+        String detail = transport.getMessage() == null || transport.getMessage().isBlank() ? transport.getClass().getSimpleName() : transport.getClass().getSimpleName() + ": " + transport.getMessage();
+        return new LookupFailure("Could not reach " + host + " (" + detail + "): " + url, transport);
     }
     /** Download one published artifact into the project's metadata cache; returns its local path. */
     static Path download(Build build, String url) throws Exception {
         Path cache = build.project.state().resolve("metadata/downloads/" + Fingerprints.bytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".jar");
         if (Files.isRegularFile(cache)) return cache;
         var request = HttpRequest.newBuilder(URI.create(url)).header("User-Agent", "modding-accelerator/local-port-tool").timeout(Duration.ofSeconds(60)).GET().build();
-        var response = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).followRedirects(HttpClient.Redirect.NORMAL).build().send(request, HttpResponse.BodyHandlers.ofInputStream());
+        HttpResponse<InputStream> response;
+        try { response = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).followRedirects(HttpClient.Redirect.NORMAL).build().send(request, HttpResponse.BodyHandlers.ofInputStream()); }
+        catch (IOException transport) { throw unreachable(url, transport); }
         if (response.statusCode() != 200) throw new IOException("Target artifact download failed (HTTP " + response.statusCode() + "): " + url);
         Files.createDirectories(cache.getParent());
         try (var input = response.body()) { Files.copy(input, cache, StandardCopyOption.REPLACE_EXISTING); }
