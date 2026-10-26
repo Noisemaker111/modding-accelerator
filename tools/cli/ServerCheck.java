@@ -143,21 +143,31 @@ final class ServerCheck {
         throw new IllegalArgumentException("server-check needs a scenario: pass --file SCENARIO, or put one at .modaccel/server-check.scenario. Run modaccel help server-check for the steps.");
     }
 
+    /** One HTTP call, tried three times: a runner's network can drop for a moment ("No route to host" on macOS CI). */
+    static <T> HttpResponse<T> send(HttpClient client, HttpRequest request, HttpResponse.BodyHandler<T> handler) throws Exception {
+        for (int attempt = 1; ; attempt++) {
+            try { return client.send(request, handler); }
+            catch (java.io.IOException e) {
+                if (attempt == 3) throw new java.io.IOException(request.uri() + " failed 3 times: " + e.getMessage(), e);
+                Thread.sleep(3000L * attempt);
+            }
+        }
+    }
     record Paper(String version, int build, Path jar, Path ids, Path lang, boolean downloaded) { }
     /**
      * The newest Paper build for this Minecraft version from PaperMC's fill API, verified by its SHA-256, cached under
-     * .modaccel/servers in modaccel's home. The cached build is reused until --refresh asks the API again. Its block and
+     * ~/.modaccel/servers (shared by every modaccel install, like the JDK cache). The cached build is reused until --refresh asks the API again. Its block and
      * item ids (the server's own data reports) and en_us translations are extracted once beside it, for the bot.
      */
     Paper paper(String minecraft, Runtimes.Jdk jdk, boolean refresh) throws Exception {
-        Path cache = build.harness.toAbsolutePath().resolve(".modaccel/servers/paper-" + minecraft);
+        Path cache = Path.of(System.getProperty("user.home"), ".modaccel", "servers", "paper-" + minecraft).toAbsolutePath();
         Files.createDirectories(cache);
         Path pin = cache.resolve("build.json");
         boolean downloaded = false;
         if (refresh || !Files.isRegularFile(pin) || !Files.isRegularFile(cache.resolve(Json.text(Json.read(pin), "file", "missing")))) {
             long begin = System.nanoTime();
             HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(20)).build();
-            HttpResponse<String> answer = client.send(HttpRequest.newBuilder(URI.create(FILL + "/versions/" + minecraft + "/builds/latest"))
+            HttpResponse<String> answer = send(client, HttpRequest.newBuilder(URI.create(FILL + "/versions/" + minecraft + "/builds/latest"))
                     .header("User-Agent", "modaccel server-check (github.com/Noisemaker111/modding-accelerator)").timeout(Duration.ofSeconds(30)).GET().build(), HttpResponse.BodyHandlers.ofString());
             if (answer.statusCode() == 404) throw new IOException("PaperMC has no Paper build for Minecraft " + minecraft + " (" + FILL + "/versions/" + minecraft + "/builds/latest answered 404). Pass --server-version with a version Paper ships.");
             if (answer.statusCode() != 200) throw new IOException("PaperMC's API answered " + answer.statusCode() + " for Paper " + minecraft + ": " + answer.body());
@@ -169,7 +179,7 @@ final class ServerCheck {
             Path target = cache.resolve(name);
             if (!Files.isRegularFile(target) || !sha256(target).equals(sha)) {
                 Path partial = cache.resolve(name + ".part");
-                HttpResponse<Path> file = client.send(HttpRequest.newBuilder(URI.create(url)).header("User-Agent", "modaccel server-check").timeout(Duration.ofMinutes(10)).GET().build(), HttpResponse.BodyHandlers.ofFile(partial));
+                HttpResponse<Path> file = send(client, HttpRequest.newBuilder(URI.create(url)).header("User-Agent", "modaccel server-check").timeout(Duration.ofMinutes(10)).GET().build(), HttpResponse.BodyHandlers.ofFile(partial));
                 if (file.statusCode() != 200) throw new IOException("Downloading " + url + " answered " + file.statusCode());
                 String got = sha256(partial);
                 if (!got.equals(sha)) { Files.deleteIfExists(partial); throw new IOException("Paper " + name + " from " + url + " has SHA-256 " + got + ", not the " + sha + " PaperMC published; it was not used."); }

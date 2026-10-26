@@ -129,7 +129,7 @@ jobs:
             ~/.gradle/wrapper
             ~/.gradle/jdks
             .modaccel/jdks
-            .modaccel/servers
+            ~/.modaccel/servers
           key: server-check-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json') }}
       - name: Package without PowerShell
         run: java tools/cli/Bootstrap.java . package --json
@@ -144,7 +144,7 @@ jobs:
             ~/.gradle/wrapper
             ~/.gradle/jdks
             .modaccel/jdks
-            .modaccel/servers
+            ~/.modaccel/servers
           key: server-check-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json') }}
       - name: Outcome receipts on failure
         if: failure()

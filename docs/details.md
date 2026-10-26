@@ -300,7 +300,7 @@ world-check, reload, eval) is not run in CI.
 
 `modaccel server-check --root PLUGIN [--file SCENARIO]` builds the plugin jar with its own task,
 downloads the real Paper server for the plugin's Minecraft version from PaperMC's API (once per
-version, SHA-256 checked, cached in the install's `.modaccel/servers`), starts it headless in
+version, SHA-256 checked, cached in `~/.modaccel/servers`), starts it headless in
 offline mode on 127.0.0.1 with a flat world on a fixed seed, and joins a bot player. **modaccel
 writes `eula=true` for that server only**: it is a throwaway local test server that nobody else can
 join, and the world is wiped every run. The bot is MCProtocolLib; it speaks Minecraft 26.3 only

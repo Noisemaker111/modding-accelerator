@@ -471,13 +471,27 @@ public final class ModaccelServerCheck {
         return out;
     }
     static final boolean WINDOWS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
-    static boolean onPath(String program) { return locate(program) != null; }
+    static boolean onPath(String program) { return locate(program) != null || starts(program); }
+    /** Whether the OS itself can start the program (Windows resolves names a PATH walk can miss). */
+    static boolean starts(String program) {
+        try {
+            Process p = new ProcessBuilder(program, "--version").redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.DISCARD).start();
+            if (!p.waitFor(20, java.util.concurrent.TimeUnit.SECONDS)) p.destroyForcibly();
+            return true;
+        } catch (IOException | InterruptedException e) { return false; }
+    }
     static Path locate(String program) {
-        for (String dir : System.getenv().getOrDefault("PATH", "").split(File.pathSeparator)) {
+        String path = System.getenv("PATH");
+        if (path == null) path = System.getenv("Path");
+        for (String dir : (path == null ? "" : path).split(File.pathSeparator)) {
+            dir = dir.strip();
+            if (dir.length() > 1 && dir.startsWith("\"") && dir.endsWith("\"")) dir = dir.substring(1, dir.length() - 1);
             if (dir.isBlank()) continue;
             for (String ext : WINDOWS ? List.of(".exe", ".cmd", ".bat", "") : List.of("")) {
-                Path p = Path.of(dir, program + ext);
-                if (Files.isRegularFile(p) && (WINDOWS || Files.isExecutable(p))) return p;
+                try {
+                    Path p = Path.of(dir, program + ext);
+                    if (Files.isRegularFile(p) && (WINDOWS || Files.isExecutable(p))) return p;
+                } catch (java.nio.file.InvalidPathException ignored) { }
             }
         }
         return null;
