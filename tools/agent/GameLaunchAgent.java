@@ -8,9 +8,6 @@ import org.objectweb.asm.*;
 final class GameLaunchAgent {
     private GameLaunchAgent() {}
     static void install(Instrumentation instrumentation) {
-        System.getProperties().put("modaccel.launch.quiet", new Consumer<Object>() {
-            public void accept(Object args) { QuietOptions.seedArgs((String[]) args); }
-        });
         instrumentation.addTransformer(new ClassFileTransformer() {
             public byte[] transform(ClassLoader loader, String name, Class<?> type, ProtectionDomain domain, byte[] bytes) {
                 try {
@@ -19,6 +16,9 @@ final class GameLaunchAgent {
                         if (background != null) return background;
                     }
                     if (!Boolean.getBoolean("modaccel.quiet") || !"net/minecraft/client/main/Main".equals(name)) return null;
+                    System.getProperties().put("modaccel.launch.quiet", new Consumer<Object>() {
+                        public void accept(Object args) { QuietOptions.seedArgs((String[]) args); }
+                    });
                     ClassReader reader = new ClassReader(bytes);
                     ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
                     final int[] hooks = {0};

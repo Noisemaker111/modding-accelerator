@@ -64,6 +64,18 @@ jobs:
       - name: Fabric metadata and logic
         working-directory: portable workspace
         run: java -jar build/distributions/modaccel.jar fast --json
+      - name: Legacy launch agent with Gradle
+        if: runner.os == 'Windows'
+        shell: pwsh
+        working-directory: portable workspace
+        run: |
+          $prepared = & java -jar build/distributions/modaccel.jar legacy-agent --json | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or -not $prepared.ok) { throw 'Could not build the legacy launch agent' }
+          $env:JAVA_TOOL_OPTIONS = '"-javaagent:' + $prepared.result.agent + '=legacy" -Dmodaccel.background=true -Dmodaccel.quiet=true'
+          & java tools/tests/LegacyAgentPropertiesTest.java
+          if ($LASTEXITCODE -ne 0) { throw 'Legacy launch agent corrupted system properties' }
+          & java -jar build/distributions/modaccel.jar fast --refresh --json
+          if ($LASTEXITCODE -ne 0) { throw 'Gradle failed with the legacy launch agent enabled' }
       - name: Multi-module FastLane isolation
         working-directory: portable workspace
         run: java tools/tests/FastLaneIsolationTest.java . build/distributions/modaccel.jar
