@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Every game modaccel starts runs silent: no narrator and no sound. The agent's premain calls
- * {@link #seedThisGame()} before Minecraft reads options.txt, so the first-launch accessibility
+ * When the user chooses a quiet game, the agent calls {@link #seedArgs(String[])} before
+ * Minecraft reads options.txt, so the first-launch accessibility
  * screen (which turns the narrator on) never appears and the master volume starts at zero.
  * Compiled into the agent with --release 8, so it uses only Java 8 APIs.
  *
@@ -29,22 +29,17 @@ final class QuietOptions {
     }
     private QuietOptions() {}
 
-    /** Seeds options.txt in this JVM's game directory: {@code --gameDir} if given, else the working directory. */
-    static void seedThisGame() {
-        try { seed(gameDirectory(System.getProperty("sun.java.command", ""), System.getProperty("user.dir"))); }
-        catch (Exception error) { System.err.println("MODACCEL_QUIET_OPTIONS_ERROR " + error); }
-    }
-
-    static Path gameDirectory(String javaCommand, String workingDirectory) {
-        String[] parts = javaCommand.split(" ");
-        for (int i = 0; i + 1 < parts.length; i++) if (parts[i].equals("--gameDir")) {
-            // Paths with spaces arrive split; join until the next option.
-            StringBuilder value = new StringBuilder(parts[i + 1]);
-            for (int j = i + 2; j < parts.length && !parts[j].startsWith("--"); j++) value.append(' ').append(parts[j]);
-            Path dir = Paths.get(value.toString());
-            return dir.isAbsolute() ? dir : Paths.get(workingDirectory).resolve(dir);
-        }
-        return Paths.get(workingDirectory);
+    /** Seeds the game's options before Minecraft reads them. */
+    static void seedArgs(String[] args) {
+        try {
+            Path directory = Paths.get(System.getProperty("user.dir"));
+            for (int i = 0; i + 1 < args.length; i++) if (args[i].equals("--gameDir")) {
+                Path selected = Paths.get(args[i + 1]);
+                directory = selected.isAbsolute() ? selected : directory.resolve(selected);
+                break;
+            }
+            seed(directory);
+        } catch (Exception error) { throw new IllegalStateException("Cannot start Minecraft quietly: could not set its sound and narrator options", error); }
     }
 
     static Path seed(Path gameDirectory) throws IOException {

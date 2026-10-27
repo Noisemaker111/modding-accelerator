@@ -213,6 +213,8 @@ gradle.afterProject { p ->
                 // Fabric's error popup otherwise waits for a click instead of reporting startup failure.
                 t.jvmArgs "-javaagent:${agent}", "-Dmodaccel.root=${root.projectDir.absolutePath}",
                         "-Dmodaccel.fingerprint=${fingerprint}", "-Dmodaccel.token=${token}",
+                        "-Dmodaccel.background=${System.getProperty('modaccel.background', 'false')}",
+                        "-Dmodaccel.quiet=${System.getProperty('modaccel.quiet', 'false')}",
                         "-Dmodaccel.state=${state.absolutePath}", '-Dprismlab.lab.port=', '-Dmodlabbridge.port=',
                         '-Dfabric.noGui=true'
             }
