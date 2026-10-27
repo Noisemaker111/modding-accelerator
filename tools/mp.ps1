@@ -193,14 +193,6 @@ function Start-MpClient {
 	while ((Get-Date) -lt $deadline) {
 		if (Test-MpClient -Port $Port) {
 			$owner = Get-PortOwner -Port $Port
-			# Hide the window the same way the warm client does, so a check never steals focus.
-			if ($owner) {
-				for ($i = 0; $i -lt 40; $i++) {
-					$win = Get-Process -Id $owner.Pid -ErrorAction SilentlyContinue
-					if ($win -and $win.MainWindowHandle -ne 0) { [ModLabWin]::ShowWindow($win.MainWindowHandle, 0) | Out-Null; break }
-					Start-Sleep -Milliseconds 250
-				}
-			}
 			Write-Stage ("$Tag client ready in {0:N1}s (pid {1})" -f $script:stageClock.Elapsed.TotalSeconds, $owner.Pid) 'Green'
 			return $true
 		}

@@ -64,15 +64,6 @@ param(
 	[switch]$Cold
 )
 
-Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-public class ModLabWin {
-  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int n);
-  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
-}
-"@ -ErrorAction SilentlyContinue
-
 $ErrorActionPreference = 'Continue'
 # Two folders, kept apart on purpose. The harness (this script, tools\, knowledge\) stays where it
 # is installed; the repo is whatever -Repo names, and every repo path below - build\, src\, gradlew,
@@ -184,6 +175,20 @@ if (Test-Path $wrapperProps) {
 				Write-Host "gradle $gradleMajor.$gradleMinor needs JDK $want, which is not installed. Put a JDK $want in .tools (or %USERPROFILE%\tools), or bump the wrapper." -ForegroundColor Yellow
 			}
 		}
+	}
+}
+
+$clientVerbs = @('ui', 'node', 'suite', 'scenario', 'mp', 'look', 'bench', 'all')
+if ($Verb -in $clientVerbs) {
+	$preferenceJson = & (Join-Path $harness 'modaccel.cmd') preferences --json
+	if ($LASTEXITCODE -ne 0) { Write-Host 'Could not read game launch preferences.' -ForegroundColor Red; exit 2 }
+	$preferences = $preferenceJson | ConvertFrom-Json
+	if ($preferences.background -or $preferences.quiet) {
+		$preparedJson = & (Join-Path $harness 'modaccel.cmd') legacy-agent --root $root --json
+		if ($LASTEXITCODE -ne 0) { Write-Host 'Could not prepare the requested background or quiet game launch:' -ForegroundColor Red; Write-Host $preparedJson; exit 2 }
+		$prepared = $preparedJson | ConvertFrom-Json
+		$agentOption = '"-javaagent:' + $prepared.result.agent + '=legacy"'
+		$env:JAVA_TOOL_OPTIONS = (($env:JAVA_TOOL_OPTIONS, $agentOption, "-Dmodaccel.background=$($preferences.background.ToString().ToLowerInvariant())", "-Dmodaccel.quiet=$($preferences.quiet.ToString().ToLowerInvariant())") | Where-Object { $_ }) -join ' '
 	}
 }
 
@@ -869,22 +874,8 @@ function Start-WarmClient {
 	$rootPattern = [regex]::Escape($root)
 	# gradlew.bat hands off to java and exits, so the port is the only reliable signal.
 	$deadline = (Get-Date).AddSeconds(300)
-	$hiddenEarly = $false
-	$tries = 0
 	while ((Get-Date) -lt $deadline) {
-		# Hide the game window the moment it exists, not after the title screen: the client renders
-		# into its own framebuffer either way, and a window popping up for 30s steals focus.
-		if (-not $hiddenEarly -and ($tries++ % 4) -eq 0) {
-			$early = Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
-				Where-Object { $_.CommandLine -match 'devlaunchinjector|devlaunch\.Main|BootstrapLauncher|fabric\.dli' -and $_.CommandLine -match $rootPattern } |
-				Select-Object -First 1
-			if ($early) {
-				$win = Get-Process -Id $early.ProcessId -ErrorAction SilentlyContinue
-				if ($win -and $win.MainWindowHandle -ne 0) { [ModLabWin]::ShowWindow($win.MainWindowHandle, 0) | Out-Null; $hiddenEarly = $true }
-			}
-		}
 		if (Test-WarmClient) {
-			# Hide the game window so starting the lab never steals focus.
 			$game = $null
 			for ($i = 0; $i -lt 40; $i++) {
 				$game = Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
@@ -895,11 +886,6 @@ function Start-WarmClient {
 			}
 			if ($game) {
 				Set-Content $clientPid $game.ProcessId -NoNewline
-				for ($i = 0; $i -lt 40; $i++) {
-					$win = Get-Process -Id $game.ProcessId -ErrorAction SilentlyContinue
-					if ($win -and $win.MainWindowHandle -ne 0) { [ModLabWin]::ShowWindow($win.MainWindowHandle, 0) | Out-Null; break }
-					Start-Sleep -Milliseconds 250
-				}
 			}
 			return $true
 		}

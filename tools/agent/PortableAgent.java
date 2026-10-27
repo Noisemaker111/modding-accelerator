@@ -20,14 +20,15 @@ public final class PortableAgent {
     private static Object lastScreen; private static long screenSince;
     private static final Map<String, Object> identity = new LinkedHashMap<String, Object>();
     public static void premain(String args, Instrumentation instrumentation) {
-        QuietOptions.seedThisGame(); // no narrator, no sound: before Minecraft reads options.txt
+        GameLaunchAgent.install(instrumentation);
+        if ("legacy".equals(args)) return;
         // Only JDK classes are referenced by transformed game code. Isolated loaders
         // need neither our jar on their mod path nor access to our implementation classes.
         HotReload.install(instrumentation);
         System.getProperties().put("modaccel.frame", new Consumer<Object>() { public void accept(Object game) { frame(game); } });
         instrumentation.addTransformer(new ClassFileTransformer() {
             public byte[] transform(ClassLoader loader, String name, Class<?> type, ProtectionDomain domain, byte[] bytes) {
-                if (!name.equals("net/minecraft/client/Minecraft") && !name.equals("net/minecraft/client/MinecraftClient")) return null;
+                if (name == null || (!name.equals("net/minecraft/client/Minecraft") && !name.equals("net/minecraft/client/MinecraftClient"))) return null;
                 try {
                     ClassReader reader = new ClassReader(bytes); final ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
                     final int[] hooks = {0};
@@ -83,7 +84,8 @@ public final class PortableAgent {
         try (ServerSocket server = new ServerSocket(0, 16, InetAddress.getByName("127.0.0.1"))) {
             String runtime = java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
             identity.putAll(Json.map("schema", 1, "root", System.getProperty("modaccel.root"), "fingerprint", System.getProperty("modaccel.fingerprint"),
-                    "token", token, "pid", Long.parseLong(runtime), "port", server.getLocalPort(), "clientClass", client.getClass().getName(), "started", System.currentTimeMillis()));
+                    "token", token, "pid", Long.parseLong(runtime), "port", server.getLocalPort(), "clientClass", client.getClass().getName(), "started", System.currentTimeMillis(),
+                    "background", Boolean.getBoolean("modaccel.background"), "quiet", Boolean.getBoolean("modaccel.quiet")));
             Json.save(Paths.get(System.getProperty("modaccel.state"), "agent.json"), identity);
             System.out.println("MODACCEL_READY " + Json.write(identity)); System.out.flush();
             while (true) {
