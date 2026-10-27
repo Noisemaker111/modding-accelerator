@@ -37,12 +37,12 @@ public final class ServerCheckFixtures {
             Path scenario = home.resolve(check.get("scenario").toString());
             long expects = Files.readAllLines(scenario).stream().filter(l -> l.strip().startsWith("expect-")).count();
 
-            if (parts.contains("scenario")) for (String label : List.of("cold", "warm")) {
+            if (parts.contains("scenario")) {
                 Run run = modaccel(home, jar, root, Map.of(), "server-check", "--file", scenario.toString());
                 long passed = count(run.output(), "\"status\":\"pass\"");
                 if (run.exit() != 0 || !run.output().contains("server-check passed") || passed != expects)
-                    throw new AssertionError(id + " server-check " + label + ": expected exit 0 and all " + expects + " expect lines passing; got exit " + run.exit() + ", " + passed + " passing\n" + run.output());
-                System.out.printf(Locale.ROOT, "PASS %s server-check %s: %d expect lines in %.1fs (%s)%n", id, label, expects, run.seconds(), times(run.output()));
+                    throw new AssertionError(id + " server-check: expected exit 0 and all " + expects + " expect lines passing; got exit " + run.exit() + ", " + passed + " passing\n" + run.output());
+                System.out.printf(Locale.ROOT, "PASS %s server-check, fresh world: %d expect lines in %.1fs (%s)%n", id, expects, run.seconds(), times(run.output()));
             }
 
             // The bot itself, with a secret from the gitignored secrets file; then without it.

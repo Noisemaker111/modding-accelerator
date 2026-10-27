@@ -83,8 +83,9 @@ public final class PortableTests {
             if (route == null || route.stepsCovered(Json.text(rule, "jump", ""), names).isEmpty()) throw new AssertionError(id + ": no route " + Json.text(rule, "jump", "") + " runs it");
             learned++;
         }
-        for (Object item : Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules"))) {
-            var rule = Json.object(item); if (!"glstatemanager-opengl".equals(rule.get("id"))) continue;
+        {
+            var rule = Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules")).stream().map(Json::object)
+                    .filter(r -> "glstatemanager-opengl".equals(r.get("id"))).findFirst().orElseThrow(() -> new AssertionError("knowledge/fixes.json has no glstatemanager-opengl rule"));
             String log = "HUD.java:3: error: cannot find symbol\nimport com.mojang.blaze3d.platform.GlStateManager;\n  symbol:   class GlStateManager\n  location: package com.mojang.blaze3d.platform\n";
             check(java.util.regex.Pattern.compile(rule.get("match").toString()).matcher(log).find()
                     && Port.rewrite(rule, "import com.mojang.blaze3d.platform.GlStateManager;\nimport com.mojang.blaze3d.platform.NativeImage;\n")

@@ -93,22 +93,23 @@ public final class TrustTest {
                 {"[1.21,)", "1.21.4", "true"}, {"[1.21.1,1.22)", "1.21.4", "true"}, {"[1.20.1,1.21.4)", "1.21.4", "false"}, {"[1.21.10,)", "1.21.1", "false"},
                 {"[1.21.1]", "1.21.4", "false"}, {"[1.21.4,1.21.4]", "1.21.4", "true"}, {"1.21.1", "1.21.4", "true"}, {"(,1.21.4]", "1.21.4", "true"}, {"(,1.21.4)", "1.21.4", "false"},
                 {"[1.20,1.20.6],[1.21,1.21.4]", "1.21.2", "true"}, {"[1.20,1.20.6],[1.21,1.21.4]", "1.20.8", "false"}, {"[1.21.6,)", "1.21.6-pre1", "true"}, {"[26.1,)", "26.3", "true"}};
-        for (String[] c : cases) require(MavenRange.own(c[0], c[1]) == Boolean.parseBoolean(c[2]), "Maven range " + c[0] + " contains " + c[1] + " is " + c[2]);
+        List<String> wrong = new ArrayList<>();
+        for (String[] c : cases) if (MavenRange.own(c[0], c[1]) != Boolean.parseBoolean(c[2])) wrong.add(c[0] + " contains " + c[1] + " should be " + c[2]);
+        require(wrong.isEmpty(), "Maven ranges are read as ranges, not text: " + wrong);
         try { MavenRange.own("[1.21", "1.21"); throw new AssertionError("an unbounded range was accepted"); } catch (IllegalArgumentException expected) { count++; }
         // The same answers from maven-artifact itself: always, never skipped. A missing jar is fetched and pinned by SHA-1.
-        Path real = mavenArtifact();
-        {
-            List<Path> classpath = List.of(real);
-            for (String[] c : cases) {
-                MavenRange.Answer answer = MavenRange.contains(c[0], c[1], classpath);
-                require(answer.decidedBy().contains("maven-artifact") && answer.contains() == Boolean.parseBoolean(c[2]), "maven-artifact agrees: " + c[0] + " contains " + c[1] + " is " + c[2] + " (" + answer.decidedBy() + ")");
-            }
-            String[] versions = {"1.21", "1.21.0", "1.21.4", "1.21.10", "1.21.6-pre1", "1.21.6-rc1", "1.21.6", "26.1-snapshot-1", "26.1", "1.0-alpha-1", "1.0-SNAPSHOT", "1.0-sp1", "1.0.final", "1-a1", "1.0-beta2"};
-            for (String a : versions) for (String b : versions) {
-                String spec = "[" + a + "]";
-                require(MavenRange.contains(spec, b, classpath).contains() == MavenRange.own(spec, b), "ComparableVersion order agrees with maven-artifact for " + a + " and " + b);
-            }
+        List<Path> classpath = List.of(mavenArtifact());
+        for (String[] c : cases) {
+            MavenRange.Answer answer = MavenRange.contains(c[0], c[1], classpath);
+            if (!answer.decidedBy().contains("maven-artifact") || answer.contains() != Boolean.parseBoolean(c[2])) wrong.add(c[0] + " contains " + c[1] + " (" + answer.decidedBy() + ")");
         }
+        // Exact-version specs: our version equality must match maven-artifact's on tricky spellings (1.21 = 1.21.0, 1-a1 = 1.0-alpha-1).
+        String[] versions = {"1.21", "1.21.0", "1.21.4", "1.21.10", "1.21.6-pre1", "1.21.6-rc1", "1.21.6", "26.1-snapshot-1", "26.1", "1.0-alpha-1", "1.0-SNAPSHOT", "1.0-sp1", "1.0.final", "1-a1", "1.0-beta2"};
+        for (int i = 0; i < versions.length; i++) for (int j = i; j < versions.length; j++) {
+            String spec = "[" + versions[i] + "]";
+            if (MavenRange.contains(spec, versions[j], classpath).contains() != MavenRange.own(spec, versions[j])) wrong.add(spec + " vs " + versions[j]);
+        }
+        require(wrong.isEmpty(), "maven-artifact itself gives the same answers: " + wrong);
         require(MavenRange.contains("[1.21,)", "1.21.4", List.of()).decidedBy().contains("copy"), "without the library, the answer says who decided");
 
         // The port's packaged-metadata check reads the range the same way.

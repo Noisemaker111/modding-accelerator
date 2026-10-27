@@ -188,10 +188,8 @@ public final class HardeningTest {
     }
     /** A Gradle timeout names its limit, whether it was a cold first setup, and how to raise it. */
     static void timeouts(Path scratch) throws Exception {
-        require(Build.gradleTimeout(true, null) == Build.COLD_TIMEOUT && Build.gradleTimeout(false, "") == Build.WARM_TIMEOUT && Build.COLD_TIMEOUT == 900 && Build.WARM_TIMEOUT == 900,
-                "a cold first setup and a warm build each get 15 minutes");
-        require(Build.gradleTimeout(false, " 3600 ") == 3600 && Build.gradleTimeout(true, "120") == 120, "MODACCEL_GRADLE_TIMEOUT overrides both");
-        try { Build.gradleTimeout(true, "soon"); throw new AssertionError("bad timeout accepted"); }
+        require(Build.gradleTimeout(" 3600 ") == 3600 && Build.gradleTimeout("") == Build.GRADLE_TIMEOUT, "MODACCEL_GRADLE_TIMEOUT overrides the default, and blank means the default");
+        try { Build.gradleTimeout("soon"); throw new AssertionError("bad timeout accepted"); }
         catch (IllegalArgumentException expected) { require(expected.getMessage().contains("MODACCEL_GRADLE_TIMEOUT"), "a bad value names the variable"); }
         String message = Build.timeoutMessage(2700, true, scratch.resolve("metadata.log"));
         require(message.contains("2700 s") && message.contains("cold first setup") && message.contains("MODACCEL_GRADLE_TIMEOUT=5400") && message.contains("metadata.log"),

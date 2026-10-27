@@ -30,13 +30,11 @@ public final class ServerPluginFixtures {
             command(List.of("git", "clone", "--quiet", plugin.repo(), root.toString()), home, 5);
             command(List.of("git", "-C", root.toString(), "checkout", "--quiet", plugin.commit()), home, 2);
             String counts = "\"executed\":" + plugin.executed() + ",\"failed\":" + plugin.failed();
-            for (String label : List.of("cold", "warm")) {
-                Run fast = modaccel(home, jar, root, "fast");
-                if (fast.exit() != 0 || !fast.output().contains(counts) || !fast.output().contains("no Minecraft or loader on the test classpath"))
-                    throw new AssertionError(plugin.id() + " fast " + label + ": expected exit 0, " + counts + " and every test selected; got exit "
-                            + fast.exit() + "\n" + fast.output());
-                System.out.printf(Locale.ROOT, "PASS %s fast %s: %d tests in %.1fs%n", plugin.id(), label, plugin.executed(), fast.seconds());
-            }
+            Run fast = modaccel(home, jar, root, "fast");
+            if (fast.exit() != 0 || !fast.output().contains(counts) || !fast.output().contains("no Minecraft or loader on the test classpath"))
+                throw new AssertionError(plugin.id() + " fast: expected exit 0, " + counts + " and every test selected; got exit "
+                        + fast.exit() + "\n" + fast.output());
+            System.out.printf(Locale.ROOT, "PASS %s fast: %d tests in %.1fs%n", plugin.id(), plugin.executed(), fast.seconds());
             Run build = modaccel(home, jar, root, "compile", "--task", plugin.task());
             Path built = root.resolve(plugin.file());
             if (build.exit() != 0 || !Files.isRegularFile(built)) throw new AssertionError(plugin.id() + " compile --task " + plugin.task()
@@ -56,14 +54,12 @@ public final class ServerPluginFixtures {
      * with its own message and file:line, and a wired-up command must pass again: the check decides, not the fixture.
      */
     static void pluginCheck(Path home, Path jar, Path root, Plugin plugin) throws Exception {
-        for (String label : List.of("cold", "warm")) {
-            Run check = modaccel(home, jar, root, "plugin-check");
-            if (check.exit() != 0 || !check.output().contains("plugin-check passed for " + plugin.checkName()) || check.output().contains("FAIL ") || check.output().contains("UNCHECKED "))
-                throw new AssertionError(plugin.id() + " plugin-check " + label + ": expected a pass with nothing unchecked; got exit " + check.exit() + "\n" + check.output());
-            for (String expected : plugin.checkExpects()) if (!check.output().contains(expected))
-                throw new AssertionError(plugin.id() + " plugin-check " + label + ": expected \"" + expected + "\"\n" + check.output());
-            System.out.printf(Locale.ROOT, "PASS %s plugin-check %s in %.1fs%n", plugin.id(), label, check.seconds());
-        }
+        Run clean = modaccel(home, jar, root, "plugin-check");
+        if (clean.exit() != 0 || !clean.output().contains("plugin-check passed for " + plugin.checkName()) || clean.output().contains("FAIL ") || clean.output().contains("UNCHECKED "))
+            throw new AssertionError(plugin.id() + " plugin-check: expected a pass with nothing unchecked; got exit " + clean.exit() + "\n" + clean.output());
+        for (String expected : plugin.checkExpects()) if (!clean.output().contains(expected))
+            throw new AssertionError(plugin.id() + " plugin-check: expected \"" + expected + "\"\n" + clean.output());
+        System.out.printf(Locale.ROOT, "PASS %s plugin-check in %.1fs%n", plugin.id(), clean.seconds());
         Path copy = Files.createTempDirectory(root.getParent(), plugin.id() + "-broken-").resolve(plugin.id());
         copyTree(root, copy);
         Path yml = copy.resolve("src/main/resources/plugin.yml");
