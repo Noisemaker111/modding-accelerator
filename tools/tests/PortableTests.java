@@ -83,8 +83,9 @@ public final class PortableTests {
             if (route == null || route.stepsCovered(Json.text(rule, "jump", ""), names).isEmpty()) throw new AssertionError(id + ": no route " + Json.text(rule, "jump", "") + " runs it");
             learned++;
         }
-        for (Object item : Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules"))) {
-            var rule = Json.object(item); if (!"glstatemanager-opengl".equals(rule.get("id"))) continue;
+        {
+            var rule = Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules")).stream().map(Json::object)
+                    .filter(r -> "glstatemanager-opengl".equals(r.get("id"))).findFirst().orElseThrow(() -> new AssertionError("knowledge/fixes.json has no glstatemanager-opengl rule"));
             String log = "HUD.java:3: error: cannot find symbol\nimport com.mojang.blaze3d.platform.GlStateManager;\n  symbol:   class GlStateManager\n  location: package com.mojang.blaze3d.platform\n";
             check(java.util.regex.Pattern.compile(rule.get("match").toString()).matcher(log).find()
                     && Port.rewrite(rule, "import com.mojang.blaze3d.platform.GlStateManager;\nimport com.mojang.blaze3d.platform.NativeImage;\n")
@@ -193,6 +194,17 @@ public final class PortableTests {
         Path layered = root.resolve("custom-client/Layered.java"); Files.createDirectories(layered.getParent()); Files.writeString(layered, "class Layered {}\n");
         String layeredHash = Fingerprints.build(model, project, init); Files.writeString(layered, "class Layered { int n; }\n");
         check(!layeredHash.equals(Fingerprints.build(model, project, init)), "custom source layouts cannot bypass the build identity");
+        // A jar Gradle makes inside the project (NeoGradle's ng_dummy_ng repository) is rewritten by the first launch: its
+        // bytes must not count, or a never-launched copy's first check is refused. A jar the author keeps in libs/ must count.
+        Path made = root.resolve(".gradle/repositories/ng_dummy_ng/neoforge.jar"), kept = root.resolve("libs/helper.jar");
+        Files.createDirectories(made.getParent()); Files.createDirectories(kept.getParent()); Files.writeString(made, "a"); Files.writeString(kept, "a");
+        Map<String, Object> jars = Json.map("projects", List.of(Json.map("directory", root.toString(), "buildFile", root.resolve("build.gradle.kts").toString(), "sourceSets", List.of(),
+                "compile", List.of(Json.map("sources", List.of(), "classpath", List.of(made.toString(), kept.toString()))))));
+        String jarHash = Fingerprints.build(jars, project, init); Files.writeString(made, "b");
+        check(jarHash.equals(Fingerprints.build(jars, project, init)), "a classpath jar Gradle rewrites inside the project's .gradle folder does not make the project look changed");
+        Files.writeString(kept, "b");
+        check(!jarHash.equals(Fingerprints.build(jars, project, init)), "a changed jar in the project's libs folder does make it look changed");
+        check(Fingerprints.changed(Map.of("x", "1"), Map.of("x", "2")).equals(List.of("x (changed)")), "a refused check names the file that changed");
         Path stale = root.resolve("build/test-results/modaccelPure/TEST-old.xml"); Files.createDirectories(stale.getParent()); Files.writeString(stale, "<testsuite tests=\"8\" failures=\"0\" errors=\"0\" skipped=\"0\"/>");
         check(((Number)TestResults.read(model, "modaccelPure", "fresh-run").get("executed")).intValue() == 0, "old successful XML cannot make an empty run pass");
         Build build = new Build(project, home, "", new Modaccel.Report(root, "test")); Port port = new Port(build, model);

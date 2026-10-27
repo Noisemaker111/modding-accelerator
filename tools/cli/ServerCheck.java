@@ -14,7 +14,8 @@ import java.util.zip.*;
  * protocol bot player. For a Paper/Bukkit plugin the server is the real Paper server for the plugin's API
  * version, downloaded from PaperMC's official API (fill.papermc.io) and cached per version and build; the
  * plugin's own jar task builds the jar. tools/servercheck/ModaccelServerCheck runs the scenario in its own
- * JVM with MCProtocolLib (knowledge/mcprotocollib.json) and reports each step.
+ * JVM with MCProtocolLib (knowledge/mcprotocollib.json) and reports each step. The bot speaks the newest
+ * protocol it has; a server on any other version is joined through ViaProxy (knowledge/viaproxy.json).
  */
 final class ServerCheck {
     static final List<String> SOURCES = List.of("tools/servercheck/ModaccelServerCheck.java", "tools/cli/Json.java");
@@ -33,10 +34,30 @@ final class ServerCheck {
         }
         return null;
     }
-    static List<String> botVersions(Path harness) throws IOException {
-        List<String> out = new ArrayList<>();
-        for (Object r : Json.array(Json.read(harness.resolve("knowledge/mcprotocollib.json")).get("releases"))) out.add(Json.text(Json.object(r), "minecraft", ""));
-        return out;
+    /** The bot for a server it cannot speak to directly: the newest release, joined through ViaProxy. */
+    static Bot newestBot(Path harness) throws IOException {
+        var knowledge = Json.read(harness.resolve("knowledge/mcprotocollib.json"));
+        List<Object> releases = Json.array(knowledge.get("releases"));
+        var release = Json.object(releases.get(releases.size() - 1));
+        return new Bot(Json.text(release, "minecraft", ""), Json.text(release, "version", ""), Json.array(knowledge.get("repositories")).stream().map(String::valueOf).toList());
+    }
+    /** ViaProxy's name for a Minecraft version from its own --list-versions: exact (1.21.4), a range (1.16.4-1.16.5) or a line (1.8.x). */
+    static String viaName(String minecraft, List<String> names) {
+        for (String name : names) {
+            if (name.equals(minecraft)) return name;
+            if (name.endsWith(".x")) { String line = name.substring(0, name.length() - 2); if (minecraft.equals(line) || minecraft.startsWith(line + ".")) return name; }
+            int dash = name.indexOf('-');
+            if (dash > 0 && compare(name.substring(0, dash), minecraft) <= 0 && compare(minecraft, name.substring(dash + 1)) <= 0) return name;
+        }
+        return null;
+    }
+    static int compare(String a, String b) {
+        String[] x = a.split("\\."), y = b.split("\\.");
+        for (int i = 0; i < Math.max(x.length, y.length); i++) {
+            int u = i < x.length ? Integer.parseInt(x[i]) : 0, v = i < y.length ? Integer.parseInt(y[i]) : 0;
+            if (u != v) return Integer.compare(u, v);
+        }
+        return 0;
     }
     /** The Minecraft version of a Paper API version: 26.3.build.214-stable is 26.3, 1.21.10-R0.1-SNAPSHOT is 1.21.10. */
     static String minecraft(String api) {
@@ -45,13 +66,22 @@ final class ServerCheck {
         Matcher plain = Pattern.compile("^(\\d+\\.\\d+(?:\\.\\d+)?)").matcher(api);
         return plain.find() ? plain.group(1) : api;
     }
-    /** Paper 26.x needs Java 25, 1.20.5 and later need 21, older lines 17. */
+    /**
+     * The Java a Paper server of this version runs on: 26.x needs 25, 1.20.5 and later 21, 1.17 to 1.20.4 17, 1.12 to
+     * 1.16 11, older lines 8. Lines up to 1.16 break on a newer Java, so serverJdk gives them exactly this one.
+     */
     static int serverJava(String minecraft) {
         String[] p = minecraft.split("\\.");
         int major = Integer.parseInt(p[0]), minor = p.length > 1 ? Integer.parseInt(p[1]) : 0, patch = p.length > 2 ? Integer.parseInt(p[2]) : 0;
         if (major >= 26) return 25;
         if (major == 1 && (minor > 20 || minor == 20 && patch >= 5)) return 21;
-        return 17;
+        if (major == 1 && minor >= 17) return 17;
+        if (major == 1 && minor >= 12) return 11;
+        return 8;
+    }
+    static Runtimes.Jdk serverJdk(Path harness, String minecraft) throws IOException {
+        int java = serverJava(minecraft);
+        return java <= 11 ? Runtimes.ensureExact(harness, java) : Runtimes.ensureAtLeast(harness, java);
     }
 
     Map<String, Object> run(Modaccel.Options options) throws Exception {
@@ -65,9 +95,7 @@ final class ServerCheck {
         if (projects.size() > 1) return unchecked("Several projects have a plugin descriptor (" + String.join(", ", projects.stream().map(p -> p.get("path").toString()).toList()) + "). Pick one with --project.");
         Map<String, Object> project = projects.get(0);
         String minecraft = options.get("server-version", minecraft(api.version()));
-        Bot bot = bot(build.harness, minecraft);
-        if (bot == null) return unchecked("The plugin builds against " + api.kind() + " " + api.version() + " (Minecraft " + minecraft + "), and server-check's bot has no protocol release for that version (it joins "
-                + String.join(", ", botVersions(build.harness)) + "). Nothing ran. Pass --server-version to run it on one of those, or add the version to knowledge/mcprotocollib.json once the bot has been seen joining it.");
+        Bot direct = bot(build.harness, minecraft), bot = direct != null ? direct : newestBot(build.harness);
         Path scenario = scenario(options);
 
         // One Gradle run: the plugin's own jar task, and the bot library resolved next to it.
@@ -87,14 +115,18 @@ final class ServerCheck {
         String jar = Json.text(resolved, "jar", "");
         if (jar.isEmpty() || !Files.isRegularFile(Path.of(jar))) return unchecked("The plugin's jar task produced no jar file, so there is nothing to put on the server.");
 
-        int java = serverJava(minecraft);
-        Runtimes.Jdk jdk = Runtimes.ensureAtLeast(build.harness, java);
-        Paper paper = paper(minecraft, jdk, options.has("refresh"));
+        // The bot and ViaProxy run on the bot's own Java; the server on its version's Java.
+        Runtimes.Jdk jdk = Runtimes.ensureAtLeast(build.harness, serverJava(bot.minecraft())), serverJdk = direct != null ? jdk : serverJdk(build.harness, minecraft);
+        Paper paper = paper(minecraft, serverJdk, options.has("refresh"), direct != null);
+        // Through ViaProxy the bot sees the world in its own version's ids, so they come from that version's Paper.
+        Paper names = direct != null ? paper : paper(bot.minecraft(), jdk, false, true);
+        Map<String, Object> proxy = direct != null ? null : viaProxy(jdk, minecraft);
         Path tools = tools(jdk, classpath);
         Path serverDir = build.project.state().resolve("server-check/paper-" + minecraft);
         Path result = work.resolve("result.json"), checkSpec = work.resolve("check-spec.json");
-        List<String> serverCommand = List.of(jdk.java().toString(), "-Xms512M", "-Xmx2G", "-DIReallyKnowWhatIAmDoingISwear=true", "-Dpaper.disableChannelLimit=true",
-                "-jar", paper.jar().toString(), "--nogui");
+        List<String> serverCommand = List.of(serverJdk.java().toString(), "-Xms512M", "-Xmx2G", "-DIReallyKnowWhatIAmDoingISwear=true", "-Dpaper.disableChannelLimit=true",
+                // Before 1.13 the server's option parser has no --nogui and prints its help instead; it takes the bare word.
+                "-jar", paper.jar().toString(), compare(minecraft, "1.13") < 0 ? "nogui" : "--nogui");
         List<String> extraPlugins = new ArrayList<>();
         if (options.values.containsKey("plugins")) {
             Path folder = build.project.root.resolve(options.get("plugins", "")).normalize();
@@ -106,9 +138,10 @@ final class ServerCheck {
         Path ignore = build.project.root.resolve(".modaccel/.gitignore");
         if (!Files.exists(ignore)) { Files.createDirectories(ignore.getParent()); Files.writeString(ignore, "# Written by modaccel: secrets and test-server files stay out of git.\n*\n"); }
         Json.save(checkSpec, Json.map("root", build.project.root.toString(), "scenario", scenario.toString(), "result", result.toString(), "logDir", work.toString(),
-                "secretsFile", build.project.root.resolve(".modaccel/secrets.properties").toString(), "ids", paper.ids().toString(), "lang", paper.lang().toString(),
-                "botLibrary", "MCProtocolLib " + bot.version() + ", Minecraft " + bot.minecraft(),
-                "server", Json.map("kind", "paper", "dir", serverDir.toString(), "command", serverCommand, "plugins", serverPlugins, "startSeconds", 240)));
+                "secretsFile", build.project.root.resolve(".modaccel/secrets.properties").toString(), "ids", names.ids().toString(), "lang", names.lang().toString(),
+                "botLibrary", "MCProtocolLib " + bot.version() + ", Minecraft " + bot.minecraft() + (proxy == null ? "" : ", through ViaProxy " + proxy.get("version") + " to Minecraft " + minecraft),
+                "proxy", proxy,
+                "server", Json.map("kind", "paper", "minecraft", minecraft, "dir", serverDir.toString(), "command", serverCommand, "plugins", serverPlugins, "startSeconds", 240)));
         List<String> command = new ArrayList<>(List.of(jdk.java().toString(), "-Xshare:auto", "-Djava.awt.headless=true", "-cp", tools + File.pathSeparator + String.join(File.pathSeparator, classpath),
                 "ModaccelServerCheck", checkSpec.toString()));
         Run.Result check = Run.command(command, build.project.root, Map.of(), build.report.log("server-check"), TIMEOUT_SECONDS);
@@ -120,7 +153,8 @@ final class ServerCheck {
         Map<String, Object> out = Json.read(result);
         out.put("tier", "server-check");
         out.put("server", Json.map("kind", "paper", "minecraft", minecraft, "build", paper.build(), "jar", paper.jar().toString(), "downloaded", paper.downloaded(), "dir", serverDir.toString()));
-        out.put("bot", Json.map("library", "MCProtocolLib", "version", bot.version(), "minecraft", bot.minecraft()));
+        out.put("bot", Json.map("library", "MCProtocolLib", "version", bot.version(), "minecraft", bot.minecraft(),
+                "through", proxy == null ? null : Json.map("proxy", "ViaProxy", "version", proxy.get("version"), "targetVersion", proxy.get("targetVersion"))));
         out.put("plugin", Json.map("jar", jar, "jarTask", resolved.get("jarTask")));
         out.put("gameVerified", Boolean.TRUE.equals(out.get("ok")));
         out.put("seconds", (System.nanoTime() - begin) / 1e9);
@@ -159,7 +193,7 @@ final class ServerCheck {
      * ~/.modaccel/servers (shared by every modaccel install, like the JDK cache). The cached build is reused until --refresh asks the API again. Its block and
      * item ids (the server's own data reports) and en_us translations are extracted once beside it, for the bot.
      */
-    Paper paper(String minecraft, Runtimes.Jdk jdk, boolean refresh) throws Exception {
+    Paper paper(String minecraft, Runtimes.Jdk jdk, boolean refresh, boolean names) throws Exception {
         Path cache = Path.of(System.getProperty("user.home"), ".modaccel", "servers", "paper-" + minecraft).toAbsolutePath();
         Files.createDirectories(cache);
         Path pin = cache.resolve("build.json");
@@ -193,8 +227,50 @@ final class ServerCheck {
         Path jar = cache.resolve(Json.text(pinned, "file", ""));
         int number = ((Number) pinned.get("build")).intValue();
         Path ids = cache.resolve("ids-" + number + ".json"), lang = cache.resolve("en_us-" + number + ".json");
+        if (!names) return new Paper(minecraft, number, jar, null, null, downloaded);
         if (!Files.isRegularFile(ids) || !Files.isRegularFile(lang)) reports(cache, jar, jdk, ids, lang);
         return new Paper(minecraft, number, jar, ids, lang, downloaded);
+    }
+
+    /**
+     * ViaProxy for a server the bot cannot speak to directly: the pinned jar (SHA-256 checked, cached under
+     * ~/.modaccel/tools like Paper) and its own name for the server's version. Throws when ViaProxy cannot reach it.
+     */
+    Map<String, Object> viaProxy(Runtimes.Jdk jdk, String minecraft) throws Exception {
+        var pin = Json.read(build.harness.resolve("knowledge/viaproxy.json"));
+        String version = Json.text(pin, "version", ""), file = Json.text(pin, "file", ""), sha = Json.text(pin, "sha256", "");
+        Path cache = Path.of(System.getProperty("user.home"), ".modaccel", "tools", "viaproxy-" + version).toAbsolutePath();
+        Files.createDirectories(cache);
+        Path jar = cache.resolve(file);
+        if (!Files.isRegularFile(jar) || !sha256(jar).equals(sha)) {
+            long begin = System.nanoTime();
+            HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(20)).build();
+            Path partial = cache.resolve(file + ".part");
+            HttpResponse<Path> got = send(client, HttpRequest.newBuilder(URI.create(Json.text(pin, "url", ""))).header("User-Agent", "modaccel server-check").timeout(Duration.ofMinutes(10)).GET().build(), HttpResponse.BodyHandlers.ofFile(partial));
+            if (got.statusCode() != 200) throw new IOException("Downloading ViaProxy " + version + " answered " + got.statusCode() + " (" + pin.get("url") + ").");
+            String actual = sha256(partial);
+            if (!actual.equals(sha)) { Files.deleteIfExists(partial); throw new IOException("ViaProxy " + file + " has SHA-256 " + actual + ", not the pinned " + sha + "; it was not used."); }
+            Files.move(partial, jar, StandardCopyOption.REPLACE_EXISTING);
+            build.report.stages.add(Json.map("name", "viaproxy-download", "seconds", (System.nanoTime() - begin) / 1e9, "file", jar.toString()));
+        }
+        Path list = cache.resolve("versions.txt");
+        if (!Files.isRegularFile(list)) {
+            Path run = cache.resolve("run"); Files.createDirectories(run);
+            var listed = Run.command(List.of(jdk.java().toString(), "-jar", jar.toString(), "cli", "--list-versions"), run, Map.of("VP_RUN_DIR", run.toString()), build.report.log("viaproxy-versions"), 120);
+            List<String> names = new ArrayList<>();
+            for (String line : Files.readAllLines(listed.log(), StandardCharsets.UTF_8)) {
+                Matcher m = Pattern.compile("\\(ViaProxy\\)\\s+(\\d+\\.\\d+(?:\\.\\d+|\\.x)?(?:-\\d+\\.\\d+(?:\\.\\d+)?)?)\\s*$").matcher(line.replaceAll("\u001B\\[[0-9;]*m", ""));
+                if (m.find()) names.add(m.group(1));
+            }
+            if (names.isEmpty()) throw new IOException("ViaProxy " + version + " listed no versions. " + Run.tail(listed.log()));
+            Files.write(list, names, StandardCharsets.UTF_8);
+        }
+        List<String> names = Files.readAllLines(list, StandardCharsets.UTF_8);
+        String target = viaName(minecraft, names);
+        if (target == null) throw new IOException("The bot cannot join a Minecraft " + minecraft + " server: ViaProxy " + version + ", which translates for it, reaches "
+                + names.get(0) + " to " + names.get(names.size() - 1) + " but has no " + minecraft + ".");
+        return Json.map("version", version, "targetVersion", target, "command", List.of(jdk.java().toString(), "-jar", jar.toString(), "cli"),
+                "dir", build.project.state().resolve("server-check/viaproxy").toString());
     }
 
     /** Paperclip patches the server once in the cache; the server's own data generator then writes its block and item ids. */
@@ -276,7 +352,9 @@ final class ServerCheck {
         var bot = Json.object(out.getOrDefault("bot", Json.map()));
         boolean ok = Boolean.TRUE.equals(out.get("ok"));
         b.append(ok ? "server-check passed" : "server-check FAILED").append(" on Paper ").append(server.get("minecraft")).append(" build ").append(server.get("build"))
-                .append(", bot MCProtocolLib ").append(bot.get("version")).append(".\n");
+                .append(", bot MCProtocolLib ").append(bot.get("version"));
+        if (bot.get("through") instanceof Map<?, ?> through) b.append(" (Minecraft ").append(bot.get("minecraft")).append(") through ViaProxy ").append(Json.object(through).get("version"));
+        b.append(".\n");
         double serverStart = 0, scenario = 0;
         for (Object s : Json.array(out.get("steps"))) {
             var step = Json.object(s);

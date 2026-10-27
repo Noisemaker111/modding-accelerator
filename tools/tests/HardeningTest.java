@@ -52,6 +52,12 @@ public final class HardeningTest {
         String text = Run.gradleFailure(log);
         require(text.startsWith("Gradle could not resolve 2 dependencies: com.simibubi.create:create-1.21.1:6.0.4-55, dev.engine-room.flywheel:flywheel-neoforge-api-1.21.1:1.0.2."),
                 "missing dependencies are named with their full coordinates: " + text);
+        require(Build.discoveryHeadline(text).startsWith("Missing dependency:"), "a build that cannot be read for a missing library says so first: " + Build.discoveryHeadline(text));
+        require(Build.discoveryHeadline(Run.unreachable(List.of("> Could not GET 'https://maven.example.com/a.pom'.", "Caused by: java.net.UnknownHostException: maven.example.com"))).startsWith("No connection"),
+                "a network failure is headed as one");
+        // Gradle's words when a build's plugins { } block names a plugin no repository has, as a real build printed them.
+        String plugin = Build.discoveryHeadline("Plugin [id: 'com.example.ghost', version: '1.0'] was not found in any of the following sources:");
+        require(plugin.startsWith("Missing build plugin: this project's build uses the Gradle plugin com.example.ghost 1.0,"), "a missing Gradle plugin is named: " + plugin);
         require(text.contains("https://maven.createmod.net") && text.contains("https://maven.neoforged.net"), "the searched repositories are named");
         require(text.contains("Execution failed for task ':compileJava'.") && !text.contains("Gradle footer"), "Gradle's own failure block is shown, not the footer");
         Path plain = scratch.resolve("plain.log"); Files.writeString(plain, "Caused by: java.lang.IllegalStateException: boom\n" + "tail\n".repeat(30));
@@ -182,10 +188,8 @@ public final class HardeningTest {
     }
     /** A Gradle timeout names its limit, whether it was a cold first setup, and how to raise it. */
     static void timeouts(Path scratch) throws Exception {
-        require(Build.gradleTimeout(true, null) == Build.COLD_TIMEOUT && Build.gradleTimeout(false, "") == Build.WARM_TIMEOUT && Build.COLD_TIMEOUT == 900 && Build.WARM_TIMEOUT == 900,
-                "a cold first setup and a warm build each get 15 minutes");
-        require(Build.gradleTimeout(false, " 3600 ") == 3600 && Build.gradleTimeout(true, "120") == 120, "MODACCEL_GRADLE_TIMEOUT overrides both");
-        try { Build.gradleTimeout(true, "soon"); throw new AssertionError("bad timeout accepted"); }
+        require(Build.gradleTimeout(" 3600 ") == 3600 && Build.gradleTimeout("") == Build.GRADLE_TIMEOUT, "MODACCEL_GRADLE_TIMEOUT overrides the default, and blank means the default");
+        try { Build.gradleTimeout("soon"); throw new AssertionError("bad timeout accepted"); }
         catch (IllegalArgumentException expected) { require(expected.getMessage().contains("MODACCEL_GRADLE_TIMEOUT"), "a bad value names the variable"); }
         String message = Build.timeoutMessage(2700, true, scratch.resolve("metadata.log"));
         require(message.contains("2700 s") && message.contains("cold first setup") && message.contains("MODACCEL_GRADLE_TIMEOUT=5400") && message.contains("metadata.log"),

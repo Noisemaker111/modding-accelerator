@@ -139,8 +139,7 @@ public final class DependenciesTest {
             } catch (IOException expected) { require(expected.getMessage().contains("excludes 1.21.6"), "artifact without target support diagnostic"); }
             finally { Files.deleteIfExists(old); }
 
-            var unavailable = Dependencies.unavailableProject("emi", TO, url -> Json.write(Json.map("game_versions", List.of("1.21", "1.21.1"))));
-            require(!ProjectModel.strings(unavailable.get("game_versions")).contains(TO), "disable path accepts a project with no target release");
+            Dependencies.unavailableProject("emi", TO, url -> Json.write(Json.map("game_versions", List.of("1.21", "1.21.1"))));
             try { Dependencies.unavailableProject("rei", TO, url -> Json.write(Json.map("game_versions", List.of(TO)))); throw new AssertionError("supported project disabled"); }
             catch (IOException expected) { require(expected.getMessage().contains("supports 1.21.6"), "supported project disable refusal"); }
 

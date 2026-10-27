@@ -1,10 +1,18 @@
 name: Portable command
+# A PR runs once, newer pushes cancel older runs, and only the core runs on all three systems.
+# Server and Stonecutter checks run on Linux for a PR and on all three systems nightly and on main.
 on:
   push:
+    branches: [main]
   pull_request:
+  schedule:
+    - cron: '41 6 * * *'
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   command:
     strategy:
@@ -23,12 +31,18 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Gradle and JDK caches
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+          key: command-${{ runner.os }}-${{ hashFiles('portable workspace/build.gradle', 'portable workspace/settings.gradle', 'portable workspace/gradle.properties', 'portable workspace/gradle/wrapper/gradle-wrapper.properties') }}
       - name: Map and bench colour per loader
         working-directory: portable workspace
         run: python bench/test_ledger_rule.py
-      - name: Portable core and JDK archive outcomes
-        working-directory: portable workspace
-        run: java tools/cli/Bootstrap.java . self-test --json
       - name: Package without PowerShell
         working-directory: portable workspace
         run: java tools/cli/Bootstrap.java . package --json
@@ -62,6 +76,19 @@ jobs:
           javac --release 21 -d .runs/preflight-tests tools/VersionMap.java tools/tests/PortPreflightTest.java tools/tests/ChainMapTest.java
           java -cp .runs/preflight-tests PortPreflightTest
           java -cp .runs/preflight-tests ChainMapTest
+      - name: Stop Gradle so Windows can read its cache locks
+        if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
+      - name: Save caches on a miss
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+          key: command-${{ runner.os }}-${{ hashFiles('portable workspace/build.gradle', 'portable workspace/settings.gradle', 'portable workspace/gradle.properties', 'portable workspace/gradle/wrapper/gradle-wrapper.properties') }}
       - name: Outcome receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -73,12 +100,12 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
   server-plugins:
-    # Every PR, under 5 minutes: pinned server plugins (bench/server-plugins/manifest.json) on fresh clones through
+    # Pinned server plugins (bench/server-plugins/manifest.json) on fresh clones through
     # the packaged command: fast, the jar, and plugin-check on MockBukkit, including each break made on purpose.
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
@@ -101,14 +128,16 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
   server-check:
-    # Every PR, under 5 minutes: AgentCraft on a real headless Paper server with a bot player
-    # (tools/tests/ServerCheckFixtures.java): its scenario cold and warm, the bot's own scenario with a
-    # secret that must stay masked, the missing-secret failure, and each break made on purpose.
-    # The Paper jar and Gradle home are cached; "cold" here means a fresh world and server folder.
+    # Plugins on real headless Paper servers with a bot player (tools/tests/ServerCheckFixtures.java),
+    # one part per job so the parts run side by side: scenario: AgentCraft's scenario on a fresh world.
+    # bot: the bot's own scenario with a secret that must stay masked, and the missing-secret failure.
+    # breaks: each break made on purpose. The Paper jar and Gradle home are cached.
+    name: server-check (${{ matrix.part }}, ${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
+        part: [scenario, bot, breaks]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
@@ -130,11 +159,12 @@ jobs:
             ~/.gradle/jdks
             .modaccel/jdks
             ~/.modaccel/servers
-          key: server-check-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json') }}
+            ~/.modaccel/tools
+          key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
       - name: Package without PowerShell
         run: java tools/cli/Bootstrap.java . package --json
       - name: Plugins on a real Paper server through modaccel
-        run: java tools/tests/ServerCheckFixtures.java . build/distributions/modaccel.jar
+        run: java tools/tests/ServerCheckFixtures.java . build/distributions/modaccel.jar "${{ matrix.part }}"
       - name: Stop the plugin's Gradle daemon so Windows can read its cache locks
         if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
         shell: pwsh
@@ -149,24 +179,25 @@ jobs:
             ~/.gradle/jdks
             .modaccel/jdks
             ~/.modaccel/servers
-          key: server-check-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json') }}
+            ~/.modaccel/tools
+          key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
       - name: Outcome receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: server-check-${{ runner.os }}-outcomes
+          name: server-check-${{ runner.os }}-${{ matrix.part }}-outcomes
           path: |
             .runs
           include-hidden-files: true
           if-no-files-found: ignore
   stonecutter-sample:
-    # Every PR, under 5 minutes: three representative Stonecutter nodes, fresh pinned clones,
-    # setup and compile through modaccel, one job per node and OS. No game. Every node of both
+    # Three representative Stonecutter nodes, fresh pinned clones, setup and compile through
+    # modaccel, one job per node. No game. Every node of both
     # mods compiles nightly in stonecutter-nightly.yml (not a merge blocker).
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
         mod: [diorama-26.3, diorama-1.21.1, ias-26.3-fabric]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20

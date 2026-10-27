@@ -43,15 +43,7 @@ public final class AppleSkinHudCheck {
     static String check(Path home, Path jar, Path root, Path snippets) throws Exception {
         modaccel(home, jar, root, "game-stop"); // a client left from an older build would be refused
         try {
-            // A never-launched copy's first launch writes files its own classpath names, and ui-check then refuses it as
-            // "Project changed during verification" (a modaccel issue, seen on NeoForge). The second launch is the stable build.
-            Run first = modaccel(home, jar, root, "ui-check");
-            if (first.exit() != 0) {
-                if (!first.output().contains("Project changed during verification")) throw new AssertionError("modaccel ui-check failed with exit " + first.exit() + ":\n" + first.output());
-                System.out.println("  first launch of this copy was refused as \"Project changed during verification\"; launching again");
-                modaccel(home, jar, root, "game-stop");
-                step(home, jar, root, "ui-check");
-            }
+            step(home, jar, root, "ui-check");
             if (!value(step(home, jar, root, "eval", "--code", "mc.world != null")).equals("true")) {
                 step(home, jar, root, "eval", "--file", snippets.resolve("open-create.java").toString());
                 step(home, jar, root, "eval", "--until", "mc.currentScreen instanceof net.minecraft.client.gui.screen.world.CreateWorldScreen", "--timeout", "30");

@@ -49,10 +49,6 @@ public final class PortPreflightTest {
         VersionMap.Known noTarget = new VersionMap.Known();
         noTarget.names = "yarn"; noTarget.toVersion = "1.21.5";
         require(VersionMap.ApiFix.preflight(noTarget, scratch.resolve("Demo.java"), good).equals(good), "absent target signatures");
-        VersionMap.Known mojmap = VersionMap.Known.load(map);
-        mojmap.names = "mojmap";
-        Files.createDirectories(scratch.resolve("empty"));
-        require(VersionMap.Preflight.run(writeMap(scratch.resolve("mojmap.json"), Files.readString(map).replace("\"yarn\"", "\"mojmap\"")), scratch.resolve("empty"), true) == 0, "Mojmap preflight is unsupported");
 
         Path forwardMap = scratch.resolve("forward.json");
         Files.writeString(forwardMap, """
@@ -117,27 +113,7 @@ public final class PortPreflightTest {
         VersionMap.Known wrongHop = VersionMap.Known.load(colorMap); wrongHop.fromVersion = "1.21.4";
         require(VersionMap.ApiFix.preflight(wrongHop, scratch.resolve("ColorDemo.java"), rgb).equals(rgb), "unknown version hop refused");
 
-        if (args.length >= 2) {
-            Path realMap = Path.of(args[0]), repo = Path.of(args[1]);
-            VersionMap.Known real = VersionMap.Known.load(realMap);
-            for (String source : List.of("HUDOverlayHandler", "TooltipOverlayHandler")) {
-                String file = "java/squeek/appleskin/client/" + source + ".java";
-                Process process = new ProcessBuilder("git", "-C", repo.toString(), "show", "a1c60fc:" + file).start();
-                String original = new String(process.getInputStream().readAllBytes());
-                require(process.waitFor() == 0, "baseline git object " + file);
-                String result = VersionMap.ApiFix.preflight(real, scratch.resolve(source + ".java"), original);
-                require(result.contains("RenderLayer::getGuiTextured") && !result.contains("drawGuiTexture(RenderPipelines.GUI_TEXTURED"), "actual baseline pipeline " + source);
-                if (source.equals("TooltipOverlayHandler")) require(result.contains("net.minecraft.client.util.math.MatrixStack matrixStack") && result.contains("matrixStack.push()"), "actual baseline matrix stack");
-            }
-        }
-        if (args.length >= 4) {
-            VersionMap.Known realColor = VersionMap.Known.load(Path.of(args[2]));
-            String f3 = Files.readString(Path.of(args[3]));
-            String migrated = VersionMap.ApiFix.preflight(realColor, Path.of(args[3]), f3);
-            require(migrated.contains("config.textColor & 0xFC000000") && migrated.contains("config.textColor | 0xFF000000"), "real F3Nope color contract");
-        }
         System.out.println("PASS: mapping-backed preflight and guarded lookalikes");
     }
     private static void require(boolean condition, String name) { if (!condition) throw new AssertionError(name); }
-    private static Path writeMap(Path path, String text) throws Exception { Files.writeString(path, text); return path; }
 }

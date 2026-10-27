@@ -1,0 +1,46 @@
+name: Something went wrong
+description: A modaccel command failed, passed when it should not have, or said something confusing.
+labels: [bug]
+body:
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      description: The exact command you ran.
+      placeholder: modaccel port --from 1.21.1 --to 1.21.6 --fix
+    validations:
+      required: true
+  - type: input
+    id: project
+    attributes:
+      label: Mod or plugin
+      description: A link to the source (and commit) if it is public, plus loader and Minecraft version.
+      placeholder: https://github.com/… at abc1234, Fabric 1.21.1
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: Paste the output. The receipt path modaccel prints at the end helps most.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: System
+      options: [Windows, Linux, macOS]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: modaccel version
+      description: From `modaccel doctor`.

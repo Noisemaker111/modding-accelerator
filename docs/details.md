@@ -324,9 +324,11 @@ downloads the real Paper server for the plugin's Minecraft version from PaperMC'
 version, SHA-256 checked, cached in `~/.modaccel/servers`), starts it headless in
 offline mode on 127.0.0.1 with a flat world on a fixed seed, and joins a bot player. **modaccel
 writes `eula=true` for that server only**: it is a throwaway local test server that nobody else can
-join, and the world is wiped every run. The bot is MCProtocolLib; it speaks Minecraft 26.3 only
-today (`knowledge/mcprotocollib.json` lists the versions it has been seen joining).
-
+join, and the world is wiped every run. The bot is MCProtocolLib and speaks Minecraft 26.3
+(`knowledge/mcprotocollib.json`). On a server of any other version it joins through
+[ViaProxy](https://github.com/ViaVersion/ViaProxy) (pinned and SHA-256 checked in
+`knowledge/viaproxy.json`), which translates between the two; the bot then reads blocks and items
+by their 26.3 names.
 A scenario is one step per line (`modaccel help server-check` lists them): `join`, `say`,
 `command /...`, `rcon ...`, helper processes (`background NAME: CMD`, e.g. a mock backend) and
 `server-env` for the server's environment, then expect steps on what really happened: chat, titles
