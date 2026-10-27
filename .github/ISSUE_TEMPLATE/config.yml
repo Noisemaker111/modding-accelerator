@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: What modaccel supports today
+    url: https://github.com/Noisemaker111/modding-accelerator#readme
+    about: The support table, before asking whether a version or loader works.

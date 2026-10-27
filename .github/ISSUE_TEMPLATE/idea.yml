@@ -1,0 +1,21 @@
+name: Idea or missing support
+description: A mod, version, loader or check modaccel should handle.
+labels: [idea]
+body:
+  - type: textarea
+    id: want
+    attributes:
+      label: What you want to do
+      description: The job, not the solution. "Port my Forge 1.20.1 mod to NeoForge 1.21.1" beats "add a Forge remapper".
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What happens today
+      description: The command you tried and what it said, or why you didn't try.
+  - type: input
+    id: example
+    attributes:
+      label: A real mod or plugin to try it on
+      placeholder: https://github.com/…

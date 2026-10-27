@@ -26,6 +26,7 @@ Run builds and game launches through modaccel, never raw Gradle or a manual laun
 - Merge when it reaches a milestone worth shipping (a new rung on SCOPE.md's ladder, or a big porting jump such as every 1.14 mod reaching 1.16), with Jon's approval and CI green on all 3 OS.
 - Porting work goes on one long-running branch, `porting`, merged at those jumps.
 - Small fixes outside any feature may go in one hardening/fixes PR at a time.
+- A PR body follows `.github/pull_request_template.md`: a bold one-line result, Before/After as numbered steps with real output, the cause, then what was checked and what is not covered. A title that needs a comma-joined list is several PRs. When a push changes what the PR does, rewrite the body in the same push; a body describing removed work is a bug.
 - Every port run gets its ledger row in that branch. Regenerate `docs/index.html` and `docs/porting-map.html` once, in the final commit before merge, so the site changes only when a milestone lands.
 - Agents work in their own worktree and never edit the same files as another agent.
 
