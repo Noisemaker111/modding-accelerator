@@ -178,7 +178,7 @@ if (Test-Path $wrapperProps) {
 	}
 }
 
-$clientVerbs = @('ui', 'node', 'suite', 'scenario', 'mp', 'look', 'bench', 'all')
+$clientVerbs = @('check', 'watch', 'restart', 'ui', 'node', 'suite', 'scenario', 'mp', 'look', 'bench', 'all')
 if ($Verb -in $clientVerbs) {
 	$preferenceJson = & (Join-Path $harness 'modaccel.cmd') preferences --json
 	if ($LASTEXITCODE -ne 0) { Write-Host 'Could not read game launch preferences.' -ForegroundColor Red; exit 2 }
