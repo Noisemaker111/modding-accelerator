@@ -20,6 +20,7 @@ public final class PortableAgent {
     private static Object lastScreen; private static long screenSince;
     private static final Map<String, Object> identity = new LinkedHashMap<String, Object>();
     public static void premain(String args, Instrumentation instrumentation) {
+        if ("legacy".equals(args) && System.getProperty("sun.java.command", "").startsWith("org.gradle.launcher.daemon.bootstrap.GradleDaemon")) return;
         GameLaunchAgent.install(instrumentation);
         if ("legacy".equals(args)) return;
         // Only JDK classes are referenced by transformed game code. Isolated loaders
