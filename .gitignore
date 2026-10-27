@@ -202,7 +202,6 @@ versions/*/.gradle/
 
 bench/port/*
 !bench/port/results.json
-!bench/port/SUMMARY.md
 
 .workers/
 logs/
@@ -220,7 +219,6 @@ run/
 .ta.log
 
 bench/mods/*
-!bench/mods/MODS.md
 !bench/mods/results.json
 
 

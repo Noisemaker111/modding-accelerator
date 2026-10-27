@@ -158,7 +158,7 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
   <h1>Porting map</h1>
   <nav><a href="index.html">Bench</a><a href="https://github.com/Noisemaker111/modding-accelerator">GitHub</a><button class="theme" id="theme" type="button">Dark</button></nav>
 </div>
-<p class="lede">Pick the version your mod is on and the one you want. Long ports go through the popular versions, and each line's colour says what has really been tried. <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/docs/details.md#porting-map">How it's measured</a></p>
+<p class="lede">Pick the version your mod is on and the one you want. Long ports go through the popular versions, and each line's colour says what has really been tried. <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/tools/ChangeIndex.java">How it's measured</a></p>
 
 <div class="card">
   <div class="pick">

@@ -4,19 +4,26 @@ This file holds only what is specific to this project.
 
 ## Goal
 
-Anyone brings an unfamiliar mod source project (a Gradle checkout; compiled JARs are unsupported), picks a Minecraft version, and gets a reversible port plus fast, trustworthy logic and game checks with minimal setup. Windows, Linux and macOS; Java and Kotlin; Fabric and NeoForge; forward and back. Changing loader is a separate job. The limited Fabric beta is a starting point, not the scope.
+A mod or plugin author never has to launch Minecraft. Two halves, equal weight:
+
+1. **Port** any mod source project (a Gradle checkout; compiled JARs are unsupported) to any Minecraft version, forward or back, reversibly, through the change index and hub routing. Changing loader is a separate job.
+2. **Prove it behaves** in the real game or a real server: the mod's own state asserted in a real client (`eval`, `--assert`, `--expect-value`), plugins on a real Paper server with a bot player following a scenario. A build, a fake server (MockBukkit) or "the mod loaded" is a floor, never "tested".
+
+Windows, Linux and macOS; Java and Kotlin; Fabric, NeoForge, Forge and Paper, climbing SCOPE.md's ladder.
 
 ## Where the truth is
 
-- `ROADMAP.md` holds the phases and numbered steps. Only statuses there are claims; update it when a step changes. `README.md` is the public goal and support table; `PLAN.md` the evidence behind the steps.
-- `coverage/ledger.json` records port runs. A run that is not in the ledger did not happen. `python bench/progress.py` renders it to `docs/index.html` (the bench page). After any port run, or any change to the rules or the router, record it in the ledger and regenerate `docs/index.html` and `docs/porting-map.html` in the same change, so a hop turns green only once a port on it has been seen working.
+- `ROADMAP.md` holds the phases and numbered steps. Only statuses there are claims; update it when a step changes. `README.md` is the public goal and support table. `modaccel help COMMAND` is how each command works; don't repeat it in a doc.
+- `coverage/ledger.json` records port runs. A run that is not in the ledger did not happen. `python bench/bench_page.py` renders it to `docs/index.html` (the bench page). After any port run, or any change to the rules or the router, record it in the ledger and regenerate `docs/index.html` and `docs/porting-map.html` in the same change, so a hop turns green only once a port on it has been seen working.
 - `coverage/changes/` is the change index (every neighbouring-release diff 1.14.4 → 26.3 in Mojang names) and its `index.json` the families, hubs, rule coverage and best ledger run. Refresh: `java tools/ChangeIndex.java`, `python bench/change_routes.py`, `python bench/porting_map.py`.
 - Rules mined from Stonecutter mods are the `source: "stonecutter"` rules in `knowledge/fixes.json`; regenerate with `python bench/stonecutter_mine.py extract` then `python bench/stonecutter_rules.py`.
 - Trial trees live under `.runs/beta-trials/`; logs under `.runs/logs`, history in `.runs/index.jsonl`.
 
 ## Commands
 
-The portable command: `modaccel.cmd` on Windows, `./modaccel` on POSIX, or `java -jar modaccel.jar`. `help` lists the verbs and `support` the version table. The main verbs: `port --from OLD --to NEW --fix` (routes A → hubs → B, joins one map across every update, filters rules by the updates crossed and names each remaining error's update; `--direct` keeps the one-jump map), `mixin-check` (Mixin applies every mixin, no game launch), `fast`, `ui-check`, `world-check`, `mp-check`, `eval` (runs Java in the owned client), `reload` (swaps recompiled classes in and says when a restart is needed), `game-status`, `game-stop`.
+The portable command: `modaccel.cmd` on Windows, `./modaccel` on POSIX, or `java -jar modaccel.jar`. `help` lists the verbs and `support` the version table. Porting: `port`, `explain`, `mixin-check`. Mods: `fast`, `ui-check`, `world-check`, `mp-check`, `eval`, `reload`, `game-status`, `game-stop`. Plugins: `plugin-check`, `server-check`.
+
+`modaccel.ps1` (called by `modaccel.cmd` for `ui`, `node`, `suite`, `world`, `look`, `mp`, ...) and `bench/bridge`, `bench/forgebridge` are the older Windows lane, kept until the portable command covers each of its jobs; don't add to them.
 
 Run builds and game launches through modaccel, never raw Gradle or a manual launch, and never add `--no-daemon`. Package locally; publishing needs Jon's approval.
 
@@ -29,6 +36,14 @@ Run builds and game launches through modaccel, never raw Gradle or a manual laun
 - A PR body follows `.github/pull_request_template.md` and fits on one screen: a bold one-line result, before/after (a table row per change), what was checked, what is not covered. A title that needs a comma-joined list is several PRs. When a push changes what the PR does, rewrite the body in the same push.
 - Every port run gets its ledger row in that branch. Regenerate `docs/index.html` and `docs/porting-map.html` once, in the final commit before merge, so the site changes only when a milestone lands.
 - Agents work in their own worktree and never edit the same files as another agent.
+
+## Releases
+
+A release is how someone without a source checkout gets modaccel. Cut one when a milestone merges:
+
+1. Bump `VERSION` in `tools/cli/Support.java` and regenerate `docs/` (`python bench/bench_page.py`, `python bench/porting_map.py`) in the milestone PR.
+2. After merge, tag `main` as `v<VERSION>` and push the tag. `.github/workflows/release.yml` checks the tag matches the code and `docs/` is current, packages, runs the extracted-ZIP test, and opens a draft release whose notes are the merged PR titles. That list is the changelog; there is no hand-kept one, so PR titles must read well.
+3. Jon reads the draft and publishes it.
 
 ## What counts as evidence
 

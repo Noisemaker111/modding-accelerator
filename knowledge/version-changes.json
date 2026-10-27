@@ -621,7 +621,7 @@
     "from": "fabric-tag-api: getOrCreateTagBuilder / FabricTagBuilder",
     "to": "unknown - no direct rename (tag providers are rebuilt, not renamed)",
     "note": "One removal produced 68 errors in Traverse and 97 in Terrestria across four tag-provider files. Treat it as a mechanical rewrite of each provider, not a find-and-replace.",
-    "source": "bench/port/SUMMARY.md, Traverse and Terrestria builds",
+    "source": "bench/port/results.json, Traverse and Terrestria builds",
     "verified": "two real mod builds"
   },
   {
@@ -630,7 +630,7 @@
     "from": "DrawContext.getMatrices() / push / pop",
     "to": "Matrix3x2fStack with pushMatrix / popMatrix",
     "note": "17 of Trinkets 21 errors were this single GUI matrix type change.",
-    "source": "bench/port/SUMMARY.md, Trinkets build",
+    "source": "bench/port/results.json, Trinkets build",
     "verified": "one real mod build"
   },
   {
@@ -639,7 +639,7 @@
     "from": "ItemStack.fromNbt / ItemStack.toNbt",
     "to": "unknown - value IO path (ValueInput / ValueOutput)",
     "note": "4 errors in Trinkets; the knowledge base already covers the CompoundTag -> ValueInput move, so read that entry first.",
-    "source": "bench/port/SUMMARY.md, Trinkets build",
+    "source": "bench/port/results.json, Trinkets build",
     "verified": "one real mod build"
   },
   {
@@ -648,7 +648,7 @@
     "from": "CoreShaders, BakedModel, ThrownPotion",
     "to": "moved packages (take the new owner from the compiler error)",
     "note": "3 moved symbols cost 6 errors in Traveler's Backpack, plus one dead @Shadow target that warned without failing the build. A green build can still ship a dead mixin.",
-    "source": "bench/port/SUMMARY.md, Traveler's Backpack build",
+    "source": "bench/port/results.json, Traveler's Backpack build",
     "verified": "one real mod build"
   },
   {
@@ -657,7 +657,7 @@
     "from": "PlayerEntity(World, GameProfile)",
     "to": "unknown - constructor changed; also getProtocolVersion removed and writeCustomData(WriteView) added",
     "note": "Polymer: 8 errors, all protocol/constructor shape.",
-    "source": "bench/port/SUMMARY.md, Polymer build",
+    "source": "bench/port/results.json, Polymer build",
     "verified": "one real mod build"
   },
   {
@@ -666,7 +666,7 @@
     "from": "EntityRenderer.render / renderToBuffer / setupAnim overrides",
     "to": "entity render-state objects (refactor landed in 1.21.2)",
     "note": "68 of Artifacts 97 errors are inherited generic/override breaks from this refactor. Bumping step by step (1.21.1 -> 1.21.2 -> 1.21.4) is cheaper than one jump.",
-    "source": "bench/port/SUMMARY.md, Artifacts build",
+    "source": "bench/port/results.json, Artifacts build",
     "verified": "one real mod build"
   },
   {
