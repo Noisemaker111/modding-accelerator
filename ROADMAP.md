@@ -1,7 +1,8 @@
 # Roadmap
 
-Goal: any Minecraft version to any other, and any loader to any other, from a Gradle source
-checkout, with checks that prove it works. Version changes and loader changes are separate jobs.
+Goal: a mod or plugin author never launches Minecraft. Port from any version to any other (and,
+separately, any loader to any other) from a Gradle source checkout, and prove the result behaves in
+the real game or a real server.
 
 Status words: **done** (ran and checked), **doing** (current step), **next**, **later**.
 Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/ (bench page)
@@ -14,7 +15,9 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/ (b
 3. Prove a port's behaviour, not just its build. The first try (overlay inspected, AppleSkin
    inventory change 95.6%, save reloads at the same position) was re-marked to "loads" on
    2026-10-26: a frame change and a save reload happen without the mod. Behaviour needs an
-   assertion on the mod's own state (`--assert` on its class, `--expect-value` on its screen). **next**
+   assertion on the mod's own state (`--assert` on its class, `--expect-value` on its screen). **done** —
+   `tools/tests/AppleSkinHudCheck.java` checks AppleSkin's HUD estimate against real regeneration on
+   the 1.21.6 port, and fails when the estimate is broken on purpose.
 4. Second loader end to end: NeoForge ZombieApocalypseAddon 1.21.1 → 1.21.4 with no hand edits;
    its `/za` command runs in a 1.21.4 world. **done**
 5. Dependency blockers become one-file answers: verified selection, disable with proof, and a
@@ -72,11 +75,24 @@ Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/ (b
 19. Forge → NeoForge and Fabric → Quilt, which are close pairs. **later**
 20. Publish which loader pairs are real, which are blocked, and why. **later**
 
-## Phase 5 — Proof and platforms
+## Phase 5 — Proof: behaviour in the real game and server
+
+The second half of the goal, worked on alongside porting.
 
 21. Linux and macOS game checks (or label them), no-Java install on each. **later**
-22. Behaviour assertions beyond UI: items, entities, multiplayer. **later**
+22. A mod's own behaviour asserted in a real client: AppleSkin's HUD estimate, Zombie Apocalypse
+    Addon's zombies hunting with `/zhunt` on its 1.21.4 port; each fails when the mod is broken on
+    purpose. **done** (local only; they start the game)
 23. Optional pixel comparison for regressions, off by default. **later**
+24. Paper plugins: `plugin-check` on MockBukkit (fast floor), then `server-check` on a real Paper
+    server with a bot player following a scenario, secrets masked. AgentCraft passes, and each break
+    made on purpose fails at its step. **done**
+25. The bot joins any Paper version from 1.8 through ViaProxy, reading each world's real floor and
+    height. **done** (1.8.8, 1.12.2, 1.16.5, 1.20.1 and 1.21.4 passed locally; CI covers 26.3 only)
+26. A nightly CI job runs the bot on older Paper versions. **next**
+27. The bot joins a modded server (NeoForge or Fabric dedicated server), so mods get scenario
+    checks like plugins do. **next**
+28. Port a Paper plugin between versions (SCOPE.md rung 5; config-only so far). **later**
 
 ## Decisions
 

@@ -1,0 +1,57 @@
+name: Release
+# Pushing a tag vX.Y.Z (matching Support.VERSION) builds the package, runs the extracted-ZIP
+# acceptance test, and opens a DRAFT GitHub release with the JAR, the ZIP and their checksums.
+# Its notes are generated from the titles of the PRs merged since the last release: that list is
+# the changelog. Jon reads the draft and publishes it; nothing is public before that.
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Tag matches the version in the code
+        run: |
+          version=$(sed -n 's/.*String VERSION = "\(.*\)";.*/\1/p' tools/cli/Support.java)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match Support.VERSION $version. Bump the version in tools/cli/Support.java, merge, then tag."
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Bench page and porting map are current
+        run: |
+          python bench/bench_page.py
+          python bench/porting_map.py
+          if ! git diff --quiet -- docs/; then
+            git diff --stat -- docs/
+            echo "docs/ is out of date with coverage/. Run python bench/bench_page.py and python bench/porting_map.py, commit, then tag again."
+            exit 1
+          fi
+      - name: Package
+        run: java tools/cli/Bootstrap.java . package --json
+      - name: Self-test from the package
+        run: java -jar build/distributions/modaccel.jar self-test --root . --json
+      - name: Extracted ZIP acceptance
+        run: java tools/tests/PackageAcceptanceTest.java build/distributions/modaccel-portable.zip build/distributions/modaccel-portable.zip.sha256 "${{ runner.temp }}"
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          out="${{ runner.temp }}/assets"; mkdir -p "$out"
+          cp build/distributions/modaccel.jar "$out/modaccel-$VERSION.jar"
+          cp build/distributions/modaccel-portable.zip "$out/modaccel-$VERSION-portable.zip"
+          cd "$out"
+          for f in *.jar *.zip; do sha256sum "$f" > "$f.sha256"; done
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft --generate-notes \
+            --title "Modding Accelerator $VERSION" $(case "$VERSION" in *-*) echo --prerelease;; esac) *

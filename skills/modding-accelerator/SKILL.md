@@ -71,5 +71,4 @@ reload on that lane (a code edit means a new client).
   versions need `gradle.properties`, the Loom plugin id and mappings changed; NeoForge and Forge
   are their own lanes.
 
-Full details, benchmarks against the normal loop, and checklists: `README.md`. Numbers and the
-roadmap: `PLAN.md`.
+What works today: `README.md`. What's next: `ROADMAP.md`.
