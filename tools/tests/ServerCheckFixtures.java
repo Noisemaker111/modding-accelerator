@@ -79,6 +79,11 @@ public final class ServerCheckFixtures {
             if (forbidden.exit() != 1 || !"expect-no-rcon list ~players online~ for 0s".equals(failedStep(forbidden.output())))
                 throw new AssertionError("expect-no-rcon must reject a matching RCON response: " + forbidden.output());
             System.out.println("PASS expect-no-rcon rejects a matching response");
+            Path externalFailure = home.resolve("tools/tests/server-check-external-failure.scenario");
+            Run external = modaccel(home, jar, root, Map.of(), "server-check", "--file", externalFailure.toString());
+            if (external.exit() != 1 || !external.output().contains("External test exit 1"))
+                throw new AssertionError("A failing external test must not pass even with matching output: " + external.output());
+            System.out.println("PASS external test rejects a nonzero exit despite matching output");
             Files.delete(secrets);
             Run without = modaccel(home, jar, root, Map.of(), "server-check", "--file", bot.toString());
             if (without.exit() != 1 || !without.output().contains("needs secret BOT_SECRET") || without.output().contains("\"status\":\"pass\""))

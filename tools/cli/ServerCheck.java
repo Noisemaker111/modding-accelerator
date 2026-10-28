@@ -117,27 +117,27 @@ final class ServerCheck {
 
         // The bot and ViaProxy run on the bot's own Java; the server on its version's Java.
         Runtimes.Jdk jdk = Runtimes.ensureAtLeast(build.harness, serverJava(bot.minecraft())), serverJdk = direct != null ? jdk : serverJdk(build.harness, minecraft);
-        Paper paper = paper(minecraft, serverJdk, options.has("refresh"), direct != null);
+        String requestedBuild = options.get("server-build", "");
+        if (!requestedBuild.isEmpty() && !requestedBuild.matches("[1-9][0-9]*")) throw new IllegalArgumentException("--server-build must be a positive Paper build number.");
+        Paper paper = paper(minecraft, serverJdk, options.has("refresh"), direct != null, requestedBuild);
         // Through ViaProxy the bot sees the world in its own version's ids, so they come from that version's Paper.
         Paper names = direct != null ? paper : paper(bot.minecraft(), jdk, false, true);
         Map<String, Object> proxy = direct != null ? null : viaProxy(jdk, minecraft);
         Path tools = tools(jdk, classpath);
-        Path serverDir = build.project.state().resolve("server-check/paper-" + minecraft);
+        Path serverDir = options.has("fresh-server") ? work.resolve("paper-" + minecraft) : build.project.state().resolve("server-check/paper-" + minecraft);
         Path result = work.resolve("result.json"), checkSpec = work.resolve("check-spec.json");
-        List<String> serverCommand = List.of(serverJdk.java().toString(), "-Xms512M", "-Xmx2G", "-DIReallyKnowWhatIAmDoingISwear=true", "-Dpaper.disableChannelLimit=true",
+        String serverXms = options.get("server-xms", "512M");
+        if (!serverXms.matches("[1-9][0-9]*[mMgG]")) throw new IllegalArgumentException("--server-xms must be a heap size such as 512M or 2G.");
+        List<String> serverCommand = List.of(serverJdk.java().toString(), "-Xms" + serverXms, "-Xmx2G", "-DIReallyKnowWhatIAmDoingISwear=true", "-Dpaper.disableChannelLimit=true",
                 // Before 1.13 the server's option parser has no --nogui and prints its help instead; it takes the bare word.
                 "-jar", paper.jar().toString(), compare(minecraft, "1.13") < 0 ? "nogui" : "--nogui");
         List<String> extraPlugins = new ArrayList<>();
-        if (options.values.containsKey("plugins")) {
-            Path folder = build.project.root.resolve(options.get("plugins", "")).normalize();
-            if (!Files.isDirectory(folder)) throw new IllegalArgumentException("--plugins needs a folder of plugin jars; " + folder + " is not a folder.");
-            try (var files = Files.list(folder)) { files.filter(f -> f.toString().endsWith(".jar")).sorted().forEach(f -> extraPlugins.add(f.toAbsolutePath().toString())); }
-        }
+        if (options.values.containsKey("plugins")) extraPlugins.addAll(pluginPaths(build.project.root, options.get("plugins", "")));
         List<String> serverPlugins = new ArrayList<>(List.of(jar)); serverPlugins.addAll(extraPlugins);
         // .modaccel holds secrets.properties and the server's logs; keep the whole folder out of the plugin's git.
         Path ignore = build.project.root.resolve(".modaccel/.gitignore");
         if (!Files.exists(ignore)) { Files.createDirectories(ignore.getParent()); Files.writeString(ignore, "# Written by modaccel: secrets and test-server files stay out of git.\n*\n"); }
-        Json.save(checkSpec, Json.map("root", build.project.root.toString(), "scenario", scenario.toString(), "result", result.toString(), "logDir", work.toString(),
+        Json.save(checkSpec, Json.map("root", build.project.root.toString(), "harness", build.harness.toString(), "scenario", scenario.toString(), "result", result.toString(), "logDir", work.toString(),
                 "secretsFile", build.project.root.resolve(".modaccel/secrets.properties").toString(), "ids", names.ids().toString(), "lang", names.lang().toString(),
                 "botLibrary", "MCProtocolLib " + bot.version() + ", Minecraft " + bot.minecraft() + (proxy == null ? "" : ", through ViaProxy " + proxy.get("version") + " to Minecraft " + minecraft),
                 "proxy", proxy,
@@ -152,8 +152,12 @@ final class ServerCheck {
         }
         Map<String, Object> out = Json.read(result);
         out.put("tier", "server-check");
-        out.put("server", Json.map("kind", "paper", "minecraft", minecraft, "build", paper.build(), "jar", paper.jar().toString(), "downloaded", paper.downloaded(), "dir", serverDir.toString()));
-        out.put("bot", Json.map("library", "MCProtocolLib", "version", bot.version(), "minecraft", bot.minecraft(),
+        out.put("server", Json.map("kind", "paper", "minecraft", minecraft, "build", paper.build(), "jar", paper.jar().toString(), "downloaded", paper.downloaded(), "dir", serverDir.toString(), "xms", serverXms, "freshDirectory", options.has("fresh-server")));
+        boolean external = Json.array(out.getOrDefault("steps", List.of())).stream().map(Json::object)
+                .anyMatch(step -> String.valueOf(step.get("step")).startsWith("expect-process "));
+        if (external) Json.object(build.report.stages.get(build.report.stages.size() - 1)).put("bot", "external test program");
+        out.put("bot", external ? Json.map("library", "external test program", "version", "provided by scenario", "minecraft", null, "through", null)
+                : Json.map("library", "MCProtocolLib", "version", bot.version(), "minecraft", bot.minecraft(),
                 "through", proxy == null ? null : Json.map("proxy", "ViaProxy", "version", proxy.get("version"), "targetVersion", proxy.get("targetVersion"))));
         out.put("plugin", Json.map("jar", jar, "jarTask", resolved.get("jarTask")));
         out.put("gameVerified", Boolean.TRUE.equals(out.get("ok")));
@@ -163,6 +167,21 @@ final class ServerCheck {
         out.put("details", text);
         if (!Boolean.TRUE.equals(out.get("ok"))) out.put("reason", text);
         return out;
+    }
+
+    static List<String> pluginPaths(Path root, String selection) throws IOException {
+        List<String> plugins = new ArrayList<>();
+        boolean wholeExists = false;
+        try { wholeExists = Files.exists(root.resolve(selection).normalize()); } catch (InvalidPathException ignored) { }
+        String[] entries = wholeExists ? new String[] { selection }
+                : selection.contains(File.pathSeparator) ? selection.split(Pattern.quote(File.pathSeparator)) : selection.split(",");
+        for (String entry : entries) {
+            Path location = root.resolve(entry.strip()).normalize();
+            if (Files.isRegularFile(location) && location.toString().endsWith(".jar")) plugins.add(location.toAbsolutePath().toString());
+            else if (Files.isDirectory(location)) try (var files = Files.list(location)) { files.filter(f -> f.toString().endsWith(".jar")).sorted().forEach(f -> plugins.add(f.toAbsolutePath().toString())); }
+            else throw new IllegalArgumentException("--plugins needs a folder or plugin jars separated by " + File.pathSeparator + "; " + location + " is neither.");
+        }
+        return plugins;
     }
 
     /** --file, else .modaccel/server-check.scenario, else modaccel/server-check.scenario in the project. */
@@ -194,22 +213,27 @@ final class ServerCheck {
      * item ids (the server's own data reports) and en_us translations are extracted once beside it, for the bot.
      */
     Paper paper(String minecraft, Runtimes.Jdk jdk, boolean refresh, boolean names) throws Exception {
+        return paper(minecraft, jdk, refresh, names, "");
+    }
+    Paper paper(String minecraft, Runtimes.Jdk jdk, boolean refresh, boolean names, String requestedBuild) throws Exception {
         Path cache = Path.of(System.getProperty("user.home"), ".modaccel", "servers", "paper-" + minecraft).toAbsolutePath();
         Files.createDirectories(cache);
-        Path pin = cache.resolve("build.json");
+        Path pin = cache.resolve(requestedBuild.isEmpty() ? "build.json" : "build-" + requestedBuild + ".json");
         boolean downloaded = false;
         if (refresh || !Files.isRegularFile(pin) || !Files.isRegularFile(cache.resolve(Json.text(Json.read(pin), "file", "missing")))) {
             long begin = System.nanoTime();
             HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(20)).build();
-            HttpResponse<String> answer = send(client, HttpRequest.newBuilder(URI.create(FILL + "/versions/" + minecraft + "/builds/latest"))
+            String endpoint = FILL + "/versions/" + minecraft + "/builds/" + (requestedBuild.isEmpty() ? "latest" : requestedBuild);
+            HttpResponse<String> answer = send(client, HttpRequest.newBuilder(URI.create(endpoint))
                     .header("User-Agent", "modaccel server-check (github.com/Noisemaker111/modding-accelerator)").timeout(Duration.ofSeconds(30)).GET().build(), HttpResponse.BodyHandlers.ofString());
-            if (answer.statusCode() == 404) throw new IOException("PaperMC has no Paper build for Minecraft " + minecraft + " (" + FILL + "/versions/" + minecraft + "/builds/latest answered 404). Pass --server-version with a version Paper ships.");
+            if (answer.statusCode() == 404) throw new IOException("PaperMC has no matching Paper build (" + endpoint + " answered 404). Check --server-version and --server-build.");
             if (answer.statusCode() != 200) throw new IOException("PaperMC's API answered " + answer.statusCode() + " for Paper " + minecraft + ": " + answer.body());
             var latest = Json.object(Json.parse(answer.body()));
             var download = Json.object(Json.object(latest.get("downloads")).get("server:default"));
             String url = Json.text(download, "url", ""), name = Json.text(download, "name", ""), sha = Json.text(Json.object(download.get("checksums")), "sha256", "");
             if (url.isEmpty() || sha.isEmpty() || !name.matches("[A-Za-z0-9_.-]+\\.jar")) throw new IOException("PaperMC's API gave no usable download for Paper " + minecraft + ": " + answer.body());
             int number = ((Number) latest.get("id")).intValue();
+            if (!requestedBuild.isEmpty() && !requestedBuild.equals(Integer.toString(number))) throw new IOException("PaperMC returned build " + number + " for requested build " + requestedBuild + ".");
             Path target = cache.resolve(name);
             if (!Files.isRegularFile(target) || !sha256(target).equals(sha)) {
                 Path partial = cache.resolve(name + ".part");
@@ -352,7 +376,7 @@ final class ServerCheck {
         var bot = Json.object(out.getOrDefault("bot", Json.map()));
         boolean ok = Boolean.TRUE.equals(out.get("ok"));
         b.append(ok ? "server-check passed" : "server-check FAILED").append(" on Paper ").append(server.get("minecraft")).append(" build ").append(server.get("build"))
-                .append(", bot MCProtocolLib ").append(bot.get("version"));
+                .append(", bot ").append(bot.getOrDefault("library", "MCProtocolLib")).append(" ").append(bot.get("version"));
         if (bot.get("through") instanceof Map<?, ?> through) b.append(" (Minecraft ").append(bot.get("minecraft")).append(") through ViaProxy ").append(Json.object(through).get("version"));
         b.append(".\n");
         double serverStart = 0, scenario = 0;
@@ -361,6 +385,7 @@ final class ServerCheck {
             String status = String.valueOf(step.getOrDefault("status", "not run"));
             double seconds = step.get("seconds") instanceof Number n ? n.doubleValue() : 0;
             if (step.get("serverStart") instanceof Map<?, ?> start && Json.object(start).get("seconds") instanceof Number n) { double startSeconds = n.doubleValue(); serverStart += startSeconds; seconds -= startSeconds; }
+            for (Object restart : Json.array(step.getOrDefault("serverRestarts", List.of()))) if (Json.object(restart).get("seconds") instanceof Number n) { serverStart += n.doubleValue(); seconds -= n.doubleValue(); }
             scenario += seconds;
             b.append(String.format(Locale.ROOT, "  %-4s %3s  %-60s %5.1fs%n", status.equals("pass") ? "PASS" : status.equals("fail") ? "FAIL" : status.equals("done") ? "  ok" : "----", step.get("line"), clip(String.valueOf(step.get("step")), 60), seconds));
         }

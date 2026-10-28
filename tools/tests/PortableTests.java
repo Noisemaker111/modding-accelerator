@@ -140,9 +140,14 @@ public final class PortableTests {
         Path home = Path.of(args[0]), scratch = Path.of(args[1]); Files.createDirectories(scratch);
         String restartTimes = ServerCheck.text(Json.map("ok", true, "server", Json.map("minecraft", "26.3", "build", "1"), "bot", Json.map("version", "x"),
                 "steps", List.of(Json.map("line", 1, "step", "start-server", "status", "done", "seconds", 10.0, "serverStart", Json.map("seconds", 9.0)),
-                        Json.map("line", 2, "step", "restart-server", "status", "done", "seconds", 6.0, "serverStart", Json.map("seconds", 5.0))),
+                        Json.map("line", 2, "step", "restart-server", "status", "done", "seconds", 6.0, "serverRestarts", List.of(Json.map("seconds", 5.0)))),
                 "serverStopSeconds", 1.0, "scenario", "fixture"), scratch);
         check(restartTimes.contains("server start 14.0s, scenario 2.0s, stop 1.0s"), "server timings include every start and restart: " + restartTimes);
+        Path pluginFolder = scratch.resolve("plugins, fixtures"); Files.createDirectories(pluginFolder);
+        Path pluginA = pluginFolder.resolve("a.jar"), pluginB = pluginFolder.resolve("b.jar");
+        Files.writeString(pluginA, "fixture"); Files.writeString(pluginB, "fixture");
+        check(ServerCheck.pluginPaths(scratch, pluginFolder.toString()).size() == 2, "plugin folder names may contain commas");
+        check(ServerCheck.pluginPaths(scratch, pluginA + File.pathSeparator + pluginB).size() == 2, "individual absolute plugin jars, including commas in their paths, can be listed together");
         Path existingArgs = scratch.resolve("existing loom args.txt");
         Files.writeString(existingArgs, "-Dmodaccel.launchProbe=existing-file\n");
         String classpath = System.getProperty("java.class.path") + (File.pathSeparator + scratch.resolve("nonexistent # ' path")).repeat(1100);
