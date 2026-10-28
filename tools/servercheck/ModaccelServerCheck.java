@@ -63,9 +63,12 @@ public final class ModaccelServerCheck {
     static Path root, logDir;
     static final List<Map<String, Object>> steps = new ArrayList<>();
     static final Map<String, String> secrets = new LinkedHashMap<>();
+    static final List<String> runtimeSecrets = new ArrayList<>();
     static final Map<String, Integer> ports = new LinkedHashMap<>();
     static final Map<String, String> serverEnv = new LinkedHashMap<>();
     static final Map<String, String> serverProperties = new LinkedHashMap<>();
+    static final Map<String, String> processEnv = new LinkedHashMap<>();
+    static final Map<String, String> helperEnv = new LinkedHashMap<>();
     static final List<Process> helpers = new ArrayList<>();
     static final Map<String, Path> helperLogs = new LinkedHashMap<>();
     static String botName = "serverFakeBot";
@@ -73,6 +76,7 @@ public final class ModaccelServerCheck {
     static String mask(String text) {
         if (text == null) return null;
         for (var secret : secrets.entrySet()) if (secret.getValue().length() >= 1) text = text.replace(secret.getValue(), "${secret:" + secret.getKey() + "}");
+        for (String secret : runtimeSecrets) text = text.replace(secret, "[masked]");
         return text;
     }
 
@@ -151,16 +155,17 @@ public final class ModaccelServerCheck {
         }
     }
 
-    static final Set<String> SERVER_STEPS = Set.of("join", "rcon", "expect-log", "expect-no-log", "expect-rcon", "start-server");
+    static final Set<String> SERVER_STEPS = Set.of("join", "rcon", "expect-log", "expect-no-log", "expect-rcon", "expect-no-rcon", "start-server", "restart-server", "expect-process");
     static final Set<String> BOT_STEPS = Set.of("say", "command", "expect-chat", "expect-no-chat", "expect-title", "expect-actionbar", "expect-entity", "expect-no-entity",
             "expect-block", "expect-inventory", "expect-no-inventory", "expect-position", "leave");
     static final Set<String> VERBS;
     static {
-        Set<String> v = new HashSet<>(Set.of("needs", "server-env", "server-property", "background", "wait-port", "wait", "expect-http", "bot-name"));
+        Set<String> v = new HashSet<>(Set.of("needs", "server-env", "server-property", "process-env", "helper-env", "background", "wait-port", "wait", "expect-http", "bot-name"));
         v.addAll(SERVER_STEPS); v.addAll(BOT_STEPS); VERBS = v;
     }
 
     static Server server; static Bot bot;
+    static final List<String> previousServerLines = new ArrayList<>();
     /** Where the bot connects: the server itself, or ViaProxy in front of it when the server runs another version. */
     static int joinPort;
     static long actionMark; static int chatMark, logMark; static String lastAction = "the start";
@@ -221,6 +226,7 @@ public final class ModaccelServerCheck {
                 case "secret" -> value = secrets.get(name);
                 case "bot" -> value = botName;
                 case "root" -> value = root.toString();
+                case "harness" -> value = spec.get("harness").toString();
                 case "server.port" -> value = server == null ? "?" : Integer.toString(server.port);
                 default -> value = m.group();
             }
@@ -259,6 +265,65 @@ public final class ModaccelServerCheck {
         if (server != null) logMark = server.lines.size();
     }
 
+    static void restartServer(Map<String, Object> step) throws Exception {
+        if (bot != null) { bot.leave(); bot = null; }
+        Server previous = server;
+        previous.stop();
+        synchronized (previous.lines) { previousServerLines.addAll(previous.lines); }
+        long started = System.nanoTime();
+        server = new Server(Json.object(spec.get("server")), previous);
+        Map<String, Object> timing = Json.map("seconds", (System.nanoTime() - started) / 1e9, "port", server.port, "log", server.log.toString());
+        @SuppressWarnings("unchecked")
+        List<Object> restarts = (List<Object>) step.computeIfAbsent("serverRestarts", ignored -> new ArrayList<>());
+        restarts.add(timing);
+        markAction("the server restart"); logMark = 0;
+    }
+
+    /** Run a project's existing bot/test program. A local authenticated control socket permits its deliberate restart. */
+    static String expectProcess(String rest, Map<String, Object> step) throws Exception {
+        Expect e = expect(rest, 180, true); assertions++;
+        List<String> command = words(e.rest());
+        if (command.isEmpty()) throw new ScenarioError("Write expect-process COMMAND ~success output~ within 180s.");
+        Path log = logDir.resolve("external-test-" + steps.size() + ".log");
+        List<String> lines = new ArrayList<>();
+        String token = UUID.randomUUID().toString();
+        runtimeSecrets.add(token); runtimeSecrets.add(server.rconPassword);
+        try (ServerSocket control = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            control.setSoTimeout(100);
+            ProcessBuilder builder = new ProcessBuilder(resolveProgram(command)).directory(root.toFile()).redirectErrorStream(true);
+            builder.environment().putAll(processEnv);
+            builder.environment().put("MC_HOST", "127.0.0.1");
+            builder.environment().put("MC_PORT", Integer.toString(server.port));
+            builder.environment().put("RCON_PORT", Integer.toString(server.rconPort));
+            builder.environment().put("RCON_PASSWORD", server.rconPassword);
+            builder.environment().put("MODACCEL_RESTART_PORT", Integer.toString(control.getLocalPort()));
+            builder.environment().put("MODACCEL_RESTART_TOKEN", token);
+            Process process = builder.start();
+            Thread output = pump(process.getInputStream(), log, lines);
+            long deadline = System.nanoTime() + (long) (e.seconds() * 1e9);
+            try {
+                while (process.isAlive() && System.nanoTime() < deadline) {
+                    if (!server.process.isAlive()) throw new ScenarioError("The server exited during the external test. Log: " + server.log);
+                    try (Socket request = control.accept()) {
+                        request.setSoTimeout(1000);
+                        String received = new BufferedReader(new InputStreamReader(request.getInputStream(), StandardCharsets.UTF_8)).readLine();
+                        if (!token.equals(received)) continue;
+                        restartServer(step);
+                        request.getOutputStream().write("ok\n".getBytes(StandardCharsets.UTF_8));
+                    } catch (SocketTimeoutException ignored) { }
+                }
+                if (process.isAlive()) throw new ScenarioError("External test timed out after " + secs(e.seconds()) + ". Log: " + log);
+                output.join(5000);
+                String captured; synchronized (lines) { captured = String.join("\n", lines); }
+                if (process.exitValue() != 0 || !e.pattern().matcher(captured).find()) throw new ScenarioError("External test exit " + process.exitValue() + " or missing ~" + e.source() + "~. Log: " + log + "\n" + captured);
+                step.put("processLog", log.toString());
+                return "external test passed; log " + log;
+            } finally {
+                if (process.isAlive()) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); }
+            }
+        }
+    }
+
     static String execute(String verb, String rest, Map<String, Object> step) throws Exception {
         switch (verb) {
             case "needs" -> {
@@ -277,11 +342,20 @@ public final class ModaccelServerCheck {
                 int eq = rest.indexOf('='); if (eq <= 0) throw new ScenarioError("Write server-property key=value.");
                 serverProperties.put(rest.substring(0, eq).strip(), rest.substring(eq + 1).strip()); return null;
             }
+            case "process-env" -> {
+                int eq = rest.indexOf('='); if (eq <= 0) throw new ScenarioError("Write process-env NAME=value.");
+                processEnv.put(rest.substring(0, eq).strip(), rest.substring(eq + 1).strip()); return null;
+            }
+            case "helper-env" -> {
+                int eq = rest.indexOf('='); if (eq <= 0) throw new ScenarioError("Write helper-env NAME=value.");
+                helperEnv.put(rest.substring(0, eq).strip(), rest.substring(eq + 1).strip()); return null;
+            }
             case "background" -> {
                 int colon = rest.indexOf(':'); if (colon <= 0) throw new ScenarioError("Write background NAME: command and arguments.");
                 String name = rest.substring(0, colon).strip(); List<String> command = words(rest.substring(colon + 1).strip());
                 Path log = logDir.resolve("helper-" + name + ".log");
                 ProcessBuilder builder = new ProcessBuilder(resolveProgram(command)).directory(root.toFile()).redirectErrorStream(true);
+                builder.environment().putAll(helperEnv);
                 Process process;
                 try { process = builder.start(); } catch (IOException e) { throw new ScenarioError("Could not start " + command.get(0) + ": " + e.getMessage()); }
                 helpers.add(process); helperLogs.put(name, log);
@@ -299,6 +373,11 @@ public final class ModaccelServerCheck {
             }
             case "wait" -> { Thread.sleep((long) (expect("x for " + rest.replaceFirst("^(for\\s+)", ""), 1, false).seconds() * 1000)); return null; }
             case "start-server" -> { return "server is up"; }
+            case "restart-server" -> {
+                restartServer(step);
+                return "server restarted with its world and plugin data";
+            }
+            case "expect-process" -> { return expectProcess(rest, step); }
             case "join" -> {
                 if (!rest.isBlank()) botName = rest.strip();
                 if (bot != null) throw new ScenarioError("The bot is already in the game.");
@@ -317,6 +396,18 @@ public final class ModaccelServerCheck {
                 do { last = server.rcon(command); if (e.pattern().matcher(last).find()) return "rcon " + command + " -> " + last; Thread.sleep(200); } while (System.nanoTime() < deadline);
                 throw new ScenarioError("Expected the RCON answer to /" + command + " to match ~" + e.source() + "~ within " + secs(e.seconds()) + ".\n  It answered: " + (last.isBlank() ? "(nothing)" : last));
             }
+            case "expect-no-rcon" -> {
+                Expect e = expect(rest, 0, true); assertions++;
+                String command = e.rest(); if (command.isBlank()) throw new ScenarioError("Write expect-no-rcon COMMAND ~regex~ [for Ns].");
+                long deadline = System.nanoTime() + (long) (e.seconds() * 1e9);
+                do {
+                    String answer = server.rcon(command);
+                    if (e.pattern().matcher(answer).find()) throw new ScenarioError("Expected the RCON answer to /" + command + " not to match ~" + e.source() + "~, but it answered: " + answer);
+                    if (System.nanoTime() >= deadline) break;
+                    Thread.sleep(200);
+                } while (true);
+                return null;
+            }
             case "expect-log" -> {
                 Expect e = expect(rest, 10, true); assertions++;
                 String found = waitFor(e.seconds(), () -> { synchronized (server.lines) { for (int i = logMark; i < server.lines.size(); i++) if (e.pattern().matcher(server.lines.get(i)).find()) return server.lines.get(i); } return null; });
@@ -326,6 +417,7 @@ public final class ModaccelServerCheck {
             case "expect-no-log" -> {
                 Expect e = expect(rest, 0, true); assertions++;
                 if (e.seconds() > 0) Thread.sleep((long) (e.seconds() * 1000));
+                for (String l : previousServerLines) if (e.pattern().matcher(l).find()) throw new ScenarioError("Expected no server log line matching ~" + e.source() + "~, but the server logged:\n  " + l);
                 synchronized (server.lines) { for (String l : server.lines) if (e.pattern().matcher(l).find()) throw new ScenarioError("Expected no server log line matching ~" + e.source() + "~, but the server logged:\n  " + l); }
                 return null;
             }
@@ -567,14 +659,16 @@ public final class ModaccelServerCheck {
     }
 
     static final class Server {
-        final Process process; final Path log, dir; final int port, rconPort; final String rconPassword = UUID.randomUUID().toString().replace("-", "");
+        final Process process; final Thread logPump; final Path log, dir; final int port, rconPort; final String rconPassword;
         final List<String> lines = new ArrayList<>();
-        Server(Map<String, Object> s) throws Exception {
+        Server(Map<String, Object> s) throws Exception { this(s, null); }
+        Server(Map<String, Object> s, Server previous) throws Exception {
             dir = Path.of(s.get("dir").toString());
-            port = freePort(); rconPort = freePort();
+            rconPassword = previous == null ? UUID.randomUUID().toString().replace("-", "") : previous.rconPassword;
+            port = previous == null ? freePort() : previous.port; rconPort = previous == null ? freePort() : previous.rconPort;
             Files.createDirectories(dir);
             // A fresh, throwaway world and plugin folder every run; Paper's patched jar and libraries stay for the next one.
-            for (String name : List.of("world", "world_nether", "world_the_end", "plugins", "logs", "crash-reports")) deleteTree(dir.resolve(name));
+            if (previous == null) for (String name : List.of("world", "world_nether", "world_the_end", "plugins", "logs", "crash-reports")) deleteTree(dir.resolve(name));
             Path plugins = dir.resolve("plugins"); Files.createDirectories(plugins);
             for (Object jar : Json.array(s.get("plugins"))) { Path p = Path.of(jar.toString()); Files.copy(p, plugins.resolve(p.getFileName()), StandardCopyOption.REPLACE_EXISTING); }
             Map<String, String> props = new LinkedHashMap<>();
@@ -595,20 +689,25 @@ public final class ModaccelServerCheck {
             for (Object o : Json.array(s.get("command"))) command.add(o.toString());
             ProcessBuilder builder = new ProcessBuilder(command).directory(dir.toFile()).redirectErrorStream(true);
             builder.environment().putAll(serverEnv);
-            log = logDir.resolve("server.log");
+            log = logDir.resolve(previous == null ? "server.log" : "server-restart-" + System.nanoTime() + ".log");
             process = builder.start();
-            pump(process.getInputStream(), log, lines);
+            logPump = pump(process.getInputStream(), log, lines);
             int timeout = ((Number) s.getOrDefault("startSeconds", 240)).intValue();
             long deadline = System.nanoTime() + timeout * 1_000_000_000L;
-            while (true) {
-                synchronized (lines) { if (lines.stream().anyMatch(l -> l.contains("Done (") && l.contains("For help"))) break; }
-                if (!process.isAlive()) throw new ScenarioError("The server exited before it was ready (exit " + process.exitValue() + "). Last log lines:\n  " + String.join("\n  ", tail(15)) + "\n  Log: " + log);
-                if (System.nanoTime() > deadline) throw new ScenarioError("The server was not ready in " + timeout + " seconds. Last log lines:\n  " + String.join("\n  ", tail(15)) + "\n  Log: " + log);
-                Thread.sleep(100);
-            }
-            synchronized (lines) {
-                for (String l : lines) if (l.contains("Error occurred while enabling") || l.contains("Could not load plugin") || l.contains("Could not load 'plugins"))
-                    throw new ScenarioError("The server started, but a plugin did not load or enable:\n  " + l + "\n  Log: " + log);
+            try {
+                while (true) {
+                    synchronized (lines) { if (lines.stream().anyMatch(l -> l.contains("Done (") && l.contains("For help"))) break; }
+                    if (!process.isAlive()) throw new ScenarioError("The server exited before it was ready (exit " + process.exitValue() + "). Last log lines:\n  " + String.join("\n  ", tail(15)) + "\n  Log: " + log);
+                    if (System.nanoTime() > deadline) throw new ScenarioError("The server was not ready in " + timeout + " seconds. Last log lines:\n  " + String.join("\n  ", tail(15)) + "\n  Log: " + log);
+                    Thread.sleep(100);
+                }
+                synchronized (lines) {
+                    for (String l : lines) if (l.contains("Error occurred while enabling") || l.contains("Could not load plugin") || l.contains("Could not load 'plugins"))
+                        throw new ScenarioError("The server started, but a plugin did not load or enable:\n  " + l + "\n  Log: " + log);
+                }
+            } catch (Exception failure) {
+                stop();
+                throw failure;
             }
         }
         /** 1.19 named world presets minecraft:flat; older servers call the flat world type flat. */
@@ -651,7 +750,7 @@ public final class ModaccelServerCheck {
             try { if (rcon != null) rcon.close(); } catch (IOException ignored) { }
             if (!process.isAlive()) return;
             try { process.getOutputStream().write("stop\n".getBytes(StandardCharsets.UTF_8)); process.getOutputStream().flush(); } catch (IOException ignored) { }
-            try { if (!process.waitFor(30, TimeUnit.SECONDS)) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); } }
+            try { if (!process.waitFor(30, TimeUnit.SECONDS)) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); process.waitFor(5, TimeUnit.SECONDS); } logPump.join(5000); }
             catch (InterruptedException e) { process.destroyForcibly(); }
         }
     }
