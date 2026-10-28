@@ -360,7 +360,7 @@ final class ServerCheck {
             var step = Json.object(s);
             String status = String.valueOf(step.getOrDefault("status", "not run"));
             double seconds = step.get("seconds") instanceof Number n ? n.doubleValue() : 0;
-            if (step.get("serverStart") instanceof Map<?, ?> start && Json.object(start).get("seconds") instanceof Number n) { serverStart = n.doubleValue(); seconds -= serverStart; }
+            if (step.get("serverStart") instanceof Map<?, ?> start && Json.object(start).get("seconds") instanceof Number n) { double startSeconds = n.doubleValue(); serverStart += startSeconds; seconds -= startSeconds; }
             scenario += seconds;
             b.append(String.format(Locale.ROOT, "  %-4s %3s  %-60s %5.1fs%n", status.equals("pass") ? "PASS" : status.equals("fail") ? "FAIL" : status.equals("done") ? "  ok" : "----", step.get("line"), clip(String.valueOf(step.get("step")), 60), seconds));
         }

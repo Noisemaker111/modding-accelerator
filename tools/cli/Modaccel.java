@@ -339,10 +339,11 @@ public final class Modaccel {
                     + "(SHA-256 checked, cached), started headless in offline mode on 127.0.0.1 with a flat fixed-seed world, and stopped after.\n"
                     + "modaccel accepts Minecraft's EULA only for that throwaway local test server. A protocol bot (MCProtocolLib, knowledge/mcprotocollib.json) joins as\n"
                     + "serverFakeBot; on a server of another Minecraft version it joins through ViaProxy (knowledge/viaproxy.json, 1.8 and up). The scenario (--file, else .modaccel/server-check.scenario) is one step per line:\n"
-                    + "  join, leave, say TEXT, command /CMD, rcon CMD, wait Ns, server-env K=V, server-property K=V, background NAME: CMD, wait-port P\n"
-                    + "  expect-chat|expect-title|expect-actionbar|expect-log|expect-rcon CMD|expect-http GET URL  ~regex~ [within Ns]\n"
+                    + "  join, leave, restart-server, say TEXT, command /CMD, rcon CMD, wait Ns, server-env K=V, server-property K=V, background NAME: CMD, wait-port P\n"
+                    + "  expect-chat|expect-title|expect-actionbar|expect-log|expect-rcon CMD|expect-http GET URL  ~regex~ [within Ns]; expect-no-rcon CMD ~regex~ [for Ns]\n"
                     + "  expect-entity TYPE [named ~re~] [near R], expect-block X Y Z ID[props] (~ is relative), expect-inventory ITEM [count N] [~re~],\n"
                     + "  expect-position X Y Z [tolerance T], and expect-no-chat|-log|-entity|-inventory ... [within|for Ns].\n"
+                    + "restart-server preserves the world and plugin data, disconnects the bot, and requires join again before bot steps.\n"
                     + "${bot}, ${port:NAME} and ${secret:NAME} expand; secrets come from the environment or .modaccel/secrets.properties (keep it\n"
                     + "out of git), are masked as ${secret:NAME} in every receipt and server file, and a missing one fails with \"needs secret NAME\".\n"
                     + "Every expect step must pass; a scenario without one fails. Exit 1 names the step, what it expected and what came instead.";

@@ -43,6 +43,17 @@ public final class ServerCheckFixtures {
                 if (run.exit() != 0 || !run.output().contains("server-check passed") || passed != expects)
                     throw new AssertionError(id + " server-check: expected exit 0 and all " + expects + " expect lines passing; got exit " + run.exit() + ", " + passed + " passing\n" + run.output());
                 System.out.printf(Locale.ROOT, "PASS %s server-check, fresh world: %d expect lines in %.1fs (%s)%n", id, expects, run.seconds(), times(run.output()));
+                for (Object extra : (List<?>) check.getOrDefault("additionalScenarios", List.of())) {
+                    @SuppressWarnings("unchecked") Map<String, Object> entry = (Map<String, Object>) extra;
+                    Path file = home.resolve(entry.get("scenario").toString());
+                    @SuppressWarnings("unchecked") Map<String, String> env = (Map<String, String>) entry.getOrDefault("env", Map.of());
+                    long required = Files.readAllLines(file).stream().filter(l -> l.strip().startsWith("expect-")).count();
+                    Run extraRun = modaccel(home, jar, root, env, "server-check", "--file", file.toString());
+                    long extraPassed = count(extraRun.output(), "\"status\":\"pass\"");
+                    if (extraRun.exit() != 0 || !extraRun.output().contains("server-check passed") || extraPassed != required)
+                        throw new AssertionError(id + " " + file + ": expected " + required + " passing assertions, got " + extraPassed + "\n" + extraRun.output());
+                    System.out.printf(Locale.ROOT, "PASS %s %s: %d expect lines in %.1fs%n", id, file.getFileName(), required, extraRun.seconds());
+                }
             }
 
             // The bot itself, with a secret from the gitignored secrets file; then without it.
@@ -63,6 +74,11 @@ public final class ServerCheckFixtures {
             }
             if (!leaks.isEmpty()) throw new AssertionError("The secret was written in clear to: " + leaks);
             System.out.printf(Locale.ROOT, "PASS %s bot scenario: %d expect lines in %.1fs, secret masked in every receipt, log and server file%n", id, botExpects, withSecret.seconds());
+            Path negativeRcon = home.resolve("tools/tests/server-check-negative-rcon.scenario");
+            Run forbidden = modaccel(home, jar, root, Map.of(), "server-check", "--file", negativeRcon.toString());
+            if (forbidden.exit() != 1 || !"expect-no-rcon list ~players online~ for 0s".equals(failedStep(forbidden.output())))
+                throw new AssertionError("expect-no-rcon must reject a matching RCON response: " + forbidden.output());
+            System.out.println("PASS expect-no-rcon rejects a matching response");
             Files.delete(secrets);
             Run without = modaccel(home, jar, root, Map.of(), "server-check", "--file", bot.toString());
             if (without.exit() != 1 || !without.output().contains("needs secret BOT_SECRET") || without.output().contains("\"status\":\"pass\""))

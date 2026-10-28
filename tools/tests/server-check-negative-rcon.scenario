@@ -1,0 +1,2 @@
+# This must fail: a working server's list response includes this text.
+expect-no-rcon list ~players online~ for 0s

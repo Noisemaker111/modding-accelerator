@@ -151,7 +151,7 @@ public final class ModaccelServerCheck {
         }
     }
 
-    static final Set<String> SERVER_STEPS = Set.of("join", "rcon", "expect-log", "expect-no-log", "expect-rcon", "start-server");
+    static final Set<String> SERVER_STEPS = Set.of("join", "rcon", "expect-log", "expect-no-log", "expect-rcon", "expect-no-rcon", "start-server", "restart-server");
     static final Set<String> BOT_STEPS = Set.of("say", "command", "expect-chat", "expect-no-chat", "expect-title", "expect-actionbar", "expect-entity", "expect-no-entity",
             "expect-block", "expect-inventory", "expect-no-inventory", "expect-position", "leave");
     static final Set<String> VERBS;
@@ -161,6 +161,7 @@ public final class ModaccelServerCheck {
     }
 
     static Server server; static Bot bot;
+    static final List<String> previousServerLines = new ArrayList<>();
     /** Where the bot connects: the server itself, or ViaProxy in front of it when the server runs another version. */
     static int joinPort;
     static long actionMark; static int chatMark, logMark; static String lastAction = "the start";
@@ -299,6 +300,17 @@ public final class ModaccelServerCheck {
             }
             case "wait" -> { Thread.sleep((long) (expect("x for " + rest.replaceFirst("^(for\\s+)", ""), 1, false).seconds() * 1000)); return null; }
             case "start-server" -> { return "server is up"; }
+            case "restart-server" -> {
+                if (bot != null) { bot.leave(); bot = null; }
+                Server previous = server;
+                previous.stop();
+                synchronized (previous.lines) { previousServerLines.addAll(previous.lines); }
+                long started = System.nanoTime();
+                server = new Server(Json.object(spec.get("server")), previous);
+                step.put("serverStart", Json.map("seconds", (System.nanoTime() - started) / 1e9, "port", server.port, "log", server.log.toString()));
+                markAction("the server restart"); logMark = 0;
+                return "server restarted with its world and plugin data";
+            }
             case "join" -> {
                 if (!rest.isBlank()) botName = rest.strip();
                 if (bot != null) throw new ScenarioError("The bot is already in the game.");
@@ -317,6 +329,18 @@ public final class ModaccelServerCheck {
                 do { last = server.rcon(command); if (e.pattern().matcher(last).find()) return "rcon " + command + " -> " + last; Thread.sleep(200); } while (System.nanoTime() < deadline);
                 throw new ScenarioError("Expected the RCON answer to /" + command + " to match ~" + e.source() + "~ within " + secs(e.seconds()) + ".\n  It answered: " + (last.isBlank() ? "(nothing)" : last));
             }
+            case "expect-no-rcon" -> {
+                Expect e = expect(rest, 0, true); assertions++;
+                String command = e.rest(); if (command.isBlank()) throw new ScenarioError("Write expect-no-rcon COMMAND ~regex~ [for Ns].");
+                long deadline = System.nanoTime() + (long) (e.seconds() * 1e9);
+                do {
+                    String answer = server.rcon(command);
+                    if (e.pattern().matcher(answer).find()) throw new ScenarioError("Expected the RCON answer to /" + command + " not to match ~" + e.source() + "~, but it answered: " + answer);
+                    if (System.nanoTime() >= deadline) break;
+                    Thread.sleep(200);
+                } while (true);
+                return null;
+            }
             case "expect-log" -> {
                 Expect e = expect(rest, 10, true); assertions++;
                 String found = waitFor(e.seconds(), () -> { synchronized (server.lines) { for (int i = logMark; i < server.lines.size(); i++) if (e.pattern().matcher(server.lines.get(i)).find()) return server.lines.get(i); } return null; });
@@ -326,6 +350,7 @@ public final class ModaccelServerCheck {
             case "expect-no-log" -> {
                 Expect e = expect(rest, 0, true); assertions++;
                 if (e.seconds() > 0) Thread.sleep((long) (e.seconds() * 1000));
+                for (String l : previousServerLines) if (e.pattern().matcher(l).find()) throw new ScenarioError("Expected no server log line matching ~" + e.source() + "~, but the server logged:\n  " + l);
                 synchronized (server.lines) { for (String l : server.lines) if (e.pattern().matcher(l).find()) throw new ScenarioError("Expected no server log line matching ~" + e.source() + "~, but the server logged:\n  " + l); }
                 return null;
             }
@@ -567,14 +592,15 @@ public final class ModaccelServerCheck {
     }
 
     static final class Server {
-        final Process process; final Path log, dir; final int port, rconPort; final String rconPassword = UUID.randomUUID().toString().replace("-", "");
+        final Process process; final Thread logPump; final Path log, dir; final int port, rconPort; final String rconPassword = UUID.randomUUID().toString().replace("-", "");
         final List<String> lines = new ArrayList<>();
-        Server(Map<String, Object> s) throws Exception {
+        Server(Map<String, Object> s) throws Exception { this(s, null); }
+        Server(Map<String, Object> s, Server previous) throws Exception {
             dir = Path.of(s.get("dir").toString());
-            port = freePort(); rconPort = freePort();
+            port = previous == null ? freePort() : previous.port; rconPort = previous == null ? freePort() : previous.rconPort;
             Files.createDirectories(dir);
             // A fresh, throwaway world and plugin folder every run; Paper's patched jar and libraries stay for the next one.
-            for (String name : List.of("world", "world_nether", "world_the_end", "plugins", "logs", "crash-reports")) deleteTree(dir.resolve(name));
+            if (previous == null) for (String name : List.of("world", "world_nether", "world_the_end", "plugins", "logs", "crash-reports")) deleteTree(dir.resolve(name));
             Path plugins = dir.resolve("plugins"); Files.createDirectories(plugins);
             for (Object jar : Json.array(s.get("plugins"))) { Path p = Path.of(jar.toString()); Files.copy(p, plugins.resolve(p.getFileName()), StandardCopyOption.REPLACE_EXISTING); }
             Map<String, String> props = new LinkedHashMap<>();
@@ -595,20 +621,25 @@ public final class ModaccelServerCheck {
             for (Object o : Json.array(s.get("command"))) command.add(o.toString());
             ProcessBuilder builder = new ProcessBuilder(command).directory(dir.toFile()).redirectErrorStream(true);
             builder.environment().putAll(serverEnv);
-            log = logDir.resolve("server.log");
+            log = logDir.resolve(previous == null ? "server.log" : "server-restart-" + System.nanoTime() + ".log");
             process = builder.start();
-            pump(process.getInputStream(), log, lines);
+            logPump = pump(process.getInputStream(), log, lines);
             int timeout = ((Number) s.getOrDefault("startSeconds", 240)).intValue();
             long deadline = System.nanoTime() + timeout * 1_000_000_000L;
-            while (true) {
-                synchronized (lines) { if (lines.stream().anyMatch(l -> l.contains("Done (") && l.contains("For help"))) break; }
-                if (!process.isAlive()) throw new ScenarioError("The server exited before it was ready (exit " + process.exitValue() + "). Last log lines:\n  " + String.join("\n  ", tail(15)) + "\n  Log: " + log);
-                if (System.nanoTime() > deadline) throw new ScenarioError("The server was not ready in " + timeout + " seconds. Last log lines:\n  " + String.join("\n  ", tail(15)) + "\n  Log: " + log);
-                Thread.sleep(100);
-            }
-            synchronized (lines) {
-                for (String l : lines) if (l.contains("Error occurred while enabling") || l.contains("Could not load plugin") || l.contains("Could not load 'plugins"))
-                    throw new ScenarioError("The server started, but a plugin did not load or enable:\n  " + l + "\n  Log: " + log);
+            try {
+                while (true) {
+                    synchronized (lines) { if (lines.stream().anyMatch(l -> l.contains("Done (") && l.contains("For help"))) break; }
+                    if (!process.isAlive()) throw new ScenarioError("The server exited before it was ready (exit " + process.exitValue() + "). Last log lines:\n  " + String.join("\n  ", tail(15)) + "\n  Log: " + log);
+                    if (System.nanoTime() > deadline) throw new ScenarioError("The server was not ready in " + timeout + " seconds. Last log lines:\n  " + String.join("\n  ", tail(15)) + "\n  Log: " + log);
+                    Thread.sleep(100);
+                }
+                synchronized (lines) {
+                    for (String l : lines) if (l.contains("Error occurred while enabling") || l.contains("Could not load plugin") || l.contains("Could not load 'plugins"))
+                        throw new ScenarioError("The server started, but a plugin did not load or enable:\n  " + l + "\n  Log: " + log);
+                }
+            } catch (Exception failure) {
+                stop();
+                throw failure;
             }
         }
         /** 1.19 named world presets minecraft:flat; older servers call the flat world type flat. */
@@ -651,7 +682,7 @@ public final class ModaccelServerCheck {
             try { if (rcon != null) rcon.close(); } catch (IOException ignored) { }
             if (!process.isAlive()) return;
             try { process.getOutputStream().write("stop\n".getBytes(StandardCharsets.UTF_8)); process.getOutputStream().flush(); } catch (IOException ignored) { }
-            try { if (!process.waitFor(30, TimeUnit.SECONDS)) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); } }
+            try { if (!process.waitFor(30, TimeUnit.SECONDS)) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); process.waitFor(5, TimeUnit.SECONDS); } logPump.join(5000); }
             catch (InterruptedException e) { process.destroyForcibly(); }
         }
     }

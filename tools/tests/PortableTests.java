@@ -138,6 +138,11 @@ public final class PortableTests {
     }
     public static void main(String[] args) throws Exception {
         Path home = Path.of(args[0]), scratch = Path.of(args[1]); Files.createDirectories(scratch);
+        String restartTimes = ServerCheck.text(Json.map("ok", true, "server", Json.map("minecraft", "26.3", "build", "1"), "bot", Json.map("version", "x"),
+                "steps", List.of(Json.map("line", 1, "step", "start-server", "status", "done", "seconds", 10.0, "serverStart", Json.map("seconds", 9.0)),
+                        Json.map("line", 2, "step", "restart-server", "status", "done", "seconds", 6.0, "serverStart", Json.map("seconds", 5.0))),
+                "serverStopSeconds", 1.0, "scenario", "fixture"), scratch);
+        check(restartTimes.contains("server start 14.0s, scenario 2.0s, stop 1.0s"), "server timings include every start and restart: " + restartTimes);
         Path existingArgs = scratch.resolve("existing loom args.txt");
         Files.writeString(existingArgs, "-Dmodaccel.launchProbe=existing-file\n");
         String classpath = System.getProperty("java.class.path") + (File.pathSeparator + scratch.resolve("nonexistent # ' path")).repeat(1100);
