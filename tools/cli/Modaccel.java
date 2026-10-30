@@ -26,7 +26,7 @@ public final class Modaccel {
     static final class Options {
         final Map<String, String> values = new LinkedHashMap<>(); final Set<String> flags = new HashSet<>(); String command = "fast";
         Options(String[] args) {
-            Set<String> switches = Set.of("json", "refresh", "help", "dry-run", "fix", "direct", "expect-world", "save-roundtrip", "jbr");
+            Set<String> switches = Set.of("json", "refresh", "help", "dry-run", "fix", "direct", "expect-world", "save-roundtrip", "jbr", "fresh-server");
             int i = 0; if (args.length > 0 && !args[0].startsWith("-")) command = args[i++];
             if (command.equals("help") && i < args.length && !args[i].startsWith("-")) values.put("command", args[i++]);
             for (; i < args.length; i++) {
@@ -35,7 +35,7 @@ public final class Modaccel {
                 if (switches.contains(key)) flags.add(key);
                 // --undo with no transaction undoes the newest port.
                 else if (key.equals("undo") && (i + 1 == args.length || args[i + 1].startsWith("--"))) values.put(key, "latest");
-                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only", "plugins", "server-version", "background", "quiet", "pack", "minecraft", "loader", "memory").contains(key)) {
+                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only", "plugins", "server-version", "server-build", "server-xms", "background", "quiet", "pack", "minecraft", "loader", "memory").contains(key)) {
                     if (++i == args.length || args[i].startsWith("--")) throw new IllegalArgumentException("Missing value for --" + key);
                     values.put(key, args[i]);
                 } else throw new IllegalArgumentException("Unknown option --" + key + ". Run modaccel help" + (command.equals("help") ? "" : " " + command) + " for the options it takes.");
@@ -345,16 +345,20 @@ public final class Modaccel {
                     + "(plain Java, a Paper/Bukkit plugin) every test runs; with Minecraft present only tests tagged @Tag(\"pure\") run.\n"
                     + "test runs the project's whole test task. Both fail when no test ran, and check the mod's resources and metadata afterwards.\n"
                     + "The build needs JUnit: testImplementation(\"org.junit.jupiter:junit-jupiter:5.11.4\") and testRuntimeOnly(\"org.junit.platform:junit-platform-launcher:1.11.4\").";
-            case "server-check" -> "Run a plugin on a real headless Paper server with a bot player and check what it really did: modaccel server-check --root SOURCE [--file SCENARIO] [--server-version 26.3] [--refresh] --json\n"
+            case "server-check" -> "Run a plugin on a real headless Paper server with a bot player and check what it really did: modaccel server-check --root SOURCE [--file SCENARIO] [--server-version 26.3] [--server-build N] [--server-xms 512M] [--fresh-server] [--plugins FOLDER_OR_JARS] [--refresh] --json\n"
                     + "The plugin's jar task builds the jar; the real Paper server for its Minecraft version is downloaded once from PaperMC's API\n"
                     + "(SHA-256 checked, cached), started headless in offline mode on 127.0.0.1 with a flat fixed-seed world, and stopped after.\n"
+                    + "--fresh-server uses a new server directory in the receipt, so Paper patches and libraries are not reused.\n"
                     + "modaccel accepts Minecraft's EULA only for that throwaway local test server. A protocol bot (MCProtocolLib, knowledge/mcprotocollib.json) joins as\n"
                     + "serverFakeBot; on a server of another Minecraft version it joins through ViaProxy (knowledge/viaproxy.json, 1.8 and up). The scenario (--file, else .modaccel/server-check.scenario) is one step per line:\n"
-                    + "  join, leave, say TEXT, command /CMD, rcon CMD, wait Ns, server-env K=V, server-property K=V, background NAME: CMD, wait-port P\n"
-                    + "  expect-chat|expect-title|expect-actionbar|expect-log|expect-rcon CMD|expect-http GET URL  ~regex~ [within Ns]\n"
+                    + "  join, leave, restart-server, say TEXT, command /CMD, rcon CMD, wait Ns, server-env K=V, server-property K=V, background NAME: CMD, wait-port P\n"
+                    + "  expect-chat|expect-title|expect-actionbar|expect-log|expect-rcon CMD|expect-http GET URL  ~regex~ [within Ns]; expect-no-rcon CMD ~regex~ [for Ns]\n"
                     + "  expect-entity TYPE [named ~re~] [near R], expect-block X Y Z ID[props] (~ is relative), expect-inventory ITEM [count N] [~re~],\n"
                     + "  expect-position X Y Z [tolerance T], and expect-no-chat|-log|-entity|-inventory ... [within|for Ns].\n"
-                    + "${bot}, ${port:NAME} and ${secret:NAME} expand; secrets come from the environment or .modaccel/secrets.properties (keep it\n"
+                    + "  process-env K=V, helper-env K=V; expect-process COMMAND ~success output~ within Ns runs an existing test, requires exit 0 and matching output.\n"
+                    + "The process receives MC_HOST, MC_PORT, RCON_PORT and RCON_PASSWORD; MODACCEL_RESTART_PORT and MODACCEL_RESTART_TOKEN request a managed restart over loopback.\n"
+                    + "restart-server preserves the world and plugin data, disconnects the bot, and requires join again before bot steps.\n"
+                    + "${bot}, ${root}, ${harness}, ${port:NAME} and ${secret:NAME} expand; secrets come from the environment or .modaccel/secrets.properties (keep it\n"
                     + "out of git), are masked as ${secret:NAME} in every receipt and server file, and a missing one fails with \"needs secret NAME\".\n"
                     + "Every expect step must pass; a scenario without one fails. Exit 1 names the step, what it expected and what came instead.";
             case "compile" -> "Compile the mod and check what the game reads at start-up: modaccel compile --root SOURCE [--project :module]\n"

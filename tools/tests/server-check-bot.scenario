@@ -19,6 +19,11 @@ expect-inventory diamond count 3 within 5s
 expect-no-inventory emerald for 1s
 rcon summon minecraft:pig 11 -60 8 {CustomName:"Wilbur",NoAI:1b}
 expect-entity pig named ~^Wilbur$~ near 4 within 5s
+restart-server
+join
+expect-position 8.5 -60 8.5 tolerance 0.1 within 5s
+expect-block 9 -60 8 oak_stairs[facing=east] within 5s
+expect-entity pig named ~^Wilbur$~ near 4 within 5s
 rcon kill @e[type=minecraft:pig]
 expect-no-entity pig within 5s
 command /me waves

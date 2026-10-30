@@ -1,0 +1,2 @@
+# The output alone must not make a failed external test pass.
+expect-process node -e "console.log('1/1 checks passed');process.exit(1)" ~1/1 checks passed~ within 5s

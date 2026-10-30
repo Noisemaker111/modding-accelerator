@@ -21,6 +21,10 @@
       ] },
       "serverCheck": {
         "scenario": "bench/server-plugins/agentcraft.scenario",
+        "additionalScenarios": [
+          { "scenario": "bench/server-plugins/agentcraft-capy-fallback.scenario", "env": { "MOCK_CLAUDE_CODE": "0" } },
+          { "scenario": "bench/server-plugins/agentcraft-hoplite.scenario", "env": {} }
+        ],
         "breaks": [
           { "name": "spawn does nothing but still says Summoned",
             "file": "src/main/java/dev/agentcraft/command/AgentCommands.java",

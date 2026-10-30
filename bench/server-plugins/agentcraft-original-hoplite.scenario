@@ -1,0 +1,20 @@
+# Original AgentCraft Mineflayer assertions, Hoplite backend.
+needs node
+background hoplite: node test/mock-hoplite.mjs ${port:hoplite}
+wait-port ${port:hoplite} within 15s
+server-env AGENTCRAFT_BACKEND=hoplite
+server-env HOPLITE_API_KEY=hop_mock
+server-env HOPLITE_BASE_URL=http://127.0.0.1:${port:hoplite}
+server-property level-seed=
+server-property generate-structures=true
+server-property allow-flight=false
+server-property view-distance=10
+server-property simulation-distance=10
+server-property max-players=20
+server-property sync-chunk-writes=true
+server-property network-compression-threshold=256
+server-property enforce-secure-profile=true
+process-env BACKEND=hoplite
+process-env MOCK_URL=http://127.0.0.1:${port:hoplite}
+start-server
+expect-process node "${harness}/bench/server-plugins/agentcraft-original.mjs" ~21/21 checks passed~ within 180s

@@ -1,0 +1,44 @@
+# Capy rejects Claude Code: the plugin must retry with the paid Capy model.
+needs node
+background capy: node test/mock-capy.mjs ${port:capy}
+wait-port ${port:capy} within 15s
+server-env AGENTCRAFT_BACKEND=capy
+server-env CAPY_API_KEY=capy_mock
+server-env CAPY_BASE_URL=http://127.0.0.1:${port:capy}/api/v1
+join
+rcon op ${bot}
+command /agent spawn Claude Opus 5.5
+expect-chat ~Summoned Claude Opus 5\.5 as @claude~ within 5s
+expect-entity mannequin named ~^@claude$~ near 3 within 5s
+expect-rcon execute as @e[type=mannequin] if data entity @s {BukkitValues:{"agentcraft:handle":"claude"}} run data get entity @s profile ~agentcraft:entity/skin/claude~ within 5s
+command /agent spawn Claude Opus 5.5
+expect-chat ~Summoned Claude Opus 5\.5 as @claude2~ within 5s
+expect-entity mannequin named ~^@claude2$~ near 3 within 5s
+say @opus build me a capybara fan site
+expect-chat ~Which one\?~ within 5s
+say @claude2 build me a capybara fan site
+expect-chat ~Claude Opus 5\.5 is on it~ within 10s
+expect-http GET http://127.0.0.1:${port:capy}/_log ~"modelId":"claude-code/claude-opus-5-5"~ within 5s
+expect-http GET http://127.0.0.1:${port:capy}/_log ~"modelId":"anthropic/claude-opus-5-5"~ within 5s
+expect-entity text_display named ~thinking~ near 6 within 10s
+expect-entity text_display named ~Running npm test~ near 6 within 5s
+expect-entity text_display named ~Looking into it.*▌~ near 6 within 5s
+expect-chat ~^<Claude Opus 5\.5> \*?\*?Done!~ within 15s
+expect-inventory written_book ~(?s)Looking into it, one sec!.*Done! I read your note~ within 5s
+expect-rcon execute as @e[type=mannequin] if data entity @s {BukkitValues:{"agentcraft:handle":"claude"}} run data get entity @s CustomName ~Claude Opus 5.5~ within 5s
+expect-no-rcon execute as @e[type=mannequin] if data entity @s {BukkitValues:{"agentcraft:handle":"claude"}} on passengers run data get entity @s text ~Done!~ for 0s
+say @claude2 now add dark mode
+expect-http GET http://127.0.0.1:${port:capy}/_log ~now add dark mode~ within 10s
+expect-chat ~^<Claude Opus 5\.5> \*?\*?Done!~ within 15s
+expect-no-chat ~is on it~ for 0s
+rcon clear ${bot}
+command /agent spawn GPT-6.1 Sol
+expect-chat ~Summoned GPT-6\.1 Sol as @gpt~ within 5s
+say @gpt write the README
+expect-chat ~GPT-6\.1 Sol is on it~ within 10s
+expect-http GET http://127.0.0.1:${port:capy}/_log ~"modelId":"openai/gpt-6.1-sol"~ within 5s
+restart-server
+join
+expect-entity mannequin named ~^@gpt$~ near 3 within 10s
+expect-inventory written_book ~Done! I read your note~ within 30s
+expect-no-log ~at dev\.agentcraft\.|\[AgentCraft\] .*(?i:error|exception)|Could not pass event .* to AgentCraft~
