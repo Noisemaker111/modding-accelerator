@@ -1,0 +1,9 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="modaccel_pack_probe"
+version="1"
+displayName="modaccel pack-check probe"
+description="Placed by modaccel pack-check for one check run, then removed."
