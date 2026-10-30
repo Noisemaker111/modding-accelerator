@@ -35,7 +35,7 @@ public final class Modaccel {
                 if (switches.contains(key)) flags.add(key);
                 // --undo with no transaction undoes the newest port.
                 else if (key.equals("undo") && (i + 1 == args.length || args[i + 1].startsWith("--"))) values.put(key, "latest");
-                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only", "plugins", "server-version", "background", "quiet").contains(key)) {
+                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only", "plugins", "server-version", "background", "quiet", "pack", "minecraft", "loader", "memory").contains(key)) {
                     if (++i == args.length || args[i].startsWith("--")) throw new IllegalArgumentException("Missing value for --" + key);
                     values.put(key, args[i]);
                 } else throw new IllegalArgumentException("Unknown option --" + key + ". Run modaccel help" + (command.equals("help") ? "" : " " + command) + " for the options it takes.");
@@ -51,7 +51,7 @@ public final class Modaccel {
         boolean has(String key) { return flags.contains(key); }
     }
     static final Set<String> COMMANDS = Set.of("support", "discover", "doctor", "setup", "compile", "fast", "test", "port", "explain", "dependencies", "mixin-check", "plugin-check", "server-check",
-            "ui-check", "world-check", "mp-check", "eval", "reload", "game-status", "game-stop", "package", "self-test", "preferences", "legacy-agent", "help");
+            "ui-check", "world-check", "mp-check", "eval", "reload", "game-status", "game-stop", "package", "self-test", "preferences", "legacy-agent", "pack-check", "help");
     public static void main(String[] args) {
         int exit = 2; Options options = null; Report report = null; ProjectLock lock = null;
         try {
@@ -70,6 +70,17 @@ public final class Modaccel {
                 return;
             }
             Path home = Installation.home();
+            if (options.command.equals("pack-check")) {
+                // A modpack, not a mod's source: no Gradle build and no project lock. Receipts go with the pack cache.
+                report = new Report(PackCheck.receipts(), options.command);
+                Map<String, Object> result = new PackCheck(home, options, report).run();
+                exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
+                Map<String, Object> output = report.finish(exit, result);
+                if (options.has("json")) System.out.println(Json.write(output));
+                else System.out.printf("pack-check: %s (%.0f seconds)%n%s%nReceipt: %s%n", exit == 0 ? "passed" : "failed", output.get("seconds"),
+                        String.valueOf(result.getOrDefault("details", "")).strip(), output.get("receipt"));
+                System.exit(exit);
+            }
             Path root = Path.of(options.get("root", "."));
             if (Files.isRegularFile(root) && root.toString().toLowerCase(Locale.ROOT).endsWith(".jar"))
                 throw new IllegalArgumentException("--root needs the mod's Gradle source directory, not a compiled JAR. Check out its source and run modaccel discover --root SOURCE.");
@@ -354,6 +365,17 @@ public final class Modaccel {
                     + "and items made by a recipe without a translation or model are warnings.\n"
                     + "Build a jar with the project's own task: modaccel compile --root SOURCE --task :jar. That is the build path for\n"
                     + "Paper/Bukkit plugins (the jar lands in build/libs); then modaccel plugin-check loads it.";
+            case "pack-check" -> "Check a modpack the way its players run it: modaccel pack-check --pack EXPORT.zip|FOLDER [--world SAVE] [--only ITEM,ITEM] [--fix] [--json]\n"
+                    + "--pack is a CurseForge export (.zip or its folder) or an instance folder with mods/ (add --minecraft 1.20.1 --loader forge-47.4.20 when it has no minecraftinstance.json).\n"
+                    + "Mod files come from CurseForge's public file API, size-checked and cached in ~/.modaccel/packs. Without the game it reports mod ids in two jars,\n"
+                    + "required mods that are missing, block files two mods both ship, and mods older than a proven repair in knowledge/pack-fixes.json.\n"
+                    + "Then the pack's own Forge server (its installer, cached) starts offline on 127.0.0.1 with the pack's mods and configs and a probe mod. modaccel\n"
+                    + "accepts Minecraft's EULA only for that throwaway local test server. Mods that only work in a game client are left out and named.\n"
+                    + "Start 1 makes a new world, saves every dimension the way level.dat stores it and reads it back, and places every block item (or --only) the way\n"
+                    + "a player right-clicks; start 2 opens that world again and reads every placed block back. --world SAVE also opens a copy of your save.\n"
+                    + "--fix adds the repairs the findings name (a verified download) and runs both starts again to show them working: to an instance folder\n"
+                    + "(undo with --undo), or for an export as a fixed copy of the .zip. Other loaders get the checks without the game, and say so.\n"
+                    + "--memory 6G sets the server's heap; --timeout seconds (default 1200) bounds each start.";
             default -> "modaccel <command> --root SOURCE [--project :module] [--json]\n"
                     + "  support                what works today        discover, doctor   what kind of build this is\n"
                     + "  setup                  evaluate the build      compile            compile + resource/metadata checks\n"
@@ -363,6 +385,7 @@ public final class Modaccel {
                     + "  eval, reload           talk to the running game          game-status, game-stop\n"
                     + "  plugin-check           Paper/Bukkit plugin on a fake Paper server (MockBukkit), no real server\n"
                     + "  server-check           plugin on a real Paper server with a bot player and a scenario\n"
+                    + "  pack-check             a modpack on its real loader server: conflicts, block swaps, worlds that will not reopen\n"
                     + "  preferences            show or change your game window and sound choices\n"
                     + "  package, self-test     build or test modaccel itself\n"
                     + "Run modaccel help COMMAND for one command (port, fast, compile, mixin-check, explain, ui-check, eval, reload ...).\n"

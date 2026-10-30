@@ -54,6 +54,9 @@ public final class Json {
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) entries.add(write(String.valueOf(entry.getKey())) + ":" + write(entry.getValue()));
             return "{" + String.join(",", entries) + "}";
         }
+        // A Path is Iterable over its own parts, and each part is a Path: write it as text, not as an endless list.
+        // (Java 8 syntax: the game agent compiles this file with --release 8.)
+        if (value instanceof java.nio.file.Path) return write(value.toString());
         if (value instanceof Iterable) {
             List<String> entries = new ArrayList<String>();
             for (Object item : (Iterable<?>) value) entries.add(write(item));

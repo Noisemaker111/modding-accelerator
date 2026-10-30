@@ -1,8 +1,8 @@
 # Roadmap
 
-Goal: a mod or plugin author never launches Minecraft. Port from any version to any other (and,
-separately, any loader to any other) from a Gradle source checkout, and prove the result behaves in
-the real game or a real server.
+Goal: a mod or plugin author never launches Minecraft, and a modpack user need not diagnose mod
+conflicts by hand. Port source from any version to any other (and, separately, any loader to any
+other), resolve modpack incompatibilities, and prove behavior in the real game or a real server.
 
 Status words: **done** (ran and checked), **doing** (current step), **next**, **later**.
 Live proof of what runs: https://noisemaker111.github.io/modding-accelerator/ (bench page)
@@ -94,11 +94,47 @@ The second half of the goal, worked on alongside porting.
     checks like plugins do. **next**
 28. Port a Paper plugin between versions (SCOPE.md rung 5; config-only so far). **later**
 
+## Phase 6 — Modpack compatibility
+
+29. Reproduce Sismeel's Forge 1.20.1 pack problems: an item becomes a different block when placed,
+    and a world fails to reopen. Identify the affected item and obtain or recreate the failing world;
+    the supplied pack export has configurations and mod download references, but no world or logs.
+    Determine each cause independently. **doing**
+    - World that will not reopen: **done**. Traverse 7.0.12 bundles Biolith 1.0.1-alpha.1, which gives
+      7 Traverse biomes climate values of 3.01; Blueprint saves the overworld's biome list in full, and
+      the next start rejects it ("Overworld settings missing"). Seen on the pack's real Forge server and
+      in its real client (the save gets the datapack-failure screen). Biolith 1.0.1-beta.1 in mods/ fixes
+      it: new worlds reopen, and a world saved by the broken version opens too.
+    - Item that becomes another block: not reproduced. Every block item (14,129 in singleplayer), placed by a player's
+      right-click on the pack's server and again in singleplayer with every client-only mod, land as
+      themselves or as their own mod's deliberate variant (bamboo shoot, sapling stages, Craziness
+      Awakened's random spawners); the 29 that change afterwards are vanilla rules (coral dying out of
+      water) or the mod's own. No two mods override the same block look. 221 block names belong
+      to blocks from two or more mods (e.g. "Azure Planks" in Outer End and Slugterra), the likeliest
+      cause on the evidence; `pack-check` now lists them. The item's name from Sismeel is still needed.
+30. Detect the demonstrated failure with a code check that fails on the broken case and passes on
+    the corrected and normal cases; verify the correction and affected behavior in a real game,
+    including save and reload when relevant. Preserve the original pack and world. **doing**:
+    `pack-check` saves every dimension the way level.dat stores it and reads it back, starts the same
+    world a second time, and reads back every placed block; it fails on the shipped pack and passes with
+    the repair. `PackCheckTest` covers the checks that need no game.
+31. Accept installed modpacks and exports as inputs, identify versions and loaders from evidence,
+    and diagnose and repair proven incompatibilities with reversible changes and clear blockers.
+    Expand across Minecraft versions and loaders with real pack cases. **doing**: CurseForge exports and
+    CurseForge app instances, both run in the game with `--fix` (a fixed .zip copy; an instance changed
+    only after the recheck passes, and `--undo` restores it exactly). Folders from other launchers lack
+    mod sides, so a client-only mod Forge does not name stops the game checks. Forge only in the game;
+    repairs come from `knowledge/pack-fixes.json` (one entry).
+32. Bring Random Things forward from its source as a Forge version-port case, and prove its
+    behavior on the target version. Automatic Forge porting is not yet supported. **later**: its newest
+    source is a partial 1.14.4 rewrite (36 files, 2019 MCP snapshot names); the full mod is 1.12.2.
+
 ## Decisions
 
 | Question | Choice | Date |
 |---|---|---|
 | What is the goal? | Any version to any version, any loader to any loader; today one hop inside one loader is verified | 2026-10-24 |
+| Can modpack users get compatibility help? | Yes: diagnose and resolve installed-pack conflicts, with reversible changes and real behavior checks; `pack-check` covers Forge packs | 2026-10-30 |
 | Are version and loader changes the same job? | No; separate records, separate claims | 2026-10-24 |
 | Does a passing build prove a port? | No; loader-refused jars, invisible UI and unloaded mods all passed builds | 2026-10-24 |
 | What counts as progress? | A row in `coverage/ledger.json` with a receipt, shown on the progress page | 2026-10-24 |
