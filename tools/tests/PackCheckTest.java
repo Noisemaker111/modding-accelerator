@@ -73,9 +73,14 @@ public final class PackCheckTest {
                     Path meta = Files.createDirectories(scratch.resolve("home/.modaccel/packs/curseforge/" + file[0])).resolve("file.json");
                     Files.writeString(meta, "{\"data\":{\"fileName\":\"" + file[1] + "\",\"fileLength\":1,\"gameVersions\":[" + file[2] + "]}}");
                 }
+                // Jars nothing lists get their sides from Modrinth by SHA-1 (here pre-cached): one client-only, one Modrinth does not know.
+                jar(appMods.resolve("zoomify.jar"), toml("zoomify", "2", ""), Map.of());
+                Path modrinth = Files.createDirectories(scratch.resolve("home/.modaccel/packs/modrinth"));
+                Files.writeString(modrinth.resolve(PackCheck.sha1(appMods.resolve("zoomify.jar")) + ".json"), "{\"project\":\"w7ThoJFB\",\"slug\":\"zoomify\",\"client_side\":\"required\",\"server_side\":\"unsupported\"}");
+                Files.writeString(modrinth.resolve(PackCheck.sha1(appMods.resolve("byhand.jar")) + ".json"), "{\"project\":\"\"}");
                 PackCheck.Pack listed = check(harness, scratch).read(app);
                 Map<String, String> sides = new TreeMap<>(); for (PackCheck.Mod mod : listed.mods()) sides.put(mod.file(), mod.side());
-                expect(sides.equals(Map.of("blur-forge-3.1.1.jar", "client", "traverse-forge-7.0.12.jar", "both", "byhand.jar", "unknown")), "a CurseForge instance's mods get their sides: " + sides);
+                expect(sides.equals(Map.of("blur-forge-3.1.1.jar", "client", "traverse-forge-7.0.12.jar", "both", "zoomify.jar", "client", "byhand.jar", "unknown")), "every mod gets its sides from CurseForge or Modrinth: " + sides);
             } finally { System.setProperty("user.home", home); }
 
             // A failed start is told in the game's own words.
@@ -99,7 +104,7 @@ public final class PackCheckTest {
             // A result that holds a file path (the probe's output file) is written as text; it once overflowed the stack.
             expect(Json.write(Json.map("probeFile", scratch.resolve("probe-place.json"))).contains("probe-place.json"), "a path in a result is written as text");
             expect(PackCheck.doneSeconds("[Server thread/INFO] Done (41.250s)! For help, type \"help\"") == 41.25, "the start time is read");
-            System.out.println(count + " pack-check checks passed: instance folder, bundled mods, duplicate ids, missing mods, shared look files, shared block names, CurseForge instance sides, known fault and its repair, client-only mods, failed-start words");
+            System.out.println(count + " pack-check checks passed: instance folder, bundled mods, duplicate ids, missing mods, shared look files, shared block names, mod sides from CurseForge and Modrinth, known fault and its repair, client-only mods, failed-start words");
         } finally {
             try (var paths = Files.walk(scratch)) { for (Path p : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(p); }
         }

@@ -144,8 +144,9 @@ public final class ModaccelPackProbe {
         final ServerLevel level; final JsonObject result; final FakePlayer player; final Set<String> only = only(); final BlockPos origin;
         final JsonArray different = new JsonArray(), unplaced = new JsonArray(), failed = new JsonArray(), placed = new JsonArray();
         int tried, same, cell;
-        // Things a support can be, tried in order until the block lands: most blocks, then plants, then crops.
-        final Block[] supports = { Blocks.STONE, Blocks.GRASS_BLOCK, Blocks.FARMLAND, Blocks.SAND };
+        // Surfaces tried in order until the block lands: the top of stone (most blocks), grass (plants), farmland
+        // (crops) and sand (cacti), then a wall face, a ceiling, and sand under water.
+        static final String[] SURFACES = { "minecraft:stone", "minecraft:grass_block", "minecraft:farmland", "minecraft:sand", "wall", "ceiling", "water" };
         Placement(ServerLevel level, JsonObject result) { this.level = level; this.result = result; player = FakePlayerFactory.getMinecraft(level); origin = origin(level); }
         void place(Item item) {
             if (!chosen(item, only)) return;
@@ -159,21 +160,47 @@ public final class ModaccelPackProbe {
             row.addProperty("itemMod", BuiltInRegistries.ITEM.getKey(item).getNamespace());
             row.addProperty("expected", expectedId);
             try {
-                BlockState landed = null; BlockPos support = null; String used = null; InteractionResult answer = null;
-                for (Block base : supports) {
-                    support = origin.offset((cell % COLUMNS) * SPACING, 0, (cell / COLUMNS) * SPACING);
+                BlockState landed = null; BlockPos support = origin.offset((cell % COLUMNS) * SPACING, 0, (cell / COLUMNS) * SPACING), at = null;
+                String used = null; InteractionResult answer = null;
+                for (String surface : SURFACES) {
                     clear(level, support);
+                    // Each surface: what is built, which face the player right-clicks, and where the block should land.
+                    BlockPos clicked = support, target = support.above(); Direction face = Direction.UP; Vec3 point;
+                    float yaw = 180f, pitch = 45f; Vec3 standing = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 2.5);
+                    Block base;
+                    switch (surface) {
+                        case "wall" -> {   // the north face of a stone block: torches, ladders, wall signs, vines
+                            base = Blocks.STONE; target = support.north(); face = Direction.NORTH;
+                            point = new Vec3(support.getX() + 0.5, support.getY() + 0.5, support.getZ());
+                            standing = new Vec3(support.getX() + 0.5, support.getY(), support.getZ() - 1.5); yaw = 0f; pitch = 0f;
+                        }
+                        case "ceiling" -> {   // the underside of a stone block: hanging signs, spore blossoms, weeping vines
+                            base = Blocks.STONE; clicked = support.above(2); face = Direction.DOWN;
+                            point = new Vec3(support.getX() + 0.5, support.getY() + 2, support.getZ() + 0.5); pitch = -45f;
+                            level.setBlock(clicked, Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
+                        }
+                        case "water" -> {   // sand under still water: seagrass, kelp, coral
+                            base = Blocks.SAND; point = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5);
+                            // Glass round the water, or a water plant (a water source itself) floods the neighbouring cells.
+                            for (Direction side : Direction.Plane.HORIZONTAL) if (level.getBlockState(target.relative(side)).isAir()) level.setBlock(target.relative(side), Blocks.GLASS.defaultBlockState(), Block.UPDATE_ALL);
+                            level.setBlock(target, Blocks.WATER.defaultBlockState(), Block.UPDATE_ALL);
+                        }
+                        default -> {   // the top of a block: most blocks, then plants, crops and sand plants
+                            base = BuiltInRegistries.BLOCK.get(new net.minecraft.resources.ResourceLocation(surface));
+                            point = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5);
+                        }
+                    }
                     level.setBlock(support, base.defaultBlockState(), Block.UPDATE_ALL);
+                    BlockState before = level.getBlockState(target);
                     ItemStack stack = new ItemStack(item);
                     player.setItemInHand(InteractionHand.MAIN_HAND, stack);
-                    player.moveTo(support.getX() + 0.5, support.getY() + 1, support.getZ() + 2.5, 180f, 45f);
-                    BlockHitResult hit = new BlockHitResult(new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5), Direction.UP, support, false);
-                    answer = player.gameMode.useItemOn(player, level, stack, InteractionHand.MAIN_HAND, hit);
-                    BlockState above = level.getBlockState(support.above());
-                    used = BuiltInRegistries.BLOCK.getKey(base).toString();
-                    if (!above.isAir()) { landed = above; break; }
+                    player.moveTo(standing.x, standing.y, standing.z, yaw, pitch);
+                    answer = player.gameMode.useItemOn(player, level, stack, InteractionHand.MAIN_HAND, new BlockHitResult(point, face, clicked, false));
+                    used = surface.contains(":") ? surface : surface + " (" + BuiltInRegistries.BLOCK.getKey(base) + ")";
+                    BlockState now = level.getBlockState(target);
+                    if (now != before) { landed = now; at = target; break; }
                     BlockState after = level.getBlockState(support);
-                    if (after.getBlock() != base) { landed = after; row.addProperty("replacedSupport", true); break; }
+                    if (after.getBlock() != base) { landed = after; at = support; row.addProperty("replacedSupport", true); break; }
                 }
                 player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                 row.addProperty("support", used);
@@ -182,9 +209,9 @@ public final class ModaccelPackProbe {
                 String landedId = BuiltInRegistries.BLOCK.getKey(landed.getBlock()).toString();
                 row.addProperty("landed", landedId);
                 row.addProperty("state", landed.toString());
-                BlockPos at = row.has("replacedSupport") ? support : support.above();
                 row.addProperty("x", at.getX()); row.addProperty("y", at.getY()); row.addProperty("z", at.getZ());
-                if (landed.getBlock() == expected) same++; else different.add(row);
+                // An item with a wall or hanging form (torch, sign) registers both blocks as its own: either is the item's block.
+                if (landed.getBlock() == expected || landed.getBlock().asItem() == item) same++; else different.add(row);
                 placed.add(row);
                 cell++;
             } catch (Throwable failure) {
@@ -315,7 +342,12 @@ public final class ModaccelPackProbe {
     }
 
     static void clear(ServerLevel level, BlockPos support) {
+        // The cell: the support, the two blocks above it (target and ceiling), the wall target to its north, and the four
+        // blocks round the target (the water attempt's glass). A cell is reused after an item that did not place, and
+        // anything left there would give the next item a wall to hang on or take the room a bed needs.
         for (int dy = 0; dy <= 2; dy++) level.setBlock(support.above(dy), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+        level.setBlock(support.north(), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+        for (Direction side : Direction.Plane.HORIZONTAL) level.setBlock(support.above().relative(side), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
     }
 
     static JsonArray mods() {
