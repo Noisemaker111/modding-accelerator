@@ -1,14 +1,16 @@
 # Modding Accelerator
 
-**Move your Minecraft mod or plugin to another version, and know it works, without launching Minecraft yourself.**
+**Move your Minecraft mod or plugin to another version, and make modpacks work together, without diagnosing problems by hand.**
 
-`modaccel` does two jobs for a mod or plugin you have the source for:
+`modaccel` aims to port and test mods or plugins you have the source for, and to help modpack users resolve incompatibilities:
 
 1. **Port it.** Point it at your Gradle project and name a Minecraft version. It rewrites what changed in the game
    between the two versions, builds the result, and lists anything it couldn't fix, with the game update that
    caused it. Every edit can be undone.
 2. **Prove it works.** It runs your mod in the real game, and your plugin on a real server, with a test player that
    types commands and checks what happened. Your logic tests run in seconds without the game.
+3. **Make modpacks compatible.** Identify and resolve conflicts among installed mods and configurations, and check
+   the affected behavior in the real game. `pack-check` does this for Forge packs today.
 
 Beta `0.1.0-beta.1` · [download](https://github.com/Noisemaker111/modding-accelerator/releases/latest) ·
 [porting map](https://noisemaker111.github.io/modding-accelerator/porting-map.html) ·
@@ -39,6 +41,7 @@ downloads a checked runtime once. `modaccel help` lists every command; `modaccel
 | Mod in the real game | `ui-check`, `world-check`, `mp-check` (dedicated server plus client), `eval` (run code inside the game), `reload` (swap edited code into a running game), `mixin-check` (applies every mixin, no game window) | Proven on Windows only |
 | Plugin on a server | `server-check`: a real Paper server with a test player (`serverFakeBot`) following your scenario, any Paper version from 1.8. `plugin-check`: a fast fake-server check | The test player can't join modded servers. `plugin-check` covers Paper 1.21 and newer |
 | Explain a port's errors | `explain`: each compiler error beside what that class looks like in both versions | |
+| Diagnose and repair a modpack | `pack-check`: a CurseForge export or instance folder on its own Forge server. Finds duplicate and missing mods, blocks that place as another block, and worlds that open once but not again; `--fix` applies a proven repair and checks it | Forge 1.20.1, one known repair so far. Other loaders get the checks without the game |
 
 A check that only shows the mod loaded is not proof it works. Proof is a check on the mod's own code or state:
 `--assert`, `--expect-value`, or a server scenario's expect lines.

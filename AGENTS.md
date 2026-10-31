@@ -4,10 +4,11 @@ This file holds only what is specific to this project.
 
 ## Goal
 
-A mod or plugin author never has to launch Minecraft. Two halves, equal weight:
+A mod or plugin author never has to launch Minecraft, and a modpack user can find and resolve compatibility problems without diagnosing them by hand. The goals are:
 
 1. **Port** any mod source project (a Gradle checkout; compiled JARs are unsupported) to any Minecraft version, forward or back, reversibly, through the change index and hub routing. Changing loader is a separate job.
 2. **Prove it behaves** in the real game or a real server: the mod's own state asserted in a real client (`eval`, `--assert`, `--expect-value`), plugins on a real Paper server with a bot player following a scenario. A build, a fake server (MockBukkit) or "the mod loaded" is a floor, never "tested".
+3. **Make modpacks work together**: detect and resolve incompatibilities in installed mods and their configurations, including incorrect blocks or items and worlds that fail to reopen, with reversible changes and real-game behavior checks. Compiled mods are inputs for pack diagnosis; source is still required for source ports.
 
 Windows, Linux and macOS; Java and Kotlin; Fabric, NeoForge, Forge and Paper, climbing SCOPE.md's ladder.
 
@@ -51,6 +52,10 @@ A release is how someone without a source checkout gets modaccel. Cut one when a
 - Never present preview or edit-only timings as complete ports, and never invent a universal speed target. Warm caches and reusable sessions are welcome; first-use setup matters too.
 - A rendering claim needs an inspected 1280x720 Minecraft framebuffer capture, never a desktop grab and never a hash of a frame. Say which tier you ran; a tier that cannot catch the mistake you made is not evidence.
 - When dependencies or behaviour cannot be verified, return the precise blocker. No silent feature removal and no weakened checks to make a port pass.
+
+## Modpacks
+
+`pack-check` runs a pack on its own Forge server. Forge 1.20.1 runs on SRG names, so the probe in `tools/packcheck` is written in Mojang names and renamed with ART; ART's `--lib` must be the Mojang-named jars or nothing is renamed. A server whose start fails keeps its JVM alive on leftover threads: stop it on the failure line, by PID. Mods marked for both sides on CurseForge can still be client-only and stop a server; leave them out and say so. Forge loads the highest version of a mod id, bundled or standalone, so a newer jar in mods/ replaces a bundled copy.
 
 ## Resident client
 

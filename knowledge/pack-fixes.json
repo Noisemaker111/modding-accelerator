@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "about": "Repairs pack-check applies for a cause it has proven in a real run. Each entry names the mod and the versions it fixes, the check that shows the fault, and a verified download. A finding with no entry here is reported with its evidence and left alone.",
+  "fixes": [
+    {
+      "id": "biolith-saved-climate-list",
+      "mod": "biolith",
+      "loader": "forge",
+      "minecraft": ["1.20.1"],
+      "fixedIn": "1.0.1-beta.1",
+      "check": "dimension-save",
+      "symptom": "A world opens the first time and never again: \"Failed to load datapacks, can't proceed with server load\", caused by \"Overworld settings missing\".",
+      "cause": "Biolith before 1.0.1-beta.1 adds placeholder climate points (3.01, outside the -2..2 the game reads back) for the biomes it places. When another mod saves the overworld's biome list in full (Blueprint's modded biome source does), the next start rejects that entry and the overworld is dropped.",
+      "evidence": [
+        "https://github.com/TerraformersMC/Biolith/issues/57 (Forge Datapack Validation (World Corruption), closed by 1.0.1-beta.1)",
+        "pack-check on Prehistoric World 2 2.4.0 (Forge 47.4.20), 2026-10-30: Traverse 7.0.12 bundles Biolith 1.0.1-alpha.1; the second start fails; with 1.0.1-beta.1 added the second start opens, every placed block reads back, and a world saved by the broken version opens too"
+      ],
+      "add": {
+        "file": "biolith-forge-1.0.1-beta.1.jar",
+        "url": "https://cdn.modrinth.com/data/iGEl6Crx/versions/3wmaz5qg/biolith-forge-1.0.1-beta.1.jar",
+        "sha512": "734a6135d8dd7151b7aff735c91998c02c56c06f22f0ebf877a62df7ba13d82dbd64db24572023e710a30eab39d84ac152993a230bc268e0baa3bd09dc8167e1",
+        "bytes": 301857,
+        "page": "https://modrinth.com/mod/biolith/version/1.0.1-beta.1",
+        "license": "LGPL-3.0-only"
+      },
+      "why": "Forge loads the highest version of a library that is both bundled inside another mod and present on its own, so the newer jar in the mods folder replaces the copy bundled inside Traverse."
+    }
+  ]
+}
