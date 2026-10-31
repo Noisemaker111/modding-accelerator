@@ -111,7 +111,10 @@ The second half of the goal, worked on alongside porting.
       Awakened's random spawners); the 29 that change afterwards are vanilla rules (coral dying out of
       water) or the mod's own. No two mods override the same block look. 221 block names belong
       to blocks from two or more mods (e.g. "Azure Planks" in Outer End and Slugterra), the likeliest
-      cause on the evidence; `pack-check` now lists them. The item's name from Sismeel is still needed.
+      cause on the evidence; `pack-check` now lists them. Items are also placed on a wall, a ceiling
+      and in water (ladders, hanging signs, spore blossoms, kelp). Sweet berries never place in this pack:
+      Sizeable Foliage refuses it on purpose and plants its bush from "Sweet Berry Seeds" instead.
+      The item's name from Sismeel is still needed.
 30. Detect the demonstrated failure with a code check that fails on the broken case and passes on
     the corrected and normal cases; verify the correction and affected behavior in a real game,
     including save and reload when relevant. Preserve the original pack and world. **doing**:
@@ -122,8 +125,9 @@ The second half of the goal, worked on alongside porting.
     and diagnose and repair proven incompatibilities with reversible changes and clear blockers.
     Expand across Minecraft versions and loaders with real pack cases. **doing**: CurseForge exports and
     CurseForge app instances, both run in the game with `--fix` (a fixed .zip copy; an instance changed
-    only after the recheck passes, and `--undo` restores it exactly). Folders from other launchers lack
-    mod sides, so a client-only mod Forge does not name stops the game checks. Forge only in the game;
+    only after the recheck passes, and `--undo` restores it exactly). Jars no CurseForge list describes
+    (other launchers' folders, hand-added jars) get their sides from Modrinth by SHA-1; a client-only mod
+    neither site knows, and Forge does not name, still stops the game checks and is listed. Forge only in the game;
     repairs come from `knowledge/pack-fixes.json` (one entry).
 32. Bring Random Things forward from its source as a Forge version-port case, and prove its
     behavior on the target version. Automatic Forge porting is not yet supported. **later**: its newest

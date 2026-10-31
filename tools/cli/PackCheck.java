@@ -24,7 +24,8 @@ import java.util.zip.*;
  */
 final class PackCheck {
     static final List<String> PROBE = List.of("tools/packcheck/ModaccelPackProbe.java", "tools/packcheck/ModaccelPackOpener.java", "tools/packcheck/mods.toml", "tools/packcheck/pack.mcmeta", "tools/packcheck/ProbeNames.java");
-    static final String CURSEFORGE = "https://www.curseforge.com/api/v1/mods/";
+    static final String CURSEFORGE = "https://www.curseforge.com/api/v1/mods/", MODRINTH = "https://api.modrinth.com/v2/";
+    static final String AGENT = "Noisemaker111/modding-accelerator pack-check";
     static final HttpClient HTTP = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(20)).build();
 
     record Mod(String file, Path jar, String side, String source) { }
@@ -88,6 +89,7 @@ final class PackCheck {
             Path overrides = directory.resolve(Json.text(m, "overrides", "overrides"));
             List<Mod> mods = new ArrayList<>(fetch(files, Map.of()));
             mods.addAll(local(overrides.resolve("mods")));
+            mods = modrinthSides(mods);
             String[] loader = loaderId.split("-", 2);
             return new Pack(Json.text(m, "name", input.getFileName().toString()).strip(), Json.text(m, "version", "").strip(), Json.text(minecraft, "version", ""),
                     loader[0], loader.length > 1 ? loader[1] : "", mods, overrides, input, false);
@@ -115,6 +117,7 @@ final class PackCheck {
                 mods = listed;
             }
         }
+        mods = modrinthSides(mods);
         if (minecraft.isEmpty() || loaderId.isEmpty()) throw new IllegalArgumentException("This instance folder does not say its game and loader version; add --minecraft 1.20.1 --loader forge-47.4.20.");
         String[] loader = loaderId.split("-", 2);
         return new Pack(input.getFileName().toString(), "", minecraft, loader[0], loader.length > 1 ? loader[1] : "", mods, directory, input, true);
@@ -173,10 +176,70 @@ final class PackCheck {
         } catch (ExecutionException failed) { throw failed.getCause() instanceof Exception e ? e : failed; }
         finally { pool.shutdownNow(); }
     }
+    /**
+     * Sides for jars nothing else describes (a hand-added jar, any launcher's folder), from Modrinth by the jar's SHA-1:
+     * version_files gives the project, projects gives client_side and server_side. A mod whose server side is
+     * "unsupported" is client-only. Answers are cached per SHA-1; jars Modrinth does not know stay "unknown".
+     */
+    List<Mod> modrinthSides(List<Mod> mods) throws Exception {
+        Path folder = cache.resolve("modrinth"); Files.createDirectories(folder);
+        Map<Mod, String> hashes = new LinkedHashMap<>();
+        for (Mod mod : mods) if (mod.side().equals("unknown") && mod.file().endsWith(".jar")) hashes.put(mod, sha1(mod.jar()));
+        if (hashes.isEmpty()) return mods;
+        long start = System.nanoTime();
+        List<String> asked = new ArrayList<>();
+        // A known answer is kept; "Modrinth does not know this jar" is asked again after a week.
+        for (String hash : new TreeSet<>(hashes.values())) {
+            Path answer = folder.resolve(hash + ".json");
+            if (!Files.isRegularFile(answer) || (Json.text(Json.read(answer), "project", "").isEmpty() && Files.getLastModifiedTime(answer).toMillis() < System.currentTimeMillis() - 7 * 86_400_000L)) asked.add(hash);
+        }
+        String blocker = "";
+        if (!asked.isEmpty()) try {
+            var versions = Json.object(Json.parse(new String(post(MODRINTH + "version_files", Json.write(Json.map("hashes", asked, "algorithm", "sha1"))), StandardCharsets.UTF_8)));
+            Map<String, String> projectOf = new HashMap<>();
+            for (var entry : versions.entrySet()) projectOf.put(entry.getKey(), Json.text(Json.object(entry.getValue()), "project_id", ""));
+            Set<String> ids = new TreeSet<>(projectOf.values()); ids.remove("");
+            Map<String, Map<String, Object>> projects = new HashMap<>();
+            if (!ids.isEmpty()) for (Object p : Json.array(Json.parse(new String(get(MODRINTH + "projects?ids=" + java.net.URLEncoder.encode(Json.write(new ArrayList<>(ids)), StandardCharsets.UTF_8)), StandardCharsets.UTF_8)))) {
+                var project = Json.object(p); projects.put(Json.text(project, "id", ""), project);
+            }
+            for (String hash : asked) {
+                var project = projects.get(projectOf.getOrDefault(hash, ""));
+                Json.save(folder.resolve(hash + ".json"), project == null ? Json.map("project", "") : Json.map("project", Json.text(project, "id", ""), "slug", Json.text(project, "slug", ""),
+                        "client_side", Json.text(project, "client_side", ""), "server_side", Json.text(project, "server_side", "")));
+            }
+        } catch (Exception failed) { blocker = "Modrinth could not be reached for mod sides: " + failed.getMessage(); }
+        List<Mod> out = new ArrayList<>(); List<String> unknown = new ArrayList<>(); int found = 0;
+        for (Mod mod : mods) {
+            Path answer = hashes.containsKey(mod) ? folder.resolve(hashes.get(mod) + ".json") : null;
+            var a = answer != null && Files.isRegularFile(answer) ? Json.read(answer) : Map.<String, Object>of();
+            if (answer == null || Json.text(a, "project", "").isEmpty()) { if (answer != null) unknown.add(mod.file()); out.add(mod); continue; }
+            found++;
+            boolean client = !"unsupported".equals(a.get("client_side")), server = !"unsupported".equals(a.get("server_side"));
+            out.add(new Mod(mod.file(), mod.jar(), client && !server ? "client" : server && !client ? "server" : "both", "modrinth " + Json.text(a, "slug", "")));
+        }
+        report.stages.add(Json.map("name", "modrinth-sides", "seconds", (System.nanoTime() - start) / 1e9, "asked", hashes.size(), "found", found, "unknown", unknown, "blocker", blocker));
+        return out;
+    }
+    static String sha1(Path file) throws Exception {
+        var digest = MessageDigest.getInstance("SHA-1");
+        try (InputStream in = Files.newInputStream(file)) { byte[] buffer = new byte[1 << 16]; for (int n; (n = in.read(buffer)) > 0; ) digest.update(buffer, 0, n); }
+        return HexFormat.of().formatHex(digest.digest());
+    }
+    static byte[] post(String url, String json) throws Exception {
+        IOException last = null;
+        for (int attempt = 0; attempt < 3; attempt++) {
+            var response = HTTP.send(HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofMinutes(2)).header("User-Agent", AGENT).header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json)).build(), HttpResponse.BodyHandlers.ofByteArray());
+            if (response.statusCode() == 200) return response.body();
+            last = new IOException("HTTP " + response.statusCode() + " from " + url);
+        }
+        throw last;
+    }
     static byte[] get(String url) throws Exception {
         IOException last = null;
         for (int attempt = 0; attempt < 3; attempt++) {
-            var response = HTTP.send(HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofMinutes(5)).header("User-Agent", "modaccel pack-check").build(), HttpResponse.BodyHandlers.ofByteArray());
+            var response = HTTP.send(HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofMinutes(5)).header("User-Agent", AGENT).build(), HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() == 200) return response.body();
             last = new IOException("HTTP " + response.statusCode() + " from " + url);
         }
@@ -327,7 +390,7 @@ final class PackCheck {
             game.put("newWorld", first);
             if (!dropped.isEmpty()) {
                 game.put("clientOnly", new ArrayList<>(dropped));
-                findings.add(Json.map("kind", "client-only", "severity", "note", "summary", dropped.size() + " mod(s) are client-only but not marked so on CurseForge; a server of this pack must leave them out.", "jars", new ArrayList<>(dropped)));
+                findings.add(Json.map("kind", "client-only", "severity", "note", "summary", dropped.size() + " mod(s) are client-only but not marked so on CurseForge or Modrinth; a server of this pack must leave them out.", "jars", new ArrayList<>(dropped)));
             }
             if (Boolean.TRUE.equals(first.get("opened"))) {
                 Map<String, Object> probeResult = Json.object(first.get("probe"));
@@ -345,8 +408,9 @@ final class PackCheck {
                 }
             } else if (String.valueOf(first.get("failure")).contains("invalid dist DEDICATED_SERVER"))
                 // Forge names a mod only when its own constructor fails; game code reached through another route names none.
-                findings.add(Json.map("kind", "server-start", "severity", "problem", "summary", "A client-only mod stopped the pack's server and Forge did not say which. The game checks need to know each mod's sides:"
-                        + " check a CurseForge export or a CurseForge app instance (both list them), or remove the client-only mods from a copy of this folder.", "evidence", first.get("failure")));
+                findings.add(Json.map("kind", "server-start", "severity", "problem", "summary", "A client-only mod stopped the pack's server and Forge did not say which. Neither CurseForge nor Modrinth knows the sides of the mods listed here;"
+                        + " one of them is the likely cause. Remove the client-only ones from a copy of this folder and run again.", "evidence", first.get("failure"),
+                        "unknownSides", pack.mods().stream().filter(m -> m.side().equals("unknown")).map(Mod::file).toList()));
             else findings.add(Json.map("kind", "server-start", "severity", "problem", "summary", "The pack's server did not finish starting a new world.", "evidence", first.get("failure")));
             if (!userWorld.isEmpty()) {
                 Path save = Path.of(userWorld).toAbsolutePath().normalize();
@@ -395,7 +459,8 @@ final class PackCheck {
             if (!unplaced.isEmpty()) {
                 List<String> items = new ArrayList<>();
                 for (Object u : unplaced) items.add(Json.text(Json.object(u), "item", ""));
-                findings.add(Json.map("kind", "not-checked", "severity", "note", "summary", unplaced.size() + " block item(s) did not place on stone, grass, farmland or sand, so the swap check did not cover them: "
+                findings.add(Json.map("kind", "not-checked", "severity", "note", "summary", unplaced.size() + " block item(s) did not place on stone, grass, farmland, sand, a wall, a ceiling or in water, so the swap check did not cover them"
+                        + " (some need other ground, darkness or an operator; a mod can also refuse a placement on purpose): "
                         + String.join(", ", items.subList(0, Math.min(12, items.size()))) + (items.size() > 12 ? " ..." : ""), "items", items));
             }
             for (Object f : Json.array(probeResult.get("failed")))

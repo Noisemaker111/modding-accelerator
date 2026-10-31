@@ -371,12 +371,13 @@ public final class Modaccel {
                     + "Paper/Bukkit plugins (the jar lands in build/libs); then modaccel plugin-check loads it.";
             case "pack-check" -> "Check a modpack the way its players run it: modaccel pack-check --pack EXPORT.zip|FOLDER [--world SAVE] [--only ITEM,ITEM] [--fix] [--json]\n"
                     + "--pack is a CurseForge export (.zip or its folder) or an instance folder with mods/ (add --minecraft 1.20.1 --loader forge-47.4.20 when it has no minecraftinstance.json).\n"
-                    + "Mod files come from CurseForge's public file API, size-checked and cached in ~/.modaccel/packs. Without the game it reports mod ids in two jars,\n"
+                    + "Mod files come from CurseForge's public file API, size-checked and cached in ~/.modaccel/packs; jars CurseForge does not list get their client/server\n"
+                    + "sides from Modrinth by SHA-1. Without the game it reports mod ids in two jars,\n"
                     + "required mods that are missing, block files two mods both ship, and mods older than a proven repair in knowledge/pack-fixes.json.\n"
                     + "Then the pack's own Forge server (its installer, cached) starts offline on 127.0.0.1 with the pack's mods and configs and a probe mod. modaccel\n"
                     + "accepts Minecraft's EULA only for that throwaway local test server. Mods that only work in a game client are left out and named.\n"
                     + "Start 1 makes a new world, saves every dimension the way level.dat stores it and reads it back, and places every block item (or --only) the way\n"
-                    + "a player right-clicks; start 2 opens that world again and reads every placed block back. --world SAVE also opens a copy of your save.\n"
+                    + "a player right-clicks, on the ground, a wall, a ceiling or in water as the item needs; start 2 opens that world again and reads every placed block back. --world SAVE also opens a copy of your save.\n"
                     + "--fix adds the repairs the findings name (a verified download) and runs both starts again to show them working: to an instance folder\n"
                     + "(undo with --undo), or for an export as a fixed copy of the .zip. Other loaders get the checks without the game, and say so.\n"
                     + "--memory 6G sets the server's heap; --timeout seconds (default 1200) bounds each start.";
