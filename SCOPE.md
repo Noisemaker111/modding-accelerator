@@ -40,7 +40,7 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 
 ## 3. Policy
 
-1. **Who we're for.** People who write mods or plugins from source. Not players, and not compiled jars.
+1. **Who we're for.** People who write mods or plugins from source, and modpack users who need their installed mods to work together. Compiled jars and pack exports are planned inputs for compatibility diagnosis; porting a mod still requires its source.
 2. **What gets first-class support.** Fabric and NeoForge first, then Forge (old modpacks), then Paper (servers). Quilt rides on Fabric. Proxies and datapacks come later.
 3. **When a platform earns the next rung.**
    - A real project someone uses needs it.
