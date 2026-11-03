@@ -1,0 +1,10 @@
+node_modules
+dist
+.turbo
+.wrangler
+.alchemy
+.shots/
+.env*
+!.env.schema
+# made from the repo's data files by scripts/export_data.py on every build
+packages/core/src/generated/

@@ -1,0 +1,59 @@
+name: Website
+
+on:
+  pull_request:
+    paths:
+      - "site/**"
+      - "coverage/**"
+      - "ROADMAP.md"
+      - "SCOPE.md"
+      - "README.md"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy the site to Cloudflare (needs the CLOUDFLARE_* secrets)"
+        type: boolean
+        default: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npx -y pnpm@11.3.0 install --frozen-lockfile
+      - run: npx -y pnpm@11.3.0 run data
+      - run: npx -y pnpm@11.3.0 run check
+      - run: npx -y pnpm@11.3.0 run test
+      - run: npx -y pnpm@11.3.0 run build
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    needs: check
+    runs-on: ubuntu-latest
+    environment: website
+    defaults:
+      run:
+        working-directory: site
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npx -y pnpm@11.3.0 install --frozen-lockfile
+      - run: npx -y pnpm@11.3.0 run infra:deploy

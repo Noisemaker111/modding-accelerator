@@ -1,0 +1,26 @@
+{
+  "name": "@modaccel-site/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 3000",
+    "typecheck": "effect-tsrs diagnostics --project tsconfig.json --strict",
+    "build": "vite build",
+    "check": "pnpm run typecheck",
+    "preview": "wrangler dev --config wrangler.preview.jsonc --port 8787"
+  },
+  "dependencies": {
+    "@modaccel-site/capability": "workspace:*",
+    "@modaccel-site/core": "workspace:*",
+    "effect": "4.0.6",
+    "foldkit": "0.169.0"
+  },
+  "devDependencies": {
+    "@foldkit/vite-plugin": "0.28.0",
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "wrangler": "4.149.0"
+  }
+}
