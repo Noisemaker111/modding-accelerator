@@ -5,6 +5,7 @@ import { Shell } from "./model.js";
 
 export const Message = defineMessageUnion({
   ChangedFrom: { version: Schema.String },
+  ChangedLoader: { loader: Schema.String },
   ChangedTo: { version: Schema.String },
   ClickedCopy: { text: Schema.String },
   ClickedRelease: { version: Schema.String },
@@ -14,7 +15,11 @@ export const Message = defineMessageUnion({
   CompletedCopy: {},
   CompletedThemeChange: {},
   CompletedWriteHash: {},
-  LoadedHash: { from: Schema.String, to: Schema.String },
+  LoadedHash: {
+    from: Schema.String,
+    loader: Schema.String,
+    to: Schema.String,
+  },
 });
 
 export type SiteMessage = typeof Message.Type;

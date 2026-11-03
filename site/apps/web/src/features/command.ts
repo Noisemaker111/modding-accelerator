@@ -6,7 +6,11 @@ import { Message } from "./message.js";
 const readPair = (hash: string) => {
   const params = new URLSearchParams(hash.replace(/^#/u, ""));
 
-  return { from: params.get("from") ?? "", to: params.get("to") ?? "" };
+  return {
+    from: params.get("from") ?? "",
+    loader: params.get("loader") ?? "",
+    to: params.get("to") ?? "",
+  };
 };
 
 export const ReadHash = Command.define("ReadHash", {
@@ -17,8 +21,8 @@ export const ReadHash = Command.define("ReadHash", {
 });
 
 export const WriteHash = Command.define("WriteHash", {
-  args: { from: Schema.String, to: Schema.String },
-  execute: ({ from, to }) =>
+  args: { from: Schema.String, loader: Schema.String, to: Schema.String },
+  execute: ({ from, loader, to }) =>
     Effect.sync(() => {
       const params = new URLSearchParams();
 
@@ -29,6 +33,8 @@ export const WriteHash = Command.define("WriteHash", {
       if (to !== "") {
         params.set("to", to);
       }
+
+      params.set("loader", loader);
 
       window.history.replaceState(null, "", `#${params.toString()}`);
 

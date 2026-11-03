@@ -1,3 +1,4 @@
+import { Loader } from "@modaccel-site/core/browser";
 import { Schema } from "effect";
 
 export const pages = [
@@ -30,6 +31,7 @@ export type SiteFlags = typeof Flags.Type;
 
 export const Model = Schema.Struct({
   from: Schema.String,
+  loader: Loader,
   page: PageId,
   shell: Shell,
   to: Schema.String,
@@ -40,6 +42,8 @@ export type SiteModel = typeof Model.Type;
 export const defaultFrom = "1.20.1";
 
 export const defaultTo = "1.21.6";
+
+export const defaultLoader: typeof Loader.Type = "fabric";
 
 export const pageById = (id: PageKey): PageInfo =>
   pages.find((page) => page.id === id) ?? pages[0];

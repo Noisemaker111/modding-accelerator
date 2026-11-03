@@ -10,7 +10,7 @@ import { siteData } from "../src/site-data.js";
 
 const hopCheck = Schema.decodeUnknownSync(Schema.Array(HopCheck))(rawCheck);
 
-const portMap = portMapFrom(siteData.map);
+const portMap = portMapFrom(siteData.map, "fabric");
 
 const last = portMap.versions.length - 1;
 
@@ -21,12 +21,35 @@ const releaseIndex = Arbitrary.schema(
 const release = (index: number) => portMap.versions[index] ?? "";
 
 describe("porting map rule", () => {
-  it("colours every checked hop exactly as bench/ledger_rule.py does", () => {
-    expect(hopCheck.length).toBeGreaterThan(40);
+  it("colours every checked hop on every loader exactly as bench/ledger_rule.py does", () => {
+    const loaders = new Set(hopCheck.map((hop) => hop.loader));
+
+    expect(loaders.size).toBe(siteData.map.loaders.length);
+    expect(hopCheck.length).toBeGreaterThan(40 * loaders.size);
 
     for (const hop of hopCheck) {
-      expect(portMap.hopStatus(hop.from, hop.to)).toStrictEqual(hop.status);
+      expect(
+        portMapFrom(siteData.map, hop.loader).hopStatus(hop.from, hop.to)
+      ).toStrictEqual(hop.status);
     }
+  });
+
+  it("a run proves only its own loader", () => {
+    const run = siteData.map.runs.find(
+      (one) => one.loader === "neoforge" && one.status !== "stop"
+    );
+
+    expect(run).toBeDefined();
+
+    if (run === undefined) {
+      return;
+    }
+
+    const neoforge = portMapFrom(siteData.map, "neoforge");
+    const quilt = portMapFrom(siteData.map, "quilt");
+
+    expect(neoforge.hopStatus(run.from, run.to).c).not.toBe("red");
+    expect(quilt.hopStatus(run.from, run.to).c).toBe("red");
   });
 
   it.prop(
@@ -79,7 +102,7 @@ describe("capabilities", () => {
   it.effect("portRoute names an unknown release", () =>
     Effect.gen(function* unknownRelease() {
       const failure = yield* portRoute
-        .handler({ from: "1.99", to: "1.21.6" })
+        .handler({ from: "1.99", loader: "fabric", to: "1.21.6" })
         .pipe(Effect.flip);
 
       expect(failure.version).toBe("1.99");

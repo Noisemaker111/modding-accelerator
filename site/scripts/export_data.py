@@ -44,10 +44,12 @@ def secs_text(v):
 # ---- bench ------------------------------------------------------------------------------------
 def tested():
     rows = bp.tested()
-    order = sorted(rows.items(), key=lambda kv: (-(ledger_rule.RANK[kv[1]["best"]["status"]] if kv[1]["best"] else 0), kv[0].lower()))
+    # bench_page keeps the best run per loader; the site shows the best of them.
+    best = {name: max(r["best"].values(), key=lambda h: ledger_rule.RANK[h["status"]], default=None) for name, r in rows.items()}
+    order = sorted(rows.items(), key=lambda kv: (-(ledger_rule.RANK[best[kv[0]]["status"]] if best[kv[0]] else 0), kv[0].lower()))
     out = []
     for name, r in order:
-        b = r["best"]
+        b = best[name]
         out.append({
             "mod": name, "what": r["what"], "loaders": sorted(r["loaders"]),
             "versions": sorted(r["versions"], key=bp.vkey), "date": r["date"],
@@ -130,7 +132,8 @@ def loader_pairs():
 def porting_map():
     every = [v["id"] for v in index["allVersions"]]
     early = {v["id"] for v in index["allVersions"] if v["status"] == "blocked"}
-    steps = ledger_rule.step_statuses(every, early, ledger["hops"], index["doing"])
+    # A port proves only its own loader, so every colour is per loader (bench/ledger_rule.py).
+    steps = ledger_rule.all_statuses(every, early, ledger["hops"], index["doing"])
     slim_steps = []
     for s in index["steps"]:
         c = s["coverage"]
@@ -140,15 +143,17 @@ def porting_map():
     pos = {v: i for i, v in enumerate(every)}
     hubs = [f["hub"] for f in index["families"]["list"]]
     pairs = [(a, b) for a, b in zip(hubs, hubs[1:])] + [(every[i], every[j]) for i in range(0, len(every), 5) for j in range(i + 3, len(every), 9)]
-    check = [{"from": a, "to": b, "status": ledger_rule.hop_status(every, steps, a, b)} for x, y in pairs for a, b in ((x, y), (y, x))]
+    check = [{"loader": lo, "from": a, "to": b, "status": ledger_rule.hop_status(every, steps[lo], a, b)}
+             for lo in ledger_rule.LOADERS for x, y in pairs for a, b in ((x, y), (y, x))]
     return {
         "check": check,
         "generated": index["generated"],
+        "loaders": [{"id": lo, "name": ledger_rule.NAME[lo]} for lo in ledger_rule.LOADERS],
         "versions": [{"id": v["id"], "released": v["released"], "measured": v["status"] == "indexed", "family": v["family"]} for v in index["allVersions"]],
         "hubs": [f["hub"] for f in index["families"]["list"]],
         "steps": slim_steps,
-        "stepStatus": [{"from": every[i], "to": every[i + 1], "fwd": steps[f"{every[i]}__{every[i + 1]}"]["fwd"], "back": steps[f"{every[i]}__{every[i + 1]}"]["back"]}
-                       for i in range(len(every) - 1)],
+        "stepStatus": [{"loader": lo, "from": every[i], "to": every[i + 1], "fwd": steps[lo][f"{every[i]}__{every[i + 1]}"]["fwd"], "back": steps[lo][f"{every[i]}__{every[i + 1]}"]["back"]}
+                       for lo in ledger_rule.LOADERS for i in range(len(every) - 1)],
         "runs": [{"mod": h["mod"], "loader": h["loader"], "from": h["from"], "to": h["to"], "status": h["status"], "date": h["date"]}
                  for h in ledger["hops"] if h["from"] in pos and h["to"] in pos],
     }
@@ -205,12 +210,10 @@ def policy():
 # ---- README.md, ROADMAP.md, AGENTS.md, the CLI help -----------------------------------------
 def readme():
     text = (ROOT / "README.md").read_text(encoding="utf-8")
-    use = re.search(r"\*\*Use this to:\*\*\n\n(.*?)\n\n", text, re.S).group(1)
-    bullets = []
-    for line in use.splitlines():
-        m = re.match(r"- \*\*(.+?)\*\* (.+)", line)
-        if m:
-            bullets.append({"title": m.group(1).rstrip("."), "text": m.group(2)})
+    # The jobs: the numbered "1. **Port it.** ..." list under the opening line.
+    jobs = re.search(r"^(1\. \*\*.*?)\n\n", text, re.S | re.M).group(1)
+    bullets = [{"title": m.group(1).rstrip("."), "text": " ".join(m.group(2).split())}
+               for m in re.finditer(r"^\d+\. \*\*(.+?)\*\* (.+?)(?=^\d+\. |\Z)", jobs, re.S | re.M)]
     limits = []
     for line in re.search(r"## Limits\n\n(.*?)\n\n", text + "\n\n", re.S).group(1).splitlines():
         m = re.match(r"- \*\*(.+?)\*\* (.+)", line)
@@ -218,9 +221,9 @@ def readme():
             limits.append({"title": m.group(1).rstrip("."), "text": m.group(2)})
     beta = re.search(r"^Beta ([^·\n]+)·", text, re.M)
     release = re.search(r"\[download\]\((https://[^)]+)\)", text)
-    goal = re.search(r"## Goal\n\n(.*?)\n\n", text, re.S).group(1)
+    goal = re.search(r"^\*\*(.+?)\*\*$", text, re.M).group(1)   # the bold line under the title
     quick = re.search(r"## Quick start\n\n(.*?)\n```sh\n(.*?)```\n\n(.*?)\n\n## ", text, re.S)
-    return {"use": bullets, "limits": limits, "beta": beta.group(1).strip() if beta else "", "release": release.group(1) if release else "",
+    return {"use": bullets, "limits": limits, "beta": beta.group(1).strip().strip("`") if beta else "", "release": release.group(1) if release else "",
             "goal": " ".join(goal.split()), "quickIntro": " ".join(quick.group(1).split()), "quickCommands": quick.group(2).rstrip().splitlines(),
             "quickAfter": " ".join(quick.group(3).split())}
 

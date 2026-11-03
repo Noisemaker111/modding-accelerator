@@ -8,8 +8,11 @@ export {
   type Size,
 } from "./route.js";
 
+export { Loader } from "./schema.js";
+
 export type {
   ColourValue,
+  LoaderValue,
   MapDataValue,
   RoadmapStatusValue,
   SiteDataValue,

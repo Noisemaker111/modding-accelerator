@@ -7,7 +7,7 @@ import { siteData } from "./site-data.js";
 import { UnknownMod } from "./unknown-mod.js";
 import { UnknownVersion } from "./unknown-version.js";
 
-const portMap = portMapFrom(siteData.map);
+const portMap = portMapFrom(siteData.map, "fabric");
 
 const wordOf = (status: string) => siteData.rule.word[status] ?? status;
 
@@ -36,7 +36,9 @@ export const portRoute = implement(portRouteContract, (input) =>
       });
     }
 
-    const hops = portMap.route(from, to).map((hop) => ({
+    const onLoader = portMapFrom(siteData.map, input.loader);
+
+    const hops = onLoader.route(from, to).map((hop) => ({
       broken: hop.measured ? hop.broken : null,
       colour: hop.status.c,
       command: hop.measured ? portCommand(hop.a, hop.b) : null,
@@ -56,7 +58,8 @@ export const portRoute = implement(portRouteContract, (input) =>
       command: portCommand(from, to),
       from,
       hops,
-      map: `/porting-map#from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      loader: input.loader,
+      map: `/porting-map#from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&loader=${input.loader}`,
       to,
     };
   })

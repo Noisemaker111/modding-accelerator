@@ -2,6 +2,7 @@ import { portMapFrom, siteData } from "@modaccel-site/core/browser";
 import type {
   ColourValue,
   Hop,
+  PortMap,
   StepStatusValue,
 } from "@modaccel-site/core/browser";
 import type { Html } from "foldkit/html";
@@ -14,7 +15,18 @@ import type { H } from "../ui.js";
 
 const { facts: numbers, map } = siteData;
 
-const portMap = portMapFrom(map);
+const portMap = portMapFrom(map, "fabric");
+
+const byLoader = new Map(
+  map.loaders.map((loader) => [loader.id, portMapFrom(map, loader.id)])
+);
+
+const mapOf = (model: SiteModel): PortMap =>
+  byLoader.get(model.loader) ?? portMap;
+
+const loaderName = (model: SiteModel) =>
+  map.loaders.find((loader) => loader.id === model.loader)?.name ??
+  model.loader;
 
 const releases = map.versions;
 
@@ -60,6 +72,32 @@ const versionSelect = (
               [portMap.isHub(release.id) ? `${release.id} (hub)` : release.id]
             )
           ),
+        ]
+      ),
+    ]
+  );
+
+const loaderSelect = (model: SiteModel, h: H): Html =>
+  h.label(
+    [h.Class("pick")],
+    [
+      h.span([], ["Loader"]),
+      h.select(
+        [
+          h.OnChange((loader) => Message.ChangedLoader({ loader })),
+          h.AriaLabel("Loader"),
+        ],
+        map.loaders.map((loader) =>
+          h.option(
+            [h.Value(loader.id), h.Selected(loader.id === model.loader)],
+            [loader.name]
+          )
+        )
+      ),
+      h.span(
+        [h.Class("small")],
+        [
+          `A port proves only its own loader, so every colour here is for ${loaderName(model)} alone.`,
         ]
       ),
     ]
@@ -164,7 +202,7 @@ const routeCard = (model: SiteModel, h: H): Html => {
     return h.p([h.Class("notice")], ["Pick two different versions."]);
   }
 
-  const hops = portMap.route(model.from, model.to);
+  const hops = mapOf(model).route(model.from, model.to);
 
   const back =
     (portMap.position(model.from) ?? 0) > (portMap.position(model.to) ?? 0);
@@ -268,7 +306,9 @@ const gutterSvg = (model: SiteModel, h: H): Html => {
     .map((hub, index) => [map.hubs[index] ?? hub, hub] as const);
 
   const base = pairs.map(([a, b], index) => {
-    const status = back ? portMap.hopStatus(b, a) : portMap.hopStatus(a, b);
+    const status = back
+      ? mapOf(model).hopStatus(b, a)
+      : mapOf(model).hopStatus(a, b);
 
     return h.path(
       [
@@ -282,7 +322,7 @@ const gutterSvg = (model: SiteModel, h: H): Html => {
   const hops =
     model.from === "" || model.to === "" || model.from === model.to
       ? []
-      : portMap.route(model.from, model.to);
+      : mapOf(model).route(model.from, model.to);
 
   const route = hops.map((hop) =>
     h.path(
@@ -370,7 +410,12 @@ const releaseCell = (model: SiteModel, h: H, version: string): Html => {
   );
 };
 
-const nextCell = (h: H, index: number, back: boolean): Html => {
+const nextCell = (
+  onLoader: PortMap,
+  h: H,
+  index: number,
+  back: boolean
+): Html => {
   const release = releases[index];
 
   if (index === 0 || release === undefined) {
@@ -380,7 +425,7 @@ const nextCell = (h: H, index: number, back: boolean): Html => {
     );
   }
 
-  const status = portMap.stepStatus(index - 1, !back);
+  const status = onLoader.stepStatus(index - 1, !back);
 
   return h.div(
     [h.Class("next")],
@@ -432,7 +477,7 @@ const releaseRow = (
     [
       releaseCell(model, h, release.id),
       h.div([h.Class("date")], [release.released]),
-      nextCell(h, index, span.back),
+      nextCell(mapOf(model), h, index, span.back),
       breaksCell(h, release.id, span.back),
     ]
   );
@@ -513,6 +558,7 @@ export const mapPage = (model: SiteModel, h: H): Html => {
               ),
             ]
           ),
+          loaderSelect(model, h),
           h.div(
             [h.Class("switch"), h.Role("group"), h.AriaLabel("Commands for")],
             [

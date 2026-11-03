@@ -1,7 +1,7 @@
 import { defineContract } from "@modaccel-site/capability/contract";
 import { Schema } from "effect";
 
-import { Colour, RunStatus } from "./schema.js";
+import { Colour, Loader, RunStatus } from "./schema.js";
 import { UnknownMod } from "./unknown-mod.js";
 import { UnknownVersion } from "./unknown-version.js";
 
@@ -25,6 +25,7 @@ export const RouteAnswer = Schema.Struct({
   command: Schema.String,
   from: Schema.String,
   hops: Schema.Array(HopAnswer),
+  loader: Loader,
   map: Schema.String,
   to: Schema.String,
 });
@@ -66,6 +67,10 @@ export const portRouteContract = defineContract("portRoute", {
   input: Schema.Struct({
     from: Schema.String.annotate({
       description: "The release the mod is on, for example 1.20.1",
+    }),
+    loader: Loader.annotate({
+      description:
+        "The mod's loader; a port proves only its own loader, so every colour is for this one",
     }),
     to: Schema.String.annotate({
       description: "The release to port it to, for example 1.21.6",

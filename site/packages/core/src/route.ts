@@ -1,6 +1,7 @@
 import type {
   ColourValue,
   LedgerRunValue,
+  LoaderValue,
   MapDataValue,
   RunStatusValue,
   StepValue,
@@ -65,6 +66,7 @@ export interface Hop {
 export interface PortMap {
   readonly hubs: readonly string[];
   readonly isHub: (version: string) => boolean;
+  readonly loader: LoaderValue;
   readonly measured: (version: string) => boolean;
   readonly position: (version: string) => number | undefined;
   readonly versions: readonly string[];
@@ -135,8 +137,15 @@ interface Part {
   readonly to: number;
 }
 
-export const portMapFrom = (data: MapDataValue): PortMap => {
+export const portMapFrom = (
+  data: MapDataValue,
+  loader: LoaderValue
+): PortMap => {
   const versions = data.versions.map((release) => release.id);
+
+  const loaderName =
+    data.loaders.find((one) => one.id === loader)?.name ?? loader;
+
   const positions = new Map(versions.map((id, index) => [id, index]));
 
   const measuredSet = new Set(
@@ -150,7 +159,9 @@ export const portMapFrom = (data: MapDataValue): PortMap => {
   );
 
   const statuses = new Map(
-    data.stepStatus.map((entry) => [`${entry.from}__${entry.to}`, entry])
+    data.stepStatus
+      .filter((entry) => entry.loader === loader)
+      .map((entry) => [`${entry.from}__${entry.to}`, entry])
   );
 
   const position = (version: string) => positions.get(version);
@@ -310,6 +321,7 @@ export const portMapFrom = (data: MapDataValue): PortMap => {
 
     const runs = data.runs.filter(
       (run) =>
+        run.loader === loader &&
         positions.has(run.from) &&
         positions.has(run.to) &&
         at(run.from) < at(run.to) === forward
@@ -344,7 +356,10 @@ export const portMapFrom = (data: MapDataValue): PortMap => {
       };
     }
 
-    return { kind: "warn", label: "Not tried yet: expect errors" };
+    return {
+      kind: "warn",
+      label: `Not tried yet on ${loaderName}: expect errors`,
+    };
   };
 
   const route = (from: string, to: string): readonly Hop[] => {
@@ -406,6 +421,7 @@ export const portMapFrom = (data: MapDataValue): PortMap => {
     hubs: data.hubs,
     isHub: (version) => hubSet.has(version),
     jumpStatus,
+    loader,
     measured: (version) => measuredSet.has(version),
     position,
     route,

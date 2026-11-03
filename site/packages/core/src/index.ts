@@ -23,10 +23,12 @@ export {
 
 export {
   HopCheck,
+  Loader,
   MapData,
   SiteData,
   StepStatus,
   type ColourValue,
+  type LoaderValue,
   type MapDataValue,
   type RoadmapStatusValue,
   type SiteDataValue,

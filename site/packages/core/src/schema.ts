@@ -13,6 +13,10 @@ export const RunStatus = Schema.Literals([
 
 export type RunStatusValue = typeof RunStatus.Type;
 
+export const Loader = Schema.Literals(["fabric", "neoforge", "forge", "quilt"]);
+
+export type LoaderValue = typeof Loader.Type;
+
 export const StepStatus = Schema.Struct({
   c: Colour,
   run: Schema.optionalKey(Schema.String),
@@ -151,12 +155,14 @@ export type LedgerRunValue = typeof LedgerRun.Type;
 export const MapData = Schema.Struct({
   generated: Schema.String,
   hubs: Schema.Array(Schema.String),
+  loaders: Schema.Array(Schema.Struct({ id: Loader, name: Schema.String })),
   runs: Schema.Array(LedgerRun),
   stepStatus: Schema.Array(
     Schema.Struct({
       back: StepStatus,
       from: Schema.String,
       fwd: StepStatus,
+      loader: Loader,
       to: Schema.String,
     })
   ),
@@ -272,6 +278,7 @@ export type FactsValue = typeof Facts.Type;
 
 export const HopCheck = Schema.Struct({
   from: Schema.String,
+  loader: Loader,
   status: StepStatus,
   to: Schema.String,
 });
