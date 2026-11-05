@@ -1,6 +1,9 @@
 name: Portable command
 # A PR runs once, newer pushes cancel older runs, and only the core runs on all three systems.
 # Server and Stonecutter checks run on Linux for a PR and on all three systems nightly and on main.
+# PR CI finishes in under 5 minutes (AGENTS.md): on pull_request every job has a 5-minute timeout and
+# the budget job fails the run when the whole workflow took over 300 s. Nightly and main keep the
+# longer timeouts because their caches are cold on two of the three systems.
 on:
   push:
     branches: [main]
@@ -20,6 +23,7 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 5 || 15 }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -114,22 +118,48 @@ jobs:
   server-plugins:
     # Pinned server plugins (bench/server-plugins/manifest.json) on fresh clones through
     # the packaged command: fast, the jar, and plugin-check on MockBukkit, including each break made on purpose.
+    # The Gradle home is cached: without it the plugin's first `fast` downloads Paper and MockBukkit on
+    # every run, which took 289 s on a slow runner (446 s for the job, the one PR run over budget).
     strategy:
       fail-fast: false
       matrix:
         os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 5 || 15 }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '25'
+      - name: Gradle and JDK caches
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+            .modaccel/jdks
+          key: server-plugins-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json') }}
       - name: Package without PowerShell
         run: java tools/cli/Bootstrap.java . package --json
       - name: Server plugins through modaccel
         run: java tools/tests/ServerPluginFixtures.java . build/distributions/modaccel.jar
+      - name: Stop the plugin's Gradle daemon so Windows can read its cache locks
+        if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
+      - name: Save caches on a miss, even when the check fails
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+            .modaccel/jdks
+          key: server-plugins-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json') }}
       - name: Outcome receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -151,7 +181,7 @@ jobs:
         os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
         part: [scenario, bot, breaks]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 5 || 15 }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -212,7 +242,7 @@ jobs:
         os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
         mod: [diorama-26.3, diorama-1.21.1, ias-26.3-fabric]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 5 || 20 }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -251,3 +281,42 @@ jobs:
           name: sample-${{ runner.os }}-${{ matrix.mod }}
           path: ${{ runner.temp }}/real-mods-results
           if-no-files-found: ignore
+  budget:
+    # The 5-minute rule as a check that can fail: once every PR job has finished, read this run's jobs
+    # and fail when the workflow has been running for more than 300 s since it started, queue time
+    # included. The job summary lists every job with its queue wait and duration, so a failure names the job.
+    name: PR CI under 5 minutes
+    if: always() && github.event_name == 'pull_request'
+    needs: [command, server-plugins, server-check, stonecutter-sample]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: read
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Elapsed time of this run against the 300 s budget
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" > run.json
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?per_page=100" > jobs.json
+          python3 - <<'EOF'
+          import json, os, sys
+          from datetime import datetime, timezone
+          def at(s): return datetime.fromisoformat(s.replace('Z', '+00:00'))
+          run = json.load(open('run.json'))
+          jobs = json.load(open('jobs.json'))['jobs']
+          started = at(run['run_started_at'])
+          now = datetime.now(timezone.utc)
+          elapsed = int((now - started).total_seconds())
+          lines = ['| job | queued | ran | finished at |', '| --- | ---: | ---: | ---: |']
+          for j in sorted(jobs, key=lambda j: j.get('completed_at') or ''):
+              if not j.get('started_at'): continue
+              s, e = at(j['started_at']), at(j['completed_at']) if j.get('completed_at') else now
+              lines.append(f"| {j['name']} ({j['conclusion'] or 'running'}) | {int((s - started).total_seconds())} s | {int((e - s).total_seconds())} s | {int((e - started).total_seconds())} s |")
+          verdict = f"{'PASS' if elapsed <= 300 else 'FAIL'}: this run has taken {elapsed} s of its 300 s budget (AGENTS.md: PR CI finishes in under 5 minutes)."
+          body = '\n'.join([f'## {verdict}', ''] + lines) + '\n'
+          open(os.environ['GITHUB_STEP_SUMMARY'], 'a').write(body)
+          print(body)
+          sys.exit(0 if elapsed <= 300 else 1)
+          EOF
