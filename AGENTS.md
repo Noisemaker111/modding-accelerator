@@ -32,7 +32,7 @@ Run builds and game launches through modaccel, never raw Gradle or a manual laun
 
 - One PR per feature or support area (e.g. "Paper plugin support", "Porting"), not one per step. Keep it a draft and add commits as steps land; the PR body is the checklist.
 - Merge when it reaches a milestone worth shipping (a new rung on SCOPE.md's ladder, or a big porting jump such as every 1.14 mod reaching 1.16), with Jon's approval and CI green on all 3 OS.
-- PR CI finishes in under 5 minutes on every OS. A check that is slower runs nightly or on demand, not on the PR.
+- PR CI finishes in under 5 minutes on every OS. A check that is slower runs nightly or on demand, not on the PR. The `budget` job in `.github/workflows/portable.yml` fails a PR run that takes longer, and every PR job has a 5-minute timeout.
 - Porting work goes on one long-running branch, `porting`, merged at those jumps.
 - Small fixes outside any feature may go in one hardening/fixes PR at a time.
 - A PR body follows `.github/pull_request_template.md` and fits on one screen: a bold one-line result, before/after (a table row per change), what was checked, what is not covered. A title that needs a comma-joined list is several PRs. When a push changes what the PR does, rewrite the body in the same push.
