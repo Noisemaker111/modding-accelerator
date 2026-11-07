@@ -1,0 +1,86 @@
+{
+ "source": "modding-accelerator",
+ "count": 8,
+ "fresh": [
+  {
+   "wall": 26.6,
+   "cpu": 22.4
+  },
+  {
+   "wall": 26.6,
+   "cpu": 21.0
+  },
+  {
+   "wall": 25.6,
+   "cpu": 21.4
+  },
+  {
+   "wall": 25.9,
+   "cpu": 21.3
+  },
+  {
+   "wall": 26.3,
+   "cpu": 21.5
+  },
+  {
+   "wall": 26.6,
+   "cpu": 21.5
+  },
+  {
+   "wall": 26.3,
+   "cpu": 22.3
+  },
+  {
+   "wall": 26.0,
+   "cpu": 21.3
+  }
+ ],
+ "freshAll": {
+  "count": 24,
+  "peakGB": 4.5,
+  "cpu": 219.3
+ },
+ "warm": [
+  {
+   "wall": 6.1,
+   "cpu": 2.9
+  },
+  {
+   "wall": 6.3,
+   "cpu": 2.5
+  },
+  {
+   "wall": 6.2,
+   "cpu": 2.9
+  },
+  {
+   "wall": 5.8,
+   "cpu": 2.5
+  },
+  {
+   "wall": 6.0,
+   "cpu": 2.8
+  },
+  {
+   "wall": 6.2,
+   "cpu": 2.7
+  },
+  {
+   "wall": 6.2,
+   "cpu": 2.5
+  },
+  {
+   "wall": 6.3,
+   "cpu": 3.1
+  }
+ ],
+ "loadedGB": 2.85,
+ "spareGB": 2.41,
+ "spares": 8,
+ "machineBusyPercent": 85.7,
+ "machine": {
+  "cpus": 24,
+  "os": "win32"
+ },
+ "measured": "2026-11-07T22:46:36+00:00"
+}

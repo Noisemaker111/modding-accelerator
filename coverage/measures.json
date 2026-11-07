@@ -350,7 +350,9 @@
    "better": "higher",
    "machine": "jon-pc",
    "target": {"value": 8, "by": "2027-01-08", "step": "36"},
-   "points": []
+   "points": [
+    {"date": "2026-11-07", "value": 8, "n": 1, "note": "data-check on 8 projects at once, each starting its own game: longest 26.6 s; 2.85 GB loaded and 2.41 GB spare games together", "source": "bench/session-cost/projects-2026-11-07T17-46-36.json"}
+   ]
   },
   {
    "id": "test.session-start-cpu",

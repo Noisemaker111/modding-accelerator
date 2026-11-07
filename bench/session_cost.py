@@ -333,6 +333,7 @@ def idle(pid, seconds):
 def need(report, what):
     if not report.get("ok"):
         raise SystemExit(f"{what} failed: {report.get('error') or json.dumps(report.get('result'))[:1500]}")
+    return report
 
 
 def client(args):
@@ -450,8 +451,11 @@ def projects(args):
             shutil.copytree(src, dst) if src.is_dir() else shutil.copy2(src, dst)
         roots.append(root)
     print(f"preparing {len(roots)} projects one after another", flush=True)
+    first = []
     for root in roots:
-        need(modaccel(["data-check", "--once"], root), "preparing " + root.name)
+        r = need(modaccel(["data-check", "--once"], root), "preparing " + root.name)
+        first.append({"wall": round(r["_wall"], 1), "stages": {s["name"]: round(s.get("seconds", 0), 1) for s in r.get("stages", []) if s.get("seconds", 0) >= 1}})
+        print(f"  {root.name} first check {first[-1]['wall']} s {first[-1]['stages']}", flush=True)
     for root in roots:
         modaccel(["game-stop"], root)
     m0 = machine_times()
@@ -459,7 +463,7 @@ def projects(args):
     for r, root in zip(fresh, roots):
         need(r, "data-check from no game in " + root.name)
     row = lambda r: {"wall": round(r["_wall"], 1), "cpu": (r.get("result") or {}).get("cpuSeconds")}
-    result = {"source": str(source), "count": len(roots), "fresh": [row(r) for r in fresh], "freshAll": split(s1)["other"]}
+    result = {"source": str(source), "count": len(roots), "first": first, "fresh": [row(r) for r in fresh], "freshAll": split(s1)["other"]}
     print(f"  {len(roots)} at once from no game: longest {max(x['wall'] for x in result['fresh'])} s, everything that started {result['freshAll']}", flush=True)
     deadline = time.time() + args.timeout
     while time.time() < deadline and not all(state_pid(r, "data-check-spare.json") for r in roots):
