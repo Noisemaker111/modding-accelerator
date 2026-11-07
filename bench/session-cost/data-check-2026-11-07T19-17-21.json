@@ -1,0 +1,123 @@
+{
+ "schema": 1,
+ "id": "2026-11-07T19-17-21.620205100Z-80b04c3e",
+ "command": "data-check",
+ "ok": true,
+ "exit": 0,
+ "seconds": 45.6292541,
+ "stageSeconds": 44.5667707,
+ "unaccountedSeconds": 1.0624833999999979,
+ "stages": [
+  {
+   "name": "java-setup",
+   "seconds": 0.3329175,
+   "required": 25,
+   "gradleJava": 25,
+   "home": "eclipse_adoptium-25-amd64-windows.2"
+  },
+  {
+   "name": "metadata",
+   "seconds": 24.7297227,
+   "exit": 0,
+   "log": "1-metadata.log",
+   "java": 25,
+   "gradle": "9.7.1",
+   "configureOnDemand": false,
+   "selectionFailure": false
+  },
+  {
+   "name": "mixin-check-prepare",
+   "seconds": 2.396819,
+   "exit": 0,
+   "log": "2-mixin-check-prepare.log",
+   "java": 25,
+   "gradle": "9.7.1",
+   "configureOnDemand": false,
+   "selectionFailure": false
+  },
+  {
+   "name": "data-check-tools",
+   "seconds": 1.85539,
+   "exit": 0,
+   "log": "3-data-check-tools.log"
+  },
+  {
+   "name": "data-check",
+   "seconds": 15.2519215,
+   "exit": 0,
+   "log": "4-data-check.log",
+   "launch": "recorded now",
+   "game": "loaded the game's code; it stays loaded for the next data-check (game-stop ends it)"
+  }
+ ],
+ "result": {
+  "ok": true,
+  "tier": "data-loaded",
+  "checked": true,
+  "checkedBy": "Minecraft's own Bootstrap, the mods' entrypoints and WorldLoader with a new world's data packs, in Fabric Loader's Knot (server side); no window, no world",
+  "mods": [
+   "prismlab"
+  ],
+  "registered": [
+   {
+    "mod": "prismlab",
+    "counts": {
+     "block": 1,
+     "block_entity_type": 1,
+     "item": 2,
+     "loot_table": 1,
+     "recipe": 1
+    }
+   }
+  ],
+  "items": [
+   {
+    "event": "item",
+    "id": "prismlab:prism_shard",
+    "name": "Prism Shard",
+    "maxStack": 16,
+    "maxDamage": 0,
+    "rarity": "common",
+    "nutrition": null,
+    "components": 13
+   },
+   {
+    "event": "item",
+    "id": "prismlab:prism_node",
+    "name": "Prism Node",
+    "maxStack": 64,
+    "maxDamage": 0,
+    "rarity": "common",
+    "nutrition": null,
+    "components": 13
+   }
+  ],
+  "packs": [
+   "vanilla",
+   "fabric-convention-tags-v2",
+   "fabric-gametest-api-v1",
+   "prismlab"
+  ],
+  "errors": [],
+  "warnings": [],
+  "failures": [],
+  "cpuSeconds": 19.6,
+  "firstInJvm": true,
+  "phaseCpu": {
+   "bootstrap": 14.5,
+   "mods": 14.9,
+   "data": 19.5
+  },
+  "gameVerified": false,
+  "behaviorVerified": false,
+  "details": "prismlab: 1 block, 1 block entity type, 2 item, 1 loot table, 1 recipe.\n  prismlab:prism_shard \"Prism Shard\": stacks to 16, common\n  prismlab:prism_node \"Prism Node\": stacks to 64, common\n0 errors and 0 warnings logged by the game while loading",
+  "game": "loaded the game's code; it stays loaded for the next data-check (game-stop ends it)",
+  "launch": {
+   "task": ":runClient",
+   "recorded": true,
+   "mode": "recorded run task"
+  },
+  "seconds": 20.4411613
+ },
+ "receipt": "result.json"
+}

@@ -12,6 +12,11 @@ import java.util.*;
  * mod registered, each item as a real stack (its components bind only once data loads), and every
  * warning and error the game logged.
  *
+ * The game's code stays loaded after the first check (one JVM per project, like the hidden client), and
+ * each later check reads the data packs again from disk, as /reload does: a changed recipe, loot table
+ * or tag costs a few CPU-seconds instead of a fresh start. Changed classes or loader metadata start a new
+ * one. --once starts it for that check only; game-stop ends it.
+ *
  * Fabric on Minecraft 26.x for now: the probe is compiled against the mod's own launch, so another
  * game version or loader is reported as unchecked with the compiler's reason, never guessed.
  */
@@ -37,23 +42,119 @@ final class DataCheck {
         catch (Unsupported unsupported) { return unchecked(unsupported.getMessage()); }
 
         Path out = build.report.directory.resolve("data-check.jsonl"), argfile = build.report.directory.resolve("data-check.args");
-        Files.createDirectories(out.getParent());
-        List<String> command = MixinCheck.options(launch, "server");
-        command.addAll(List.of("-Dmodaccel.datacheck.out=" + out, "-Dmodaccel.datacheck.outputs=" + String.join(File.pathSeparator, outputs())));
-        // A JVM that runs for seconds spends more on C2 compiling than it gets back: C1 only halves its CPU, as for hidden games.
-        if (command.stream().noneMatch(o -> o.startsWith("-XX:TieredStopAtLevel="))) command.add(1, "-XX:TieredStopAtLevel=1");
-        String main = MixinCheck.fabricMain(launch, "ModaccelDataCheck", command);
-        MixinCheck.classPath(command, argfile, classes, launch);
-        command.add(main); command.addAll(launch.arguments());
-        Files.createDirectories(launch.directory());
-        var result = Run.command(command, launch.directory(), new HashMap<>(launch.environment()), build.report.log("data-check"), TIMEOUT_SECONDS);
-        build.report.stage("data-check", result, Json.map("launch", launch.recorded() ? "recorded now" : "reused recording"));
+        Files.createDirectories(out.getParent()); Files.deleteIfExists(out);
+        Path log = build.report.log("data-check");
+        boolean keep = !options.has("once");
+        String fingerprint = codeFingerprint(launch, classes), how;
+        long started = System.nanoTime(); int exit;
+        Map<String, Object> loaded = keep ? live(build, fingerprint) : null;
+        if (loaded != null && "ok".equals(ask(loaded, "check " + out, TIMEOUT_SECONDS))) {
+            // Same code as the loaded game: reading the data again from disk is all a changed data file needs.
+            how = "reused the loaded game (process " + loaded.get("pid") + "), data read again"; exit = 0;
+            Files.writeString(log, "data-check asked the loaded game (process " + loaded.get("pid") + ") to read the data again; its own log: " + loaded.get("log") + "\n");
+        } else {
+            boolean replaced = stop(build);
+            List<String> command = MixinCheck.options(launch, "server");
+            command.addAll(List.of("-Dmodaccel.datacheck.out=" + out, "-Dmodaccel.datacheck.outputs=" + String.join(File.pathSeparator, outputs())));
+            // A JVM that runs for seconds spends more on C2 compiling than it gets back: C1 only halves its CPU, as for hidden games.
+            if (command.stream().noneMatch(o -> o.startsWith("-XX:TieredStopAtLevel="))) command.add(1, "-XX:TieredStopAtLevel=1");
+            String token = UUID.randomUUID().toString();
+            if (keep) command.addAll(List.of("-Dmodaccel.datacheck.serve=true", "-Dmodaccel.datacheck.state=" + state(build), "-Dmodaccel.datacheck.token=" + token,
+                    "-Dmodaccel.datacheck.fingerprint=" + fingerprint));
+            String main = MixinCheck.fabricMain(launch, "ModaccelDataCheck", command);
+            MixinCheck.classPath(command, argfile, classes, launch);
+            command.add(main); command.addAll(launch.arguments());
+            Files.createDirectories(launch.directory());
+            if (!keep) {
+                exit = Run.command(command, launch.directory(), new HashMap<>(launch.environment()), log, TIMEOUT_SECONDS).exit();
+                how = "started the game's code for this check only (--once)";
+            } else {
+                exit = startLoaded(command, launch, log, out, token);
+                how = (replaced ? "the mod's code changed, so a new game was loaded" : "loaded the game's code") + "; it stays loaded for the next data-check (game-stop ends it)";
+            }
+        }
+        build.report.stage("data-check", new Run.Result(exit, log, (System.nanoTime() - started) / 1e9), Json.map("launch", launch.recorded() ? "recorded now" : "reused recording", "game", how));
         List<Map<String, Object>> events = new ArrayList<>();
         if (Files.isRegularFile(out)) for (String line : Files.readAllLines(out, StandardCharsets.UTF_8)) if (!line.isBlank()) events.add(Json.object(Json.parse(line)));
-        Map<String, Object> verdict = verdict(events, result.exit(), result.log().toString());
+        Map<String, Object> verdict = verdict(events, exit, log.toString());
+        verdict.put("game", how);
         verdict.put("launch", Json.map("task", task, "recorded", launch.recorded(), "mode", launch.mode()));
         verdict.put("seconds", (System.nanoTime() - begin) / 1e9);
         return verdict;
+    }
+
+    // --- The loaded game: one JVM per project that reads the data again for each later check ---
+
+    static Path state(Build build) { return build.project.state().resolve("data-check.json"); }
+
+    /**
+     * What decides whether the loaded game can answer: the mod's compiled classes and loader metadata (a
+     * changed recipe or loot table is read again; changed code needs a new JVM), the launch's class path
+     * and data-check's own runner.
+     */
+    String codeFingerprint(MixinCheck.Launch launch, Path classes) throws Exception {
+        List<Path> code = new ArrayList<>();
+        for (String output : outputs()) {
+            Path folder = Path.of(output); if (!Files.isDirectory(folder)) continue;
+            try (var walk = Files.walk(folder)) {
+                walk.filter(Files::isRegularFile).filter(f -> { String n = f.getFileName().toString(); return n.endsWith(".class") || n.equals("fabric.mod.json") || n.endsWith(".mixins.json")
+                        || n.endsWith(".accesswidener") || n.endsWith(".classtweaker"); }).forEach(code::add);
+            }
+        }
+        return Fingerprints.bytes((Fingerprints.files(code) + "|" + launch.classPath() + "|" + classes.getFileName()).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** The loaded game for this project when it is still running the same code, else null. */
+    static Map<String, Object> live(Build build, String fingerprint) {
+        try {
+            if (!Files.isRegularFile(state(build))) return null;
+            Map<String, Object> session = Json.read(state(build));
+            boolean alive = ProcessHandle.of(((Number) session.get("pid")).longValue()).map(ProcessHandle::isAlive).orElse(false);
+            return alive && fingerprint.equals(session.get("fingerprint")) ? session : null;
+        } catch (Exception unreadable) { return null; }
+    }
+
+    /** One request to the loaded game; its one-line answer, or null when it did not answer. */
+    static String ask(Map<String, Object> session, String request, int timeoutSeconds) {
+        try (var socket = new java.net.Socket()) {
+            socket.connect(new java.net.InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), ((Number) session.get("port")).intValue()), 5000);
+            socket.setSoTimeout(timeoutSeconds * 1000);
+            var writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+            writer.println(session.get("token") + " " + request);
+            return new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)).readLine();
+        } catch (Exception noAnswer) { return null; }
+    }
+
+    /** Stops this project's loaded game, if one runs. True when there was one. game-stop calls it too. */
+    static boolean stop(Build build) throws Exception {
+        if (!Files.isRegularFile(state(build))) return false;
+        Map<String, Object> session;
+        try { session = Json.read(state(build)); } catch (Exception unreadable) { Files.deleteIfExists(state(build)); return false; }
+        var process = ProcessHandle.of(((Number) session.get("pid")).longValue()).filter(ProcessHandle::isAlive);
+        if (process.isPresent()) {
+            ask(session, "quit", 10);
+            try { process.get().onExit().get(10, java.util.concurrent.TimeUnit.SECONDS); }
+            catch (java.util.concurrent.TimeoutException stuck) { process.get().destroyForcibly(); }
+        }
+        Files.deleteIfExists(state(build));
+        return process.isPresent();
+    }
+
+    /** Starts the game's code to stay loaded and waits for its first check: done, failed, or the JVM gone. */
+    int startLoaded(List<String> command, MixinCheck.Launch launch, Path log, Path out, String token) throws Exception {
+        ProcessBuilder builder = new ProcessBuilder(command).directory(launch.directory().toFile()).redirectErrorStream(true).redirectOutput(log.toFile());
+        builder.environment().putAll(launch.environment());
+        Process process = builder.start();
+        long deadline = System.nanoTime() + TIMEOUT_SECONDS * 1_000_000_000L;
+        while (System.nanoTime() < deadline) {
+            if (!process.isAlive()) return process.exitValue();
+            // Serving starts once the first check has been written: the state file carries this start's token.
+            Map<String, Object> session = Files.isRegularFile(state(build)) ? Json.object(Json.parse(Files.readString(state(build)))) : Map.of();
+            if (token.equals(session.get("token"))) { session.put("log", log.toString()); Json.save(state(build), session); return 0; }
+            Thread.sleep(200);
+        }
+        process.descendants().forEach(ProcessHandle::destroy); process.destroyForcibly();
+        throw new IOException("data-check's game did not finish loading in " + TIMEOUT_SECONDS + " s. Log: " + log);
     }
 
     /** Every source set's output folders: a mod loaded from one of them is this project's own. */
@@ -94,13 +195,14 @@ final class DataCheck {
 
     /** The probe's events, sorted into what a world would see. Static so the self-test can feed it events. */
     static Map<String, Object> verdict(List<Map<String, Object>> events, int exit, String log) {
-        boolean started = false, done = false; double cpu = -1;
+        boolean started = false, done = false, first = true; double cpu = -1, from = 0;
         List<String> ours = new ArrayList<>(); List<Object> registered = new ArrayList<>(), items = new ArrayList<>(), errors = new ArrayList<>(), warnings = new ArrayList<>(), failures = new ArrayList<>();
         Map<String, Object> phases = new LinkedHashMap<>(); Object packs = null;
         for (Map<String, Object> event : events) {
             switch (Json.text(event, "event", "")) {
-                case "start" -> started = true;
-                case "done" -> { done = true; if (event.get("cpu") instanceof Number n) cpu = n.doubleValue(); }
+                case "start" -> { started = true; first = !Boolean.FALSE.equals(event.get("first")); if (!first && event.get("cpu") instanceof Number n) from = n.doubleValue(); }
+                // The first check counts the whole JVM; a check in the loaded game counts only its own work.
+                case "done" -> { done = true; if (event.get("cpu") instanceof Number n) cpu = Math.round((n.doubleValue() - from) * 10) / 10.0; }
                 case "phase" -> phases.put(Json.text(event, "name", ""), event.get("cpu"));
                 case "mods" -> ours.addAll(ProjectModel.strings(event.get("ours")));
                 case "packs" -> packs = event.get("selected");
@@ -152,7 +254,7 @@ final class DataCheck {
         Map<String, Object> result = Json.map("ok", ok, "tier", "data-loaded", "checked", ran && !ours.isEmpty(),
                 "checkedBy", "Minecraft's own Bootstrap, the mods' entrypoints and WorldLoader with a new world's data packs, in Fabric Loader's Knot (server side); no window, no world",
                 "mods", ours, "registered", registered, "items", items, "packs", packs, "errors", errors, "warnings", warnings, "failures", failures,
-                "cpuSeconds", cpu, "phaseCpu", phases, "gameVerified", false, "behaviorVerified", false, "details", details.toString().strip());
+                "cpuSeconds", cpu, "firstInJvm", first, "phaseCpu", phases, "gameVerified", false, "behaviorVerified", false, "details", details.toString().strip());
         if (!ok) result.put("reason", details.toString().strip());
         return result;
     }

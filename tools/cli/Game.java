@@ -299,6 +299,7 @@ final class Game {
             }
             // A stopped game didn't crash; later commands shouldn't say it exited.
             Files.deleteIfExists(build.project.state().resolve("agent.json"));
+            if (DataCheck.stop(build)) result.put("details", result.get("details") + " Stopped data-check's loaded game.");
             // The daemons that prepared, launched and recompiled the game hold a gigabyte or more each.
             Run.Result daemons = build.stopDaemons();
             result.put("gradleDaemonsStopped", daemons == null || daemons.exit() == 0); return result;

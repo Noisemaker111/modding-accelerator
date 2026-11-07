@@ -377,17 +377,32 @@
    ]
   },
   {
+   "id": "test.data-check-first-cpu",
+   "area": "test",
+   "name": "CPU for the first data-check on a mod, the game's code started for it, Fabric 26.3",
+   "unit": "CPU-s",
+   "better": "lower",
+   "info": true,
+   "condition": "warm",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-07", "value": 33, "n": 1, "note": "first full run, machine 98% busy", "source": "bench/session-cost/data-check-2026-11-07T07-42-47.json"},
+    {"date": "2026-11-07", "value": 28.3, "n": 1, "note": "machine 98% busy", "source": "bench/session-cost/data-check-2026-11-07T07-48-20.json"},
+    {"date": "2026-11-07", "value": 19.6, "n": 1, "note": "machine about 25% busy; the game stays loaded after it", "source": "bench/session-cost/data-check-2026-11-07T19-17-21.json"}
+   ]
+  },
+  {
    "id": "test.data-check-cpu",
    "area": "test",
-   "name": "CPU for data-check to read a mod's items, recipes and errors, no game launched, Fabric 26.3",
+   "name": "CPU per data-check on a mod once its game is loaded, no game launched, Fabric 26.3",
    "unit": "CPU-s",
    "better": "lower",
    "condition": "warm",
    "machine": "jon-pc",
    "target": {"value": 5, "by": "2026-12-18", "step": "35"},
    "points": [
-    {"date": "2026-11-07", "value": 33, "n": 1, "note": "first full run, machine 98% busy", "source": "bench/session-cost/data-check-2026-11-07T07-42-47.json"},
-    {"date": "2026-11-07", "value": 28.3, "n": 1, "note": "second run, machine 98% busy", "source": "bench/session-cost/data-check-2026-11-07T07-48-20.json"}
+    {"date": "2026-11-07", "value": 2.2, "n": 1, "note": "Prism Lab demo mod, data read again by the loaded game, 2 s", "source": "bench/session-cost/data-check-2026-11-07T19-18-08.json"},
+    {"date": "2026-11-07", "value": 2.5, "n": 1, "note": "the same after a broken recipe was added and removed", "source": "bench/session-cost/data-check-2026-11-07T19-18-15.json"}
    ]
   },
   {

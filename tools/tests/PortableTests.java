@@ -218,6 +218,8 @@ public final class PortableTests {
                 Json.map("event", "error", "phase", "probe", "message", "Registry Loading")), 4, "log");
         check(!Boolean.TRUE.equals(stopped.get("ok")) && String.valueOf(stopped.get("details")).contains("Errors in element demo:broken"), "a load that stops shows what the game said first");
         check(!Boolean.TRUE.equals(DataCheck.verdict(List.of(Json.map("event", "start"), Json.map("event", "mods", "ours", List.of()), Json.map("event", "done")), 0, "log").get("ok")), "nothing of the project loaded is not a pass");
+        var again = DataCheck.verdict(List.of(Json.map("event", "start", "cpu", 40.0, "first", false), Json.map("event", "mods", "ours", List.of("demo")), Json.map("event", "done", "cpu", 42.2)), 0, "log");
+        check(Double.valueOf(2.2).equals(again.get("cpuSeconds")) && Boolean.FALSE.equals(again.get("firstInJvm")), "a check in the loaded game counts only its own CPU: " + again.get("cpuSeconds"));
         try { Json.parse("{\"ok\":true,\"ok\":false}"); throw new AssertionError("duplicate accepted"); } catch (IllegalArgumentException expected) { count++; }
         Path root = scratch.resolve("mod with spaces"); Files.createDirectories(root.resolve("gradle/wrapper"));
         Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");

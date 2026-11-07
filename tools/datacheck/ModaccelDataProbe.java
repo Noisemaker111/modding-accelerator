@@ -53,41 +53,62 @@ import org.apache.logging.log4j.core.config.Property;
  * steps a dedicated server takes before it creates a world. Bootstrap, every mod's main and server
  * entrypoints, the registries frozen (Fabric delays that until its mods have registered), then the
  * data packs a new world would enable (vanilla, Fabric's mod packs) loaded by WorldLoader, as the
- * server does. Every warning and error the game logs meanwhile is kept, as it happens.
+ * server does. Every warning and error the game logs meanwhile is kept, as it happens. It can stay loaded
+ * and read the data again for each later check (see run()).
  *
  * Written against Minecraft 26.x (Mojang names); data-check compiles it against the mod's own launch.
  */
 public final class ModaccelDataProbe {
     record Loaded(ReloadableServerResources resources, LayeredRegistryAccess<RegistryLayer> registries) {}
 
-    static PrintWriter out;
+    static volatile PrintWriter out;
     static final java.util.concurrent.atomic.AtomicInteger count = new java.util.concurrent.atomic.AtomicInteger();
+    static final Set<String> ours = new LinkedHashSet<>();
+    static boolean first = true;
 
+    /**
+     * Starts the game's code once, reads the data, and then, with -Dmodaccel.datacheck.serve=true, stays
+     * loaded: each later check loads the data packs again from disk (as /reload does), which is all a
+     * changed recipe, loot table or tag needs. A change to the mod's code needs a new JVM; data-check
+     * decides that, not this class.
+     */
     public static void run() throws Exception {
-        out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(System.getProperty("modaccel.datacheck.out"), true), StandardCharsets.UTF_8), true);
+        open(System.getProperty("modaccel.datacheck.out"));
+        capture();
+        boolean serve = Boolean.getBoolean("modaccel.datacheck.serve"), started = false;
+        // A data error leaves the loaded game usable, so it keeps serving; a failed start does not.
+        try { init(); started = true; check(); }
+        catch (Throwable failure) { if (!serve || !started) throw failure; error(failure); }
+        finally { close(); }
+        if (serve) serve();
+    }
+
+    static void init() throws Exception {
         // The project's own mods: those loaded from its source sets' outputs (the game jar can sit inside the project too, in .gradle).
         List<Path> outputs = new ArrayList<>();
         for (String output : System.getProperty("modaccel.datacheck.outputs", "").split(java.io.File.pathSeparator))
             if (!output.isBlank()) outputs.add(Path.of(output).toAbsolutePath().normalize());
-        capture();
-        emit("start", "jvmCpu", cpu());
-
+        emit("start", "cpu", cpu(), "first", true);
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         phase("bootstrap");
 
         FabricLoader loader = FabricLoader.getInstance();
-        Set<String> ours = new LinkedHashSet<>();
         for (ModContainer mod : loader.getAllMods())
             for (Path path : mod.getOrigin().getPaths()) for (Path output : outputs) if (path.toAbsolutePath().normalize().startsWith(output)) ours.add(mod.getMetadata().getId());
-        emit("mods", "ours", new ArrayList<>(ours), "loaded", loader.getAllMods().size());
         for (var entry : loader.getEntrypointContainers("main", ModInitializer.class)) entry.getEntrypoint().onInitialize();
         for (var entry : loader.getEntrypointContainers("server", DedicatedServerModInitializer.class)) entry.getEntrypoint().onInitializeServer();
         Method freeze = BuiltInRegistries.class.getDeclaredMethod("freeze");
         freeze.setAccessible(true);
         freeze.invoke(null);
         phase("mods");
+    }
 
+    /** One check: the data packs a new world enables, loaded from disk by WorldLoader, then the report. */
+    static void check() throws Exception {
+        if (!first) emit("start", "cpu", cpu(), "first", false);
+        first = false;
+        emit("mods", "ours", new ArrayList<>(ours), "loaded", FabricLoader.getInstance().getAllMods().size());
         Path packs = Files.createTempDirectory("modaccel-datacheck");
         PackRepository repository = ServerPacksSource.createPackRepository(packs, new DirectoryValidator(path -> true));
         repository.reload();
@@ -107,7 +128,7 @@ public final class ModaccelDataProbe {
         Set<String> seen = new java.util.HashSet<>();
         data.registries().compositeAccess().registries().forEach(entry -> {
             if (!seen.add(entry.key().identifier().toString())) return; // a registry can appear in more than one layer
-            count(counts, entry.key().identifier().getPath(), entry.value().keySet(), ours);
+            count(counts, entry.key().identifier().getPath(), entry.value().keySet());
             entry.value().listTagIds().forEach(tag -> { if (ours.contains(tag.location().getNamespace())) counts.computeIfAbsent(tag.location().getNamespace(), k -> new TreeMap<>()).merge(entry.key().identifier().getPath() + " tag", 1, Integer::sum); });
         });
         // Loot tables, predicates and item modifiers live only in the full lookup, apart from the rest.
@@ -117,10 +138,10 @@ public final class ModaccelDataProbe {
             registry.listElementIds().forEach(key -> { if (ours.contains(key.identifier().getNamespace())) counts.computeIfAbsent(key.identifier().getNamespace(), k -> new TreeMap<>()).merge(name, 1, Integer::sum); });
         });
         Map<String, Integer> recipes = new TreeMap<>();
-        for (var recipe : data.resources().getRecipeManager().getRecipes()) bump(recipes, recipe.id().identifier().getNamespace(), ours);
-        if (!recipes.isEmpty()) recipes.forEach((ns, n) -> counts.computeIfAbsent(ns, k -> new TreeMap<>()).put("recipe", n));
+        for (var recipe : data.resources().getRecipeManager().getRecipes()) bump(recipes, recipe.id().identifier().getNamespace());
+        recipes.forEach((ns, n) -> counts.computeIfAbsent(ns, k -> new TreeMap<>()).put("recipe", n));
         Map<String, Integer> advancements = new TreeMap<>();
-        for (var advancement : data.resources().getAdvancements().getAllAdvancements()) bump(advancements, advancement.id().getNamespace(), ours);
+        for (var advancement : data.resources().getAdvancements().getAllAdvancements()) bump(advancements, advancement.id().getNamespace());
         advancements.forEach((ns, n) -> counts.computeIfAbsent(ns, k -> new TreeMap<>()).put("advancement", n));
         for (String mod : ours) emit("registered", "mod", mod, "counts", counts.getOrDefault(mod, Map.of()));
 
@@ -138,13 +159,52 @@ public final class ModaccelDataProbe {
             }
         }
         emit("done", "cpu", cpu());
-        out.close();
     }
 
-    static void count(Map<String, Map<String, Integer>> counts, String registry, Set<Identifier> keys, Set<String> ours) {
+    /**
+     * Stays loaded and answers one request per connection on 127.0.0.1: "TOKEN check OUTFILE" or "TOKEN quit".
+     * The port, token and pid go to -Dmodaccel.datacheck.state, which data-check reads.
+     */
+    static void serve() throws Exception {
+        String token = System.getProperty("modaccel.datacheck.token");
+        try (java.net.ServerSocket server = new java.net.ServerSocket(0, 4, java.net.InetAddress.getLoopbackAddress())) {
+            Map<String, Object> state = new LinkedHashMap<>();
+            state.put("pid", ProcessHandle.current().pid()); state.put("port", server.getLocalPort()); state.put("token", token);
+            state.put("fingerprint", System.getProperty("modaccel.datacheck.fingerprint", ""));
+            Path file = Path.of(System.getProperty("modaccel.datacheck.state")), temporary = file.resolveSibling(file.getFileName() + ".tmp");
+            Files.writeString(temporary, json(state), StandardCharsets.UTF_8);
+            Files.move(temporary, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            while (true) {
+                try (java.net.Socket socket = server.accept()) {
+                    var reader = new java.io.BufferedReader(new java.io.InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                    var reply = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+                    String[] request = String.valueOf(reader.readLine()).split(" ", 3);
+                    if (request.length < 2 || !request[0].equals(token)) { reply.println("refused"); continue; }
+                    if (request[1].equals("quit")) { reply.println("ok"); return; }
+                    if (request[1].equals("check") && request.length == 3) {
+                        open(request[2]);
+                        try { check(); } catch (Throwable failure) { error(failure); } finally { close(); }
+                        reply.println("ok");
+                    } else reply.println("unknown");
+                }
+            }
+        }
+    }
+
+    static void open(String file) throws Exception {
+        out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8), true);
+    }
+    static void close() { PrintWriter writer = out; out = null; if (writer != null) writer.close(); }
+    static void error(Throwable failure) {
+        Throwable cause = failure instanceof java.util.concurrent.ExecutionException && failure.getCause() != null ? failure.getCause() : failure;
+        java.io.StringWriter trace = new java.io.StringWriter(); failure.printStackTrace(new PrintWriter(trace));
+        emit("error", "phase", "probe", "message", String.valueOf(cause), "trace", trace.toString());
+    }
+
+    static void count(Map<String, Map<String, Integer>> counts, String registry, Set<Identifier> keys) {
         for (Identifier key : keys) if (ours.contains(key.getNamespace())) counts.computeIfAbsent(key.getNamespace(), k -> new TreeMap<>()).merge(registry, 1, Integer::sum);
     }
-    static void bump(Map<String, Integer> counts, String namespace, Set<String> ours) { if (ours.contains(namespace)) counts.merge(namespace, 1, Integer::sum); }
+    static void bump(Map<String, Integer> counts, String namespace) { if (ours.contains(namespace)) counts.merge(namespace, 1, Integer::sum); }
 
     static double cpu() {
         return Math.round(((com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean()).getProcessCpuTime() / 1e8) / 10.0;
@@ -176,7 +236,7 @@ public final class ModaccelDataProbe {
         for (int i = 0; i + 1 < pairs.length; i += 2) e.put((String) pairs[i], pairs[i + 1]);
         write(e);
     }
-    static synchronized void write(Map<String, Object> event) { out.println(json(event)); }
+    static synchronized void write(Map<String, Object> event) { PrintWriter writer = out; if (writer != null) writer.println(json(event)); }
 
     static String json(Object value) {
         if (value == null) return "null";

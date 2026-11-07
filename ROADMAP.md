@@ -18,7 +18,7 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
 | 4. Loaders | 0 | 0 | 0 | 3 | 2027-03-12 |
 | 5. Proof: behaviour in the real game and server | 3 | 0 | 2 | 3 | 2027-02-12 |
 | 6. Modpack compatibility | 0 | 3 | 0 | 1 | 2027-02-05 |
-| 7. Testing without Minecraft open | 0 | 2 | 3 | 1 | 2027-01-08 |
+| 7. Testing without Minecraft open | 1 | 1 | 3 | 1 | 2027-01-08 |
 
 ## Phase 1 — Neighbouring versions (1.21.x), Fabric and NeoForge
 
@@ -207,12 +207,13 @@ sessions run at once on one PC.
 35. A check that needs the game's data but not its picture runs the game's own code with no window
     and no world: data-check reads what the mod registered, each item as a real stack, and every
     error the game logs while it loads the data packs. It costs about 5 CPU-s per check once one
-    loaded JVM answers many checks, instead of 49 for a hidden client. **doing** — modaccel
+    loaded JVM answers many checks, instead of 49 for a hidden client. **done** — modaccel
     data-check works on Fabric 26.3: on the Prism Lab demo mod it lists the mod's items, blocks,
     loot table and recipe with no game launched, and a broken recipe fails it with the game's own
-    error. One check costs 5.7 CPU-s on a quiet 4-core Linux machine and about 28 on this PC while
-    other work keeps it at 98%; reusing one loaded JVM is still to do.
-    Started 2026-11-07, target 2026-12-18.
+    error. The game's code stays loaded after the first check (about 20 CPU-s on this PC), so each
+    later check reads the data again for 2.2 CPU-s in 2 s; changed classes load it again, and
+    game-stop ends it. On a quiet 4-core Linux machine the first check took 5.7 CPU-s.
+    Done 2026-11-07.
 36. modaccel runs at least 8 game checks side by side on this PC, each with its own game folder,
     without running out of memory; a hidden client starts on 25 CPU-s and a cold check takes under
     10 s, and a waiting hidden client costs almost no CPU. **later**
@@ -266,7 +267,8 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Game checks modaccel runs at once on one PC | — | not measured | 8 sessions by Jan 8, 2027, step 36 | Not measured yet |
 | CPU to start one hidden client, saved launch, Fabric 26.3, warm | 95 CPU-s (Nov 6) | 49 CPU-s (Nov 6) | 25 CPU-s by Jan 8, 2027, step 36 | 66% of the way |
 | CPU for data-check on the Prism Lab demo mod, quiet 4-core Linux machine, Fabric 26.3, cold | — | 5.7 CPU-s (Nov 7) | — | Fact |
-| CPU for data-check to read a mod's items, recipes and errors, no game launched, Fabric 26.3, warm | 33 CPU-s (Nov 7) | 28.3 CPU-s (Nov 7) | 5 CPU-s by Dec 18, step 35 | 17% of the way |
+| CPU for the first data-check on a mod, the game's code started for it, Fabric 26.3, warm | 33 CPU-s (Nov 7) | 19.6 CPU-s (Nov 7) | — | Fact |
+| CPU per data-check on a mod once its game is loaded, no game launched, Fabric 26.3, warm | 2.2 CPU-s (Nov 7) | 2.5 CPU-s (Nov 7) | 5 CPU-s by Dec 18, step 35 | Met |
 | CPU a hidden client uses while it waits, warm | 0.21 cores (Nov 6) | 0.15 cores (Nov 6) | 0.05 cores by Jan 8, 2027, step 36 | 38% of the way |
 | Hidden clients this PC held at once, each to a 1280x720 capture | — | 16 sessions (Nov 6) | — | Fact |
 | One-file edit, modaccel fast, warm | — | 4 s (Oct 23) | 4 s (hold) by Nov 27, step 34 | Met |
@@ -301,7 +303,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 13 steps (Oct 26) | 41 steps by Mar 12, 2027 | 22% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 14 steps (Nov 7) | 41 steps by Mar 12, 2027 | 25% of the way |
 
 ## Decisions
 

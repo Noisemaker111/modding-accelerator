@@ -316,11 +316,13 @@ public final class Modaccel {
                     + "Every class the mod's mixin configs target is loaded, so Mixin applies the mixins; nothing opens a window or a world. Mixin's debug\n"
                     + "injector check is on, so an injection that matches fewer places than it expects is reported as dead. Each finding is Mixin's own message,\n"
                     + "with the mixin's source file. Exit 1 when a mixin would stop the game or is dead; --refresh records the launch again.";
-            case "data-check" -> "Read what the game loads for the mod, without launching the game: modaccel data-check --root SOURCE [--project :module] [--client-task :p:runClient] [--refresh] --json\n"
+            case "data-check" -> "Read what the game loads for the mod, without launching the game: modaccel data-check --root SOURCE [--project :module] [--client-task :p:runClient] [--once] [--refresh] --json\n"
                     + "The mod's dev launch (recorded once, shared with mixin-check) starts the game's own code with no window, no world and no network:\n"
                     + "Bootstrap, every mod's main and server entrypoints, the registries frozen, then a new world's data packs loaded by the game's WorldLoader.\n"
                     + "Reports what the mod registered (items, blocks, recipes, loot tables, tags ...), each item as a real stack (stack size, durability, food),\n"
                     + "and every warning and error the game logged. Exit 1 when the game logged an error, an item cannot be made, or nothing of the mod loaded.\n"
+                    + "The game's code stays loaded: the next data-check reads the data again (a changed recipe or loot table costs a few CPU-seconds);\n"
+                    + "changed classes or fabric.mod.json load it again. --once does not keep it; game-stop ends it.\n"
                     + "Fabric on Minecraft 26.x; other versions and loaders are reported as unchecked with the reason.";
             case "plugin-check" -> "Load and enable a Paper/Bukkit plugin on MockBukkit, a fake Paper server, without a real server: modaccel plugin-check --root SOURCE [--project :module] [--task :shadowJar] [--plugins FOLDER] --json\n"
                     + "The plugin's own jar task builds the jar (shadowJar, reobfJar or jar; --task picks another). MockBukkit for the plugin's Paper API line\n"

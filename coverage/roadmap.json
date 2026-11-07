@@ -429,15 +429,17 @@
     {
      "id": "35",
      "title": "Check the game's data without launching it",
-     "status": "doing",
+     "status": "done",
+     "done": "2026-11-07",
      "text": "A check that needs the game's data but not its picture runs the game's own code with no window and no world: data-check reads what the mod registered, each item as a real stack, and every error the game logs while it loads the data packs. It costs about 5 CPU-s per check once one loaded JVM answers many checks, instead of 49 for a hidden client.",
      "start": "2026-11-07",
      "target": "2026-12-18",
      "measures": [
       "test.data-check-cpu",
+      "test.data-check-first-cpu",
       "test.data-check-cpu.boat"
      ],
-     "result": "modaccel data-check works on Fabric 26.3: on the Prism Lab demo mod it lists the mod's items, blocks, loot table and recipe with no game launched, and a broken recipe fails it with the game's own error. One check costs 5.7 CPU-s on a quiet 4-core Linux machine and about 28 on this PC while other work keeps it at 98%; reusing one loaded JVM is still to do."
+     "result": "modaccel data-check works on Fabric 26.3: on the Prism Lab demo mod it lists the mod's items, blocks, loot table and recipe with no game launched, and a broken recipe fails it with the game's own error. The game's code stays loaded after the first check (about 20 CPU-s on this PC), so each later check reads the data again for 2.2 CPU-s in 2 s; changed classes load it again, and game-stop ends it. On a quiet 4-core Linux machine the first check took 5.7 CPU-s."
     },
     {
      "id": "36",
