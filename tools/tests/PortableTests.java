@@ -207,6 +207,17 @@ public final class PortableTests {
         check(String.valueOf(Game.hiddenWindowFailure(hidden, Json.map("backgroundApplied", "org/lwjgl/sdl/SDLVideo", "backgroundError", "Unsupported org/lwjgl/sdl/SDLMouse window controls"))).contains("SDLMouse window controls"), "a failed rewrite stops the check and names the library");
         check(String.valueOf(Game.hiddenWindowFailure(hidden, Json.map("backgroundApplied", "", "backgroundError", ""))).contains("no window library was rewritten"), "nothing rewritten stops the check");
         check(Game.hiddenWindowFailure(shown, Json.map("backgroundApplied", "", "backgroundError", "")) == null, "a visible window by choice is not a failure");
+        List<Map<String, Object>> loaded = new ArrayList<>(List.of(Json.map("event", "start"), Json.map("event", "mods", "ours", List.of("demo")),
+                Json.map("event", "registered", "mod", "demo", "counts", Json.map("item", 1, "loot_table", 1)),
+                Json.map("event", "item", "id", "demo:gem", "name", "Gem", "maxStack", 16, "maxDamage", 0, "rarity", "common"), Json.map("event", "done", "cpu", 17.0)));
+        var dataOk = DataCheck.verdict(loaded, 0, "log");
+        check(Boolean.TRUE.equals(dataOk.get("ok")) && String.valueOf(dataOk.get("details")).contains("demo:gem \"Gem\": stacks to 16"), "data-check passes a clean load and shows each item: " + dataOk.get("details"));
+        loaded.add(3, Json.map("event", "log", "level", "ERROR", "logger", "Minecraft", "message", "Couldn't parse demo:broken"));
+        check(!Boolean.TRUE.equals(DataCheck.verdict(loaded, 0, "log").get("ok")), "an error the game logged fails data-check");
+        var stopped = DataCheck.verdict(List.of(Json.map("event", "start"), Json.map("event", "log", "level", "ERROR", "logger", "Minecraft", "message", "Errors in element demo:broken"),
+                Json.map("event", "error", "phase", "probe", "message", "Registry Loading")), 4, "log");
+        check(!Boolean.TRUE.equals(stopped.get("ok")) && String.valueOf(stopped.get("details")).contains("Errors in element demo:broken"), "a load that stops shows what the game said first");
+        check(!Boolean.TRUE.equals(DataCheck.verdict(List.of(Json.map("event", "start"), Json.map("event", "mods", "ours", List.of()), Json.map("event", "done")), 0, "log").get("ok")), "nothing of the project loaded is not a pass");
         try { Json.parse("{\"ok\":true,\"ok\":false}"); throw new AssertionError("duplicate accepted"); } catch (IllegalArgumentException expected) { count++; }
         Path root = scratch.resolve("mod with spaces"); Files.createDirectories(root.resolve("gradle/wrapper"));
         Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");

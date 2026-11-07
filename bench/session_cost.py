@@ -504,6 +504,8 @@ def idle_many(pids, seconds):
 
 def run(args):
     cmd = args.command[1:] if args.command[:1] == ["--"] else args.command
+    # Windows cannot start a .cmd (modaccel.cmd, gradlew.bat) by its bare name; which() finds it the way a shell would
+    cmd = [shutil.which(cmd[0]) or cmd[0]] + cmd[1:]
     start = time.perf_counter()
     with Sampler() as s:
         code = subprocess.run(cmd).returncode

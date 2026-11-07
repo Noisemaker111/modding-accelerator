@@ -23,7 +23,7 @@ Windows, Linux and macOS; Java and Kotlin; Fabric, NeoForge, Forge and Paper, cl
 
 ## Commands
 
-The portable command: `modaccel.cmd` on Windows, `./modaccel` on POSIX, or `java -jar modaccel.jar`. `help` lists the verbs and `support` the version table. Porting: `port`, `explain`, `mixin-check`. Mods: `fast`, `ui-check`, `world-check`, `mp-check`, `eval`, `reload`, `game-status`, `game-stop`. Plugins: `plugin-check`, `server-check`.
+The portable command: `modaccel.cmd` on Windows, `./modaccel` on POSIX, or `java -jar modaccel.jar`. `help` lists the verbs and `support` the version table. Porting: `port`, `explain`, `mixin-check`. Mods: `fast`, `data-check` (the game's data, items and load errors from the game's own code, no game launched; Fabric 26.x), `ui-check`, `world-check`, `mp-check`, `eval`, `reload`, `game-status`, `game-stop`. Plugins: `plugin-check`, `server-check`.
 
 `modaccel.ps1` (called by `modaccel.cmd` for `ui`, `node`, `suite`, `world`, `look`, `mp`, ...) and `bench/bridge`, `bench/forgebridge` are the older Windows lane, kept until the portable command covers each of its jobs; don't add to them.
 
