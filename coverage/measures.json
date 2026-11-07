@@ -388,7 +388,8 @@
    "points": [
     {"date": "2026-11-07", "value": 33, "n": 1, "note": "first full run, machine 98% busy", "source": "bench/session-cost/data-check-2026-11-07T07-42-47.json"},
     {"date": "2026-11-07", "value": 28.3, "n": 1, "note": "machine 98% busy", "source": "bench/session-cost/data-check-2026-11-07T07-48-20.json"},
-    {"date": "2026-11-07", "value": 19.6, "n": 1, "note": "machine about 25% busy; the game stays loaded after it", "source": "bench/session-cost/data-check-2026-11-07T19-17-21.json"}
+    {"date": "2026-11-07", "value": 19.6, "n": 1, "note": "machine about 25% busy; the game stays loaded after it", "source": "bench/session-cost/data-check-2026-11-07T19-17-21.json"},
+    {"date": "2026-11-07", "value": 14.3, "n": 1, "note": "a changed mixin class loaded a fresh game; serial collector, block shapes skipped", "source": "bench/session-cost/data-check-2026-11-07T21-14-41.json"}
    ]
   },
   {
@@ -402,7 +403,50 @@
    "target": {"value": 5, "by": "2026-12-18", "step": "35"},
    "points": [
     {"date": "2026-11-07", "value": 2.2, "n": 1, "note": "Prism Lab demo mod, data read again by the loaded game, 2 s", "source": "bench/session-cost/data-check-2026-11-07T19-18-08.json"},
-    {"date": "2026-11-07", "value": 2.5, "n": 1, "note": "the same after a broken recipe was added and removed", "source": "bench/session-cost/data-check-2026-11-07T19-18-15.json"}
+    {"date": "2026-11-07", "value": 2.5, "n": 1, "note": "the same after a broken recipe was added and removed", "source": "bench/session-cost/data-check-2026-11-07T19-18-15.json"},
+    {"date": "2026-11-07", "value": 1.5, "n": 1, "note": "a recipe removed under src, copied to the build without Gradle, 1.8 s", "source": "bench/session-cost/data-check-2026-11-07T21-14-22.json"}
+   ]
+  },
+  {
+   "id": "test.data-check-code-change-cpu",
+   "area": "test",
+   "name": "CPU per data-check after the mod's code changed, the spare game taking it, Fabric 26.3",
+   "unit": "CPU-s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 5, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-11-07", "value": 6.2, "n": 1, "note": "Prism Lab's initializer changed, 3.9 s; the spare's 15.8 CPU-s start was paid in the background before", "source": "bench/session-cost/data-check-2026-11-07T20-37-54.json"},
+    {"date": "2026-11-07", "value": 4.9, "n": 1, "note": "the same with the serial collector and block shapes skipped, 3.7 s; spare start 9.9 CPU-s in the background", "source": "bench/session-cost/data-check-2026-11-07T21-14-25.json"}
+   ]
+  },
+  {
+   "id": "test.data-check-fresh-seconds",
+   "area": "test",
+   "name": "Seconds for a data-check that loads a fresh game, Fabric 26.3",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 10, "by": "2027-01-08", "step": "36"},
+   "points": [
+    {"date": "2026-11-07", "value": 45.6, "n": 1, "note": "25 s of it Gradle reading the build again, its cache expired after an hour", "source": "bench/session-cost/data-check-2026-11-07T19-17-21.json"},
+    {"date": "2026-11-07", "value": 11.7, "n": 1, "note": "no Gradle: the build read once and kept; serial collector, block shapes skipped", "source": "bench/session-cost/data-check-2026-11-07T21-14-41.json"}
+   ]
+  },
+  {
+   "id": "test.data-check-ram",
+   "area": "test",
+   "name": "Memory of data-check's loaded game, Fabric 26.3",
+   "unit": "GB",
+   "better": "lower",
+   "info": true,
+   "condition": "warm",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-07", "value": 0.52, "n": 1, "note": "Java's default collector (G1)", "source": "bench/session-cost/data-check-memory-2026-11-07.txt"},
+    {"date": "2026-11-07", "value": 0.38, "n": 2, "note": "serial collector, 64 MB starting heap", "source": "bench/session-cost/data-check-memory-2026-11-07.txt"}
    ]
   },
   {

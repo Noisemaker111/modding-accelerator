@@ -200,6 +200,14 @@ final class MixinCheck {
             var saved = Json.read(record);
             if (fingerprint.equals(saved.get("fingerprint")) && Files.isRegularFile(Path.of(Json.text(saved, "java", ""))))
                 return fromRecord(saved, false);
+            // Only resource files Gradle copies as they are changed: copy them, as processResources would, and keep the launch.
+            Map<String, String> inputs = Fingerprints.each(model, build.project, build.init);
+            int copied = Files.isRegularFile(Path.of(Json.text(saved, "java", ""))) ? ResourceCopy.copy(saved, inputs) : -1;
+            if (copied >= 0) {
+                saved.put("fingerprint", fingerprint); saved.put("inputs", inputs); Json.save(record, saved);
+                build.report.stages.add(Json.map("name", "resources-copied", "files", copied, "seconds", 0));
+                return fromRecord(saved, false);
+            }
         }
         // Gradle prepares the launch exactly as it would for the game (compile, resources, loader setup),
         // without downloading game assets, which applying mixins never reads.
@@ -220,6 +228,9 @@ final class MixinCheck {
             saved = fromTask(Json.read(launchFile));
         }
         saved.put("fingerprint", fingerprint); saved.put("task", task);
+        // What a later change to resource files alone needs to skip Gradle (ResourceCopy).
+        List<List<String>> roots = ResourceCopy.roots(model);
+        saved.put("inputs", Fingerprints.each(model, build.project, build.init)); saved.put("resourceRoots", roots); saved.put("filtered", ResourceCopy.filtered(roots));
         Json.save(record, saved);
         return fromRecord(saved, true);
     }

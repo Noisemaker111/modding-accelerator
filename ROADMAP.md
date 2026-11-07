@@ -210,9 +210,11 @@ sessions run at once on one PC.
     loaded JVM answers many checks, instead of 49 for a hidden client. **done** — modaccel
     data-check works on Fabric 26.3: on the Prism Lab demo mod it lists the mod's items, blocks,
     loot table and recipe with no game launched, and a broken recipe fails it with the game's own
-    error. The game's code stays loaded after the first check (about 20 CPU-s on this PC), so each
-    later check reads the data again for 2.2 CPU-s in 2 s; changed classes load it again, and
-    game-stop ends it. On a quiet 4-core Linux machine the first check took 5.7 CPU-s.
+    error. The game stays loaded: a changed data file costs about 2 CPU-s in 2 s, copied from src
+    without Gradle when Gradle would copy it as it is. A spare game waits behind it, started up to
+    just before the mods' own code, and takes changed code for about 5 CPU-s in 4 s; a changed mixin
+    or loader file loads a fresh game, 12 s. The build is read once and kept until a build file
+    changes. A loaded game holds about 0.38 GB.
     Done 2026-11-07.
 36. modaccel runs at least 8 game checks side by side on this PC, each with its own game folder,
     without running out of memory; a hidden client starts on 25 CPU-s and a cold check takes under
@@ -267,8 +269,11 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Game checks modaccel runs at once on one PC | — | not measured | 8 sessions by Jan 8, 2027, step 36 | Not measured yet |
 | CPU to start one hidden client, saved launch, Fabric 26.3, warm | 95 CPU-s (Nov 6) | 49 CPU-s (Nov 6) | 25 CPU-s by Jan 8, 2027, step 36 | 66% of the way |
 | CPU for data-check on the Prism Lab demo mod, quiet 4-core Linux machine, Fabric 26.3, cold | — | 5.7 CPU-s (Nov 7) | — | Fact |
-| CPU for the first data-check on a mod, the game's code started for it, Fabric 26.3, warm | 33 CPU-s (Nov 7) | 19.6 CPU-s (Nov 7) | — | Fact |
-| CPU per data-check on a mod once its game is loaded, no game launched, Fabric 26.3, warm | 2.2 CPU-s (Nov 7) | 2.5 CPU-s (Nov 7) | 5 CPU-s by Dec 18, step 35 | Met |
+| CPU for the first data-check on a mod, the game's code started for it, Fabric 26.3, warm | 33 CPU-s (Nov 7) | 14.3 CPU-s (Nov 7) | — | Fact |
+| CPU per data-check on a mod once its game is loaded, no game launched, Fabric 26.3, warm | 2.2 CPU-s (Nov 7) | 1.5 CPU-s (Nov 7) | 5 CPU-s by Dec 18, step 35 | Met |
+| CPU per data-check after the mod's code changed, the spare game taking it, Fabric 26.3, warm | 6.2 CPU-s (Nov 7) | 4.9 CPU-s (Nov 7) | 5 CPU-s by Dec 18, step 35 | Met |
+| Seconds for a data-check that loads a fresh game, Fabric 26.3, warm | 45.6 s (Nov 7) | 11.7 s (Nov 7) | 10 s by Jan 8, 2027, step 36 | 95% of the way |
+| Memory of data-check's loaded game, Fabric 26.3, warm | 0.5 GB (Nov 7) | 0.4 GB (Nov 7) | — | Fact |
 | CPU a hidden client uses while it waits, warm | 0.21 cores (Nov 6) | 0.15 cores (Nov 6) | 0.05 cores by Jan 8, 2027, step 36 | 38% of the way |
 | Hidden clients this PC held at once, each to a 1280x720 capture | — | 16 sessions (Nov 6) | — | Fact |
 | One-file edit, modaccel fast, warm | — | 4 s (Oct 23) | 4 s (hold) by Nov 27, step 34 | Met |

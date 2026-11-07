@@ -436,10 +436,12 @@
      "target": "2026-12-18",
      "measures": [
       "test.data-check-cpu",
+      "test.data-check-code-change-cpu",
       "test.data-check-first-cpu",
+      "test.data-check-ram",
       "test.data-check-cpu.boat"
      ],
-     "result": "modaccel data-check works on Fabric 26.3: on the Prism Lab demo mod it lists the mod's items, blocks, loot table and recipe with no game launched, and a broken recipe fails it with the game's own error. The game's code stays loaded after the first check (about 20 CPU-s on this PC), so each later check reads the data again for 2.2 CPU-s in 2 s; changed classes load it again, and game-stop ends it. On a quiet 4-core Linux machine the first check took 5.7 CPU-s."
+     "result": "modaccel data-check works on Fabric 26.3: on the Prism Lab demo mod it lists the mod's items, blocks, loot table and recipe with no game launched, and a broken recipe fails it with the game's own error. The game stays loaded: a changed data file costs about 2 CPU-s in 2 s, copied from src without Gradle when Gradle would copy it as it is. A spare game waits behind it, started up to just before the mods' own code, and takes changed code for about 5 CPU-s in 4 s; a changed mixin or loader file loads a fresh game, 12 s. The build is read once and kept until a build file changes. A loaded game holds about 0.38 GB."
     },
     {
      "id": "36",
@@ -449,6 +451,7 @@
      "start": "2026-12-18",
      "target": "2027-01-08",
      "measures": [
+      "test.data-check-fresh-seconds",
       "test.parallel-sessions",
       "test.session-start-cpu",
       "test.cold-start-check.fabric",

@@ -1,0 +1,109 @@
+{
+ "schema": 1,
+ "id": "2026-11-07T20-37-54.577567500Z-ad7ea6ff",
+ "command": "data-check",
+ "ok": true,
+ "exit": 0,
+ "seconds": 3.9497864,
+ "stageSeconds": 3.2244379000000003,
+ "unaccountedSeconds": 0.7253484999999995,
+ "stages": [
+  {
+   "name": "java-setup",
+   "seconds": 0.4578177,
+   "required": 25,
+   "gradleJava": 25,
+   "home": "eclipse_adoptium-25-amd64-windows.2"
+  },
+  {
+   "name": "metadata",
+   "cache": "hit",
+   "seconds": 0
+  },
+  {
+   "name": "data-check",
+   "seconds": 2.7666202,
+   "exit": 0,
+   "log": "2-data-check.log",
+   "launch": "reused recording",
+   "game": "the code changed; the game loaded in advance (process 34216) took it and stays loaded"
+  }
+ ],
+ "result": {
+  "ok": true,
+  "tier": "data-loaded",
+  "checked": true,
+  "checkedBy": "Minecraft's own Bootstrap, the mods' entrypoints and WorldLoader with a new world's data packs, in Fabric Loader's Knot (server side); no window, no world",
+  "mods": [
+   "prismlab"
+  ],
+  "registered": [
+   {
+    "mod": "prismlab",
+    "counts": {
+     "block": 1,
+     "block_entity_type": 1,
+     "item": 2,
+     "loot_table": 1,
+     "recipe": 1
+    }
+   }
+  ],
+  "items": [
+   {
+    "event": "item",
+    "id": "prismlab:prism_shard",
+    "name": "Prism Shard",
+    "maxStack": 16,
+    "maxDamage": 0,
+    "rarity": "common",
+    "nutrition": null,
+    "components": 13
+   },
+   {
+    "event": "item",
+    "id": "prismlab:prism_node",
+    "name": "Prism Node",
+    "maxStack": 64,
+    "maxDamage": 0,
+    "rarity": "common",
+    "nutrition": null,
+    "components": 13
+   }
+  ],
+  "packs": [
+   "vanilla",
+   "fabric-convention-tags-v2",
+   "fabric-gametest-api-v1",
+   "prismlab"
+  ],
+  "errors": [],
+  "warnings": [
+   {
+    "level": "WARN",
+    "logger": "prismlab",
+    "message": "modaccel spare test: the changed code ran",
+    "thrown": null
+   }
+  ],
+  "failures": [],
+  "cpuSeconds": 6.2,
+  "firstInJvm": false,
+  "phaseCpu": {
+   "mods": 16.2,
+   "data": 22.0
+  },
+  "gameVerified": false,
+  "behaviorVerified": false,
+  "details": "prismlab: 1 block, 1 block entity type, 2 item, 1 loot table, 1 recipe.\n  prismlab:prism_shard \"Prism Shard\": stacks to 16, common\n  prismlab:prism_node \"Prism Node\": stacks to 64, common\n0 errors and 1 warning logged by the game while loading",
+  "game": "the code changed; the game loaded in advance (process 34216) took it and stays loaded",
+  "spareWarmupCpuSeconds": 15.8,
+  "launch": {
+   "task": ":runClient",
+   "recorded": false,
+   "mode": "recorded run task"
+  },
+  "seconds": 3.3489671
+ },
+ "receipt": "result.json"
+}

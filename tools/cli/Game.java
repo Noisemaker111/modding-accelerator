@@ -299,7 +299,11 @@ final class Game {
             }
             // A stopped game didn't crash; later commands shouldn't say it exited.
             Files.deleteIfExists(build.project.state().resolve("agent.json"));
-            if (DataCheck.stop(build)) result.put("details", result.get("details") + " Stopped data-check's loaded game.");
+            boolean loadedGame = DataCheck.stop(build), spare = DataCheck.stopSpare(build);
+            if (loadedGame || spare) {
+                String stopped = "Stopped data-check's " + (loadedGame && spare ? "loaded and spare games." : loadedGame ? "loaded game." : "spare game.");
+                result.put("details", current == null && !Boolean.TRUE.equals(result.get("stopped")) && result.get("details").toString().startsWith("No game was running") ? stopped : result.get("details") + " " + stopped);
+            }
             // The daemons that prepared, launched and recompiled the game hold a gigabyte or more each.
             Run.Result daemons = build.stopDaemons();
             result.put("gradleDaemonsStopped", daemons == null || daemons.exit() == 0); return result;

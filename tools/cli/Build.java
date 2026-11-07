@@ -149,15 +149,16 @@ final class Build {
         String key = project.configurationHash(init) + "|" + selected + "|" + jdk.home() + "|" + (planning ? "plan" : "full");
         if (!refresh && Files.isRegularFile(model) && Files.isRegularFile(stamp)) {
             Map<String, Object> cached = Json.read(stamp);
-            if (key.equals(cached.get("key")) && System.currentTimeMillis() - ((Number)cached.get("at")).longValue() < 3600000
-                    && classpathExists(Json.read(model))) {
+            // No expiry: the key covers every build input, and reading the build again costs a Gradle start
+            // (25 s on a cold daemon). A dynamic dependency version Gradle would re-resolve takes --refresh.
+            if (key.equals(cached.get("key")) && classpathExists(Json.read(model))) {
                 report.stages.add(Json.map("name", "metadata", "cache", "hit", "seconds", 0)); return Json.read(model);
             }
         }
         Run.Result result = gradle(planning ? List.of("-Dmodaccel.metadataMode=plan", ":modaccelMetadata") : List.of(":modaccelMetadata"), planning ? "metadata-plan" : "metadata");
         if (result.exit() != 0) { String why = Run.gradleFailure(result.log()); throw new IOException(discoveryHeadline(why) + "\n" + why + "\nLog: " + result.log()); }
         Map<String, Object> value = Json.read(model);
-        Json.save(stamp, Json.map("key", key, "at", System.currentTimeMillis())); return value;
+        Json.save(stamp, Json.map("key", key)); return value;
     }
     /** What stopped modaccel reading the build, in a few words, ahead of Gradle's own detail. */
     static String discoveryHeadline(String why) {

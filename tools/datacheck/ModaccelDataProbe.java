@@ -54,7 +54,8 @@ import org.apache.logging.log4j.core.config.Property;
  * entrypoints, the registries frozen (Fabric delays that until its mods have registered), then the
  * data packs a new world would enable (vanilla, Fabric's mod packs) loaded by WorldLoader, as the
  * server does. Every warning and error the game logs meanwhile is kept, as it happens. It can stay loaded
- * and read the data again for each later check (see run()).
+ * and read the data again for each later check, or start as a spare that waits before the mods' own code
+ * runs (see run()).
  *
  * Written against Minecraft 26.x (Mojang names); data-check compiles it against the mod's own launch.
  */
@@ -64,51 +65,67 @@ public final class ModaccelDataProbe {
     static volatile PrintWriter out;
     static final java.util.concurrent.atomic.AtomicInteger count = new java.util.concurrent.atomic.AtomicInteger();
     static final Set<String> ours = new LinkedHashSet<>();
-    static boolean first = true;
+    static boolean started;
 
     /**
      * Starts the game's code once, reads the data, and then, with -Dmodaccel.datacheck.serve=true, stays
      * loaded: each later check loads the data packs again from disk (as /reload does), which is all a
-     * changed recipe, loot table or tag needs. A change to the mod's code needs a new JVM; data-check
-     * decides that, not this class.
+     * changed recipe, loot table or tag needs.
+     *
+     * With -Dmodaccel.datacheck.spare=true it stops before the mods' entrypoints instead and waits: Bootstrap
+     * (most of a start) is done, and the project's classes are read from disk only when its code first runs.
+     * When the code changes, data-check checks that no class this JVM already read has changed and sends
+     * "go": the mods start and the data loads, and the spare becomes the loaded game. data-check decides
+     * which JVM may answer, not this class.
      */
     public static void run() throws Exception {
         open(System.getProperty("modaccel.datacheck.out"));
         capture();
-        boolean serve = Boolean.getBoolean("modaccel.datacheck.serve"), started = false;
+        boolean serve = Boolean.getBoolean("modaccel.datacheck.serve");
+        if (Boolean.getBoolean("modaccel.datacheck.spare")) {
+            try { boot(); } finally { close(); }
+            serve(); return;
+        }
         // A data error leaves the loaded game usable, so it keeps serving; a failed start does not.
-        try { init(); started = true; check(); }
+        try { boot(); mods(); check(); }
         catch (Throwable failure) { if (!serve || !started) throw failure; error(failure); }
         finally { close(); }
         if (serve) serve();
     }
 
-    static void init() throws Exception {
-        // The project's own mods: those loaded from its source sets' outputs (the game jar can sit inside the project too, in .gradle).
-        List<Path> outputs = new ArrayList<>();
-        for (String output : System.getProperty("modaccel.datacheck.outputs", "").split(java.io.File.pathSeparator))
-            if (!output.isBlank()) outputs.add(Path.of(output).toAbsolutePath().normalize());
+    /** Bootstrap, and which loaded mods are the project's own: those loaded from its source sets' outputs (the game jar can sit inside the project too, in .gradle). */
+    static void boot() {
         emit("start", "cpu", cpu(), "first", true);
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         phase("bootstrap");
+        for (ModContainer mod : FabricLoader.getInstance().getAllMods())
+            for (Path path : mod.getOrigin().getPaths()) for (Path output : outputs()) if (path.toAbsolutePath().normalize().startsWith(output)) ours.add(mod.getMetadata().getId());
+    }
 
+    static List<Path> outputs() {
+        List<Path> outputs = new ArrayList<>();
+        for (String output : System.getProperty("modaccel.datacheck.outputs", "").split(java.io.File.pathSeparator))
+            if (!output.isBlank()) outputs.add(Path.of(output).toAbsolutePath().normalize());
+        return outputs;
+    }
+
+    /** Every mod's main and server entrypoints, then the registries frozen. */
+    static void mods() throws Exception {
         FabricLoader loader = FabricLoader.getInstance();
-        for (ModContainer mod : loader.getAllMods())
-            for (Path path : mod.getOrigin().getPaths()) for (Path output : outputs) if (path.toAbsolutePath().normalize().startsWith(output)) ours.add(mod.getMetadata().getId());
         for (var entry : loader.getEntrypointContainers("main", ModInitializer.class)) entry.getEntrypoint().onInitialize();
         for (var entry : loader.getEntrypointContainers("server", DedicatedServerModInitializer.class)) entry.getEntrypoint().onInitializeServer();
         Method freeze = BuiltInRegistries.class.getDeclaredMethod("freeze");
         freeze.setAccessible(true);
         freeze.invoke(null);
         phase("mods");
+        started = true;
     }
 
     /** One check: the data packs a new world enables, loaded from disk by WorldLoader, then the report. */
     static void check() throws Exception {
-        if (!first) emit("start", "cpu", cpu(), "first", false);
-        first = false;
-        emit("mods", "ours", new ArrayList<>(ours), "loaded", FabricLoader.getInstance().getAllMods().size());
+        // data-check's own helper mod (fabric.addMods) is not one of the game's.
+        emit("mods", "ours", new ArrayList<>(ours), "loaded", FabricLoader.getInstance().getAllMods().stream().filter(m -> !m.getMetadata().getId().equals("modaccel_datacheck")).count());
         Path packs = Files.createTempDirectory("modaccel-datacheck");
         PackRepository repository = ServerPacksSource.createPackRepository(packs, new DirectoryValidator(path -> true));
         repository.reload();
@@ -162,8 +179,10 @@ public final class ModaccelDataProbe {
     }
 
     /**
-     * Stays loaded and answers one request per connection on 127.0.0.1: "TOKEN check OUTFILE" or "TOKEN quit".
-     * The port, token and pid go to -Dmodaccel.datacheck.state, which data-check reads.
+     * Stays loaded and answers one request per connection on 127.0.0.1: "TOKEN check OUTFILE", "TOKEN quit",
+     * and for a spare "TOKEN loaded" (the project's classes this JVM has already read, one JSON line) and
+     * "TOKEN go OUTFILE" (start the mods, then check). The port, token, pid and CPU so far go to
+     * -Dmodaccel.datacheck.state, which data-check reads.
      */
     static void serve() throws Exception {
         String token = System.getProperty("modaccel.datacheck.token");
@@ -171,6 +190,7 @@ public final class ModaccelDataProbe {
             Map<String, Object> state = new LinkedHashMap<>();
             state.put("pid", ProcessHandle.current().pid()); state.put("port", server.getLocalPort()); state.put("token", token);
             state.put("fingerprint", System.getProperty("modaccel.datacheck.fingerprint", ""));
+            state.put("started", started); state.put("cpu", cpu());
             Path file = Path.of(System.getProperty("modaccel.datacheck.state")), temporary = file.resolveSibling(file.getFileName() + ".tmp");
             Files.writeString(temporary, json(state), StandardCharsets.UTF_8);
             Files.move(temporary, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
@@ -181,14 +201,36 @@ public final class ModaccelDataProbe {
                     String[] request = String.valueOf(reader.readLine()).split(" ", 3);
                     if (request.length < 2 || !request[0].equals(token)) { reply.println("refused"); continue; }
                     if (request[1].equals("quit")) { reply.println("ok"); return; }
-                    if (request[1].equals("check") && request.length == 3) {
-                        open(request[2]);
-                        try { check(); } catch (Throwable failure) { error(failure); } finally { close(); }
-                        reply.println("ok");
-                    } else reply.println("unknown");
+                    if (request[1].equals("loaded") && !started) { reply.println(json(loaded())); continue; }
+                    boolean go = request.length == 3 && request[1].equals("go") && !started;
+                    if (!go && !(request.length == 3 && request[1].equals("check") && started)) { reply.println("unknown"); continue; }
+                    open(request[2]);
+                    emit("start", "cpu", cpu(), "first", false);
+                    try { if (go) mods(); check(); } catch (Throwable failure) { error(failure); } finally { close(); }
+                    // A spare whose mods failed to start cannot become the loaded game: it says so and ends.
+                    if (!started) { reply.println("failed"); return; }
+                    reply.println("ok");
                 }
             }
         }
+    }
+
+    /** The project's class files this JVM has already defined: a spare may take changed code only if none of these changed. */
+    static List<String> loaded() throws Exception {
+        ClassLoader game = Thread.currentThread().getContextClassLoader();
+        Method find = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+        find.setAccessible(true); // data-check opens java.lang to this JVM's unnamed module
+        List<String> files = new ArrayList<>();
+        for (Path output : outputs()) {
+            if (!Files.isDirectory(output)) continue;
+            try (var walk = Files.walk(output)) {
+                for (Path file : walk.filter(f -> f.toString().endsWith(".class")).toList()) {
+                    String relative = output.relativize(file).toString().replace(java.io.File.separatorChar, '/');
+                    if (find.invoke(game, relative.substring(0, relative.length() - 6).replace('/', '.')) != null) files.add(file.toString());
+                }
+            }
+        }
+        return files;
     }
 
     static void open(String file) throws Exception {

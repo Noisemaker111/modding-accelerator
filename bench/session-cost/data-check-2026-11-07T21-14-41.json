@@ -1,0 +1,109 @@
+{
+ "schema": 1,
+ "id": "2026-11-07T21-14-41.978700300Z-0bc8ac42",
+ "command": "data-check",
+ "ok": true,
+ "exit": 0,
+ "seconds": 11.7005886,
+ "stageSeconds": 11.1387365,
+ "unaccountedSeconds": 0.5618520999999994,
+ "stages": [
+  {
+   "name": "java-setup",
+   "seconds": 0.2877083,
+   "required": 25,
+   "gradleJava": 25,
+   "home": "eclipse_adoptium-25-amd64-windows.2"
+  },
+  {
+   "name": "metadata",
+   "cache": "hit",
+   "seconds": 0
+  },
+  {
+   "name": "data-check",
+   "seconds": 10.8510282,
+   "exit": 0,
+   "log": "2-data-check.log",
+   "launch": "reused recording",
+   "game": "the mod's code changed, so a new game was loaded (no game loaded in advance could take the code: it had already read ServerLoadMixin.class, which changed since); it stays loaded for the next data-check (game-stop ends it)"
+  }
+ ],
+ "result": {
+  "ok": true,
+  "tier": "data-loaded",
+  "checked": true,
+  "checkedBy": "Minecraft's own Bootstrap, the mods' entrypoints and WorldLoader with a new world's data packs, in Fabric Loader's Knot (server side); no window, no world",
+  "mods": [
+   "prismlab"
+  ],
+  "registered": [
+   {
+    "mod": "prismlab",
+    "counts": {
+     "block": 1,
+     "block_entity_type": 1,
+     "item": 2,
+     "loot_table": 1,
+     "recipe": 1
+    }
+   }
+  ],
+  "items": [
+   {
+    "event": "item",
+    "id": "prismlab:prism_shard",
+    "name": "Prism Shard",
+    "maxStack": 16,
+    "maxDamage": 0,
+    "rarity": "common",
+    "nutrition": null,
+    "components": 13
+   },
+   {
+    "event": "item",
+    "id": "prismlab:prism_node",
+    "name": "Prism Node",
+    "maxStack": 64,
+    "maxDamage": 0,
+    "rarity": "common",
+    "nutrition": null,
+    "components": 13
+   }
+  ],
+  "packs": [
+   "vanilla",
+   "fabric-convention-tags-v2",
+   "fabric-gametest-api-v1",
+   "prismlab"
+  ],
+  "errors": [],
+  "warnings": [
+   {
+    "level": "WARN",
+    "logger": "prismlab",
+    "message": "modaccel spare test: the changed code ran",
+    "thrown": null
+   }
+  ],
+  "failures": [],
+  "cpuSeconds": 14.3,
+  "firstInJvm": true,
+  "phaseCpu": {
+   "bootstrap": 9.5,
+   "mods": 9.9,
+   "data": 14.2
+  },
+  "gameVerified": false,
+  "behaviorVerified": false,
+  "details": "prismlab: 1 block, 1 block entity type, 2 item, 1 loot table, 1 recipe.\n  prismlab:prism_shard \"Prism Shard\": stacks to 16, common\n  prismlab:prism_node \"Prism Node\": stacks to 64, common\n0 errors and 1 warning logged by the game while loading",
+  "game": "the mod's code changed, so a new game was loaded (no game loaded in advance could take the code: it had already read ServerLoadMixin.class, which changed since); it stays loaded for the next data-check (game-stop ends it)",
+  "launch": {
+   "task": ":runClient",
+   "recorded": false,
+   "mode": "recorded run task"
+  },
+  "seconds": 11.3004425
+ },
+ "receipt": "result.json"
+}
