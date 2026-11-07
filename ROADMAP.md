@@ -269,10 +269,10 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Client start and first join to a dedicated server, cold | — | 27.1 s (Oct 22) | 10 s by Jan 8, 2027, step 36 | Baseline |
 | New registration on a fresh server, warm | — | 15 s (Oct 21) | 5 s by Jan 8, 2027, step 36 | Baseline |
 | Logic tests, no Minecraft, warm | — | 0.79 s (Oct 21) | 1 s (hold) by Nov 27, step 34 | Met |
-| Screen change + screenshot, warm game, Fabric 26.3 | — | 1.5 s (Oct 21) | 1.5 s (hold) by Nov 27, step 34 | Met |
+| Screen change + screenshot, warm game, Fabric 26.3 | 1.5 s (Oct 21) | 3.9 s (Nov 7) | 1.5 s (hold) by Nov 27, step 34 | 0% of the way |
 | Screen edit swapped into the running game, NeoForge 1.21.1, warm | — | 1.5 s (Oct 22) | 1.5 s (hold) by Nov 27, step 34 | Met |
 | Block entity in a live world, Fabric 26.3, warm | — | 2.1 s (Oct 21) | 2.5 s (hold) by Nov 27, step 34 | Met |
-| Scripted scenario + screenshot, warm game, Fabric 26.3 | — | 2.9 s (Oct 21) | 3 s (hold) by Nov 27, step 34 | Met |
+| Scripted scenario + screenshot, warm game, Fabric 26.3 | 2.9 s (Oct 21) | 5.1 s (Nov 7) | 3 s (hold) by Nov 27, step 34 | 0% of the way |
 | Multiplayer scenario, warm client and server | — | 4.1 s (Oct 22) | 4 s by Nov 27, step 34 | Baseline |
 | Mods with their own behaviour asserted in a real client | 2 mods (Oct 26) | 2 mods (Nov 7) | 4 mods by Dec 4, step 37 | 0% of the way |
 | Memory for one hidden game session, Fabric 26.3, warm | 1.1 GB (Nov 6) | 1.0 GB (Nov 6) | 0.8 GB by Jan 8, 2027, step 36 | 36% of the way |

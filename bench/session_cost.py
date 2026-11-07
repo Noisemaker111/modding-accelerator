@@ -4,6 +4,8 @@ later steps are judged with.
 
     python bench/session_cost.py client --root PROJECT [--runs 3] [--idle 20] [--record]
     python bench/session_cost.py parallel --root PROJECT --count 8 [--idle 20] [--jvm FLAGS] [--record]
+    python bench/session_cost.py warm --root PROJECT --world SAVE [--runs 5] [--record]
+    python bench/session_cost.py projects --root PROJECT --count 8 [--record]
     python bench/session_cost.py run --label NAME -- COMMAND...
 
 client: stops any game for PROJECT and its Gradle daemons, then per run: ui-check from cold (no game, no
@@ -13,6 +15,17 @@ After each start it counts the game's windows that are visible on screen (Window
 the game (the pid in .modaccel/portable/agent.json), the dedicated server (the pid mp-check reports) and
 the rest (Gradle daemons and tooling). Memory is the working set (resident set on Linux and macOS), with
 the operating system's own peak where it keeps one. GPU memory is not included.
+
+warm: the checks a loaded hidden game answers, each --runs times: a screen opened and captured at 1280x720
+(ui-check --screen), a save loaded and captured (world-check --world), and a scenario: a scripted step in that
+world (eval) then the frame captured (ui-check). Each
+check's time and the game's windows on screen after it. Run it with modaccel preferences --background on.
+
+projects: COUNT projects checked at the same time, as when many mods are worked on at once. Each is a copy of
+--root's mod (src, Gradle files) in .runs/session-cost/projects/, prepared one after another (Gradle records its
+launch, then nothing is kept). Then every project's data-check runs at once from no game (each starts its own),
+then, once their spare games are ready, at once again with their games loaded. Reports each check's wall time,
+the CPU of everything that started, and the memory of every loaded and spare game together.
 
 parallel: starts COUNT hidden clients at once from the project's verified saved launch
 (.modaccel/portable/launch.json, written by a ui-check), each with its own game folder, state folder and
@@ -366,6 +379,108 @@ def client(args):
     return {"root": str(root), "runs": runs}
 
 
+def warm(args):
+    root = Path(args.root).resolve()
+    first = modaccel(["ui-check"], root)
+    need(first, "ui-check to load the game")
+    pid = game_pid(root)
+    # A scenario: a scripted step in the loaded world (the player turned and moved), then the frame captured.
+    step = "mc.player.setYRot(mc.player.getYRot() + 90); mc.player.setPos(mc.player.getX() + 1, mc.player.getY(), mc.player.getZ()); mc.player.getYRot()"
+    checks = [("screen", [["ui-check", "--screen", args.screen]]), ("world", [["world-check", "--world", args.world]]),
+              ("scenario", [["eval", "--code", step], ["ui-check"]])]
+    runs = []
+    m0 = machine_times()
+    for n in range(args.runs):
+        row = {}
+        for name, commands in checks:
+            wall = check = 0.0
+            for command in commands:
+                report = modaccel(command, root)
+                need(report, name + " (" + command[0] + ")")
+                wall += report["_wall"]
+                check += report.get("seconds", 0)
+            shown = visible_windows([pid])
+            row[name] = {"wall": round(wall, 2), "check": round(check, 2), "visibleWindows": None if shown is None else len(shown.get(pid, []))}
+        print(f"  run {n + 1}/{args.runs}: " + ", ".join(f"{k} {v['wall']} s ({v['visibleWindows']} windows)" for k, v in row.items()), flush=True)
+        runs.append(row)
+    busy = machine_busy(m0, machine_times())
+    modaccel(["game-stop"], root)
+    medians = {name: median(runs, name, "wall") for name, _ in checks}
+    windows = max((r[name]["visibleWindows"] or 0) for r in runs for name, _ in checks) if runs else None
+    return {"root": str(root), "warm": runs, "medians": medians, "mostWindowsOnScreen": windows, "game": game_pid(root) or pid,
+            "machineBusyPercent": busy}
+
+
+MOD_FILES = ["src", "gradle", "build.gradle", "settings.gradle", "gradle.properties", "gradlew", "gradlew.bat"]
+
+
+def state_pid(root, name):
+    try:
+        return json.loads((Path(root) / ".modaccel" / "portable" / name).read_text(encoding="utf-8"))["pid"]
+    except (OSError, ValueError, KeyError):
+        return None
+
+
+def together(roots, command):
+    """One modaccel command on every root at the same moment; the reports in root order and what started meanwhile."""
+    with Sampler() as sampler:
+        threads, reports = [], [None] * len(roots)
+
+        def one(i):
+            reports[i] = modaccel(command, roots[i])
+        for i in range(len(roots)):
+            threads.append(threading.Thread(target=one, args=(i,)))
+            threads[-1].start()
+        for t in threads:
+            t.join()
+    return reports, sampler
+
+
+def projects(args):
+    source = Path(args.root).resolve()
+    base = HARNESS / ".runs" / "session-cost" / "projects"
+    roots = []
+    for i in range(args.count):
+        root = base / f"p{i + 1}"
+        for name in MOD_FILES:
+            src, dst = source / name, root / name
+            if dst.exists():
+                continue
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(src, dst) if src.is_dir() else shutil.copy2(src, dst)
+        roots.append(root)
+    print(f"preparing {len(roots)} projects one after another", flush=True)
+    for root in roots:
+        need(modaccel(["data-check", "--once"], root), "preparing " + root.name)
+    for root in roots:
+        modaccel(["game-stop"], root)
+    m0 = machine_times()
+    fresh, s1 = together(roots, ["data-check"])
+    for r, root in zip(fresh, roots):
+        need(r, "data-check from no game in " + root.name)
+    row = lambda r: {"wall": round(r["_wall"], 1), "cpu": (r.get("result") or {}).get("cpuSeconds")}
+    result = {"source": str(source), "count": len(roots), "fresh": [row(r) for r in fresh], "freshAll": split(s1)["other"]}
+    print(f"  {len(roots)} at once from no game: longest {max(x['wall'] for x in result['fresh'])} s, everything that started {result['freshAll']}", flush=True)
+    deadline = time.time() + args.timeout
+    while time.time() < deadline and not all(state_pid(r, "data-check-spare.json") for r in roots):
+        time.sleep(1)
+    warm, _ = together(roots, ["data-check"])
+    for r, root in zip(warm, roots):
+        need(r, "data-check with the game loaded in " + root.name)
+    result["warm"] = [row(r) for r in warm]
+    now = processes()
+    games = [state_pid(r, "data-check.json") for r in roots]
+    spares = [state_pid(r, "data-check-spare.json") for r in roots]
+    result["loadedGB"] = gb(sum(now[pid]["rss"] for pid in games if pid in now))
+    result["spareGB"] = gb(sum(now[pid]["rss"] for pid in spares if pid in now))
+    result["spares"] = sum(1 for pid in spares if pid in now)
+    result["machineBusyPercent"] = machine_busy(m0, machine_times())
+    print(f"  at once with games loaded: longest {max(x['wall'] for x in result['warm'])} s; loaded games {result['loadedGB']} GB, spares {result['spareGB']} GB", flush=True)
+    for root in roots:
+        modaccel(["game-stop"], root)
+    return result
+
+
 def ask(session, request, timeout=150):
     """One request to a running game's agent, the same line protocol modaccel uses."""
     with socket.create_connection(("127.0.0.1", session["port"]), timeout=5) as sock:
@@ -540,7 +655,16 @@ def record(result, name):
     kept.write_text(json.dumps(clean(result), indent=1) + chr(10), encoding="utf-8", newline=chr(10))
     source = "bench/session-cost/" + name
     add = []
-    if "runs" in result:
+    if "fresh" in result:
+        n = result["count"]
+        add.append(("test.parallel-sessions", n, 1, "data-check on %d projects at once, each starting its own game: longest %s s; %s GB loaded and %s GB spare games together"
+                    % (n, max(x["wall"] for x in result["fresh"]), result["loadedGB"], result["spareGB"])))
+    elif "warm" in result:
+        n = len(result["warm"])
+        note = "hidden game, %d windows on screen, the whole modaccel command; machine %s%% busy" % (result["mostWindowsOnScreen"], result["machineBusyPercent"])
+        add.append(("test.screen-check.fabric", result["medians"]["screen"], n, "ui-check --screen, " + note))
+        add.append(("test.scenario.fabric", result["medians"]["scenario"], n, "eval step then ui-check capture, " + note))
+    elif "runs" in result:
         runs = result["runs"]
         m = lambda *p: median(runs, *p)
         add.append(("test.session-ram", m("saved", "game", "peakGB"), len(runs), "peak working set, saved launch"))
@@ -574,11 +698,22 @@ def main():
     pa.add_argument("--jvm", default="", help="extra JVM flags for every client, to compare launch profiles")
     pa.add_argument("--record", action="store_true", help="add the start CPU per client to coverage/measures.json")
     pa.add_argument("--threads", action="store_true", help="CPU per kind of thread in each client once it is checked")
+    w = sub.add_parser("warm")
+    w.add_argument("--root", required=True)
+    w.add_argument("--world", required=True, help="a save in the project's game folder")
+    w.add_argument("--screen", default="net.minecraft.client.gui.screens.TitleScreen")
+    w.add_argument("--runs", type=int, default=5)
+    w.add_argument("--record", action="store_true", help="add the medians to coverage/measures.json")
+    pr = sub.add_parser("projects")
+    pr.add_argument("--root", required=True, help="the mod to copy")
+    pr.add_argument("--count", type=int, default=8)
+    pr.add_argument("--timeout", type=float, default=180, help="seconds to wait for every spare game")
+    pr.add_argument("--record", action="store_true", help="add the count to coverage/measures.json")
     r = sub.add_parser("run")
     r.add_argument("--label", required=True)
     r.add_argument("command", nargs=argparse.REMAINDER)
     args = ap.parse_args()
-    result = {"client": client, "parallel": parallel, "run": run}[args.mode](args)
+    result = {"client": client, "parallel": parallel, "warm": warm, "projects": projects, "run": run}[args.mode](args)
     result.update(machine={"cpus": os.cpu_count(), "os": sys.platform}, measured=datetime.now(timezone.utc).isoformat(timespec="seconds"))
     out = HARNESS / ".runs" / "session-cost" / (datetime.now().strftime("%Y-%m-%dT%H-%M-%S") + ".json")
     out.parent.mkdir(parents=True, exist_ok=True)

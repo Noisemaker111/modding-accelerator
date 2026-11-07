@@ -259,7 +259,8 @@
    "machine": "jon-pc",
    "target": {"value": 1.5, "by": "2026-11-27", "step": "34", "note": "hold, with no window"},
    "points": [
-    {"date": "2026-10-21", "value": 1.49, "n": 5, "note": "with a game window", "source": "bench/data.json loop"}
+    {"date": "2026-10-21", "value": 1.49, "n": 5, "note": "with a game window", "source": "bench/data.json loop"},
+    {"date": "2026-11-07", "value": 3.94, "n": 5, "note": "ui-check --screen, hidden game, 0 windows on screen, the whole modaccel command; machine 29.3% busy", "source": "bench/session-cost/warm-2026-11-07T17-33-07.json"}
    ]
   },
   {
@@ -298,7 +299,8 @@
    "machine": "jon-pc",
    "target": {"value": 3, "by": "2026-11-27", "step": "34", "note": "hold, with no window"},
    "points": [
-    {"date": "2026-10-21", "value": 2.9, "n": 5, "source": "bench/data.json loop"}
+    {"date": "2026-10-21", "value": 2.9, "n": 5, "source": "bench/data.json loop"},
+    {"date": "2026-11-07", "value": 5.14, "n": 5, "note": "eval step then ui-check capture, hidden game, 0 windows on screen, the whole modaccel command; machine 29.3% busy", "source": "bench/session-cost/warm-2026-11-07T17-33-07.json"}
    ]
   },
   {

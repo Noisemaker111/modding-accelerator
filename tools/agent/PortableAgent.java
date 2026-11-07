@@ -224,7 +224,7 @@ public final class PortableAgent {
             // fades its background over 2 s and then its buttons over 2 more (1.21.6), so wait 4.5 s.
             boolean transition = screenName.equals("MessageScreen") || screenName.equals("GenericMessageScreen")
                     || screenName.equals("LevelLoadingScreen") || screenName.equals("ProgressScreen") || screenName.equals("ReceivingLevelScreen")
-                    || System.nanoTime() - screenSince < (screenName.equals("TitleScreen") ? 4500000000L : 1000000000L);
+                    || System.nanoTime() - screenSince < (screenName.equals("TitleScreen") && titleFading(current) ? 4500000000L : 1000000000L);
             String expectedScreen = Json.text(request, "expectScreen", ""), leaveScreen = Json.text(request, "leaveScreen", "");
             boolean outcomePending = !expectedScreen.isEmpty() && (current == null || !expectedScreen.equals(current.getClass().getName()))
                     || !leaveScreen.isEmpty() && current != null && leaveScreen.equals(current.getClass().getName())
@@ -472,6 +472,10 @@ public final class PortableAgent {
             types.addAll(Arrays.asList(type.getInterfaces()));
         }
         throw new NoSuchMethodException(owner.getClass().getName() + "." + name + " through a public type");
+    }
+    /** The title screen fades in only when the game opens it at start-up; one opened later (--screen) shows at once. Unknown names: assume it fades. */
+    private static boolean titleFading(Object title) {
+        try { return Boolean.TRUE.equals(field(title, "fading")); } catch (Exception unknown) { return true; }
     }
     private static Object field(Object owner, String... names) throws Exception {
         for (String name : names) for (Class<?> type = owner.getClass(); type != null; type = type.getSuperclass()) try {
