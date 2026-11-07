@@ -207,7 +207,8 @@
    "machine": "jon-pc",
    "target": {"value": 10, "by": "2027-01-08", "step": "36"},
    "points": [
-    {"date": "2026-10-22", "value": 24.2, "n": 1, "source": "bench/data.json multiplayer"}
+    {"date": "2026-10-22", "value": 24.2, "n": 1, "source": "bench/data.json multiplayer"},
+    {"date": "2026-11-07", "value": 15, "n": 2, "note": "mp-check's own server, 19 and 11 s: the loader's first log line to Done, a hidden client starting beside it; machine busy with other work", "source": "bench/session-cost/mp-check-2026-11-07.json"}
    ]
   },
   {
@@ -491,7 +492,8 @@
    "machine": "jon-pc",
    "target": {"value": 15, "by": "2027-01-08", "step": "36"},
    "points": [
-    {"date": "2026-10-26", "value": 25, "note": "about 25 s", "source": "SCOPE.md section 5"}
+    {"date": "2026-10-26", "value": 25, "note": "about 25 s", "source": "SCOPE.md section 5"},
+    {"date": "2026-11-07", "value": 51.0, "n": 2, "note": "bench/server-plugins/agentcraft.scenario, 44 steps with a server restart, mock backend; Paper started in 18.7 and 10.6 s; machine 46 to 58% busy; the Oct 26 figure was a shorter scenario", "source": "bench/session-cost/paper-2026-11-07.json"}
    ]
   },
   {
@@ -504,7 +506,34 @@
    "machine": "jon-pc",
    "target": {"value": 30, "by": "2027-01-08", "step": "36"},
    "points": [
-    {"date": "2026-10-26", "value": 55, "note": "about 55 s, Paper download included", "source": "SCOPE.md section 5"}
+    {"date": "2026-10-26", "value": 55, "note": "about 55 s, Paper download included", "source": "SCOPE.md section 5"},
+    {"date": "2026-11-07", "value": 316.0, "n": 1, "note": "a fresh clone: 152 s Gradle reading the build, 112 s building the plugin, 48 s the scenario on a fresh Paper server", "source": "bench/session-cost/paper-2026-11-07.json"}
+   ]
+  },
+  {
+   "id": "plugin.server-check.cpu",
+   "area": "plugin",
+   "name": "CPU for server-check on a real Paper server, AgentCraft",
+   "unit": "CPU-s",
+   "better": "lower",
+   "info": true,
+   "condition": "warm",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-07", "value": 130, "n": 2, "note": "everything server-check started: Gradle, Paper, the bot, the mock backend", "source": "bench/session-cost/paper-2026-11-07.json"}
+   ]
+  },
+  {
+   "id": "plugin.server-check.ram",
+   "area": "plugin",
+   "name": "Memory at the peak of server-check on a real Paper server, AgentCraft",
+   "unit": "GB",
+   "better": "lower",
+   "info": true,
+   "condition": "warm",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-07", "value": 2.4, "n": 2, "note": "peak of everything server-check started", "source": "bench/session-cost/paper-2026-11-07.json"}
    ]
   },
   {

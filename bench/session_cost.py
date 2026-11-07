@@ -238,6 +238,8 @@ class Sampler:
     def __init__(self, every=0.5):
         self.before = set(processes())
         self.every, self.seen, self.stop_flag = every, {}, threading.Event()
+        # Most windows the new processes had on screen at one sample (None where windows cannot be read).
+        self.windows, self.titles = 0, set()
         self.thread = threading.Thread(target=self._loop, daemon=True)
         self.machine = machine_times()
         self.busy = None
@@ -257,6 +259,12 @@ class Sampler:
             s["private"] = max(s["private"], p.get("private") or 0)
             s["threads"] = max(s["threads"], p.get("threads") or 0)
             s["cpu"], s["rss"] = p["cpu"], p["rss"]
+        shown = visible_windows([pid for pid in now if pid not in self.before])
+        if shown is None:
+            self.windows = None
+        elif self.windows is not None:
+            self.windows = max(self.windows, sum(len(t) for t in shown.values()))
+            self.titles.update(t for ts in shown.values() for t in ts)
         return now
 
     def __enter__(self):
@@ -303,7 +311,8 @@ def gb(n):
 
 def split(sampler, game=None, server=None):
     """Peak memory and CPU of the game, the server and everything else that appeared."""
-    out = {"game": None, "server": None, "other": {"count": 0, "peakGB": 0.0, "cpu": 0.0}, "machineBusyPercent": sampler.busy}
+    out = {"game": None, "server": None, "other": {"count": 0, "peakGB": 0.0, "cpu": 0.0}, "machineBusyPercent": sampler.busy,
+           "mostWindowsOnScreen": sampler.windows, "windowTitles": sorted(sampler.titles)}
     for pid, s in sampler.seen.items():
         row = {"pid": pid, "peakGB": gb(s["peak"]), "privateGB": gb(s["private"]), "threads": s["threads"], "cpu": round(s["cpu"], 1)}
         if pid == game:

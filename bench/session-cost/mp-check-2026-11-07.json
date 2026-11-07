@@ -1,0 +1,90 @@
+{
+ "what": "modaccel mp-check on the Prism Lab demo mod: its own dedicated Fabric 26.3 server (:runServerLab) and a hidden, quiet client joining it, then a 1280x720 framebuffer capture. The second run's windows were counted every 0.5 s for the whole run.",
+ "runs": [
+  {
+   "label": "mp-check-hidden",
+   "exit": 0,
+   "wall": 102.8,
+   "game": null,
+   "server": null,
+   "other": {
+    "count": 6,
+    "peakGB": 3.5,
+    "cpu": 211.1
+   },
+   "machineBusyPercent": 52.0,
+   "machine": {
+    "cpus": 24,
+    "os": "win32"
+   },
+   "measured": "2026-11-07T23:29:23+00:00",
+   "modaccel": {
+    "ok": true,
+    "seconds": 101.6,
+    "stages": {
+     "java-setup": 0.4,
+     "metadata": 21.4,
+     "game-start": 21.4,
+     "framebuffer-check": 0.9
+    },
+    "tier": "dedicated-client",
+    "integratedServer": false,
+    "capture": {
+     "width": 1280,
+     "height": 720,
+     "source": "Minecraft framebuffer"
+    }
+   },
+   "serverStart": {
+    "seconds": 19,
+    "from": "18:28:29",
+    "to": "18:28:48",
+    "note": "the server's loader's first log line to Done; the hidden client started beside it"
+   },
+   "mostWindowsOnScreen": null,
+   "windowNote": "not counted during this run (mp-check closes its client and server when it ends; the bench then counted windows only afterwards)"
+  },
+  {
+   "label": "mp-check-hidden",
+   "exit": 0,
+   "wall": 52.6,
+   "game": null,
+   "server": null,
+   "other": {
+    "count": 5,
+    "peakGB": 3.41,
+    "cpu": 167.1
+   },
+   "machineBusyPercent": 43.3,
+   "mostWindowsOnScreen": 0,
+   "windowTitles": [],
+   "machine": {
+    "cpus": 24,
+    "os": "win32"
+   },
+   "measured": "2026-11-07T23:32:00+00:00",
+   "modaccel": {
+    "ok": true,
+    "seconds": 51.4,
+    "stages": {
+     "java-setup": 0.4,
+     "game-start": 15.4,
+     "framebuffer-check": 0.7
+    },
+    "tier": "dedicated-client",
+    "integratedServer": false,
+    "capture": {
+     "width": 1280,
+     "height": 720,
+     "source": "Minecraft framebuffer"
+    }
+   },
+   "serverStart": {
+    "seconds": 11,
+    "from": "18:31:21",
+    "to": "18:31:32",
+    "note": "the server's loader's first log line to Done; the hidden client started beside it"
+   }
+  }
+ ]
+}
