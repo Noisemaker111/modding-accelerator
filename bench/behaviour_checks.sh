@@ -2,7 +2,8 @@
 # The real-game behaviour checks on Linux with no screen: AppleSkin's HUD estimate (Fabric 1.21.6) and Zombie
 # Apocalypse's AI (NeoForge, ported 1.21.1 -> 1.21.4 by modaccel port). Each check passes on the mod as it is and must
 # fail on a copy broken on purpose. The client runs hidden and quiet on a virtual display (Xvfb) with Mesa's software
-# OpenGL, so it needs no GPU. Not in cloud CI until Jon approves that spending. By hand, from the repo
+# OpenGL, so it needs no GPU. Not in cloud CI until Jon approves that spending: the nightly job is
+# bench/behaviour-nightly.patch. By hand, from the repo
 # root (Git Bash on Jon's PC):
 #   fairshare lease boat -- ~/.ascii/bin/boat.exe run --no-env --timeout 3600 --push . -- bash bench/behaviour_checks.sh
 # Exit 0 = both checks passed and both breaks failed. Prints one "behaviour-checks: N mods" line for the measure.

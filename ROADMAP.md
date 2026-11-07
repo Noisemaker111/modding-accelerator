@@ -242,7 +242,9 @@ sessions run at once on one PC.
     night in CI, not only on this PC. **next** — bench/behaviour_checks.sh runs both behaviour
     checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) in a hidden, quiet client on a virtual
     display with software OpenGL: on a fresh boat.dev Linux machine with no GPU both passed and both
-    breaks failed, 10 minutes. The nightly cloud CI job waits for Jon to approve that spending.
+    breaks failed, 10 minutes. The nightly CI job is written as bench/behaviour-nightly.patch with
+    its expected spend ($0 on this public repository, about 10 to 15 runner-minutes a night) and
+    waits for Jon to approve it.
     Starts 2026-11-16, target 2026-12-04.
 38. pack-check records how long each stage takes and checks the shipped and the repaired pack side
     by side. **done** — pack-check times every stage (read, static checks, each server start) and
