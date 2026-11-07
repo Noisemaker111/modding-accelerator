@@ -1,4 +1,4 @@
-"""One rule for what a ledger run means, shared by the bench page and the porting map.
+"""One rule for what a ledger run means, shared by the roadmap page and its porting map.
 
 A run in coverage/ledger.json reached one of four statuses. behaviour and load are green (it
 works in the game), build is yellow (packaged, not yet loaded), stop is red (named errors left).

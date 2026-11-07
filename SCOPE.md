@@ -52,7 +52,7 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
    - Hybrid servers (Arclight and similar) already run plugins next to mods.
    - Revisit only if real demand shows up.
 6. **Loader changes (Fabric ↔ NeoForge) stay separate from version ports**, with separate claims. This is already decided in ROADMAP.
-7. **Every claim carries its rung.** The README, the bench page and the porting map say which rung a platform reached, never "supports X".
+7. **Every claim carries its rung.** The README and the roadmap page (with its porting map) say which rung a platform reached, never "supports X".
 
 ## 4. Intake: what happens when someone brings a new project
 
