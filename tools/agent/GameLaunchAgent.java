@@ -4,17 +4,37 @@ import java.security.ProtectionDomain;
 import java.util.function.Consumer;
 import org.objectweb.asm.*;
 
-/** Applies personal launch preferences before the client opens windows or reads settings. */
+/**
+ * Applies personal launch preferences before the client opens windows or reads settings.
+ * What the hidden-window transform did is left in two string system properties, so the agent's
+ * status (and modaccel) can tell a hidden window from one that failed to hide:
+ * modaccel.background.applied lists each window library rewritten, modaccel.background.error the failure.
+ */
 final class GameLaunchAgent {
     private GameLaunchAgent() {}
-    static void install(Instrumentation instrumentation) {
+    private static boolean installed;
+    static synchronized void install(Instrumentation instrumentation) {
+        // Installed once per JVM: a second transformer would see the first one's output.
+        if (installed) return;
+        installed = true;
         instrumentation.addTransformer(new ClassFileTransformer() {
             public byte[] transform(ClassLoader loader, String name, Class<?> type, ProtectionDomain domain, byte[] bytes) {
-                try {
-                    if (Boolean.getBoolean("modaccel.background")) {
+                if (Boolean.getBoolean("modaccel.background")) {
+                    try {
                         byte[] background = BackgroundWindows.transform(name, bytes);
-                        if (background != null) return background;
+                        if (background != null) {
+                            String applied = System.getProperty("modaccel.background.applied", "");
+                            System.setProperty("modaccel.background.applied", applied.isEmpty() ? name : applied + "," + name);
+                            return background;
+                        }
+                    } catch (Throwable error) {
+                        System.err.println("MODACCEL_BACKGROUND_ERROR " + error);
+                        String earlier = System.getProperty("modaccel.background.error", "");
+                        System.setProperty("modaccel.background.error", (earlier.isEmpty() ? "" : earlier + "; ") + error.getMessage());
+                        return null;
                     }
+                }
+                try {
                     if (!Boolean.getBoolean("modaccel.quiet") || !"net/minecraft/client/main/Main".equals(name)) return null;
                     System.getProperties().put("modaccel.launch.quiet", new Consumer<Object>() {
                         public void accept(Object args) { QuietOptions.seedArgs((String[]) args); }
@@ -43,8 +63,8 @@ final class GameLaunchAgent {
                     if (hooks[0] != 1) throw new IllegalStateException("Minecraft client entry point is unsupported");
                     return writer.toByteArray();
                 } catch (Throwable error) {
-                    System.err.println("MODACCEL_BACKGROUND_ERROR " + error);
-                    return new byte[0];
+                    System.err.println("MODACCEL_QUIET_ERROR " + error);
+                    return null;
                 }
             }
         });

@@ -202,6 +202,11 @@ public final class PortableTests {
         Map<String, Object> positionA = Json.map("x", 1.5, "y", 64.0, "z", -3.5), positionB = Json.map("x", 1.5, "y", 64.0, "z", -3.5), positionC = Json.map("x", 1.56, "y", 64.0, "z", -3.5);
         check(Game.samePosition(positionA, positionB, 0.05), "save round-trip accepts an unchanged position");
         check(!Game.samePosition(positionA, positionC, 0.05), "save round-trip rejects a moved position beyond tolerance");
+        Map<String, Object> hidden = Json.map("background", true, "log", "game.log"), shown = Json.map("background", false, "log", "game.log");
+        check(Game.hiddenWindowFailure(hidden, Json.map("backgroundApplied", "org/lwjgl/sdl/SDLVideo,org/lwjgl/sdl/SDLMouse", "backgroundError", "")) == null, "a hidden window that was rewritten lets the check run");
+        check(String.valueOf(Game.hiddenWindowFailure(hidden, Json.map("backgroundApplied", "org/lwjgl/sdl/SDLVideo", "backgroundError", "Unsupported org/lwjgl/sdl/SDLMouse window controls"))).contains("SDLMouse window controls"), "a failed rewrite stops the check and names the library");
+        check(String.valueOf(Game.hiddenWindowFailure(hidden, Json.map("backgroundApplied", "", "backgroundError", ""))).contains("no window library was rewritten"), "nothing rewritten stops the check");
+        check(Game.hiddenWindowFailure(shown, Json.map("backgroundApplied", "", "backgroundError", "")) == null, "a visible window by choice is not a failure");
         try { Json.parse("{\"ok\":true,\"ok\":false}"); throw new AssertionError("duplicate accepted"); } catch (IllegalArgumentException expected) { count++; }
         Path root = scratch.resolve("mod with spaces"); Files.createDirectories(root.resolve("gradle/wrapper"));
         Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");

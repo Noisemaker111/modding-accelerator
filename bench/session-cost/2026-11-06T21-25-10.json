@@ -1,0 +1,79 @@
+{
+ "runs": [
+  {
+   "cold": {
+    "wall": 401.2,
+    "gameStart": 112.6,
+    "mode": "Gradle prepares and launches the actual client",
+    "visibleWindows": 0,
+    "game": {
+     "pid": 31740,
+     "peakGB": 1.01,
+     "privateGB": 1.47,
+     "threads": 94,
+     "cpu": 53.4
+    },
+    "server": null,
+    "other": {
+     "count": 4,
+     "peakGB": 1.2,
+     "cpu": 97.7
+    },
+    "machineBusyPercent": 80.8
+   },
+   "idle": {
+    "seconds": 20.0,
+    "cores": 0.15,
+    "machinePercent": 0.6,
+    "rssGB": 0.91,
+    "machineBusyPercent": 89.1
+   },
+   "warm": {
+    "wall": 9.6,
+    "check": 4.4
+   },
+   "saved": {
+    "wall": 58.2,
+    "gameStart": 41.8,
+    "mode": "saved launch; dependencies already prepared",
+    "visibleWindows": 0,
+    "game": {
+     "pid": 55300,
+     "peakGB": 0.98,
+     "privateGB": 1.51,
+     "threads": 96,
+     "cpu": 43.5
+    },
+    "server": null,
+    "other": {
+     "count": 1,
+     "peakGB": 0.26,
+     "cpu": 11.7
+    },
+    "machineBusyPercent": 93.1
+   },
+   "mp": {
+    "wall": 148.8,
+    "game": null,
+    "server": {
+     "pid": 55376,
+     "peakGB": 0.8,
+     "privateGB": 1.23,
+     "threads": 93,
+     "cpu": 98.1
+    },
+    "other": {
+     "count": 3,
+     "peakGB": 1.57,
+     "cpu": 155.9
+    },
+    "machineBusyPercent": 98.0
+   }
+  }
+ ],
+ "machine": {
+  "cpus": 24,
+  "os": "win32"
+ },
+ "measured": "2026-11-07T02:25:10+00:00"
+}

@@ -1,0 +1,58 @@
+{
+ "runs": [
+  {
+   "cold": {
+    "wall": 379.0,
+    "gameStart": 349.7,
+    "game": {
+     "pid": 30536,
+     "peakGB": 1.08,
+     "privateGB": 1.61,
+     "threads": 92,
+     "cpu": 105.3
+    },
+    "server": null,
+    "other": {
+     "count": 3,
+     "peakGB": 1.11,
+     "cpu": 88.6
+    },
+    "machineBusyPercent": 75.4
+   },
+   "idle": {
+    "seconds": 20.0,
+    "cores": 0.21,
+    "machinePercent": 0.9,
+    "rssGB": 1.06,
+    "machineBusyPercent": 97.5
+   },
+   "warm": {
+    "wall": 23.5,
+    "check": 11.85
+   },
+   "mp": {
+    "wall": 201.5,
+    "serverStart": 0,
+    "game": null,
+    "server": {
+     "pid": 25008,
+     "peakGB": 0.13,
+     "privateGB": 1.16,
+     "threads": 45,
+     "cpu": 4.3
+    },
+    "other": {
+     "count": 3,
+     "peakGB": 2.1,
+     "cpu": 263.4
+    },
+    "machineBusyPercent": 97.5
+   }
+  }
+ ],
+ "machine": {
+  "cpus": 24,
+  "os": "win32"
+ },
+ "measured": "2026-11-07T01:46:13+00:00"
+}

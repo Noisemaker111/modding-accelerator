@@ -18,7 +18,7 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
 | 4. Loaders | 0 | 0 | 0 | 3 | 2027-03-12 |
 | 5. Proof: behaviour in the real game and server | 3 | 0 | 2 | 3 | 2027-02-12 |
 | 6. Modpack compatibility | 0 | 3 | 0 | 1 | 2027-02-05 |
-| 7. Testing without Minecraft open | 0 | 0 | 4 | 2 | 2027-01-08 |
+| 7. Testing without Minecraft open | 0 | 1 | 3 | 2 | 2027-01-08 |
 
 ## Phase 1 — Neighbouring versions (1.21.x), Fabric and NeoForge
 
@@ -194,15 +194,21 @@ Every check runs with no game window, and the cost of a game session is mostly s
 sessions run at once on one PC.
 
 33. Measure RAM, CPU, start time and time per check for one client, one dedicated server and one
-    Paper server, warm and cold, as the baseline the next steps are judged against. **next**
-    Starts 2026-11-09, target 2026-11-13.
+    Paper server, warm and cold, as the baseline the next steps are judged against. **doing** —
+    bench/session_cost.py measures a session from the operating system on Windows, Linux and macOS.
+    A hidden Fabric 26.3 client peaks at 1 GB and spends about 100 CPU-s starting, 49 with C1 only,
+    which hidden launches now use; 16 started side by side from one saved launch. Paper and warm
+    timings on a quiet PC are still to measure.
+    Started 2026-11-06, target 2026-11-13.
 34. ui-check, world-check, mp-check, eval and the behaviour checks run with no Minecraft window and
-    no sound, with the same assertions and the same 1280x720 captures. **next**
+    no sound, with the same assertions and the same 1280x720 captures, and a check stops when a
+    window asked to stay hidden is not. **next**
     Starts 2026-11-13, target 2026-11-27.
 35. A new session reuses a game that has already started instead of starting its own, so a cold
     check drops from about 36 s to under 10 s. **later**
     Starts 2026-11-27, target 2026-12-18.
-36. At least 8 checks run side by side on this PC without running out of memory. **later**
+36. modaccel runs at least 8 game checks side by side on this PC, each with its own game folder,
+    without running out of memory, and a waiting hidden client costs almost no CPU. **later**
     Starts 2026-12-18, target 2027-01-08.
 37. The real-game behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) run every
     night in CI, not only on this PC. **next**
@@ -249,8 +255,11 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Scripted scenario + screenshot, warm game, Fabric 26.3 | — | 2.9 s (Oct 21) | 3 s (hold) by Nov 27, step 34 | Met |
 | Multiplayer scenario, warm client and server | — | 4.1 s (Oct 22) | 4 s by Nov 27, step 34 | Baseline |
 | Mods with their own behaviour asserted in a real client | — | 2 mods (Oct 26) | 4 mods by Dec 4, step 37 | Baseline |
-| Memory for one game session | — | not measured | set from the baseline by Nov 13, step 33 | Not measured yet |
-| Game sessions running at once on one PC | — | not measured | 8 sessions by Jan 8, 2027, step 36 | Not measured yet |
+| Memory for one hidden game session, Fabric 26.3, warm | 1.1 GB (Nov 6) | 1.0 GB (Nov 6) | 0.8 GB by Jan 8, 2027, step 36 | 36% of the way |
+| Game checks modaccel runs at once on one PC | — | not measured | 8 sessions by Jan 8, 2027, step 36 | Not measured yet |
+| CPU to start one hidden client, saved launch, Fabric 26.3, warm | 95 CPU-s (Nov 6) | 49 CPU-s (Nov 6) | 25 CPU-s by Dec 18, step 35 | 66% of the way |
+| CPU a hidden client uses while it waits, warm | 0.21 cores (Nov 6) | 0.15 cores (Nov 6) | 0.05 cores by Jan 8, 2027, step 36 | 38% of the way |
+| Hidden clients this PC held at once, each to a 1280x720 capture | — | 16 sessions (Nov 6) | — | Fact |
 | One-file edit, modaccel fast, warm | — | 4 s (Oct 23) | 4 s (hold) by Nov 27, step 34 | Met |
 
 ### Plugins

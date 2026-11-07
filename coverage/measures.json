@@ -328,22 +328,66 @@
   {
    "id": "test.session-ram",
    "area": "test",
-   "name": "Memory for one game session",
+   "name": "Memory for one hidden game session, Fabric 26.3",
    "unit": "GB",
    "better": "lower",
    "machine": "jon-pc",
-   "target": {"value": null, "by": "2026-11-13", "step": "33", "note": "set from the baseline"},
-   "points": []
+   "target": {"value": 0.8, "by": "2027-01-08", "step": "36", "note": "set from the Nov 6 baseline"},
+   "points": [
+    {"date": "2026-11-06", "value": 1.08, "n": 1, "note": "peak working set, title screen, default JIT", "source": "bench/session-cost/2026-11-06T20-46-13.json"},
+    {"date": "2026-11-06", "value": 0.98, "n": 1, "note": "peak working set, saved launch, C1 only", "source": "bench/session-cost/2026-11-06T21-25-10.json"}
+   ],
+   "condition": "warm"
   },
   {
    "id": "test.parallel-sessions",
    "area": "test",
-   "name": "Game sessions running at once on one PC",
+   "name": "Game checks modaccel runs at once on one PC",
    "unit": "sessions",
    "better": "higher",
    "machine": "jon-pc",
    "target": {"value": 8, "by": "2027-01-08", "step": "36"},
    "points": []
+  },
+  {
+   "id": "test.session-start-cpu",
+   "area": "test",
+   "name": "CPU to start one hidden client, saved launch, Fabric 26.3",
+   "unit": "CPU-s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 25, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-11-06", "value": 95, "n": 8, "note": "8 clients at once, 759 CPU-s in all, default JIT", "source": "bench/session-cost/2026-11-06T20-50-36.json"},
+    {"date": "2026-11-06", "value": 49, "n": 8, "note": "8 clients at once, 389 CPU-s in all, C1 only", "source": "bench/session-cost/2026-11-06T21-27-14.json"}
+   ]
+  },
+  {
+   "id": "test.session-idle-cpu",
+   "area": "test",
+   "name": "CPU a hidden client uses while it waits",
+   "unit": "cores",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 0.05, "by": "2027-01-08", "step": "36"},
+   "points": [
+    {"date": "2026-11-06", "value": 0.21, "n": 1, "note": "title screen, 20 s, default JIT", "source": "bench/session-cost/2026-11-06T20-46-13.json"},
+    {"date": "2026-11-06", "value": 0.15, "n": 1, "note": "title screen, 20 s, C1 only", "source": "bench/session-cost/2026-11-06T21-25-10.json"}
+   ]
+  },
+  {
+   "id": "test.parallel-probe",
+   "area": "test",
+   "name": "Hidden clients this PC held at once, each to a 1280x720 capture",
+   "unit": "sessions",
+   "better": "higher",
+   "info": true,
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-06", "value": 16, "n": 1, "note": "bench/session_cost.py parallel from one saved launch, 18.2 GB, 100 s on a busy PC; not yet a modaccel command", "source": "bench/session-cost/2026-11-06T20-52-48.json"}
+   ]
   },
   {
    "id": "plugin.server-check.warm",

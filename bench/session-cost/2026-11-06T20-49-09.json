@@ -1,0 +1,36 @@
+{
+ "count": 2,
+ "checked": 2,
+ "allCheckedSeconds": 35.1,
+ "machineBusyPercent": 99.0,
+ "peakGBTotal": 2.33,
+ "privateGBTotal": 3.36,
+ "startCpuSeconds": 192.2,
+ "idle": {
+  "seconds": 15.0,
+  "cores": 0.56,
+  "rssGB": 2.22,
+  "machineBusyPercent": 94.3
+ },
+ "sessions": [
+  {
+   "name": "s1",
+   "pid": 30500,
+   "ready": 26.3,
+   "capture": "parallel-s1.png",
+   "checked": 34.7
+  },
+  {
+   "name": "s2",
+   "pid": 44740,
+   "ready": 25.2,
+   "capture": "parallel-s2.png",
+   "checked": 35.1
+  }
+ ],
+ "machine": {
+  "cpus": 24,
+  "os": "win32"
+ },
+ "measured": "2026-11-07T01:49:09+00:00"
+}
