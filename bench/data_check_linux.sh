@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # data-check on the Prism Lab demo mod on a clean Ubuntu machine (boat.dev): clean; a broken recipe under src and the
-# fix, copied without Gradle and read by the loaded game; then a new class, taken by the spare game.
+# fix, copied without Gradle and read by the loaded game; then a new class, taken by the spare game; then --once on a
+# copy (tools/tests/DataCheckOnceTest.java), which must leave no game running.
 # From the repo root (Git Bash on Jon's PC):
 #   fairshare lease boat -- ~/.ascii/bin/boat.exe run --no-env --timeout 2400 --push . -- bash bench/data_check_linux.sh
-# Exit 0 = clean and fixed passed, broken failed, and the spare took the changed code.
+# Exit 0 = clean and fixed passed, broken failed, the spare took the changed code, and --once left nothing running.
 set -u
 S=; command -v sudo >/dev/null && S=sudo
 $S apt-get update -qq >/tmp/apt.log 2>&1 && $S apt-get install -y -qq openjdk-21-jdk-headless >>/tmp/apt.log 2>&1 || { tail -20 /tmp/apt.log; exit 9; }
@@ -38,4 +39,6 @@ echo "== new class, exit $code"; summary /tmp/code.json || tail -40 /tmp/code.er
 grep -q 'loaded in advance' /tmp/code.json; spare=$?
 rm -f build/classes/java/main/com/prismlab/ModaccelJunk.class
 java -jar build/distributions/modaccel.jar game-stop --root . --json >/dev/null 2>&1
-[ "$clean" = 0 ] && [ "$broken" = 1 ] && [ "$fixed" = 0 ] && [ "$code" = 0 ] && [ "$spare" = 0 ]
+java tools/tests/DataCheckOnceTest.java . build/distributions/modaccel.jar >/tmp/once.log 2>&1; once=$?
+echo "== --once on a copy, exit $once"; tail -5 /tmp/once.log
+[ "$clean" = 0 ] && [ "$broken" = 1 ] && [ "$fixed" = 0 ] && [ "$code" = 0 ] && [ "$spare" = 0 ] && [ "$once" = 0 ]
