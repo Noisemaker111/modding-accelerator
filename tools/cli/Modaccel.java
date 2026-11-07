@@ -24,18 +24,20 @@ public final class Modaccel {
         }
     }
     static final class Options {
+        /** Every --switch and --option any command reads; has() and get() refuse a name missing here, so a documented option cannot be read but rejected. */
+        static final Set<String> SWITCHES = Set.of("json", "refresh", "help", "dry-run", "fix", "direct", "expect-world", "save-roundtrip", "jbr", "fresh-server", "once");
+        static final Set<String> VALUES = Set.of("command", "root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only", "plugins", "server-version", "server-build", "server-xms", "background", "quiet", "pack", "minecraft", "loader", "memory");
         final Map<String, String> values = new LinkedHashMap<>(); final Set<String> flags = new HashSet<>(); String command = "fast";
         Options(String[] args) {
-            Set<String> switches = Set.of("json", "refresh", "help", "dry-run", "fix", "direct", "expect-world", "save-roundtrip", "jbr", "fresh-server");
             int i = 0; if (args.length > 0 && !args[0].startsWith("-")) command = args[i++];
             if (command.equals("help") && i < args.length && !args[i].startsWith("-")) values.put("command", args[i++]);
             for (; i < args.length; i++) {
                 String key = args[i]; if (!key.startsWith("--")) throw new IllegalArgumentException("Expected --option; got " + key);
                 key = key.substring(2);
-                if (switches.contains(key)) flags.add(key);
+                if (SWITCHES.contains(key)) flags.add(key);
                 // --undo with no transaction undoes the newest port.
                 else if (key.equals("undo") && (i + 1 == args.length || args[i + 1].startsWith("--"))) values.put(key, "latest");
-                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only", "plugins", "server-version", "server-build", "server-xms", "background", "quiet", "pack", "minecraft", "loader", "memory").contains(key)) {
+                else if (VALUES.contains(key)) {
                     if (++i == args.length || args[i].startsWith("--")) throw new IllegalArgumentException("Missing value for --" + key);
                     values.put(key, args[i]);
                 } else throw new IllegalArgumentException("Unknown option --" + key + ". Run modaccel help" + (command.equals("help") ? "" : " " + command) + " for the options it takes.");
@@ -47,8 +49,9 @@ public final class Modaccel {
                 values.put(key, String.join(",", paths));
             }
         }
-        String get(String key, String fallback) { return values.getOrDefault(key, fallback); }
-        boolean has(String key) { return flags.contains(key); }
+        String get(String key, String fallback) { known(VALUES, key); return values.getOrDefault(key, fallback); }
+        boolean has(String key) { known(SWITCHES, key); return flags.contains(key); }
+        private static void known(Set<String> names, String key) { if (!names.contains(key)) throw new IllegalStateException("--" + key + " is read but not in Options." + (names == SWITCHES ? "SWITCHES" : "VALUES")); }
     }
     static final Set<String> COMMANDS = Set.of("support", "discover", "doctor", "setup", "compile", "fast", "test", "port", "explain", "dependencies", "mixin-check", "data-check", "plugin-check", "server-check",
             "ui-check", "world-check", "mp-check", "eval", "reload", "game-status", "game-stop", "package", "self-test", "preferences", "legacy-agent", "pack-check", "help");

@@ -143,6 +143,16 @@ public final class PortableTests {
                         Json.map("line", 2, "step", "restart-server", "status", "done", "seconds", 6.0, "serverRestarts", List.of(Json.map("seconds", 5.0)))),
                 "serverStopSeconds", 1.0, "scenario", "fixture"), scratch);
         check(restartTimes.contains("server start 14.0s, scenario 2.0s, stop 1.0s"), "server timings include every start and restart: " + restartTimes);
+        // data-check read --once while the parser refused it; every option a command reads must be one the parser takes.
+        var read = java.util.regex.Pattern.compile("options\\.(has|get|values\\.containsKey)\\(\"([a-z-]+)\"");
+        try (var sources = Files.list(home.resolve("tools/cli"))) {
+            for (Path source : sources.filter(p -> p.toString().endsWith(".java")).toList()) {
+                var m = read.matcher(Files.readString(source));
+                while (m.find()) check((m.group(1).equals("has") ? Modaccel.Options.SWITCHES : Modaccel.Options.VALUES).contains(m.group(2)),
+                        source.getFileName() + " reads --" + m.group(2) + ", which the option parser does not take");
+            }
+        }
+        check(new Modaccel.Options(new String[] {"data-check", "--once"}).has("once"), "data-check --once is accepted");
         Path pluginFolder = scratch.resolve("plugins, fixtures"); Files.createDirectories(pluginFolder);
         Path pluginA = pluginFolder.resolve("a.jar"), pluginB = pluginFolder.resolve("b.jar");
         Files.writeString(pluginA, "fixture"); Files.writeString(pluginB, "fixture");
