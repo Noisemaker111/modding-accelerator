@@ -1,20 +1,18 @@
-"""Render docs/porting-map.html from the change index.
+"""The porting map: every Minecraft release, the hub-to-hub route between any two, and what has
+really been ported. It is a section of the roadmap page (docs/index.html, bench/bench_page.py);
+docs/porting-map.html only sends old links there.
 
 Reads coverage/changes/index.json (bench/change_routes.py) and every <from>__<to>.json step file
 (tools/ChangeIndex.java). The page carries the small index inline; each step's full change list
 is written to docs/porting-map/steps/<from>__<to>.js as gzip + base64 and loaded only when a
 step is opened, so the page works from a local file and on GitHub Pages without a server.
 
-    python bench/porting_map.py
+    python bench/porting_map.py      step files and the redirect page
 """
 import base64
 import gzip
 import json
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from page_style import STYLE, THEME_JS  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 CHANGES = ROOT / "coverage" / "changes"
@@ -23,13 +21,28 @@ STEPS = DOCS / "porting-map" / "steps"
 DETAIL_JS = (Path(__file__).resolve().parent / "porting_map_detail.js").read_text(encoding="utf-8")
 
 
-def main():
+def payload():
+    """The small index the map script reads, as JSON safe to put inside a <script>."""
+    index = json.loads((CHANGES / "index.json").read_text(encoding="utf-8"))
+    slim_steps = []
+    for s in index["steps"]:
+        cov = {k: v for k, v in s["coverage"].items() if k != "matched"}
+        slim_steps.append({**{k: v for k, v in s.items() if k != "coverage"}, "coverage": cov})
+    slim = {k: index[k] for k in ("generated", "allVersions", "blocked", "runs", "doing", "stepStatus")}
+    slim["families"] = [{k: f[k] for k in ("id", "versions", "hub") if k in f} | {"estimated": f.get("estimated", False)} for f in index["families"]["list"]]
+    slim["steps"] = slim_steps
+    sc = ROOT / "coverage" / "stonecutter" / "index.json"
+    slim["stonecutterMods"] = json.loads(sc.read_text(encoding="utf-8"))["totals"]["mods"] if sc.is_file() else 0
+    return json.dumps(slim, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
+
+
+def write_steps():
+    """Each step's full change list, loaded only when someone opens that step."""
     index = json.loads((CHANGES / "index.json").read_text(encoding="utf-8"))
     STEPS.mkdir(parents=True, exist_ok=True)
     for old in STEPS.glob("*.js"):
         old.unlink()
     total = 0
-    slim_steps = []
     for s in index["steps"]:
         data = json.loads((CHANGES / s["file"]).read_text(encoding="utf-8"))
         data["matched"] = s["coverage"]["matched"]
@@ -39,27 +52,45 @@ def main():
         out = STEPS / f"{key}.js"
         out.write_bytes(f'PM.loaded("{key}","{b64}");\n'.encode("ascii"))
         total += out.stat().st_size
-        cov = {k: v for k, v in s["coverage"].items() if k != "matched"}
-        slim_steps.append({**{k: v for k, v in s.items() if k != "coverage"}, "coverage": cov})
-    slim = {k: index[k] for k in ("generated", "allVersions", "blocked", "runs", "doing", "stepStatus")}
-    slim["families"] = [{k: f[k] for k in ("id", "versions", "hub") if k in f} | {"estimated": f.get("estimated", False)} for f in index["families"]["list"]]
-    slim["steps"] = slim_steps
-    sc = ROOT / "coverage" / "stonecutter" / "index.json"
-    slim["stonecutterMods"] = json.loads(sc.read_text(encoding="utf-8"))["totals"]["mods"] if sc.is_file() else 0
-    payload = json.dumps(slim, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
-    html = TEMPLATE.replace("/*STYLE*/", STYLE).replace("/*THEME*/", THEME_JS).replace("/*DETAIL*/", DETAIL_JS).replace("/*INDEX*/null", payload)
-    (DOCS / "porting-map.html").write_bytes(html.encode("utf-8"))
-    print("wrote", DOCS / "porting-map.html", len(html), "bytes;", len(slim_steps), "step files,", total, "bytes")
+    return len(index["steps"]), total
 
 
-TEMPLATE = r"""<!doctype html>
+def stonecutter_items():
+    """Switches mined per update, for viz.columns: accent where a rule was learned from them."""
+    index = json.loads((CHANGES / "index.json").read_text(encoding="utf-8"))
+    out = []
+    for s in index["steps"]:
+        sc = s.get("stonecutter") or {"switches": 0, "mods": 0, "rules": [], "backRules": []}
+        rules = len(sc["rules"]) + len(sc["backRules"])
+        tip = f"{s['from']} → {s['to']}: {sc['switches']:,} switches in {sc['mods']} mods" + (f", {rules} rule{'s' if rules != 1 else ''} learned" if rules else ", no rule learned")
+        out.append({"label": s["to"], "value": sc["switches"], "on": rules > 0, "tip": tip})
+    return out
+
+
+def section():
+    """(css, body html, script) for the porting map inside another page. The body keeps a {SC_CHART} slot."""
+    return MAP_CSS, MAP_BODY, MAP_JS.replace("/*DETAIL*/", DETAIL_JS).replace("/*INDEX*/null", payload())
+
+
+REDIRECT = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Porting map</title>
-<meta name="description" content="Every Minecraft Java release, the hub-to-hub route between any two, and what has really been ported.">
-<style>
-/*STYLE*/
-.card { border:1px solid var(--rule); border-radius:12px; padding:16px; margin-top:16px }
+<meta http-equiv="refresh" content="0; url=index.html#porting">
+<link rel="canonical" href="index.html#porting">
+<script>location.replace("index.html" + (location.hash && location.hash.length > 1 ? location.hash : "#porting"));</script>
+<style>body{font:16px system-ui,sans-serif;margin:40px 16px;background:#f9f9f7;color:#0b0b0b}@media (prefers-color-scheme:dark){body{background:#0d0d0d;color:#f0efec}a{color:#6da7ec}}</style>
+</head><body><p>The porting map is now part of the roadmap: <a href="index.html#porting">open it</a>.</p></body></html>
+"""
+
+
+def main():
+    n, size = write_steps()
+    (DOCS / "porting-map.html").write_text(REDIRECT, encoding="utf-8", newline="\n")
+    print("wrote", DOCS / "porting-map.html", "(redirect to index.html#porting);", n, "step files,", size, "bytes")
+
+
+MAP_CSS = r""".card { border:1px solid var(--rule); border-radius:12px; padding:16px; margin-top:16px }
 .pick { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:end }
 .pick label { display:block; font-size:15px; color:var(--ink2); margin-bottom:4px }
 select, input[type=search] { width:100%; font:inherit; font-size:18px; padding:9px 10px; border:1px solid var(--rule); border-radius:8px; background:var(--chip); color:var(--ink) }
@@ -141,6 +172,7 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 .loaderpick { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin-top:12px }
 .loaderpick label { margin:0; font-size:15px; color:var(--ink2) }
 .loaderpick select { width:auto; min-width:140px }
+#sctable td:first-child { white-space:nowrap }
 @media (max-width: 720px) {
   .pick { grid-template-columns:1fr auto 1fr }
   .vrow { gap:10px }
@@ -152,13 +184,9 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
   .tbl.stack tr.hop { border-bottom:0; padding-bottom:0 }
   .tbl.stack td.hopname { font-size:19px; font-weight:600 }
 }
-</style></head><body>
-<main>
-<div class="top">
-  <h1>Porting map</h1>
-  <nav><a href="index.html">Bench</a><a href="https://github.com/Noisemaker111/modding-accelerator">GitHub</a><button class="theme" id="theme" type="button">Dark</button></nav>
-</div>
-<p class="lede">Pick the version your mod is on and the one you want. Long ports go through the popular versions, and each line's colour says what has really been tried. <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/tools/ChangeIndex.java">How it's measured</a></p>
+"""
+
+MAP_BODY = r"""<p class="lede">Pick the version your mod is on and the one you want. Long ports go through the popular versions, and each line's colour says what has really been tried. <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/tools/ChangeIndex.java">How it's measured</a></p>
 
 <div class="card">
   <div class="pick">
@@ -173,7 +201,7 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 <div id="route"></div>
 <div id="detail"></div>
 
-<h2>Every release</h2>
+<h3>Every release</h3>
 <div class="legend">
   <span><b class="hubmark">1.20.1</b> boxed: a popular version, good to port through</span>
   <span><b class="pickmark">1.20.1</b> with a <b>from</b> or <b>to</b> tag: your two picks</span>
@@ -191,18 +219,17 @@ pre.all { background:var(--head); border-radius:8px; padding:12px 14px; font-siz
 <div id="hopinfo" class="small"></div>
 <div id="map"></div>
 
-<h2>Learned from real mods</h2>
+<h3>Learned from real mods</h3>
 <p class="small">Stonecutter mods keep one source for many versions, with switches like <span class="mono">//? if &gt;=1.21.2</span>: each one is a person showing the code before and after an update. These are the switches mined from <span id="scmods"></span> open-source mods, placed on the update their version boundary falls on, and the rules learned where the same change repeats across mods. A rule runs only on its own update, and only when the compiler reports the old name.</p>
-<table class="tbl" id="sctable"><thead><tr><th class="l">Update</th><th>Switches</th><th>Mods</th><th class="l">Rules learned (forward)</th><th class="l">Backport rules</th></tr></thead><tbody></tbody></table>
+{SC_CHART}<details class="v-tablefold"><summary>Every update as a table</summary><table class="tbl stack" id="sctable"><thead><tr><th class="l">Update</th><th>Switches</th><th>Mods</th><th class="l">Rules learned (forward)</th><th class="l">Backport rules</th></tr></thead><tbody></tbody></table></details>
 
 <p class="foot">Made by <span class="mono">bench/porting_map.py</span> from <span class="mono">coverage/changes/index.json</span>, <span class="mono">coverage/ledger.json</span> and <span class="mono">ROADMAP.md</span> on <span id="gen"></span>. Before 1.14.4 Mojang published no official names, so those families are grouped by version number and nothing there is measured.</p>
-</main>
-<script>
-const IX = /*INDEX*/null;
+"""
+
+MAP_JS = r"""const IX = /*INDEX*/null;
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt = n => n.toLocaleString("en-US");
-/*THEME*/
 const ALL = IX.allVersions.map(v => v.id);
 const POS = Object.fromEntries(ALL.map((v, i) => [v, i]));
 const MEASURED = v => IX.allVersions[POS[v]].status === "indexed";
@@ -514,8 +541,6 @@ const START = new URLSearchParams(location.hash.slice(1));
 drawMap(); pickers(); render(); scTable();
 if (START.get("step") && STEP[START.get("step")]) openStep(START.get("step"), START.get("back") !== "1");
 $("#gen").textContent = IX.generated;
-</script>
-</body></html>
 """
 
 if __name__ == "__main__":

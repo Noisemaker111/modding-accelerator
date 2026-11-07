@@ -13,8 +13,7 @@
    the affected behavior in the real game. `pack-check` does this for Forge packs today.
 
 Beta `0.1.0-beta.1` · [download](https://github.com/Noisemaker111/modding-accelerator/releases/latest) ·
-[porting map](https://noisemaker111.github.io/modding-accelerator/porting-map.html) ·
-[bench](https://noisemaker111.github.io/modding-accelerator/)
+[roadmap, numbers and porting map](https://noisemaker111.github.io/modding-accelerator/)
 
 ## Quick start
 
@@ -54,9 +53,8 @@ A check that only shows the mod loaded is not proof it works. Proof is a check o
 
 ## Where things are
 
-- [`ROADMAP.md`](ROADMAP.md): what's next, in order.
+- [Roadmap page](https://noisemaker111.github.io/modding-accelerator/): every step with its dates and target, every number with its history and target, the porting map and every port run. The same roadmap as text: [`ROADMAP.md`](ROADMAP.md), generated from [`coverage/roadmap.json`](coverage/roadmap.json) and [`coverage/measures.json`](coverage/measures.json).
 - [`SCOPE.md`](SCOPE.md): which kinds of projects are supported, and how far.
-- [Porting map](https://noisemaker111.github.io/modding-accelerator/porting-map.html): every release with its route and what was really run. Data in [`coverage/changes/`](coverage/changes/), made by [`tools/ChangeIndex.java`](tools/ChangeIndex.java).
-- [Bench](https://noisemaker111.github.io/modding-accelerator/): every port run, from [`coverage/ledger.json`](coverage/ledger.json).
+- [Porting map](https://noisemaker111.github.io/modding-accelerator/#porting): every release with its route and what was really run. Data in [`coverage/changes/`](coverage/changes/), made by [`tools/ChangeIndex.java`](tools/ChangeIndex.java); runs in [`coverage/ledger.json`](coverage/ledger.json).
 - [`bench/alternatives.md`](bench/alternatives.md): how this compares with Loom, GameTest, HeadlessMC and others.
 - [Releases](https://github.com/Noisemaker111/modding-accelerator/releases): what changed in each version.

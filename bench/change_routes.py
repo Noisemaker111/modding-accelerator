@@ -2,7 +2,7 @@
 
 Reads what tools/ChangeIndex.java wrote (coverage/changes/versions.json and one <from>__<to>.json
 per neighbouring release pair), plus knowledge/*.json and coverage/ledger.json, and writes
-coverage/changes/index.json: the data a port router (and docs/porting-map.html) reads.
+coverage/changes/index.json: the data a port router (and the porting map in docs/index.html) reads.
 
     python bench/change_routes.py [--refresh-mods]
 

@@ -1,0 +1,544 @@
+{
+ "about": "Every number modaccel shows: on the roadmap page, in ROADMAP.md, in a PR or a report. One entry per thing measured, with every point it ever had and the target it is heading for. Record a point with python bench/measures.py add; print a table for a PR with python bench/measures.py table. A point carries its date, value, how many runs (n), what it was measured on, and where the receipt is. Cold and warm are separate measures, and so is the same check on another loader: a measure only ever compares the same work. A measure with 'computed' gets its points from the ledger or the roadmap at render time instead of from 'points'. A target with value null is set once its step measures a baseline. 'context' measures are other people's numbers we compare against, and 'info' measures are facts worth showing; neither has a target. Every other measure has one.",
+ "machines": {"jon-pc": "Ryzen 9 3900X, Windows 11, JDK 25 (JDK 21 for NeoForge 1.21.1)", "ci": "GitHub-hosted runners (windows, macos, ubuntu)"},
+ "areas": {"port": "Porting", "test": "Game checks", "plugin": "Plugins", "pack": "Modpacks", "ci": "CI", "roadmap": "Roadmap", "context": "Compared with"},
+ "headline": [
+  "port.mods-working",
+  "port.errors.zaa-neoforge-1.21.1-26.3",
+  "test.cold-start-check.fabric",
+  "pack.packs-in-game"
+ ],
+ "measures": [
+  {
+   "id": "roadmap.steps-done",
+   "area": "roadmap",
+   "name": "Roadmap steps done",
+   "unit": "steps",
+   "better": "higher",
+   "computed": "roadmap.steps-done",
+   "target": {"value": "all", "by": "last-target", "note": "every step by its own target date"}
+  },
+  {
+   "id": "port.updates-working.fabric",
+   "area": "port",
+   "name": "1.21.x updates that work in the game, Fabric",
+   "unit": "updates",
+   "better": "higher",
+   "of": 22,
+   "computed": "ledger.updates-working:fabric:1.21:1.21.11",
+   "explain": "Each of the 11 updates from 1.21 to 1.21.11, forward and back: green once a Fabric port across it loaded or passed a behaviour check (bench/ledger_rule.py).",
+   "target": {"value": 22, "by": "2027-01-29", "step": "10"}
+  },
+  {
+   "id": "port.updates-working.neoforge",
+   "area": "port",
+   "name": "1.21.x updates that work in the game, NeoForge",
+   "unit": "updates",
+   "better": "higher",
+   "of": 22,
+   "computed": "ledger.updates-working:neoforge:1.21:1.21.11",
+   "explain": "Each of the 11 updates from 1.21 to 1.21.11, forward and back: green once a NeoForge port across it loaded or passed a behaviour check (bench/ledger_rule.py).",
+   "target": {"value": 22, "by": "2027-01-29", "step": "10"}
+  },
+  {
+   "id": "port.mods-working",
+   "area": "port",
+   "name": "Real mods with a port that works in the game",
+   "unit": "mods",
+   "better": "higher",
+   "computed": "ledger.mods-working",
+   "explain": "Untouched open-source mods with at least one ledger run that loaded or passed a behaviour check.",
+   "target": {"value": 6, "by": "2026-12-18", "step": "12"}
+  },
+  {
+   "id": "port.errors.appleskin-fabric-1.20.1-1.21.6",
+   "area": "port",
+   "name": "Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6",
+   "unit": "errors",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 0, "by": "2026-11-20", "step": "7"},
+   "points": [
+    {"date": "2026-10-24", "value": 62, "note": "Loom and Gradle bumped by hand, before rules", "source": "coverage/ledger.json"},
+    {"date": "2026-10-24", "value": 51, "note": "seven rules (Identifier, food components, debug HUD)", "source": "coverage/ledger.json"},
+    {"date": "2026-10-25", "value": 37, "note": "through the router, with the glstatemanager-opengl rule", "source": "coverage/ledger.json"}
+   ]
+  },
+  {
+   "id": "port.errors.zaa-neoforge-1.21.1-1.21.6",
+   "area": "port",
+   "name": "Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6",
+   "unit": "errors",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 0, "by": "2026-12-04", "step": "10"},
+   "points": [
+    {"date": "2026-10-24", "value": 38, "note": "reported before rules", "source": "coverage/ledger.json"},
+    {"date": "2026-10-24", "value": 9, "note": "after rules", "source": "coverage/ledger.json"},
+    {"date": "2026-10-25", "value": 9, "note": "hub router, all 9 on update 1.21.4 → 1.21.5", "source": "coverage/ledger.json"},
+    {"date": "2026-10-25", "value": 9, "note": "plus 38 rules learned from Stonecutter mods", "source": "coverage/ledger.json"}
+   ]
+  },
+  {
+   "id": "port.errors.notes-neoforge-1.21-1.21.6",
+   "area": "port",
+   "name": "Errors left: Notes, NeoForge 1.21 → 1.21.6",
+   "unit": "errors",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 0, "by": "2026-12-04", "step": "10"},
+   "points": [
+    {"date": "2026-10-25", "value": 14, "note": "untouched mod; no learned rule matched", "source": "coverage/ledger.json"}
+   ]
+  },
+  {
+   "id": "port.errors.jade-neoforge-1.21.1-1.21.6",
+   "area": "port",
+   "name": "Errors left: Jade, NeoForge 1.21.1 → 1.21.6",
+   "unit": "errors",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 0, "by": "2027-01-15", "step": "12"},
+   "points": [
+    {"date": "2026-10-24", "value": 98, "note": "the 1.21.6 GUI rewrite", "source": "coverage/ledger.json"}
+   ]
+  },
+  {
+   "id": "port.errors.zaa-neoforge-1.21.1-26.3",
+   "area": "port",
+   "name": "Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3",
+   "unit": "errors",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 0, "by": "2027-01-15", "step": "17"},
+   "points": [
+    {"date": "2026-10-25", "value": 69, "note": "hub router across nine hops", "source": "coverage/ledger.json"},
+    {"date": "2026-10-25", "value": 50, "note": "plus 38 rules learned from Stonecutter mods", "source": "coverage/ledger.json"}
+   ]
+  },
+  {
+   "id": "port.hand-files.appleskin-neoforge-1.21.6-26.3",
+   "area": "port",
+   "name": "Hand-written files: AppleSkin, NeoForge 1.21.6 → 26.3",
+   "unit": "files",
+   "better": "lower",
+   "machine": "jon-pc",
+   "target": {"value": 0, "by": "2026-11-27", "step": "17"},
+   "points": [
+    {"date": "2026-10-24", "value": 1, "note": "the removed debug-text event needs a new debug screen entry", "source": "coverage/ledger.json"}
+   ]
+  },
+  {
+   "id": "port.time.zaa-neoforge-1.21.1-1.21.4",
+   "area": "port",
+   "name": "Port to a packaged build: Zombie Apocalypse 1.21.1 → 1.21.4",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 90, "by": "2026-12-18", "step": "10"},
+   "points": [
+    {"date": "2026-10-24", "value": 154, "n": 1, "note": "one jump, fresh copy", "source": "coverage/ledger.json"},
+    {"date": "2026-10-25", "value": 165, "n": 1, "note": "hub router, three families, mixin audit included", "source": "coverage/ledger.json"}
+   ]
+  },
+  {
+   "id": "port.time.appleskin-neoforge-1.21.6-26.3",
+   "area": "port",
+   "name": "Port to a packaged build: AppleSkin 1.21.6 → 26.3",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 60, "by": "2026-11-27", "step": "17"},
+   "points": [
+    {"date": "2026-10-24", "value": 66, "n": 1, "note": "mixin audit included", "source": "coverage/ledger.json"}
+   ]
+  },
+  {
+   "id": "port.rules.learned",
+   "area": "port",
+   "name": "Port rules learned from Stonecutter mods",
+   "unit": "rules",
+   "better": "higher",
+   "target": {"value": 80, "by": "2026-12-31", "step": "13"},
+   "points": [
+    {"date": "2026-10-25", "value": 38, "note": "from 5,045 switches in 33 mods", "source": "knowledge/fixes.json"}
+   ]
+  },
+  {
+   "id": "test.cold-start-check.fabric",
+   "area": "test",
+   "name": "Cold game start + one check, Fabric 26.3",
+   "unit": "s",
+   "better": "lower",
+   "condition": "cold",
+   "machine": "jon-pc",
+   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-10-21", "value": 36.5, "n": 1, "source": "bench/data.json loop"}
+   ]
+  },
+  {
+   "id": "test.cold-start.neoforge",
+   "area": "test",
+   "name": "Cold game start to a listening client, NeoForge 1.21.1",
+   "unit": "s",
+   "better": "lower",
+   "condition": "cold",
+   "machine": "jon-pc",
+   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-10-22", "value": 18.4, "n": 1, "source": "bench/data.json neoforgeloop"}
+   ]
+  },
+  {
+   "id": "test.server-start",
+   "area": "test",
+   "name": "Dedicated server start, Fabric 26.3",
+   "unit": "s",
+   "better": "lower",
+   "condition": "cold",
+   "machine": "jon-pc",
+   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-10-22", "value": 24.2, "n": 1, "source": "bench/data.json multiplayer"}
+   ]
+  },
+  {
+   "id": "test.mp-first-join",
+   "area": "test",
+   "name": "Client start and first join to a dedicated server",
+   "unit": "s",
+   "better": "lower",
+   "condition": "cold",
+   "machine": "jon-pc",
+   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-10-22", "value": 27.1, "n": 1, "source": "bench/data.json multiplayer"}
+   ]
+  },
+  {
+   "id": "test.fresh-registration",
+   "area": "test",
+   "name": "New registration on a fresh server",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 5, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-10-21", "value": 15.0, "n": 3, "source": "bench/data.json loop"}
+   ]
+  },
+  {
+   "id": "test.logic",
+   "area": "test",
+   "name": "Logic tests, no Minecraft",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 1, "by": "2026-11-27", "step": "34", "note": "hold"},
+   "points": [
+    {"date": "2026-10-21", "value": 0.79, "n": 5, "source": "bench/data.json loop"}
+   ]
+  },
+  {
+   "id": "test.screen-check.fabric",
+   "area": "test",
+   "name": "Screen change + screenshot, warm game, Fabric 26.3",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 1.5, "by": "2026-11-27", "step": "34", "note": "hold, with no window"},
+   "points": [
+    {"date": "2026-10-21", "value": 1.49, "n": 5, "note": "with a game window", "source": "bench/data.json loop"}
+   ]
+  },
+  {
+   "id": "test.screen-check.neoforge",
+   "area": "test",
+   "name": "Screen edit swapped into the running game, NeoForge 1.21.1",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 1.5, "by": "2026-11-27", "step": "34", "note": "hold, with no window"},
+   "points": [
+    {"date": "2026-10-22", "value": 1.5, "n": 1, "note": "with a game window", "source": "bench/data.json hotreload"}
+   ]
+  },
+  {
+   "id": "test.block-entity",
+   "area": "test",
+   "name": "Block entity in a live world, Fabric 26.3",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 2.5, "by": "2026-11-27", "step": "34", "note": "hold, with no window"},
+   "points": [
+    {"date": "2026-10-21", "value": 2.09, "n": 5, "source": "bench/data.json loop"}
+   ]
+  },
+  {
+   "id": "test.scenario.fabric",
+   "area": "test",
+   "name": "Scripted scenario + screenshot, warm game, Fabric 26.3",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 3, "by": "2026-11-27", "step": "34", "note": "hold, with no window"},
+   "points": [
+    {"date": "2026-10-21", "value": 2.9, "n": 5, "source": "bench/data.json loop"}
+   ]
+  },
+  {
+   "id": "test.scenario.mp",
+   "area": "test",
+   "name": "Multiplayer scenario, warm client and server",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 4, "by": "2026-11-27", "step": "34"},
+   "points": [
+    {"date": "2026-10-22", "value": 4.1, "n": 1, "source": "bench/data.json multiplayer"}
+   ]
+  },
+  {
+   "id": "test.behaviour-checks",
+   "area": "test",
+   "name": "Mods with their own behaviour asserted in a real client",
+   "unit": "mods",
+   "better": "higher",
+   "target": {"value": 4, "by": "2026-12-04", "step": "37"},
+   "points": [
+    {"date": "2026-10-26", "value": 2, "note": "AppleSkin HUD estimate, Zombie Apocalypse AI; local only", "source": "tools/tests/AppleSkinHudCheck.java, tools/tests/ZombieAiCheck.java"}
+   ]
+  },
+  {
+   "id": "test.session-ram",
+   "area": "test",
+   "name": "Memory for one game session",
+   "unit": "GB",
+   "better": "lower",
+   "machine": "jon-pc",
+   "target": {"value": null, "by": "2026-11-13", "step": "33", "note": "set from the baseline"},
+   "points": []
+  },
+  {
+   "id": "test.parallel-sessions",
+   "area": "test",
+   "name": "Game sessions running at once on one PC",
+   "unit": "sessions",
+   "better": "higher",
+   "machine": "jon-pc",
+   "target": {"value": 8, "by": "2027-01-08", "step": "36"},
+   "points": []
+  },
+  {
+   "id": "plugin.server-check.warm",
+   "area": "plugin",
+   "name": "server-check on a real Paper server, AgentCraft",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 15, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-10-26", "value": 25, "note": "about 25 s", "source": "SCOPE.md section 5"}
+   ]
+  },
+  {
+   "id": "plugin.server-check.cold",
+   "area": "plugin",
+   "name": "server-check on a real Paper server, AgentCraft, cold",
+   "unit": "s",
+   "better": "lower",
+   "condition": "cold",
+   "machine": "jon-pc",
+   "target": {"value": 30, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-10-26", "value": 55, "note": "about 55 s, Paper download included", "source": "SCOPE.md section 5"}
+   ]
+  },
+  {
+   "id": "plugin.plugin-check.warm",
+   "area": "plugin",
+   "name": "plugin-check on MockBukkit, AgentCraft",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 7, "by": "2026-11-27", "step": "34", "note": "hold"},
+   "points": [
+    {"date": "2026-10-26", "value": 7, "note": "4 to 7 s across runs; the slow end shown", "source": "SCOPE.md section 5"}
+   ]
+  },
+  {
+   "id": "plugin.paper-versions.local",
+   "area": "plugin",
+   "name": "Paper versions the test player passed on",
+   "unit": "versions",
+   "better": "higher",
+   "target": {"value": 8, "by": "2026-11-20", "step": "26"},
+   "points": [
+    {"date": "2026-10-26", "value": 6, "note": "1.8.8, 1.12.2, 1.16.5, 1.20.1, 1.21.4 locally; 26.3 in CI", "source": "ROADMAP.md step 25"}
+   ]
+  },
+  {
+   "id": "plugin.paper-versions.ci",
+   "area": "plugin",
+   "name": "Paper versions the test player passes on in CI",
+   "unit": "versions",
+   "better": "higher",
+   "machine": "ci",
+   "target": {"value": 6, "by": "2026-11-20", "step": "26"},
+   "points": [
+    {"date": "2026-10-26", "value": 1, "note": "26.3 only", "source": ".github/workflows/portable.yml"}
+   ]
+  },
+  {
+   "id": "pack.packs-in-game",
+   "area": "pack",
+   "name": "Modpacks checked in the game by pack-check",
+   "unit": "packs",
+   "better": "higher",
+   "target": {"value": 5, "by": "2027-01-15", "step": "31"},
+   "points": [
+    {"date": "2026-10-30", "value": 1, "note": "Prehistoric World 2, Forge 1.20.1, 368 mods", "source": "PR #38"}
+   ]
+  },
+  {
+   "id": "pack.known-repairs",
+   "area": "pack",
+   "name": "Proven pack repairs pack-check knows",
+   "unit": "repairs",
+   "better": "higher",
+   "target": {"value": 5, "by": "2027-01-15", "step": "31"},
+   "points": [
+    {"date": "2026-10-30", "value": 1, "note": "Biolith 1.0.1-beta.1 for Traverse's bundled alpha", "source": "knowledge/pack-fixes.json"}
+   ]
+  },
+  {
+   "id": "pack.block-items-checked",
+   "area": "pack",
+   "name": "Block items placed and read back in one pack",
+   "unit": "items",
+   "better": "higher",
+   "info": true,
+   "points": [
+    {"date": "2026-10-30", "value": 14129, "note": "Prehistoric World 2, singleplayer with every client-only mod", "source": "ROADMAP.md step 29"}
+   ]
+  },
+  {
+   "id": "pack.check-time",
+   "area": "pack",
+   "name": "pack-check on a 368-mod pack, shipped and repaired",
+   "unit": "min",
+   "better": "lower",
+   "machine": "jon-pc",
+   "target": {"value": null, "by": "2026-11-20", "step": "38", "note": "set once each stage is timed"},
+   "points": []
+  },
+  {
+   "id": "ci.pr-wall",
+   "area": "ci",
+   "name": "PR checks, start to finish",
+   "unit": "min",
+   "better": "lower",
+   "machine": "ci",
+   "target": {"value": 5, "by": "2026-11-05", "note": "hold; the budget job fails a PR run that takes longer"},
+   "points": [
+    {"date": "2026-10-27", "value": 2.0, "source": "gh run list, Portable command, pull_request"},
+    {"date": "2026-10-28", "value": 4.1, "source": "gh run list, Portable command, pull_request"},
+    {"date": "2026-10-30", "value": 2.9, "source": "gh run list, Portable command, pull_request"},
+    {"date": "2026-10-31", "value": 2.8, "source": "gh run list, Portable command, pull_request"},
+    {"date": "2026-11-03", "value": 3.2, "n": 6, "note": "median of 6 runs that day (2.8 to 7.5)", "source": "gh run list, Portable command, pull_request"},
+    {"date": "2026-11-05", "value": 3.9, "n": 2, "note": "median of 2 runs (3.2, 4.5)", "source": "gh run list, Portable command, pull_request"}
+   ]
+  },
+  {
+   "id": "ci.nightly-wall",
+   "area": "ci",
+   "name": "Nightly multi-version run, start to finish",
+   "unit": "min",
+   "better": "lower",
+   "machine": "ci",
+   "target": {"value": 30, "by": "2026-12-04", "step": "37"},
+   "points": [
+    {"date": "2026-10-28", "value": 45.9, "note": "failed", "source": "gh run list, Stonecutter nodes (nightly)"},
+    {"date": "2026-10-29", "value": 46.9, "note": "failed", "source": "gh run list, Stonecutter nodes (nightly)"},
+    {"date": "2026-10-30", "value": 27.2, "note": "passed", "source": "gh run list, Stonecutter nodes (nightly)"},
+    {"date": "2026-10-31", "value": 27.7, "note": "passed", "source": "gh run list, Stonecutter nodes (nightly)"},
+    {"date": "2026-11-01", "value": 26.0, "note": "passed", "source": "gh run list, Stonecutter nodes (nightly)"},
+    {"date": "2026-11-02", "value": 69.2, "note": "failed", "source": "gh run list, Stonecutter nodes (nightly)"},
+    {"date": "2026-11-03", "value": 69.9, "note": "failed", "source": "gh run list, Stonecutter nodes (nightly)"},
+    {"date": "2026-11-04", "value": 101.8, "note": "failed", "source": "gh run list, Stonecutter nodes (nightly)"},
+    {"date": "2026-11-05", "value": 56.0, "note": "failed", "source": "gh run list, Stonecutter nodes (nightly)"},
+    {"date": "2026-11-06", "value": 41.7, "note": "failed: Diorama 1.21.9 on macOS", "source": "gh run list, Stonecutter nodes (nightly)"}
+   ]
+  },
+  {
+   "id": "context.own-first-build",
+   "area": "context",
+   "name": "A mod's own first build, cold",
+   "unit": "s",
+   "better": "lower",
+   "condition": "cold",
+   "machine": "jon-pc",
+   "context": true,
+   "points": [
+    {"date": "2026-10-21", "value": 332.0, "n": 6, "note": "median of 6 Fabric mods", "source": "bench/port/results.json"}
+   ]
+  },
+  {
+   "id": "context.own-edit-build",
+   "area": "context",
+   "name": "One-file edit, the mod's own build",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "context": true,
+   "points": [
+    {"date": "2026-10-23", "value": 8.55, "n": 8, "note": "median of 8 mods, 3 edits each", "source": "bench/data.json editloop"}
+   ]
+  },
+  {
+   "id": "test.edit-fast",
+   "area": "test",
+   "name": "One-file edit, modaccel fast",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 4, "by": "2026-11-27", "step": "34", "note": "hold"},
+   "points": [
+    {"date": "2026-10-23", "value": 4.0, "n": 8, "note": "median of 8 mods, 3 edits each, PowerShell start included", "source": "bench/data.json editloop"}
+   ]
+  },
+  {
+   "id": "context.bump-build",
+   "area": "context",
+   "name": "A mod's own build after a version bump, warm caches",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "context": true,
+   "points": [
+    {"date": "2026-10-21", "value": 158.55, "n": 6, "note": "median of 6 Fabric mods", "source": "bench/port/results.json"}
+   ]
+  }
+ ]
+}

@@ -1,25 +1,35 @@
-"""Render docs/index.html, the bench page: what we test, what ran, and how fast it was.
+"""Render the one roadmap: docs/index.html (timeline, every number, the porting map, every port run)
+and ROADMAP.md (the same roadmap as text).
 
-Reads coverage/ledger.json (every port that was run), bench/data.json (loop timings),
+Reads coverage/roadmap.json (phases, steps, dates, targets) and coverage/measures.json (every number,
+with its history and target) through bench/measures.py, draws them with bench/viz.py, and embeds the
+porting map from bench/porting_map.py. The evidence tables read coverage/ledger.json,
 bench/port/results.json (2026-10-21 version bumps on six real mods) and bench/mods/results.json
-(2026-10-22 baselines). .runs/index.jsonl holds every run but is not committed, so the timing
-history here is only what those files carry.
+(2026-10-22 baselines). site/scripts/export_data.py imports the helpers here (tested, secs, vkey, by,
+ledger_secs, bumps, mods, data, LOADER); keep their names.
 
-    python bench/bench_page.py
+    python bench/bench_page.py              docs/index.html and ROADMAP.md
+    python bench/bench_page.py --roadmap    ROADMAP.md only
 """
+import argparse
 import json
 import re
-import statistics
 import sys
+import textwrap
 from html import escape
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from page_style import STYLE, THEME_JS  # noqa: E402
 from ledger_rule import COLOUR, RANK, WORD  # noqa: E402  (the porting map reads the same rule)
+import measures as M  # noqa: E402
+import viz  # noqa: E402
+from porting_map import MAP_CSS, MAP_BODY, section, stonecutter_items  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "index.html"
+ROADMAP_MD = ROOT / "ROADMAP.md"
+_, _, MAP_JS = section()
 
 
 def load(p):
@@ -143,6 +153,7 @@ def earlier_runs():
 
 
 # ---- speed over time ---------------------------------------------------------------------------
+
 def by(key, name):
     return next(x["seconds"] for x in data[key] if x["name"] == name)
 
@@ -151,58 +162,6 @@ def ledger_secs(mod, frm, to):
     h = next(h for h in ledger["hops"] if h["mod"] == mod and h["from"] == frm and h["to"] == to)
     return float(re.search(r"in (\d+(?:\.\d+)?)s\b", h["detail"]).group(1)), h["date"]
 
-
-def speed():
-    # data.json["measured"] says the Fabric loop is from 2026-10-21 and the Forge/NeoForge/multiplayer
-    # numbers from 2026-10-22; the edit-loop table carries its own date.
-    d21, d22, d23 = "2026-10-21", "2026-10-22", data["editloop_measured"][:10]
-    port263, d24 = ledger_secs("AppleSkin", "1.21.6", "26.3")
-    own263, _ = ledger_secs("AppleSkin", "26.3", "26.3")
-    med = statistics.median
-    base = [m["baseline"]["seconds"] for m in bumps["mods"]]
-    bumped = [m["bumped"]["seconds"] for m in bumps["mods"]]
-    fast = [med(e["fast"]) for e in data["editloop"]]
-    warm = [med(e["warm"]) for e in data["editloop"]]
-    rows = [
-        ("Setup", None),
-        ("A mod's own first build, cold", {d21: (med(base), f"median of {len(base)} mods"), d22: (by("forgeloop", "their gradlew build -x test"), "MineColonies, Forge")}),
-        ("Toolchain check before building", {d22: (by("toolchain", "Diorama: READY"), "Diorama, ready")}),
-        ("Compile", None),
-        ("Build after a version bump, warm caches", {d21: (med(bumped), f"median of {len(bumped)} mods")}),
-        ("Port to a packaged build, mixins checked", {d24: (port263, "AppleSkin 1.21.6 → 26.3")}),
-        ("A mod's own build through modaccel", {d24: (own263, "AppleSkin, 26.3")}),
-        ("One-file edit, the mod's own build", {d23: (med(warm), f"median of {len(warm)} mods")}),
-        ("One-file edit, modaccel fast", {d22: (by("forgeloop", "one-file edit, .\\modaccel fast"), "MineColonies"), d23: (med(fast), f"median of {len(fast)} mods")}),
-        ("Game start", None),
-        ("Client start, cold", {d21: (by("loop", "cold client boot + one check"), "Fabric 26.3, with one check"), d22: (by("neoforgeloop", "cold start, client listening"), "NeoForge 1.21.1")}),
-        ("Dedicated server start", {d22: (by("multiplayer", "server boot"), "")}),
-        ("Checks", None),
-        ("Logic tests, no Minecraft", {d21: (by("loop", "logic tests, no Minecraft"), "")}),
-        ("Screen change and a screenshot", {d21: (by("loop", "screen change + screenshot"), "Fabric 26.3"), d22: (by("hotreload", "NeoForge 1.21.1: screen edit, same JVM"), "NeoForge 1.21.1")}),
-        ("Block entity in a live world", {d21: (by("loop", "block entity in a live world"), "")}),
-        ("Scripted scenario and a screenshot", {d21: (by("loop", "scripted scenario + screenshot"), ""), d22: (by("multiplayer", "scenario, warm client"), "multiplayer, warm client")}),
-    ]
-    dates = sorted({d for _, cells in rows if cells for d in cells})
-    short = lambda d: d[5:].replace("-", "/")
-    head = "".join(f"<th>{short(d)}</th>" for d in dates) + "<th class='hi'>Latest</th>"
-    body = []
-    for name, cells in rows:
-        if cells is None:
-            body.append(f"<tr class='headrow'><td class='l' colspan='{len(dates) + 1}'><b>{name}</b></td><td class='hi'></td></tr>")
-            continue
-        # One column per measurement day, then the latest value highlighted.
-        tds = []
-        for d in dates:
-            v = cells.get(d)
-            if v:
-                tds.append(f"<td class='old' data-k='{short(d)}'>{secs(v[0])}{f'<span class=sub>{escape(v[1])}</span>' if v[1] else ''}</td>")
-            else:
-                tds.append("<td class='none'><span class='sub'>—</span></td>")
-        last = max(cells)
-        v = cells[last]
-        tds.append(f"<td class='hi' data-k='Latest'>{secs(v[0])}<span class='sub'>{short(last)}{', ' + escape(v[1]) if v[1] else ''}</span></td>")
-        body.append(f"<tr><td class='l'>{name}</td>{''.join(tds)}</tr>")
-    return head, "".join(body), dates
 
 
 # ---- loader changes (folded in from the old progress page) ---------------------------------------
@@ -225,105 +184,238 @@ def loader_grid():
     return head, "".join(body)
 
 
-def main():
+# ---- the one roadmap ----------------------------------------------------------------------------
+def phase_counts(p):
+    counts = {k: 0 for k in M.STATUSES}
+    for s in p["steps"]:
+        counts[s["status"]] += 1
+    return counts
+
+
+def phase_end(p):
+    return max(s.get("target") or s["done"] for s in p["steps"])
+
+
+def step_html(book, s):
+    ms = [book.by_id[i] for i in s.get("measures", [])]
+    more = ""
+    if s.get("result"):
+        more += f"<p><b>So far:</b> {escape(s['result'])}</p>"
+    if s.get("points"):
+        more += "<ul>" + "".join(f"<li>{escape(x)}</li>" for x in s["points"]) + "</ul>"
+    return (f'<li class="v-step" id="step-{escape(s["id"])}" data-status="{s["status"]}" data-target="{escape(s.get("target", ""))}">'
+            f'<div class="v-sl"><span class="v-sid">{escape(s["id"])}</span><b>{escape(s["title"])}</b>{viz.step_chip(s["status"])}'
+            f'<span class="v-latechip">Late</span><span class="v-dates">{escape(viz.step_dates(s))}</span></div>'
+            f'<details><summary>What this step is</summary><p>{escape(s["text"])}</p>{more}</details>'
+            f'{viz.rows(book, ms) if ms else ""}</li>')
+
+
+def phase_html(book, p):
+    counts = phase_counts(p)
+    done = counts["done"]
+    end = phase_end(p)
+    intro = f"<p>{escape(p['intro'])}</p>" if p.get("intro") else ""
+    extra = ""
+    if p["id"] == "4":
+        l_head, l_body = loader_grid()
+        extra = (f'<h3>Loader pairs</h3><table class="tbl stack"><thead><tr><th class="l">From</th>{l_head}</tr></thead>'
+                 f"<tbody>{l_body}</tbody></table>")
+    return (f'<section class="v-phase" id="phase-{escape(p["id"])}"><div class="v-phead"><h2>Phase {escape(p["id"])} · {escape(p["title"])}</h2>'
+            f'<span>{done} of {len(p["steps"])} done · {"finished" if done == len(p["steps"]) else "last target " + M.day(end)}'
+            f' <b class="v-plate" hidden></b></span></div>{intro}{viz.segbar(counts, len(p["steps"]))}'
+            f'<ol class="v-steps">{"".join(step_html(book, s) for s in p["steps"])}</ol>{extra}</section>')
+
+
+def numbers_html(book):
+    out = []
+    for area, name in book.data["areas"].items():
+        ms = [m for m in book.data["measures"] if m["area"] == area]
+        if not ms:
+            continue
+        note = " Other people's numbers on the same machine, so ours have something to be compared with." if area == "context" else ""
+        out.append(f'<h3 id="area-{escape(area)}">{escape(name)}</h3>{f"<p>{note.strip()}</p>" if note else ""}{viz.cards(book, ms)}')
+    return "".join(out)
+
+
+def page(book):
+    steps = list(book.steps.values())
+    n_done = sum(s["status"] == "done" for s in steps)
+    doing = [s for s in steps if s["status"] == "doing"]
+    upcoming = sorted((s for s in steps if s["status"] != "done"), key=lambda s: s["target"])
+    nxt = upcoming[0] if upcoming else None
+    phases = book.roadmap["phases"]
+    body = []
+    for p in phases:
+        body.append(phase_html(book, p))
+        if p["id"] == "4":
+            pm = [m for m in book.data["measures"] if m["id"].startswith("port.updates-working.")]
+            chart = viz.columns(stonecutter_items(), "Stonecutter switches",
+                                '<span><i class="k-col"></i>A rule was learned from these switches</span><span><i class="k-col off"></i>No rule yet</span>')
+            body.append(f'<section id="porting"><h2>Porting map</h2><p>How much of the map works today, against the target:</p>{viz.rows(book, pm)}'
+                        f'{MAP_BODY.replace("{SC_CHART}", chart)}</section>')
+    head = [book.by_id[i] for i in book.data.get("headline", [])]
     t_rows, vers, n_mods = tested_table()
-    s_head, s_body, dates = speed()
-    l_head, l_body = loader_grid()
-    hops = ledger["hops"]
-    green = sum(1 for h in hops if h["status"] in ("behaviour", "load"))
+    nav = "".join(f'<a href="#{a}">{w}</a>' for a, w in (("now", "Where we are"), ("timeline", "Timeline"), ("phase-1", "Porting"), ("porting", "Porting map"),
+                                                          ("phase-5", "Proof"), ("phase-6", "Modpacks"), ("phase-7", "No game window"), ("numbers", "Every number"), ("evidence", "Evidence")))
     html = TEMPLATE
     for k, v in {
-        "/*STYLE*/": STYLE, "/*THEME*/": THEME_JS,
-        "{N_MODS}": str(n_mods), "{N_VERS}": str(len(vers)), "{VERS}": ", ".join(vers),
-        "{N_RUNS}": str(len(hops)), "{N_GREEN}": str(green),
-        "{TESTED}": t_rows, "{LATEST}": latest_runs(), "{EARLIER}": earlier_runs(),
-        "{S_HEAD}": s_head, "{S_BODY}": s_body, "{L_HEAD}": l_head, "{L_BODY}": l_body,
-        "{NEWEST}": dates[-1], "{MACHINE}": escape(data["machine"]),
+        "/*STYLE*/": STYLE + viz.VIZ_CSS + MAP_CSS + PAGE_CSS, "/*THEME*/": THEME_JS, "/*VIZ*/": viz.VIZ_JS, "/*MAP*/": MAP_JS,
+        "{NAV}": nav, "{GOAL}": escape(book.roadmap["goal"][:1].upper() + book.roadmap["goal"][1:]),
+        "{KPIS}": (f"<div><b>{n_done} of {len(steps)}</b>steps done</div><div><b>{len(doing)}</b>being worked on</div>"
+                   + (f"<div><b>{M.day(nxt['target'])}</b>next target (step {escape(nxt['id'])})</div>" if nxt else "")
+                   + f"<div><b>{len(book.data['measures'])}</b>numbers tracked</div>"),
+        "{BURNUP}": viz.burnup(book), "{HEADLINE}": "".join(viz.card(book, m, anchor=False) for m in head),
+        "{GANTT}": viz.gantt(book), "{PHASES}": "".join(body), "{NUMBERS}": numbers_html(book),
+        "{TESTED}": t_rows, "{VERS}": ", ".join(vers), "{LATEST}": latest_runs(), "{EARLIER}": earlier_runs(),
+        "{SET}": M.day(book.roadmap["targetsSet"]), "{MACHINE}": escape(book.data["machines"]["jon-pc"]),
     }.items():
         html = html.replace(k, v)
-    OUT.write_text(html, encoding="utf-8")
-    print("wrote", OUT, len(html), "bytes")
+    return html
 
+
+# ---- ROADMAP.md ---------------------------------------------------------------------------------
+def roadmap_md(book):
+    r = book.roadmap
+    wrap = lambda text, first="", rest="    ": textwrap.fill(text, 100, initial_indent=first, subsequent_indent=rest, break_on_hyphens=False, break_long_words=False)
+    out = ["# Roadmap", "",
+           "Generated from `coverage/roadmap.json` (phases, steps, dates) and `coverage/measures.json` (every number, its",
+           "history and its target) by `python bench/bench_page.py --roadmap`. Edit those two files, not this one;",
+           "`python bench/test_measures.py` fails while this file is behind them. The page with the timeline, every number",
+           "and the porting map: https://noisemaker111.github.io/modding-accelerator/", "",
+           f"Goal: {r['goal']}", "",
+           "Status words: **done** (ran and checked), **doing** (being worked on), **next**, **later**. Every step that is",
+           f"not done has a target date. Targets were set on {r['targetsSet']}; a target that moves keeps its old date in `moved`.", "",
+           "| Phase | Done | Doing | Next | Later | Last target |", "|---|---|---|---|---|---|"]
+    for p in r["phases"]:
+        c = phase_counts(p)
+        out.append(f"| {p['id']}. {p['title']} | {c['done']} | {c['doing']} | {c['next']} | {c['later']} | {phase_end(p)} |")
+    out.append("")
+    for p in r["phases"]:
+        out += [f"## Phase {p['id']} — {p['title']}", ""]
+        if p.get("intro"):
+            out += [wrap(p["intro"], "", ""), ""]
+        for s in p["steps"]:
+            line = f"{s['id']}. {s['text']} **{s['status']}**" + (f" — {s['result']}" if s.get("result") else "")
+            out.append(wrap(line))
+            for x in s.get("points", []):
+                out.append(wrap(x, "    - ", "      "))
+            if s.get("done"):
+                out.append(f"    Done {s['done']}.")
+            else:
+                out.append(f"    {'Started' if s['status'] == 'doing' else 'Starts'} {s['start']}, target {s['target']}.")
+        out.append("")
+    out += ["## Numbers", "",
+            "Every number with a target, from `coverage/measures.json`. The same table for a PR or report:",
+            "`python bench/measures.py table [ID ...] [--area AREA] [--step STEP]`.", ""]
+    for area, name in book.data["areas"].items():
+        ms = [m for m in book.data["measures"] if m["area"] == area and not m.get("context")]
+        if ms:
+            out += [f"### {name}", "", M.table(book, ms), ""]
+    out += ["## Decisions", "", "| Question | Choice | Date |", "|---|---|---|"]
+    out += [f"| {d['question']} | {d['choice']} | {d['date']} |" for d in r["decisions"]]
+    return "\n".join(out) + "\n"
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description="Write docs/index.html (the roadmap page) and ROADMAP.md.")
+    ap.add_argument("--roadmap", action="store_true", help="write ROADMAP.md only (docs/ is regenerated only before a milestone merge)")
+    args = ap.parse_args(argv)
+    book = M.Book()
+    found = M.problems(book)
+    if found:
+        print("coverage/measures.json or coverage/roadmap.json has problems:\n  " + "\n  ".join(found), file=sys.stderr)
+        return 1
+    ROADMAP_MD.write_text(roadmap_md(book), encoding="utf-8", newline="\n")
+    print("wrote", ROADMAP_MD)
+    if args.roadmap:
+        return 0
+    html = page(book)
+    OUT.write_text(html, encoding="utf-8", newline="\n")
+    print("wrote", OUT, len(html), "bytes")
+    return 0
+
+
+PAGE_CSS = r"""
+.nw { white-space:nowrap }
+td.what { font-size:14.5px; color:var(--ink2); max-width:460px; line-height:1.4 }
+td.none { color:var(--ink3) }
+.top nav a { text-decoration:none } .top nav a:hover { text-decoration:underline }
+header.top { position:sticky; top:0; z-index:5; background:var(--bg); padding:10px 0; border-bottom:1px solid var(--rule) }
+#porting { scroll-margin-top:64px }
+@media (max-width: 720px) {
+  header.top { position:static }
+  td.what { max-width:none }
+}
+"""
 
 TEMPLATE = r"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Modding Accelerator bench</title>
-<meta name="description" content="The Minecraft mods and versions Modding Accelerator is tested on, every port it ran, and how fast each part was.">
+<title>Modding Accelerator roadmap</title>
+<meta name="description" content="Where Modding Accelerator is: every roadmap step with its dates and target, every number with its history and target, the porting map and every port that was run.">
 <style>
 /*STYLE*/
-.nw { white-space:nowrap }
-td.what { font-size:15px; color:var(--ink2); max-width:460px; line-height:1.4 }
-td.none { color:var(--ink3) }
-.facts { display:flex; gap:28px; flex-wrap:wrap; margin-top:18px }
-.facts div { font-size:15px; color:var(--ink2) }
-.facts b { display:block; font-size:30px; color:var(--ink); font-weight:600 }
-.wide { overflow-x:auto }
-.room { border:1px dashed var(--rule); border-radius:10px; padding:14px 16px; margin-top:12px; color:var(--ink2) }
-@media (max-width: 720px) {
-  td.what { max-width:none }
-  .tbl.speed td.none, .tbl.speed tr.headrow td.hi { display:none }
-  .tbl.speed td.old { color:var(--ink3) }
-  .tbl.speed tr.headrow td { background:none; padding-top:14px; font-size:18px }
-  .tbl.speed td[data-k]::before { content:attr(data-k) ": " }
-}
 </style></head><body>
 <main>
-<div class="top">
-  <h1>Bench</h1>
-  <nav><a href="porting-map.html">Porting map</a><a href="https://github.com/Noisemaker111/modding-accelerator">GitHub</a><button class="theme" id="theme" type="button">Dark</button></nav>
-</div>
-<p class="lede">The mods and Minecraft versions Modding Accelerator is tested on, every port it has run, and how long each part took. Only runs with a receipt are here. To see the route between two versions, open the <a href="porting-map.html">porting map</a>.</p>
-<div class="facts">
-  <div><b>{N_MODS}</b>real mods</div>
-  <div><b>{N_VERS}</b>Minecraft versions</div>
-  <div><b>{N_RUNS}</b>ports run</div>
-  <div><b>{N_GREEN}</b>load or work in the game</div>
-</div>
+<header class="top">
+  <h1>Roadmap</h1>
+  <nav>{NAV}<a href="https://github.com/Noisemaker111/modding-accelerator">GitHub</a><button class="theme" id="theme" type="button">Dark</button></nav>
+</header>
+<p class="lede">{GOAL}</p>
+<div class="v-kpis">{KPIS}</div>
 
-<h2 id="tested">What we test</h2>
+<h2 id="now">Where we are</h2>
+<p>Steps done against the plan, and the numbers that say most about each goal. Every number on this page is a measure in <span class="mono">coverage/measures.json</span>: its points, its target and the date it should get there. A ring is the target; the dashed line is the way still to go.</p>
+<div class="v-score">{BURNUP}<div class="v-cards">{HEADLINE}</div></div>
+
+<h2 id="timeline">Timeline</h2>
+<p>Every step from its start to its target, or to the day it was done. Targets were set on {SET} and move only with a note. The vertical line is today; a step past its target that is not done turns red.</p>
+<div class="v-glegend"><span><i class="v-s-done"></i>Done</span><span><i style="background:var(--accent-wash);box-shadow:inset 0 0 0 1.5px var(--accent)"></i>Doing</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--ink3)"></i>Next</span><span><i class="v-s-later"></i>Later</span><span><i style="box-shadow:inset 0 0 0 2px var(--red)"></i>Late</span></div>
+{GANTT}
+
+{PHASES}
+
+<h2 id="numbers">Every number</h2>
+<p>Each card is one measure: the same work, measured the same way each time. Hover a point for its date, run count and note. Cold and warm are separate cards. Timings are from {MACHINE} unless the card says CI. In a PR, print the same numbers with <span class="mono">python bench/measures.py table</span>.</p>
+{NUMBERS}
+
+<h2 id="evidence">Evidence</h2>
+<h3>Every port run</h3>
+<p>Newest first, from <span class="mono">coverage/ledger.json</span>. A run that is not here did not happen.</p>
+<table class="tbl stack"><thead><tr><th class="l">Mod</th><th>Port</th><th class="hi l">Reached</th><th class="l">What happened</th><th>Date</th></tr></thead>
+<tbody>{LATEST}</tbody></table>
+<h3>Mods we test</h3>
 <p>Untouched open-source mods. The highlighted column is the furthest a port of that mod has got.</p>
 <table class="tbl stack"><thead><tr><th class="l">Mod</th><th>Loader</th><th>Versions</th><th class="hi l">Furthest it got</th><th>Last run</th></tr></thead>
 <tbody>{TESTED}</tbody></table>
 <p class="small">Versions touched: {VERS}.</p>
-
-<h2 id="runs">Latest runs</h2>
-<p>Every port modaccel has run, newest first, from <span class="mono">coverage/ledger.json</span>.</p>
-<table class="tbl stack"><thead><tr><th class="l">Mod</th><th>Port</th><th class="hi l">Reached</th><th class="l">What happened</th><th>Date</th></tr></thead>
-<tbody>{LATEST}</tbody></table>
-<div class="room"><b>Real-mod runner.</b> A runner that takes six real mods through every step is being built. Its runs will show up here, in the table above, once they are recorded in the ledger.</div>
-
-<h2 id="earlier">Earlier runs</h2>
-<p>Before modaccel ported anything: each mod's version pins bumped by hand to see how much breaks, and how long their own build takes.</p>
+<h3>Before modaccel</h3>
+<p>Each mod's version pins bumped by hand to see how much breaks, and how long their own build takes.</p>
 <table class="tbl stack"><thead><tr><th class="l">Mod</th><th>Version</th><th class="hi">Compile errors</th><th>Their first build</th><th>Build after bump</th><th>Date</th></tr></thead>
 <tbody>{EARLIER}</tbody></table>
-
-<h2 id="speed">Speed over time</h2>
-<p>Each column is a day something was measured, and the highlighted column is the latest number. Most numbers were measured once, so this history is still thin: the full run log (<span class="mono">.runs/index.jsonl</span>) is kept on the machine and not committed.</p>
-<div class="wide"><table class="tbl stack speed"><thead><tr><th class="l">What</th>{S_HEAD}</tr></thead>
-<tbody>{S_BODY}</tbody></table></div>
-<p class="small">{MACHINE}. Cold includes downloads and first setup; compare an edit with warm numbers, never cold.</p>
-
-<h2 id="loaders">Changing loader</h2>
-<p>Keeping the game version and moving to another loader is a separate job. None of it is built yet.</p>
-<table class="tbl stack"><thead><tr><th class="l">From</th>{L_HEAD}</tr></thead>
-<tbody>{L_BODY}</tbody></table>
-
-<h2 id="green">What counts as working</h2>
+<h3>What counts as working</h3>
 <table class="tbl stack"><tbody>
 <tr><td class="l"><span class="dot st-red"></span><b>Stops with named errors</b></td><td class="l">The port refuses to guess and lists what is left.</td></tr>
 <tr><td class="l"><span class="dot st-yellow"></span><b>Builds, mixins checked</b></td><td class="l">The project compiles and the mixin audit passes. Not called working.</td></tr>
 <tr><td class="l"><span class="dot st-green"></span><b>Loads in the real game</b></td><td class="l">A real client or server starts with the jar and lists the mod.</td></tr>
-<tr><td class="l"><span class="dot st-green"></span><b>Behaviour checked in the game</b></td><td class="l">Something you can see is asserted: a screen changed, a command ran, a save reloaded.</td></tr>
+<tr><td class="l"><span class="dot st-green"></span><b>Behaviour checked in the game</b></td><td class="l">An assertion on the mod's own state passes in the game. A frame change or a reloaded save is not behaviour.</td></tr>
 </tbody></table>
 
-<p class="foot">Made by <span class="mono">bench/bench_page.py</span> from <span class="mono">coverage/ledger.json</span>, <span class="mono">bench/data.json</span>, <span class="mono">bench/port/results.json</span> and <span class="mono">bench/mods/results.json</span>. Newest measurement {NEWEST}. The plan is in <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/ROADMAP.md">ROADMAP.md</a>.</p>
+<p class="foot">Made by <span class="mono">bench/bench_page.py</span> from <span class="mono">coverage/roadmap.json</span>, <span class="mono">coverage/measures.json</span>, <span class="mono">coverage/ledger.json</span>, <span class="mono">coverage/changes/index.json</span>, <span class="mono">bench/port/results.json</span> and <span class="mono">bench/mods/results.json</span>. The same roadmap as text: <a href="https://github.com/Noisemaker111/modding-accelerator/blob/main/ROADMAP.md">ROADMAP.md</a>.</p>
 </main>
 <script>
 /*THEME*/
+/*VIZ*/
+</script>
+<script>
+/*MAP*/
+</script>
+<script>
+// old porting-map links (#from=…&to=…, #step=…) land on the map
+if (/(^|[#&])(from|to|step)=/.test(location.hash)) document.getElementById("porting").scrollIntoView();
 </script>
 </body></html>
 """
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

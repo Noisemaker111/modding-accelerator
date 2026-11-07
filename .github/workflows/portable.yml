@@ -47,6 +47,9 @@ jobs:
       - name: Map and bench colour per loader
         working-directory: portable workspace
         run: python bench/test_ledger_rule.py
+      - name: Roadmap and measures agree, ROADMAP.md is current
+        working-directory: portable workspace
+        run: python bench/test_measures.py
       - name: Package without PowerShell
         working-directory: portable workspace
         run: java tools/cli/Bootstrap.java . package --json

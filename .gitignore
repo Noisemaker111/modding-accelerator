@@ -246,3 +246,4 @@ bench/fresh/
 bench/fix-test/
 .pl*.log
 bench/scan-test/
+__pycache__/
