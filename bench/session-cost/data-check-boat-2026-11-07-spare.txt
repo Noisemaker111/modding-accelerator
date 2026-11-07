@@ -1,0 +1,36 @@
+bench/data_check_linux.sh at b7f561f on a fresh boat.dev Ubuntu machine (4 cores, 8 GB), run through fairshare lease boat with --no-env, 2026-11-07.
+Stack trace lines cut; nothing else changed.
+
+creating a default sandbox...
+bx_276m6qjw ready in 1.1s
+pushed 567 files (23.3 MB) to ~/modaccel-no-window
+== clean run, exit 0
+ok: True | seconds: 58 | CPU-s: 6.2 | first in JVM: True | loaded the game's code; it stays loaded for the next data-check (game-stop ends it)
+prismlab: 1 block, 1 block entity type, 2 item, 1 loot table, 1 recipe.
+  prismlab:prism_shard "Prism Shard": stacks to 16, common
+  prismlab:prism_node "Prism Node": stacks to 64, common
+0 errors and 0 warnings logged by the game while loading
+== broken recipe under src, exit 1
+ok: False | seconds: 1 | CPU-s: None | first in JVM: False | reused the loaded game (process 8972), data read again
+data-check did not complete: net.minecraft.ReportedException: Registry Loading. Log: /home/user/modaccel-no-window/.runs/portable/2026-11-07T21-20-20.080383225Z-5760f873/3-data-check.log
+  [error] net.minecraft.resources.RegistryDataLoader: Registry loading errors:
+> Errors in registry minecraft:recipe:
+>> Errors in element prismlab:broken_probe:
+java.lang.IllegalStateException: Failed to parse prismlab:broken_probe from pack prismlab
+Caused by: java.lang.IllegalStateException: Map entry '#' : Failed to parse either. First: Not a JSON object: "prismlab:no_such_item"; Second: Failed to parse either. First: Not a tag id; Second: Failed to parse either. First: Not a json array: "prismlab:no_such_item"; Second: Unknown registry key in ResourceKey[minecraft:root / minecraft:item]: prismlab:no_such_item
+stages: ['java-setup', 'metadata', 'resources-copied', 'data-check']
+== recipe removed, exit 0
+ok: True | seconds: 1 | CPU-s: 0.7 | first in JVM: False | reused the loaded game (process 8972), data read again
+prismlab: 1 block, 1 block entity type, 2 item, 1 loot table, 1 recipe.
+  prismlab:prism_shard "Prism Shard": stacks to 16, common
+  prismlab:prism_node "Prism Node": stacks to 64, common
+0 errors and 0 warnings logged by the game while loading
+== spare ready after about 1 s: {"pid":9032,"port":46341,"token":"(cut)","fingerprint":"","started":false,"cpu":4.8}
+== new class, exit 0
+ok: True | seconds: 1 | CPU-s: 1.7 | first in JVM: False | the code changed; the game loaded in advance (process 9032) took it and stays loaded
+prismlab: 1 block, 1 block entity type, 2 item, 1 loot table, 1 recipe.
+  prismlab:prism_shard "Prism Shard": stacks to 16, common
+  prismlab:prism_node "Prism Node": stacks to 64, common
+0 errors and 0 warnings logged by the game while loading
+exit 0 · 1m 53s · default · $0.0011 · bx_276m6qjw deleted
+exit 0

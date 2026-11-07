@@ -373,7 +373,8 @@
    "condition": "cold",
    "machine": "boat",
    "points": [
-    {"date": "2026-11-07", "value": 5.7, "n": 1, "note": "fresh machine, first run; the game JVM alone, Gradle not counted", "source": "bench/session-cost/data-check-boat-2026-11-07.txt"}
+    {"date": "2026-11-07", "value": 5.7, "n": 1, "note": "fresh machine, first run; the game JVM alone, Gradle not counted", "source": "bench/session-cost/data-check-boat-2026-11-07.txt"},
+    {"date": "2026-11-07", "value": 6.2, "n": 1, "note": "fresh machine, first run; then a changed recipe 0.7 and a new class taken by the spare 1.7", "source": "bench/session-cost/data-check-boat-2026-11-07-spare.txt"}
    ]
   },
   {
