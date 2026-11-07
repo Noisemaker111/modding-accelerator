@@ -5,6 +5,7 @@ Each check is shown failing once, so a pass means the reader saw something.
     python bench/test_session_cost.py
 """
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -31,7 +32,9 @@ def busy_java(seconds):
                    "java.util.List<byte[]> keep = new java.util.ArrayList<>(); long x = 0; "
                    "while (System.nanoTime() < end) { x += keep.size(); if (keep.size() < 64) keep.add(new byte[1 << 20]); } "
                    "System.out.println(x); } }" % seconds)
-    return subprocess.Popen(["java", str(src)], stdout=subprocess.DEVNULL)
+    # a JRE first on PATH cannot run a source file, so JAVA_HOME (a JDK, as on CI) wins when it is set
+    java = str(Path(os.environ["JAVA_HOME"]) / "bin" / "java") if os.environ.get("JAVA_HOME") else "java"
+    return subprocess.Popen([java, str(src)], stdout=subprocess.DEVNULL)
 
 
 # a Java process that was already running is not counted
@@ -64,6 +67,13 @@ check(busy is None and sys.platform == "darwin" or busy is not None and 0 <= bus
 # windows on screen: a dict on Windows (none for a console Java), None (unknown) elsewhere
 shown = C.visible_windows([child.pid])
 check(shown == {} if C.WINDOWS else shown is None, f"visible windows of a console process: {shown}")
+
+# CPU per kind of thread, read while the process runs (Windows, Linux; macOS has no reader yet)
+live = busy_java(4)
+time.sleep(3)
+groups = C.thread_groups(live.pid)
+live.wait()
+check(sys.platform == "darwin" or sum(groups.values()) > 0.5, f"thread CPU of a busy Java process: {groups}")
 
 # the result kept as a source has no local paths
 kept = C.clean({"root": "C:\\Users\\x\\p", "a": {"capture": "C:\\Users\\x\\p\\shot.png"}, "b": "/Users/x/p/log.txt", "n": 3})

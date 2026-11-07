@@ -97,6 +97,39 @@ if WINDOWS:
 
     K32.GetSystemTimes.argtypes = [ctypes.POINTER(wintypes.FILETIME)] * 3
 
+    class THREADENTRY32(ctypes.Structure):
+        _fields_ = [("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD), ("th32ThreadID", wintypes.DWORD),
+                    ("th32OwnerProcessID", wintypes.DWORD), ("tpBasePri", ctypes.c_long), ("tpDeltaPri", ctypes.c_long),
+                    ("dwFlags", wintypes.DWORD)]
+
+    K32.Thread32First.argtypes = K32.Thread32Next.argtypes = [wintypes.HANDLE, ctypes.POINTER(THREADENTRY32)]
+    K32.OpenThread.restype = wintypes.HANDLE
+    K32.GetThreadTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
+    K32.GetThreadDescription.argtypes = [wintypes.HANDLE, ctypes.POINTER(ctypes.c_wchar_p)]
+    K32.LocalFree.argtypes = [ctypes.c_void_p]
+
+    def threads(pid):
+        """[(name, cpu seconds)] for every live thread of a process, JVM-internal and native ones included."""
+        snap = K32.CreateToolhelp32Snapshot(4, 0)
+        entry = THREADENTRY32(); entry.dwSize = ctypes.sizeof(entry)
+        out, ok = [], K32.Thread32First(snap, ctypes.byref(entry))
+        while ok:
+            if entry.th32OwnerProcessID == pid:
+                h = K32.OpenThread(0x0800, False, entry.th32ThreadID)  # THREAD_QUERY_LIMITED_INFORMATION
+                if h:
+                    t = [wintypes.FILETIME() for _ in range(4)]
+                    K32.GetThreadTimes(h, *[ctypes.byref(x) for x in t])
+                    desc = ctypes.c_wchar_p()
+                    name = ""
+                    if K32.GetThreadDescription(h, ctypes.byref(desc)) >= 0 and desc.value:
+                        name = desc.value
+                        K32.LocalFree(desc)
+                    K32.CloseHandle(h)
+                    out.append((name or "(unnamed native)", _ft(t[2]) + _ft(t[3])))
+            ok = K32.Thread32Next(snap, ctypes.byref(entry))
+        K32.CloseHandle(snap)
+        return out
+
     U32 = ctypes.WinDLL("user32", use_last_error=True)
     _ENUM = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
     U32.EnumWindows.argtypes = [_ENUM, wintypes.LPARAM]
@@ -162,6 +195,18 @@ else:
 
 
 if not WINDOWS:
+    def threads(pid):
+        out = []
+        for task in Path(f"/proc/{pid}/task").glob("*"):
+            try:
+                stat = (task / "stat").read_text()
+                fields = stat[stat.rindex(")") + 2:].split()
+                tick = os.sysconf("SC_CLK_TCK")
+                out.append(((task / "comm").read_text().strip(), (int(fields[11]) + int(fields[12])) / tick))
+            except (OSError, ValueError):
+                pass
+        return out
+
     def visible_windows(pids):
         """Not read on Linux and macOS yet; None means unknown, not hidden."""
         return None
@@ -407,6 +452,9 @@ def parallel(args):
                 x["failed"] = str(error)
         all_checked = round(time.perf_counter() - t0, 1)
         shown = visible_windows([x["pid"] for x in started])
+        if args.threads:
+            for x in started:
+                x["threads"] = thread_groups(x["pid"])
     pids = {x["pid"]: x["name"] for x in started}
     games = [v for k, v in s.seen.items() if k in pids]
     load = idle_many(list(pids), args.idle)
@@ -426,7 +474,21 @@ def parallel(args):
             "machineBusyPercent": s.busy,
             "peakGBTotal": round(sum(gb(g["peak"]) for g in games), 2), "privateGBTotal": round(sum(gb(g["private"]) for g in games), 2),
             "startCpuSeconds": round(sum(g["cpu"] for g in games), 1), "idle": load,
-            "sessions": [{k: v for k, v in x.items() if k in ("name", "pid", "ready", "checked", "capture", "failed")} for x in sessions]}
+            "sessions": [{k: v for k, v in x.items() if k in ("name", "pid", "ready", "checked", "capture", "failed", "threads")} for x in sessions]}
+
+
+def thread_groups(pid):
+    """CPU seconds per kind of thread: game, workers, JIT, GC, graphics driver and so on."""
+    import re
+    groups = {}
+    for name, cpu in threads(pid):
+        n = re.sub(r"[ #-]*\d+$", "", name).strip() or name
+        if "Compiler" in n:
+            n = "JIT compiler"
+        elif n.startswith(("GC Thread", "G1 ", "VM Periodic", "Gang worker")) or "GC" in n.split()[0:1]:
+            n = "garbage collector"
+        groups[n] = round(groups.get(n, 0) + cpu, 1)
+    return dict(sorted(groups.items(), key=lambda kv: -kv[1]))
 
 
 def idle_many(pids, seconds):
@@ -509,6 +571,7 @@ def main():
     pa.add_argument("--timeout", type=float, default=600)
     pa.add_argument("--jvm", default="", help="extra JVM flags for every client, to compare launch profiles")
     pa.add_argument("--record", action="store_true", help="add the start CPU per client to coverage/measures.json")
+    pa.add_argument("--threads", action="store_true", help="CPU per kind of thread in each client once it is checked")
     r = sub.add_parser("run")
     r.add_argument("--label", required=True)
     r.add_argument("command", nargs=argparse.REMAINDER)

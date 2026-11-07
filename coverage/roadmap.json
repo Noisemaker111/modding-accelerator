@@ -430,7 +430,7 @@
      "id": "35",
      "title": "Share one started game between sessions",
      "status": "later",
-     "text": "A new session reuses a game that has already started instead of starting its own, so a cold check drops from about 36 s to under 10 s.",
+     "text": "A new session reuses a game that has already started and resets it instead of starting its own, so a check pays about 5 CPU-s for a ready game instead of 49, and a cold check drops from about 36 s to under 10 s. The first start gets cheaper too: cached Mixin output, a class archive for the libraries, no frames drawn while a hidden game loads, and no Realms or telemetry calls.",
      "start": "2026-11-27",
      "target": "2026-12-18",
      "measures": [
@@ -524,6 +524,11 @@
   {
    "question": "Where do roadmap steps, targets and every number we show live?",
    "choice": "`coverage/roadmap.json` (steps, dates, targets) and `coverage/measures.json` (every number, with its history and target); ROADMAP.md and the roadmap page are generated from them",
+   "date": "2026-11-06"
+  },
+  {
+   "question": "How cheap should a hidden game check be?",
+   "choice": "5 CPU-s per check, from 49. A fresh Fabric start cannot get there, so step 35 shares and resets one started game; graphics settings stay as they are",
    "date": "2026-11-06"
   }
  ]

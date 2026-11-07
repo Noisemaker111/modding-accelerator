@@ -204,8 +204,11 @@ sessions run at once on one PC.
     no sound, with the same assertions and the same 1280x720 captures, and a check stops when a
     window asked to stay hidden is not. **next**
     Starts 2026-11-13, target 2026-11-27.
-35. A new session reuses a game that has already started instead of starting its own, so a cold
-    check drops from about 36 s to under 10 s. **later**
+35. A new session reuses a game that has already started and resets it instead of starting its own,
+    so a check pays about 5 CPU-s for a ready game instead of 49, and a cold check drops from about
+    36 s to under 10 s. The first start gets cheaper too: cached Mixin output, a class archive for
+    the libraries, no frames drawn while a hidden game loads, and no Realms or telemetry calls.
+    **later**
     Starts 2026-11-27, target 2026-12-18.
 36. modaccel runs at least 8 game checks side by side on this PC, each with its own game folder,
     without running out of memory, and a waiting hidden client costs almost no CPU. **later**
@@ -257,7 +260,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Mods with their own behaviour asserted in a real client | — | 2 mods (Oct 26) | 4 mods by Dec 4, step 37 | Baseline |
 | Memory for one hidden game session, Fabric 26.3, warm | 1.1 GB (Nov 6) | 1.0 GB (Nov 6) | 0.8 GB by Jan 8, 2027, step 36 | 36% of the way |
 | Game checks modaccel runs at once on one PC | — | not measured | 8 sessions by Jan 8, 2027, step 36 | Not measured yet |
-| CPU to start one hidden client, saved launch, Fabric 26.3, warm | 95 CPU-s (Nov 6) | 49 CPU-s (Nov 6) | 25 CPU-s by Dec 18, step 35 | 66% of the way |
+| CPU for a game check to get a ready hidden client, Fabric 26.3, warm | 95 CPU-s (Nov 6) | 49 CPU-s (Nov 6) | 5 CPU-s by Dec 18, step 35 | 51% of the way |
 | CPU a hidden client uses while it waits, warm | 0.21 cores (Nov 6) | 0.15 cores (Nov 6) | 0.05 cores by Jan 8, 2027, step 36 | 38% of the way |
 | Hidden clients this PC held at once, each to a 1280x720 capture | — | 16 sessions (Nov 6) | — | Fact |
 | One-file edit, modaccel fast, warm | — | 4 s (Oct 23) | 4 s (hold) by Nov 27, step 34 | Met |
@@ -307,3 +310,4 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Plugin ↔ mod conversion? | Not for now; it's a rewrite, not a port, and hybrid servers already exist | 2026-10-25 |
 | Ports between Paper versions? | Yes, as rung 5 for Paper once rungs 2–3 land | 2026-10-25 |
 | Where do roadmap steps, targets and every number we show live? | `coverage/roadmap.json` (steps, dates, targets) and `coverage/measures.json` (every number, with its history and target); ROADMAP.md and the roadmap page are generated from them | 2026-11-06 |
+| How cheap should a hidden game check be? | 5 CPU-s per check, from 49. A fresh Fabric start cannot get there, so step 35 shares and resets one started game; graphics settings stay as they are | 2026-11-06 |

@@ -352,12 +352,12 @@
   {
    "id": "test.session-start-cpu",
    "area": "test",
-   "name": "CPU to start one hidden client, saved launch, Fabric 26.3",
+   "name": "CPU for a game check to get a ready hidden client, Fabric 26.3",
    "unit": "CPU-s",
    "better": "lower",
    "condition": "warm",
    "machine": "jon-pc",
-   "target": {"value": 25, "by": "2026-12-18", "step": "35"},
+   "target": {"value": 5, "by": "2026-12-18", "step": "35"},
    "points": [
     {"date": "2026-11-06", "value": 95, "n": 8, "note": "8 clients at once, 759 CPU-s in all, default JIT", "source": "bench/session-cost/2026-11-06T20-50-36.json"},
     {"date": "2026-11-06", "value": 49, "n": 8, "note": "8 clients at once, 389 CPU-s in all, C1 only", "source": "bench/session-cost/2026-11-06T21-27-14.json"}
