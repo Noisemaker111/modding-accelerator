@@ -18,7 +18,7 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
 | 4. Loaders | 0 | 0 | 0 | 3 | 2027-03-12 |
 | 5. Proof: behaviour in the real game and server | 3 | 0 | 2 | 3 | 2027-02-12 |
 | 6. Modpack compatibility | 0 | 3 | 0 | 1 | 2027-02-05 |
-| 7. Testing without Minecraft open | 0 | 0 | 4 | 2 | 2027-01-08 |
+| 7. Testing without Minecraft open | 0 | 2 | 3 | 1 | 2027-01-08 |
 
 ## Phase 1 — Neighbouring versions (1.21.x), Fabric and NeoForge
 
@@ -194,15 +194,28 @@ Every check runs with no game window, and the cost of a game session is mostly s
 sessions run at once on one PC.
 
 33. Measure RAM, CPU, start time and time per check for one client, one dedicated server and one
-    Paper server, warm and cold, as the baseline the next steps are judged against. **next**
-    Starts 2026-11-09, target 2026-11-13.
+    Paper server, warm and cold, as the baseline the next steps are judged against. **doing** —
+    bench/session_cost.py measures a session from the operating system on Windows, Linux and macOS.
+    A hidden Fabric 26.3 client peaks at 1 GB and spends about 100 CPU-s starting, 49 with C1 only,
+    which hidden launches now use; 16 started side by side from one saved launch. Paper and warm
+    timings on a quiet PC are still to measure.
+    Started 2026-11-06, target 2026-11-13.
 34. ui-check, world-check, mp-check, eval and the behaviour checks run with no Minecraft window and
-    no sound, with the same assertions and the same 1280x720 captures. **next**
+    no sound, with the same assertions and the same 1280x720 captures, and a check stops when a
+    window asked to stay hidden is not. **next**
     Starts 2026-11-13, target 2026-11-27.
-35. A new session reuses a game that has already started instead of starting its own, so a cold
-    check drops from about 36 s to under 10 s. **later**
-    Starts 2026-11-27, target 2026-12-18.
-36. At least 8 checks run side by side on this PC without running out of memory. **later**
+35. A check that needs the game's data but not its picture runs the game's own code with no window
+    and no world: data-check reads what the mod registered, each item as a real stack, and every
+    error the game logs while it loads the data packs. It costs about 5 CPU-s per check once one
+    loaded JVM answers many checks, instead of 49 for a hidden client. **doing** — modaccel
+    data-check works on Fabric 26.3: on the Prism Lab demo mod it lists the mod's items, blocks,
+    loot table and recipe with no game launched, and a broken recipe fails it with the game's own
+    error. One check costs 5.7 CPU-s on a quiet 4-core Linux machine and about 28 on this PC while
+    other work keeps it at 98%; reusing one loaded JVM is still to do.
+    Started 2026-11-07, target 2026-12-18.
+36. modaccel runs at least 8 game checks side by side on this PC, each with its own game folder,
+    without running out of memory; a hidden client starts on 25 CPU-s and a cold check takes under
+    10 s, and a waiting hidden client costs almost no CPU. **later**
     Starts 2026-12-18, target 2027-01-08.
 37. The real-game behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) run every
     night in CI, not only on this PC. **next**
@@ -237,11 +250,11 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Cold game start + one check, Fabric 26.3 | — | 36.5 s (Oct 21) | 10 s by Dec 18, step 35 | Baseline |
-| Cold game start to a listening client, NeoForge 1.21.1 | — | 18.4 s (Oct 22) | 10 s by Dec 18, step 35 | Baseline |
-| Dedicated server start, Fabric 26.3, cold | — | 24.2 s (Oct 22) | 10 s by Dec 18, step 35 | Baseline |
-| Client start and first join to a dedicated server, cold | — | 27.1 s (Oct 22) | 10 s by Dec 18, step 35 | Baseline |
-| New registration on a fresh server, warm | — | 15 s (Oct 21) | 5 s by Dec 18, step 35 | Baseline |
+| Cold game start + one check, Fabric 26.3 | — | 36.5 s (Oct 21) | 10 s by Jan 8, 2027, step 36 | Baseline |
+| Cold game start to a listening client, NeoForge 1.21.1 | — | 18.4 s (Oct 22) | 10 s by Jan 8, 2027, step 36 | Baseline |
+| Dedicated server start, Fabric 26.3, cold | — | 24.2 s (Oct 22) | 10 s by Jan 8, 2027, step 36 | Baseline |
+| Client start and first join to a dedicated server, cold | — | 27.1 s (Oct 22) | 10 s by Jan 8, 2027, step 36 | Baseline |
+| New registration on a fresh server, warm | — | 15 s (Oct 21) | 5 s by Jan 8, 2027, step 36 | Baseline |
 | Logic tests, no Minecraft, warm | — | 0.79 s (Oct 21) | 1 s (hold) by Nov 27, step 34 | Met |
 | Screen change + screenshot, warm game, Fabric 26.3 | — | 1.5 s (Oct 21) | 1.5 s (hold) by Nov 27, step 34 | Met |
 | Screen edit swapped into the running game, NeoForge 1.21.1, warm | — | 1.5 s (Oct 22) | 1.5 s (hold) by Nov 27, step 34 | Met |
@@ -249,16 +262,21 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Scripted scenario + screenshot, warm game, Fabric 26.3 | — | 2.9 s (Oct 21) | 3 s (hold) by Nov 27, step 34 | Met |
 | Multiplayer scenario, warm client and server | — | 4.1 s (Oct 22) | 4 s by Nov 27, step 34 | Baseline |
 | Mods with their own behaviour asserted in a real client | — | 2 mods (Oct 26) | 4 mods by Dec 4, step 37 | Baseline |
-| Memory for one game session | — | not measured | set from the baseline by Nov 13, step 33 | Not measured yet |
-| Game sessions running at once on one PC | — | not measured | 8 sessions by Jan 8, 2027, step 36 | Not measured yet |
+| Memory for one hidden game session, Fabric 26.3, warm | 1.1 GB (Nov 6) | 1.0 GB (Nov 6) | 0.8 GB by Jan 8, 2027, step 36 | 36% of the way |
+| Game checks modaccel runs at once on one PC | — | not measured | 8 sessions by Jan 8, 2027, step 36 | Not measured yet |
+| CPU to start one hidden client, saved launch, Fabric 26.3, warm | 95 CPU-s (Nov 6) | 49 CPU-s (Nov 6) | 25 CPU-s by Jan 8, 2027, step 36 | 66% of the way |
+| CPU for data-check on the Prism Lab demo mod, quiet 4-core Linux machine, Fabric 26.3, cold | — | 5.7 CPU-s (Nov 7) | — | Fact |
+| CPU for data-check to read a mod's items, recipes and errors, no game launched, Fabric 26.3, warm | 33 CPU-s (Nov 7) | 28.3 CPU-s (Nov 7) | 5 CPU-s by Dec 18, step 35 | 17% of the way |
+| CPU a hidden client uses while it waits, warm | 0.21 cores (Nov 6) | 0.15 cores (Nov 6) | 0.05 cores by Jan 8, 2027, step 36 | 38% of the way |
+| Hidden clients this PC held at once, each to a 1280x720 capture | — | 16 sessions (Nov 6) | — | Fact |
 | One-file edit, modaccel fast, warm | — | 4 s (Oct 23) | 4 s (hold) by Nov 27, step 34 | Met |
 
 ### Plugins
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| server-check on a real Paper server, AgentCraft, warm | — | 25 s (Oct 26) | 15 s by Dec 18, step 35 | Baseline |
-| server-check on a real Paper server, AgentCraft, cold | — | 55 s (Oct 26) | 30 s by Dec 18, step 35 | Baseline |
+| server-check on a real Paper server, AgentCraft, warm | — | 25 s (Oct 26) | 15 s by Jan 8, 2027, step 36 | Baseline |
+| server-check on a real Paper server, AgentCraft, cold | — | 55 s (Oct 26) | 30 s by Jan 8, 2027, step 36 | Baseline |
 | plugin-check on MockBukkit, AgentCraft, warm | — | 7 s (Oct 26) | 7 s (hold) by Nov 27, step 34 | Met |
 | Paper versions the test player passed on | — | 6 versions (Oct 26) | 8 versions by Nov 20, step 26 | Baseline |
 | Paper versions the test player passes on in CI | — | 1 version (Oct 26) | 6 versions by Nov 20, step 26 | Baseline |
@@ -298,3 +316,4 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Plugin ↔ mod conversion? | Not for now; it's a rewrite, not a port, and hybrid servers already exist | 2026-10-25 |
 | Ports between Paper versions? | Yes, as rung 5 for Paper once rungs 2–3 land | 2026-10-25 |
 | Where do roadmap steps, targets and every number we show live? | `coverage/roadmap.json` (steps, dates, targets) and `coverage/measures.json` (every number, with its history and target); ROADMAP.md and the roadmap page are generated from them | 2026-11-06 |
+| How cheap should a game check be? | 5 CPU-s per check, from 49. Checks that need the game's data but not a picture stop launching the game: data-check runs the game's own code with no window and no world (Jon, 2026-11-07, instead of sharing one started game). Picture checks keep the hidden client, with graphics settings as they are | 2026-11-07 |

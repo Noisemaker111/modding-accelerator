@@ -50,7 +50,7 @@ public final class Modaccel {
         String get(String key, String fallback) { return values.getOrDefault(key, fallback); }
         boolean has(String key) { return flags.contains(key); }
     }
-    static final Set<String> COMMANDS = Set.of("support", "discover", "doctor", "setup", "compile", "fast", "test", "port", "explain", "dependencies", "mixin-check", "plugin-check", "server-check",
+    static final Set<String> COMMANDS = Set.of("support", "discover", "doctor", "setup", "compile", "fast", "test", "port", "explain", "dependencies", "mixin-check", "data-check", "plugin-check", "server-check",
             "ui-check", "world-check", "mp-check", "eval", "reload", "game-status", "game-stop", "package", "self-test", "preferences", "legacy-agent", "pack-check", "help");
     public static void main(String[] args) {
         int exit = 2; Options options = null; Report report = null; ProjectLock lock = null;
@@ -125,6 +125,7 @@ public final class Modaccel {
                     case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload" -> { result = new Game(build, model).run(options); exit = "reload".equals(options.command) && Boolean.TRUE.equals(result.get("restartNeeded")) ? 1 : 0; }
                     case "port" -> { result = new Port(build, model).run(options); if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model)); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "explain" -> { result = new Explain(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
+                    case "data-check" -> { result = new DataCheck(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "mixin-check" -> {
                         result = new MixinCheck(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                         // Mixin applies a require = 0 injection that matches nothing without a word; the audit against the game jar names it.
@@ -315,6 +316,12 @@ public final class Modaccel {
                     + "Every class the mod's mixin configs target is loaded, so Mixin applies the mixins; nothing opens a window or a world. Mixin's debug\n"
                     + "injector check is on, so an injection that matches fewer places than it expects is reported as dead. Each finding is Mixin's own message,\n"
                     + "with the mixin's source file. Exit 1 when a mixin would stop the game or is dead; --refresh records the launch again.";
+            case "data-check" -> "Read what the game loads for the mod, without launching the game: modaccel data-check --root SOURCE [--project :module] [--client-task :p:runClient] [--refresh] --json\n"
+                    + "The mod's dev launch (recorded once, shared with mixin-check) starts the game's own code with no window, no world and no network:\n"
+                    + "Bootstrap, every mod's main and server entrypoints, the registries frozen, then a new world's data packs loaded by the game's WorldLoader.\n"
+                    + "Reports what the mod registered (items, blocks, recipes, loot tables, tags ...), each item as a real stack (stack size, durability, food),\n"
+                    + "and every warning and error the game logged. Exit 1 when the game logged an error, an item cannot be made, or nothing of the mod loaded.\n"
+                    + "Fabric on Minecraft 26.x; other versions and loaders are reported as unchecked with the reason.";
             case "plugin-check" -> "Load and enable a Paper/Bukkit plugin on MockBukkit, a fake Paper server, without a real server: modaccel plugin-check --root SOURCE [--project :module] [--task :shadowJar] [--plugins FOLDER] --json\n"
                     + "The plugin's own jar task builds the jar (shadowJar, reobfJar or jar; --task picks another). MockBukkit for the plugin's Paper API line\n"
                     + "(knowledge/mockbukkit.json) loads that jar in a fresh JVM, the way Paper does, and checks: plugin.yml / paper-plugin.yml parses and its\n"
@@ -385,6 +392,7 @@ public final class Modaccel {
                     + "  support                what works today        discover, doctor   what kind of build this is\n"
                     + "  setup                  evaluate the build      compile            compile + resource/metadata checks\n"
                     + "  fast, test             logic tests, no game    mixin-check        Mixin applies the mixins, no game\n"
+                    + "  data-check             what the game loads for the mod (items, recipes, errors), no game\n"
                     + "  port                   move to another version explain            explain compiler errors\n"
                     + "  dependencies           target dependencies     ui-check, world-check, mp-check   real game checks\n"
                     + "  eval, reload           talk to the running game          game-status, game-stop\n"
@@ -393,7 +401,7 @@ public final class Modaccel {
                     + "  pack-check             a modpack on its real loader server: conflicts, block swaps, worlds that will not reopen\n"
                     + "  preferences            show or change your game window and sound choices\n"
                     + "  package, self-test     build or test modaccel itself\n"
-                    + "Run modaccel help COMMAND for one command (port, fast, compile, mixin-check, explain, ui-check, eval, reload ...).\n"
+                    + "Run modaccel help COMMAND for one command (port, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n"
                     + "--root is the mod's Gradle source checkout (the folder with gradlew); a multi-version build needs --project, e.g. --project :1.21.6.";
         };
     }

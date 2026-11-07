@@ -26,7 +26,7 @@ INDEX = ROOT / "coverage" / "changes" / "index.json"
 
 STATUSES = ("done", "doing", "next", "later")
 UNITS = {"s", "min", "GB", "errors", "files", "rules", "mods", "updates", "steps", "versions", "packs", "repairs",
-         "items", "sessions"}
+         "items", "sessions", "cores", "CPU-s"}
 ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 
@@ -134,17 +134,21 @@ def num(v, unit, minutes=False):
         return f"{v:.2f}".rstrip("0").rstrip(".") if v < 1 else f"{v:.1f}"
     if unit in ("min", "GB"):
         return f"{v:.1f}"
+    if unit == "cores":
+        return f"{v:.2f}"
+    if unit == "CPU-s":
+        return f"{int(v + 0.5)}" if v >= 100 or float(v).is_integer() else f"{v:.1f}"
     return f"{int(round(v)):,}"
 
 
 SINGULAR = {"errors": "error", "files": "file", "rules": "rule", "mods": "mod", "updates": "update", "steps": "step",
-            "versions": "version", "packs": "pack", "repairs": "repair", "items": "item", "sessions": "session"}
+            "versions": "version", "packs": "pack", "repairs": "repair", "items": "item", "sessions": "session", "cores": "core"}
 
 
 def unit_word(v, unit, minutes=False):
     if unit == "s":
         return "min" if minutes else "s"
-    if unit in ("min", "GB"):
+    if unit in ("min", "GB", "CPU-s"):
         return unit
     return SINGULAR.get(unit, unit) if v == 1 else unit
 

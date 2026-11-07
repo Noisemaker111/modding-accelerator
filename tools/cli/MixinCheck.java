@@ -315,24 +315,12 @@ final class MixinCheck {
     Map<String, Object> side(Launch launch, String loader, Path tools, List<String> configs, String side) throws Exception {
         Path out = build.report.directory.resolve("mixin-check-" + side + ".jsonl"), argfile = build.report.directory.resolve("mixin-check-" + side + ".args");
         Files.createDirectories(out.getParent());
-        List<String> command = new ArrayList<>(List.of(launch.java()));
-        Set<String> agents = new HashSet<>();
-        for (String option : launch.options()) {
-            if (option.startsWith("-Dfabric.dli.env=") && side.equals("server")) { command.add("-Dfabric.dli.env=server"); continue; }
-            // Recorded launches can list the same agent twice (Gradle's two JVM argument lists); load each once.
-            if (option.startsWith("-javaagent:") && !agents.add(option)) continue;
-            command.add(option);
-        }
+        List<String> command = options(launch, side);
         command.addAll(List.of("-Dmixin.debug.injectors=true", "-Dmodaccel.mixincheck.out=" + out, "-Dmodaccel.mixincheck.configs=" + String.join(",", configs),
-                "-Dmodaccel.mixincheck.side=" + side, "-Dmodaccel.mixincheck.loader=" + loader, "-Dfabric.noGui=true"));
+                "-Dmodaccel.mixincheck.side=" + side, "-Dmodaccel.mixincheck.loader=" + loader));
         String main = launch.main(); List<String> arguments = new ArrayList<>(launch.arguments());
         if (loader.equals("fabric")) {
-            // Loom starts Knot through its dev launch injector (and Architectury through its transformer first);
-            // both read the next main class from fabric.dli.main, so only that changes.
-            command.add("-Dfabric.dli.main=ModaccelMixinCheck");
-            if (KNOT.contains(main)) main = "ModaccelMixinCheck";
-            else if (!main.equals("net.fabricmc.devlaunchinjector.Main") && !main.startsWith("dev.architectury.transformer."))
-                throw new IOException("Unrecognised Fabric dev launch (main class " + main + "); the Mixin check knows Knot, Loom's dev launch injector and Architectury's transformer.");
+            main = fabricMain(launch, "ModaccelMixinCheck", command);
         } else {
             if (!main.equals(NEO_MAIN)) throw new IOException("Unrecognised NeoForge dev launch (main class " + main + "); the Mixin check needs BootstrapLauncher.");
             main = "ModaccelMixinCheck";
@@ -344,17 +332,51 @@ final class MixinCheck {
             for (int i = 0; i + 1 < arguments.size(); i++) if (arguments.get(i).startsWith("--fml.") && !arguments.get(i + 1).startsWith("--")) { kept.add(arguments.get(i)); kept.add(arguments.get(++i)); }
             arguments = kept;
         }
-        String classPath = tools.resolve("classes") + File.pathSeparator + launch.classPath();
-        Files.writeString(argfile, "-cp\n\"" + classPath.replace("\\", "\\\\").replace("\"", "\\\"") + "\"\n", StandardCharsets.UTF_8);
-        command.add("@" + argfile); command.add(main); command.addAll(arguments);
-        Map<String, String> environment = new HashMap<>(launch.environment());
+        classPath(command, argfile, tools.resolve("classes"), launch);
+        command.add(main); command.addAll(arguments);
         // The run directory is made by the loader plugin when it starts the game, so a fresh checkout has none yet.
         Files.createDirectories(launch.directory());
-        var result = Run.command(command, launch.directory(), environment, build.report.log("mixin-check-" + side), TIMEOUT_SECONDS);
+        var result = Run.command(command, launch.directory(), new HashMap<>(launch.environment()), build.report.log("mixin-check-" + side), TIMEOUT_SECONDS);
         build.report.stage("mixin-check-" + side, result, Json.map("launch", launch.recorded() ? "recorded now" : "reused recording"));
         List<Map<String, Object>> events = new ArrayList<>();
         if (Files.isRegularFile(out)) for (String line : Files.readAllLines(out, StandardCharsets.UTF_8)) if (!line.isBlank()) events.add(Json.object(Json.parse(line)));
         return Json.map("side", side, "exit", result.exit(), "seconds", result.seconds(), "log", result.log().toString(), "events", events);
+    }
+
+    // --- The recorded launch, started with one of modaccel's classes in place of the game (mixin-check, data-check) ---
+
+    /** The launch's Java and JVM options for SIDE, each agent loaded once, the loader's GUI off. */
+    static List<String> options(Launch launch, String side) {
+        List<String> command = new ArrayList<>(List.of(launch.java()));
+        Set<String> agents = new HashSet<>();
+        for (String option : launch.options()) {
+            if (option.startsWith("-Dfabric.dli.env=") && side.equals("server")) { command.add("-Dfabric.dli.env=server"); continue; }
+            // Recorded launches can list the same agent twice (Gradle's two JVM argument lists); load each once.
+            if (option.startsWith("-javaagent:") && !agents.add(option)) continue;
+            command.add(option);
+        }
+        command.add("-Dfabric.noGui=true");
+        return command;
+    }
+
+    /**
+     * Loom starts Knot through its dev launch injector (and Architectury through its transformer first);
+     * both read the next main class from fabric.dli.main, so only that changes. Returns the main class to start.
+     */
+    static String fabricMain(Launch launch, String ours, List<String> command) throws IOException {
+        command.add("-Dfabric.dli.main=" + ours);
+        String main = launch.main();
+        if (KNOT.contains(main)) return ours;
+        if (!main.equals("net.fabricmc.devlaunchinjector.Main") && !main.startsWith("dev.architectury.transformer."))
+            throw new IOException("Unrecognised Fabric dev launch (main class " + main + "); modaccel knows Knot, Loom's dev launch injector and Architectury's transformer.");
+        return main;
+    }
+
+    /** OURS ahead of the launch's class path, through an @argfile (a game class path is longer than Windows allows on a command line). */
+    static void classPath(List<String> command, Path argfile, Path ours, Launch launch) throws IOException {
+        String classPath = ours + File.pathSeparator + launch.classPath();
+        Files.writeString(argfile, "-cp\n\"" + classPath.replace("\\", "\\\\").replace("\"", "\\\"") + "\"\n", StandardCharsets.UTF_8);
+        command.add("@" + argfile);
     }
 
     // --- Mixin's results, sorted into what the game would do ---

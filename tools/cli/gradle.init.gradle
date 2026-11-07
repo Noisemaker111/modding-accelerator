@@ -217,15 +217,22 @@ gradle.afterProject { p ->
                         "-Dmodaccel.quiet=${System.getProperty('modaccel.quiet', 'false')}",
                         "-Dmodaccel.state=${state.absolutePath}", '-Dprismlab.lab.port=', '-Dmodlabbridge.port=',
                         '-Dfabric.noGui=true'
+                // A hidden game is a test session, not someone playing: C1 alone halves the CPU a client
+                // spends starting (8 clients at once: 378 CPU-s instead of 819, bench/session_cost.py).
+                if (System.getProperty('modaccel.background', 'false') == 'true') t.jvmArgs '-XX:TieredStopAtLevel=1'
             }
             def executable = t.executable
             try { executable = t.javaLauncher.get().executablePath.asFile.absolutePath } catch (Exception ignored) {}
             def arguments = []
             arguments.addAll(t.allJvmArgs)
             // Gradle's newer jvmArguments property and argument providers are separate
-            // from allJvmArgs. Loom puts its DLI properties and @classpath file here.
-            if (t.hasProperty('jvmArguments')) arguments.addAll(t.jvmArguments.getOrElse([]))
-            t.jvmArgumentProviders.each { arguments.addAll(it.asArguments()) }
+            // from allJvmArgs on some Gradle versions. Loom puts its DLI properties and
+            // @classpath file here. Gradle 9 already counts them in allJvmArgs, and adding
+            // them again listed every argument twice, the agent included.
+            def jvmExtra = []
+            if (t.hasProperty('jvmArguments')) jvmExtra.addAll(t.jvmArguments.getOrElse([]))
+            t.jvmArgumentProviders.each { jvmExtra.addAll(it.asArguments()) }
+            jvmExtra.each { if (!arguments.contains(it)) arguments.add(it) }
             def effectiveClasspath = p.files(t.classpath)
             // ModDevGradle also assigns these inside exec(), after doFirst.
             if (t.hasProperty('classpathProvider')) effectiveClasspath.from(t.classpathProvider)

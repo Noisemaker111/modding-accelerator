@@ -1,6 +1,6 @@
 {
  "about": "Every number modaccel shows: on the roadmap page, in ROADMAP.md, in a PR or a report. One entry per thing measured, with every point it ever had and the target it is heading for. Record a point with python bench/measures.py add; print a table for a PR with python bench/measures.py table. A point carries its date, value, how many runs (n), what it was measured on, and where the receipt is. Cold and warm are separate measures, and so is the same check on another loader: a measure only ever compares the same work. A measure with 'computed' gets its points from the ledger or the roadmap at render time instead of from 'points'. A target with value null is set once its step measures a baseline. 'context' measures are other people's numbers we compare against, and 'info' measures are facts worth showing; neither has a target. Every other measure has one.",
- "machines": {"jon-pc": "Ryzen 9 3900X, Windows 11, JDK 25 (JDK 21 for NeoForge 1.21.1)", "ci": "GitHub-hosted runners (windows, macos, ubuntu)"},
+ "machines": {"jon-pc": "Ryzen 9 3900X, Windows 11, JDK 25 (JDK 21 for NeoForge 1.21.1)", "ci": "GitHub-hosted runners (windows, macos, ubuntu)", "boat": "boat.dev default machine: 4 vCPU, 8 GB, Ubuntu, idle apart from the check"},
  "areas": {"port": "Porting", "test": "Game checks", "plugin": "Plugins", "pack": "Modpacks", "ci": "CI", "roadmap": "Roadmap", "context": "Compared with"},
  "headline": [
   "port.mods-working",
@@ -179,7 +179,7 @@
    "better": "lower",
    "condition": "cold",
    "machine": "jon-pc",
-   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
+   "target": {"value": 10, "by": "2027-01-08", "step": "36"},
    "points": [
     {"date": "2026-10-21", "value": 36.5, "n": 1, "source": "bench/data.json loop"}
    ]
@@ -192,7 +192,7 @@
    "better": "lower",
    "condition": "cold",
    "machine": "jon-pc",
-   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
+   "target": {"value": 10, "by": "2027-01-08", "step": "36"},
    "points": [
     {"date": "2026-10-22", "value": 18.4, "n": 1, "source": "bench/data.json neoforgeloop"}
    ]
@@ -205,7 +205,7 @@
    "better": "lower",
    "condition": "cold",
    "machine": "jon-pc",
-   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
+   "target": {"value": 10, "by": "2027-01-08", "step": "36"},
    "points": [
     {"date": "2026-10-22", "value": 24.2, "n": 1, "source": "bench/data.json multiplayer"}
    ]
@@ -218,7 +218,7 @@
    "better": "lower",
    "condition": "cold",
    "machine": "jon-pc",
-   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
+   "target": {"value": 10, "by": "2027-01-08", "step": "36"},
    "points": [
     {"date": "2026-10-22", "value": 27.1, "n": 1, "source": "bench/data.json multiplayer"}
    ]
@@ -231,7 +231,7 @@
    "better": "lower",
    "condition": "warm",
    "machine": "jon-pc",
-   "target": {"value": 5, "by": "2026-12-18", "step": "35"},
+   "target": {"value": 5, "by": "2027-01-08", "step": "36"},
    "points": [
     {"date": "2026-10-21", "value": 15.0, "n": 3, "source": "bench/data.json loop"}
    ]
@@ -328,22 +328,93 @@
   {
    "id": "test.session-ram",
    "area": "test",
-   "name": "Memory for one game session",
+   "name": "Memory for one hidden game session, Fabric 26.3",
    "unit": "GB",
    "better": "lower",
    "machine": "jon-pc",
-   "target": {"value": null, "by": "2026-11-13", "step": "33", "note": "set from the baseline"},
-   "points": []
+   "target": {"value": 0.8, "by": "2027-01-08", "step": "36", "note": "set from the Nov 6 baseline"},
+   "points": [
+    {"date": "2026-11-06", "value": 1.08, "n": 1, "note": "peak working set, title screen, default JIT", "source": "bench/session-cost/2026-11-06T20-46-13.json"},
+    {"date": "2026-11-06", "value": 0.98, "n": 1, "note": "peak working set, saved launch, C1 only", "source": "bench/session-cost/2026-11-06T21-25-10.json"}
+   ],
+   "condition": "warm"
   },
   {
    "id": "test.parallel-sessions",
    "area": "test",
-   "name": "Game sessions running at once on one PC",
+   "name": "Game checks modaccel runs at once on one PC",
    "unit": "sessions",
    "better": "higher",
    "machine": "jon-pc",
    "target": {"value": 8, "by": "2027-01-08", "step": "36"},
    "points": []
+  },
+  {
+   "id": "test.session-start-cpu",
+   "area": "test",
+   "name": "CPU to start one hidden client, saved launch, Fabric 26.3",
+   "unit": "CPU-s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 25, "by": "2027-01-08", "step": "36"},
+   "points": [
+    {"date": "2026-11-06", "value": 95, "n": 8, "note": "8 clients at once, 759 CPU-s in all, default JIT", "source": "bench/session-cost/2026-11-06T20-50-36.json"},
+    {"date": "2026-11-06", "value": 49, "n": 8, "note": "8 clients at once, 389 CPU-s in all, C1 only", "source": "bench/session-cost/2026-11-06T21-27-14.json"}
+   ]
+  },
+  {
+   "id": "test.data-check-cpu.boat",
+   "area": "test",
+   "name": "CPU for data-check on the Prism Lab demo mod, quiet 4-core Linux machine, Fabric 26.3",
+   "unit": "CPU-s",
+   "better": "lower",
+   "info": true,
+   "condition": "cold",
+   "machine": "boat",
+   "points": [
+    {"date": "2026-11-07", "value": 5.7, "n": 1, "note": "fresh machine, first run; the game JVM alone, Gradle not counted", "source": "bench/session-cost/data-check-boat-2026-11-07.txt"}
+   ]
+  },
+  {
+   "id": "test.data-check-cpu",
+   "area": "test",
+   "name": "CPU for data-check to read a mod's items, recipes and errors, no game launched, Fabric 26.3",
+   "unit": "CPU-s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 5, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-11-07", "value": 33, "n": 1, "note": "first full run, machine 98% busy", "source": "bench/session-cost/data-check-2026-11-07T07-42-47.json"},
+    {"date": "2026-11-07", "value": 28.3, "n": 1, "note": "second run, machine 98% busy", "source": "bench/session-cost/data-check-2026-11-07T07-48-20.json"}
+   ]
+  },
+  {
+   "id": "test.session-idle-cpu",
+   "area": "test",
+   "name": "CPU a hidden client uses while it waits",
+   "unit": "cores",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 0.05, "by": "2027-01-08", "step": "36"},
+   "points": [
+    {"date": "2026-11-06", "value": 0.21, "n": 1, "note": "title screen, 20 s, default JIT", "source": "bench/session-cost/2026-11-06T20-46-13.json"},
+    {"date": "2026-11-06", "value": 0.15, "n": 1, "note": "title screen, 20 s, C1 only", "source": "bench/session-cost/2026-11-06T21-25-10.json"}
+   ]
+  },
+  {
+   "id": "test.parallel-probe",
+   "area": "test",
+   "name": "Hidden clients this PC held at once, each to a 1280x720 capture",
+   "unit": "sessions",
+   "better": "higher",
+   "info": true,
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-06", "value": 16, "n": 1, "note": "bench/session_cost.py parallel from one saved launch, 18.2 GB, 100 s on a busy PC; not yet a modaccel command", "source": "bench/session-cost/2026-11-06T20-52-48.json"}
+   ]
   },
   {
    "id": "plugin.server-check.warm",
@@ -353,7 +424,7 @@
    "better": "lower",
    "condition": "warm",
    "machine": "jon-pc",
-   "target": {"value": 15, "by": "2026-12-18", "step": "35"},
+   "target": {"value": 15, "by": "2027-01-08", "step": "36"},
    "points": [
     {"date": "2026-10-26", "value": 25, "note": "about 25 s", "source": "SCOPE.md section 5"}
    ]
@@ -366,7 +437,7 @@
    "better": "lower",
    "condition": "cold",
    "machine": "jon-pc",
-   "target": {"value": 30, "by": "2026-12-18", "step": "35"},
+   "target": {"value": 30, "by": "2027-01-08", "step": "36"},
    "points": [
     {"date": "2026-10-26", "value": 55, "note": "about 55 s, Paper download included", "source": "SCOPE.md section 5"}
    ]

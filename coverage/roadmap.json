@@ -401,20 +401,24 @@
     {
      "id": "33",
      "title": "Measure what one game session costs today",
-     "status": "next",
+     "status": "doing",
      "text": "Measure RAM, CPU, start time and time per check for one client, one dedicated server and one Paper server, warm and cold, as the baseline the next steps are judged against.",
-     "start": "2026-11-09",
+     "start": "2026-11-06",
      "target": "2026-11-13",
      "measures": [
       "test.session-ram",
+      "test.session-start-cpu",
+      "test.session-idle-cpu",
+      "test.parallel-probe",
       "test.cold-start-check.fabric"
-     ]
+     ],
+     "result": "bench/session_cost.py measures a session from the operating system on Windows, Linux and macOS. A hidden Fabric 26.3 client peaks at 1 GB and spends about 100 CPU-s starting, 49 with C1 only, which hidden launches now use; 16 started side by side from one saved launch. Paper and warm timings on a quiet PC are still to measure."
     },
     {
      "id": "34",
      "title": "Every game check with no window",
      "status": "next",
-     "text": "ui-check, world-check, mp-check, eval and the behaviour checks run with no Minecraft window and no sound, with the same assertions and the same 1280x720 captures.",
+     "text": "ui-check, world-check, mp-check, eval and the behaviour checks run with no Minecraft window and no sound, with the same assertions and the same 1280x720 captures, and a check stops when a window asked to stay hidden is not.",
      "start": "2026-11-13",
      "target": "2026-11-27",
      "measures": [
@@ -424,27 +428,33 @@
     },
     {
      "id": "35",
-     "title": "Share one started game between sessions",
-     "status": "later",
-     "text": "A new session reuses a game that has already started instead of starting its own, so a cold check drops from about 36 s to under 10 s.",
-     "start": "2026-11-27",
+     "title": "Check the game's data without launching it",
+     "status": "doing",
+     "text": "A check that needs the game's data but not its picture runs the game's own code with no window and no world: data-check reads what the mod registered, each item as a real stack, and every error the game logs while it loads the data packs. It costs about 5 CPU-s per check once one loaded JVM answers many checks, instead of 49 for a hidden client.",
+     "start": "2026-11-07",
      "target": "2026-12-18",
      "measures": [
-      "test.cold-start-check.fabric",
-      "test.server-start",
-      "plugin.server-check.warm"
-     ]
+      "test.data-check-cpu",
+      "test.data-check-cpu.boat"
+     ],
+     "result": "modaccel data-check works on Fabric 26.3: on the Prism Lab demo mod it lists the mod's items, blocks, loot table and recipe with no game launched, and a broken recipe fails it with the game's own error. One check costs 5.7 CPU-s on a quiet 4-core Linux machine and about 28 on this PC while other work keeps it at 98%; reusing one loaded JVM is still to do."
     },
     {
      "id": "36",
      "title": "Many sessions at once on one PC",
      "status": "later",
-     "text": "At least 8 checks run side by side on this PC without running out of memory.",
+     "text": "modaccel runs at least 8 game checks side by side on this PC, each with its own game folder, without running out of memory; a hidden client starts on 25 CPU-s and a cold check takes under 10 s, and a waiting hidden client costs almost no CPU.",
      "start": "2026-12-18",
      "target": "2027-01-08",
      "measures": [
       "test.parallel-sessions",
-      "test.session-ram"
+      "test.session-start-cpu",
+      "test.cold-start-check.fabric",
+      "test.server-start",
+      "plugin.server-check.warm",
+      "test.session-ram",
+      "test.session-idle-cpu",
+      "test.parallel-probe"
      ]
     },
     {
@@ -518,6 +528,11 @@
    "question": "Where do roadmap steps, targets and every number we show live?",
    "choice": "`coverage/roadmap.json` (steps, dates, targets) and `coverage/measures.json` (every number, with its history and target); ROADMAP.md and the roadmap page are generated from them",
    "date": "2026-11-06"
+  },
+  {
+   "question": "How cheap should a game check be?",
+   "choice": "5 CPU-s per check, from 49. Checks that need the game's data but not a picture stop launching the game: data-check runs the game's own code with no window and no world (Jon, 2026-11-07, instead of sharing one started game). Picture checks keep the hidden client, with graphics settings as they are",
+   "date": "2026-11-07"
   }
  ]
 }

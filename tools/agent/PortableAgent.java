@@ -19,10 +19,15 @@ public final class PortableAgent {
     private static String pauseControlError;
     private static Object lastScreen; private static long screenSince;
     private static final Map<String, Object> identity = new LinkedHashMap<String, Object>();
-    public static void premain(String args, Instrumentation instrumentation) {
+    private static boolean installed;
+    public static synchronized void premain(String args, Instrumentation instrumentation) {
         if ("legacy".equals(args) && System.getProperty("sun.java.command", "").startsWith("org.gradle.launcher.daemon.bootstrap.GradleDaemon")) return;
         GameLaunchAgent.install(instrumentation);
         if ("legacy".equals(args)) return;
+        // A launch can name this agent twice (recorded launches listed every JVM argument twice). A
+        // second set of transformers hooked every frame twice and failed on already-rewritten classes.
+        if (installed) return;
+        installed = true;
         // Only JDK classes are referenced by transformed game code. Isolated loaders
         // need neither our jar on their mod path nor access to our implementation classes.
         HotReload.install(instrumentation);
@@ -163,7 +168,8 @@ public final class PortableAgent {
             done.complete(Json.map("ok", true, "identity", identity, "screen", screen == null ? "" : screen.getClass().getName(), "inWorld", inWorld(),
                     "integratedServer", singleplayer != null, "level", hasLevel, "worldPath", singleplayer == null ? "" : worldPath(singleplayer),
                     "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput,
-                    "gameDirectory", gameDirectory(), "narrator", narrator(), "masterVolume", masterVolume()));
+                    "gameDirectory", gameDirectory(), "narrator", narrator(), "masterVolume", masterVolume(),
+                    "backgroundApplied", System.getProperty("modaccel.background.applied", ""), "backgroundError", System.getProperty("modaccel.background.error", "")));
         } else if (command.equals("resize")) {
             int width = number(request, "width"), height = number(request, "height");
             if (width < 320 || width > 7680 || height < 240 || height > 4320) throw new IllegalArgumentException("Unsupported frame size");
