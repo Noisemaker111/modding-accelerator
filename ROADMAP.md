@@ -18,7 +18,7 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
 | 4. Loaders | 0 | 0 | 0 | 3 | 2027-03-12 |
 | 5. Proof: behaviour in the real game and server | 3 | 0 | 2 | 3 | 2027-02-12 |
 | 6. Modpack compatibility | 0 | 3 | 0 | 1 | 2027-02-05 |
-| 7. Testing without Minecraft open | 1 | 1 | 3 | 1 | 2027-01-08 |
+| 7. Testing without Minecraft open | 2 | 1 | 2 | 1 | 2027-01-08 |
 
 ## Phase 1 — Neighbouring versions (1.21.x), Fabric and NeoForge
 
@@ -221,11 +221,21 @@ sessions run at once on one PC.
     10 s, and a waiting hidden client costs almost no CPU. **later**
     Starts 2026-12-18, target 2027-01-08.
 37. The real-game behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) run every
-    night in CI, not only on this PC. **next**
+    night in CI, not only on this PC. **next** — bench/behaviour_checks.sh runs both behaviour
+    checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) in a hidden, quiet client on a virtual
+    display with software OpenGL: on a fresh boat.dev Linux machine with no GPU both passed and both
+    breaks failed, 10 minutes. The nightly cloud CI job waits for Jon to approve that spending.
     Starts 2026-11-16, target 2026-12-04.
 38. pack-check records how long each stage takes and checks the shipped and the repaired pack side
-    by side. **next**
-    Starts 2026-11-09, target 2026-11-20.
+    by side. **done** — pack-check times every stage (read, static checks, each server start) and
+    starts the repaired pack's server beside the shipped one. On Prehistoric World 2 (368 mods) a
+    full check with the repair proven takes 5.1 minutes instead of 12.7, with the same findings.
+    Client-only mods a start finds are remembered, so later runs skip that extra start; a start that
+    only reads the world stops as soon as its probe is done; Simple Voice Chat gets a free port so
+    the two servers do not collide, and a start that still loses a port runs again alone; a server
+    that stops before its probe is done is reported at once instead of after the 20-minute timeout;
+    an export is unpacked once.
+    Done 2026-11-07.
 
 ## Numbers
 
@@ -264,7 +274,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Block entity in a live world, Fabric 26.3, warm | — | 2.1 s (Oct 21) | 2.5 s (hold) by Nov 27, step 34 | Met |
 | Scripted scenario + screenshot, warm game, Fabric 26.3 | — | 2.9 s (Oct 21) | 3 s (hold) by Nov 27, step 34 | Met |
 | Multiplayer scenario, warm client and server | — | 4.1 s (Oct 22) | 4 s by Nov 27, step 34 | Baseline |
-| Mods with their own behaviour asserted in a real client | — | 2 mods (Oct 26) | 4 mods by Dec 4, step 37 | Baseline |
+| Mods with their own behaviour asserted in a real client | 2 mods (Oct 26) | 2 mods (Nov 7) | 4 mods by Dec 4, step 37 | 0% of the way |
 | Memory for one hidden game session, Fabric 26.3, warm | 1.1 GB (Nov 6) | 1.0 GB (Nov 6) | 0.8 GB by Jan 8, 2027, step 36 | 36% of the way |
 | Game checks modaccel runs at once on one PC | — | not measured | 8 sessions by Jan 8, 2027, step 36 | Not measured yet |
 | CPU to start one hidden client, saved launch, Fabric 26.3, warm | 95 CPU-s (Nov 6) | 49 CPU-s (Nov 6) | 25 CPU-s by Jan 8, 2027, step 36 | 66% of the way |
@@ -295,7 +305,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Modpacks checked in the game by pack-check | — | 1 pack (Oct 30) | 5 packs by Jan 15, 2027, step 31 | Baseline |
 | Proven pack repairs pack-check knows | — | 1 repair (Oct 30) | 5 repairs by Jan 15, 2027, step 31 | Baseline |
 | Block items placed and read back in one pack | — | 14,129 items (Oct 30) | — | Fact |
-| pack-check on a 368-mod pack, shipped and repaired | — | not measured | set from the baseline by Nov 20, step 38 | Not measured yet |
+| pack-check on a 368-mod pack, shipped and repaired, warm | 12.7 min (Oct 30) | 5.1 min (Nov 7) | 4.0 min by Nov 20, step 38 | 87% of the way |
 
 ### CI
 
@@ -308,7 +318,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 14 steps (Nov 7) | 41 steps by Mar 12, 2027 | 25% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 15 steps (Nov 7) | 41 steps by Mar 12, 2027 | 28% of the way |
 
 ## Decisions
 

@@ -7,7 +7,7 @@ import java.util.*;
 public final class Modaccel {
     static final class Report {
         final Path root, directory; final String command, id = Instant.now().toString().replace(':', '-') + "-" + UUID.randomUUID().toString().substring(0, 8);
-        final long start = System.nanoTime(); final List<Object> stages = new ArrayList<>();
+        final long start = System.nanoTime(); final List<Object> stages = Collections.synchronizedList(new ArrayList<>());
         Report(Path root, String command) { this.root = root; this.command = command; directory = root.resolve(".runs/portable/" + id); }
         Path log(String name) { return directory.resolve(stages.size() + "-" + name + ".log"); }
         void stage(String name, Run.Result result, Map<String, Object> extra) {

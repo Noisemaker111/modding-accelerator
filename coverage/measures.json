@@ -322,7 +322,8 @@
    "better": "higher",
    "target": {"value": 4, "by": "2026-12-04", "step": "37"},
    "points": [
-    {"date": "2026-10-26", "value": 2, "note": "AppleSkin HUD estimate, Zombie Apocalypse AI; local only", "source": "tools/tests/AppleSkinHudCheck.java, tools/tests/ZombieAiCheck.java"}
+    {"date": "2026-10-26", "value": 2, "note": "AppleSkin HUD estimate, Zombie Apocalypse AI; local only", "source": "tools/tests/AppleSkinHudCheck.java, tools/tests/ZombieAiCheck.java"},
+    {"date": "2026-11-07", "value": 2, "note": "the same two, also on a fresh Linux machine with no GPU or screen (bench/behaviour_checks.sh on boat), each break failing; not in cloud CI until Jon approves that spending", "source": "bench/session-cost/behaviour-boat-2026-11-07.txt"}
    ]
   },
   {
@@ -578,8 +579,12 @@
    "unit": "min",
    "better": "lower",
    "machine": "jon-pc",
-   "target": {"value": null, "by": "2026-11-20", "step": "38", "note": "set once each stage is timed"},
-   "points": []
+   "condition": "warm",
+   "target": {"value": 4, "by": "2026-11-20", "step": "38", "note": "set from the first timed stages: each server start is 1.5 to 3 minutes of Forge loading 368 mods"},
+   "points": [
+    {"date": "2026-10-30", "value": 12.7, "n": 1, "note": "shipped then repaired pack, one after the other; each lane's first start found the client-only mod and started again", "source": "bench/session-cost/pack-check-2026-11-07.json"},
+    {"date": "2026-11-07", "value": 5.1, "n": 1, "note": "repaired pack beside the shipped one, client-only mod remembered, read-only starts stopped once their probe was done", "source": "bench/session-cost/pack-check-2026-11-07.json"}
+   ]
   },
   {
    "id": "ci.pr-wall",

@@ -33,7 +33,7 @@ Run builds and game launches through modaccel, never raw Gradle or a manual laun
 
 - One PR per feature or support area (e.g. "Paper plugin support", "Porting"), not one per step. Keep it a draft and add commits as steps land; the PR body is the checklist.
 - Merge when it reaches a milestone worth shipping (a new rung on SCOPE.md's ladder, or a big porting jump such as every 1.14 mod reaching 1.16), with CI green on all 3 OS. Agents merge; Jon has asked not to be waited on. Publishing a release still needs his approval.
-- PR CI finishes in under 5 minutes on every OS. A check that is slower runs nightly or on demand, not on the PR. The `budget` job in `.github/workflows/portable.yml` fails a PR run that takes longer, and every PR job has a 5-minute timeout.
+- PR CI finishes in under 5 minutes on every OS. A check that is slower runs nightly or on demand, not on the PR. The real-game behaviour checks (`bench/behaviour_checks.sh`, a hidden client on Xvfb with software OpenGL) run by hand or on boat; a cloud CI job for them waits for Jon to approve that spending. The `budget` job in `.github/workflows/portable.yml` fails a PR run that takes longer, and every PR job has a 5-minute timeout.
 - Porting work goes on one long-running branch, `porting`, merged at those jumps.
 - Small fixes outside any feature may go in one hardening/fixes PR at a time.
 - A PR body follows `.github/pull_request_template.md` and fits on one screen: a bold one-line result, before/after (a table row per change), what was checked, what is not covered. A title that needs a comma-joined list is several PRs. When a push changes what the PR does, rewrite the body in the same push.
@@ -57,7 +57,7 @@ A release is how someone without a source checkout gets modaccel. Cut one when a
 
 ## Modpacks
 
-`pack-check` runs a pack on its own Forge server. Forge 1.20.1 runs on SRG names, so the probe in `tools/packcheck` is written in Mojang names and renamed with ART; ART's `--lib` must be the Mojang-named jars or nothing is renamed. A server whose start fails keeps its JVM alive on leftover threads: stop it on the failure line, by PID. Mods marked for both sides on CurseForge can still be client-only and stop a server; leave them out and say so. Forge loads the highest version of a mod id, bundled or standalone, so a newer jar in mods/ replaces a bundled copy.
+`pack-check` runs a pack on its own Forge server. Forge 1.20.1 runs on SRG names, so the probe in `tools/packcheck` is written in Mojang names and renamed with ART; ART's `--lib` must be the Mojang-named jars or nothing is renamed. A server whose start fails keeps its JVM alive on leftover threads: stop it on the failure line, by PID. Mods marked for both sides on CurseForge can still be client-only and stop a server; leave them out and say so, and remember them in `~/.modaccel/packs/client-only.json` so no later start pays that extra start again. Every repair comes from a known fault, found before the game runs, so `--fix` starts the repaired pack's server beside the shipped one (each with its own instance folder, logs prefixed `repaired-`); keep the two lanes' findings apart. Forge loads the highest version of a mod id, bundled or standalone, so a newer jar in mods/ replaces a bundled copy.
 
 ## Resident client
 

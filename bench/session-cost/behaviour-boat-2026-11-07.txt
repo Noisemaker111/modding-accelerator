@@ -1,0 +1,13 @@
+bench/behaviour_checks.sh on a fresh boat.dev Ubuntu machine (4 cores, 8 GB, no GPU), 2026-11-07, at the PR #42 working tree after 2adfc30.
+Run: fairshare lease boat -- boat.exe run --no-env --timeout 3600 --push . -- bash bench/behaviour_checks.sh
+The client ran hidden and quiet on Xvfb (1280x720) with Mesa software OpenGL.
+
+== appleskin: exit 0 in 200 s
+PASS AppleSkin HUD (137s): PASS real natural regeneration healed +12.000001 health; AppleSkin's HUD estimated +12.000002
+PASS AppleSkin HUD break "slow regeneration estimated as +1.5 health" fails at the comparison (62s)
+== zombie port 1.21.1 -> 1.21.4: exit 0 in 229 s
+== zombie: exit 0 in 111 s
+PASS Zombie Apocalypse Addon AI (41s): PASS hunting true, berserker true, pig health 1000.0, goals [4:ZombieAttackTurtleEggGoal, 8:LookAtPlayerGoal, 8:RandomLookAroundGoal, 2:ZombieAttackGoal, 6:MoveThroughVillageGoal, 7:WaterAvoidingRandomStrollGoal, 1:ZombieEatFoodGoal, 4:ZombieMountZombieHorseGoal], target goals [1:HurtByTargetGoal, 2:NearestAttackableTargetGoal, 3:NearestAttackableTargetGoal, 3:NearestAttackableTargetGoal, 5:NearestAttackableTargetGoal, 3:ZombieHuntGoal], tags [modaccel_za, zombieapocalypseaddon_scaled], target pig
+PASS Zombie Apocalypse Addon break "no AI goals injected" fails at the check (70s)
+behaviour-checks: 2 mods, 9 min
+exit 0 · 10m 02s · default · $0.0060 · machine deleted

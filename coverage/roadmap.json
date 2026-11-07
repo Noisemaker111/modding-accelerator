@@ -472,18 +472,21 @@
      "measures": [
       "test.behaviour-checks",
       "ci.nightly-wall"
-     ]
+     ],
+     "result": "bench/behaviour_checks.sh runs both behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) in a hidden, quiet client on a virtual display with software OpenGL: on a fresh boat.dev Linux machine with no GPU both passed and both breaks failed, 10 minutes. The nightly cloud CI job waits for Jon to approve that spending."
     },
     {
      "id": "38",
      "title": "pack-check timed, and faster",
-     "status": "next",
+     "status": "done",
+     "done": "2026-11-07",
      "text": "pack-check records how long each stage takes and checks the shipped and the repaired pack side by side.",
      "start": "2026-11-09",
      "target": "2026-11-20",
      "measures": [
       "pack.check-time"
-     ]
+     ],
+     "result": "pack-check times every stage (read, static checks, each server start) and starts the repaired pack's server beside the shipped one. On Prehistoric World 2 (368 mods) a full check with the repair proven takes 5.1 minutes instead of 12.7, with the same findings. Client-only mods a start finds are remembered, so later runs skip that extra start; a start that only reads the world stops as soon as its probe is done; Simple Voice Chat gets a free port so the two servers do not collide, and a start that still loses a port runs again alone; a server that stops before its probe is done is reported at once instead of after the 20-minute timeout; an export is unpacked once."
     }
    ]
   }
