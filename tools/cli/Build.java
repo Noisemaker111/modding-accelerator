@@ -36,6 +36,7 @@ final class Build {
         report.stage("stop-daemons", result, Json.map("registry", daemons().toString())); return result;
     }
     static final int GRADLE_TIMEOUT = 900;
+    static final int NETWORK_RETRY_SECONDS = 20;
     static final String TIMEOUT_VARIABLE = "MODACCEL_GRADLE_TIMEOUT";
     /** No evaluated model yet: Gradle may still download the game, mappings and every dependency. */
     boolean coldSetup() {
@@ -154,7 +155,17 @@ final class Build {
                 report.stages.add(Json.map("name", "metadata", "cache", "hit", "seconds", 0)); return Json.read(model);
             }
         }
-        Run.Result result = gradle(planning ? List.of("-Dmodaccel.metadataMode=plan", ":modaccelMetadata") : List.of(":modaccelMetadata"), planning ? "metadata-plan" : "metadata");
+        List<String> task = planning ? List.of("-Dmodaccel.metadataMode=plan", ":modaccelMetadata") : List.of(":modaccelMetadata");
+        String stage = planning ? "metadata-plan" : "metadata";
+        Run.Result result = gradle(task, stage);
+        // The first read downloads Gradle and the build's dependencies, and the wrapper gives up after one 10 s try:
+        // on 2026-11-08 services.gradle.org timed out on CI for an hour. One more try after a pause rides that out.
+        String unreachable = result.exit() == 0 ? null : Run.unreachable(new String(Files.readAllBytes(result.log()), java.nio.charset.StandardCharsets.UTF_8).lines().toList());
+        if (unreachable != null) {
+            System.err.println("degraded: " + unreachable.substring(0, unreachable.indexOf(". ") + 1) + " Trying once more in " + NETWORK_RETRY_SECONDS + " s.");
+            Thread.sleep(NETWORK_RETRY_SECONDS * 1000L);
+            result = gradle(task, stage + "-retry");
+        }
         if (result.exit() != 0) { String why = Run.gradleFailure(result.log()); throw new IOException(discoveryHeadline(why) + "\n" + why + "\nLog: " + result.log()); }
         Map<String, Object> value = Json.read(model);
         Json.save(stamp, Json.map("key", key)); return value;

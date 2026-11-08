@@ -111,7 +111,7 @@ jobs:
         # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
-          kb=$(du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null | awk '{s+=$1} END {print s+0}')
+          kb=$( (du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null || true) | awk '{s+=$1} END {print s+0}')
           echo "kb=$kb" >> "$GITHUB_OUTPUT"
           if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
       - name: Save caches on a miss
@@ -176,7 +176,7 @@ jobs:
         # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
-          kb=$(du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null | awk '{s+=$1} END {print s+0}')
+          kb=$( (du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null || true) | awk '{s+=$1} END {print s+0}')
           echo "kb=$kb" >> "$GITHUB_OUTPUT"
           if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
       - name: Save caches on a miss, even when the check fails
@@ -247,7 +247,7 @@ jobs:
         # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
-          kb=$(du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null | awk '{s+=$1} END {print s+0}')
+          kb=$( (du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null || true) | awk '{s+=$1} END {print s+0}')
           echo "kb=$kb" >> "$GITHUB_OUTPUT"
           if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
       - name: Save caches on a miss, even when the check fails
@@ -310,7 +310,7 @@ jobs:
         # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
-          kb=$(du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null | awk '{s+=$1} END {print s+0}')
+          kb=$( (du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null || true) | awk '{s+=$1} END {print s+0}')
           echo "kb=$kb" >> "$GITHUB_OUTPUT"
           if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
       - name: Save caches on a miss, even when the node fails
