@@ -11,6 +11,7 @@ step is opened, so the page works from a local file and on GitHub Pages without 
 """
 import base64
 import gzip
+import zlib
 import json
 from pathlib import Path
 
@@ -40,19 +41,33 @@ def write_steps():
     """Each step's full change list, loaded only when someone opens that step."""
     index = json.loads((CHANGES / "index.json").read_text(encoding="utf-8"))
     STEPS.mkdir(parents=True, exist_ok=True)
-    for old in STEPS.glob("*.js"):
-        old.unlink()
-    total = 0
+    total, keep = 0, set()
     for s in index["steps"]:
         data = json.loads((CHANGES / s["file"]).read_text(encoding="utf-8"))
         data["matched"] = s["coverage"]["matched"]
         raw = json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-        b64 = base64.b64encode(gzip.compress(raw, 9, mtime=0)).decode("ascii")
         key = s["file"][:-5]
         out = STEPS / f"{key}.js"
-        out.write_bytes(f'PM.loaded("{key}","{b64}");\n'.encode("ascii"))
+        keep.add(out.name)
+        # zlib builds differ in the bytes they write for the same data (1.3.1 on Windows, 1.3 on Ubuntu), so a file
+        # whose contents are unchanged keeps its bytes: docs/ then matches coverage/ whichever machine regenerates it.
+        if step_contents(out) != raw:
+            b64 = base64.b64encode(gzip.compress(raw, 9, mtime=0)).decode("ascii")
+            out.write_bytes(f'PM.loaded("{key}","{b64}");\n'.encode("ascii"))
         total += out.stat().st_size
+    for old in STEPS.glob("*.js"):
+        if old.name not in keep:
+            old.unlink()
     return len(index["steps"]), total
+
+
+def step_contents(path):
+    """The JSON a step file carries, or None when there is no readable one."""
+    try:
+        b64 = path.read_bytes().split(b'","', 1)[1].rsplit(b'");', 1)[0]
+        return gzip.decompress(base64.b64decode(b64))
+    except (OSError, IndexError, ValueError, EOFError, zlib.error):
+        return None
 
 
 def stonecutter_items():
