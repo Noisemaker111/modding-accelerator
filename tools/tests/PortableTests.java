@@ -133,7 +133,7 @@ public final class PortableTests {
             Files.writeString(root.resolve("build.gradle"), "plugins {\n\tid 'fabric-loom' version " + (property ? "\"${loom_version}\"" : "'1.8-SNAPSHOT'") + "\n}\n");
             Files.writeString(root.resolve("gradle.properties"), property ? "loom_version=1.8-SNAPSHOT\nother=1\n" : "other=1\n");
             Files.createDirectories(root.resolve("gradle/wrapper"));
-            Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.10-bin.zip\n");
+            Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
             ProjectModel project = new ProjectModel(root);
             check(project.loomVersion().equals("1.8-SNAPSHOT"), "the Loom version is read from " + (property ? "the property the plugin line names" : "the plugin line"));
             Build build = new Build(project, home, "", new Modaccel.Report(root, "port"));
@@ -160,7 +160,7 @@ public final class PortableTests {
                 new Case("Loom layered, 1.21.6 published", "other=1\n", loomBuild, "2025.06.29", null, loomBuild.replace("parchment-1.21.1:2024.11.17", "parchment-1.21.6:2025.06.29")));
         for (Case c : cases) {
             Path root = scratch.resolve("parchment-" + c.name().replaceAll("\\W+", "-")); Files.createDirectories(root.resolve("gradle/wrapper"));
-            Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14-bin.zip\n");
+            Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
             Files.writeString(root.resolve("gradle.properties"), c.props()); Files.writeString(root.resolve("build.gradle"), c.build());
             Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
             Target.Setup setup = new Target.Setup(build, Json.map(), c.release().isEmpty() ? "26.3" : "1.21.6", List.of());
@@ -170,7 +170,7 @@ public final class PortableTests {
                     "Parchment follows the target (" + c.name() + "): " + setup.text(root.resolve("gradle.properties")).replace("\n", "|") + " / " + setup.text(root.resolve("build.gradle")).replace("\n", "|"));
         }
         Path plain = scratch.resolve("parchment-none"); Files.createDirectories(plain.resolve("gradle/wrapper"));
-        Files.writeString(plain.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14-bin.zip\n");
+        Files.writeString(plain.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
         Files.writeString(plain.resolve("gradle.properties"), "other=1\n"); Files.writeString(plain.resolve("build.gradle"), "plugins { }\n");
         Build plainBuild = new Build(new ProjectModel(plain), home, "", new Modaccel.Report(plain, "port"));
         Target.Setup untouched = new Target.Setup(plainBuild, Json.map(), "26.3", List.of());
