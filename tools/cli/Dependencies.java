@@ -210,13 +210,11 @@ final class Dependencies {
         // target, and the record says so. A selection in .modaccel/dependencies.json can name any version.
         var releases = stableFirst(listed);
         boolean preRelease = !stable(Json.object(releases.get(0)));
-        Map<String, Object> release = Json.object(releases.get(0)); String toolchainNote = null;
-        String loom = Json.text(setup.project, "loomVersion", "");
-        // The evaluated model does not carry Loom's version; the build's own files state it.
-        if (loom.isEmpty() && loader.equals("fabric")) loom = setup.build.project.loomVersion();
-        if (loader.equals("fabric") && !loom.isEmpty()) {
-            toolchainNote = loomWarning(release, builtWithLoom(setup.build, release), loom);
-            if (toolchainNote != null) System.err.println("Warning: " + toolchainNote);
+        Map<String, Object> release = Json.object(releases.get(0));
+        // The Loom each target jar was built with; Target.loomFollows raises the project's Loom to the newest of them.
+        if (loader.equals("fabric")) {
+            String built = builtWithLoom(setup.build, release);
+            if (!built.isEmpty()) setup.loomBuilt.put(Json.text(release, "version_number", group + ":" + name), built);
         }
         String published = Json.text(release, "version_number", ""), target;
         if (group.equals(MODRINTH_GROUP)) {
@@ -227,7 +225,6 @@ final class Dependencies {
         if (target.isEmpty()) throw new IOException("Published target " + published + " has no verified Maven coordinate for " + group + ":" + name);
         Map<String, Object> evidence = Json.map("sourceSha512", hash, "identity", current.getOrDefault("identity", "exact artifact hash"),
                 "publishedProject", current.get("project_id"), "publishedVersion", published, "gameVersion", to, "evidence", "published " + displayLoader(loader) + " release lists " + to);
-        if (toolchainNote != null) evidence.put("warning", toolchainNote);
         if (preRelease) evidence.put("preRelease", Json.text(release, "version_type", "pre-release") + ": " + group + ":" + name + " published no full release for " + to
                 + ", so its newest " + Json.text(release, "version_type", "pre-release") + " " + published + " was chosen. Pin another version with a selection if that is not wanted.");
         apply(setup, group, name, old, group, name, target, binary, evidence);
@@ -267,15 +264,14 @@ final class Dependencies {
         return sameGame.stream().filter(v -> number.equals(Json.text(Json.object(v), "version_number", ""))).count() > 1;
     }
     /**
-     * A release built by a newer Loom is kept, with a warning. Whether this project's Loom can read
-     * it is Gradle's to decide: a newer-Loom jar is usually readable (YACL was), and skipping it on
-     * that guess silently chose an older dependency. The jar's own Fabric-Loom-Version is the fact
-     * reported; the project's Loom version comes from its build files.
+     * A release built by a newer Loom is kept: skipping it would silently choose an older dependency.
+     * Target.loomFollows raises the project's Loom to match; this warning is for a build whose Loom
+     * version it cannot find to raise. The jar's own Fabric-Loom-Version is the fact reported.
      */
     static String loomWarning(Map<String, Object> release, String built, String loom) {
         if (built.isEmpty() || loom.isEmpty() || Versions.compare(minor(built), minor(loom)) <= 0) return null;
         return Json.text(release, "version_number", "") + " was built with Loom " + built + " (its jar's Fabric-Loom-Version), newer than this project's Loom " + loom
-                + ". It was kept: Gradle decides whether this Loom reads it. If configuration fails on that dependency's files, raise loom_version or select an older release in .modaccel/dependencies.json.";
+                + ". It was kept, and this build states its Loom version where modaccel cannot raise it: raise it by hand or select an older release in .modaccel/dependencies.json.";
     }
     /** "1.10.5" or "1.10-SNAPSHOT" -> "1.10". */
     static String minor(String version) {
@@ -290,14 +286,18 @@ final class Dependencies {
                 if (!Boolean.TRUE.equals(file.get("primary")) && Json.array(release.get("files")).size() > 1) continue;
                 String url = Json.text(file, "url", "");
                 if (!url.startsWith("https://")) continue;
-                try (var jar = new java.util.jar.JarFile(Target.download(build, url).toFile())) {
-                    var manifest = jar.getManifest();
-                    String value = manifest == null ? null : manifest.getMainAttributes().getValue("Fabric-Loom-Version");
-                    return value == null ? "" : value.trim();
-                }
+                return builtWithLoom(Target.download(build, url));
             }
         } catch (Exception unreadable) { }
         return "";
+    }
+    /** The Loom version a mod jar's manifest records (Fabric-Loom-Version), or "" when it has none. */
+    static String builtWithLoom(Path file) throws IOException {
+        try (var jar = new java.util.jar.JarFile(file.toFile())) {
+            var manifest = jar.getManifest();
+            String value = manifest == null ? null : manifest.getMainAttributes().getValue("Fabric-Loom-Version");
+            return value == null ? "" : value.trim();
+        }
     }
     /** The published version must exist in a declared Maven repository, with or without its build suffix. */
     static String mavenVersion(Target.Setup setup, String group, String name, String published) throws Exception {

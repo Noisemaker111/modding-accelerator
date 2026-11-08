@@ -129,7 +129,7 @@ final class Run {
         }
         return null;
     }
-    private static final Pattern JAVA_ERROR = Pattern.compile("^\\s*(.+\\.java):(\\d+): error: (.*)$");
+    private static final Pattern JAVA_ERROR = Pattern.compile("^\\s*" + Port.FILE + ":(\\d+): error: (.*)$");
     private static final Pattern KOTLIN_ERROR = Pattern.compile("^\\s*e: (?:file:///?)?(.+\\.kts?):(\\d+):(?:\\d+)? ?(.*)$");
     /**
      * javac and kotlinc errors as "file:line  message", with the source line, paths relative to

@@ -22,6 +22,8 @@ final class Target {
         final Map<Path, String> texts = new LinkedHashMap<>(), originals = new LinkedHashMap<>();
         final List<Map<String, Object>> applied = new ArrayList<>(), blockers = new ArrayList<>(), unchecked = new ArrayList<>();
         final List<Path> excluded = new ArrayList<>();
+        /** Target dependency (version) -> the Loom version its jar was built with. */
+        final Map<String, String> loomBuilt = new LinkedHashMap<>();
         Setup(Build build, Map<String, Object> project, String to, List<Dependencies.Selection> selections) {
             this.build = build; this.project = project; this.to = to; this.selections = selections;
         }
@@ -93,11 +95,95 @@ final class Target {
             for (int i = 0; i < nodes.getLength(); i++) { String value = nodes.item(i).getTextContent(); if (value.endsWith("+" + to)) api = value; }
             if (api.isEmpty()) throw new IOException("No published Fabric API for " + to);
             for (String key : List.of("fabric_version", "fabric_api_version")) if (pins.containsKey(key)) setup.replacements.put(key, api);
+            try {
+                String built = Dependencies.builtWithLoom(download(build, "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/" + api + "/fabric-api-" + api + ".jar"));
+                if (!built.isEmpty()) setup.loomBuilt.put("Fabric API " + api, built);
+            } catch (IOException unread) {
+                setup.unchecked.add(Json.map("artifact", "net.fabricmc.fabric-api:fabric-api", "version", api, "reason", "Its jar could not be read for the Loom it needs: " + unread.getMessage()));
+            }
         }
         Dependencies.resolve(setup);
         applyReplacements(setup, build, pins);
+        loomFollows(setup, build, to);
         manifest(setup);
         return setup;
+    }
+    /**
+     * Loom follows the target. A Fabric mod jar built by a newer Loom stops an older Loom while the build
+     * loads ("Mod was built with a newer version of Loom"), so the project's Loom rises to the newest line its
+     * target jars (Fabric API and every resolved mod) were built with, at that line's newest release on
+     * maven.fabricmc.net. Gradle then rises to the version that Loom's own module metadata requires
+     * (org.gradle.plugin.api-version). Neither is ever lowered, so a backport keeps its build tools.
+     */
+    static void loomFollows(Setup setup, Build build, String to) throws Exception {
+        String current = build.project.loomVersion(), need = "", needBy = "";
+        for (var built : setup.loomBuilt.entrySet())
+            if (need.isEmpty() || Versions.compare(Dependencies.minor(built.getValue()), Dependencies.minor(need)) > 0) { need = built.getValue(); needBy = built.getKey(); }
+        if (need.isEmpty() || current.isEmpty() || Versions.compare(Dependencies.minor(need), Dependencies.minor(current)) <= 0) {
+            if (current.isEmpty()) for (var built : setup.loomBuilt.entrySet()) {
+                String warning = Dependencies.loomWarning(Json.map("version_number", built.getKey()), built.getValue(), "(not stated)");
+                if (warning != null) System.err.println("Warning: " + warning);
+            }
+            return;
+        }
+        String line = Dependencies.minor(need), loom = newestLoom(build, line);
+        if (!loomEdit(setup, build, current, loom)) {
+            System.err.println("Warning: " + Dependencies.loomWarning(Json.map("version_number", needBy), need, current));
+            return;
+        }
+        setup.applied.add(Json.map("change", "Loom " + current + " -> " + loom + " for " + to, "evidence", needBy + " was built with Loom " + need));
+        String module = fetch(build, "https://maven.fabricmc.net/net/fabricmc/fabric-loom/" + loom + "/fabric-loom-" + loom + ".module");
+        Matcher api = Pattern.compile("\"org\\.gradle\\.plugin\\.api-version\"\\s*:\\s*\"([^\"]+)\"").matcher(module);
+        if (!api.find()) return;
+        Path wrapper = build.project.root.resolve("gradle/wrapper/gradle-wrapper.properties");
+        if (!Files.isRegularFile(wrapper)) return;
+        String text = setup.text(wrapper);
+        Matcher url = Pattern.compile("(distributionUrl=[^\\r\\n]*?gradle-)([0-9][0-9.]*(?:-rc-?\\d+)?)(-(?:bin|all)\\.zip)").matcher(text);
+        if (!url.find() || Versions.compare(url.group(2), api.group(1)) >= 0) return;
+        String gradle = api.group(1);
+        setup.replace(wrapper, url.group(0), url.group(1) + gradle + url.group(3));
+        Matcher sum = Pattern.compile("(?m)^distributionSha256Sum=\\S+").matcher(setup.text(wrapper));
+        if (sum.find()) setup.replace(wrapper, sum.group(0), "distributionSha256Sum="
+                + fetch(build, "https://services.gradle.org/distributions/gradle-" + gradle + url.group(3) + ".sha256").trim());
+        setup.applied.add(Json.map("file", wrapper.toString(), "change", "Gradle " + url.group(2) + " -> " + gradle + " for Loom " + loom,
+                "evidence", "fabric-loom " + loom + " requires Gradle " + gradle + " (org.gradle.plugin.api-version)"));
+    }
+    /** The newest release of one Loom line (e.g. 1.10 -> 1.10.5), read from maven.fabricmc.net. */
+    static String newestLoom(Build build, String line) throws Exception {
+        String xml = fetch(build, "https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml");
+        var factory = DocumentBuilderFactory.newInstance(); factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        var nodes = factory.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(java.nio.charset.StandardCharsets.UTF_8))).getElementsByTagName("version");
+        String chosen = "";
+        for (int i = 0; i < nodes.getLength(); i++) {
+            String value = nodes.item(i).getTextContent();
+            if (!value.startsWith(line + ".") || !value.matches("[0-9.]+")) continue;
+            if (chosen.isEmpty() || Versions.compare(value, chosen) > 0) chosen = value;
+        }
+        if (chosen.isEmpty()) throw new IOException("No published Fabric Loom release in the " + line + " line");
+        return chosen;
+    }
+    /** Writes the new Loom version where the build states it (the places ProjectModel.loomVersion reads); false when it cannot. */
+    static boolean loomEdit(Setup setup, Build build, String current, String loom) throws IOException {
+        Path properties = build.project.root.resolve("gradle.properties");
+        List<String> keys = new ArrayList<>(List.of("loom_version", "loomVersion", "fabric_loom_version"));
+        Pattern plugin = Pattern.compile("(id\\s*\\(?\\s*[\"'](?:fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?)[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"'])([^\"']+)([\"'])");
+        for (Path file : build.project.inputs()) {
+            String name = file.getFileName().toString();
+            if (!name.matches("(?:build|settings)\\.gradle(?:\\.kts)?")) continue;
+            Matcher found = plugin.matcher(setup.text(file));
+            if (!found.find()) continue;
+            Matcher property = Pattern.compile("^\\$\\{?(?:project\\.)?([A-Za-z_][A-Za-z0-9_]*)\\}?$").matcher(found.group(2));
+            if (property.find()) { keys.add(0, property.group(1)); break; }
+            if (!found.group(2).strip().equals(current)) continue;
+            setup.replace(file, found.group(0), found.group(1) + loom + found.group(3));
+            return true;
+        }
+        if (!Files.isRegularFile(properties)) return false;
+        for (String key : keys) {
+            Matcher pin = Pattern.compile("(?m)^([ \\t]*" + Pattern.quote(key) + "[ \\t]*=[ \\t]*)(\\S+)[ \\t]*$").matcher(setup.text(properties));
+            if (pin.find() && pin.group(2).equals(current)) { setup.replace(properties, pin.group(0), pin.group(1) + loom); return true; }
+        }
+        return false;
     }
     /**
      * NeoForge 1.21.4 split the `data` run type into clientData/serverData. A build that still

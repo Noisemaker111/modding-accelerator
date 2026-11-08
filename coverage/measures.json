@@ -62,7 +62,8 @@
    "points": [
     {"date": "2026-10-24", "value": 62, "note": "Loom and Gradle bumped by hand, before rules", "source": "coverage/ledger.json"},
     {"date": "2026-10-24", "value": 51, "note": "seven rules (Identifier, food components, debug HUD)", "source": "coverage/ledger.json"},
-    {"date": "2026-10-25", "value": 37, "note": "through the router, with the glstatemanager-opengl rule", "source": "coverage/ledger.json"}
+    {"date": "2026-10-25", "value": 37, "note": "through the router, with the glstatemanager-opengl rule", "source": "coverage/ledger.json"},
+    {"date": "2026-11-07", "value": 11, "note": "nothing by hand: build tools follow the target, render and tooltip rules; four new-code changes left", "source": "coverage/ledger.json"}
    ]
   },
   {

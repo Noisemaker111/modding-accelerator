@@ -118,5 +118,55 @@
 			"`port -Fix` applies this family automatically; the count is usually ~130 sites."
 		],
 		"note": "Mechanical once known: one sweep cleared 130 of Traveler's Backpack's 196 errors. The Or(x) helpers reproduce the old absent-key defaults, so they are drop-in."
+	},
+	{
+		"id": "hunger-exhaustion-accessor",
+		"jump": "1.21.1 -> 1.21.2",
+		"match": "symbol:\\s+method (?:getExhaustion|getExhaustionLevel)\\(\\)",
+		"title": "The hunger exhaustion getter is gone",
+		"steps": [
+			"1.21.2 removed HungerManager.getExhaustion() (FoodData.getExhaustionLevel() in official names) and setExhaustion; the value is the private float field exhaustion (exhaustionLevel).",
+			"Add a mixin accessor interface on HungerManager with @Accessor(\"exhaustion\") float getExhaustion() (and a setter only if the mod wrote it), list it in the mod's mixins json, and read it as ((ThatAccessor) hungerManager).getExhaustion().",
+			"Do not read the field by reflection: a Fabric mod runs on intermediary names outside the dev environment, so the yarn field name does not exist there."
+		],
+		"note": "coverage/changes/1.21.1__1.21.2.json records FoodData getExhaustionLevel()float and setExhaustion(float)void removed. Upstream AppleSkin 1.21.6 reads it through its own ExhaustionHelper."
+	},
+	{
+		"id": "food-effects-consumable",
+		"jump": "1.21.1 -> 1.21.2",
+		"match": "symbol:\\s+method (?:getStatusEffects|effects)\\(\\)|location: (?:class|variable \\w+ of type) FoodComponent",
+		"title": "Food effects moved to the consumable component",
+		"steps": [
+			"1.20.5 made food a data component (FoodComponent record, effects() as StatusEffectEntry); 1.21.2 moved eating effects to ConsumableComponent (DataComponentTypes.CONSUMABLE), whose onConsumeEffects() is a List<ConsumeEffect>.",
+			"An item's chance effects are the ApplyEffectsConsumeEffect entries: for each, effects() is the List<StatusEffectInstance> and probability() the chance shared by that list.",
+			"StatusEffectInstance.getEffectType() is a RegistryEntry<StatusEffect> since 1.20.5: read its category with getEffectType().value().getCategory().",
+			"FoodComponent keeps nutrition(), saturation() and canAlwaysEat(); an item that is edible has both FOOD and CONSUMABLE."
+		],
+		"note": "Yarn 1.21.6: ConsumableComponent.onConsumeEffects(), ApplyEffectsConsumeEffect.effects()/probability(), FoodComponent(int, float, boolean)."
+	},
+	{
+		"id": "client-game-rules",
+		"jump": "1.21.1 -> 1.21.2",
+		"match": "symbol:\\s+method getGameRules\\(\\)",
+		"title": "Game rules live on the server world only",
+		"steps": [
+			"1.21.2 removed getGameRules() from World and the client level's data; ServerWorld.getGameRules() remains.",
+			"Server code: cast to or take a ServerWorld. Client code has no game rules: in singleplayer read them from MinecraftClient.getServer() (the integrated server) and its world; on a remote server either sync the rule from the server or keep the vanilla default, and say which in the code.",
+			"Keep the guard's meaning: a check that used to skip work when a rule was off must still skip it when the rule is known to be off."
+		],
+		"note": "coverage/changes/1.21.1__1.21.2.json records LevelData.getGameRules removed and ServerLevel.getGameRules added."
+	},
+	{
+		"id": "custom-payload-records",
+		"jump": "1.20.4 -> 1.20.5",
+		"match": "registerGlobalReceiver|CustomPayloadS2CPacket|PacketByteBufs|constructor CustomPayload",
+		"title": "Networking moved to typed payload records",
+		"steps": [
+			"1.20.5 replaced id-plus-buffer packets with CustomPayload records. Make one record per packet that implements CustomPayload, with static final CustomPayload.Id<That> ID = new CustomPayload.Id<>(Identifier.of(namespace, path)) and getId() returning ID.",
+			"Give it a static PacketCodec<RegistryByteBuf, That> CODEC, e.g. PacketCodec.tuple(PacketCodecs.FLOAT, That::value, That::new) for one float, and register it once at startup with PayloadTypeRegistry.playS2C().register(That.ID, That.CODEC) (playC2S for client-to-server).",
+			"Send with ServerPlayNetworking.send(player, new That(value)) instead of building a CustomPayloadS2CPacket from a buffer.",
+			"Receive with ClientPlayNetworking.registerGlobalReceiver(That.ID, (payload, context) -> context.client().execute(...)): the payload arrives decoded, and the client is context.client()."
+		],
+		"note": "Fabric API networking for 1.20.5+; the yarn 1.21.6 jar declares CustomPayload.Id(Identifier) and PacketCodecs.FLOAT."
 	}
 ]

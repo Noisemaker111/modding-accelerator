@@ -266,6 +266,60 @@
       "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
     },
     {
+      "id": "neo-debug-text-entry",
+      "jump": "1.21.8 -> 1.21.9 (official names)",
+      "match": "symbol:\\s+class DebugText\\b",
+      "apply": {
+        "find": "(?s)NeoForge\\.EVENT_BUS\\.register\\(new (\\w+)\\(\\)\\);(.*?)@SubscribeEvent(\\s*)public void (\\w+)\\(CustomizeGuiOverlayEvent\\.DebugText (\\w+)\\)",
+        "replace": "// 1.21.9 removed the debug text event: registerDebugEntries adds these lines as a debug screen entry.$2@SubscribeEvent$3public static void registerDebugEntries(net.neoforged.neoforge.client.event.RegisterDebugEntriesEvent event)$3{$3\tvar id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath($1.class.getPackageName().toLowerCase(java.util.Locale.ROOT), \"$1/$4\".toLowerCase(java.util.Locale.ROOT));$3\tevent.register(id, (displayer, level, clientChunk, serverChunk) -> new $1().$4(displayer));$3\tevent.includeInProfile(id, net.minecraft.client.gui.components.debug.DebugScreenProfile.DEFAULT, net.minecraft.client.gui.components.debug.DebugScreenEntryStatus.IN_OVERLAY);$3}\n$3public void $4(net.minecraft.client.gui.components.debug.DebugScreenDisplayer $5)"
+      },
+      "scope": "log",
+      "when": "^(?![\\s\\S]*@SubscribeEvent[\\s\\S]*@SubscribeEvent)[\\s\\S]*NeoForge\\.EVENT_BUS\\.register\\(new \\w+\\(\\)\\);",
+      "note": "NeoForge 21.9 removed CustomizeGuiOverlayEvent.DebugText with vanilla's move to registered debug screen entries. The handler keeps its body and becomes the entry's display method; a static RegisterDebugEntriesEvent subscriber registers it (mod bus, collected when the mod is constructed, before client setup) and shows it in the default F3 profile, and the old game-bus register call goes. The entry id is the handler's package and class/method name. Only a class whose single subscriber is that handler and that registers one new instance of itself; anything else is left for a human (neo-debug-text guide).",
+      "verified": null,
+      "test": {
+        "error": "DebugInfoHandler.java:30: error: cannot find symbol\n\tpublic void onTextRender(CustomizeGuiOverlayEvent.DebugText textEvent)\n\t                                                 ^\n  symbol:   class DebugText\n  location: class CustomizeGuiOverlayEvent\n",
+        "before": "package squeek.appleskin.client;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;\nimport net.neoforged.neoforge.common.NeoForge;\n\n@OnlyIn(Dist.CLIENT)\npublic class DebugInfoHandler\n{\n\tpublic static void init()\n\t{\n\t\tNeoForge.EVENT_BUS.register(new DebugInfoHandler());\n\t}\n\n\t@SubscribeEvent\n\tpublic void onTextRender(CustomizeGuiOverlayEvent.DebugText textEvent)\n\t{\n\t\tif (!Minecraft.getInstance().getDebugOverlay().showDebugScreen())\n\t\t\treturn;\n\t\ttextEvent.getLeft().add(\"hunger: \" + food);\n\t}\n}\n",
+        "after": "package squeek.appleskin.client;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;\nimport net.neoforged.neoforge.common.NeoForge;\n\n@OnlyIn(Dist.CLIENT)\npublic class DebugInfoHandler\n{\n\tpublic static void init()\n\t{\n\t\t// 1.21.9 removed the debug text event: registerDebugEntries adds these lines as a debug screen entry.\n\t}\n\n\t@SubscribeEvent\n\tpublic static void registerDebugEntries(net.neoforged.neoforge.client.event.RegisterDebugEntriesEvent event)\n\t{\n\t\tvar id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(DebugInfoHandler.class.getPackageName().toLowerCase(java.util.Locale.ROOT), \"DebugInfoHandler/onTextRender\".toLowerCase(java.util.Locale.ROOT));\n\t\tevent.register(id, (displayer, level, clientChunk, serverChunk) -> new DebugInfoHandler().onTextRender(displayer));\n\t\tevent.includeInProfile(id, net.minecraft.client.gui.components.debug.DebugScreenProfile.DEFAULT, net.minecraft.client.gui.components.debug.DebugScreenEntryStatus.IN_OVERLAY);\n\t}\n\n\tpublic void onTextRender(net.minecraft.client.gui.components.debug.DebugScreenDisplayer textEvent)\n\t{\n\t\tif (!Minecraft.getInstance().getDebugOverlay().showDebugScreen())\n\t\t\treturn;\n\t\ttextEvent.getLeft().add(\"hunger: \" + food);\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "neo-debug-text-lines",
+      "jump": "1.21.8 -> 1.21.9 (official names)",
+      "match": "symbol:\\s+class DebugText\\b",
+      "apply": {
+        "find": "\\b(\\w+)\\.get(?:Left|Right)\\(\\)\\.add\\(",
+        "replace": "$1.addLine("
+      },
+      "scope": "log",
+      "when": "public void \\w+\\(net\\.minecraft\\.client\\.gui\\.components\\.debug\\.DebugScreenDisplayer \\w+\\)",
+      "note": "After neo-debug-text-entry the handler's event parameter is the debug screen displayer: a line added to the old left or right column is addLine.",
+      "verified": null,
+      "test": {
+        "error": "DebugInfoHandler.java:30: error: cannot find symbol\n\tpublic void onTextRender(CustomizeGuiOverlayEvent.DebugText textEvent)\n\t                                                 ^\n  symbol:   class DebugText\n  location: class CustomizeGuiOverlayEvent\n",
+        "before": "package squeek.appleskin.client;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;\nimport net.neoforged.neoforge.common.NeoForge;\n\n@OnlyIn(Dist.CLIENT)\npublic class DebugInfoHandler\n{\n\tpublic static void init()\n\t{\n\t\t// 1.21.9 removed the debug text event: registerDebugEntries adds these lines as a debug screen entry.\n\t}\n\n\t@SubscribeEvent\n\tpublic static void registerDebugEntries(net.neoforged.neoforge.client.event.RegisterDebugEntriesEvent event)\n\t{\n\t\tvar id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(DebugInfoHandler.class.getPackageName().toLowerCase(java.util.Locale.ROOT), \"DebugInfoHandler/onTextRender\".toLowerCase(java.util.Locale.ROOT));\n\t\tevent.register(id, (displayer, level, clientChunk, serverChunk) -> new DebugInfoHandler().onTextRender(displayer));\n\t\tevent.includeInProfile(id, net.minecraft.client.gui.components.debug.DebugScreenProfile.DEFAULT, net.minecraft.client.gui.components.debug.DebugScreenEntryStatus.IN_OVERLAY);\n\t}\n\n\tpublic void onTextRender(net.minecraft.client.gui.components.debug.DebugScreenDisplayer textEvent)\n\t{\n\t\tif (!Minecraft.getInstance().getDebugOverlay().showDebugScreen())\n\t\t\treturn;\n\t\ttextEvent.getLeft().add(\"hunger: \" + food);\n\t}\n}\n",
+        "after": "package squeek.appleskin.client;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;\nimport net.neoforged.neoforge.common.NeoForge;\n\n@OnlyIn(Dist.CLIENT)\npublic class DebugInfoHandler\n{\n\tpublic static void init()\n\t{\n\t\t// 1.21.9 removed the debug text event: registerDebugEntries adds these lines as a debug screen entry.\n\t}\n\n\t@SubscribeEvent\n\tpublic static void registerDebugEntries(net.neoforged.neoforge.client.event.RegisterDebugEntriesEvent event)\n\t{\n\t\tvar id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(DebugInfoHandler.class.getPackageName().toLowerCase(java.util.Locale.ROOT), \"DebugInfoHandler/onTextRender\".toLowerCase(java.util.Locale.ROOT));\n\t\tevent.register(id, (displayer, level, clientChunk, serverChunk) -> new DebugInfoHandler().onTextRender(displayer));\n\t\tevent.includeInProfile(id, net.minecraft.client.gui.components.debug.DebugScreenProfile.DEFAULT, net.minecraft.client.gui.components.debug.DebugScreenEntryStatus.IN_OVERLAY);\n\t}\n\n\tpublic void onTextRender(net.minecraft.client.gui.components.debug.DebugScreenDisplayer textEvent)\n\t{\n\t\tif (!Minecraft.getInstance().getDebugOverlay().showDebugScreen())\n\t\t\treturn;\n\t\ttextEvent.addLine(\"hunger: \" + food);\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "neo-debug-text-subscriber",
+      "jump": "1.21.8 -> 1.21.9 (official names)",
+      "match": "symbol:\\s+class DebugText\\b",
+      "apply": {
+        "find": "(?m)^public class ",
+        "replace": "@net.neoforged.fml.common.EventBusSubscriber(value = net.neoforged.api.distmarker.Dist.CLIENT)\npublic class "
+      },
+      "scope": "log",
+      "when": "^(?![\\s\\S]*EventBusSubscriber)[\\s\\S]*public static void registerDebugEntries\\(net\\.neoforged\\.neoforge\\.client\\.event\\.RegisterDebugEntriesEvent ",
+      "note": "The class neo-debug-text-entry rewrote is registered for its static RegisterDebugEntriesEvent subscriber by FML's automatic subscriber, on the client only, when the mod is constructed: a listener added in client setup would be too late, since the debug entries are collected as the client starts.",
+      "verified": null,
+      "test": {
+        "error": "DebugInfoHandler.java:30: error: cannot find symbol\n\tpublic void onTextRender(CustomizeGuiOverlayEvent.DebugText textEvent)\n\t                                                 ^\n  symbol:   class DebugText\n  location: class CustomizeGuiOverlayEvent\n",
+        "before": "package squeek.appleskin.client;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;\nimport net.neoforged.neoforge.common.NeoForge;\n\n@OnlyIn(Dist.CLIENT)\npublic class DebugInfoHandler\n{\n\tpublic static void init()\n\t{\n\t\t// 1.21.9 removed the debug text event: registerDebugEntries adds these lines as a debug screen entry.\n\t}\n\n\t@SubscribeEvent\n\tpublic static void registerDebugEntries(net.neoforged.neoforge.client.event.RegisterDebugEntriesEvent event)\n\t{\n\t\tvar id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(DebugInfoHandler.class.getPackageName().toLowerCase(java.util.Locale.ROOT), \"DebugInfoHandler/onTextRender\".toLowerCase(java.util.Locale.ROOT));\n\t\tevent.register(id, (displayer, level, clientChunk, serverChunk) -> new DebugInfoHandler().onTextRender(displayer));\n\t\tevent.includeInProfile(id, net.minecraft.client.gui.components.debug.DebugScreenProfile.DEFAULT, net.minecraft.client.gui.components.debug.DebugScreenEntryStatus.IN_OVERLAY);\n\t}\n\n\tpublic void onTextRender(net.minecraft.client.gui.components.debug.DebugScreenDisplayer textEvent)\n\t{\n\t\tif (!Minecraft.getInstance().getDebugOverlay().showDebugScreen())\n\t\t\treturn;\n\t\ttextEvent.addLine(\"hunger: \" + food);\n\t}\n}\n",
+        "after": "package squeek.appleskin.client;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;\nimport net.neoforged.neoforge.common.NeoForge;\n\n@OnlyIn(Dist.CLIENT)\n@net.neoforged.fml.common.EventBusSubscriber(value = net.neoforged.api.distmarker.Dist.CLIENT)\npublic class DebugInfoHandler\n{\n\tpublic static void init()\n\t{\n\t\t// 1.21.9 removed the debug text event: registerDebugEntries adds these lines as a debug screen entry.\n\t}\n\n\t@SubscribeEvent\n\tpublic static void registerDebugEntries(net.neoforged.neoforge.client.event.RegisterDebugEntriesEvent event)\n\t{\n\t\tvar id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(DebugInfoHandler.class.getPackageName().toLowerCase(java.util.Locale.ROOT), \"DebugInfoHandler/onTextRender\".toLowerCase(java.util.Locale.ROOT));\n\t\tevent.register(id, (displayer, level, clientChunk, serverChunk) -> new DebugInfoHandler().onTextRender(displayer));\n\t\tevent.includeInProfile(id, net.minecraft.client.gui.components.debug.DebugScreenProfile.DEFAULT, net.minecraft.client.gui.components.debug.DebugScreenEntryStatus.IN_OVERLAY);\n\t}\n\n\tpublic void onTextRender(net.minecraft.client.gui.components.debug.DebugScreenDisplayer textEvent)\n\t{\n\t\tif (!Minecraft.getInstance().getDebugOverlay().showDebugScreen())\n\t\t\treturn;\n\t\ttextEvent.addLine(\"hunger: \" + food);\n\t}\n}\n"
+      }
+    },
+    {
       "id": "resources-resourcelocation-identifier",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+class ResourceLocation",
@@ -322,38 +376,6 @@
       "when": "",
       "note": "26.x moved RenderType into net.minecraft.client.renderer.rendertype.",
       "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)"
-    },
-    {
-      "id": "drawtexture-seven-args",
-      "jump": "1.20.1 -> 1.21.6 (yarn)",
-      "match": "no suitable method found for drawTexture\\(Identifier,int,int,int,int,int,int\\)",
-      "apply": {
-        "find": "\\.drawTexture\\((?!RenderPipelines)(?<tex>[A-Za-z_][\\w.]*)\\s*,\\s*(?<a>[^,()]+?)\\s*,\\s*(?<b>[^,()]+?)\\s*,\\s*(?<c>[^,()]+?)\\s*,\\s*(?<d>[^,()]+?)\\s*,\\s*(?<e>[^,()]+?)\\s*,\\s*(?<f>[^,()]+?)\\)",
-        "replace": ".drawTexture(RenderPipelines.GUI_TEXTURED, ${tex}, ${a}, ${b}, ${c}, ${d}, ${e}, ${f}, 256, 256)",
-        "ensureImports": [
-          "net.minecraft.client.gl.RenderPipelines"
-        ]
-      },
-      "scope": "log",
-      "when": "",
-      "note": "1.21.6 draws with a render pipeline; the 7-argument texture call needs the GUI pipeline and the 256x256 sheet size. Matches the call shape upstream's own 1.21.6 branch uses. Calls whose arguments contain parentheses are left for a human.",
-      "verified": null
-    },
-    {
-      "id": "drawtexture-ten-args-drop-z",
-      "jump": "1.20.1 -> 1.21.6 (yarn)",
-      "match": "incompatible types: Identifier cannot be converted to RenderPipeline",
-      "apply": {
-        "find": "\\.drawTexture\\((?!RenderPipelines)(?<tex>[A-Za-z_][\\w.]*)\\s*,\\s*(?<x>[^,()]+?)\\s*,\\s*(?<y>[^,()]+?)\\s*,\\s*(?<z>[^,()]+?)\\s*,\\s*(?<u>[^,()]+?)\\s*,\\s*(?<v>[^,()]+?)\\s*,\\s*(?<w>[^,()]+?)\\s*,\\s*(?<h>[^,()]+?)\\s*,\\s*(?<tw>[^,()]+?)\\s*,\\s*(?<th>[^,()]+?)\\)",
-        "replace": ".drawTexture(RenderPipelines.GUI_TEXTURED, ${tex}, ${x}, ${y}, ${u}, ${v}, ${w}, ${h}, ${tw}, ${th})",
-        "ensureImports": [
-          "net.minecraft.client.gl.RenderPipelines"
-        ]
-      },
-      "scope": "log",
-      "when": "",
-      "note": "The 10-argument form carried a z offset that 1.21.6's pipeline draw no longer takes; upstream's 1.21.6 tooltip drops the same argument, so this rule drops it too instead of inventing a matrix push.",
-      "verified": null
     },
     {
       "id": "identifier-constructor-two-arg",
@@ -1126,6 +1148,558 @@
       "when": "",
       "note": "1.21.5 moved GlStateManager from com.mojang.blaze3d.platform to com.mojang.blaze3d.opengl (coverage/changes/1.21.4__1.21.5.json lists it removed and added, so no mapping links the two). com.mojang names are the same in every mapping set. Only the import moves: members it lost (SrcFactor, DstFactor) stay as named errors. Before this, javac stopped at the import and hid every other error.",
       "verified": null
+    },
+    {
+      "id": "gui-blit-render-type-7",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "no suitable method found for drawTexture\\(",
+      "apply": {
+        "find": "\\.drawTexture\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".drawTexture(RenderLayer::getGuiTextured, $1,$2,$3,$4,$5,$6,$7, 256, 256)"
+      },
+      "scope": "log",
+      "when": "\\bDrawContext\\b",
+      "note": "1.21.2 put the render type function first in every DrawContext.drawTexture; the 7-argument form drew from a 256x256 texture. coverage/changes/1.21.1__1.21.2.json records the four changed blit signatures.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:215: error: no suitable method found for drawTexture(Identifier,int,int,int,int,int,int)\n\t\t\tcontext.drawTexture(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n\t\t\t       ^\n",
+        "before": "context.drawTexture(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n// DrawContext\n",
+        "after": "context.drawTexture(RenderLayer::getGuiTextured, TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize, 256, 256);\n// DrawContext\n"
+      }
+    },
+    {
+      "id": "gui-blit-render-type-9",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "no suitable method found for drawTexture\\(",
+      "apply": {
+        "find": "\\.drawTexture\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".drawTexture(RenderLayer::getGuiTextured, $1,$2,$3,$4,$5,$6,$7,$8,$9)"
+      },
+      "scope": "log",
+      "when": "\\bDrawContext\\b",
+      "note": "1.21.2 put the render type function first in every DrawContext.drawTexture; the 9-argument form keeps its texture size. coverage/changes/1.21.1__1.21.2.json records the four changed blit signatures.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:215: error: no suitable method found for drawTexture(Identifier,int,int,int,int,int,int)\n\t\t\tcontext.drawTexture(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n\t\t\t       ^\n",
+        "before": "context.drawTexture(TEX, x, y, u, v, 9, 9, 64, 64);\n// DrawContext\n",
+        "after": "context.drawTexture(RenderLayer::getGuiTextured, TEX, x, y, u, v, 9, 9, 64, 64);\n// DrawContext\n"
+      }
+    },
+    {
+      "id": "gui-blit-render-type-10",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "no suitable method found for drawTexture\\(",
+      "apply": {
+        "find": "\\.drawTexture\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".drawTexture(RenderLayer::getGuiTextured, $1,$2,$3,$5,$6,$7,$8,$9,$10)"
+      },
+      "scope": "log",
+      "when": "\\bDrawContext\\b",
+      "note": "1.21.2 put the render type function first in every DrawContext.drawTexture; the 10-argument form loses its z (GUI layers are ordered by draw order). coverage/changes/1.21.1__1.21.2.json records the four changed blit signatures.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:215: error: no suitable method found for drawTexture(Identifier,int,int,int,int,int,int)\n\t\t\tcontext.drawTexture(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n\t\t\t       ^\n",
+        "before": "context.drawTexture(TextureHelper.MC_ICONS, x, y, tooltipZ, offsets.shankFull, 27, 9, 9, 256, 256);\n// DrawContext\n",
+        "after": "context.drawTexture(RenderLayer::getGuiTextured, TextureHelper.MC_ICONS, x, y, offsets.shankFull, 27, 9, 9, 256, 256);\n// DrawContext\n"
+      }
+    },
+    {
+      "id": "gui-blit-render-type-11",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "no suitable method found for drawTexture\\(",
+      "apply": {
+        "find": "\\.drawTexture\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".drawTexture(RenderLayer::getGuiTextured, $1,$2,$3,$6,$7,$4,$5,$8,$9,$10,$11)"
+      },
+      "scope": "log",
+      "when": "\\bDrawContext\\b",
+      "note": "1.21.2 put the render type function first in every DrawContext.drawTexture; the 11-argument form moves its UV ahead of its size. coverage/changes/1.21.1__1.21.2.json records the four changed blit signatures.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:215: error: no suitable method found for drawTexture(Identifier,int,int,int,int,int,int)\n\t\t\tcontext.drawTexture(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n\t\t\t       ^\n",
+        "before": "context.drawTexture(TEX, x, y, w, h, u, v, rw, rh, 256, 256);\n// DrawContext\n",
+        "after": "context.drawTexture(RenderLayer::getGuiTextured, TEX, x, y, u, v, w, h, rw, rh, 256, 256);\n// DrawContext\n"
+      }
+    },
+    {
+      "id": "gui-blit-render-pipeline",
+      "jump": "1.21.5 -> 1.21.6 (yarn)",
+      "match": "no suitable method found for drawTexture\\(|symbol:\\s+method getGuiTextured\\b",
+      "apply": {
+        "find": "\\bRenderLayer::getGuiTextured",
+        "replace": "RenderPipelines.GUI_TEXTURED",
+        "ensureImports": [
+          "net.minecraft.client.gl.RenderPipelines"
+        ]
+      },
+      "scope": "log",
+      "when": "\\bDrawContext\\b",
+      "note": "1.21.6 replaced the render type function of DrawContext.drawTexture with a RenderPipeline; the textured GUI one is RenderPipelines.GUI_TEXTURED. coverage/changes/1.21.5__1.21.6.json records blit(Function,...) -> blit(RenderPipeline,...).",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:215: error: no suitable method found for drawTexture(Identifier,int,int,int,int,int,int)\n\t\t\tcontext.drawTexture(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n\t\t\t       ^\n",
+        "before": "package a;\nclass H { void f(DrawContext context) { context.drawTexture(RenderLayer::getGuiTextured, TEX, x, y, u, v, 9, 9, 256, 256); } }\n",
+        "after": "package a;\nimport net.minecraft.client.gl.RenderPipelines;\nclass H { void f(DrawContext context) { context.drawTexture(RenderPipelines.GUI_TEXTURED, TEX, x, y, u, v, 9, 9, 256, 256); } }\n"
+      }
+    },
+    {
+      "id": "shader-color-field",
+      "jump": "1.21.5 -> 1.21.6 (yarn)",
+      "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
+      "apply": {
+        "find": "RenderSystem\\.setShaderColor\\(\\s*((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\s*,\\s*((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\s*,\\s*((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\s*,\\s*((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\s*\\)",
+        "replace": "guiShaderColor = net.minecraft.util.math.ColorHelper.fromFloats($4, $1, $2, $3)"
+      },
+      "scope": "log",
+      "when": "\\bDrawContext\\b",
+      "note": "1.21.6 removed RenderSystem.setShaderColor. The colour it set is kept in the class's guiShaderColor (ARGB, from the same four floats) and passed to each GUI draw call by shader-color-draws; shader-color-declare adds the field. coverage/changes/1.21.5__1.21.6.json records setShaderColor(float,float,float,float) removed.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:265: error: cannot find symbol\n\t\t\tRenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha * 0.25F);\n\t\t\t            ^\n  symbol:   method setShaderColor(float,float,float,float)\n  location: class RenderSystem\n",
+        "before": "\t\tRenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha * 0.25F);\n// DrawContext\n",
+        "after": "\t\tguiShaderColor = net.minecraft.util.math.ColorHelper.fromFloats(alpha * 0.25F, 1.0F, 1.0F, 1.0F);\n// DrawContext\n"
+      }
+    },
+    {
+      "id": "shader-color-declare",
+      "jump": "1.21.5 -> 1.21.6 (yarn)",
+      "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
+      "apply": {
+        "find": "(?m)^((?:public |final |abstract )*class \\w+[^{;]*\\{)",
+        "replace": "$1\n\t// RenderSystem.setShaderColor is gone in 1.21.6: the colour it set is passed to each draw call.\n\tprivate static int guiShaderColor = 0xFFFFFFFF;\n"
+      },
+      "scope": "log",
+      "when": "^(?![\\s\\S]*int guiShaderColor)[\\s\\S]*guiShaderColor = ",
+      "note": "Declares the guiShaderColor that shader-color-field assigns, opaque white like the shader colour's default.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:265: error: cannot find symbol\n\t\t\tRenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha * 0.25F);\n\t\t\t            ^\n  symbol:   method setShaderColor(float,float,float,float)\n  location: class RenderSystem\n",
+        "before": "package a;\n\npublic class HUD\n{\n\tvoid f() { guiShaderColor = 0; }\n}\n",
+        "after": "package a;\n\npublic class HUD\n{\n\t// RenderSystem.setShaderColor is gone in 1.21.6: the colour it set is passed to each draw call.\n\tprivate static int guiShaderColor = 0xFFFFFFFF;\n\n\tvoid f() { guiShaderColor = 0; }\n}\n"
+      }
+    },
+    {
+      "id": "shader-color-draws",
+      "jump": "1.21.5 -> 1.21.6 (yarn)",
+      "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
+      "apply": {
+        "find": "\\.((?:drawTexture\\(RenderPipelines\\.GUI_TEXTURED,((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+))|(?:drawGuiTexture\\(RenderPipelines\\.GUI_TEXTURED,((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)))\\)",
+        "replace": ".$1, guiShaderColor)"
+      },
+      "scope": "log",
+      "when": "int guiShaderColor",
+      "note": "Each textured GUI draw without a colour of its own takes the shader colour that used to tint it (drawTexture with a texture size, and drawGuiTexture).",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:265: error: cannot find symbol\n\t\t\tRenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha * 0.25F);\n\t\t\t            ^\n  symbol:   method setShaderColor(float,float,float,float)\n  location: class RenderSystem\n",
+        "before": "int guiShaderColor;\ncontext.drawTexture(RenderPipelines.GUI_TEXTURED, TEX, x, y, u, v, 9, 9, 256, 256);\ncontext.drawGuiTexture(RenderPipelines.GUI_TEXTURED, SPRITE, x, y, 9, 9);\n",
+        "after": "int guiShaderColor;\ncontext.drawTexture(RenderPipelines.GUI_TEXTURED, TEX, x, y, u, v, 9, 9, 256, 256, guiShaderColor);\ncontext.drawGuiTexture(RenderPipelines.GUI_TEXTURED, SPRITE, x, y, 9, 9, guiShaderColor);\n"
+      }
+    },
+    {
+      "id": "gui-blit-render-type-7-official",
+      "jump": "1.21.1 -> 1.21.2 (official names)",
+      "match": "no suitable method found for blit\\(",
+      "apply": {
+        "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".blit(RenderType::guiTextured, $1,$2,$3,$4,$5,$6,$7, 256, 256)"
+      },
+      "scope": "log",
+      "when": "\\bGuiGraphics\\b",
+      "note": "1.21.2 put the render type function first in every GuiGraphics.blit; the 7-argument form drew from a 256x256 texture. coverage/changes/1.21.1__1.21.2.json records the four changed blit signatures.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:215: error: no suitable method found for blit(ResourceLocation,int,int,int,int,int,int)\n\t\t\tcontext.blit(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n\t\t\t       ^\n",
+        "before": "context.blit(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n// GuiGraphics\n",
+        "after": "context.blit(RenderType::guiTextured, TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize, 256, 256);\n// GuiGraphics\n"
+      }
+    },
+    {
+      "id": "gui-blit-render-type-9-official",
+      "jump": "1.21.1 -> 1.21.2 (official names)",
+      "match": "no suitable method found for blit\\(",
+      "apply": {
+        "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".blit(RenderType::guiTextured, $1,$2,$3,$4,$5,$6,$7,$8,$9)"
+      },
+      "scope": "log",
+      "when": "\\bGuiGraphics\\b",
+      "note": "1.21.2 put the render type function first in every GuiGraphics.blit; the 9-argument form keeps its texture size. coverage/changes/1.21.1__1.21.2.json records the four changed blit signatures.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:215: error: no suitable method found for blit(ResourceLocation,int,int,int,int,int,int)\n\t\t\tcontext.blit(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n\t\t\t       ^\n",
+        "before": "context.blit(TEX, x, y, u, v, 9, 9, 64, 64);\n// GuiGraphics\n",
+        "after": "context.blit(RenderType::guiTextured, TEX, x, y, u, v, 9, 9, 64, 64);\n// GuiGraphics\n"
+      }
+    },
+    {
+      "id": "gui-blit-render-type-10-official",
+      "jump": "1.21.1 -> 1.21.2 (official names)",
+      "match": "no suitable method found for blit\\(",
+      "apply": {
+        "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".blit(RenderType::guiTextured, $1,$2,$3,$5,$6,$7,$8,$9,$10)"
+      },
+      "scope": "log",
+      "when": "\\bGuiGraphics\\b",
+      "note": "1.21.2 put the render type function first in every GuiGraphics.blit; the 10-argument form loses its z (GUI layers are ordered by draw order). coverage/changes/1.21.1__1.21.2.json records the four changed blit signatures.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:215: error: no suitable method found for blit(ResourceLocation,int,int,int,int,int,int)\n\t\t\tcontext.blit(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n\t\t\t       ^\n",
+        "before": "context.blit(TextureHelper.MC_ICONS, x, y, tooltipZ, offsets.shankFull, 27, 9, 9, 256, 256);\n// GuiGraphics\n",
+        "after": "context.blit(RenderType::guiTextured, TextureHelper.MC_ICONS, x, y, offsets.shankFull, 27, 9, 9, 256, 256);\n// GuiGraphics\n"
+      }
+    },
+    {
+      "id": "gui-blit-render-type-11-official",
+      "jump": "1.21.1 -> 1.21.2 (official names)",
+      "match": "no suitable method found for blit\\(",
+      "apply": {
+        "find": "\\.blit\\((?!\\s*(?:RenderLayer::|RenderType::|RenderPipelines\\.|net\\.minecraft))((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": ".blit(RenderType::guiTextured, $1,$2,$3,$6,$7,$4,$5,$8,$9,$10,$11)"
+      },
+      "scope": "log",
+      "when": "\\bGuiGraphics\\b",
+      "note": "1.21.2 put the render type function first in every GuiGraphics.blit; the 11-argument form moves its UV ahead of its size. coverage/changes/1.21.1__1.21.2.json records the four changed blit signatures.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:215: error: no suitable method found for blit(ResourceLocation,int,int,int,int,int,int)\n\t\t\tcontext.blit(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n\t\t\t       ^\n",
+        "before": "context.blit(TEX, x, y, w, h, u, v, rw, rh, 256, 256);\n// GuiGraphics\n",
+        "after": "context.blit(RenderType::guiTextured, TEX, x, y, u, v, w, h, rw, rh, 256, 256);\n// GuiGraphics\n"
+      }
+    },
+    {
+      "id": "gui-blit-render-pipeline-official",
+      "jump": "1.21.5 -> 1.21.6 (official names)",
+      "match": "no suitable method found for blit\\(|symbol:\\s+method guiTextured\\b",
+      "apply": {
+        "find": "\\bRenderType::guiTextured",
+        "replace": "RenderPipelines.GUI_TEXTURED",
+        "ensureImports": [
+          "net.minecraft.client.renderer.RenderPipelines"
+        ]
+      },
+      "scope": "log",
+      "when": "\\bGuiGraphics\\b",
+      "note": "1.21.6 replaced the render type function of GuiGraphics.blit with a RenderPipeline; the textured GUI one is RenderPipelines.GUI_TEXTURED. coverage/changes/1.21.5__1.21.6.json records blit(Function,...) -> blit(RenderPipeline,...).",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:215: error: no suitable method found for blit(ResourceLocation,int,int,int,int,int,int)\n\t\t\tcontext.blit(TextureHelper.MOD_ICONS, x, y, u, v, iconSize, iconSize);\n\t\t\t       ^\n",
+        "before": "package a;\nclass H { void f(GuiGraphics context) { context.blit(RenderType::guiTextured, TEX, x, y, u, v, 9, 9, 256, 256); } }\n",
+        "after": "package a;\nimport net.minecraft.client.renderer.RenderPipelines;\nclass H { void f(GuiGraphics context) { context.blit(RenderPipelines.GUI_TEXTURED, TEX, x, y, u, v, 9, 9, 256, 256); } }\n"
+      }
+    },
+    {
+      "id": "shader-color-field-official",
+      "jump": "1.21.5 -> 1.21.6 (official names)",
+      "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
+      "apply": {
+        "find": "RenderSystem\\.setShaderColor\\(\\s*((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\s*,\\s*((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\s*,\\s*((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\s*,\\s*((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\s*\\)",
+        "replace": "guiShaderColor = net.minecraft.util.ARGB.colorFromFloat($4, $1, $2, $3)"
+      },
+      "scope": "log",
+      "when": "\\bGuiGraphics\\b",
+      "note": "1.21.6 removed RenderSystem.setShaderColor. The colour it set is kept in the class's guiShaderColor (ARGB, from the same four floats) and passed to each GUI draw call by shader-color-draws; shader-color-declare adds the field. coverage/changes/1.21.5__1.21.6.json records setShaderColor(float,float,float,float) removed.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:265: error: cannot find symbol\n\t\t\tRenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha * 0.25F);\n\t\t\t            ^\n  symbol:   method setShaderColor(float,float,float,float)\n  location: class RenderSystem\n",
+        "before": "\t\tRenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha * 0.25F);\n// GuiGraphics\n",
+        "after": "\t\tguiShaderColor = net.minecraft.util.ARGB.colorFromFloat(alpha * 0.25F, 1.0F, 1.0F, 1.0F);\n// GuiGraphics\n"
+      }
+    },
+    {
+      "id": "shader-color-declare-official",
+      "jump": "1.21.5 -> 1.21.6 (official names)",
+      "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
+      "apply": {
+        "find": "(?m)^((?:public |final |abstract )*class \\w+[^{;]*\\{)",
+        "replace": "$1\n\t// RenderSystem.setShaderColor is gone in 1.21.6: the colour it set is passed to each draw call.\n\tprivate static int guiShaderColor = 0xFFFFFFFF;\n"
+      },
+      "scope": "log",
+      "when": "^(?![\\s\\S]*int guiShaderColor)[\\s\\S]*guiShaderColor = ",
+      "note": "Declares the guiShaderColor that shader-color-field assigns, opaque white like the shader colour's default.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:265: error: cannot find symbol\n\t\t\tRenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha * 0.25F);\n\t\t\t            ^\n  symbol:   method setShaderColor(float,float,float,float)\n  location: class RenderSystem\n",
+        "before": "package a;\n\npublic class HUD\n{\n\tvoid f() { guiShaderColor = 0; }\n}\n",
+        "after": "package a;\n\npublic class HUD\n{\n\t// RenderSystem.setShaderColor is gone in 1.21.6: the colour it set is passed to each draw call.\n\tprivate static int guiShaderColor = 0xFFFFFFFF;\n\n\tvoid f() { guiShaderColor = 0; }\n}\n"
+      }
+    },
+    {
+      "id": "shader-color-draws-official",
+      "jump": "1.21.5 -> 1.21.6 (official names)",
+      "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
+      "apply": {
+        "find": "\\.((?:blit\\(RenderPipelines\\.GUI_TEXTURED,((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+))|(?:blitSprite\\(RenderPipelines\\.GUI_TEXTURED,((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)))\\)",
+        "replace": ".$1, guiShaderColor)"
+      },
+      "scope": "log",
+      "when": "int guiShaderColor",
+      "note": "Each textured GUI draw without a colour of its own takes the shader colour that used to tint it (blit with a texture size, and blitSprite).",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:265: error: cannot find symbol\n\t\t\tRenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha * 0.25F);\n\t\t\t            ^\n  symbol:   method setShaderColor(float,float,float,float)\n  location: class RenderSystem\n",
+        "before": "int guiShaderColor;\ncontext.blit(RenderPipelines.GUI_TEXTURED, TEX, x, y, u, v, 9, 9, 256, 256);\ncontext.blitSprite(RenderPipelines.GUI_TEXTURED, SPRITE, x, y, 9, 9);\n",
+        "after": "int guiShaderColor;\ncontext.blit(RenderPipelines.GUI_TEXTURED, TEX, x, y, u, v, 9, 9, 256, 256, guiShaderColor);\ncontext.blitSprite(RenderPipelines.GUI_TEXTURED, SPRITE, x, y, 9, 9, guiShaderColor);\n"
+      }
+    },
+    {
+      "id": "render-state-in-pipeline-guarded",
+      "jump": "1.21.4 -> 1.21.5",
+      "match": "symbol:\\s+method (?:enableBlend|disableBlend|defaultBlendFunc|blendFunc|blendFuncSeparate|enableDepthTest|disableDepthTest|depthMask|enableCull|disableCull)\\(",
+      "apply": {
+        "find": "(\\b(?:if\\s*\\((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))*\\)|else)\\s*)RenderSystem\\.(?:enableBlend|disableBlend|defaultBlendFunc|blendFunc|blendFuncSeparate|enableDepthTest|disableDepthTest|depthMask|enableCull|disableCull)\\((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))*\\);",
+        "replace": "$1{ } // 1.21.5: the draw call's pipeline sets this state"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "A blend, depth or cull call that is the whole body of an if or else becomes an empty block, so the statement after it does not fall under the condition. coverage/changes/1.21.4__1.21.5.json records these RenderSystem methods removed.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:378: error: cannot find symbol\n\t\tRenderSystem.enableBlend();\n\t\t            ^\n  symbol:   method enableBlend()\n  location: class RenderSystem\n",
+        "before": "\t\tif (needDisableBlend)\n\t\t\tRenderSystem.disableBlend();\n\t}\n",
+        "after": "\t\tif (needDisableBlend)\n\t\t\t{ } // 1.21.5: the draw call's pipeline sets this state\n\t}\n"
+      }
+    },
+    {
+      "id": "render-state-in-pipeline",
+      "jump": "1.21.4 -> 1.21.5",
+      "match": "symbol:\\s+method (?:enableBlend|disableBlend|defaultBlendFunc|blendFunc|blendFuncSeparate|enableDepthTest|disableDepthTest|depthMask|enableCull|disableCull)\\(",
+      "apply": {
+        "find": "(?m)^[ \\t]*RenderSystem\\.(?:enableBlend|disableBlend|defaultBlendFunc|blendFunc|blendFuncSeparate|enableDepthTest|disableDepthTest|depthMask|enableCull|disableCull)\\((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))*\\);[ \\t]*\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.5 removed RenderSystem's blend, depth and cull switches: GUI and world draws get them from their render pipeline (GUI_TEXTURED blends), so the lines go. coverage/changes/1.21.4__1.21.5.json records these RenderSystem methods removed.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:378: error: cannot find symbol\n\t\tRenderSystem.enableBlend();\n\t\t            ^\n  symbol:   method enableBlend()\n  location: class RenderSystem\n",
+        "before": "\t\tRenderSystem.enableBlend();\n\t\tRenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);\n\t\tdraw();\n\t\tRenderSystem.disableDepthTest();\n",
+        "after": "\t\tdraw();\n"
+      }
+    },
+    {
+      "id": "shader-texture-id-binding",
+      "jump": "1.21.4 -> 1.21.5",
+      "match": "(?:Identifier|ResourceLocation) cannot be converted to GpuTexture",
+      "apply": {
+        "find": "(?m)^[ \\t]*RenderSystem\\.setShaderTexture\\(\\s*\\d+\\s*,\\s*[A-Za-z_][\\w.]*\\s*\\);[ \\t]*\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "\\b(?:DrawContext|GuiGraphics)\\b",
+      "note": "1.21.5 changed RenderSystem.setShaderTexture(int, id) to take a GpuTexture. In GUI code the binding only prepared the next draw, which now names its own texture, so a binding of a texture id (a field or constant) goes. coverage/changes/1.21.4__1.21.5.json records setShaderTexture(int,GpuTexture) added.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:219: error: incompatible types: Identifier cannot be converted to GpuTextureView\n\t\tRenderSystem.setShaderTexture(0, TextureHelper.MC_ICONS);\n",
+        "before": "\t\tRenderSystem.setShaderTexture(0, TextureHelper.MC_ICONS);\n\t\tcontext.drawTexture(x);\n// DrawContext\n",
+        "after": "\t\tcontext.drawTexture(x);\n// DrawContext\n"
+      }
+    },
+    {
+      "id": "shader-texture-view",
+      "jump": "1.21.5 -> 1.21.6 (yarn)",
+      "match": "GpuTexture cannot be converted to GpuTextureView",
+      "apply": {
+        "find": "(RenderSystem\\.setShaderTexture\\(\\s*\\d+\\s*,\\s*(?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\.getGlTexture\\(\\)\\)",
+        "replace": "$1.getGlTextureView())"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.6 binds shader textures as GpuTextureView; an AbstractTexture's view is getGlTextureView(). coverage/changes/1.21.5__1.21.6.json records setShaderTexture(int,GpuTexture) -> setShaderTexture(int,GpuTextureView) and AbstractTexture.getTextureView added.",
+      "verified": null,
+      "test": {
+        "error": "R.java:9: error: incompatible types: GpuTexture cannot be converted to GpuTextureView\n",
+        "before": "RenderSystem.setShaderTexture(0, texture.getGlTexture());\n",
+        "after": "RenderSystem.setShaderTexture(0, texture.getGlTextureView());\n"
+      }
+    },
+    {
+      "id": "shader-texture-view-official",
+      "jump": "1.21.5 -> 1.21.6 (official names)",
+      "match": "GpuTexture cannot be converted to GpuTextureView",
+      "apply": {
+        "find": "(RenderSystem\\.setShaderTexture\\(\\s*\\d+\\s*,\\s*(?:[^,;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\.getTexture\\(\\)\\)",
+        "replace": "$1.getTextureView())"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.6 binds shader textures as GpuTextureView; an AbstractTexture's view is getTextureView(). coverage/changes/1.21.5__1.21.6.json records setShaderTexture(int,GpuTexture) -> setShaderTexture(int,GpuTextureView) and AbstractTexture.getTextureView added.",
+      "verified": null,
+      "test": {
+        "error": "R.java:9: error: incompatible types: GpuTexture cannot be converted to GpuTextureView\n",
+        "before": "RenderSystem.setShaderTexture(0, texture.getTexture());\n",
+        "after": "RenderSystem.setShaderTexture(0, texture.getTextureView());\n"
+      }
+    },
+    {
+      "id": "text-content-empty",
+      "jump": "1.20.2 -> 1.20.3 (yarn)",
+      "match": "symbol:\\s+variable EMPTY\\s+location: (?:class|interface) TextContent\\b",
+      "apply": {
+        "find": "\\bTextContent\\.EMPTY\\b",
+        "replace": "PlainTextContent.EMPTY",
+        "ensureImports": [
+          "net.minecraft.text.PlainTextContent"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.20.3 removed TextContent.EMPTY; the empty contents are PlainTextContent.EMPTY. coverage/changes/1.20.2__1.20.3.json records ComponentContents.EMPTY removed and PlainTextContents added.",
+      "verified": null,
+      "test": {
+        "error": "T.java:91: error: cannot find symbol\n\t\t\treturn TextContent.EMPTY;\n\t\t\t                  ^\n  symbol:   variable EMPTY\n  location: interface TextContent\n",
+        "before": "package a;\n\nclass T {\n\tObject f() { return TextContent.EMPTY; }\n}\n",
+        "after": "package a;\nimport net.minecraft.text.PlainTextContent;\n\nclass T {\n\tObject f() { return PlainTextContent.EMPTY; }\n}\n"
+      }
+    },
+    {
+      "id": "tooltip-component-height-font",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "does not override abstract method getHeight\\(TextRenderer\\) in TooltipComponent",
+      "apply": {
+        "find": "\\bpublic int getHeight\\(\\s*\\)",
+        "replace": "public int getHeight(TextRenderer textRenderer)"
+      },
+      "scope": "log",
+      "when": "\\bimplements\\b[^{]*\\bTooltipComponent\\b",
+      "note": "1.21.2 gave TooltipComponent.getHeight the font, like getWidth. coverage/changes/1.21.1__1.21.2.json records getHeight()int -> getHeight(Font)int.",
+      "verified": null,
+      "test": {
+        "error": "T.java:126: error: FoodOverlay is not abstract and does not override abstract method getHeight(TextRenderer) in TooltipComponent\n\tpublic static class FoodOverlay implements TooltipComponent\n",
+        "before": "class FoodOverlay implements TooltipComponent {\n\t@Override\n\tpublic int getHeight()\n\t{\n\t\treturn 10;\n\t}\n}\n",
+        "after": "class FoodOverlay implements TooltipComponent {\n\t@Override\n\tpublic int getHeight(TextRenderer textRenderer)\n\t{\n\t\treturn 10;\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "tooltip-component-image-size",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "does not override abstract method getHeight\\(TextRenderer\\) in TooltipComponent|method does not override or implement a method from a supertype",
+      "apply": {
+        "find": "\\bpublic void drawItems\\(\\s*TextRenderer\\s+(\\w+)\\s*,\\s*int\\s+(\\w+)\\s*,\\s*int\\s+(\\w+)\\s*,\\s*DrawContext\\s+(\\w+)\\s*\\)",
+        "replace": "public void drawItems(TextRenderer $1, int $2, int $3, int tooltipWidth, int tooltipHeight, DrawContext $4)"
+      },
+      "scope": "log",
+      "when": "\\bimplements\\b[^{]*\\bTooltipComponent\\b",
+      "note": "1.21.2 passes the tooltip's width and height to TooltipComponent.drawItems. coverage/changes/1.21.1__1.21.2.json records renderImage(Font,int,int,GuiGraphics) -> renderImage(Font,int,int,int,int,GuiGraphics).",
+      "verified": null,
+      "test": {
+        "error": "T.java:126: error: FoodOverlay is not abstract and does not override abstract method getHeight(TextRenderer) in TooltipComponent\n\tpublic static class FoodOverlay implements TooltipComponent\n",
+        "before": "class FoodOverlay implements TooltipComponent {\n\t@Override\n\tpublic void drawItems(TextRenderer textRenderer, int x, int y, DrawContext context)\n\t{\n\t}\n}\n",
+        "after": "class FoodOverlay implements TooltipComponent {\n\t@Override\n\tpublic void drawItems(TextRenderer textRenderer, int x, int y, int tooltipWidth, int tooltipHeight, DrawContext context)\n\t{\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "texture-bind-in-draw",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+method bindTexture\\(Identifier\\)",
+      "apply": {
+        "find": "(?m)^[ \\t]*[\\w.()]*getTextureManager\\(\\)\\.bindTexture\\(\\s*[A-Za-z_][\\w.]*\\s*\\);[ \\t]*\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "\\bDrawContext\\b",
+      "note": "1.21.2 removed TextureManager.bindTexture. In GUI code the bind only prepared the next draw, which names its own texture, so the line goes. coverage/changes/1.21.1__1.21.2.json records TextureManager.bindForSetup(ResourceLocation) removed.",
+      "verified": null,
+      "test": {
+        "error": "H.java:284: error: cannot find symbol\n\t\tmc.getTextureManager().bindTexture(TextureHelper.MC_ICONS);\n\t\t                      ^\n  symbol:   method bindTexture(Identifier)\n  location: class TextureManager\n",
+        "before": "\t\tenableAlpha(alpha);\n\t\tmc.getTextureManager().bindTexture(TextureHelper.MC_ICONS);\n\t\tdraw(context);\n// DrawContext\n",
+        "after": "\t\tenableAlpha(alpha);\n\t\tdraw(context);\n// DrawContext\n"
+      }
+    },
+    {
+      "id": "text-content-empty-official",
+      "jump": "1.20.2 -> 1.20.3 (official names)",
+      "match": "symbol:\\s+variable EMPTY\\s+location: (?:class|interface) ComponentContents\\b",
+      "apply": {
+        "find": "\\bComponentContents\\.EMPTY\\b",
+        "replace": "PlainTextContents.EMPTY",
+        "ensureImports": [
+          "net.minecraft.network.chat.contents.PlainTextContents"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.20.3 removed ComponentContents.EMPTY; the empty contents are PlainTextContents.EMPTY. coverage/changes/1.20.2__1.20.3.json records ComponentContents.EMPTY removed and PlainTextContents added.",
+      "verified": null,
+      "test": {
+        "error": "T.java:91: error: cannot find symbol\n\t\t\treturn ComponentContents.EMPTY;\n\t\t\t                  ^\n  symbol:   variable EMPTY\n  location: interface ComponentContents\n",
+        "before": "package a;\n\nclass T {\n\tObject f() { return ComponentContents.EMPTY; }\n}\n",
+        "after": "package a;\nimport net.minecraft.network.chat.contents.PlainTextContents;\n\nclass T {\n\tObject f() { return PlainTextContents.EMPTY; }\n}\n"
+      }
+    },
+    {
+      "id": "tooltip-component-height-font-official",
+      "jump": "1.21.1 -> 1.21.2 (official names)",
+      "match": "does not override abstract method getHeight\\(Font\\) in ClientTooltipComponent",
+      "apply": {
+        "find": "\\bpublic int getHeight\\(\\s*\\)",
+        "replace": "public int getHeight(Font font)"
+      },
+      "scope": "log",
+      "when": "\\bimplements\\b[^{]*\\bClientTooltipComponent\\b",
+      "note": "1.21.2 gave ClientTooltipComponent.getHeight the font, like getWidth. coverage/changes/1.21.1__1.21.2.json records getHeight()int -> getHeight(Font)int.",
+      "verified": null,
+      "test": {
+        "error": "T.java:126: error: FoodOverlay is not abstract and does not override abstract method getHeight(Font) in ClientTooltipComponent\n\tpublic static class FoodOverlay implements ClientTooltipComponent\n",
+        "before": "class FoodOverlay implements ClientTooltipComponent {\n\t@Override\n\tpublic int getHeight()\n\t{\n\t\treturn 10;\n\t}\n}\n",
+        "after": "class FoodOverlay implements ClientTooltipComponent {\n\t@Override\n\tpublic int getHeight(Font font)\n\t{\n\t\treturn 10;\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "tooltip-component-image-size-official",
+      "jump": "1.21.1 -> 1.21.2 (official names)",
+      "match": "does not override abstract method getHeight\\(Font\\) in ClientTooltipComponent|method does not override or implement a method from a supertype",
+      "apply": {
+        "find": "\\bpublic void renderImage\\(\\s*Font\\s+(\\w+)\\s*,\\s*int\\s+(\\w+)\\s*,\\s*int\\s+(\\w+)\\s*,\\s*GuiGraphics\\s+(\\w+)\\s*\\)",
+        "replace": "public void renderImage(Font $1, int $2, int $3, int tooltipWidth, int tooltipHeight, GuiGraphics $4)"
+      },
+      "scope": "log",
+      "when": "\\bimplements\\b[^{]*\\bClientTooltipComponent\\b",
+      "note": "1.21.2 passes the tooltip's width and height to ClientTooltipComponent.renderImage. coverage/changes/1.21.1__1.21.2.json records renderImage(Font,int,int,GuiGraphics) -> renderImage(Font,int,int,int,int,GuiGraphics).",
+      "verified": null,
+      "test": {
+        "error": "T.java:126: error: FoodOverlay is not abstract and does not override abstract method getHeight(Font) in ClientTooltipComponent\n\tpublic static class FoodOverlay implements ClientTooltipComponent\n",
+        "before": "class FoodOverlay implements ClientTooltipComponent {\n\t@Override\n\tpublic void renderImage(Font font, int x, int y, GuiGraphics context)\n\t{\n\t}\n}\n",
+        "after": "class FoodOverlay implements ClientTooltipComponent {\n\t@Override\n\tpublic void renderImage(Font font, int x, int y, int tooltipWidth, int tooltipHeight, GuiGraphics context)\n\t{\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "texture-bind-in-draw-official",
+      "jump": "1.21.1 -> 1.21.2 (official names)",
+      "match": "symbol:\\s+method bindForSetup\\(ResourceLocation\\)",
+      "apply": {
+        "find": "(?m)^[ \\t]*[\\w.()]*getTextureManager\\(\\)\\.bindForSetup\\(\\s*[A-Za-z_][\\w.]*\\s*\\);[ \\t]*\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "\\bGuiGraphics\\b",
+      "note": "1.21.2 removed TextureManager.bindForSetup. In GUI code the bind only prepared the next draw, which names its own texture, so the line goes. coverage/changes/1.21.1__1.21.2.json records TextureManager.bindForSetup(ResourceLocation) removed.",
+      "verified": null,
+      "test": {
+        "error": "H.java:284: error: cannot find symbol\n\t\tmc.getTextureManager().bindForSetup(TextureHelper.MC_ICONS);\n\t\t                      ^\n  symbol:   method bindForSetup(ResourceLocation)\n  location: class TextureManager\n",
+        "before": "\t\tenableAlpha(alpha);\n\t\tmc.getTextureManager().bindForSetup(TextureHelper.MC_ICONS);\n\t\tdraw(context);\n// GuiGraphics\n",
+        "after": "\t\tenableAlpha(alpha);\n\t\tdraw(context);\n// GuiGraphics\n"
+      }
+    },
+    {
+      "id": "food-component-always-eat",
+      "jump": "1.20.4 -> 1.20.5 (yarn)",
+      "match": "symbol:\\s+method isAlwaysEdible\\(\\)",
+      "apply": {
+        "find": "\\.isAlwaysEdible\\(\\)",
+        "replace": ".canAlwaysEat()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.20.5 made FoodComponent a record; yarn's isAlwaysEdible() became its canAlwaysEat() component (official names kept canAlwaysEat). The yarn 1.21.6 FoodComponent has canAlwaysEat().",
+      "verified": null,
+      "test": {
+        "error": "F.java:36: error: cannot find symbol\n\t\treturn player.canConsume(itemFood.isAlwaysEdible());\n\t\t                                 ^\n  symbol:   method isAlwaysEdible()\n  location: variable itemFood of type FoodComponent\n",
+        "before": "\t\treturn player.canConsume(itemFood.isAlwaysEdible());\n",
+        "after": "\t\treturn player.canConsume(itemFood.canAlwaysEat());\n"
+      }
     },
     {
       "id": "glstatemanager-opengl-back",

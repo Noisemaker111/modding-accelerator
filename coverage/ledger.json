@@ -219,6 +219,15 @@
       "status": "stop",
       "detail": "Untouched mod, branch 1.21 @8ae52f0: stopped before compiling. Its JEI coordinates are built from ${minecraft_version}, so the target step moves the name to jei-1.21.4-* but keeps version 19.64.0.453, which does not exist, and a selection to JEI 20.0.0.4 was not picked up. Tool gap: dependency setup does not follow property-built NeoForge coordinates.",
       "date": "2026-10-25"
+    },
+    {
+      "mod": "AppleSkin",
+      "loader": "fabric",
+      "from": "1.20.1",
+      "to": "1.21.6",
+      "status": "stop",
+      "detail": "Re-run with nothing done by hand, through modaccel port --fix (72s, warm caches). The build tools now follow the target: Loom 1.8-SNAPSHOT went to 1.10.5 because the target's Fabric API was built with Loom 1.10, and Gradle 8.10 to 8.12, the version Loom 1.10.5's published metadata asks for. The first build showed 69 errors; 22 rules took them to 11, including the whole render family (render type then pipeline first in drawTexture, shader colour into each draw call, blend and depth state, texture binds and views), the tooltip component's new size arguments, the empty text contents and canAlwaysEat. The 11 left are four changes that need new code, and the stopped port now names a repair guide for each: the removed hunger exhaustion getter (an accessor mixin), food effects moved to the consumable component, game rules only on the server world, and networking as payload records. Upstream's 1.21.6 also replaced the icons.png HUD textures with sprites, which a rule cannot restore.",
+      "date": "2026-11-07"
     }
   ],
   "loader_pairs": [

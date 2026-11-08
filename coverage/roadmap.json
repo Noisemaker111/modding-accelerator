@@ -69,7 +69,7 @@
      "id": "7",
      "title": "AppleSkin 1.20.1 → 1.21.6, five minors in one jump",
      "status": "doing",
-     "text": "A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. 62 errors down to 51 after seven rules (Identifier, food components, debug HUD); the rest needs real code changes.",
+     "text": "A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. With the render rules (step 8) and build tools that follow the target (step 9), 69 errors go to 11 with nothing done by hand. The 11 are four changes that need new code: the exhaustion getter, food effects on the consumable component, server-only game rules and payload networking. The stopped port names a repair guide for each.",
      "start": "2026-10-24",
      "target": "2026-11-20",
      "measures": [
@@ -79,21 +79,25 @@
     {
      "id": "8",
      "title": "Render-pipeline changes become rules",
-     "status": "next",
+     "status": "done",
      "text": "Turn the render-pipeline family into rules (draw texture / render pipeline / texture view), then re-run step 7 to a build.",
      "start": "2026-11-09",
      "target": "2026-11-17",
      "measures": [
       "port.errors.appleskin-fabric-1.20.1-1.21.6"
-     ]
+     ],
+     "done": "2026-11-07",
+     "result": "The GUI render family is rules in yarn and official names, each tied to the update that changed it: the render type first in every blit (1.21.2), the RenderPipeline (1.21.6), shader colour into each draw call (1.21.6), blend, depth and cull state (1.21.5), texture-id binds (1.21.5) and texture views (1.21.6). They replace the two whole-jump drawTexture rules. On AppleSkin 1.20.1 → 1.21.6 no render error is left; it still stops at 11 errors outside rendering (step 7)."
     },
     {
      "id": "9",
      "title": "Build tools follow the target version",
-     "status": "next",
+     "status": "done",
      "text": "Build-toolchain bumps follow the target automatically (AppleSkin needed Loom 1.10 + Gradle 8.13).",
      "start": "2026-11-12",
-     "target": "2026-11-24"
+     "target": "2026-11-24",
+     "done": "2026-11-07",
+     "result": "A Fabric port raises Loom to the newest release of the line its target dependencies were built with (from each jar's Fabric-Loom-Version), then raises the Gradle wrapper to the version that Loom's published metadata asks for. It never lowers either. AppleSkin 1.20.1 → 1.21.6: Loom 1.8-SNAPSHOT to 1.10.5 and Gradle 8.10 to 8.12, with no hand edit."
     },
     {
      "id": "10",
