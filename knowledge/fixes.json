@@ -3386,6 +3386,38 @@
         "before": "class C { double f() { return list.scrollAmount(); } }\n",
         "after": "class C { double f() { return list.getScrollAmount(); } }\n"
       }
+    },
+    {
+      "id": "gui-colors-opaque-official",
+      "jump": "1.21.5 -> 1.21.6 (official names)",
+      "silent": "1.21.6 draws GUI colours as ARGB. A colour with no alpha byte (0xffffff, 14737632) still compiles but draws nothing: text and fills vanish from the screen.",
+      "apply": {
+        "transform": "opaque-gui-colors"
+      },
+      "scope": "repo",
+      "when": "\\bGuiGraphics\\b",
+      "note": "Seen in Notes (MattCzyr): its own 1.21.6 port gave every text colour an alpha byte (0xffffff -> 0xffffffff, 14737632 -> 0xffe0e0e0, labelColor = 0x808080 -> 0xff808080). The rewrite gives an alpha byte to 6-digit hex literals, decimal colours in a text draw call's colour position, and decimal literals assigned to a name containing colo(u)r, in files that draw GUI.",
+      "verified": null,
+      "test": {
+        "before": "\tprivate int enabledColor = 14737632;\n\tprivate int labelColor = 0x808080;\n\t\tguiGraphics.drawCenteredString(font, title.getString(), width / 2 + 60, 15, 0xffffff);\n\t\tguiGraphics.drawString(fontRenderer, line, getX() + margin, renderY, 14737632, true);\n\t\tguiGraphics.fill(startX, startY, endX, endY, -16776961);\n\t\tguiGraphics.drawString(mc.font, title, x, y, 0xFFFFFFFF);\n// GuiGraphics\n",
+        "after": "\tprivate int enabledColor = 0xffe0e0e0;\n\tprivate int labelColor = 0xff808080;\n\t\tguiGraphics.drawCenteredString(font, title.getString(), width / 2 + 60, 15, 0xffffffff);\n\t\tguiGraphics.drawString(fontRenderer, line, getX() + margin, renderY, 0xffe0e0e0, true);\n\t\tguiGraphics.fill(startX, startY, endX, endY, -16776961);\n\t\tguiGraphics.drawString(mc.font, title, x, y, 0xFFFFFFFF);\n// GuiGraphics\n"
+      }
+    },
+    {
+      "id": "gui-colors-opaque",
+      "jump": "1.21.5 -> 1.21.6 (yarn)",
+      "silent": "1.21.6 draws GUI colours as ARGB. A colour with no alpha byte (0xffffff, 14737632) still compiles but draws nothing: text and fills vanish from the screen.",
+      "apply": {
+        "transform": "opaque-gui-colors"
+      },
+      "scope": "repo",
+      "when": "\\bDrawContext\\b",
+      "note": "Seen in Notes (MattCzyr): its own 1.21.6 port gave every text colour an alpha byte (0xffffff -> 0xffffffff, 14737632 -> 0xffe0e0e0, labelColor = 0x808080 -> 0xff808080). The rewrite gives an alpha byte to 6-digit hex literals, decimal colours in a text draw call's colour position, and decimal literals assigned to a name containing colo(u)r, in files that draw GUI.",
+      "verified": null,
+      "test": {
+        "before": "\tprivate int enabledColor = 14737632;\n\tprivate int labelColor = 0x808080;\n\t\tcontext.drawCenteredTextWithShadow(font, title.getString(), width / 2 + 60, 15, 0xffffff);\n\t\tcontext.drawText(fontRenderer, line, getX() + margin, renderY, 14737632, true);\n\t\tcontext.fill(startX, startY, endX, endY, -16776961);\n\t\tcontext.drawText(mc.font, title, x, y, 0xFFFFFFFF);\n// DrawContext\n",
+        "after": "\tprivate int enabledColor = 0xffe0e0e0;\n\tprivate int labelColor = 0xff808080;\n\t\tcontext.drawCenteredTextWithShadow(font, title.getString(), width / 2 + 60, 15, 0xffffffff);\n\t\tcontext.drawText(fontRenderer, line, getX() + margin, renderY, 0xffe0e0e0, true);\n\t\tcontext.fill(startX, startY, endX, endY, -16776961);\n\t\tcontext.drawText(mc.font, title, x, y, 0xFFFFFFFF);\n// DrawContext\n"
+      }
     }
   ]
 }

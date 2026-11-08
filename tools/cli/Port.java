@@ -166,6 +166,7 @@ final class Port {
             if (repairTasks.isEmpty()) repairTasks = tasks;
             else excludeOtherTargets(repairTasks, model);
             repairTasks.add(0, "-Dmodaccel.recompile=true");
+            applySilentRules(from, to);
             var initial = build.gradle(tasks, explicitTask ? "port-initial-compile" : "port-initial-build"); log = initial.log(); compiled = initial.exit() == 0;
             Set<String> seen = new HashSet<>();
             int roundsTried = 0;
@@ -530,22 +531,48 @@ final class Port {
         throw new IOException("The annotation processor reported a dead target " + target
                 + ", but no single-line multi-target mixin declaration contains it; repair it by hand");
     }
-    void applyRules(Path log) throws Exception {
-        removeDeadMixinTargets(log);
-        String errors = Files.readString(log);
-        // Only the selected project's own sources are repaired; a repo can hold other versions' copies
-        // (a Forge 1.20.1 sibling, generated Stonecutter sources) that this port must not touch.
+    /** The selected project's own Java sources: a repo can hold other versions' copies (a Forge 1.20.1 sibling, generated Stonecutter sources) that this port must not touch. */
+    List<Path> ownedJava() throws IOException {
         Set<Path> owned = new HashSet<>();
         for (Object item : Json.array(model.get("projects"))) for (Object set : Json.array(Json.object(item).get("sourceSets"))) {
             for (String dir : ProjectModel.strings(Json.object(set).get("java"))) owned.add(Path.of(dir).toAbsolutePath().normalize());
         }
-        List<Path> all = sources(build.project).stream().filter(p -> p.toString().endsWith(".java"))
+        return sources(build.project).stream().filter(p -> p.toString().endsWith(".java"))
                 .filter(p -> owned.isEmpty() || owned.stream().anyMatch(p.toAbsolutePath().normalize()::startsWith)).toList();
+    }
+    /**
+     * Rules for changes the compiler never reports (a rule with "silent" saying what goes wrong instead): they run once,
+     * before the first build, over every owned source, when the port crosses their update. In 1.21.6 a GUI colour
+     * without an alpha byte still compiles and draws nothing.
+     */
+    void applySilentRules(String from, String to) throws Exception {
+        List<Path> all = ownedJava();
+        for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
+            var rule = Json.object(item); if (!rule.containsKey("silent")) continue;
+            List<String> covered = route == null ? List.of() : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
+            if (route != null ? covered.isEmpty() : !crosses(Json.text(rule, "jump", ""), from, to)) continue;
+            for (Path file : all) {
+                String original = Files.readString(file), text = rewrite(rule, original);
+                if (!text.equals(original)) { Files.writeString(file, text); rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered); }
+            }
+        }
+    }
+    /** True when a port from -> to crosses the release a jump ("A -> B" changed in B, "X+" in X) names, either way. */
+    static boolean crosses(String jump, String from, String to) {
+        Matcher release = Pattern.compile("(?:->\\s*)?(\\d+(?:\\.\\d+)+)(\\+)?(?!.*->)").matcher(jump);
+        if (!release.find()) return false;
+        String changed = release.group(1);
+        return Versions.compare(from, changed) < 0 ? Versions.compare(to, changed) >= 0 : Versions.compare(to, changed) < 0;
+    }
+    void applyRules(Path log) throws Exception {
+        removeDeadMixinTargets(log);
+        String errors = Files.readString(log);
+        List<Path> all = ownedJava();
         Set<Path> logged = new HashSet<>();
         Matcher reported = Pattern.compile("(?m)^\\s*" + FILE + ":[0-9]+: error:").matcher(errors);
         while (reported.find()) { Path file = Path.of(reported.group(1)); if (!file.isAbsolute()) file = build.project.root.resolve(file); file = file.normalize(); if (file.startsWith(build.project.root)) logged.add(file); }
         for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
-            var rule = Json.object(item); if (!Pattern.compile(rule.get("match").toString()).matcher(errors).find()) continue;
+            var rule = Json.object(item); if (rule.containsKey("silent") || !Pattern.compile(rule.get("match").toString()).matcher(errors).find()) continue;
             // A routed port runs a rule only when its jump covers an update the route crosses and its names fit.
             List<String> covered = route == null ? List.of() : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null && covered.isEmpty()) continue;
@@ -577,21 +604,60 @@ final class Port {
         List<Map<String, Object>> guides = new ArrayList<>();
         for (Object item : Json.array(Json.parse(Files.readString(file, StandardCharsets.UTF_8)))) {
             var guide = Json.object(item);
-            Matcher release = Pattern.compile("(?:->\\s*)?(\\d+(?:\\.\\d+)+)(\\+)?(?!.*->)").matcher(Json.text(guide, "jump", ""));
-            if (!release.find()) continue;
-            String changed = release.group(1);
-            boolean crosses = Versions.compare(from, changed) < 0 ? Versions.compare(to, changed) >= 0 : Versions.compare(to, changed) < 0;
-            if (!crosses || !Pattern.compile(Json.text(guide, "match", "(?!)")).matcher(errors).find()) continue;
+            if (!crosses(Json.text(guide, "jump", ""), from, to) || !Pattern.compile(Json.text(guide, "match", "(?!)")).matcher(errors).find()) continue;
             guides.add(Json.map("id", guide.get("id"), "title", guide.get("title"), "steps", guide.get("steps"), "note", guide.get("note")));
         }
         return guides;
+    }
+    /** The colour argument's position in each text draw call (mojmap GuiGraphics and yarn DrawContext). */
+    private static final Map<String, Integer> COLOR_ARGUMENT = Map.of("drawString", 4, "drawCenteredString", 4, "drawWordWrap", 5,
+            "drawText", 4, "drawTextWithShadow", 4, "drawCenteredTextWithShadow", 4, "drawWrappedText", 5);
+    /**
+     * 1.21.6 draws GUI colours as ARGB: before it, text with no alpha byte was drawn opaque, after it, invisible. Gives
+     * an alpha byte to a 6-digit hex literal, to a decimal colour in a text draw call's colour position, and to a
+     * decimal literal assigned to a name with "colo(u)r" in it.
+     */
+    static String opaqueGuiColors(String text) {
+        text = Pattern.compile("\\b0[xX]([0-9a-fA-F]{6})\\b(?![0-9a-fA-F])").matcher(text).replaceAll("0xff$1");
+        Matcher named = Pattern.compile("(\\b\\w*[Cc]olou?r\\w*\\s*=\\s*)(\\d+)\\b(?![.\\dLlFfDd])").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (named.find()) {
+            long value = Long.parseLong(named.group(2));
+            named.appendReplacement(out, Matcher.quoteReplacement(value > 0 && value < 0x1000000L ? named.group(1) + String.format(Locale.ROOT, "0xff%06x", value) : named.group()));
+        }
+        named.appendTail(out); text = out.toString();
+        Matcher call = Pattern.compile("\\.(" + String.join("|", COLOR_ARGUMENT.keySet()) + ")\\(").matcher(text);
+        StringBuilder result = new StringBuilder(); int copied = 0;
+        while (call.find()) {
+            // Split the call's top-level arguments, minding nested calls and string literals.
+            List<int[]> arguments = new ArrayList<>(); int depth = 0, start = call.end(), at = call.end(); boolean string = false;
+            for (; at < text.length(); at++) {
+                char c = text.charAt(at);
+                if (string) { if (c == '\\') at++; else if (c == '"') string = false; continue; }
+                if (c == '"') string = true;
+                else if (c == '(' || c == '[' || c == '{') depth++;
+                else if ((c == ')' || c == ']' || c == '}') && depth > 0) depth--;
+                else if (c == ')' || (c == ',' && depth == 0)) { arguments.add(new int[]{start, at}); start = at + 1; if (c == ')') break; }
+            }
+            int position = COLOR_ARGUMENT.get(call.group(1));
+            if (position >= arguments.size()) continue;
+            int[] span = arguments.get(position);
+            String argument = text.substring(span[0], span[1]);
+            if (!argument.strip().matches("\\d+")) continue;
+            long value = Long.parseLong(argument.strip());
+            if (value >= 0x1000000L) continue;
+            result.append(text, copied, span[0]).append(argument.replace(argument.strip(), String.format(Locale.ROOT, "0xff%06x", value)));
+            copied = span[1];
+        }
+        return result.append(text.substring(copied)).toString();
     }
     /** One knowledge rule on one source text: its `when` gate, the literal or regex rewrite, then any imports it needs. */
     static String rewrite(Map<String, Object> rule, String original) {
         var apply = Json.object(rule.get("apply"));
         String text = original;
         String when = Json.text(rule, "when", ""); if (!when.isEmpty() && !Pattern.compile(when).matcher(text).find()) return original;
-        if (apply.containsKey("literal")) text = text.replace(apply.get("literal").toString(), Json.text(apply, "replace", ""));
+        if ("opaque-gui-colors".equals(apply.get("transform"))) text = opaqueGuiColors(text);
+        else if (apply.containsKey("literal")) text = text.replace(apply.get("literal").toString(), Json.text(apply, "replace", ""));
         else if (apply.containsKey("find")) text = Pattern.compile(apply.get("find").toString()).matcher(text).replaceAll(Json.text(apply, "replace", ""));
         if (!text.equals(original)) {
             for (String name : ProjectModel.strings(apply.get("ensureImports"))) if (!text.contains("import " + name + ";")) {

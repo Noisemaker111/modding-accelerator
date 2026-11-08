@@ -116,10 +116,13 @@ public final class PortableTests {
             if ("stonecutter".equals(rule.get("source")) || !(rule.get("test") instanceof Map<?, ?>)) continue;
             String id = Json.text(rule, "id", "?");
             var test = Json.object(rule.get("test"));
-            if (!java.util.regex.Pattern.compile(rule.get("match").toString()).matcher(test.get("error").toString()).find()) throw new AssertionError(id + ": match misses its test error");
+            // A silent rule has no compiler error to match: it runs whenever the port crosses its update.
+            if (!rule.containsKey("silent") && !java.util.regex.Pattern.compile(rule.get("match").toString()).matcher(test.get("error").toString()).find()) throw new AssertionError(id + ": match misses its test error");
             String after = Port.rewrite(rule, test.get("before").toString());
             if (after.equals(test.get("before")) || !after.equals(test.get("after"))) throw new AssertionError(id + ": rewrite gave\n" + after + "\nexpected\n" + test.get("after"));
             String[] range = Json.text(rule, "jump", "").replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
+            if (rule.containsKey("silent") && !(Port.crosses(Json.text(rule, "jump", ""), range[0], range[1]) && !Port.crosses(Json.text(rule, "jump", ""), range[1], range[1])))
+                throw new AssertionError(id + ": a silent rule must run on the port across its own update and on no other");
             Route route = Route.plan(home, range[0], range[1]);
             if (route == null || route.stepsCovered(Json.text(rule, "jump", ""), Json.text(rule, "jump", "").contains("yarn") ? "yarn" : "mojmap").isEmpty()) throw new AssertionError(id + ": no route " + Json.text(rule, "jump", "") + " runs it");
             written++;
