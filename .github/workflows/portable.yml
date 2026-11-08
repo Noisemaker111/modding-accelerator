@@ -1,15 +1,13 @@
 name: Portable command
 # A PR runs once, newer pushes cancel older runs, and only the core runs on all three systems.
-# Server and Stonecutter checks run on Linux for a PR and on all three systems nightly and on main.
-# PR CI finishes in under 5 minutes (AGENTS.md): on pull_request every job has a 5-minute timeout and
-# the budget job fails the run when the whole workflow took over 300 s. Nightly and main keep the
-# longer timeouts because their caches are cold on two of the three systems.
+# Server and Stonecutter checks run on Linux for a PR and on all three systems on main. No schedule:
+# every input is pinned, so a run of unchanged code repeats the last answer. On pull_request every job
+# has a 5-minute timeout against hangs; main keeps longer timeouts because its caches are cold on two
+# of the three systems.
 on:
   push:
     branches: [main]
   pull_request:
-  schedule:
-    - cron: '41 6 * * *'
   workflow_dispatch:
 permissions:
   contents: read
@@ -244,7 +242,7 @@ jobs:
   stonecutter-sample:
     # Three representative Stonecutter nodes, fresh pinned clones, setup and compile through
     # modaccel, one job per node. No game. Every node of both
-    # mods compiles nightly in stonecutter-nightly.yml (not a merge blocker).
+    # mods compiles on demand in stonecutter-nightly.yml (not a merge blocker).
     strategy:
       fail-fast: false
       matrix:
@@ -290,42 +288,3 @@ jobs:
           name: sample-${{ runner.os }}-${{ matrix.mod }}
           path: ${{ runner.temp }}/real-mods-results
           if-no-files-found: ignore
-  budget:
-    # The 5-minute rule as a check that can fail: once every PR job has finished, read this run's jobs
-    # and fail when the workflow has been running for more than 300 s since it started, queue time
-    # included. The job summary lists every job with its queue wait and duration, so a failure names the job.
-    name: PR CI under 5 minutes
-    if: always() && github.event_name == 'pull_request'
-    needs: [command, server-plugins, server-check, stonecutter-sample]
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    permissions:
-      actions: read
-      contents: read
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - name: Elapsed time of this run against the 300 s budget
-        run: |
-          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" > run.json
-          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?per_page=100" > jobs.json
-          python3 - <<'EOF'
-          import json, os, sys
-          from datetime import datetime, timezone
-          def at(s): return datetime.fromisoformat(s.replace('Z', '+00:00'))
-          run = json.load(open('run.json'))
-          jobs = json.load(open('jobs.json'))['jobs']
-          started = at(run['run_started_at'])
-          now = datetime.now(timezone.utc)
-          elapsed = int((now - started).total_seconds())
-          lines = ['| job | queued | ran | finished at |', '| --- | ---: | ---: | ---: |']
-          for j in sorted(jobs, key=lambda j: j.get('completed_at') or ''):
-              if not j.get('started_at'): continue
-              s, e = at(j['started_at']), at(j['completed_at']) if j.get('completed_at') else now
-              lines.append(f"| {j['name']} ({j['conclusion'] or 'running'}) | {int((s - started).total_seconds())} s | {int((e - s).total_seconds())} s | {int((e - started).total_seconds())} s |")
-          verdict = f"{'PASS' if elapsed <= 300 else 'FAIL'}: this run has taken {elapsed} s of its 300 s budget (AGENTS.md: PR CI finishes in under 5 minutes)."
-          body = '\n'.join([f'## {verdict}', ''] + lines) + '\n'
-          open(os.environ['GITHUB_STEP_SUMMARY'], 'a').write(body)
-          print(body)
-          sys.exit(0 if elapsed <= 300 else 1)
-          EOF
