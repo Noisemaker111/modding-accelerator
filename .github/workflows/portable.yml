@@ -41,6 +41,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
+            ~/.modaccel/jdks
           key: command-${{ runner.os }}-${{ hashFiles('portable workspace/build.gradle', 'portable workspace/settings.gradle', 'portable workspace/gradle.properties', 'portable workspace/gradle/wrapper/gradle-wrapper.properties') }}
       - name: Map and bench colour per loader
         working-directory: portable workspace
@@ -111,6 +112,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
+            ~/.modaccel/jdks
           key: command-${{ runner.os }}-${{ hashFiles('portable workspace/build.gradle', 'portable workspace/settings.gradle', 'portable workspace/gradle.properties', 'portable workspace/gradle/wrapper/gradle-wrapper.properties') }}
       - name: Outcome receipts on failure
         if: failure()
@@ -147,7 +149,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
+            ~/.modaccel/jdks
           key: server-plugins-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json') }}
       - name: Package without PowerShell
         run: java tools/cli/Bootstrap.java . package --json
@@ -165,7 +167,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
+            ~/.modaccel/jdks
           key: server-plugins-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json') }}
       - name: Outcome receipts on failure
         if: failure()
@@ -206,7 +208,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
+            ~/.modaccel/jdks
             ~/.modaccel/servers
             ~/.modaccel/tools
           key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
@@ -226,7 +228,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
+            ~/.modaccel/jdks
             ~/.modaccel/servers
             ~/.modaccel/tools
           key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
@@ -267,7 +269,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
+            ~/.modaccel/jdks
           key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
       - name: Setup and compile the node
         run: python bench/real-mods/run.py --compile-nodes --only ${{ matrix.mod }} --cache "${{ runner.temp }}/real-mods" --out "${{ runner.temp }}/real-mods-results" --label ${{ matrix.mod }}
@@ -279,7 +281,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
+            ~/.modaccel/jdks
           key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
       - name: Node results
         if: always()

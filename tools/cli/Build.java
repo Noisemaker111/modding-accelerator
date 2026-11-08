@@ -116,11 +116,10 @@ final class Build {
         // Test hook: make the init script miss under configure-on-demand to exercise the fallback.
         if ("true".equals(System.getenv("MODACCEL_SIMULATE_COD_MISS"))) command.add("-Dmodaccel.simulateCodMiss=true");
         List<String> toolchains = new ArrayList<>();
-        Path projectCache = harness.resolve(".modaccel/jdks").toAbsolutePath().normalize();
-        Path userCache = Path.of(System.getProperty("user.home"), ".modaccel/jdks").toAbsolutePath().normalize();
+        Path downloaded = JdkDownloads.cache();
         for (Runtimes.Jdk installed : Runtimes.installed(harness)) {
             Path home = installed.home().toAbsolutePath().normalize();
-            if (home.startsWith(projectCache) || home.startsWith(userCache)) toolchains.add(home.toString());
+            if (home.startsWith(downloaded)) toolchains.add(home.toString());
         }
         if (!toolchains.isEmpty()) {
             Path gradleHome = Path.of(System.getenv().getOrDefault("GRADLE_USER_HOME", Path.of(System.getProperty("user.home"), ".gradle").toString()));

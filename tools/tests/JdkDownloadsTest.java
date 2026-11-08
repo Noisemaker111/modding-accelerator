@@ -45,6 +45,7 @@ public class JdkDownloadsTest {
             tar(tar, "../escape", (byte)'0', "bad");
             try { JdkDownloads.extract(tar, root.resolve("tar-escape"), false); throw new AssertionError("tar escape accepted"); }
             catch (IOException expected) { if (!expected.getMessage().contains("Unsafe")) throw expected; }
+            int[] realWaits = JdkDownloads.retryWaits;
             JdkDownloads.retryWaits = new int[]{0, 0};
             int[] calls = {0};
             String got = JdkDownloads.retrying("test", () -> { if (++calls[0] < 3) throw new IOException("Server returned HTTP response code: 504 for URL: https://github.com/x"); return "ok"; });
@@ -55,8 +56,9 @@ public class JdkDownloadsTest {
             calls[0] = 0;
             try { JdkDownloads.retrying("test", () -> { calls[0]++; throw new FileNotFoundException("https://github.com/missing.zip"); }); throw new AssertionError("404 accepted"); }
             catch (IOException expected) { if (calls[0] != 1) throw new AssertionError("a missing file must not be retried: " + calls[0] + " calls"); }
+            JdkDownloads.retryWaits = realWaits;
             System.out.println("checksum, corruption, ZIP/TAR extraction, path escape, Java requirement, retry after a passing server error: PASS");
-            if (args.length == 2) System.out.println("provisioned: " + JdkDownloads.provision(Path.of(args[0]), Integer.parseInt(args[1])));
+            if (args.length == 1) System.out.println("provisioned: " + JdkDownloads.install(Integer.parseInt(args[0])));
         } finally {
             try (var files = Files.walk(root)) { for (Path p : files.sorted(java.util.Comparator.reverseOrder()).toList()) Files.deleteIfExists(p); }
         }
