@@ -1,4 +1,4 @@
-The nightly behaviour-check job, waiting for Jon's approval of the spending (Phase 7 step 37). Not applied:
+The nightly behaviour-check job, waiting for Jon's approval of the spending (roadmap step 26, Phase 5). Not applied:
 .github/workflows/portable.yml has no such job. To turn it on, from the repo root: git apply bench/behaviour-nightly.patch
 
 What it runs: bash bench/behaviour_checks.sh once a night (the workflow's existing 06:41 UTC schedule) and on

@@ -17,8 +17,8 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
 | 3. 26.x, the unobfuscated game | 0 | 3 | 1 | 0 | 2026-12-04 |
 | 4. Loaders | 0 | 0 | 0 | 3 | 2027-03-12 |
 | 5. Proof: behaviour in the real game and server | 3 | 0 | 2 | 3 | 2027-02-12 |
-| 6. Modpack compatibility | 0 | 3 | 0 | 1 | 2027-02-05 |
-| 7. Testing without Minecraft open | 4 | 1 | 1 | 0 | 2027-01-08 |
+| 6. Modpack compatibility | 1 | 3 | 0 | 1 | 2027-02-05 |
+| 7. Testing without Minecraft open | 4 | 0 | 0 | 0 | 2026-12-18 |
 
 ## Phase 1 — Neighbouring versions (1.21.x), Fabric and NeoForge
 
@@ -119,7 +119,11 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
 
 The second half of the goal, worked on alongside porting.
 
-21. Linux and macOS game checks (or label them), no-Java install on each. **later**
+21. Linux and macOS game checks (or label them), no-Java install on each. **later** — Linux, part
+    proven: on a fresh boat.dev Ubuntu machine with no GPU, the behaviour checks (a hidden client on
+    a virtual display, software OpenGL) passed and failed on their breaks, and data-check passed
+    (bench/session-cost/behaviour-boat-2026-11-07.txt, data-check-boat-2026-11-07.txt). macOS and
+    the no-Java install are not checked.
     Starts 2026-12-14, target 2027-01-15.
 22. A mod's own behaviour asserted in a real client: AppleSkin's HUD estimate, Zombie Apocalypse
     Addon's zombies hunting with `/zhunt` on its 1.21.4 port; each fails when the mod is broken on
@@ -135,7 +139,13 @@ The second half of the goal, worked on alongside porting.
     height. **done** — (1.8.8, 1.12.2, 1.16.5, 1.20.1 and 1.21.4 passed locally; CI covers 26.3
     only)
     Done 2026-10-26.
-26. A nightly CI job runs the bot on older Paper versions. **next**
+26. One nightly CI job runs the real-game behaviour checks (AppleSkin's HUD estimate, Zombie
+    Apocalypse's AI) and the bot on older Paper versions. **next** — bench/behaviour_checks.sh runs
+    both behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) in a hidden, quiet
+    client on a virtual display with software OpenGL: on a fresh boat.dev Linux machine with no GPU
+    both passed and both breaks failed, 10 minutes. The nightly CI job is written as
+    bench/behaviour-nightly.patch with its expected spend ($0 on this public repository, about 10 to
+    15 runner-minutes a night) and waits for Jon to approve it.
     Starts 2026-11-09, target 2026-11-20.
 27. The bot joins a modded server (NeoForge or Fabric dedicated server), so mods get scenario checks
     like plugins do. **next**
@@ -183,6 +193,19 @@ The second half of the goal, worked on alongside porting.
     the game checks and is listed. Forge only in the game; repairs come from
     `knowledge/pack-fixes.json` (one entry).
     Started 2026-10-30, target 2027-01-15.
+38. pack-check records how long each stage takes and checks the shipped and the repaired pack side
+    by side. **done** — pack-check times every stage (read, static checks, each server start) and
+    starts the repaired pack's server beside the shipped one. On Prehistoric World 2 (368 mods) a
+    full check with the repair proven takes 5.1 minutes instead of 12.7, with the same findings.
+    Client-only mods a start finds are remembered, so later runs skip that extra start; a start that
+    only reads the world stops as soon as its probe is done; Simple Voice Chat gets a free port so
+    the two servers do not collide, and a start that still loses a port runs again alone; a server
+    that stops before its probe is done is reported at once instead of after the 20-minute timeout;
+    an export is unpacked once. Tried for the 4.0-minute target and not used: the lighter compiler
+    (C1) cuts a 368-mod server start's CPU by a third (519 to 351 CPU-s) but made the start take 465
+    s instead of 139 s; the item probe already uses 40 ms of every 50 ms server tick. The 4.0-minute
+    target was dropped on Nov 7; the time stays as a fact.
+    Done 2026-11-07.
 32. Bring Random Things forward from its source as a Forge version-port case, and prove its behavior
     on the target version. Automatic Forge porting is not yet supported. **later** — its newest
     source is a partial 1.14.4 rewrite (36 files, 2019 MCP snapshot names); the full mod is 1.12.2.
@@ -190,8 +213,8 @@ The second half of the goal, worked on alongside porting.
 
 ## Phase 7 — Testing without Minecraft open
 
-Every check runs with no game window, and the cost of a game session is mostly shared, so many
-sessions run at once on one PC.
+Every check runs with no game window, checks that need only the game's data skip launching it, and 8
+run at once on one PC. Closed on 2026-11-07.
 
 33. Measure RAM, CPU, start time and time per check for one client, one dedicated server and one
     Paper server, warm and cold, as the baseline the next steps are judged against. **done** —
@@ -229,39 +252,19 @@ sessions run at once on one PC.
     changes. A loaded game holds about 0.38 GB.
     Done 2026-11-07.
 36. modaccel runs at least 8 game checks side by side on this PC, each with its own game folder,
-    without running out of memory; a hidden client starts on 25 CPU-s and a cold check takes under
-    10 s, and a waiting hidden client costs almost no CPU. **doing** — 8 projects (copies of the
-    demo mod) each ran data-check at once: from no game all passed within 26.6 s, about 21 CPU-s
-    each and 4.5 GB at the peak; with their games loaded, all passed again within 6.3 s. The 8
-    loaded games hold 2.85 GB and their 8 spares 2.41 GB. A brand-new project's first check takes
-    about 36 s, 21 of it Gradle reading the build and recording the launch. A hidden game nobody has
-    asked anything for 2 s now draws 10 frames a second, woken at once by the next request: it uses
-    0.04 to 0.06 cores while waiting instead of 0.14 to 0.16, measured alternately on the same PC,
-    with warm checks as fast as before. Tried and not used: Java's start-up cache for Paper (AOT)
-    halves a start's CPU (48 to 24 CPU-s) but recording it adds about 95 s to one start and its
-    shutdown, and the self-updating class archive saves 2 to 5 s per start but adds about 40 s to
-    the first, a slow first start this step exists to avoid. Still to reach: a hidden client start
-    of 25 CPU-s, a cold check under 10 s, and a server start of 10 s.
-    Started 2026-11-07, target 2027-01-08.
-37. The real-game behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) run every
-    night in CI, not only on this PC. **next** — bench/behaviour_checks.sh runs both behaviour
-    checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) in a hidden, quiet client on a virtual
-    display with software OpenGL: on a fresh boat.dev Linux machine with no GPU both passed and both
-    breaks failed, 10 minutes. The nightly CI job is written as bench/behaviour-nightly.patch with
-    its expected spend ($0 on this public repository, about 10 to 15 runner-minutes a night) and
-    waits for Jon to approve it.
-    Starts 2026-11-16, target 2026-12-04.
-38. pack-check records how long each stage takes and checks the shipped and the repaired pack side
-    by side. **done** — pack-check times every stage (read, static checks, each server start) and
-    starts the repaired pack's server beside the shipped one. On Prehistoric World 2 (368 mods) a
-    full check with the repair proven takes 5.1 minutes instead of 12.7, with the same findings.
-    Client-only mods a start finds are remembered, so later runs skip that extra start; a start that
-    only reads the world stops as soon as its probe is done; Simple Voice Chat gets a free port so
-    the two servers do not collide, and a start that still loses a port runs again alone; a server
-    that stops before its probe is done is reported at once instead of after the 20-minute timeout;
-    an export is unpacked once. Tried for the 4.0-minute target and not used: the lighter compiler
-    (C1) cuts a 368-mod server start's CPU by a third (519 to 351 CPU-s) but made the start take 465
-    s instead of 139 s; the item probe already uses 40 ms of every 50 ms server tick.
+    without running out of memory, and a waiting hidden client costs almost no CPU. **done** — 8
+    projects (copies of the demo mod) each ran data-check at once: from no game all passed within
+    26.6 s, about 21 CPU-s each and 4.5 GB at the peak; with their games loaded, all passed again
+    within 6.3 s. The 8 loaded games hold 2.85 GB and their 8 spares 2.41 GB. A brand-new project's
+    first check takes about 36 s, 21 of it Gradle reading the build and recording the launch. A
+    hidden game nobody has asked anything for 2 s now draws 10 frames a second, woken at once by the
+    next request: it uses 0.04 to 0.06 cores while waiting instead of 0.14 to 0.16, measured
+    alternately on the same PC, with warm checks as fast as before. Tried and not used: Java's
+    start-up cache for Paper (AOT) halves a start's CPU (48 to 24 CPU-s) but recording it adds about
+    95 s to one start and its shutdown, and the self-updating class archive saves 2 to 5 s per start
+    but adds about 40 s to the first, a slow first start this step exists to avoid. The faster-start
+    targets set on Nov 6 (a hidden client on 25 CPU-s, a cold check under 10 s, a server start of 10
+    s) were dropped on Nov 7: they do not move the goal, and their numbers stay as facts.
     Done 2026-11-07.
 
 ## Numbers
@@ -290,26 +293,26 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Cold game start + one check, Fabric 26.3 | — | 36.5 s (Oct 21) | 10 s by Jan 8, 2027, step 36 | Baseline |
-| Cold game start to a listening client, NeoForge 1.21.1 | — | 18.4 s (Oct 22) | 10 s by Jan 8, 2027, step 36 | Baseline |
-| Dedicated server start, Fabric 26.3, cold | 24.2 s (Oct 22) | 15 s (Nov 7) | 10 s by Jan 8, 2027, step 36 | 65% of the way |
-| Client start and first join to a dedicated server, cold | — | 27.1 s (Oct 22) | 10 s by Jan 8, 2027, step 36 | Baseline |
-| New registration on a fresh server, warm | — | 15 s (Oct 21) | 5 s by Jan 8, 2027, step 36 | Baseline |
+| Cold game start + one check, Fabric 26.3 | — | 36.5 s (Oct 21) | — | Fact |
+| Cold game start to a listening client, NeoForge 1.21.1 | — | 18.4 s (Oct 22) | — | Fact |
+| Dedicated server start, Fabric 26.3, cold | 24.2 s (Oct 22) | 15 s (Nov 7) | — | Fact |
+| Client start and first join to a dedicated server, cold | — | 27.1 s (Oct 22) | — | Fact |
+| New registration on a fresh server, warm | — | 15 s (Oct 21) | — | Fact |
 | Logic tests, no Minecraft, warm | — | 0.79 s (Oct 21) | 1 s (hold) by Nov 27, step 34 | Met |
 | Screen change + screenshot, warm game, Fabric 26.3 | 1.5 s (Oct 21) | 3.9 s (Nov 7) | 1.5 s (hold) by Nov 27, step 34 | 0% of the way |
 | Screen edit swapped into the running game, NeoForge 1.21.1, warm | — | 1.5 s (Oct 22) | 1.5 s (hold) by Nov 27, step 34 | Met |
 | Block entity in a live world, Fabric 26.3, warm | — | 2.1 s (Oct 21) | 2.5 s (hold) by Nov 27, step 34 | Met |
 | Scripted scenario + screenshot, warm game, Fabric 26.3 | 2.9 s (Oct 21) | 5.1 s (Nov 7) | 3 s (hold) by Nov 27, step 34 | 0% of the way |
 | Multiplayer scenario, warm client and server | — | 4.1 s (Oct 22) | 4 s by Nov 27, step 34 | Baseline |
-| Mods with their own behaviour asserted in a real client | 2 mods (Oct 26) | 2 mods (Nov 7) | 4 mods by Dec 4, step 37 | 0% of the way |
-| Memory for one hidden game session, Fabric 26.3, warm | 1.1 GB (Nov 6) | 1.0 GB (Nov 6) | 0.8 GB by Jan 8, 2027, step 36 | 36% of the way |
+| Mods with their own behaviour asserted in a real client | 2 mods (Oct 26) | 2 mods (Nov 7) | 4 mods by Dec 4, step 26 | 0% of the way |
+| Memory for one hidden game session, Fabric 26.3, warm | 1.1 GB (Nov 6) | 1.0 GB (Nov 6) | — | Fact |
 | Game checks modaccel runs at once on one PC | — | 8 sessions (Nov 7) | 8 sessions by Jan 8, 2027, step 36 | Met |
-| CPU to start one hidden client, saved launch, Fabric 26.3, warm | 95 CPU-s (Nov 6) | 49 CPU-s (Nov 6) | 25 CPU-s by Jan 8, 2027, step 36 | 66% of the way |
+| CPU to start one hidden client, saved launch, Fabric 26.3, warm | 95 CPU-s (Nov 6) | 49 CPU-s (Nov 6) | — | Fact |
 | CPU for data-check on the Prism Lab demo mod, quiet 4-core Linux machine, Fabric 26.3, cold | 5.7 CPU-s (Nov 7) | 6.2 CPU-s (Nov 7) | — | Fact |
 | CPU for the first data-check on a mod, the game's code started for it, Fabric 26.3, warm | 33 CPU-s (Nov 7) | 14.3 CPU-s (Nov 7) | — | Fact |
 | CPU per data-check on a mod once its game is loaded, no game launched, Fabric 26.3, warm | 2.2 CPU-s (Nov 7) | 1.5 CPU-s (Nov 7) | 5 CPU-s by Dec 18, step 35 | Met |
 | CPU per data-check after the mod's code changed, the spare game taking it, Fabric 26.3, warm | 6.2 CPU-s (Nov 7) | 4.9 CPU-s (Nov 7) | 5 CPU-s by Dec 18, step 35 | Met |
-| Seconds for a data-check that loads a fresh game, Fabric 26.3, warm | 45.6 s (Nov 7) | 11.7 s (Nov 7) | 10 s by Jan 8, 2027, step 36 | 95% of the way |
+| Seconds for a data-check that loads a fresh game, Fabric 26.3, warm | 45.6 s (Nov 7) | 11.7 s (Nov 7) | — | Fact |
 | Memory of data-check's loaded game, Fabric 26.3, warm | 0.5 GB (Nov 7) | 0.4 GB (Nov 7) | — | Fact |
 | CPU a hidden client uses while it waits, warm | 0.21 cores (Nov 6) | 0.05 cores (Nov 7) | 0.05 cores by Jan 8, 2027, step 36 | Met |
 | Hidden clients this PC held at once, each to a 1280x720 capture | — | 16 sessions (Nov 6) | — | Fact |
@@ -319,8 +322,8 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| server-check on a real Paper server, AgentCraft, warm | 25 s (Oct 26) | 51 s (Nov 7) | 15 s by Jan 8, 2027, step 36 | 0% of the way |
-| server-check on a real Paper server, AgentCraft, cold | 0.9 min (Oct 26) | 5.3 min (Nov 7) | 0.5 min by Jan 8, 2027, step 36 | 0% of the way |
+| server-check on a real Paper server, AgentCraft, warm | 25 s (Oct 26) | 51 s (Nov 7) | — | Fact |
+| server-check on a real Paper server, AgentCraft, cold | 0.9 min (Oct 26) | 5.3 min (Nov 7) | — | Fact |
 | CPU for server-check on a real Paper server, AgentCraft, warm | — | 130 CPU-s (Nov 7) | — | Fact |
 | Memory at the peak of server-check on a real Paper server, AgentCraft, warm | — | 2.4 GB (Nov 7) | — | Fact |
 | plugin-check on MockBukkit, AgentCraft, warm | — | 7 s (Oct 26) | 7 s (hold) by Nov 27, step 34 | Met |
@@ -334,20 +337,20 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Modpacks checked in the game by pack-check | — | 1 pack (Oct 30) | 5 packs by Jan 15, 2027, step 31 | Baseline |
 | Proven pack repairs pack-check knows | — | 1 repair (Oct 30) | 5 repairs by Jan 15, 2027, step 31 | Baseline |
 | Block items placed and read back in one pack | — | 14,129 items (Oct 30) | — | Fact |
-| pack-check on a 368-mod pack, shipped and repaired, warm | 12.7 min (Oct 30) | 5.1 min (Nov 7) | 4.0 min by Nov 20, step 38 | 87% of the way |
+| pack-check on a 368-mod pack, shipped and repaired, warm | 12.7 min (Oct 30) | 5.1 min (Nov 7) | — | Fact |
 
 ### CI
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
-| Nightly multi-version run, start to finish | 45.9 min (Oct 28) | 41.7 min (Nov 6) | 30.0 min by Dec 4, step 37 | 26% of the way |
+| Nightly multi-version run, start to finish | 45.9 min (Oct 28) | 41.7 min (Nov 6) | 30.0 min by Dec 4, step 26 | 26% of the way |
 
 ### Roadmap
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 17 steps (Nov 7) | 41 steps by Mar 12, 2027 | 33% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 18 steps (Nov 7) | 40 steps by Mar 12, 2027 | 37% of the way |
 
 ## Decisions
 
@@ -363,3 +366,4 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Ports between Paper versions? | Yes, as rung 5 for Paper once rungs 2–3 land | 2026-10-25 |
 | Where do roadmap steps, targets and every number we show live? | `coverage/roadmap.json` (steps, dates, targets) and `coverage/measures.json` (every number, with its history and target); ROADMAP.md and the roadmap page are generated from them | 2026-11-06 |
 | How cheap should a game check be? | 5 CPU-s per check, from 49. Checks that need the game's data but not a picture stop launching the game: data-check runs the game's own code with no window and no world (Jon, 2026-11-07, instead of sharing one started game). Picture checks keep the hidden client, with graphics settings as they are | 2026-11-07 |
+| Do speed targets drive work? | Only when they move the goal. Phase 7 closed on Nov 7 once checks were hidden, data-check skipped the game and 8 checks ran at once; the start, cold-check, server and pack-check speed targets became facts, the nightly job joined step 26 and pack-check's step joined Phase 6, and work went back to porting (Jon, 2026-11-07) | 2026-11-07 |
