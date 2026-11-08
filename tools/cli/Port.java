@@ -720,14 +720,45 @@ final class Port {
         String[] lines = text.split("\n", -1);
         for (var site : sites.entrySet()) {
             int at = site.getKey() - 1; if (at < 0 || at >= lines.length) continue;
+            var helper = Json.object(rule.get("apply"));
+            // A helper rule's call: its own find and replace, or receiver.symbol(args) as name(receiver, args).
+            if ("helper".equals(helper.get("transform"))) {
+                lines[at] = helper.containsKey("find") ? Pattern.compile(helper.get("find").toString()).matcher(lines[at]).replaceAll(Json.text(helper, "replace", ""))
+                        : helperCalls(lines[at], helper, site.getValue());
+                continue;
+            }
             Map<String, Object> bound = new LinkedHashMap<>(rule), apply = new LinkedHashMap<>(Json.object(rule.get("apply")));
             for (String key : List.of("find", "replace", "literal")) if (apply.get(key) instanceof String value) apply.put(key, value.replace("{symbol}", site.getValue()));
             apply.remove("ensureImports"); bound.put("apply", apply); bound.put("when", "");
             lines[at] = rewrite(bound, lines[at]);
         }
         String out = String.join("\n", lines);
+        if (!out.equals(text) && "helper".equals(Json.object(rule.get("apply")).get("transform"))) out = insertHelper(out, Json.object(rule.get("apply")));
         if (!out.equals(text)) for (String name : ProjectModel.strings(Json.object(rule.get("apply")).get("ensureImports"))) out = addImport(out, name);
         return out;
+    }
+    /** receiver.symbol(args) on one line becomes name(receiver, args): the call goes through a helper the port adds to the class. */
+    static String helperCalls(String line, Map<String, Object> apply, String symbol) {
+        String name = Json.text(apply, "name", "");
+        Matcher call = Pattern.compile("\\.\\s*" + Pattern.quote(symbol) + "\\s*\\(").matcher(line);
+        StringBuilder out = new StringBuilder(); int copied = 0;
+        while (call.find()) {
+            int receiver = receiverStart(line, call.start());
+            if (receiver >= call.start() || receiver < copied) continue;
+            boolean noArguments = line.substring(call.end()).stripLeading().startsWith(")");
+            out.append(line, copied, receiver).append(name).append('(').append(line, receiver, call.start()).append(noArguments ? "" : ", ");
+            copied = call.end();
+        }
+        return copied == 0 ? line : out.append(line.substring(copied)).toString();
+    }
+    /** Adds a helper rule's method to the end of the file's top-level class, once. */
+    static String insertHelper(String text, Map<String, Object> apply) {
+        String name = Json.text(apply, "name", "");
+        if (Pattern.compile("static[^;{=]*\\b" + Pattern.quote(name) + "\\s*\\(").matcher(text).find()) return text;
+        int end = text.lastIndexOf('}');
+        if (end < 0) return text;
+        String body = text.substring(0, end).replaceAll("[ \\t]*$", "");
+        return body + (body.endsWith("\n") ? "" : "\n") + "\n" + Json.text(apply, "source", "") + "\n" + text.substring(end);
     }
     static String addImport(String text, String name) {
         if (text.contains("import " + name + ";")) return text;

@@ -154,7 +154,7 @@
 			"Server code: cast to or take a ServerWorld. Client code has no game rules: in singleplayer read them from MinecraftClient.getServer() (the integrated server) and its world; on a remote server either sync the rule from the server or keep the vanilla default, and say which in the code.",
 			"Keep the guard's meaning: a check that used to skip work when a rule was off must still skip it when the rule is known to be off."
 		],
-		"note": "coverage/changes/1.21.1__1.21.2.json records LevelData.getGameRules removed and ServerLevel.getGameRules added."
+		"note": "coverage/changes/1.21.1__1.21.2.json records LevelData.getGameRules removed and ServerLevel.getGameRules added. port --fix handles a call on a World or Level itself (rule client-game-rules-default: the server's rules on a server, the defaults a client always had); this guide is for the rest, or for a mod that wants the real rule on a client."
 	},
 	{
 		"id": "custom-payload-records",

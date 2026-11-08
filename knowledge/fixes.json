@@ -3456,6 +3456,68 @@
       }
     },
     {
+      "id": "client-game-rules-default",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+method getGameRules\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) World\\b",
+      "apply": {
+        "transform": "helper",
+        "name": "modaccel$gameRules",
+        "source": "\t/** Written by modaccel port: 1.21.2 keeps game rules on the server. A client world gets the default rules, all a client ever had. */\n\tprivate static GameRules modaccel$gameRules(World world) {\n\t\tif (world instanceof ServerWorld server) return server.getGameRules();\n\t\tif (world.getServer() != null) return world.getServer().getGameRules();\n\t\treturn new GameRules(world.getEnabledFeatures());\n\t}",
+        "ensureImports": ["net.minecraft.world.GameRules", "net.minecraft.world.World", "net.minecraft.server.world.ServerWorld"]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.2 removed World.getGameRules(); ServerWorld and MinecraftServer keep it. A client world never had the server's rules (only defaults), so the helper keeps the old behaviour exactly: the server's rules on the server, the defaults on a client. Seen in AppleSkin 1.20.1 -> 1.21.6 (natural regeneration in its health estimate); upstream AppleSkin syncs the rule instead, which a mod can still add.",
+      "verified": null,
+      "test": {
+        "error": "FoodHelper.java:5: error: cannot find symbol\n\t\treturn world != null && world.getGameRules().getBoolean(GameRules.NATURAL_REGENERATION);\n\t\t                             ^\n  symbol:   method getGameRules()\n  location: variable world of type World\n",
+        "before": "package mod;\n\npublic class FoodHelper {\n\tstatic boolean regen(World world) {\n\t\treturn world != null && world.getGameRules().getBoolean(GameRules.NATURAL_REGENERATION);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.server.world.ServerWorld;\nimport net.minecraft.world.World;\nimport net.minecraft.world.GameRules;\n\npublic class FoodHelper {\n\tstatic boolean regen(World world) {\n\t\treturn world != null && modaccel$gameRules(world).getBoolean(GameRules.NATURAL_REGENERATION);\n\t}\n\n\t/** Written by modaccel port: 1.21.2 keeps game rules on the server. A client world gets the default rules, all a client ever had. */\n\tprivate static GameRules modaccel$gameRules(World world) {\n\t\tif (world instanceof ServerWorld server) return server.getGameRules();\n\t\tif (world.getServer() != null) return world.getServer().getGameRules();\n\t\treturn new GameRules(world.getEnabledFeatures());\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "client-game-rules-default-official",
+      "jump": "1.21.1 -> 1.21.2 (official names)",
+      "match": "symbol:\\s+method getGameRules\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) Level\\b",
+      "apply": {
+        "transform": "helper",
+        "name": "modaccel$gameRules",
+        "source": "\t/** Written by modaccel port: 1.21.2 keeps game rules on the server. A client level gets the default rules, all a client ever had. */\n\tprivate static GameRules modaccel$gameRules(Level level) {\n\t\tif (level instanceof ServerLevel server) return server.getGameRules();\n\t\tif (level.getServer() != null) return level.getServer().getGameRules();\n\t\treturn new GameRules(level.enabledFeatures());\n\t}",
+        "ensureImports": ["net.minecraft.world.level.GameRules", "net.minecraft.world.level.Level", "net.minecraft.server.level.ServerLevel"]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "The official-names twin of client-game-rules-default (Level, ServerLevel, enabledFeatures() checked against the 1.21.6 Mojang mappings).",
+      "verified": null,
+      "test": {
+        "error": "FoodHelper.java:5: error: cannot find symbol\n\t\treturn level.getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION);\n\t\t            ^\n  symbol:   method getGameRules()\n  location: variable level of type Level\n",
+        "before": "package mod;\n\npublic class FoodHelper {\n\tstatic boolean regen(Level level) {\n\t\treturn level.getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.Level;\nimport net.minecraft.world.level.GameRules;\n\npublic class FoodHelper {\n\tstatic boolean regen(Level level) {\n\t\treturn modaccel$gameRules(level).getBoolean(GameRules.RULE_NATURAL_REGENERATION);\n\t}\n\n\t/** Written by modaccel port: 1.21.2 keeps game rules on the server. A client level gets the default rules, all a client ever had. */\n\tprivate static GameRules modaccel$gameRules(Level level) {\n\t\tif (level instanceof ServerLevel server) return server.getGameRules();\n\t\tif (level.getServer() != null) return level.getServer().getGameRules();\n\t\treturn new GameRules(level.enabledFeatures());\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "food-effects-from-consumable",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+method getStatusEffects\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) FoodComponent\\b",
+      "apply": {
+        "transform": "helper",
+        "name": "modaccel$foodEffects",
+        "find": "([\\w.]+)\\.get\\(DataComponentTypes\\.FOOD\\)\\.getStatusEffects\\(\\)",
+        "replace": "modaccel\\$foodEffects($1)",
+        "source": "\t/** Written by modaccel port: 1.21.2 moved a food's effects to its consumable component. The same list as before: each effect with its chance. */\n\tprivate static List<Pair<StatusEffectInstance, Float>> modaccel$foodEffects(ItemStack stack) {\n\t\tList<Pair<StatusEffectInstance, Float>> effects = new ArrayList<>();\n\t\tConsumableComponent consumable = stack.get(DataComponentTypes.CONSUMABLE);\n\t\tif (consumable == null) return effects;\n\t\tfor (ConsumeEffect effect : consumable.onConsumeEffects())\n\t\t\tif (effect instanceof ApplyEffectsConsumeEffect apply)\n\t\t\t\tfor (StatusEffectInstance instance : apply.effects()) effects.add(Pair.of(instance, apply.probability()));\n\t\treturn effects;\n\t}",
+        "ensureImports": ["java.util.List", "java.util.ArrayList", "com.mojang.datafixers.util.Pair", "net.minecraft.entity.effect.StatusEffectInstance", "net.minecraft.item.ItemStack", "net.minecraft.component.DataComponentTypes", "net.minecraft.component.type.ConsumableComponent", "net.minecraft.item.consume.ConsumeEffect", "net.minecraft.item.consume.ApplyEffectsConsumeEffect"]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Before 1.20.5 a food's getStatusEffects() was a list of (effect, chance) pairs; 1.21.2 moved eating effects to the consumable component's ApplyEffectsConsumeEffect entries. The helper rebuilds the old list from the stack, so loops over it keep working. Runs on a stack's food component (stack.get(DataComponentTypes.FOOD), as item-get-food-component writes it); a FoodComponent held apart from its stack keeps the food-effects-consumable guide. Names checked against yarn 1.21.6. Seen in AppleSkin 1.20.1 -> 1.21.6.",
+      "verified": null,
+      "test": {
+        "error": "FoodHelper.java:5: error: cannot find symbol\n\t\tfor (Pair<StatusEffectInstance, Float> effect : itemStack.get(DataComponentTypes.FOOD).getStatusEffects())\n\t\t                                                                                     ^\n  symbol:   method getStatusEffects()\n  location: class FoodComponent\n",
+        "before": "package mod;\n\npublic class FoodHelper {\n\tstatic boolean rotten(ItemStack itemStack) {\n\t\tfor (Pair<StatusEffectInstance, Float> effect : itemStack.get(DataComponentTypes.FOOD).getStatusEffects())\n\t\t\tif (effect.getFirst().getEffectType().value().getCategory() == StatusEffectCategory.HARMFUL) return true;\n\t\treturn false;\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.item.consume.ApplyEffectsConsumeEffect;\nimport net.minecraft.item.consume.ConsumeEffect;\nimport net.minecraft.component.type.ConsumableComponent;\nimport net.minecraft.component.DataComponentTypes;\nimport net.minecraft.item.ItemStack;\nimport net.minecraft.entity.effect.StatusEffectInstance;\nimport com.mojang.datafixers.util.Pair;\nimport java.util.ArrayList;\nimport java.util.List;\n\npublic class FoodHelper {\n\tstatic boolean rotten(ItemStack itemStack) {\n\t\tfor (Pair<StatusEffectInstance, Float> effect : modaccel$foodEffects(itemStack))\n\t\t\tif (effect.getFirst().getEffectType().value().getCategory() == StatusEffectCategory.HARMFUL) return true;\n\t\treturn false;\n\t}\n\n\t/** Written by modaccel port: 1.21.2 moved a food's effects to its consumable component. The same list as before: each effect with its chance. */\n\tprivate static List<Pair<StatusEffectInstance, Float>> modaccel$foodEffects(ItemStack stack) {\n\t\tList<Pair<StatusEffectInstance, Float>> effects = new ArrayList<>();\n\t\tConsumableComponent consumable = stack.get(DataComponentTypes.CONSUMABLE);\n\t\tif (consumable == null) return effects;\n\t\tfor (ConsumeEffect effect : consumable.onConsumeEffects())\n\t\t\tif (effect instanceof ApplyEffectsConsumeEffect apply)\n\t\t\t\tfor (StatusEffectInstance instance : apply.effects()) effects.add(Pair.of(instance, apply.probability()));\n\t\treturn effects;\n\t}\n}\n"
+      }
+    },
+    {
       "id": "hunger-exhaustion-accessor",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "symbol:\\s+method (?:getExhaustion|setExhaustion)\\(",
