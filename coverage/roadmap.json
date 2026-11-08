@@ -314,17 +314,14 @@
     },
     {
      "id": "26",
-     "title": "Nightly CI: behaviour checks and the bot on older Paper versions",
+     "title": "Nightly bot run on older Paper versions",
      "status": "next",
-     "text": "One nightly CI job runs the real-game behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) and the bot on older Paper versions.",
+     "text": "A nightly CI job runs the bot on older Paper versions.",
      "start": "2026-11-09",
      "target": "2026-11-20",
      "measures": [
-      "plugin.paper-versions.ci",
-      "test.behaviour-checks",
-      "ci.nightly-wall"
-     ],
-     "result": "bench/behaviour_checks.sh runs both behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) in a hidden, quiet client on a virtual display with software OpenGL: on a fresh boat.dev Linux machine with no GPU both passed and both breaks failed, 10 minutes. The nightly CI job is written as bench/behaviour-nightly.patch with its expected spend ($0 on this public repository, about 10 to 15 runner-minutes a night) and waits for Jon to approve it."
+      "plugin.paper-versions.ci"
+     ]
     },
     {
      "id": "27",
@@ -332,7 +329,10 @@
      "status": "next",
      "text": "The bot joins a modded server (NeoForge or Fabric dedicated server), so mods get scenario checks like plugins do.",
      "start": "2026-11-23",
-     "target": "2026-12-11"
+     "target": "2026-12-11",
+     "measures": [
+      "test.behaviour-checks"
+     ]
     },
     {
      "id": "28",
@@ -539,6 +539,11 @@
    "question": "Do speed targets drive work?",
    "choice": "Only when they move the goal. Phase 7 closed on Nov 7 once checks were hidden, data-check skipped the game and 8 checks ran at once; the start, cold-check, screen-check, server and pack-check speed targets became facts, the nightly job joined step 26 and pack-check's step joined Phase 6, and work went back to porting (Jon, 2026-11-07)",
    "date": "2026-11-07"
+  },
+  {
+   "question": "Run the real-game behaviour checks nightly?",
+   "choice": "No. Their inputs (game, mods, Java) are pinned, so a nightly run repeats yesterday's answer; they run when a port reaches the game or the code they test changes (Jon, 2026-11-08)",
+   "date": "2026-11-08"
   }
  ]
 }
