@@ -3418,6 +3418,52 @@
         "before": "\tprivate int enabledColor = 14737632;\n\tprivate int labelColor = 0x808080;\n\t\tcontext.drawCenteredTextWithShadow(font, title.getString(), width / 2 + 60, 15, 0xffffff);\n\t\tcontext.drawText(fontRenderer, line, getX() + margin, renderY, 14737632, true);\n\t\tcontext.fill(startX, startY, endX, endY, -16776961);\n\t\tcontext.drawText(mc.font, title, x, y, 0xFFFFFFFF);\n// DrawContext\n",
         "after": "\tprivate int enabledColor = 0xffe0e0e0;\n\tprivate int labelColor = 0xff808080;\n\t\tcontext.drawCenteredTextWithShadow(font, title.getString(), width / 2 + 60, 15, 0xffffffff);\n\t\tcontext.drawText(fontRenderer, line, getX() + margin, renderY, 0xffe0e0e0, true);\n\t\tcontext.fill(startX, startY, endX, endY, -16776961);\n\t\tcontext.drawText(mc.font, title, x, y, 0xFFFFFFFF);\n// DrawContext\n"
       }
+    },
+    {
+      "id": "hunger-exhaustion-accessor",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+method (?:getExhaustion|setExhaustion)\\(",
+      "apply": {
+        "transform": "accessor",
+        "owner": "net.minecraft.entity.player.HungerManager",
+        "field": "exhaustion",
+        "type": "float",
+        "get": "getExhaustion",
+        "set": "setExhaustion",
+        "why": "1.21.2 removed HungerManager.getExhaustion() and setExhaustion(float); the private field exhaustion remains."
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The port writes an accessor mixin in the package of the mod's main mixins config, lists it there, and sends each failing call through it. Upstream AppleSkin 1.21.6 does the same by hand (HungerManagerMixin with ExhaustionHelper). A mod with no mixins config keeps the error and gets the hunger-exhaustion-accessor guide.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:4: error: cannot find symbol\n\t\treturn player.getHungerManager().getExhaustion();\n\t\t                                ^\n  symbol:   method getExhaustion()\n  location: class HungerManager\n",
+        "before": "package mod.client;\n\nclass HUD {\n\tfloat read(PlayerEntity player) { return player.getHungerManager().getExhaustion(); }\n\tvoid write(HungerManager stats, float[] values) { stats.setExhaustion(values[0]); }\n}\n",
+        "after": "package mod.client;\nimport mod.mixin.HungerManagerAccessor;\n\nclass HUD {\n\tfloat read(PlayerEntity player) { return ((HungerManagerAccessor) player.getHungerManager()).modaccel$getExhaustion(); }\n\tvoid write(HungerManager stats, float[] values) { ((HungerManagerAccessor) stats).modaccel$setExhaustion(values[0]); }\n}\n"
+      }
+    },
+    {
+      "id": "hunger-exhaustion-accessor-official",
+      "jump": "1.21.1 -> 1.21.2 (official names)",
+      "match": "symbol:\\s+method (?:getExhaustionLevel|setExhaustion)\\(",
+      "apply": {
+        "transform": "accessor",
+        "owner": "net.minecraft.world.food.FoodData",
+        "field": "exhaustionLevel",
+        "type": "float",
+        "get": "getExhaustionLevel",
+        "set": "setExhaustion",
+        "why": "1.21.2 removed FoodData.getExhaustionLevel() and setExhaustion(float); the private field exhaustionLevel remains."
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The official-names twin of hunger-exhaustion-accessor.",
+      "verified": null,
+      "test": {
+        "error": "HUD.java:4: error: cannot find symbol\n\t\treturn player.getFoodData().getExhaustionLevel();\n\t\t                           ^\n  symbol:   method getExhaustionLevel()\n  location: class FoodData\n",
+        "before": "package mod.client;\n\nclass HUD {\n\tfloat read(Player player) { return player.getFoodData().getExhaustionLevel(); }\n}\n",
+        "after": "package mod.client;\nimport mod.mixin.FoodDataAccessor;\n\nclass HUD {\n\tfloat read(Player player) { return ((FoodDataAccessor) player.getFoodData()).modaccel$getExhaustionLevel(); }\n}\n"
+      }
     }
   ]
 }

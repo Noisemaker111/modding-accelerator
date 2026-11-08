@@ -129,7 +129,7 @@
 			"Add a mixin accessor interface on HungerManager with @Accessor(\"exhaustion\") float getExhaustion() (and a setter only if the mod wrote it), list it in the mod's mixins json, and read it as ((ThatAccessor) hungerManager).getExhaustion().",
 			"Do not read the field by reflection: a Fabric mod runs on intermediary names outside the dev environment, so the yarn field name does not exist there."
 		],
-		"note": "coverage/changes/1.21.1__1.21.2.json records FoodData getExhaustionLevel()float and setExhaustion(float)void removed. Upstream AppleSkin 1.21.6 reads it through its own ExhaustionHelper."
+		"note": "coverage/changes/1.21.1__1.21.2.json records FoodData getExhaustionLevel()float and setExhaustion(float)void removed. Upstream AppleSkin 1.21.6 reads it through its own ExhaustionHelper. port --fix writes this accessor itself (rule hunger-exhaustion-accessor) when the mod has a mixins config; this guide is left for a mod without one."
 	},
 	{
 		"id": "food-effects-consumable",

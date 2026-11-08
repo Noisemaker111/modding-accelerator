@@ -129,6 +129,51 @@ public final class PortableTests {
         }
         check(written >= 3, written + " written rules with a test match their error, rewrite their example and run on their update");
     }
+    /**
+     * A getter the game removed while keeping its field (1.21.2's HungerManager.getExhaustion()) becomes an accessor mixin
+     * the port writes into the mod's mixin package, lists in its main mixins config, and deletes again on undo.
+     */
+    static void accessorChecks(Path home, Path scratch) throws Exception {
+        String chain = "x = a.b(c, d(e)).f[0].getExhaustion();";
+        check(chain.substring(Port.receiverStart(chain, chain.indexOf(".getExhaustion"))).startsWith("a.b(c"), "a call's receiver is the whole chain of names, calls and indexes before it");
+        String created = "return new Stats(1).getExhaustion();";
+        check(created.substring(Port.receiverStart(created, created.indexOf(".getExhaustion"))).startsWith("new Stats(1)"), "a receiver made with new keeps its new");
+        Path root = scratch.resolve("accessor"), java = root.resolve("src/main/java/mod"), resources = root.resolve("src/main/resources");
+        Files.createDirectories(java.resolve("mixin")); Files.createDirectories(java.resolve("client")); Files.createDirectories(java.resolve("compat")); Files.createDirectories(resources);
+        Files.writeString(root.resolve("settings.gradle"), "");
+        Files.createDirectories(root.resolve("gradle/wrapper"));
+        Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14-bin.zip\n");
+        Files.writeString(java.resolve("mixin/HudMixin.java"), "package mod.mixin;\n\nclass HudMixin {}\n");
+        Files.writeString(java.resolve("compat/JeiMixin.java"), "package mod.compat;\n\nclass JeiMixin {}\n");
+        Path hud = java.resolve("client/HUD.java");
+        String original = "package mod.client;\n\nclass HUD {\n\tfloat read(PlayerEntity player) {\n\t\treturn player.getHungerManager().getExhaustion();\n\t}\n\tfloat own(Payload payload) { return payload.getExhaustion(); }\n}\n";
+        Files.writeString(hud, original);
+        Path config = resources.resolve("mod.mixins.json");
+        String listed = "{\n  \"required\": true,\n  \"package\": \"mod.mixin\",\n  \"client\": [\n    \"HudMixin\"\n  ]\n}\n";
+        Files.writeString(config, listed);
+        Files.writeString(resources.resolve("mod.compat.mixins.json"), "{\n  \"required\": false,\n  \"package\": \"mod.compat\",\n  \"mixins\": [\"JeiMixin\"]\n}\n");
+        ProjectModel project = new ProjectModel(root);
+        Port port = new Port(new Build(project, home, "", new Modaccel.Report(root, "port")), Json.map("projects", List.of()));
+        port.transaction = project.state().resolve("ports/accessor"); Files.createDirectories(port.transaction); port.saveInProgress();
+        port.track(hud);
+        var rule = Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules")).stream().map(Json::object)
+                .filter(r -> "hunger-exhaustion-accessor".equals(r.get("id"))).findFirst().orElseThrow(() -> new AssertionError("knowledge/fixes.json has no hunger-exhaustion-accessor rule"));
+        String log = hud + ":5: error: cannot find symbol\n\t\treturn player.getHungerManager().getExhaustion();\n\t\t                                ^\n  symbol:   method getExhaustion()\n  location: class HungerManager\n";
+        check(port.applyAccessor(rule, log), "a removed getter named by javac on its owner class is repaired by the accessor rule");
+        Path accessor = java.resolve("mixin/HungerManagerAccessor.java");
+        String source = Files.readString(accessor);
+        check(source.contains("@Mixin(HungerManager.class)") && source.contains("@Accessor(\"exhaustion\")") && source.contains("float modaccel$getExhaustion();") && !source.contains("modaccel$setExhaustion"),
+                "the accessor mixin reads the field in the main mixin package, with no setter the mod never used");
+        check(Files.readString(config).contains("\"package\": \"mod.mixin\",\n  \"mixins\": [\"HungerManagerAccessor\"],\n  \"client\""), "the accessor is listed in the required mixins config, not the optional one: " + Files.readString(config));
+        String repaired = Files.readString(hud);
+        check(repaired.contains("return ((HungerManagerAccessor) player.getHungerManager()).modaccel$getExhaustion();") && repaired.contains("return payload.getExhaustion();")
+                && repaired.contains("import mod.mixin.HungerManagerAccessor;"), "only the call javac reported goes through the accessor; the mod's own getter of the same name is kept");
+        Port.finishTransaction(project, port.transaction, port.before);
+        Port.undo(project, port.transaction.toString());
+        check(!Files.exists(accessor) && Files.readString(config).equals(listed) && Files.readString(hud).equals(original), "undo deletes the accessor it wrote and restores the config and the call");
+        check(Port.registerMixin("{\"package\": \"a\", \"mixins\": []}", "X").equals("{\"package\": \"a\", \"mixins\": [\"X\"]}")
+                && Port.registerMixin("{\"package\": \"a\", \"mixins\": [\"Y\"]}", "X").equals("{\"package\": \"a\", \"mixins\": [\"X\", \"Y\"]}"), "a mixin goes first in a config's common list, empty or not");
+    }
     /** Step 9: Loom follows the target. The new version lands where the build states it, a literal plugin line or the property it reads. */
     static void loomEditChecks(Path home, Path scratch) throws Exception {
         for (boolean property : List.of(false, true)) {
@@ -373,6 +418,7 @@ public final class PortableTests {
         routeChecks(home, new Port(portBuild, model), scratch);
         learnedRuleChecks(home);
         loomEditChecks(home, scratch);
+        accessorChecks(home, scratch);
         parchmentChecks(home, scratch);
         for (var groups : List.of(List.of("net.minecraftforge"), List.of("net.fabricmc", "net.neoforged"), List.<String>of())) {
             var dependencies = groups.stream().map(group -> Json.map("group", group)).toList();

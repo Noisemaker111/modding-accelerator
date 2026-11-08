@@ -10,6 +10,27 @@ final class Port {
     final Build build; Map<String, Object> model; String targetVersion = "";
     /** The hub route this port walks (null for the one-jump path), its source namespace, and the rules that changed a file. */
     Route route; String namespace = "mojmap"; final Map<String, List<String>> rulesApplied = new LinkedHashMap<>();
+    /** The running port's undo record: each file's hash before the port (null for a file the port created) and the files it plans to change. */
+    Path transaction; final Map<String, Object> before = new LinkedHashMap<>(); final List<String> planned = new ArrayList<>(); List<String> plannedRemovals = List.of();
+    void saveInProgress() throws IOException {
+        Json.save(transaction.resolve("transaction.json"), Json.map("root", build.project.root.toString(), "before", before, "after", Map.of(), "removed", List.of(),
+                "plan", Json.map("edits", planned, "removals", plannedRemovals, "backups", transaction.resolve("before").toString()), "status", "in-progress"));
+    }
+    /**
+     * Records a file the port is about to change or create that the opening backup did not cover (only sources and build
+     * files are backed up up front), before the first write: undo restores it, or deletes it when the port created it.
+     */
+    void track(Path file) throws Exception {
+        String relative = build.project.root.relativize(file.toAbsolutePath().normalize()).toString().replace('\\', '/');
+        if (before.containsKey(relative)) return;
+        if (Files.isRegularFile(file)) {
+            Path backup = transaction.resolve("before").resolve(relative);
+            Files.createDirectories(backup.getParent()); Files.copy(file, backup, StandardCopyOption.REPLACE_EXISTING);
+            before.put(relative, Fingerprints.bytes(Files.readAllBytes(file)));
+        } else before.put(relative, null);
+        planned.add(relative);
+        saveInProgress();
+    }
     Port(Build build, Map<String, Object> model) { this.build = build; this.model = model; }    static List<Path> sources(ProjectModel project) throws IOException {
         List<Path> paths = new ArrayList<>(project.inputs());
         Files.walkFileTree(project.root, new SimpleFileVisitor<Path>() {
@@ -124,8 +145,8 @@ final class Port {
         Path learned = options.values.containsKey("rules") ? Path.of(options.get("rules", "")).toAbsolutePath() : null;
         boolean corpusLoaded = learned != null;
         Target.requireWritable(target);
-        Path transaction = build.project.state().resolve("ports/" + build.report.id);
-        Map<String, Object> before = new LinkedHashMap<>();
+        Path transaction = build.project.state().resolve("ports/" + build.report.id); this.transaction = transaction;
+        Map<String, Object> before = this.before;
         Set<Path> backupPaths = new TreeSet<>(sources(build.project));
         for (Target.Edit edit : target) {
             Path file = edit.file().toRealPath();
@@ -137,10 +158,9 @@ final class Port {
             Files.createDirectories(backup.getParent()); Files.copy(file, backup); before.put(relative.toString().replace('\\', '/'), Fingerprints.bytes(Files.readAllBytes(file)));
         }
         // The restore plan is on disk before the first edit: an interrupted port still knows what it may have changed.
-        List<String> planned = new ArrayList<>();
         for (Target.Edit edit : target) planned.add(build.project.root.relativize(edit.file().toRealPath()).toString().replace('\\', '/'));
-        Json.save(transaction.resolve("transaction.json"), Json.map("root", build.project.root.toString(), "before", before, "after", Map.of(), "removed", List.of(),
-                "plan", Json.map("edits", planned, "removals", relative(build.project.root, excluded), "backups", transaction.resolve("before").toString()), "status", "in-progress"));
+        plannedRemovals = relative(build.project.root, excluded);
+        saveInProgress();
         Path log; boolean compiled = false; int rounds = Integer.parseInt(options.get("rounds", "5"));
         List<String> removed = new ArrayList<>();
         if (rounds < 1 || rounds > 20) throw new IllegalArgumentException("--rounds must be 1–20");
@@ -576,6 +596,10 @@ final class Port {
             // A routed port runs a rule only when its jump covers an update the route crosses and its names fit.
             List<String> covered = route == null ? List.of() : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null && covered.isEmpty()) continue;
+            if ("accessor".equals(Json.object(rule.get("apply")).get("transform"))) {
+                if (applyAccessor(rule, errors)) rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
+                continue;
+            }
             for (Path file : all) {
                 if (!"repo".equals(rule.get("scope")) && !logged.contains(file)) continue;
                 String original = Files.readString(file), text = rewrite(rule, original);
@@ -657,15 +681,166 @@ final class Port {
         String text = original;
         String when = Json.text(rule, "when", ""); if (!when.isEmpty() && !Pattern.compile(when).matcher(text).find()) return original;
         if ("opaque-gui-colors".equals(apply.get("transform"))) text = opaqueGuiColors(text);
+        // A rule's test has no project to put the accessor in: it reads as if the mod's mixin package were mod.mixin.
+        else if ("accessor".equals(apply.get("transform"))) text = accessorCalls(text, apply, "mod.mixin." + simpleName(Json.text(apply, "owner", "")) + "Accessor", null);
         else if (apply.containsKey("literal")) text = text.replace(apply.get("literal").toString(), Json.text(apply, "replace", ""));
         else if (apply.containsKey("find")) text = Pattern.compile(apply.get("find").toString()).matcher(text).replaceAll(Json.text(apply, "replace", ""));
-        if (!text.equals(original)) {
-            for (String name : ProjectModel.strings(apply.get("ensureImports"))) if (!text.contains("import " + name + ";")) {
-                Matcher header = Pattern.compile("(?m)^package [^;]+;").matcher(text);
-                text = header.find() ? text.substring(0, header.end()) + "\nimport " + name + ";" + text.substring(header.end()) : "import " + name + ";\n" + text;
-            }
-        }
+        if (!text.equals(original)) for (String name : ProjectModel.strings(apply.get("ensureImports"))) text = addImport(text, name);
         return text;
+    }
+    static String addImport(String text, String name) {
+        if (text.contains("import " + name + ";")) return text;
+        Matcher header = Pattern.compile("(?m)^package ([^;]+);").matcher(text);
+        if (header.find() && name.equals(header.group(1).strip() + "." + simpleName(name))) return text;
+        return header.find(0) ? text.substring(0, header.end()) + "\nimport " + name + ";" + text.substring(header.end()) : "import " + name + ";\n" + text;
+    }
+    /** The accessor method that stands in for a removed getter or setter: modaccel$getExhaustion for the field exhaustion. */
+    static String accessorMethod(String kind, String field) { return "modaccel$" + kind + Character.toUpperCase(field.charAt(0)) + field.substring(1); }
+    /**
+     * A getter or setter the game removed while keeping its private field (1.21.2's HungerManager.getExhaustion()): each
+     * call on the given lines (every line when null) goes through the accessor mixin instead, as
+     * ((HungerManagerAccessor) receiver).modaccel$getExhaustion(). A call with no receiver is left for javac to report.
+     */
+    static String accessorCalls(String text, Map<String, Object> apply, String accessor, Set<Integer> lines) {
+        String field = Json.text(apply, "field", ""), simple = simpleName(accessor);
+        Map<String, String> methods = new LinkedHashMap<>();
+        for (String kind : List.of("get", "set")) if (!Json.text(apply, kind, "").isEmpty()) methods.put(Json.text(apply, kind, ""), accessorMethod(kind, field));
+        if (methods.isEmpty() || field.isEmpty()) return text;
+        Matcher call = Pattern.compile("\\.\\s*(" + String.join("|", methods.keySet()) + ")\\s*\\(").matcher(text);
+        StringBuilder out = new StringBuilder(); int copied = 0, line = 1, counted = 0;
+        while (call.find()) {
+            for (; counted < call.start(); counted++) if (text.charAt(counted) == '\n') line++;
+            if (lines != null && !lines.contains(line)) continue;
+            int receiver = receiverStart(text, call.start());
+            if (receiver >= call.start() || receiver < copied) continue;
+            out.append(text, copied, receiver).append("((").append(simple).append(") ").append(text, receiver, call.start()).append(").")
+                    .append(methods.get(call.group(1))).append('(');
+            copied = call.end();
+        }
+        if (copied == 0) return text;
+        return addImport(out.append(text.substring(copied)).toString(), accessor);
+    }
+    /** Where the receiver of the call whose '.' is at dot starts: a chain of names, calls and indexes such as a.b().c[0]. */
+    static int receiverStart(String text, int dot) {
+        int begin = dot;
+        while (true) {
+            int end = begin - 1; while (end >= 0 && Character.isWhitespace(text.charAt(end))) end--;
+            if (end < 0) return begin;
+            char c = text.charAt(end); int start;
+            if (c == ')' || c == ']') {
+                int depth = 0, at = end;
+                for (; at >= 0; at--) { char d = text.charAt(at); if (d == ')' || d == ']') depth++; else if ((d == '(' || d == '[') && --depth == 0) break; }
+                if (at < 0) return begin;
+                start = at;
+                int name = start - 1; while (name >= 0 && Character.isJavaIdentifierPart(text.charAt(name))) name--;
+                if (name + 1 < start) start = name + 1;   // a call or an index on a name: foo(...), foo[...]
+                else if (c == ']') { begin = start; continue; }
+            } else if (Character.isJavaIdentifierPart(c)) {
+                start = end; while (start > 0 && Character.isJavaIdentifierPart(text.charAt(start - 1))) start--;
+            } else return begin;
+            if (text.startsWith("new", Math.max(0, start - 4)) && start >= 4 && Character.isWhitespace(text.charAt(start - 1))
+                    && (start == 4 || !Character.isJavaIdentifierPart(text.charAt(start - 5)))) start -= 4;
+            begin = start;
+            int previous = start - 1; while (previous >= 0 && Character.isWhitespace(text.charAt(previous))) previous--;
+            if (previous >= 0 && text.charAt(previous) == '.') begin = previous; else return begin;
+        }
+    }
+    /**
+     * Runs an accessor rule on the errors it names: javac's "cannot find symbol" for the rule's getter or setter on its
+     * owner class. Writes the accessor mixin into the package of the mod's main mixins config, lists it there, and sends
+     * each failing call through it. False when no error is the rule's, or the mod has no mixins config to put it in
+     * (then the error stays, with its repair guide).
+     */
+    boolean applyAccessor(Map<String, Object> rule, String errors) throws Exception {
+        var apply = Json.object(rule.get("apply"));
+        String owner = Json.text(apply, "owner", ""), ownerSimple = simpleName(owner);
+        Set<String> names = new HashSet<>();
+        for (String kind : List.of("get", "set")) if (!Json.text(apply, kind, "").isEmpty()) names.add(Json.text(apply, kind, ""));
+        Map<Path, Set<Integer>> sites = new LinkedHashMap<>(); Set<String> used = new HashSet<>();
+        List<String> log = errors.lines().toList();
+        for (int i = 0; i < log.size(); i++) {
+            Matcher error = ERROR.matcher(log.get(i)); if (!error.find() || !error.group(3).contains("cannot find symbol")) continue;
+            StringBuilder block = new StringBuilder();
+            for (int j = i + 1; j < log.size() && j <= i + 5 && !ERROR.matcher(log.get(j)).find(); j++) block.append(log.get(j)).append('\n');
+            Matcher symbol = Pattern.compile("symbol:\\s+method (\\w+)\\(").matcher(block);
+            if (!symbol.find() || !names.contains(symbol.group(1)) || !Pattern.compile("location:.*\\b" + Pattern.quote(ownerSimple) + "\\b").matcher(block).find()) continue;
+            Path file = Path.of(error.group(1)); if (!file.isAbsolute()) file = build.project.root.resolve(file); file = file.normalize();
+            if (!file.startsWith(build.project.root) || !Files.isRegularFile(file)) continue;
+            sites.computeIfAbsent(file, f -> new TreeSet<>()).add(Integer.parseInt(error.group(2)));
+            used.add(symbol.group(1).equals(Json.text(apply, "get", "")) ? "get" : "set");
+        }
+        if (sites.isEmpty()) return false;
+        Path config = mainMixinConfig();
+        if (config == null) return false;
+        String mixinPackage = Json.text(Json.read(config), "package", "");
+        Path folder = null;
+        for (Path source : ownedJava()) {
+            Path parent = source.getParent();
+            if (parent.endsWith(mixinPackage.replace('.', '/')) && Files.readString(source).matches("(?s).*\\bpackage\\s+" + Pattern.quote(mixinPackage) + "\\s*;.*")) { folder = parent; break; }
+        }
+        if (folder == null) return false;
+        String simple = ownerSimple + "Accessor";
+        Path file = folder.resolve(simple + ".java");
+        if (Files.exists(file) && !Files.readString(file).contains(ACCESSOR_MARK)) { simple = ownerSimple + "ModaccelAccessor"; file = folder.resolve(simple + ".java"); }
+        String existing = Files.exists(file) ? Files.readString(file) : "";
+        for (String kind : List.of("get", "set")) if (existing.contains(accessorMethod(kind, Json.text(apply, "field", "")) + "(")) used.add(kind);
+        track(file);
+        Files.writeString(file, accessorSource(mixinPackage, simple, apply, used));
+        String listed = Files.readString(config), registered = registerMixin(listed, simple);
+        if (!registered.equals(listed)) { track(config); Files.writeString(config, registered); }
+        for (var site : sites.entrySet()) {
+            String original = Files.readString(site.getKey()), text = accessorCalls(original, apply, mixinPackage + "." + simple, site.getValue());
+            if (!text.equals(original)) Files.writeString(site.getKey(), text);
+        }
+        return true;
+    }
+    static final String ACCESSOR_MARK = "Written by modaccel port";
+    /** The accessor mixin's source: a getter and, when the mod wrote the value, a setter on the owner's private field. */
+    static String accessorSource(String mixinPackage, String simple, Map<String, Object> apply, Set<String> kinds) {
+        String owner = Json.text(apply, "owner", ""), field = Json.text(apply, "field", ""), type = Json.text(apply, "type", "");
+        StringBuilder out = new StringBuilder("package " + mixinPackage + ";\n\nimport " + owner + ";\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.gen.Accessor;\n\n")
+                .append("/** ").append(ACCESSOR_MARK).append(": ").append(Json.text(apply, "why", simpleName(owner) + " no longer exposes " + field + "."))
+                .append(" */\n@Mixin(").append(simpleName(owner)).append(".class)\npublic interface ").append(simple).append(" {\n");
+        if (kinds.contains("get")) out.append("    @Accessor(\"").append(field).append("\")\n    ").append(type).append(' ').append(accessorMethod("get", field)).append("();\n");
+        if (kinds.contains("set")) out.append("    @Accessor(\"").append(field).append("\")\n    void ").append(accessorMethod("set", field)).append('(').append(type).append(" value);\n");
+        return out.append("}\n").toString();
+    }
+    /** Lists a mixin class in a mixins config's common "mixins" array, adding the array when the config has none; formatting kept. */
+    static String registerMixin(String config, String simple) {
+        if (Pattern.compile("\"" + Pattern.quote(simple) + "\"").matcher(config).find()) return config;
+        Matcher common = Pattern.compile("\"mixins\"\\s*:\\s*\\[(\\s*)").matcher(config);
+        if (common.find()) {
+            boolean empty = config.substring(common.end()).startsWith("]");
+            String indent = common.group(1).isEmpty() ? "" : common.group(1);
+            return config.substring(0, common.end()) + "\"" + simple + "\"" + (empty ? "" : "," + (indent.isEmpty() ? " " : indent)) + config.substring(common.end());
+        }
+        Matcher pkg = Pattern.compile("\"package\"\\s*:\\s*\"[^\"]*\"\\s*,?").matcher(config);
+        if (!pkg.find()) return config;
+        String head = config.substring(0, pkg.end());
+        return (head.endsWith(",") ? head : head + ",") + "\n  \"mixins\": [\"" + simple + "\"]" + (head.endsWith(",") ? "," : "") + config.substring(pkg.end());
+    }
+    /** The mod's own required mixins config (a *.json with a "package"), preferring one marked required and with common mixins. */
+    Path mainMixinConfig() throws IOException {
+        List<Path> configs = new ArrayList<>();
+        Files.walkFileTree(build.project.root, new SimpleFileVisitor<>() {
+            @Override public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attributes) {
+                return !dir.equals(build.project.root) && (ProjectModel.IGNORED.contains(dir.getFileName().toString()) || Files.exists(dir.resolve(".git"))) ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
+            }
+            @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+                String name = file.getFileName().toString();
+                if (name.endsWith(".json") && name.contains("mixins") && !name.contains("refmap")) configs.add(file);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        Path best = null; int bestScore = -1;
+        for (Path file : new TreeSet<>(configs)) {
+            Map<String, Object> config;
+            try { config = Json.read(file); } catch (IOException | IllegalArgumentException unreadable) { continue; }
+            if (Json.text(config, "package", "").isEmpty()) continue;
+            int score = (Boolean.FALSE.equals(config.get("required")) ? 0 : 2) + (config.containsKey("mixins") ? 1 : 0);
+            if (score > bestScore) { best = file; bestScore = score; }
+        }
+        return best;
     }
     /**
      * A reported source file: an absolute path (C:\... or /...) or a relative one starting with a plain name. Gradle's
@@ -859,6 +1034,8 @@ final class Port {
         Map<String, Object> after = new LinkedHashMap<>(); StringBuilder patch = new StringBuilder();
         for (String relative : before.keySet()) {
             Path file = project.root.resolve(relative);
+            boolean created = before.get(relative) == null && !removed.contains(relative);
+            if (created && !Files.isRegularFile(file)) continue;
             if (!Files.isRegularFile(file)) {
                 if (!removed.contains(relative)) throw new IOException("Repair unexpectedly removed " + relative + "; backups: " + transaction);
                 after.put(relative, null); patch.append("deleted ").append(relative).append('\n'); continue;
@@ -866,7 +1043,7 @@ final class Port {
             String hash = Fingerprints.bytes(Files.readAllBytes(file));
             if (!hash.equals(before.get(relative))) {
                 after.put(relative, hash);
-                String old = Files.readString(transaction.resolve("before").resolve(relative)), now = Files.readString(file);
+                String old = created ? "" : Files.readString(transaction.resolve("before").resolve(relative)), now = Files.readString(file);
                 patch.append("diff --git a/").append(relative).append(" b/").append(relative).append("\n--- a/").append(relative).append("\n+++ b/").append(relative).append('\n');
                 List<String> a = old.lines().toList(), b = now.lines().toList();
                 patch.append("@@ -1,").append(a.size()).append(" +1,").append(b.size()).append(" @@\n");
@@ -912,7 +1089,8 @@ final class Port {
         for (var entry : Json.object(state.get("before")).entrySet()) {
             Path file = project.root.resolve(entry.getKey()).normalize();
             if (!file.startsWith(project.root)) continue;
-            if (!Files.isRegularFile(file) || !Fingerprints.bytes(Files.readAllBytes(file)).equals(entry.getValue())) changed.add(entry.getKey());
+            // A null hash is a file the port created: changed once it exists.
+            if (entry.getValue() == null ? Files.exists(file) : !Files.isRegularFile(file) || !Fingerprints.bytes(Files.readAllBytes(file)).equals(entry.getValue())) changed.add(entry.getKey());
         }
         return changed;
     }
@@ -948,7 +1126,11 @@ final class Port {
             if (!file.startsWith(project.root) || !Files.isRegularFile(file) || !Fingerprints.bytes(Files.readAllBytes(file)).equals(entry.getValue()))
                 throw new IOException("Refusing undo: " + entry.getKey() + " changed after porting. Your later edits have been preserved.");
         }
-        for (String relative : after.keySet()) Files.copy(transaction.resolve("before").resolve(relative), project.root.resolve(relative), StandardCopyOption.REPLACE_EXISTING);
+        var original = Json.object(state.get("before"));
+        for (String relative : after.keySet()) {
+            if (original.get(relative) == null && !removed.contains(relative)) Files.delete(project.root.resolve(relative));
+            else Files.copy(transaction.resolve("before").resolve(relative), project.root.resolve(relative), StandardCopyOption.REPLACE_EXISTING);
+        }
         state.put("status", "undone"); Json.save(transaction.resolve("transaction.json"), state);
         return Json.map("ok", true, "restoredFiles", after.size(), "transaction", transaction.toString(),
                 "details", after.isEmpty() ? "The port changed no files, so there was nothing to restore." : "Restored " + after.size() + " file(s) to their state before the port.");
@@ -960,14 +1142,16 @@ final class Port {
      */
     static Map<String, Object> undoInterrupted(ProjectModel project, Path transaction, Map<String, Object> state) throws Exception {
         List<String> changed = changedSince(project, state);
+        var original = Json.object(state.get("before"));
         Path kept = transaction.resolve("current-before-undo");
         for (String relative : changed) {
             Path file = project.root.resolve(relative).normalize(), backup = transaction.resolve("before").resolve(relative);
-            if (!Files.isRegularFile(backup)) throw new IOException("Refusing undo: no backup of " + relative + " in " + transaction.resolve("before") + ". Nothing was restored.");
+            if (original.get(relative) != null && !Files.isRegularFile(backup)) throw new IOException("Refusing undo: no backup of " + relative + " in " + transaction.resolve("before") + ". Nothing was restored.");
             if (Files.isRegularFile(file)) { Files.createDirectories(kept.resolve(relative).getParent()); Files.copy(file, kept.resolve(relative), StandardCopyOption.REPLACE_EXISTING); }
         }
         for (String relative : changed) {
             Path file = project.root.resolve(relative).normalize();
+            if (original.get(relative) == null) { Files.delete(file); continue; }
             Files.createDirectories(file.getParent());
             Files.copy(transaction.resolve("before").resolve(relative), file, StandardCopyOption.REPLACE_EXISTING);
         }
@@ -987,7 +1171,8 @@ final class Port {
         for (var entry : Json.object(state.get("before")).entrySet()) {
             Path file = project.root.resolve(entry.getKey()).normalize();
             if (!file.startsWith(project.root)) continue;
-            if (!Files.isRegularFile(file)) missing.add(entry.getKey());
+            if (entry.getValue() == null) { if (Files.exists(file)) changed.add(entry.getKey()); }
+            else if (!Files.isRegularFile(file)) missing.add(entry.getKey());
             else if (!Fingerprints.bytes(Files.readAllBytes(file)).equals(entry.getValue())) changed.add(entry.getKey());
         }
         StringBuilder out = new StringBuilder("Refusing undo: this port did not finish (status " + Json.text(state, "status", "unknown")
