@@ -91,7 +91,8 @@ public final class ZombieAiCheck {
         Path output = Files.createTempFile("modaccel-za-", ".log");
         long start = System.nanoTime();
         Process process = new ProcessBuilder(command).directory(home.toFile()).redirectErrorStream(true).redirectOutput(output.toFile()).start();
-        if (!process.waitFor(10, TimeUnit.MINUTES)) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); throw new AssertionError("Timed out: " + command); }
+        // Longer than modaccel's own 20-minute game start limit, so its reason is reported rather than this kill.
+        if (!process.waitFor(25, TimeUnit.MINUTES)) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); throw new AssertionError("Timed out: " + command); }
         String text = new String(Files.readAllBytes(output), StandardCharsets.UTF_8); Files.deleteIfExists(output);
         return new Run(process.exitValue(), text, (System.nanoTime() - start) / 1e9);
     }

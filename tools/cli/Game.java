@@ -657,9 +657,11 @@ final class Game {
             if (Set.of("-cp", "-classpath", "--class-path", "-p", "--module-path", "-jar").contains(argument) || argument.startsWith("@")) return true;
         return false;
     }
-    static final long GAME_START_SECONDS = 180, GRADLE_PREPARE_SECONDS = 30 * 60;
+    static final long GAME_START_SECONDS = 180, GAME_START_LIMIT_SECONDS = 20 * 60, GRADLE_PREPARE_SECONDS = 30 * 60;
     /**
-     * Waits for the client's first frame. The 180 s budget starts when the game itself starts:
+     * Waits for the client's first frame. The game fails to start when its log stops moving for 180 s, or after 20
+     * minutes in all: a healthy hidden start on a busy PC took about 8 minutes (2026-11-08, AppleSkin on 1.21.6 beside
+     * NeoForge decompiles) and failed a 180 s total budget, while a hung game stops writing. The clock starts when the game itself starts:
      * when Gradle launches it, Gradle first compiles and prepares the run, which on a big mod
      * (MineColonies: about 4 minutes of javac) used to use up the whole budget before the game
      * existed. Gradle's own phase gets a separate, much larger budget; its exit still fails at once.
@@ -667,13 +669,14 @@ final class Game {
      * that line fails the start at once instead of after the whole timeout.
      */
     static Map<String, Object> awaitFirstFrame(CompletableFuture<Map<String, Object>> ready, Path log, boolean launchedDirectly) throws Exception {
-        long begin = System.nanoTime(), gameStarted = launchedDirectly ? begin : 0, offset = 0;
+        long begin = System.nanoTime(), gameStarted = launchedDirectly ? begin : 0, offset = 0, moved = begin;
         StringBuilder tail = new StringBuilder();
         while (true) {
             try { return ready.get(1, TimeUnit.SECONDS); }
             catch (TimeoutException waiting) { }
             if (Files.exists(log)) try (var file = new RandomAccessFile(log.toFile(), "r")) {
                 if (file.length() > offset) {
+                    moved = System.nanoTime();
                     file.seek(offset); byte[] bytes = new byte[(int)Math.min(file.length() - offset, 1 << 20)]; file.readFully(bytes); offset += bytes.length;
                     tail.append(new String(bytes, StandardCharsets.UTF_8)); if (tail.length() > 4096) tail.delete(0, tail.length() - 4096);
                     if (gameStarted == 0 && tail.indexOf("MODACCEL_LAUNCH") >= 0) gameStarted = System.nanoTime();
@@ -681,8 +684,10 @@ final class Game {
                 }
             }
             long now = System.nanoTime();
-            if (gameStarted != 0 && now - gameStarted > GAME_START_SECONDS * 1_000_000_000L)
-                throw new TimeoutException("no rendered frame " + GAME_START_SECONDS + " s after the game started");
+            if (gameStarted != 0 && now - Math.max(gameStarted, moved) > GAME_START_SECONDS * 1_000_000_000L)
+                throw new TimeoutException("no rendered frame, and the game log has not moved for " + GAME_START_SECONDS + " s");
+            if (gameStarted != 0 && now - gameStarted > GAME_START_LIMIT_SECONDS * 1_000_000_000L)
+                throw new TimeoutException("no rendered frame " + GAME_START_LIMIT_SECONDS / 60 + " minutes after the game started");
             if (gameStarted == 0 && now - begin > GRADLE_PREPARE_SECONDS * 1_000_000_000L)
                 throw new TimeoutException("Gradle did not start the game within " + GRADLE_PREPARE_SECONDS + " s");
         }

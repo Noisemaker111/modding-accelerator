@@ -450,16 +450,23 @@
     },
     {
       "id": "food-component-saturation",
-      "jump": "1.20.1 -> 1.21.6 (yarn)",
-      "match": "symbol:\\s+method getSaturationModifier\\(\\)",
+      "jump": "1.20.4 -> 1.20.5 (yarn)",
+      "match": "symbol:\\s+method getSaturationModifier\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) FoodComponent\\b",
       "apply": {
-        "find": "\\.getSaturationModifier\\(\\)",
-        "replace": ".saturation()"
+        "transform": "helper",
+        "name": "modaccel$saturationModifier",
+        "source": "\t/** Written by modaccel port: since 1.20.5 a food's saturation() is the saturation it gives (nutrition x modifier x 2), not the modifier it was made from. */\n\tprivate static float modaccel$saturationModifier(FoodComponent food) {\n\t\treturn food.nutrition() == 0 ? 0.0F : food.saturation() / (food.nutrition() * 2.0F);\n\t}",
+        "ensureImports": ["net.minecraft.component.type.FoodComponent"]
       },
-      "scope": "log",
+      "scope": "line",
       "when": "",
-      "note": "FoodComponent is a record in 1.21.2+: the saturation modifier is the saturation() accessor.",
-      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+      "note": "1.20.5 made food a record whose saturation() is the finished amount (HungerConstants.calculateSaturation: nutrition * modifier * 2), where 1.20.4's getSaturationModifier() was the modifier. Renaming one to the other compiles and is wrong: AppleSkin 1.20.1 -> 1.21.6 then estimated +15.5 health for a golden carrot that really heals +12.0, caught by its HUD check in the real client. The helper gives back the modifier.",
+      "verified": null,
+      "test": {
+        "error": "FoodHelper.java:4: error: cannot find symbol\n\t\tfloat saturationModifier = itemFood != null ? itemFood.getSaturationModifier() : 0;\n\t\t                                                      ^\n  symbol:   method getSaturationModifier()\n  location: variable itemFood of type FoodComponent\n",
+        "before": "package mod;\n\npublic class FoodHelper {\n\t\tfloat saturationModifier = itemFood != null ? itemFood.getSaturationModifier() : 0;\n}\n",
+        "after": "package mod;\nimport net.minecraft.component.type.FoodComponent;\n\npublic class FoodHelper {\n\t\tfloat saturationModifier = itemFood != null ? modaccel$saturationModifier(itemFood) : 0;\n\n\t/** Written by modaccel port: since 1.20.5 a food's saturation() is the saturation it gives (nutrition x modifier x 2), not the modifier it was made from. */\n\tprivate static float modaccel$saturationModifier(FoodComponent food) {\n\t\treturn food.nutrition() == 0 ? 0.0F : food.saturation() / (food.nutrition() * 2.0F);\n\t}\n}\n"
+      }
     },
     {
       "id": "debug-hud-visible",
