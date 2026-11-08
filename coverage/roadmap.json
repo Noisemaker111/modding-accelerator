@@ -537,7 +537,7 @@
   },
   {
    "question": "Do speed targets drive work?",
-   "choice": "Only when they move the goal. Phase 7 closed on Nov 7 once checks were hidden, data-check skipped the game and 8 checks ran at once; the start, cold-check, server and pack-check speed targets became facts, the nightly job joined step 26 and pack-check's step joined Phase 6, and work went back to porting (Jon, 2026-11-07)",
+   "choice": "Only when they move the goal. Phase 7 closed on Nov 7 once checks were hidden, data-check skipped the game and 8 checks ran at once; the start, cold-check, screen-check, server and pack-check speed targets became facts, the nightly job joined step 26 and pack-check's step joined Phase 6, and work went back to porting (Jon, 2026-11-07)",
    "date": "2026-11-07"
   }
  ]

@@ -299,10 +299,10 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Client start and first join to a dedicated server, cold | — | 27.1 s (Oct 22) | — | Fact |
 | New registration on a fresh server, warm | — | 15 s (Oct 21) | — | Fact |
 | Logic tests, no Minecraft, warm | — | 0.79 s (Oct 21) | 1 s (hold) by Nov 27, step 34 | Met |
-| Screen change + screenshot, warm game, Fabric 26.3 | 1.5 s (Oct 21) | 3.9 s (Nov 7) | 1.5 s (hold) by Nov 27, step 34 | 0% of the way |
+| Screen change + screenshot, warm game, Fabric 26.3 | 1.5 s (Oct 21) | 3.9 s (Nov 7) | — | Fact |
 | Screen edit swapped into the running game, NeoForge 1.21.1, warm | — | 1.5 s (Oct 22) | 1.5 s (hold) by Nov 27, step 34 | Met |
 | Block entity in a live world, Fabric 26.3, warm | — | 2.1 s (Oct 21) | 2.5 s (hold) by Nov 27, step 34 | Met |
-| Scripted scenario + screenshot, warm game, Fabric 26.3 | 2.9 s (Oct 21) | 5.1 s (Nov 7) | 3 s (hold) by Nov 27, step 34 | 0% of the way |
+| Scripted scenario + screenshot, warm game, Fabric 26.3 | 2.9 s (Oct 21) | 5.1 s (Nov 7) | — | Fact |
 | Multiplayer scenario, warm client and server | — | 4.1 s (Oct 22) | 4 s by Nov 27, step 34 | Baseline |
 | Mods with their own behaviour asserted in a real client | 2 mods (Oct 26) | 2 mods (Nov 7) | 4 mods by Dec 4, step 26 | 0% of the way |
 | Memory for one hidden game session, Fabric 26.3, warm | 1.1 GB (Nov 6) | 1.0 GB (Nov 6) | — | Fact |
@@ -366,4 +366,4 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Ports between Paper versions? | Yes, as rung 5 for Paper once rungs 2–3 land | 2026-10-25 |
 | Where do roadmap steps, targets and every number we show live? | `coverage/roadmap.json` (steps, dates, targets) and `coverage/measures.json` (every number, with its history and target); ROADMAP.md and the roadmap page are generated from them | 2026-11-06 |
 | How cheap should a game check be? | 5 CPU-s per check, from 49. Checks that need the game's data but not a picture stop launching the game: data-check runs the game's own code with no window and no world (Jon, 2026-11-07, instead of sharing one started game). Picture checks keep the hidden client, with graphics settings as they are | 2026-11-07 |
-| Do speed targets drive work? | Only when they move the goal. Phase 7 closed on Nov 7 once checks were hidden, data-check skipped the game and 8 checks ran at once; the start, cold-check, server and pack-check speed targets became facts, the nightly job joined step 26 and pack-check's step joined Phase 6, and work went back to porting (Jon, 2026-11-07) | 2026-11-07 |
+| Do speed targets drive work? | Only when they move the goal. Phase 7 closed on Nov 7 once checks were hidden, data-check skipped the game and 8 checks ran at once; the start, cold-check, screen-check, server and pack-check speed targets became facts, the nightly job joined step 26 and pack-check's step joined Phase 6, and work went back to porting (Jon, 2026-11-07) | 2026-11-07 |
