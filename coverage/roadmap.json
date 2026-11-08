@@ -466,7 +466,7 @@
       "test.session-idle-cpu",
       "test.parallel-probe"
      ],
-     "result": "8 projects (copies of the demo mod) each ran data-check at once: from no game all passed within 26.6 s, about 21 CPU-s each and 4.5 GB at the peak; with their games loaded, all passed again within 6.3 s. The 8 loaded games hold 2.85 GB and their 8 spares 2.41 GB. A brand-new project's first check takes about 36 s, 21 of it Gradle reading the build and recording the launch. Still to reach: a hidden client start of 25 CPU-s, a cold check under 10 s, almost no CPU while waiting, and a server start of 10 s."
+     "result": "8 projects (copies of the demo mod) each ran data-check at once: from no game all passed within 26.6 s, about 21 CPU-s each and 4.5 GB at the peak; with their games loaded, all passed again within 6.3 s. The 8 loaded games hold 2.85 GB and their 8 spares 2.41 GB. A brand-new project's first check takes about 36 s, 21 of it Gradle reading the build and recording the launch. A hidden game nobody has asked anything for 2 s now draws 10 frames a second, woken at once by the next request: it uses 0.04 to 0.06 cores while waiting instead of 0.14 to 0.16, measured alternately on the same PC, with warm checks as fast as before. Tried and not used: Java's start-up cache for Paper (AOT) halves a start's CPU (48 to 24 CPU-s) but recording it adds about 95 s to one start and its shutdown, and the self-updating class archive saves 2 to 5 s per start but adds about 40 s to the first, a slow first start this step exists to avoid. Still to reach: a hidden client start of 25 CPU-s, a cold check under 10 s, and a server start of 10 s."
     },
     {
      "id": "37",
@@ -492,7 +492,7 @@
      "measures": [
       "pack.check-time"
      ],
-     "result": "pack-check times every stage (read, static checks, each server start) and starts the repaired pack's server beside the shipped one. On Prehistoric World 2 (368 mods) a full check with the repair proven takes 5.1 minutes instead of 12.7, with the same findings. Client-only mods a start finds are remembered, so later runs skip that extra start; a start that only reads the world stops as soon as its probe is done; Simple Voice Chat gets a free port so the two servers do not collide, and a start that still loses a port runs again alone; a server that stops before its probe is done is reported at once instead of after the 20-minute timeout; an export is unpacked once."
+     "result": "pack-check times every stage (read, static checks, each server start) and starts the repaired pack's server beside the shipped one. On Prehistoric World 2 (368 mods) a full check with the repair proven takes 5.1 minutes instead of 12.7, with the same findings. Client-only mods a start finds are remembered, so later runs skip that extra start; a start that only reads the world stops as soon as its probe is done; Simple Voice Chat gets a free port so the two servers do not collide, and a start that still loses a port runs again alone; a server that stops before its probe is done is reported at once instead of after the 20-minute timeout; an export is unpacked once. Tried for the 4.0-minute target and not used: the lighter compiler (C1) cuts a 368-mod server start's CPU by a third (519 to 351 CPU-s) but made the start take 465 s instead of 139 s; the item probe already uses 40 ms of every 50 ms server tick."
     }
    ]
   }

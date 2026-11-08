@@ -467,7 +467,8 @@
    "target": {"value": 0.05, "by": "2027-01-08", "step": "36"},
    "points": [
     {"date": "2026-11-06", "value": 0.21, "n": 1, "note": "title screen, 20 s, default JIT", "source": "bench/session-cost/2026-11-06T20-46-13.json"},
-    {"date": "2026-11-06", "value": 0.15, "n": 1, "note": "title screen, 20 s, C1 only", "source": "bench/session-cost/2026-11-06T21-25-10.json"}
+    {"date": "2026-11-06", "value": 0.15, "n": 1, "note": "title screen, 20 s, C1 only", "source": "bench/session-cost/2026-11-06T21-25-10.json"},
+    {"date": "2026-11-07", "value": 0.05, "n": 4, "note": "title screen, 30 s, C1 only, idle frame wait: 0.06, 0.05, 0.05 and 0.04 (0.16 and 0.14 without it, alternated on the same PC); warm checks no slower", "source": "bench/session-cost/idle-wait-2026-11-07.json"}
    ]
   },
   {

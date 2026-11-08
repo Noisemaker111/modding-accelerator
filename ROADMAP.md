@@ -234,9 +234,14 @@ sessions run at once on one PC.
     demo mod) each ran data-check at once: from no game all passed within 26.6 s, about 21 CPU-s
     each and 4.5 GB at the peak; with their games loaded, all passed again within 6.3 s. The 8
     loaded games hold 2.85 GB and their 8 spares 2.41 GB. A brand-new project's first check takes
-    about 36 s, 21 of it Gradle reading the build and recording the launch. Still to reach: a hidden
-    client start of 25 CPU-s, a cold check under 10 s, almost no CPU while waiting, and a server
-    start of 10 s.
+    about 36 s, 21 of it Gradle reading the build and recording the launch. A hidden game nobody has
+    asked anything for 2 s now draws 10 frames a second, woken at once by the next request: it uses
+    0.04 to 0.06 cores while waiting instead of 0.14 to 0.16, measured alternately on the same PC,
+    with warm checks as fast as before. Tried and not used: Java's start-up cache for Paper (AOT)
+    halves a start's CPU (48 to 24 CPU-s) but recording it adds about 95 s to one start and its
+    shutdown, and the self-updating class archive saves 2 to 5 s per start but adds about 40 s to
+    the first, a slow first start this step exists to avoid. Still to reach: a hidden client start
+    of 25 CPU-s, a cold check under 10 s, and a server start of 10 s.
     Started 2026-11-07, target 2027-01-08.
 37. The real-game behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) run every
     night in CI, not only on this PC. **next** — bench/behaviour_checks.sh runs both behaviour
@@ -254,7 +259,9 @@ sessions run at once on one PC.
     only reads the world stops as soon as its probe is done; Simple Voice Chat gets a free port so
     the two servers do not collide, and a start that still loses a port runs again alone; a server
     that stops before its probe is done is reported at once instead of after the 20-minute timeout;
-    an export is unpacked once.
+    an export is unpacked once. Tried for the 4.0-minute target and not used: the lighter compiler
+    (C1) cuts a 368-mod server start's CPU by a third (519 to 351 CPU-s) but made the start take 465
+    s instead of 139 s; the item probe already uses 40 ms of every 50 ms server tick.
     Done 2026-11-07.
 
 ## Numbers
@@ -304,7 +311,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | CPU per data-check after the mod's code changed, the spare game taking it, Fabric 26.3, warm | 6.2 CPU-s (Nov 7) | 4.9 CPU-s (Nov 7) | 5 CPU-s by Dec 18, step 35 | Met |
 | Seconds for a data-check that loads a fresh game, Fabric 26.3, warm | 45.6 s (Nov 7) | 11.7 s (Nov 7) | 10 s by Jan 8, 2027, step 36 | 95% of the way |
 | Memory of data-check's loaded game, Fabric 26.3, warm | 0.5 GB (Nov 7) | 0.4 GB (Nov 7) | — | Fact |
-| CPU a hidden client uses while it waits, warm | 0.21 cores (Nov 6) | 0.15 cores (Nov 6) | 0.05 cores by Jan 8, 2027, step 36 | 38% of the way |
+| CPU a hidden client uses while it waits, warm | 0.21 cores (Nov 6) | 0.05 cores (Nov 7) | 0.05 cores by Jan 8, 2027, step 36 | Met |
 | Hidden clients this PC held at once, each to a 1280x720 capture | — | 16 sessions (Nov 6) | — | Fact |
 | One-file edit, modaccel fast, warm | — | 4 s (Oct 23) | 4 s (hold) by Nov 27, step 34 | Met |
 

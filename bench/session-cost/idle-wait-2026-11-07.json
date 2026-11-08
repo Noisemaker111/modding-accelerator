@@ -1,0 +1,754 @@
+{
+ "what": "the hidden game idle on its title screen for 30 s, before and after the agent's idle frame wait (10 frames a second once nothing has asked anything for 2 s), alternated on the same PC; session_cost.py client --runs 1 --idle 30 --no-server each",
+ "before": [
+  {
+   "runs": [
+    {
+     "cold": {
+      "wall": 96.4,
+      "gameStart": 57.6,
+      "mode": "Gradle prepares and launches the actual client",
+      "visibleWindows": 0,
+      "game": {
+       "pid": 43632,
+       "peakGB": 1.05,
+       "privateGB": 1.54,
+       "threads": 96,
+       "cpu": 36.6
+      },
+      "server": null,
+      "other": {
+       "count": 4,
+       "peakGB": 1.2,
+       "cpu": 103.7
+      },
+      "machineBusyPercent": 67.3,
+      "mostWindowsOnScreen": 0,
+      "windowTitles": []
+     },
+     "idle": {
+      "seconds": 30.0,
+      "cores": 0.16,
+      "machinePercent": 0.6,
+      "rssGB": 0.98,
+      "machineBusyPercent": 38.7
+     },
+     "warm": {
+      "wall": 2.7,
+      "check": 1.66
+     },
+     "saved": {
+      "wall": 43.8,
+      "gameStart": 35.8,
+      "mode": "saved launch; dependencies already prepared",
+      "visibleWindows": 0,
+      "game": {
+       "pid": 47960,
+       "peakGB": 1.01,
+       "privateGB": 1.51,
+       "threads": 95,
+       "cpu": 44.3
+      },
+      "server": null,
+      "other": {
+       "count": 2,
+       "peakGB": 0.87,
+       "cpu": 44.6
+      },
+      "machineBusyPercent": 82.2,
+      "mostWindowsOnScreen": 0,
+      "windowTitles": []
+     }
+    }
+   ],
+   "machine": {
+    "cpus": 24,
+    "os": "win32"
+   },
+   "measured": "2026-11-08T00:03:00+00:00"
+  },
+  {
+   "runs": [
+    {
+     "cold": {
+      "wall": 164.1,
+      "gameStart": 147.8,
+      "mode": "Gradle prepares and launches the actual client",
+      "visibleWindows": 0,
+      "game": {
+       "pid": 25556,
+       "peakGB": 0.99,
+       "privateGB": 1.49,
+       "threads": 91,
+       "cpu": 34.7
+      },
+      "server": null,
+      "other": {
+       "count": 6,
+       "peakGB": 4.01,
+       "cpu": 207.2
+      },
+      "machineBusyPercent": 47.8,
+      "mostWindowsOnScreen": 0,
+      "windowTitles": []
+     },
+     "idle": {
+      "seconds": 30.0,
+      "cores": 0.14,
+      "machinePercent": 0.6,
+      "rssGB": 0.95,
+      "machineBusyPercent": 44.3
+     },
+     "warm": {
+      "wall": 3.7,
+      "check": 2.47
+     },
+     "saved": {
+      "wall": 83.1,
+      "gameStart": 73.5,
+      "mode": "saved launch; dependencies already prepared",
+      "visibleWindows": 0,
+      "game": {
+       "pid": 59236,
+       "peakGB": 0.97,
+       "privateGB": 1.49,
+       "threads": 96,
+       "cpu": 35.2
+      },
+      "server": null,
+      "other": {
+       "count": 4,
+       "peakGB": 2.95,
+       "cpu": 95.8
+      },
+      "machineBusyPercent": 47.6,
+      "mostWindowsOnScreen": 0,
+      "windowTitles": []
+     }
+    }
+   ],
+   "machine": {
+    "cpus": 24,
+    "os": "win32"
+   },
+   "measured": "2026-11-08T00:10:33+00:00"
+  }
+ ],
+ "after": [
+  {
+   "runs": [
+    {
+     "cold": {
+      "wall": 55.2,
+      "gameStart": 45.1,
+      "mode": "Gradle prepares and launches the actual client",
+      "visibleWindows": 0,
+      "game": {
+       "pid": 28412,
+       "peakGB": 0.99,
+       "privateGB": 1.49,
+       "threads": 95,
+       "cpu": 40.3
+      },
+      "server": null,
+      "other": {
+       "count": 5,
+       "peakGB": 2.95,
+       "cpu": 109.2
+      },
+      "machineBusyPercent": 72.6,
+      "mostWindowsOnScreen": 0,
+      "windowTitles": []
+     },
+     "idle": {
+      "seconds": 30.0,
+      "cores": 0.06,
+      "machinePercent": 0.2,
+      "rssGB": 0.9,
+      "machineBusyPercent": 74.5
+     },
+     "warm": {
+      "wall": 4.1,
+      "check": 2.22
+     },
+     "saved": {
+      "wall": 44.7,
+      "gameStart": 34.1,
+      "mode": "saved launch; dependencies already prepared",
+      "visibleWindows": 0,
+      "game": {
+       "pid": 48536,
+       "peakGB": 1.0,
+       "privateGB": 1.53,
+       "threads": 96,
+       "cpu": 45.6
+      },
+      "server": null,
+      "other": {
+       "count": 5,
+       "peakGB": 3.03,
+       "cpu": 151.3
+      },
+      "machineBusyPercent": 90.0,
+      "mostWindowsOnScreen": 0,
+      "windowTitles": []
+     }
+    }
+   ],
+   "machine": {
+    "cpus": 24,
+    "os": "win32"
+   },
+   "measured": "2026-11-08T00:05:28+00:00"
+  },
+  {
+   "runs": [
+    {
+     "cold": {
+      "wall": 62.1,
+      "gameStart": 53.5,
+      "mode": "Gradle prepares and launches the actual client",
+      "visibleWindows": 0,
+      "game": {
+       "pid": 41688,
+       "peakGB": 1.0,
+       "privateGB": 1.51,
+       "threads": 96,
+       "cpu": 42.6
+      },
+      "server": null,
+      "other": {
+       "count": 4,
+       "peakGB": 2.04,
+       "cpu": 145.7
+      },
+      "machineBusyPercent": 79.4,
+      "mostWindowsOnScreen": 0,
+      "windowTitles": []
+     },
+     "idle": {
+      "seconds": 30.0,
+      "cores": 0.05,
+      "machinePercent": 0.2,
+      "rssGB": 0.97,
+      "machineBusyPercent": 53.6
+     },
+     "warm": {
+      "wall": 2.9,
+      "check": 1.74
+     },
+     "saved": {
+      "wall": 66.1,
+      "gameStart": 58.3,
+      "mode": "saved launch; dependencies already prepared",
+      "visibleWindows": 0,
+      "game": {
+       "pid": 44732,
+       "peakGB": 0.98,
+       "privateGB": 1.46,
+       "threads": 96,
+       "cpu": 39.1
+      },
+      "server": null,
+      "other": {
+       "count": 4,
+       "peakGB": 2.92,
+       "cpu": 123.5
+      },
+      "machineBusyPercent": 64.4,
+      "mostWindowsOnScreen": 0,
+      "windowTitles": []
+     }
+    }
+   ],
+   "machine": {
+    "cpus": 24,
+    "os": "win32"
+   },
+   "measured": "2026-11-08T00:13:28+00:00"
+  }
+ ],
+ "warmAlternated": {
+  "note": "warm checks (screen, world, scenario) 4 times per set on a freshly started game, without and with the wait, alternated",
+  "before": [
+   {
+    "warm": [
+     {
+      "screen": {
+       "wall": 7.09,
+       "check": 5.89,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 15.27,
+       "check": 13.57,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 7.06,
+       "check": 4.76,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 4.4,
+       "check": 3.38,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 3.56,
+       "check": 2.47,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 7.41,
+       "check": 4.9,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 5.08,
+       "check": 3.79,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 4.73,
+       "check": 2.87,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 7.06,
+       "check": 4.63,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 5.22,
+       "check": 3.84,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 4.65,
+       "check": 2.88,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 9.01,
+       "check": 5.77,
+       "visibleWindows": 0
+      }
+     }
+    ],
+    "medians": {
+     "screen": 5.15,
+     "world": 4.69,
+     "scenario": 7.23
+    },
+    "mostWindowsOnScreen": 0,
+    "game": 27052,
+    "machineBusyPercent": 62.8,
+    "machine": {
+     "cpus": 24,
+     "os": "win32"
+    },
+    "measured": "2026-11-08T00:18:46+00:00"
+   },
+   {
+    "warm": [
+     {
+      "screen": {
+       "wall": 9.23,
+       "check": 7.83,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 17.14,
+       "check": 15.78,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 8.89,
+       "check": 6.2,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 13.81,
+       "check": 12.32,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 12.23,
+       "check": 9.25,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 16.76,
+       "check": 12.51,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 5.73,
+       "check": 4.36,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 5.83,
+       "check": 4.38,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 33.7,
+       "check": 30.2,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 6.49,
+       "check": 4.93,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 4.59,
+       "check": 3.27,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 7.65,
+       "check": 5.04,
+       "visibleWindows": 0
+      }
+     }
+    ],
+    "medians": {
+     "screen": 7.86,
+     "world": 9.03,
+     "scenario": 12.83
+    },
+    "mostWindowsOnScreen": 0,
+    "game": 58336,
+    "machineBusyPercent": 81.3,
+    "machine": {
+     "cpus": 24,
+     "os": "win32"
+    },
+    "measured": "2026-11-08T00:28:12+00:00"
+   }
+  ],
+  "after": [
+   {
+    "warm": [
+     {
+      "screen": {
+       "wall": 4.52,
+       "check": 3.5,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 43.61,
+       "check": 42.27,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 8.09,
+       "check": 5.16,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 5.42,
+       "check": 4.02,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 4.82,
+       "check": 3.02,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 10.22,
+       "check": 7.73,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 7.11,
+       "check": 3.82,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 4.25,
+       "check": 2.88,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 6.23,
+       "check": 4.31,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 9.17,
+       "check": 6.01,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 5.16,
+       "check": 3.71,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 6.68,
+       "check": 4.47,
+       "visibleWindows": 0
+      }
+     }
+    ],
+    "medians": {
+     "screen": 6.27,
+     "world": 4.99,
+     "scenario": 7.38
+    },
+    "mostWindowsOnScreen": 0,
+    "game": 48964,
+    "machineBusyPercent": 48.7,
+    "machine": {
+     "cpus": 24,
+     "os": "win32"
+    },
+    "measured": "2026-11-08T00:24:02+00:00"
+   },
+   {
+    "warm": [
+     {
+      "screen": {
+       "wall": 5.5,
+       "check": 4.06,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 12.29,
+       "check": 10.79,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 7.44,
+       "check": 4.87,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 4.32,
+       "check": 3.29,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 4.21,
+       "check": 3.19,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 7.9,
+       "check": 5.62,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 6.72,
+       "check": 5.21,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 4.16,
+       "check": 2.91,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 6.0,
+       "check": 4.03,
+       "visibleWindows": 0
+      }
+     },
+     {
+      "screen": {
+       "wall": 4.6,
+       "check": 3.57,
+       "visibleWindows": 0
+      },
+      "world": {
+       "wall": 3.66,
+       "check": 2.49,
+       "visibleWindows": 0
+      },
+      "scenario": {
+       "wall": 6.66,
+       "check": 4.48,
+       "visibleWindows": 0
+      }
+     }
+    ],
+    "medians": {
+     "screen": 5.05,
+     "world": 4.19,
+     "scenario": 7.05
+    },
+    "mostWindowsOnScreen": 0,
+    "game": 42580,
+    "machineBusyPercent": 70.2,
+    "machine": {
+     "cpus": 24,
+     "os": "win32"
+    },
+    "measured": "2026-11-08T00:30:27+00:00"
+   }
+  ]
+ },
+ "final": {
+  "note": "the wait as committed: never before the game has answered its first request, never while a request is open. Idle 0.05 cores (a run whose saved-launch start then stalled 150 s before the window, in mixin set-up the agent does not touch) and 0.04 cores (cold start, saved-launch start and warm ui-check 3.4 s all passed); the client run's own mp-check refused this copy's server (EULA not accepted), so mp-check ran on the main checkout and passed",
+  "idleCores": [
+   0.05,
+   0.04
+  ],
+  "warm": {
+   "warm": [
+    {
+     "screen": {
+      "wall": 4.71,
+      "check": 3.62,
+      "visibleWindows": 0
+     },
+     "world": {
+      "wall": 14.27,
+      "check": 13.34,
+      "visibleWindows": 0
+     },
+     "scenario": {
+      "wall": 8.9,
+      "check": 6.8,
+      "visibleWindows": 0
+     }
+    },
+    {
+     "screen": {
+      "wall": 4.87,
+      "check": 3.63,
+      "visibleWindows": 0
+     },
+     "world": {
+      "wall": 5.02,
+      "check": 3.48,
+      "visibleWindows": 0
+     },
+     "scenario": {
+      "wall": 8.78,
+      "check": 5.05,
+      "visibleWindows": 0
+     }
+    },
+    {
+     "screen": {
+      "wall": 5.03,
+      "check": 3.78,
+      "visibleWindows": 0
+     },
+     "world": {
+      "wall": 4.36,
+      "check": 3.34,
+      "visibleWindows": 0
+     },
+     "scenario": {
+      "wall": 6.79,
+      "check": 4.7,
+      "visibleWindows": 0
+     }
+    },
+    {
+     "screen": {
+      "wall": 4.62,
+      "check": 3.66,
+      "visibleWindows": 0
+     },
+     "world": {
+      "wall": 3.26,
+      "check": 2.35,
+      "visibleWindows": 0
+     },
+     "scenario": {
+      "wall": 6.1,
+      "check": 4.25,
+      "visibleWindows": 0
+     }
+    },
+    {
+     "screen": {
+      "wall": 4.56,
+      "check": 3.42,
+      "visibleWindows": 0
+     },
+     "world": {
+      "wall": 3.52,
+      "check": 2.49,
+      "visibleWindows": 0
+     },
+     "scenario": {
+      "wall": 10.41,
+      "check": 6.44,
+      "visibleWindows": 0
+     }
+    }
+   ],
+   "medians": {
+    "screen": 4.71,
+    "world": 4.36,
+    "scenario": 8.78
+   },
+   "mostWindowsOnScreen": 0,
+   "game": 34456,
+   "machineBusyPercent": 57.2,
+   "machine": {
+    "cpus": 24,
+    "os": "win32"
+   },
+   "measured": "2026-11-08T00:50:09+00:00"
+  },
+  "mpCheck": {
+   "label": "mp-idle-wait",
+   "command": [
+    ".\\modaccel.cmd",
+    "mp-check",
+    "--root",
+    "modding-accelerator",
+    "--json"
+   ],
+   "exit": 0,
+   "wall": 140.4,
+   "game": null,
+   "server": null,
+   "other": {
+    "count": 5,
+    "peakGB": 3.25,
+    "cpu": 230.2
+   },
+   "machineBusyPercent": 56.8,
+   "mostWindowsOnScreen": 0,
+   "windowTitles": [],
+   "machine": {
+    "cpus": 24,
+    "os": "win32"
+   },
+   "measured": "2026-11-08T00:52:44+00:00"
+  }
+ }
+}

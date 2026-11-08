@@ -18,6 +18,11 @@ public final class PortableAgent {
     private static Object pauseOptions; private static Field pauseField; private static boolean originalPauseOnLostFocus;
     private static String pauseControlError;
     private static Object lastScreen; private static long screenSince;
+    // A hidden game that has answered a request, has none open and none for IDLE_AFTER draws at most IDLE_FPS frames a
+    // second: each frame waits on `wake`, which a request signals, so a request (a world loading, a screen settling) runs
+    // at full rate. Until the first answer the game is still loading, and loading finishes its work between frames.
+    private static final int IDLE_FPS = 10; private static final long IDLE_AFTER = 2000000000L;
+    private static volatile long lastRequest; private static volatile boolean serving, answered; private static final Object wake = new Object();
     private static final Map<String, Object> identity = new LinkedHashMap<String, Object>();
     private static boolean installed;
     public static synchronized void premain(String args, Instrumentation instrumentation) {
@@ -83,6 +88,9 @@ public final class PortableAgent {
             server.setDaemon(true); server.start();
         }
         try { Object current = screen(); if (current != lastScreen) { lastScreen = current; screenSince = System.nanoTime(); } } catch (Exception ignored) {}
+        if (serving || !pending.isEmpty()) lastRequest = System.nanoTime();
+        else if (answered && Boolean.getBoolean("modaccel.background") && System.nanoTime() - lastRequest > IDLE_AFTER)
+            synchronized (wake) { try { wake.wait(1000 / IDLE_FPS); } catch (InterruptedException stop) { Thread.currentThread().interrupt(); } }
         int count = pending.size();
         for (int i = 0; i < count; i++) { Runnable action = pending.poll(); if (action != null) action.run(); }
     }
@@ -102,12 +110,14 @@ public final class PortableAgent {
                     String line = input.readLine(); if (line == null) continue;
                     final Map<String, Object> request = Json.object(Json.parse(line));
                     if (!token.equals(request.get("token"))) { output.println(Json.write(Json.map("ok", false, "error", "Wrong session token"))); continue; }
+                    serving = true; synchronized (wake) { wake.notifyAll(); }
                     if ("eval".equals(request.get("command"))) { output.println(Json.write(eval(request))); continue; }
                     final CompletableFuture<Map<String, Object>> result = new CompletableFuture<Map<String, Object>>();
                     pending.add(new Runnable() { public void run() { try { perform(request, result); } catch (Throwable e) { result.complete(Json.map("ok", false, "error", cause(e))); } } });
                     try { output.println(Json.write(result.get(130, TimeUnit.SECONDS))); }
                     catch (Exception error) { result.cancel(false); output.println(Json.write(Json.map("ok", false, "error", "Game did not finish the requested action: " + cause(error)))); }
                 } catch (Throwable error) { System.err.println("MODACCEL_CONTROL_ERROR " + cause(error)); }
+                finally { if (serving) { lastRequest = System.nanoTime(); serving = false; answered = true; } }
             }
         } catch (Throwable error) { System.err.println("MODACCEL_AGENT_ERROR " + cause(error)); }
     }
