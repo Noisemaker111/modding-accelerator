@@ -123,7 +123,9 @@ final class Run {
             if (host == null && here.find()) host = java.net.URI.create(here.group(1)).getHost();
             if (host == null) for (String other : lines) {
                 Matcher url = URL.matcher(other);
-                if (other.contains("Could not GET") || other.contains("Could not HEAD") || other.contains("Could not get resource")) if (url.find()) { host = java.net.URI.create(url.group(1)).getHost(); break; }
+                // The wrapper's own download says "Downloading from <url> failed: timeout" above a cause with no URL.
+                if (other.contains("Could not GET") || other.contains("Could not HEAD") || other.contains("Could not get resource") || other.contains("Downloading from"))
+                    if (url.find()) { host = java.net.URI.create(url.group(1)).getHost(); break; }
             }
             String what = cause.group().startsWith("PKIX") || cause.group().startsWith("Remote host") ? "a secure connection failed (" + cause.group() + ")"
                     : cause.group().matches("(?i).*(host|name|servname).*") ? "the name could not be looked up"
