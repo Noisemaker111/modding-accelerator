@@ -161,6 +161,9 @@ public final class PortableTests {
                 .filter(r -> "hunger-exhaustion-accessor".equals(r.get("id"))).findFirst().orElseThrow(() -> new AssertionError("knowledge/fixes.json has no hunger-exhaustion-accessor rule"));
         String log = hud + ":5: error: cannot find symbol\n\t\treturn player.getHungerManager().getExhaustion();\n\t\t                                ^\n  symbol:   method getExhaustion()\n  location: class HungerManager\n";
         check(port.applyAccessor(rule, log), "a removed getter named by javac on its owner class is repaired by the accessor rule");
+        check(Files.readString(hud).split("\n", -1).length == original.split("\n", -1).length && !Files.readString(hud).contains("import mod.mixin"),
+                "the import a rule adds waits for the end of the round, so javac's line numbers still hold for the steps after it");
+        port.flushImports();
         Path accessor = java.resolve("mixin/HungerManagerAccessor.java");
         String source = Files.readString(accessor);
         check(source.contains("@Mixin(HungerManager.class)") && source.contains("@Accessor(\"exhaustion\")") && source.contains("float modaccel$getExhaustion();") && !source.contains("modaccel$setExhaustion"),

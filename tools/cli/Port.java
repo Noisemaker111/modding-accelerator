@@ -198,6 +198,7 @@ final class Port {
                 var args = new ArrayList<>(List.of("--map", map.toString(), "--fix", log.toString(), "--repo", build.project.root.toString()));
                 if (learned != null) args.addAll(List.of("--rules", learned.toString()));
                 var fix = tools.run("VersionMap", args, "port-fix-" + (round + 1));
+                flushImports();
                 if (fix.exit() != 0) throw new IOException("Typed repair stopped: " + Run.tail(fix.log()));
                 if (state.equals(Fingerprints.files(sources(build.project)))) break;
                 var compile = build.gradle(repairTasks, (explicitTask ? "port-compile-" : "port-build-") + (round + 1)); log = compile.log(); compiled = compile.exit() == 0;
@@ -596,8 +597,9 @@ final class Port {
             // A routed port runs a rule only when its jump covers an update the route crosses and its names fit.
             List<String> covered = route == null ? List.of() : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null && covered.isEmpty()) continue;
-            if ("accessor".equals(Json.object(rule.get("apply")).get("transform"))) {
-                if (applyAccessor(rule, errors)) rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
+            Object transform = Json.object(rule.get("apply")).get("transform");
+            if ("accessor".equals(transform) || "payload-bytes".equals(transform)) {
+                if ("accessor".equals(transform) ? applyAccessor(rule, errors) : applyPayloadBytes(rule, errors)) rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
                 continue;
             }
             if ("line".equals(rule.get("scope"))) {
@@ -606,7 +608,7 @@ final class Port {
                     String original = Files.readString(file), text = rewriteReported(rule, original, errors, named -> {
                         Path path = Path.of(named); return (path.isAbsolute() ? path : build.project.root.resolve(path)).normalize().equals(file);
                     });
-                    if (!text.equals(original)) { Files.writeString(file, text); rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered); }
+                    if (!text.equals(original)) { Files.writeString(file, deferImports(file, original, text)); rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered); }
                 }
                 continue;
             }
@@ -614,11 +616,39 @@ final class Port {
                 if (!"repo".equals(rule.get("scope")) && !logged.contains(file)) continue;
                 String original = Files.readString(file), text = rewrite(rule, original);
                 if (!text.equals(original)) {
-                    Files.writeString(file, text);
+                    Files.writeString(file, deferImports(file, original, text));
                     rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
                 }
             }
         }
+    }
+    /**
+     * Imports a repair round adds wait until the round's line-based steps are done (these rules and the typed fixer read
+     * javac's line numbers from the same log): an import line inserted first would aim every later step below it one
+     * line off. Takes the import lines addImport put after the package line back out of text and keeps them for
+     * flushImports.
+     */
+    final Map<Path, Set<String>> pendingImports = new LinkedHashMap<>();
+    String deferImports(Path file, String original, String text) {
+        List<String> lines = new ArrayList<>(Arrays.asList(text.split("\n", -1)));
+        int added = lines.size() - original.split("\n", -1).length;
+        if (added <= 0) return text;
+        Set<String> had = new HashSet<>(); for (String line : original.split("\n", -1)) had.add(line.strip());
+        int at = 0; for (int i = 0; i < lines.size(); i++) if (lines.get(i).matches("\\s*package\\s+[\\w.]+\\s*;.*")) { at = i + 1; break; }
+        while (added > 0 && at < lines.size() && lines.get(at).strip().matches("import [\\w.]+;") && !had.contains(lines.get(at).strip())) {
+            String line = lines.remove(at).strip(); added--;
+            pendingImports.computeIfAbsent(file, f -> new LinkedHashSet<>()).add(line.substring(7, line.length() - 1));
+        }
+        return String.join("\n", lines);
+    }
+    void flushImports() throws IOException {
+        for (var entry : pendingImports.entrySet()) {
+            if (!Files.isRegularFile(entry.getKey())) continue;
+            String text = Files.readString(entry.getKey()), out = text;
+            for (String name : entry.getValue()) out = addImport(out, name);
+            if (!out.equals(text)) Files.writeString(entry.getKey(), out);
+        }
+        pendingImports.clear();
     }
     /**
      * The repair guides (knowledge/structural.json) for what a stopped port left: a guide is offered when its match finds
@@ -663,16 +693,7 @@ final class Port {
         Matcher call = Pattern.compile("\\.(" + String.join("|", COLOR_ARGUMENT.keySet()) + ")\\(").matcher(text);
         StringBuilder result = new StringBuilder(); int copied = 0;
         while (call.find()) {
-            // Split the call's top-level arguments, minding nested calls and string literals.
-            List<int[]> arguments = new ArrayList<>(); int depth = 0, start = call.end(), at = call.end(); boolean string = false;
-            for (; at < text.length(); at++) {
-                char c = text.charAt(at);
-                if (string) { if (c == '\\') at++; else if (c == '"') string = false; continue; }
-                if (c == '"') string = true;
-                else if (c == '(' || c == '[' || c == '{') depth++;
-                else if ((c == ')' || c == ']' || c == '}') && depth > 0) depth--;
-                else if (c == ')' || (c == ',' && depth == 0)) { arguments.add(new int[]{start, at}); start = at + 1; if (c == ')') break; }
-            }
+            List<int[]> arguments = arguments(text, call.end() - 1);
             int position = COLOR_ARGUMENT.get(call.group(1));
             if (position >= arguments.size()) continue;
             int[] span = arguments.get(position);
@@ -685,6 +706,102 @@ final class Port {
         }
         return result.append(text.substring(copied)).toString();
     }
+    /**
+     * The top-level arguments of the call whose '(' is at open, as [start, end) spans: nested calls, lambda bodies, string
+     * and char literals are skipped over. Empty for f(); what was found so far when the call never closes.
+     */
+    static List<int[]> arguments(String text, int open) {
+        List<int[]> spans = new ArrayList<>(); int depth = 0, start = open + 1; char quote = 0;
+        for (int at = open + 1; at < text.length(); at++) {
+            char c = text.charAt(at);
+            if (quote != 0) { if (c == '\\') at++; else if (c == quote) quote = 0; continue; }
+            if (c == '"' || c == '\'') quote = c;
+            else if (c == '(' || c == '[' || c == '{') depth++;
+            else if ((c == ')' || c == ']' || c == '}') && depth > 0) depth--;
+            else if (c == ')' || (c == ',' && depth == 0)) {
+                if (c == ',' || !text.substring(start, at).isBlank() || !spans.isEmpty()) spans.add(new int[]{start, at});
+                start = at + 1; if (c == ')') break;
+            }
+        }
+        return spans;
+    }
+    /**
+     * Fabric's 1.20.5 networking took away channel-plus-buffer packets. On the lines javac reported, each old call is
+     * carried over to a payload that holds the same bytes (the port writes the class, named here): a send's channel and
+     * buffer become name.of(channel, buf), a receiver's channel becomes name.type(channel), and its old lambda
+     * (client, handler, buf, responseSender) or (server, player, handler, buf, responseSender) gets the new
+     * (payload, context) one with the old names declared first, so its body runs unchanged. Every line when lines is null.
+     */
+    static String payloadCalls(String text, String name, Set<Integer> lines) {
+        Matcher call = Pattern.compile("\\b(?:(Client|Server)PlayNetworking\\s*\\.\\s*(registerGlobalReceiver|send)|new\\s+CustomPayload(?:S2C|C2S)Packet)\\s*\\(").matcher(text);
+        StringBuilder out = new StringBuilder(); int copied = 0, line = 1, counted = 0;
+        while (call.find()) {
+            for (; counted < call.start(); counted++) if (text.charAt(counted) == '\n') line++;
+            if (lines != null && !lines.contains(line) || call.start() < copied) continue;
+            List<int[]> args = arguments(text, call.end() - 1);
+            String side = call.group(1), verb = call.group(2), replacement = null; int from = 0, to = 0;
+            if (verb == null || verb.equals("send")) {
+                // new CustomPayloadS2CPacket(channel, buf), ClientPlayNetworking.send(channel, buf), ServerPlayNetworking.send(player, channel, buf)
+                int first = "Server".equals(side) ? 1 : 0;
+                if (args.size() != first + 2) continue;
+                from = args.get(first)[0]; to = args.get(first + 1)[1];
+                String inner = text.substring(from, to); int lead = inner.length() - inner.stripLeading().length();
+                replacement = inner.substring(0, lead) + name + ".of(" + inner.strip() + ")";
+            } else {
+                if (args.size() != 2) continue;
+                Matcher lambda = Pattern.compile("\\A(\\s*)\\(\\s*(\\w+)\\s*,\\s*(\\w+)\\s*,\\s*(\\w+)\\s*,\\s*(\\w+)(?:\\s*,\\s*(\\w+))?\\s*\\)\\s*->\\s*\\{")
+                        .matcher(text.substring(args.get(1)[0], args.get(1)[1]));
+                if (!lambda.find() || "Client".equals(side) != (lambda.group(6) == null)) continue;
+                String declared = "Client".equals(side)
+                        ? " var " + lambda.group(2) + " = modaccel$context.client(); var " + lambda.group(3) + " = modaccel$context.client().getNetworkHandler(); var "
+                          + lambda.group(4) + " = modaccel$payload.buf(); var " + lambda.group(5) + " = modaccel$context.responseSender();"
+                        : " var " + lambda.group(2) + " = modaccel$context.server(); var " + lambda.group(3) + " = modaccel$context.player(); var " + lambda.group(4)
+                          + " = modaccel$context.player().networkHandler; var " + lambda.group(5) + " = modaccel$payload.buf(); var " + lambda.group(6) + " = modaccel$context.responseSender();";
+                from = args.get(0)[0]; to = args.get(1)[0] + lambda.end();
+                String channel = text.substring(from, args.get(0)[1]); int lead = channel.length() - channel.stripLeading().length();
+                replacement = channel.substring(0, lead) + name + ".type(" + channel.strip() + ")" + text.substring(args.get(0)[1], args.get(1)[0])
+                        + lambda.group(1) + "(modaccel$payload, modaccel$context) -> {" + declared;
+            }
+            out.append(text, copied, from).append(replacement);
+            copied = to;
+        }
+        return copied == 0 ? text : out.append(text.substring(copied)).toString();
+    }
+    /** Runs a "payload-bytes" rule: writes its class beside the first file it changes and imports it where it is used. */
+    boolean applyPayloadBytes(Map<String, Object> rule, String errors) throws Exception {
+        var apply = Json.object(rule.get("apply"));
+        String name = Json.text(apply, "name", "ModaccelPacket");
+        Map<Path, String> rewritten = new LinkedHashMap<>();
+        for (var site : reportedLines(errors, Pattern.compile(rule.get("match").toString())).entrySet()) {
+            String original = Files.readString(site.getKey()), text = payloadCalls(original, name, site.getValue().keySet());
+            if (!text.equals(original)) rewritten.put(site.getKey(), text);
+        }
+        if (rewritten.isEmpty()) return false;
+        Path first = rewritten.keySet().iterator().next();
+        Matcher declared = Pattern.compile("(?m)^\\s*package\\s+([\\w.]+)\\s*;").matcher(rewritten.get(first));
+        if (!declared.find()) return false;
+        Path file = first.getParent().resolve(name + ".java");
+        if (Files.exists(file) && !Files.readString(file).contains(WRITTEN_MARK)) return false;
+        if (!Files.exists(file)) { track(file); Files.writeString(file, Json.text(apply, "source", "").replace("{package}", declared.group(1))); }
+        for (var entry : rewritten.entrySet()) Files.writeString(entry.getKey(), deferImports(entry.getKey(), Files.readString(entry.getKey()), addImport(entry.getValue(), declared.group(1) + "." + name)));
+        return true;
+    }
+    /** Each project file javac reported an error in whose block the pattern fits, with those lines and the symbol each error names. */
+    Map<Path, Map<Integer, String>> reportedLines(String errors, Pattern match) {
+        Map<Path, Map<Integer, String>> sites = new LinkedHashMap<>();
+        List<String> log = errors.lines().toList();
+        for (int i = 0; i < log.size(); i++) {
+            Matcher error = ERROR.matcher(log.get(i)); if (!error.find()) continue;
+            StringBuilder block = new StringBuilder(log.get(i)).append('\n');
+            for (int j = i + 1; j < log.size() && j <= i + 5 && !ERROR.matcher(log.get(j)).find(); j++) block.append(log.get(j)).append('\n');
+            if (!match.matcher(block).find()) continue;
+            Path file = Path.of(error.group(1)); if (!file.isAbsolute()) file = build.project.root.resolve(file); file = file.normalize();
+            if (!file.startsWith(build.project.root) || !Files.isRegularFile(file)) continue;
+            Matcher symbol = Pattern.compile("symbol:\\s+\\w+ (\\w+)").matcher(block);
+            sites.computeIfAbsent(file, f -> new TreeMap<>()).put(Integer.parseInt(error.group(2)), symbol.find() ? symbol.group(1) : "");
+        }
+        return sites;
+    }
     /** One knowledge rule on one source text: its `when` gate, the literal or regex rewrite, then any imports it needs. */
     static String rewrite(Map<String, Object> rule, String original) {
         var apply = Json.object(rule.get("apply"));
@@ -693,6 +810,7 @@ final class Port {
         if ("opaque-gui-colors".equals(apply.get("transform"))) text = opaqueGuiColors(text);
         // A rule's test has no project to put the accessor in: it reads as if the mod's mixin package were mod.mixin.
         else if ("accessor".equals(apply.get("transform"))) text = accessorCalls(text, apply, "mod.mixin." + simpleName(Json.text(apply, "owner", "")) + "Accessor", null);
+        else if ("payload-bytes".equals(apply.get("transform"))) text = payloadCalls(text, Json.text(apply, "name", "ModaccelPacket"), null);
         else if (apply.containsKey("literal")) text = text.replace(apply.get("literal").toString(), Json.text(apply, "replace", ""));
         else if (apply.containsKey("find")) text = Pattern.compile(apply.get("find").toString()).matcher(text).replaceAll(Json.text(apply, "replace", ""));
         if (!text.equals(original)) for (String name : ProjectModel.strings(apply.get("ensureImports"))) text = addImport(text, name);
@@ -828,20 +946,11 @@ final class Port {
         String owner = Json.text(apply, "owner", ""), ownerSimple = simpleName(owner);
         Set<String> names = new HashSet<>();
         for (String kind : List.of("get", "set")) if (!Json.text(apply, kind, "").isEmpty()) names.add(Json.text(apply, kind, ""));
-        Map<Path, Set<Integer>> sites = new LinkedHashMap<>(); Set<String> used = new HashSet<>();
-        List<String> log = errors.lines().toList();
-        for (int i = 0; i < log.size(); i++) {
-            Matcher error = ERROR.matcher(log.get(i)); if (!error.find() || !error.group(3).contains("cannot find symbol")) continue;
-            StringBuilder block = new StringBuilder();
-            for (int j = i + 1; j < log.size() && j <= i + 5 && !ERROR.matcher(log.get(j)).find(); j++) block.append(log.get(j)).append('\n');
-            Matcher symbol = Pattern.compile("symbol:\\s+method (\\w+)\\(").matcher(block);
-            if (!symbol.find() || !names.contains(symbol.group(1)) || !Pattern.compile("location:.*\\b" + Pattern.quote(ownerSimple) + "\\b").matcher(block).find()) continue;
-            Path file = Path.of(error.group(1)); if (!file.isAbsolute()) file = build.project.root.resolve(file); file = file.normalize();
-            if (!file.startsWith(build.project.root) || !Files.isRegularFile(file)) continue;
-            sites.computeIfAbsent(file, f -> new TreeSet<>()).add(Integer.parseInt(error.group(2)));
-            used.add(symbol.group(1).equals(Json.text(apply, "get", "")) ? "get" : "set");
-        }
+        String methods = names.stream().map(Pattern::quote).reduce((a, b) -> a + "|" + b).orElse("(?!)");
+        var sites = reportedLines(errors, Pattern.compile("cannot find symbol[^\\n]*\\n(?:[^\\n]*\\n)*?\\s*symbol:\\s+method (?:" + methods + ")\\([^\\n]*\\n\\s*location:[^\\n]*\\b" + Pattern.quote(ownerSimple) + "\\b"));
         if (sites.isEmpty()) return false;
+        Set<String> used = new HashSet<>();
+        for (var lines : sites.values()) for (String symbol : lines.values()) used.add(symbol.equals(Json.text(apply, "get", "")) ? "get" : "set");
         Path config = mainMixinConfig();
         if (config == null) return false;
         String mixinPackage = Json.text(Json.read(config), "package", "");
@@ -853,7 +962,7 @@ final class Port {
         if (folder == null) return false;
         String simple = ownerSimple + "Accessor";
         Path file = folder.resolve(simple + ".java");
-        if (Files.exists(file) && !Files.readString(file).contains(ACCESSOR_MARK)) { simple = ownerSimple + "ModaccelAccessor"; file = folder.resolve(simple + ".java"); }
+        if (Files.exists(file) && !Files.readString(file).contains(WRITTEN_MARK)) { simple = ownerSimple + "ModaccelAccessor"; file = folder.resolve(simple + ".java"); }
         String existing = Files.exists(file) ? Files.readString(file) : "";
         for (String kind : List.of("get", "set")) if (existing.contains(accessorMethod(kind, Json.text(apply, "field", "")) + "(")) used.add(kind);
         track(file);
@@ -861,17 +970,17 @@ final class Port {
         String listed = Files.readString(config), registered = registerMixin(listed, simple);
         if (!registered.equals(listed)) { track(config); Files.writeString(config, registered); }
         for (var site : sites.entrySet()) {
-            String original = Files.readString(site.getKey()), text = accessorCalls(original, apply, mixinPackage + "." + simple, site.getValue());
-            if (!text.equals(original)) Files.writeString(site.getKey(), text);
+            String original = Files.readString(site.getKey()), text = accessorCalls(original, apply, mixinPackage + "." + simple, site.getValue().keySet());
+            if (!text.equals(original)) Files.writeString(site.getKey(), deferImports(site.getKey(), original, text));
         }
         return true;
     }
-    static final String ACCESSOR_MARK = "Written by modaccel port";
+    static final String WRITTEN_MARK = "Written by modaccel port";
     /** The accessor mixin's source: a getter and, when the mod wrote the value, a setter on the owner's private field. */
     static String accessorSource(String mixinPackage, String simple, Map<String, Object> apply, Set<String> kinds) {
         String owner = Json.text(apply, "owner", ""), field = Json.text(apply, "field", ""), type = Json.text(apply, "type", "");
         StringBuilder out = new StringBuilder("package " + mixinPackage + ";\n\nimport " + owner + ";\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.gen.Accessor;\n\n")
-                .append("/** ").append(ACCESSOR_MARK).append(": ").append(Json.text(apply, "why", simpleName(owner) + " no longer exposes " + field + "."))
+                .append("/** ").append(WRITTEN_MARK).append(": ").append(Json.text(apply, "why", simpleName(owner) + " no longer exposes " + field + "."))
                 .append(" */\n@Mixin(").append(simpleName(owner)).append(".class)\npublic interface ").append(simple).append(" {\n");
         if (kinds.contains("get")) out.append("    @Accessor(\"").append(field).append("\")\n    ").append(type).append(' ').append(accessorMethod("get", field)).append("();\n");
         if (kinds.contains("set")) out.append("    @Accessor(\"").append(field).append("\")\n    void ").append(accessorMethod("set", field)).append('(').append(type).append(" value);\n");
