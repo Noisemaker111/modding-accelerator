@@ -73,8 +73,11 @@ final class JdkDownloads {
         throw new IOException("No published Temurin JDK " + feature + " for " + platform);
     }
     interface Fetch<T> { T get() throws IOException; }
-    /** Seconds slept before each retry; tests set it to zero. */
-    static int[] retryWaits = {3, 10};
+    /**
+     * Seconds slept before each retry; tests set them to zero. On 2026-11-08 GitHub's release downloads answered 504
+     * for runs of 20 seconds or more, past a 3 s and 10 s wait, so the waits span about a minute.
+     */
+    static int[] retryWaits = {5, 15, 30};
     /**
      * Runs a fetch again after a server's passing trouble (5xx, 429, a timeout or reset), which GitHub's release
      * downloads give now and then; a 404 or a refused connection fails at once. Each retry says so on stderr.
