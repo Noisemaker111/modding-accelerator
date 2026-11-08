@@ -104,8 +104,18 @@ jobs:
         if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
-      - name: Save caches on a miss
+      - name: Anything downloaded worth caching
+        id: worth
         if: always() && steps.cache.outputs.cache-hit != 'true'
+        shell: bash
+        # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
+        # later run restored it and downloaded again, so a passing outage kept failing CI.
+        run: |
+          kb=$(du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null | awk '{s+=$1} END {print s+0}')
+          echo "kb=$kb" >> "$GITHUB_OUTPUT"
+          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
+      - name: Save caches on a miss
+        if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
         uses: actions/cache/save@v4
         with:
           path: |
@@ -159,8 +169,18 @@ jobs:
         if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
-      - name: Save caches on a miss, even when the check fails
+      - name: Anything downloaded worth caching
+        id: worth
         if: always() && steps.cache.outputs.cache-hit != 'true'
+        shell: bash
+        # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
+        # later run restored it and downloaded again, so a passing outage kept failing CI.
+        run: |
+          kb=$(du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null | awk '{s+=$1} END {print s+0}')
+          echo "kb=$kb" >> "$GITHUB_OUTPUT"
+          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
+      - name: Save caches on a miss, even when the check fails
+        if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
         uses: actions/cache/save@v4
         with:
           path: |
@@ -220,8 +240,18 @@ jobs:
         if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
-      - name: Save caches on a miss, even when the check fails
+      - name: Anything downloaded worth caching
+        id: worth
         if: always() && steps.cache.outputs.cache-hit != 'true'
+        shell: bash
+        # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
+        # later run restored it and downloaded again, so a passing outage kept failing CI.
+        run: |
+          kb=$(du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null | awk '{s+=$1} END {print s+0}')
+          echo "kb=$kb" >> "$GITHUB_OUTPUT"
+          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
+      - name: Save caches on a miss, even when the check fails
+        if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
         uses: actions/cache/save@v4
         with:
           path: |
@@ -273,8 +303,18 @@ jobs:
           key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
       - name: Setup and compile the node
         run: python bench/real-mods/run.py --compile-nodes --only ${{ matrix.mod }} --cache "${{ runner.temp }}/real-mods" --out "${{ runner.temp }}/real-mods-results" --label ${{ matrix.mod }}
-      - name: Save caches on a miss, even when the node fails
+      - name: Anything downloaded worth caching
+        id: worth
         if: always() && steps.cache.outputs.cache-hit != 'true'
+        shell: bash
+        # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
+        # later run restored it and downloaded again, so a passing outage kept failing CI.
+        run: |
+          kb=$(du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null | awk '{s+=$1} END {print s+0}')
+          echo "kb=$kb" >> "$GITHUB_OUTPUT"
+          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
+      - name: Save caches on a miss, even when the node fails
+        if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
         uses: actions/cache/save@v4
         with:
           path: |
