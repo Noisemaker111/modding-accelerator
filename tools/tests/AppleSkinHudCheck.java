@@ -8,21 +8,37 @@ import java.util.concurrent.TimeUnit;
  * AppleSkin's own HUD value, checked in the real client through modaccel's eval: the health AppleSkin estimates a
  * golden carrot will restore (the flashing hearts its HUD draws) must equal what the game's natural regeneration
  * really heals once the player eats it. Not in PR CI (it starts the game); run it locally:
- *   java tools/tests/AppleSkinHudCheck.java <checkout> <modaccel.jar> <AppleSkin Fabric 1.21.6 checkout>
- * It then breaks AppleSkin on purpose in a copy (its slow-regeneration estimate heals 1.5 instead of 1) and requires
- * that run to fail at the comparison. Both runs stop their client at the end.
+ *   java tools/tests/AppleSkinHudCheck.java <checkout> <modaccel.jar> <AppleSkin checkout>
+ * The checkout is the Fabric 1.21.6 one (yarn names, snippets in appleskin-hud-yarn) or any Mojang-named one such as
+ * the NeoForge 26.3 port (appleskin-hud-mojmap, written for 26.3). It then breaks AppleSkin on purpose in a copy (its
+ * slow-regeneration estimate heals 1.5 instead of 1) and requires that run to fail at the comparison. Both runs stop
+ * their client at the end.
  */
 public final class AppleSkinHudCheck {
     record Run(int exit, String output, double seconds) { }
+    /** The game names one checkout's snippets and wait conditions are written in. */
+    record Names(String dir, String inWorld, String createOpen, String entered, String setUp, String foodDropped) { }
+    static final Names YARN = new Names("appleskin-hud-yarn", "mc.world != null",
+            "mc.currentScreen instanceof net.minecraft.client.gui.screen.world.CreateWorldScreen",
+            "mc.player != null && mc.world != null && mc.currentScreen == null",
+            "mc.player.getHealth() == 2.0F && mc.player.getHungerManager().getFoodLevel() == 17 && mc.player.getHungerManager().getSaturationLevel() == 0.0F",
+            "mc.getServer().getPlayerManager().getPlayer(mc.player.getUuid()).getHungerManager().getFoodLevel() < 18");
+    static final Names MOJMAP = new Names("appleskin-hud-mojmap", "mc.level != null",
+            "mc.gui.screen() instanceof net.minecraft.client.gui.screens.worldselection.CreateWorldScreen",
+            "mc.player != null && mc.level != null && mc.gui.screen() == null && mc.getSingleplayerServer() != null",
+            "mc.player.getHealth() == 2.0F && mc.player.getFoodData().getFoodLevel() == 17 && mc.player.getFoodData().getSaturationLevel() == 0.0F",
+            "mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID()).getFoodData().getFoodLevel() < 18");
     static final String BREAK_FILE = "java/squeek/appleskin/helpers/FoodHelper.java", BREAK_FIND = "health += 1;", BREAK_REPLACE = "health += 1.5F;";
 
     public static void main(String[] args) throws Exception {
         if (args.length != 3) throw new IllegalArgumentException("Usage: java AppleSkinHudCheck.java <checkout> <modaccel.jar> <AppleSkin checkout>");
         Path home = Path.of(args[0]).toRealPath(), jar = Path.of(args[1]).toAbsolutePath().normalize(), root = Path.of(args[2]).toRealPath();
-        Path snippets = home.resolve("tools/tests/appleskin-hud");
+        Path properties = root.resolve("gradle.properties");
+        Names names = Files.isRegularFile(properties) && Files.readString(properties).matches("(?s).*\\byarn_mappings\\s*=.*") ? YARN : MOJMAP;
+        System.out.println("  names: " + names.dir());
 
         long start = System.nanoTime();
-        String passed = check(home, jar, root, snippets);
+        String passed = check(home, jar, root, names);
         if (passed == null) throw new AssertionError("AppleSkin HUD check failed on the untouched mod; see the output above.");
         System.out.printf(Locale.ROOT, "PASS AppleSkin HUD (%.0fs): %s%n", (System.nanoTime() - start) / 1e9, passed);
 
@@ -34,26 +50,27 @@ public final class AppleSkinHudCheck {
         if (at < 0 || source.indexOf(BREAK_FIND, at + 1) >= 0) throw new AssertionError("Expected exactly one " + BREAK_FIND + " in " + file);
         Files.writeString(file, source.replace(BREAK_FIND, BREAK_REPLACE), StandardCharsets.UTF_8);
         start = System.nanoTime();
-        String broken = check(home, jar, copy, snippets);
+        String broken = check(home, jar, copy, names);
         if (broken != null) throw new AssertionError("The break (slow regeneration estimated as +1.5) still passed: " + broken);
         System.out.printf(Locale.ROOT, "PASS AppleSkin HUD break \"slow regeneration estimated as +1.5 health\" fails at the comparison (%.0fs)%n", (System.nanoTime() - start) / 1e9);
     }
 
     /** The PASS line on success, null when the comparison failed; anything else going wrong throws. */
-    static String check(Path home, Path jar, Path root, Path snippets) throws Exception {
+    static String check(Path home, Path jar, Path root, Names names) throws Exception {
+        Path snippets = home.resolve("tools/tests").resolve(names.dir());
         modaccel(home, jar, root, "game-stop"); // a client left from an older build would be refused
         try {
             step(home, jar, root, "ui-check");
-            if (!value(step(home, jar, root, "eval", "--code", "mc.world != null")).equals("true")) {
+            if (!value(step(home, jar, root, "eval", "--code", names.inWorld())).equals("true")) {
                 step(home, jar, root, "eval", "--file", snippets.resolve("open-create.java").toString());
-                step(home, jar, root, "eval", "--until", "mc.currentScreen instanceof net.minecraft.client.gui.screen.world.CreateWorldScreen", "--timeout", "30");
+                step(home, jar, root, "eval", "--until", names.createOpen(), "--timeout", "30");
                 step(home, jar, root, "eval", "--file", snippets.resolve("press-create.java").toString());
-                step(home, jar, root, "eval", "--until", "mc.player != null && mc.world != null && mc.currentScreen == null", "--timeout", "120");
+                step(home, jar, root, "eval", "--until", names.entered(), "--timeout", "120");
             }
             step(home, jar, root, "eval", "--file", snippets.resolve("setup.java").toString());
-            step(home, jar, root, "eval", "--until", "mc.player.getHealth() == 2.0F && mc.player.getHungerManager().getFoodLevel() == 17 && mc.player.getHungerManager().getSaturationLevel() == 0.0F", "--timeout", "20");
+            step(home, jar, root, "eval", "--until", names.setUp(), "--timeout", "20");
             System.out.println("  " + value(step(home, jar, root, "eval", "--file", snippets.resolve("estimate.java").toString())));
-            step(home, jar, root, "eval", "--until", "mc.getServer().getPlayerManager().getPlayer(mc.player.getUuid()).getHungerManager().getFoodLevel() < 18", "--timeout", "90");
+            step(home, jar, root, "eval", "--until", names.foodDropped(), "--timeout", "90");
             Run measure = modaccel(home, jar, root, "eval", "--file", snippets.resolve("measure.java").toString());
             if (measure.exit() == 0) return value(measure);
             if (measure.output().contains("AppleSkin's estimate is wrong")) { System.out.println("  FAIL as expected: " + between(measure.output(), "AppleSkin's estimate is wrong", "\"")); return null; }
