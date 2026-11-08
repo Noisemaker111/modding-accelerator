@@ -12,7 +12,7 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
 
 | Phase | Done | Doing | Next | Later | Last target |
 |---|---|---|---|---|---|
-| 1. Neighbouring versions (1.21.x), Fabric and NeoForge | 8 | 1 | 1 | 0 | 2026-12-04 |
+| 1. Neighbouring versions (1.21.x), Fabric and NeoForge | 9 | 0 | 1 | 0 | 2026-12-04 |
 | 2. Big jumps across families (1.16.5, 1.18.2, 1.20.1 → 1.21.x) | 4 | 0 | 0 | 2 | 2027-01-08 |
 | 3. 26.x, the unobfuscated game | 1 | 2 | 1 | 0 | 2026-12-04 |
 | 4. Loaders | 0 | 0 | 0 | 3 | 2027-03-12 |
@@ -46,8 +46,14 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
     build tools that follow the target (step 9), 69 errors go to 11 with nothing done by hand. The
     11 are four changes that need new code: the exhaustion getter, food effects on the consumable
     component, server-only game rules and payload networking. The stopped port names a repair guide
-    for each. **doing**
-    Started 2026-10-24, target 2026-11-20.
+    for each. **done** — AppleSkin 1.20.1 → 1.21.6 ports with nothing written by hand and passes its
+    HUD behaviour check in the real 1.21.6 client (+12.000002 estimated, +12.000001 healed; the
+    break fails). The four new-code changes became port features: accessor mixins for a getter the
+    game removed but whose field it kept, helpers the port adds to a class, and old networking
+    carried over as a payload of the same bytes. Mixins Mixin refuses are repaired from its own
+    messages. The check also caught a rule that compiled but was wrong (the 1.20.5 saturation
+    change).
+    Done 2026-11-08.
 8. Turn the render-pipeline family into rules (draw texture / render pipeline / texture view), then
     re-run step 7 to a build. **done** — The GUI render family is rules in yarn and official names,
     each tied to the update that changed it: the render type first in every blit (1.21.2), the
@@ -287,10 +293,10 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| 1.21.x updates that work in the game, Fabric | — | 2 updates (Oct 24) | 22 updates by Jan 29, 2027, step 10 | Baseline |
+| 1.21.x updates that work in the game, Fabric | 2 updates (Oct 24) | 7 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 25% of the way |
 | 1.21.x updates that work in the game, NeoForge | 3 updates (Oct 24) | 8 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 26% of the way |
 | Real mods with a port that works in the game | — | 3 mods (Oct 24) | 6 mods by Dec 18, step 12 | Baseline |
-| Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 11 errors (Nov 7) | 0 errors by Nov 20, step 7 | 82% of the way |
+| Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 0 errors (Nov 8) | 0 errors by Nov 20, step 7 | Met |
 | Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6, warm | 38 errors (Oct 24) | 9 errors (Oct 25) | 0 errors by Dec 4, step 10 | 76% of the way |
 | Errors left: Notes, NeoForge 1.21 → 1.21.6, warm | — | 14 errors (Oct 25) | 0 errors by Dec 4, step 10 | Baseline |
 | Errors left: Jade, NeoForge 1.21.1 → 1.21.6, warm | — | 98 errors (Oct 24) | 0 errors by Jan 15, 2027, step 12 | Baseline |
@@ -361,7 +367,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 21 steps (Nov 8) | 40 steps by Mar 12, 2027 | 46% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 22 steps (Nov 8) | 40 steps by Mar 12, 2027 | 49% of the way |
 
 ## Decisions
 

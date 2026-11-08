@@ -68,10 +68,12 @@
     {
      "id": "7",
      "title": "AppleSkin 1.20.1 → 1.21.6, five minors in one jump",
-     "status": "doing",
+     "status": "done",
      "text": "A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. With the render rules (step 8) and build tools that follow the target (step 9), 69 errors go to 11 with nothing done by hand. The 11 are four changes that need new code: the exhaustion getter, food effects on the consumable component, server-only game rules and payload networking. The stopped port names a repair guide for each.",
      "start": "2026-10-24",
      "target": "2026-11-20",
+     "done": "2026-11-08",
+     "result": "AppleSkin 1.20.1 → 1.21.6 ports with nothing written by hand and passes its HUD behaviour check in the real 1.21.6 client (+12.000002 estimated, +12.000001 healed; the break fails). The four new-code changes became port features: accessor mixins for a getter the game removed but whose field it kept, helpers the port adds to a class, and old networking carried over as a payload of the same bytes. Mixins Mixin refuses are repaired from its own messages. The check also caught a rule that compiled but was wrong (the 1.20.5 saturation change).",
      "measures": [
       "port.errors.appleskin-fabric-1.20.1-1.21.6"
      ]
