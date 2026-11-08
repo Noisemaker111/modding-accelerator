@@ -1,0 +1,14 @@
+bash bench/behaviour_checks.sh on the boat Linux T3 host (8 cores, 16 GB, Xvfb + Mesa software OpenGL, fresh upstream clones), 2026-11-08
+== appleskin: exit 0 in 214 s
+PASS AppleSkin HUD (143s): PASS real natural regeneration healed +12.000001 health; AppleSkin's HUD estimated +12.000002
+PASS AppleSkin HUD break "slow regeneration estimated as +1.5 health" fails at the comparison (71s)
+== notes port 1.21 -> 1.21.6: exit 0 in 90 s
+== notes: exit 0 in 80 s
+PASS Notes pinned note (35s): PASS pinned modaccel pin check, layer drew [Gutters cleaned (colour ffffffff), at 12 Elm St (colour ffffffff), 4591 (colour ffffffff)]
+PASS Notes break "pinned note drawn with alpha 0" fails at the comparison (44s)
+== zombie port 1.21.1 -> 1.21.6: exit 0 in 67 s
+== zombie: exit 0 in 159 s
+PASS Zombie Apocalypse Addon AI (59s): PASS hunting true, berserker true, pig health 997.0, goals [4:ZombieAttackTurtleEggGoal, 8:LookAtPlayerGoal, 8:RandomLookAroundGoal, 2:ZombieAttackGoal, 6:MoveThroughVillageGoal, 7:WaterAvoidingRandomStrollGoal, 1:ZombieEatFoodGoal, 4:ZombieMountZombieHorseGoal], target goals [1:HurtByTargetGoal, 2:NearestAttackableTargetGoal, 3:NearestAttackableTargetGoal, 3:NearestAttackableTargetGoal, 5:NearestAttackableTargetGoal, 3:ZombieHuntGoal], tags [modaccel_za, zombieapocalypseaddon_scaled], target pig
+PASS Zombie Apocalypse Addon break "no AI goals injected" fails at the check (99s)
+behaviour-checks: 3 mods, 10 min
+DONE exit 0 in 620 s

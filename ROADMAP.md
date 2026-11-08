@@ -12,7 +12,7 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
 
 | Phase | Done | Doing | Next | Later | Last target |
 |---|---|---|---|---|---|
-| 1. Neighbouring versions (1.21.x), Fabric and NeoForge | 9 | 0 | 1 | 0 | 2026-12-04 |
+| 1. Neighbouring versions (1.21.x), Fabric and NeoForge | 11 | 0 | 0 | 0 | 2026-12-04 |
 | 2. Big jumps across families (1.16.5, 1.18.2, 1.20.1 → 1.21.x) | 4 | 0 | 0 | 2 | 2027-01-08 |
 | 3. 26.x, the unobfuscated game | 1 | 2 | 1 | 0 | 2026-12-04 |
 | 4. Loaders | 0 | 0 | 0 | 3 | 2027-03-12 |
@@ -69,8 +69,27 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
     1.21.6: Loom 1.8-SNAPSHOT to 1.10.5 and Gradle 8.10 to 8.12, with no hand edit.
     Done 2026-11-07.
 10. One command, no hand edits, for 1.21.1 → 1.21.6 on this mod, and the same for a second mod.
-    **next**
-    Starts 2026-11-20, target 2026-12-04.
+    **done** — Two NeoForge mods port to 1.21.6 with nothing written by hand and pass behaviour
+    checks in the real 1.21.6 client: Notes 1.21 → 1.21.6 (13 errors to 0; its key, a saved note and
+    its pinned-note HUD layer) and Zombie Apocalypse Addon 1.21.1 → 1.21.6 (9 to 0; its zombie AI).
+    The new rules run in official names (layer API, drawString, saved data codec, saddle slot, owner
+    reference); an accessor mixin now works in a mod with no mixins (the port adds the config);
+    NeoGradle and Gradle follow the target; the Mixin check reaches NeoForge 21.6's renamed
+    unit-test launch target. Both checks ran on the boat Linux host, hidden on Xvfb.
+    Done 2026-11-08.
+10b. NeoForge's first setup for a game version (NeoForm: decompile, inject, transformSource,
+    recompile) ran in each mod folder: on Jon's PC on 2026-11-08 Notes and Zombie Apocalypse each
+    began it for 1.21.6, its steps took 12, 24, 34 and 22+ minutes under fairshare's idle priority,
+    and both were killed. A second mod on the same NeoForge and Minecraft version must reuse the
+    first one's setup and start compiling within minutes. **done** — Every forward NeoForge port now
+    moves to the same NeoGradle (the newest 7.x), so NeoGradle's own cross-project cache
+    (~/.gradle/caches/ng_execute, keyed by task class, inputs and file contents, not by folder)
+    serves every mod on that version. Zombie Apocalypse 1.21.1 → 1.21.6 right after Notes ran 0
+    NeoForm steps and made 0 cache entries; its whole port took 30 s. The cold setup itself takes
+    137 s on an idle 8-core machine (decompile 33 s, recompile 30 s): the hours on the PC were the
+    PC starved, not the work. bench/neoform_steps.py times each step and counts the cache entries a
+    build made.
+    Done 2026-11-08.
 
 ## Phase 2 — Big jumps across families (1.16.5, 1.18.2, 1.20.1 → 1.21.x)
 
@@ -294,17 +313,20 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
 | 1.21.x updates that work in the game, Fabric | 2 updates (Oct 24) | 7 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 25% of the way |
-| 1.21.x updates that work in the game, NeoForge | 3 updates (Oct 24) | 8 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 26% of the way |
-| Real mods with a port that works in the game | — | 3 mods (Oct 24) | 6 mods by Dec 18, step 12 | Baseline |
+| 1.21.x updates that work in the game, NeoForge | 3 updates (Oct 24) | 11 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 42% of the way |
+| Real mods with a port that works in the game | 3 mods (Oct 24) | 4 mods (Nov 8) | 6 mods by Dec 18, step 12 | 33% of the way |
 | Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 0 errors (Nov 8) | 0 errors by Nov 20, step 7 | Met |
-| Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6, warm | 38 errors (Oct 24) | 9 errors (Oct 25) | 0 errors by Dec 4, step 10 | 76% of the way |
-| Errors left: Notes, NeoForge 1.21 → 1.21.6, warm | — | 14 errors (Oct 25) | 0 errors by Dec 4, step 10 | Baseline |
+| Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6, warm | 38 errors (Oct 24) | 0 errors (Nov 8) | 0 errors by Dec 4, step 10 | Met |
+| Errors left: Notes, NeoForge 1.21 → 1.21.6, warm | 14 errors (Oct 25) | 0 errors (Nov 8) | 0 errors by Dec 4, step 10 | Met |
 | Errors left: Jade, NeoForge 1.21.1 → 1.21.6, warm | — | 98 errors (Oct 24) | 0 errors by Jan 15, 2027, step 12 | Baseline |
 | Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm | 69 errors (Oct 25) | 50 errors (Oct 25) | 0 errors by Jan 15, 2027, step 17 | 28% of the way |
 | Hand-written files: AppleSkin, NeoForge 1.21.6 → 26.3 | 1 file (Oct 24) | 0 files (Nov 8) | 0 files by Nov 27, step 17 | Met |
 | Port to a packaged build: Zombie Apocalypse 1.21.1 → 1.21.4, warm | 2.6 min (Oct 24) | 2.8 min (Oct 25) | 1.5 min by Dec 18, step 10 | 0% of the way |
 | Port to a packaged build: AppleSkin 1.21.6 → 26.3, warm | — | 66 s (Oct 24) | 60 s by Nov 27, step 17 | Baseline |
 | Port rules learned from Stonecutter mods | — | 38 rules (Oct 25) | 80 rules by Dec 31, step 13 | Baseline |
+| NeoForge 1.21.6 game setup (NeoForm), first mod on the machine, cold | — | 2.3 min (Nov 8) | — | Fact |
+| NeoForge 1.21.6 game setup (NeoForm), first mod, on Jon's PC, cold | — | 92.0 min (Nov 8) | — | Fact |
+| NeoForm steps a second mod on the same NeoForge version runs again, warm | 16 steps (Nov 8) | 0 steps (Nov 8) | 0 steps by Nov 8, step 10b | Met |
 
 ### Game checks
 
@@ -321,7 +343,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Block entity in a live world, Fabric 26.3, warm | — | 2.1 s (Oct 21) | 2.5 s (hold) by Nov 27, step 34 | Met |
 | Scripted scenario + screenshot, warm game, Fabric 26.3 | 2.9 s (Oct 21) | 5.1 s (Nov 7) | — | Fact |
 | Multiplayer scenario, warm client and server | — | 4.1 s (Oct 22) | 4 s by Nov 27, step 34 | Baseline |
-| Mods with their own behaviour asserted in a real client | 2 mods (Oct 26) | 2 mods (Nov 7) | 4 mods by Dec 4, step 27 | 0% of the way |
+| Mods with their own behaviour asserted in a real client | 2 mods (Oct 26) | 3 mods (Nov 8) | 4 mods by Dec 4, step 27 | 50% of the way |
 | Memory for one hidden game session, Fabric 26.3, warm | 1.1 GB (Nov 6) | 1.0 GB (Nov 6) | — | Fact |
 | Game checks modaccel runs at once on one PC | — | 8 sessions (Nov 7) | 8 sessions by Jan 8, 2027, step 36 | Met |
 | CPU to start one hidden client, saved launch, Fabric 26.3, warm | 95 CPU-s (Nov 6) | 49 CPU-s (Nov 6) | — | Fact |
@@ -367,7 +389,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 22 steps (Nov 8) | 40 steps by Mar 12, 2027 | 49% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 24 steps (Nov 8) | 41 steps by Mar 12, 2027 | 53% of the way |
 
 ## Decisions
 

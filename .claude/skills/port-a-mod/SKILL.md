@@ -34,8 +34,12 @@ Pick the next (mod, loader, from, to) from what is weakest on the map: a step wi
    work.
 2. **Baseline.** `modaccel compile --root <mod> --json` on its own version. If it does not build there, that is not a
    porting problem: fix the setup first or pick another mod.
-3. **Port.** `modaccel port --root <mod> --from A --to B --fix --json`. A cold NeoForge setup decompiles the game, about
-   an hour on this PC, so set `MODACCEL_GRADLE_TIMEOUT=6900`. Record the remaining error count as a measure
+3. **Port.** `modaccel port --root <mod> --from A --to B --fix --json`. A cold NeoForge setup decompiles the game once
+   per NeoForge version per machine: about 2 minutes on an idle 8-core machine (the boat Linux host), hours on a busy
+   PC. Every forward port moves to the same NeoGradle, so the next mod on that version reuses the setup from NeoGradle's
+   shared cache; `python -I bench/neoform_steps.py <mod> --since <port start>` shows each step's time and how many cache
+   entries the build made (0 = nothing decompiled again). Run NeoForge ports one at a time, so the second finds the
+   first one's setup. Record the remaining error count as a measure
    (`python -I bench/measures.py add port.errors.<mod>-<loader>-<A>-<B> N ...`).
 4. **Sort the errors by cause, not one by one.** The port names the update behind each error. For each cause:
    - **A mechanical change** (rename, moved package, new signature, replaced call): a rule in `knowledge/fixes.json`
@@ -53,10 +57,13 @@ Pick the next (mod, loader, from, to) from what is weakest on the map: a step wi
 5. **Repeat 3 and 4 until it builds.** Ledger status `build`.
 6. **Load.** Start the game hidden through modaccel (`ui-check`, then `world-check` or `eval --until` a world is
    loaded). If the world never loads, suspect the build setup before the mod: disable the mod's own registrations to
-   tell the two apart. Ledger status `load`.
+   tell the two apart. On a Linux machine with no screen (the boat T3 host), run the client and the checks under
+   `xvfb-run -a -s "-screen 0 1280x720x24"` with Mesa's software OpenGL, as `bench/behaviour_checks.sh` does. Ledger
+   status `load`.
 7. **Behaviour.** Pick the mod's main feature and check it in the real game through `modaccel eval` snippets, the
    way `tools/tests/AppleSkinHudCheck.java` checks AppleSkin's HUD against real regeneration and
-   `tools/tests/ZombieAiCheck.java` checks zombie AI. Then break the mod on purpose once (one changed number in its
+   `tools/tests/ZombieAiCheck.java` checks zombie AI and `tools/tests/NotesPinCheck.java` checks Notes' pinned-note HUD
+   layer. Then break the mod on purpose once (one changed number in its
    source, restored in `finally`) and see the check fail at the comparison. Ledger status `behaviour`.
 8. **Record and check**, on the `porting` branch:
    - a `coverage/ledger.json` row: mod, loader, from, to, status, date, and a detail saying what was proven and any

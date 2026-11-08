@@ -3588,6 +3588,307 @@
         "before": "package mod.client;\n\nclass HUD {\n\tfloat read(Player player) { return player.getFoodData().getExhaustionLevel(); }\n}\n",
         "after": "package mod.client;\nimport mod.mixin.FoodDataAccessor;\n\nclass HUD {\n\tfloat read(Player player) { return ((FoodDataAccessor) player.getFoodData()).modaccel$getExhaustionLevel(); }\n}\n"
       }
+    },
+    {
+      "id": "layered-draw-import-neoforge",
+      "jump": "1.21.5 -> 1.21.6 (official names)",
+      "loader": "neoforge",
+      "match": "symbol:\\s+class LayeredDraw\\b",
+      "apply": {
+        "literal": "import net.minecraft.client.gui.LayeredDraw;",
+        "replace": "import net.neoforged.neoforge.client.gui.GuiLayer;"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Seen in Notes (MattCzyr) NeoForge 1.21 -> 1.21.6: 1.21.6 removed LayeredDraw (coverage/changes/1.21.5__1.21.6.json). On NeoForge a HUD layer registered with RegisterGuiLayersEvent is a net.neoforged.neoforge.client.gui.GuiLayer, whose render(GuiGraphics, DeltaTracker) is the same method LayeredDraw.Layer had; the author's own 1.21.6 port made the same change. A Fabric mod needs Fabric's HUD API instead, so this runs only on NeoForge.",
+      "verified": null,
+      "test": {
+        "error": "PinnedNoteLayer.java:12: error: cannot find symbol\nimport net.minecraft.client.gui.LayeredDraw;\n                               ^\n  symbol:   class LayeredDraw\n  location: package net.minecraft.client.gui\n",
+        "before": "package mod;\n\nimport net.minecraft.client.gui.LayeredDraw;\n\npublic class PinnedNoteLayer implements LayeredDraw.Layer {\n}\n",
+        "after": "package mod;\n\nimport net.neoforged.neoforge.client.gui.GuiLayer;\n\npublic class PinnedNoteLayer implements LayeredDraw.Layer {\n}\n"
+      }
+    },
+    {
+      "id": "layered-draw-layer-neoforge",
+      "jump": "1.21.5 -> 1.21.6 (official names)",
+      "loader": "neoforge",
+      "match": "package LayeredDraw does not exist",
+      "apply": {
+        "find": "\\bLayeredDraw\\.Layer\\b",
+        "replace": "GuiLayer",
+        "ensureImports": [
+          "net.neoforged.neoforge.client.gui.GuiLayer"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Same change as layered-draw-import-neoforge: the layer type itself becomes NeoForge's GuiLayer.",
+      "verified": null,
+      "test": {
+        "error": "PinnedNoteLayer.java:19: error: package LayeredDraw does not exist\npublic class PinnedNoteLayer implements LayeredDraw.Layer {\n                                                   ^\n",
+        "before": "package mod;\n\npublic class PinnedNoteLayer implements LayeredDraw.Layer {\n}\n",
+        "after": "package mod;\nimport net.neoforged.neoforge.client.gui.GuiLayer;\n\npublic class PinnedNoteLayer implements GuiLayer {\n}\n"
+      }
+    },
+    {
+      "id": "selection-list-scrollbar-x-official",
+      "jump": "1.21.3 -> 1.21.4 (official names)",
+      "match": "symbol:\\s+method getScrollbarPosition\\(\\)",
+      "apply": {
+        "find": "\\bgetScrollbarPosition\\(\\)",
+        "replace": "scrollBarX()"
+      },
+      "scope": "log",
+      "when": "SelectionList\\b",
+      "note": "Seen in Notes (MattCzyr) NeoForge 1.21 -> 1.21.6: 1.21.4 replaced AbstractSelectionList.getScrollbarPosition() with scrollBarX() (coverage/changes/1.21.3__1.21.4.json), the x the scroll bar is drawn at, so an override and its super call both take the new name, as the author's own port did.",
+      "verified": null,
+      "test": {
+        "error": "NotesList.java:26: error: cannot find symbol\n\t\treturn super.getScrollbarPosition() + 20;\n\t\t            ^\n  symbol: method getScrollbarPosition()\n",
+        "before": "class NotesList extends ObjectSelectionList<Entry> {\n\t@Override\n\tprotected int getScrollbarPosition() {\n\t\treturn super.getScrollbarPosition() + 20;\n\t}\n}\n",
+        "after": "class NotesList extends ObjectSelectionList<Entry> {\n\t@Override\n\tprotected int scrollBarX() {\n\t\treturn super.scrollBarX() + 20;\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "override-weaker-access-public",
+      "jump": "1.14.4 -> 26.3",
+      "match": "cannot override \\w+\\([^)\\n]*\\) in [\\w.$]+\\n[^\\n]*\\n[^\\n]*\\n\\s*attempting to assign weaker access privileges; was public",
+      "apply": {
+        "find": "\\b(?:protected|private)\\b",
+        "replace": "public"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Seen in Notes (MattCzyr) NeoForge 1.21 -> 1.21.6: the game made AbstractSelectionList.getRowBottom(int) public, and the mod's protected override no longer compiles. Whenever an update widens a method the mod overrides, javac says so in these words; the override becomes public on the line javac names, at any update and in any names.",
+      "verified": null,
+      "test": {
+        "error": "NotesList.java:3: error: getRowBottom(int) in NotesList cannot override getRowBottom(int) in AbstractSelectionList\n\tprotected int getRowBottom(int index) {\n\t              ^\n  attempting to assign weaker access privileges; was public\n",
+        "before": "class NotesList {\n\t@Override\n\tprotected int getRowBottom(int index) {\n\t\treturn getRowTop(index) + itemHeight;\n\t}\n\tprotected int other() { return 0; }\n}\n",
+        "after": "class NotesList {\n\t@Override\n\tpublic int getRowBottom(int index) {\n\t\treturn getRowTop(index) + itemHeight;\n\t}\n\tprotected int other() { return 0; }\n}\n"
+      }
+    },
+    {
+      "id": "gui-text-highlight-pipeline-official",
+      "jump": "1.21.5 -> 1.21.6 (official names)",
+      "match": "symbol:\\s+method guiTextHighlight\\(\\)\\n\\s*location: class RenderType",
+      "apply": {
+        "literal": "RenderType.guiTextHighlight()",
+        "replace": "RenderPipelines.GUI_TEXT_HIGHLIGHT",
+        "ensureImports": [
+          "net.minecraft.client.renderer.RenderPipelines"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Seen in Notes (MattCzyr) NeoForge 1.21 -> 1.21.6: 1.21.6 removed RenderType.guiTextHighlight() (knowledge/api-1.21.5-to-1.21.6.json) and GuiGraphics.fill takes the RenderPipeline RenderPipelines.GUI_TEXT_HIGHLIGHT, the same inverted highlight, as the author's own port did.",
+      "verified": null,
+      "test": {
+        "error": "NotesTextField.java:3: error: cannot find symbol\n\t\tguiGraphics.fill(RenderType.guiTextHighlight(), startX, startY, endX, endY, -16776961);\n\t\t                           ^\n  symbol:   method guiTextHighlight()\n  location: class RenderType\n",
+        "before": "package mod;\n\nclass F {\n\t\tguiGraphics.fill(RenderType.guiTextHighlight(), startX, startY, endX, endY, -16776961);\n}\n",
+        "after": "package mod;\nimport net.minecraft.client.renderer.RenderPipelines;\n\nclass F {\n\t\tguiGraphics.fill(RenderPipelines.GUI_TEXT_HIGHLIGHT, startX, startY, endX, endY, -16776961);\n}\n"
+      }
+    },
+    {
+      "id": "gui-text-highlight-pipeline",
+      "jump": "1.21.5 -> 1.21.6 (yarn)",
+      "match": "symbol:\\s+method getGuiTextHighlight\\(\\)\\n\\s*location: class RenderLayer",
+      "apply": {
+        "literal": "RenderLayer.getGuiTextHighlight()",
+        "replace": "RenderPipelines.GUI_TEXT_HIGHLIGHT",
+        "ensureImports": [
+          "net.minecraft.client.gl.RenderPipelines"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The yarn twin of gui-text-highlight-pipeline-official: yarn 1.21.5+build.1 names it RenderLayer.getGuiTextHighlight() (method_51786), yarn 1.21.6+build.1 RenderPipelines.GUI_TEXT_HIGHLIGHT (field_56881) in net.minecraft.client.gl.",
+      "verified": null,
+      "test": {
+        "error": "F.java:3: error: cannot find symbol\n\t\tcontext.fill(RenderLayer.getGuiTextHighlight(), x1, y1, x2, y2, -16776961);\n\t\t                        ^\n  symbol:   method getGuiTextHighlight()\n  location: class RenderLayer\n",
+        "before": "package mod;\n\nclass F {\n\t\tcontext.fill(RenderLayer.getGuiTextHighlight(), x1, y1, x2, y2, -16776961);\n}\n",
+        "after": "package mod;\nimport net.minecraft.client.gl.RenderPipelines;\n\nclass F {\n\t\tcontext.fill(RenderPipelines.GUI_TEXT_HIGHLIGHT, x1, y1, x2, y2, -16776961);\n}\n"
+      }
+    },
+    {
+      "id": "registry-access-lookup-official",
+      "jump": "1.21.1 -> 1.21.2 (official names)",
+      "match": "symbol:\\s+method registry\\(ResourceKey<[^\\n]*\\n\\s*location: (?:interface RegistryAccess|variable \\w+ of type RegistryAccess)",
+      "apply": {
+        "find": "\\.registry\\(",
+        "replace": ".lookup("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Seen in Notes (MattCzyr) NeoForge 1.21 -> 1.21.6: 1.21.2 renamed RegistryAccess.registry(key) to lookup(key) with the same Optional<Registry<T>> result (coverage/changes/1.21.1__1.21.2.json lists registryOrThrow -> lookupOrThrow beside it). Only the line javac names is changed: registry( is a common method name.",
+      "verified": null,
+      "test": {
+        "error": "StringUtils.java:3: error: cannot find symbol\n\t\treturn level.registryAccess().registry(Registries.BIOME);\n\t\t                             ^\n  symbol:   method registry(ResourceKey<Registry<Biome>>)\n  location: interface RegistryAccess\n",
+        "before": "class StringUtils {\n\tstatic Object f(Level level) {\n\t\treturn level.registryAccess().registry(Registries.BIOME);\n\t}\n\tstatic Object g(Holder h) { return h.registry(); }\n}\n",
+        "after": "class StringUtils {\n\tstatic Object f(Level level) {\n\t\treturn level.registryAccess().lookup(Registries.BIOME);\n\t}\n\tstatic Object g(Holder h) { return h.registry(); }\n}\n"
+      }
+    },
+    {
+      "id": "drawstring-float-helper-neoforge",
+      "jump": "1.21.5 -> 1.21.6 (official names)",
+      "loader": "neoforge",
+      "match": "no suitable method found for drawString\\(Font,String,float,float,int,boolean\\)",
+      "apply": {
+        "transform": "helper",
+        "name": "modaccel$drawString",
+        "find": "\\b(\\w+(?:\\.\\w+)*)\\.drawString\\(",
+        "replace": "modaccel\\$drawString($1, ",
+        "source": "\t/** Written by modaccel port: NeoForge 1.21.6 dropped GuiGraphics.drawString at float positions, which drew the text and returned where it ended; the game's own drawString returns nothing now. */\n\tprivate static int modaccel$drawString(GuiGraphics graphics, Font font, String text, float x, float y, int color, boolean shadow) {\n\t\tif (text == null) return 0;\n\t\tgraphics.drawString(font, text, (int) x, (int) y, color, shadow);\n\t\treturn (int) (x + font.width(text)) + (shadow ? 1 : 0);\n\t}",
+        "ensureImports": [
+          "net.minecraft.client.gui.GuiGraphics",
+          "net.minecraft.client.gui.Font"
+        ]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Seen in Notes (MattCzyr) NeoForge 1.21 -> 1.21.6: NeoForge 1.21.1 patched GuiGraphics with drawString(Font, String, float, float, int, boolean) returning the x where the text ended ((int) (x + width) + 1 with a shadow, Font.drawInternal); NeoForge 1.21.6 has only the game's int-position drawString, which returns void. The call goes through a helper that draws at the int position and gives back the same end x, so code that keeps drawing after the text (a text field's cursor) still lines up. The author's own port instead added font.width(s) by hand.",
+      "verified": null,
+      "test": {
+        "error": "NotesTitleField.java:5: error: no suitable method found for drawString(Font,String,float,float,int,boolean)\n\t\t\t\tj1 = guiGraphics.drawString(font, s1, (float) l, (float) i1, i, true);\n\t\t\t\t                ^\n    method GuiGraphics.drawString(Font,String,int,int,int,boolean) is not applicable\n",
+        "before": "package mod;\n\nclass NotesTitleField {\n\tvoid render(GuiGraphics guiGraphics) {\n\t\t\t\tj1 = guiGraphics.drawString(font, s1, (float) l, (float) i1, i, true);\n\t\tguiGraphics.drawString(font, s1, l, i1, i, true);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.client.gui.Font;\nimport net.minecraft.client.gui.GuiGraphics;\n\nclass NotesTitleField {\n\tvoid render(GuiGraphics guiGraphics) {\n\t\t\t\tj1 = modaccel$drawString(guiGraphics, font, s1, (float) l, (float) i1, i, true);\n\t\tguiGraphics.drawString(font, s1, l, i1, i, true);\n\t}\n\n\t/** Written by modaccel port: NeoForge 1.21.6 dropped GuiGraphics.drawString at float positions, which drew the text and returned where it ended; the game's own drawString returns nothing now. */\n\tprivate static int modaccel$drawString(GuiGraphics graphics, Font font, String text, float x, float y, int color, boolean shadow) {\n\t\tif (text == null) return 0;\n\t\tgraphics.drawString(font, text, (int) x, (int) y, color, shadow);\n\t\treturn (int) (x + font.width(text)) + (shadow ? 1 : 0);\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "saved-data-type-codec-official",
+      "jump": "1.21.4 -> 1.21.5 (official names)",
+      "match": "symbol:\\s+class Factory\\b",
+      "apply": {
+        "find": "\\bcomputeIfAbsent\\(\\s*new\\s+(?:SavedData\\.)?Factory<>\\(\\s*(\\w+)::new\\s*,\\s*(\\w+)::(\\w+)\\s*\\)\\s*,\\s*([^;()]+?)\\s*\\)",
+        "replace": "computeIfAbsent(new SavedDataType<$1>($4, context -> new $1(), context -> CompoundTag.CODEC.xmap(tag -> $2.$3(tag, context.levelOrThrow().registryAccess()), data -> data.save(new CompoundTag(), context.levelOrThrow().registryAccess()))))",
+        "ensureImports": [
+          "net.minecraft.world.level.saveddata.SavedDataType",
+          "net.minecraft.nbt.CompoundTag"
+        ]
+      },
+      "scope": "log",
+      "when": "extends SavedData\\b",
+      "note": "Seen in Zombie Apocalypse Addon (NeoForge) 1.21.1 -> 1.21.6: 1.21.5 removed SavedData.Factory and SavedData.save(CompoundTag, HolderLookup.Provider); a saved data type is a SavedDataType(id, constructor, codec), each given the SavedData.Context of the level that stores it. The mod's own NBT load and save are kept and wrapped in a codec over CompoundTag.CODEC, so the file on disk holds the same tag as before. Only the two-argument Factory (no DataFixTypes) is rewritten.",
+      "verified": null,
+      "test": {
+        "error": "ApocalypseWorldData.java:9: error: cannot find symbol\n                new Factory<>(ApocalypseWorldData::new, ApocalypseWorldData::load),\n                    ^\n  symbol:   class Factory\n  location: class ApocalypseWorldData\n",
+        "before": "package mod;\n\npublic class ApocalypseWorldData extends SavedData {\n    public static ApocalypseWorldData get(MinecraftServer server) {\n        return server.overworld().getDataStorage().computeIfAbsent(\n                new Factory<>(ApocalypseWorldData::new, ApocalypseWorldData::load),\n                DATA_NAME);\n    }\n}\n",
+        "after": "package mod;\nimport net.minecraft.nbt.CompoundTag;\nimport net.minecraft.world.level.saveddata.SavedDataType;\n\npublic class ApocalypseWorldData extends SavedData {\n    public static ApocalypseWorldData get(MinecraftServer server) {\n        return server.overworld().getDataStorage().computeIfAbsent(new SavedDataType<ApocalypseWorldData>(DATA_NAME, context -> new ApocalypseWorldData(), context -> CompoundTag.CODEC.xmap(tag -> ApocalypseWorldData.load(tag, context.levelOrThrow().registryAccess()), data -> data.save(new CompoundTag(), context.levelOrThrow().registryAccess()))));\n    }\n}\n"
+      }
+    },
+    {
+      "id": "saved-data-save-override-official",
+      "jump": "1.21.4 -> 1.21.5 (official names)",
+      "match": "method does not override or implement a method from a supertype",
+      "apply": {
+        "find": "[ \\t]*@Override[ \\t]*\\r?\\n(\\s*public\\s+CompoundTag\\s+save\\s*\\(\\s*CompoundTag\\s+\\w+\\s*,\\s*HolderLookup\\.Provider\\s+\\w+\\s*\\))",
+        "replace": "$1"
+      },
+      "scope": "log",
+      "when": "extends SavedData\\b",
+      "note": "Same change as saved-data-type-codec-official: SavedData no longer declares save(CompoundTag, HolderLookup.Provider), so the mod's save keeps its body (the codec calls it) and loses @Override.",
+      "verified": null,
+      "test": {
+        "error": "ApocalypseWorldData.java:4: error: method does not override or implement a method from a supertype\n    @Override\n    ^\n",
+        "before": "public class ApocalypseWorldData extends SavedData {\n\n    @Override\n    public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {\n        return tag;\n    }\n}\n",
+        "after": "public class ApocalypseWorldData extends SavedData {\n\n    public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {\n        return tag;\n    }\n}\n"
+      }
+    },
+    {
+      "id": "entity-in-water-or-bubble-official",
+      "jump": "1.21.4 -> 1.21.5 (official names)",
+      "match": "symbol:\\s+method isInWaterOrBubble\\(\\)",
+      "apply": {
+        "literal": ".isInWaterOrBubble()",
+        "replace": ".isInWater()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Seen in Zombie Apocalypse Addon (NeoForge) 1.21.1 -> 1.21.6: 1.21.5 removed Entity.isInWaterOrBubble() (isInWater() || isInBubbleColumn() in 1.21.4) and isInBubbleColumn(). A bubble column's fluid is water, so an entity inside one is already touching water and isInWater() gives the same answer.",
+      "verified": null,
+      "test": {
+        "error": "ZombieTowering.java:3: error: cannot find symbol\n                || zombie.isInWaterOrBubble()\n                         ^\n  symbol:   method isInWaterOrBubble()\n  location: variable zombie of type Zombie\n",
+        "before": "class T {\n    boolean f(Zombie zombie) {\n        return zombie.isPassenger()\n                || zombie.isInWaterOrBubble();\n    }\n}\n",
+        "after": "class T {\n    boolean f(Zombie zombie) {\n        return zombie.isPassenger()\n                || zombie.isInWater();\n    }\n}\n"
+      }
+    },
+    {
+      "id": "entity-in-water-or-bubble",
+      "jump": "1.21.4 -> 1.21.5 (yarn)",
+      "match": "symbol:\\s+method isInsideWaterOrBubbleColumn\\(\\)",
+      "apply": {
+        "literal": ".isInsideWaterOrBubbleColumn()",
+        "replace": ".isTouchingWater()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The yarn twin of entity-in-water-or-bubble-official: yarn 1.21.4+build.8 Entity.isInsideWaterOrBubbleColumn() (method_5816) is gone in 1.21.5+build.1; isTouchingWater() (method_5799) remains.",
+      "verified": null,
+      "test": {
+        "error": "T.java:3: error: cannot find symbol\n        return zombie.isInsideWaterOrBubbleColumn();\n                     ^\n  symbol:   method isInsideWaterOrBubbleColumn()\n  location: variable zombie of type ZombieEntity\n",
+        "before": "class T {\n    boolean f(ZombieEntity zombie) {\n        return zombie.isInsideWaterOrBubbleColumn();\n    }\n}\n",
+        "after": "class T {\n    boolean f(ZombieEntity zombie) {\n        return zombie.isTouchingWater();\n    }\n}\n"
+      }
+    },
+    {
+      "id": "equip-saddle-slot-helper-official",
+      "jump": "1.21.4 -> 1.21.5 (official names)",
+      "match": "symbol:\\s+method equipSaddle\\(ItemStack,SoundSource\\)",
+      "apply": {
+        "transform": "helper",
+        "name": "modaccel$equipSaddle",
+        "source": "\t/** Written by modaccel port: 1.21.5 made the saddle an equipment slot and removed equipSaddle(ItemStack, SoundSource); with a sound source it played the saddling sound, which the saddle's own equippable component now names. */\n\tprivate static void modaccel$equipSaddle(net.minecraft.world.entity.Mob mob, net.minecraft.world.item.ItemStack saddle, net.minecraft.sounds.SoundSource source) {\n\t\tmob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.SADDLE, saddle);\n\t\tnet.minecraft.world.item.equipment.Equippable equippable = saddle.get(net.minecraft.core.component.DataComponents.EQUIPPABLE);\n\t\tif (source != null && equippable != null) mob.level().playSound(null, mob, equippable.equipSound().value(), source, 0.5F, 1.0F);\n\t}"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Seen in Zombie Apocalypse Addon (NeoForge) 1.21.1 -> 1.21.6: 1.21.5 removed Saddleable.equipSaddle(ItemStack, SoundSource); a saddle is the item in EquipmentSlot.SADDLE (Mob.isSaddled reads that slot). The call goes through a helper that equips the slot and, as the old method did when given a sound source, plays the saddling sound at half volume, taken from the saddle's equippable component.",
+      "verified": null,
+      "test": {
+        "error": "ZombieHuntCompat.java:3: error: cannot find symbol\n        zombieHorse.equipSaddle(\n                   ^\n  symbol:   method equipSaddle(ItemStack,SoundSource)\n  location: variable zombieHorse of type ZombieHorse\n",
+        "before": "class ZombieHuntCompat {\n    static void equipSaddle(ZombieHorse zombieHorse) {\n        zombieHorse.equipSaddle(\n                new ItemStack(Items.SADDLE),\n                SoundSource.NEUTRAL);\n    }\n}\n",
+        "after": "class ZombieHuntCompat {\n    static void equipSaddle(ZombieHorse zombieHorse) {\n        modaccel$equipSaddle(zombieHorse, \n                new ItemStack(Items.SADDLE),\n                SoundSource.NEUTRAL);\n    }\n\n\t/** Written by modaccel port: 1.21.5 made the saddle an equipment slot and removed equipSaddle(ItemStack, SoundSource); with a sound source it played the saddling sound, which the saddle's own equippable component now names. */\n\tprivate static void modaccel$equipSaddle(net.minecraft.world.entity.Mob mob, net.minecraft.world.item.ItemStack saddle, net.minecraft.sounds.SoundSource source) {\n\t\tmob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.SADDLE, saddle);\n\t\tnet.minecraft.world.item.equipment.Equippable equippable = saddle.get(net.minecraft.core.component.DataComponents.EQUIPPABLE);\n\t\tif (source != null && equippable != null) mob.level().playSound(null, mob, equippable.equipSound().value(), source, 0.5F, 1.0F);\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "owner-uuid-reference-helper-official",
+      "jump": "1.21.4 -> 1.21.5 (official names)",
+      "match": "symbol:\\s+method getOwnerUUID\\(\\)",
+      "apply": {
+        "transform": "helper",
+        "name": "modaccel$ownerUUID",
+        "source": "\t/** Written by modaccel port: 1.21.5 replaced OwnableEntity.getOwnerUUID() with getOwnerReference(), a reference that is null when nothing owns the animal. */\n\tprivate static java.util.UUID modaccel$ownerUUID(net.minecraft.world.entity.OwnableEntity owned) {\n\t\tnet.minecraft.world.entity.EntityReference<?> owner = owned.getOwnerReference();\n\t\treturn owner == null ? null : owner.getUUID();\n\t}"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Seen in Zombie Apocalypse Addon (NeoForge) 1.21.1 -> 1.21.6: 1.21.5 replaced OwnableEntity.getOwnerUUID() (tamed animals and horses) with getOwnerReference(), an EntityReference<LivingEntity> or null. The helper gives back the same UUID, or null as before when nothing owns it.",
+      "verified": null,
+      "test": {
+        "error": "ZombieHunt.java:3: error: cannot find symbol\n        UUID owner = horse.getOwnerUUID();\n                          ^\n  symbol:   method getOwnerUUID()\n  location: variable horse of type Horse\n",
+        "before": "class ZombieHunt {\n    void f(Horse horse) {\n        UUID owner = horse.getOwnerUUID();\n    }\n}\n",
+        "after": "class ZombieHunt {\n    void f(Horse horse) {\n        UUID owner = modaccel$ownerUUID(horse);\n    }\n\n\t/** Written by modaccel port: 1.21.5 replaced OwnableEntity.getOwnerUUID() with getOwnerReference(), a reference that is null when nothing owns the animal. */\n\tprivate static java.util.UUID modaccel$ownerUUID(net.minecraft.world.entity.OwnableEntity owned) {\n\t\tnet.minecraft.world.entity.EntityReference<?> owner = owned.getOwnerReference();\n\t\treturn owner == null ? null : owner.getUUID();\n\t}\n}\n"
+      }
+    },
+    {
+      "id": "horse-owner-accessor-official",
+      "jump": "1.21.4 -> 1.21.5 (official names)",
+      "match": "symbol:\\s+method setOwnerUUID\\(UUID\\)\\n\\s*location: (?:variable \\w+ of type|class) (?:AbstractHorse|AbstractChestedHorse|Horse|ZombieHorse|SkeletonHorse|Donkey|Mule|Llama|TraderLlama|Camel)\\b",
+      "apply": {
+        "transform": "accessor",
+        "owner": "net.minecraft.world.entity.animal.horse.AbstractHorse",
+        "receivers": "AbstractHorse|AbstractChestedHorse|Horse|ZombieHorse|SkeletonHorse|Donkey|Mule|Llama|TraderLlama|Camel",
+        "field": "owner",
+        "type": "net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>",
+        "set": "setOwnerUUID",
+        "setArgument": "java.util.Optional.ofNullable({value}).map(modaccel$uuid -> new net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>(modaccel$uuid)).orElse(null)",
+        "why": "1.21.5 removed AbstractHorse.setOwnerUUID(UUID); the private field owner, an EntityReference<LivingEntity>, remains and only setOwner(LivingEntity) sets it, which needs the owner loaded."
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Seen in Zombie Apocalypse Addon (NeoForge) 1.21.1 -> 1.21.6: a horse turned into a zombie horse keeps its owner by UUID, who may be offline. 1.21.5's AbstractHorse keeps the owner as an EntityReference that only setOwner(LivingEntity) sets, so the port writes an accessor mixin for the field (adding a mixins config to a NeoForge mod that has none) and passes the same UUID as a reference.",
+      "verified": null,
+      "test": {
+        "error": "ZombieHunt.java:3: error: cannot find symbol\n            zombieHorse.setOwnerUUID(owner);\n                       ^\n  symbol:   method setOwnerUUID(UUID)\n  location: variable zombieHorse of type ZombieHorse\n",
+        "before": "package mod;\n\nclass ZombieHunt {\n    void f(ZombieHorse zombieHorse, UUID owner) {\n            zombieHorse.setOwnerUUID(owner);\n    }\n}\n",
+        "after": "package mod;\nimport mod.mixin.AbstractHorseAccessor;\n\nclass ZombieHunt {\n    void f(ZombieHorse zombieHorse, UUID owner) {\n            ((AbstractHorseAccessor) zombieHorse).modaccel$setOwner(java.util.Optional.ofNullable(owner).map(modaccel$uuid -> new net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>(modaccel$uuid)).orElse(null));\n    }\n}\n"
+      }
     }
   ]
 }

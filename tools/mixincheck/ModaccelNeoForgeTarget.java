@@ -85,19 +85,39 @@ public final class ModaccelNeoForgeTarget implements ClassFileTransformer {
         int attributes = in.readUnsignedShort(); out.writeShort(attributes);
         for (int a = 0; a < attributes; a++) {
             int attributeName = in.readUnsignedShort(); out.writeShort(attributeName);
-            int length = in.readInt(); out.writeInt(length);
+            int length = in.readInt();
             byte[] body = new byte[length]; in.readFully(body);
-            if (target && "Code".equals(utf8[attributeName])) {
-                // Code: max_stack(2) max_locals(2) code_length(4) code[...] exceptions... attributes...
-                int codeLength = ((body[4] & 0xff) << 24) | ((body[5] & 0xff) << 16) | ((body[6] & 0xff) << 8) | (body[7] & 0xff);
-                int exceptions = ((body[8 + codeLength] & 0xff) << 8) | (body[9 + codeLength] & 0xff);
-                if (exceptions != 0) throw new IOException("runService has an exception table");
-                for (int b = 0; b < codeLength - 1; b++) body[8 + b] = 0; // nop
-                body[8 + codeLength - 1] = (byte) 0xb1;                   // return
-                emptied = true;
-            }
+            if (target && "Code".equals(utf8[attributeName])) { body = emptied(body, utf8); emptied = true; }
+            out.writeInt(body.length);
             out.write(body);
         }
         return emptied;
+    }
+
+    /**
+     * A Code attribute whose code is nop...return. Its StackMapTable goes too: the frames described the old branches, and
+     * FML 4.0.43 (NeoForge 21.6) has one in runService, so a kept table no longer matched the nops ("Instruction type does
+     * not match stack map") and the launch target could not load. Straight-line code needs no frames.
+     */
+    static byte[] emptied(byte[] body, String[] utf8) throws IOException {
+        // Code: max_stack(2) max_locals(2) code_length(4) code[...] exception_table_length(2) attributes_count(2) attributes...
+        int codeLength = ((body[4] & 0xff) << 24) | ((body[5] & 0xff) << 16) | ((body[6] & 0xff) << 8) | (body[7] & 0xff);
+        int exceptions = ((body[8 + codeLength] & 0xff) << 8) | (body[9 + codeLength] & 0xff);
+        if (exceptions != 0) throw new IOException("runService has an exception table");
+        for (int b = 0; b < codeLength - 1; b++) body[8 + b] = 0; // nop
+        body[8 + codeLength - 1] = (byte) 0xb1;                   // return
+        int at = 10 + codeLength, count = ((body[at] & 0xff) << 8) | (body[at + 1] & 0xff), kept = 0;
+        ByteArrayOutputStream attributes = new ByteArrayOutputStream();
+        for (int i = 0, p = at + 2; i < count; i++) {
+            int name = ((body[p] & 0xff) << 8) | (body[p + 1] & 0xff);
+            int length = ((body[p + 2] & 0xff) << 24) | ((body[p + 3] & 0xff) << 16) | ((body[p + 4] & 0xff) << 8) | (body[p + 5] & 0xff);
+            if (!"StackMapTable".equals(utf8[name])) { attributes.write(body, p, 6 + length); kept++; }
+            p += 6 + length;
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.write(body, 0, at);
+        out.write(kept >> 8); out.write(kept);
+        attributes.writeTo(out);
+        return out.toByteArray();
     }
 }

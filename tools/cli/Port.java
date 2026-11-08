@@ -518,6 +518,19 @@ final class Port {
         return "mojmap";
     }
     /**
+     * A rule with "loader" runs only on a project built for that loader: NeoForge's GuiLayer replaces 1.21.6's removed
+     * LayeredDraw.Layer, while a Fabric mod needs Fabric's HUD API for the same error.
+     */
+    boolean loaderFits(Map<String, Object> rule) {
+        Set<String> loaders = new TreeSet<>();
+        for (Object p : Json.array(model.get("projects"))) loaders.addAll(Support.loaders(Json.object(p)));
+        return loaderFits(rule, loaders);
+    }
+    static boolean loaderFits(Map<String, Object> rule, Set<String> loaders) {
+        String loader = Json.text(rule, "loader", "");
+        return loader.isEmpty() || loaders.contains(loader);
+    }
+    /**
      * A mapping change can delete one target of a multi-target mixin. The annotation processor
      * names it and reports an empty match, so remove only that dead name and keep the rest.
      */
@@ -576,7 +589,7 @@ final class Port {
     void applySilentRules(String from, String to) throws Exception {
         List<Path> all = ownedJava();
         for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
-            var rule = Json.object(item); if (!rule.containsKey("silent")) continue;
+            var rule = Json.object(item); if (!rule.containsKey("silent") || !loaderFits(rule)) continue;
             List<String> covered = route == null ? List.of() : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null ? covered.isEmpty() : !crosses(Json.text(rule, "jump", ""), from, to)) continue;
             for (Path file : all) {
@@ -707,7 +720,7 @@ final class Port {
         Matcher reported = Pattern.compile("(?m)^\\s*" + FILE + ":[0-9]+: error:").matcher(errors);
         while (reported.find()) { Path file = Path.of(reported.group(1)); if (!file.isAbsolute()) file = build.project.root.resolve(file); file = file.normalize(); if (file.startsWith(build.project.root)) logged.add(file); }
         for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
-            var rule = Json.object(item); if (rule.containsKey("silent") || !Pattern.compile(rule.get("match").toString()).matcher(errors).find()) continue;
+            var rule = Json.object(item); if (rule.containsKey("silent") || !loaderFits(rule) || !Pattern.compile(rule.get("match").toString()).matcher(errors).find()) continue;
             // A routed port runs a rule only when its jump covers an update the route crosses and its names fit.
             List<String> covered = route == null ? List.of() : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
             if (route != null && covered.isEmpty()) continue;
@@ -1020,6 +1033,14 @@ final class Port {
             out.append(text, copied, receiver).append("((").append(simple).append(") ").append(text, receiver, call.start()).append(").")
                     .append(methods.get(call.group(1))).append('(');
             copied = call.end();
+            // The removed setter took another type than the field ("setOwnerUUID(UUID)" for an EntityReference): its
+            // argument goes through the rule's setArgument, {value} standing for what the mod passed.
+            String wrap = Json.text(apply, "setArgument", "");
+            List<int[]> passed = arguments(text, call.end() - 1);
+            if (!wrap.isEmpty() && call.group(1).equals(Json.text(apply, "set", "")) && passed.size() == 1) {
+                out.append(wrap.replace("{value}", text.substring(passed.get(0)[0], passed.get(0)[1]).strip()));
+                copied = passed.get(0)[1];
+            }
         }
         if (copied == 0) return text;
         return addImport(out.append(text.substring(copied)).toString(), accessor);
@@ -1061,18 +1082,22 @@ final class Port {
         Set<String> names = new HashSet<>();
         for (String kind : List.of("get", "set")) if (!Json.text(apply, kind, "").isEmpty()) names.add(Json.text(apply, kind, ""));
         String methods = names.stream().map(Pattern::quote).reduce((a, b) -> a + "|" + b).orElse("(?!)");
-        var sites = reportedLines(errors, Pattern.compile("cannot find symbol[^\\n]*\\n(?:[^\\n]*\\n)*?\\s*symbol:\\s+method (?:" + methods + ")\\([^\\n]*\\n\\s*location:[^\\n]*\\b" + Pattern.quote(ownerSimple) + "\\b"));
+        // The receiver may be the owner or a subclass of it (a ZombieHorse for AbstractHorse's owner field): "receivers" lists them.
+        String receivers = Json.text(apply, "receivers", Pattern.quote(ownerSimple));
+        var sites = reportedLines(errors, Pattern.compile("cannot find symbol[^\\n]*\\n(?:[^\\n]*\\n)*?\\s*symbol:\\s+method (?:" + methods + ")\\([^\\n]*\\n\\s*location:[^\\n]*\\b(?:" + receivers + ")\\b"));
         if (sites.isEmpty()) return false;
         Set<String> used = new HashSet<>();
         for (var lines : sites.values()) for (String symbol : lines.values()) used.add(symbol.equals(Json.text(apply, "get", "")) ? "get" : "set");
         Path config = mainMixinConfig();
-        if (config == null) return false;
+        if (config == null) config = newMixinConfig();
+        if (config == null) { System.err.println("degraded: " + Json.text(rule, "id", "accessor") + " needs a mixins config and this mod has none modaccel can add (it adds one to NeoForge mods only)"); return false; }
         String mixinPackage = Json.text(Json.read(config), "package", "");
         Path folder = null;
         for (Path source : ownedJava()) {
             Path parent = source.getParent();
             if (parent.endsWith(mixinPackage.replace('.', '/')) && Files.readString(source).matches("(?s).*\\bpackage\\s+" + Pattern.quote(mixinPackage) + "\\s*;.*")) { folder = parent; break; }
         }
+        if (folder == null && newMixinFolder != null && mixinPackage.equals(newMixinPackage)) { folder = newMixinFolder; Files.createDirectories(folder); }
         if (folder == null) return false;
         String simple = ownerSimple + "Accessor";
         Path file = folder.resolve(simple + ".java");
@@ -1115,6 +1140,42 @@ final class Port {
         return (head.endsWith(",") ? head : head + ",") + "\n  \"mixins\": [\"" + simple + "\"]" + (head.endsWith(",") ? "," : "") + config.substring(pkg.end());
     }
     /** The mod's own required mixins config (a *.json with a "package"), preferring one marked required and with common mixins. */
+    Path newMixinFolder; String newMixinPackage;
+    /**
+     * A NeoForge mod with no mixins gets a mixins config of its own the first time a port needs an accessor (Zombie
+     * Apocalypse Addon's horse owner, 1.21.5): <mod id>.modaccel.mixins.json beside its mods.toml's resources, the
+     * package <the @Mod class's package>.mixin, and a [[mixins]] entry in META-INF/neoforge.mods.toml. Every file is
+     * tracked, so undo removes the config and the entry again. Null for other loaders or when the mod class is not found.
+     */
+    Path newMixinConfig() throws Exception {
+        Path toml = build.project.root.resolve("src/main/resources/META-INF/neoforge.mods.toml");
+        if (!Files.isRegularFile(toml)) return null;
+        String modPackage = null; Path modFolder = null;
+        for (Path source : ownedJava()) {
+            String text = Files.readString(source);
+            Matcher pkg = Pattern.compile("(?m)^\\s*package\\s+([\\w.]+)\\s*;").matcher(text);
+            if (text.contains("@Mod(") && pkg.find()) { modPackage = pkg.group(1); modFolder = source.getParent(); break; }
+        }
+        if (modPackage == null) return null;
+        String tomlText = Files.readString(toml);
+        Matcher id = Pattern.compile("(?m)^\\s*modId\\s*=\\s*\"([^\"]+)\"").matcher(tomlText);
+        String modId = id.find() ? id.group(1) : modPackage.substring(modPackage.lastIndexOf('.') + 1);
+        Matcher template = Pattern.compile("^\\$\\{(\\w+)}$").matcher(modId);
+        if (template.find()) {
+            Path properties = build.project.root.resolve("gradle.properties");
+            String value = Files.isRegularFile(properties) ? ProjectModel.properties(properties).getProperty(template.group(1)) : null;
+            modId = value != null ? value.strip() : modPackage.substring(modPackage.lastIndexOf('.') + 1);
+        }
+        String name = modId + ".modaccel.mixins.json";
+        Path config = toml.getParent().getParent().resolve(name);
+        track(config);
+        Files.writeString(config, "{\n  \"required\": true,\n  \"minVersion\": \"0.8\",\n  \"package\": \"" + modPackage + ".mixin\",\n  \"compatibilityLevel\": \"JAVA_21\",\n  \"mixins\": [],\n  \"injectors\": {\n    \"defaultRequire\": 1\n  }\n}\n");
+        track(toml);
+        Files.writeString(toml, tomlText + (tomlText.endsWith("\n") ? "" : "\n") + "\n# " + WRITTEN_MARK + ": the accessor mixins a port writes.\n[[mixins]]\nconfig=\"" + name + "\"\n");
+        newMixinPackage = modPackage + ".mixin"; newMixinFolder = modFolder.resolve("mixin");
+        build.report.stages.add(Json.map("name", "mixin-config", "added", build.project.root.relativize(config).toString(), "package", newMixinPackage));
+        return config;
+    }
     Path mainMixinConfig() throws IOException {
         List<Path> configs = new ArrayList<>();
         Files.walkFileTree(build.project.root, new SimpleFileVisitor<>() {
@@ -1400,8 +1461,10 @@ final class Port {
             if (newest == null) throw new IOException("There is no port of this project to undo" + (transactions(project).isEmpty() ? "." : ": every recorded port was already undone."));
             id = newest.toString();
         }
-        Path transaction = Path.of(id).toAbsolutePath().normalize();
-        if (!transaction.startsWith(project.state().resolve("ports"))) throw new IOException("Undo must name this project's recorded port transaction.");
+        // The port's own id (the name its result and receipt carry) names its transaction as well as the full path does.
+        Path transaction = id.matches("[\\w.-]+") && Files.isDirectory(project.state().resolve("ports").resolve(id))
+                ? project.state().resolve("ports").resolve(id) : Path.of(id).toAbsolutePath().normalize();
+        if (!transaction.startsWith(project.state().resolve("ports"))) throw new IOException("Undo must name this project's recorded port transaction: its id or its folder under " + project.state().resolve("ports") + ".");
         var state = Json.read(transaction.resolve("transaction.json"));
         if (!project.root.toString().equals(state.get("root"))) throw new IOException("Undo belongs to a different project.");
         String status = Json.text(state, "status", "");

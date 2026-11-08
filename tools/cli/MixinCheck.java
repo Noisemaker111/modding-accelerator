@@ -339,7 +339,7 @@ final class MixinCheck {
             // It is fixed to the server side and then bootstraps the game; the agent makes it build the game layer
             // for the side being checked and return (see ModaccelNeoForgeTarget).
             command.add("-javaagent:" + tools.resolve("neoforge-target.jar") + "=" + side);
-            List<String> kept = new ArrayList<>(List.of("--launchTarget", "forgejunituserdev"));
+            List<String> kept = new ArrayList<>(List.of("--launchTarget", junitTarget(launch)));
             for (int i = 0; i + 1 < arguments.size(); i++) if (arguments.get(i).startsWith("--fml.") && !arguments.get(i + 1).startsWith("--")) { kept.add(arguments.get(i)); kept.add(arguments.get(++i)); }
             arguments = kept;
         }
@@ -352,6 +352,33 @@ final class MixinCheck {
         List<Map<String, Object>> events = new ArrayList<>();
         if (Files.isRegularFile(out)) for (String line : Files.readAllLines(out, StandardCharsets.UTF_8)) if (!line.isBlank()) events.add(Json.object(Json.parse(line)));
         return Json.map("side", side, "exit", result.exit(), "seconds", result.seconds(), "log", result.log().toString(), "events", events);
+    }
+
+    /**
+     * The name FML's unit-test launch target answers to, read from the loader jar the launch uses. FML 4 (NeoForge
+     * 21.1-21.5) has JUnitUserDevLaunchTarget, forgejunituserdev, the one junit-fml uses in a mod's build; FML 9 (NeoForge
+     * 21.6) has only JUnitDevLaunchTarget, neoforgejunitdev ("Missing LaunchHandler forgejunituserdev"). The name is the
+     * one lower-case word with "junit" in the class's constants; forgejunituserdev when no jar has either class.
+     */
+    static String junitTarget(Launch launch) {
+        List<String> entries = new ArrayList<>(List.of(launch.classPath().split(java.io.File.pathSeparator)));
+        for (int i = 0; i + 1 < launch.options().size(); i++)
+            if (List.of("--module-path", "-p").contains(launch.options().get(i))) entries.addAll(List.of(launch.options().get(i + 1).split(java.io.File.pathSeparator)));
+        for (String entry : entries) {
+            if (!entry.endsWith(".jar") || !Files.isRegularFile(Path.of(entry))) continue;
+            try (var jar = new java.util.zip.ZipFile(entry)) {
+                for (String type : List.of("JUnitUserDevLaunchTarget", "JUnitDevLaunchTarget")) {
+                    var target = jar.getEntry("net/neoforged/fml/loading/targets/" + type + ".class");
+                    String name = target == null ? null : junitTargetName(jar.getInputStream(target).readAllBytes());
+                    if (name != null) return name;
+                }
+            } catch (IOException unreadable) { }
+        }
+        return "forgejunituserdev";
+    }
+    static String junitTargetName(byte[] classFile) {
+        java.util.regex.Matcher name = java.util.regex.Pattern.compile("(?<![\\w.$/])([a-z]*junit[a-z]*)(?![\\w.$/])").matcher(new String(classFile, StandardCharsets.ISO_8859_1));
+        return name.find() ? name.group(1) : null;
     }
 
     // --- The recorded launch, started with one of modaccel's classes in place of the game (mixin-check, data-check) ---

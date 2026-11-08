@@ -129,6 +129,12 @@ public final class PortableTests {
             written++;
         }
         check(written >= 3, written + " written rules with a test match their error, rewrite their example and run on their update");
+        {
+            var layer = Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules")).stream().map(Json::object)
+                    .filter(r -> "layered-draw-layer-neoforge".equals(r.get("id"))).findFirst().orElseThrow(() -> new AssertionError("knowledge/fixes.json has no layered-draw-layer-neoforge rule"));
+            check(Port.loaderFits(layer, Set.of("neoforge")) && !Port.loaderFits(layer, Set.of("fabric")) && Port.loaderFits(Json.map("id", "any"), Set.of("fabric")),
+                    "a rule for one loader (NeoForge's GuiLayer for the removed LayeredDraw.Layer) runs only on that loader's projects");
+        }
     }
     /**
      * A getter the game removed while keeping its field (1.21.2's HungerManager.getExhaustion()) becomes an accessor mixin
@@ -173,10 +179,49 @@ public final class PortableTests {
         check(repaired.contains("return ((HungerManagerAccessor) player.getHungerManager()).modaccel$getExhaustion();") && repaired.contains("return payload.getExhaustion();")
                 && repaired.contains("import mod.mixin.HungerManagerAccessor;"), "only the call javac reported goes through the accessor; the mod's own getter of the same name is kept");
         Port.finishTransaction(project, port.transaction, port.before);
-        Port.undo(project, port.transaction.toString());
-        check(!Files.exists(accessor) && Files.readString(config).equals(listed) && Files.readString(hud).equals(original), "undo deletes the accessor it wrote and restores the config and the call");
+        Port.undo(project, port.transaction.getFileName().toString());
+        check(!Files.exists(accessor) && Files.readString(config).equals(listed) && Files.readString(hud).equals(original), "undo, given the port's bare id, deletes the accessor it wrote and restores the config and the call");
         check(Port.registerMixin("{\"package\": \"a\", \"mixins\": []}", "X").equals("{\"package\": \"a\", \"mixins\": [\"X\"]}")
                 && Port.registerMixin("{\"package\": \"a\", \"mixins\": [\"Y\"]}", "X").equals("{\"package\": \"a\", \"mixins\": [\"X\", \"Y\"]}"), "a mixin goes first in a config's common list, empty or not");
+    }
+    /**
+     * A NeoForge mod with no mixins (Zombie Apocalypse Addon) still gets its accessor: the port adds a mixins config named
+     * for the mod id, lists it in neoforge.mods.toml, writes the accessor in <@Mod package>.mixin, wraps the old setter's
+     * UUID as the field's EntityReference, and undo takes all of it back out.
+     */
+    static void accessorWithoutMixinsChecks(Path home, Path scratch) throws Exception {
+        Path root = scratch.resolve("accessor-no-mixins"), java = root.resolve("src/main/java/mod"), meta = root.resolve("src/main/resources/META-INF");
+        Files.createDirectories(java); Files.createDirectories(meta); Files.createDirectories(root.resolve("gradle/wrapper"));
+        Files.writeString(root.resolve("settings.gradle"), "");
+        Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14-bin.zip\n");
+        Files.writeString(root.resolve("gradle.properties"), "mod_id=zombiemod\n");
+        Files.writeString(java.resolve("ZombieMod.java"), "package mod;\n\n@Mod(\"zombiemod\")\npublic class ZombieMod {}\n");
+        Path toml = meta.resolve("neoforge.mods.toml");
+        String tomlText = "modLoader=\"javafml\"\n[[mods]]\nmodId=\"${mod_id}\"\n";
+        Files.writeString(toml, tomlText);
+        Path hunt = java.resolve("ZombieHunt.java");
+        String original = "package mod;\n\nclass ZombieHunt {\n    void f(ZombieHorse zombieHorse, UUID owner) {\n            zombieHorse.setOwnerUUID(owner);\n    }\n}\n";
+        Files.writeString(hunt, original);
+        ProjectModel project = new ProjectModel(root);
+        Port port = new Port(new Build(project, home, "", new Modaccel.Report(root, "port")), Json.map("projects", List.of()));
+        port.transaction = project.state().resolve("ports/accessor-no-mixins"); Files.createDirectories(port.transaction); port.saveInProgress();
+        port.track(hunt);
+        var rule = Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules")).stream().map(Json::object)
+                .filter(r -> "horse-owner-accessor-official".equals(r.get("id"))).findFirst().orElseThrow(() -> new AssertionError("knowledge/fixes.json has no horse-owner-accessor-official rule"));
+        String log = hunt + ":5: error: cannot find symbol\n            zombieHorse.setOwnerUUID(owner);\n                       ^\n  symbol:   method setOwnerUUID(UUID)\n  location: variable zombieHorse of type ZombieHorse\n";
+        check(port.applyAccessor(rule, log), "an accessor on a subclass's receiver (a ZombieHorse for AbstractHorse's field) runs in a mod with no mixins config");
+        port.flushImports();
+        Path config = root.resolve("src/main/resources/zombiemod.modaccel.mixins.json"), accessor = java.resolve("mixin/AbstractHorseAccessor.java");
+        check(Files.isRegularFile(config) && Json.text(Json.read(config), "package", "").equals("mod.mixin") && Files.readString(config).contains("\"AbstractHorseAccessor\"")
+                && Files.readString(toml).contains("[[mixins]]\nconfig=\"zombiemod.modaccel.mixins.json\""),
+                "the port adds a mixins config named for the mod id from its gradle.properties, lists it in neoforge.mods.toml and lists the accessor in it");
+        check(Files.readString(accessor).contains("void modaccel$setOwner(net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity> value);")
+                && Files.readString(hunt).contains("((AbstractHorseAccessor) zombieHorse).modaccel$setOwner(java.util.Optional.ofNullable(owner).map("),
+                "the removed setter's UUID is passed as the field's EntityReference through the accessor's setter");
+        Port.finishTransaction(project, port.transaction, port.before);
+        Port.undo(project, port.transaction.getFileName().toString());
+        check(!Files.exists(config) && !Files.exists(accessor) && Files.readString(toml).equals(tomlText) && Files.readString(hunt).equals(original),
+                "undo removes the mixins config, its mods.toml entry and the accessor it wrote");
     }
     /** Mixin targets that a port leaves stale, repaired from the class map and from Mixin's own words (AppleSkin 1.20.1 -> 1.21.6). */
     static void mixinRepairChecks() {
@@ -241,6 +286,34 @@ public final class PortableTests {
         Build plainBuild = new Build(new ProjectModel(plain), home, "", new Modaccel.Report(plain, "port"));
         Target.Setup untouched = new Target.Setup(plainBuild, Json.map(), "26.3", List.of());
         check(!Target.parchmentEdit(untouched, plainBuild, "26.3", null) && untouched.edits().isEmpty(), "a build without Parchment is left alone and nothing is looked up");
+        neoGradleChecks(home, scratch);
+    }
+    /** NeoGradle follows a forward port (Notes 1.21 -> 1.21.6 stopped at launch on NeoGradle 7.0.145's ASM 9.5) to one version for every mod, and Gradle follows NeoGradle. */
+    static void neoGradleChecks(Path home, Path scratch) throws Exception {
+        for (String to : List.of("1.21.6", "1.20.6")) {
+            Path root = scratch.resolve("neogradle-" + to); Files.createDirectories(root.resolve("gradle/wrapper"));
+            Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.9-bin.zip\n");
+            Files.writeString(root.resolve("build.gradle"), "plugins {\n    id 'net.neoforged.gradle.userdev' version '7.0.145'\n}\n");
+            Files.writeString(root.resolve("gradle.properties"), "minecraft_version=1.21\n");
+            Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
+            // The two lookups NeoGradle's planning makes, answered from the metadata cache Target.fetch reads first.
+            Map<String, String> answers = Map.of(
+                    "https://maven.neoforged.net/releases/net/neoforged/gradle/userdev/maven-metadata.xml",
+                    "<metadata><versioning><versions><version>7.0.145</version><version>7.0.192</version><version>7.1.38</version></versions></versioning></metadata>",
+                    "https://maven.neoforged.net/releases/net/neoforged/gradle/userdev/7.1.38/userdev-7.1.38.module",
+                    "{\"variants\": [{\"attributes\": {\"org.gradle.plugin.api-version\": \"8.14\"}}]}");
+            for (var answer : answers.entrySet()) {
+                Path cached = build.project.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+                Files.createDirectories(cached.getParent()); Files.writeString(cached, answer.getValue());
+            }
+            Target.Setup setup = new Target.Setup(build, Json.map(), to, List.of());
+            setup.pins.put("minecraft_version", "1.21");
+            Target.neoGradleFollows(setup, build, to);
+            String plugin = setup.text(root.resolve("build.gradle")), wrapper = setup.text(root.resolve("gradle/wrapper/gradle-wrapper.properties"));
+            if (to.equals("1.21.6")) check(plugin.contains("version '7.1.38'") && wrapper.contains("gradle-8.14-bin.zip"),
+                    "a forward port moves NeoGradle to the newest 7.x, the same for every mod so they share one game setup (7.0.145 -> 7.1.38), and Gradle to what it requires (8.9 -> 8.14): " + plugin.strip() + " / " + wrapper.strip());
+            else check(setup.edits().isEmpty(), "a backport keeps its NeoGradle and Gradle");
+        }
     }
     static Map<String, Object> testModel(String... runtime) {
         return Json.map("projects", List.of(Json.map("sourceSets", List.of(Json.map("name", "main", "runtime", List.of()),
@@ -437,6 +510,7 @@ public final class PortableTests {
         learnedRuleChecks(home);
         loomEditChecks(home, scratch);
         accessorChecks(home, scratch);
+        accessorWithoutMixinsChecks(home, scratch);
         mixinRepairChecks();
         parchmentChecks(home, scratch);
         for (var groups : List.of(List.of("net.minecraftforge"), List.of("net.fabricmc", "net.neoforged"), List.<String>of())) {

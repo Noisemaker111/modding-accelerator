@@ -66,6 +66,7 @@ final class Target {
             for (String key : List.of("neo_version_range", "neoforge_version_range")) if (pins.containsKey(key)) setup.replacements.put(key, "[" + resolved + ",)");
             Dependencies.resolve(setup, "neoforge");
             applyReplacements(setup, build, pins);
+            neoGradleFollows(setup, build, to);
             toolchain(setup, build, to);
             runTypeRename(setup, build, to);
             parchmentFollows(setup, build, to);
@@ -218,8 +219,14 @@ final class Target {
             return;
         }
         setup.applied.add(Json.map("change", "Loom " + current + " -> " + loom + " for " + to, "evidence", needBy + " was built with Loom " + need));
-        String module = fetch(build, "https://maven.fabricmc.net/net/fabricmc/fabric-loom/" + loom + "/fabric-loom-" + loom + ".module");
-        Matcher api = Pattern.compile("\"org\\.gradle\\.plugin\\.api-version\"\\s*:\\s*\"([^\"]+)\"").matcher(module);
+        gradleFollows(setup, build, "https://maven.fabricmc.net/net/fabricmc/fabric-loom/" + loom + "/fabric-loom-" + loom + ".module", "Loom " + loom, "fabric-loom " + loom);
+    }
+    /**
+     * Gradle rises to the version a build plugin's own module metadata requires (org.gradle.plugin.api-version), and is
+     * never lowered: an older Gradle refuses the plugin while the build loads, before any source is compiled.
+     */
+    static void gradleFollows(Setup setup, Build build, String moduleUrl, String plugin, String evidence) throws Exception {
+        Matcher api = Pattern.compile("\"org\\.gradle\\.plugin\\.api-version\"\\s*:\\s*\"([^\"]+)\"").matcher(fetch(build, moduleUrl));
         if (!api.find()) return;
         Path wrapper = build.project.root.resolve("gradle/wrapper/gradle-wrapper.properties");
         if (!Files.isRegularFile(wrapper)) return;
@@ -231,8 +238,37 @@ final class Target {
         Matcher sum = Pattern.compile("(?m)^distributionSha256Sum=\\S+").matcher(setup.text(wrapper));
         if (sum.find()) setup.replace(wrapper, sum.group(0), "distributionSha256Sum="
                 + fetch(build, "https://services.gradle.org/distributions/gradle-" + gradle + url.group(3) + ".sha256").trim());
-        setup.applied.add(Json.map("file", wrapper.toString(), "change", "Gradle " + url.group(2) + " -> " + gradle + " for Loom " + loom,
-                "evidence", "fabric-loom " + loom + " requires Gradle " + gradle + " (org.gradle.plugin.api-version)"));
+        setup.applied.add(Json.map("file", wrapper.toString(), "change", "Gradle " + url.group(2) + " -> " + gradle + " for " + plugin,
+                "evidence", evidence + " requires Gradle " + gradle + " (org.gradle.plugin.api-version)"));
+    }
+    /**
+     * NeoGradle follows the target on a forward port. NeoForge 21.6's userdev runs on ASM 9.8 while NeoGradle 7.0.145
+     * still put ASM 9.5 on the client's class path, so Notes 1.21 -> 1.21.6 compiled and then stopped at launch
+     * ("Module named org.objectweb.asm.tree.analysis was already on the JVMs module path"). The plugin rises to the
+     * newest NeoGradle 7.x (the 7.1 line, which 26.1+ needs anyway), then Gradle to what that release requires. One
+     * NeoGradle for every port is also what lets a second mod reuse the first one's game setup: NeoGradle's own
+     * cross-project cache (~/.gradle/caches/ng_execute) keys each NeoForm step by its task class, input properties and
+     * input file contents, so two NeoGradle versions decompile the same game twice. A backport keeps its build tools.
+     */
+    static void neoGradleFollows(Setup setup, Build build, String to) throws Exception {
+        String from = "";
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (setup.pins.containsKey(key)) { from = setup.pins.get(key); break; }
+        if (!from.isEmpty() && Versions.compare(to, from) <= 0) return;
+        Pattern pluginLine = Pattern.compile("(id\\s*\\(?\\s*[\"']net\\.neoforged\\.gradle\\.userdev[\"']\\s*\\)?\\s*version\\s*[\"'])([^\"']+)([\"'])");
+        Path properties = build.project.root.resolve("gradle.properties");
+        for (Path file : List.of(build.project.root.resolve("build.gradle"), build.project.root.resolve("build.gradle.kts"), build.project.root.resolve("settings.gradle"), build.project.root.resolve("settings.gradle.kts"), properties)) {
+            if (!Files.isRegularFile(file)) continue;
+            Matcher pin = file.equals(properties)
+                    ? Pattern.compile("(?m)^([ \\t]*(?:neogradle_version|neoGradleVersion|neogradleVersion)[ \\t]*=[ \\t]*)(\\S+)()[ \\t]*$").matcher(setup.text(file))
+                    : pluginLine.matcher(setup.text(file));
+            if (!pin.find() || !pin.group(2).matches("\\d+\\.\\d+\\.\\d+")) continue;
+            String current = pin.group(2), newest = latestNeoGradle(build, "7");
+            if (Versions.compare(newest, current) <= 0) return;
+            setup.replace(file, pin.group(0), pin.group(1) + newest + pin.group(3));
+            setup.applied.add(Json.map("file", file.toString(), "change", "NeoGradle " + current + " -> " + newest + " for " + to, "evidence", "the newest NeoGradle 7.x on maven.neoforged.net"));
+            gradleFollows(setup, build, "https://maven.neoforged.net/releases/net/neoforged/gradle/userdev/" + newest + "/userdev-" + newest + ".module", "NeoGradle " + newest, "NeoGradle " + newest);
+            return;
+        }
     }
     /** The newest release of one Loom line (e.g. 1.10 -> 1.10.5), read from maven.fabricmc.net. */
     static String newestLoom(Build build, String line) throws Exception {
@@ -318,14 +354,6 @@ final class Target {
         Path groovy = build.project.root.resolve("build.gradle"), kts = build.project.root.resolve("build.gradle.kts");
         Path file = Files.isRegularFile(groovy) ? groovy : Files.isRegularFile(kts) ? kts : null;
         if (file == null) return;
-        Matcher plugin = Pattern.compile("(id\\s*\\(?\\s*[\"']net\\.neoforged\\.gradle\\.userdev[\"']\\s*\\)?\\s*version\\s*[\"'])([^\"']+)([\"'])").matcher(setup.text(file));
-        if (plugin.find()) {
-            String current = plugin.group(2), latest = latestNeoGradle(build);
-            if (Versions.compare(latest, current) > 0) {
-                setup.replace(file, plugin.group(0), plugin.group(1) + latest + plugin.group(3));
-                setup.applied.add(Json.map("file", file.toString(), "change", "NeoGradle " + current + " -> " + latest + " for " + to));
-            }
-        }
         Matcher java = Pattern.compile("JavaLanguageVersion\\.of\\((\\d+)\\)").matcher(setup.text(file));
         if (java.find()) {
             int want = javaFor(to);
@@ -334,19 +362,8 @@ final class Target {
                 setup.applied.add(Json.map("file", file.toString(), "change", "Java toolchain " + java.group(1) + " -> " + want + " for " + to));
             }
         }
-        // Many builds put the plugin version in a property; the literal plugin line then carries no version.
         Path properties = build.project.root.resolve("gradle.properties");
         if (Files.isRegularFile(properties)) {
-            for (String key : List.of("neogradle_version", "neoGradleVersion", "neogradleVersion")) {
-                Matcher pin = Pattern.compile("(?m)^([ \\t]*" + key + "[ \\t]*=[ \\t]*)(\\S+)[ \\t]*$").matcher(setup.text(properties));
-                if (!pin.find()) continue;
-                String latest = latestNeoGradle(build);
-                if (Versions.compare(latest, pin.group(2)) > 0) {
-                    setup.replace(properties, pin.group(0), pin.group(1) + latest);
-                    setup.applied.add(Json.map("file", properties.toString(), "change", "NeoGradle " + pin.group(2) + " -> " + latest + " for " + to));
-                }
-                break;
-            }
             for (String key : List.of("java_version", "java_toolchain_version")) {
                 Matcher pin = Pattern.compile("(?m)^([ \\t]*" + key + "[ \\t]*=[ \\t]*)(\\d+)[ \\t]*$").matcher(setup.text(properties));
                 if (!pin.find()) continue;
@@ -385,18 +402,18 @@ final class Target {
         if (Versions.compare(minecraft, "1.18") >= 0) return 17;
         return Versions.compare(minecraft, "1.17") >= 0 ? 16 : 8;
     }
-    /** NeoGradle's newest 7.x line, read from NeoForged's own published metadata. */
-    static String latestNeoGradle(Build build) throws Exception {
+    /** NeoGradle's newest release whose version starts with line + "." (line "7" for the newest 7.x), from NeoForged's own published metadata. */
+    static String latestNeoGradle(Build build, String line) throws Exception {
         String xml = fetch(build, "https://maven.neoforged.net/releases/net/neoforged/gradle/userdev/maven-metadata.xml");
         var factory = DocumentBuilderFactory.newInstance(); factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         var nodes = factory.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(java.nio.charset.StandardCharsets.UTF_8))).getElementsByTagName("version");
         String chosen = "";
         for (int i = 0; i < nodes.getLength(); i++) {
             String value = nodes.item(i).getTextContent();
-            if (!value.startsWith("7.") || !value.matches("[0-9.]+")) continue;
+            if (!value.startsWith(line + ".") || !value.matches("[0-9.]+")) continue;
             if (chosen.isEmpty() || Versions.compare(value, chosen) > 0) chosen = value;
         }
-        if (chosen.isEmpty()) throw new IOException("No published NeoGradle 7.x line for an unobfuscated target");
+        if (chosen.isEmpty()) throw new IOException("No published NeoGradle release in the " + line + ".x line");
         return chosen;
     }
     /** NeoForge versions are numbered by Minecraft minor: 1.21.6 publishes as 21.6.x (1.20.1 as 47.x). */
