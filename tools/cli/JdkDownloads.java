@@ -72,7 +72,31 @@ final class JdkDownloads {
         } catch (RuntimeException malformed) { throw new IOException("Invalid Adoptium JDK metadata", malformed); }
         throw new IOException("No published Temurin JDK " + feature + " for " + platform);
     }
-    private static byte[] readUrl(URI uri, int limit) throws IOException {
+    interface Fetch<T> { T get() throws IOException; }
+    /** Seconds slept before each retry; tests set it to zero. */
+    static int[] retryWaits = {3, 10};
+    /**
+     * Runs a fetch again after a server's passing trouble (5xx, 429, a timeout or reset), which GitHub's release
+     * downloads give now and then; a 404 or a refused connection fails at once. Each retry says so on stderr.
+     */
+    static <T> T retrying(String what, Fetch<T> fetch) throws IOException {
+        for (int attempt = 0; ; attempt++) {
+            try { return fetch.get(); }
+            catch (IOException failure) {
+                if (attempt >= retryWaits.length || !passing(failure)) throw failure;
+                System.err.println("degraded: " + what + " failed (" + failure.getMessage() + "); retrying in " + retryWaits[attempt] + " s");
+                try { Thread.sleep(retryWaits[attempt] * 1000L); }
+                catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); throw failure; }
+            }
+        }
+    }
+    static boolean passing(IOException failure) {
+        String message = String.valueOf(failure.getMessage());
+        return failure instanceof SocketTimeoutException || message.matches("(?s).*HTTP response code: (5\\d\\d|429)\\b.*") || message.contains("Connection reset");
+    }
+    private static byte[] readUrl(URI uri, int limit) throws IOException { return retrying("Reading " + uri, () -> readOnce(uri, limit)); }
+    private static void download(URI uri, Path to) throws IOException { retrying("Downloading " + uri, () -> { downloadOnce(uri, to); return null; }); }
+    private static byte[] readOnce(URI uri, int limit) throws IOException {
         HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
         conn.setConnectTimeout(20000); conn.setReadTimeout(30000);
         try (InputStream input = conn.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -81,7 +105,7 @@ final class JdkDownloads {
             return out.toByteArray();
         }
     }
-    private static void download(URI uri, Path to) throws IOException {
+    private static void downloadOnce(URI uri, Path to) throws IOException {
         URLConnection conn = uri.toURL().openConnection(); conn.setConnectTimeout(20000); conn.setReadTimeout(60000);
         try (InputStream input = conn.getInputStream(); OutputStream out = Files.newOutputStream(to, StandardOpenOption.TRUNCATE_EXISTING)) {
             byte[] buffer = new byte[65536]; long size = 0; int n;
