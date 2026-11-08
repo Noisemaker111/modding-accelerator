@@ -270,6 +270,9 @@ public final class StrangerTest {
             require(Run.gradleFailure(file).startsWith("Gradle could not reach maven.unreachable.example"), "the build failure leads with the unreachable host");
         } finally { Files.deleteIfExists(file); }
         require(Run.unreachable(List.of("> Could not find com.example:pinlib:1.0.")) == null, "a dependency that is simply missing is not called a network problem");
+        // NeoGradle's downloader names only the URL (seen on 2026-11-07 fetching Mojang's version manifest).
+        String neo = Run.unreachable(List.of("> Uncaught exception while processing replacement of dependency net.neoforged:neoforge using handler x: Failed to download the file from: https://piston-meta.mojang.com/mc/game/version_manifest.json to: C:\\g\\launcher_metadata.json"));
+        require(neo != null && neo.startsWith("Gradle could not reach piston-meta.mojang.com: a download from it failed"), "a failed NeoGradle download is named as the network and its host: " + neo);
     }
 
     /** fast printed raw counts; a failing test's name and message were only in the XML. */
