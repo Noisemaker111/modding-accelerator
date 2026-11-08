@@ -144,6 +144,38 @@ public final class PortableTests {
                     "Loom 1.8-SNAPSHOT -> 1.10.5 is written to " + changed.getFileName() + " and nowhere else");
         }
     }
+    /** Parchment follows the target: names for another version once compiled the 26.3 game wrong (BundlerInfo "packet == packet"). */
+    static void parchmentChecks(Path home, Path scratch) throws Exception {
+        String neoGradle = "neo_version=21.6.11-beta\nneogradle.subsystems.parchment.minecraftVersion=1.21.5\nneogradle.subsystems.parchment.mappingsVersion=2025.06.15\nother=1\n";
+        String modDevProps = "parchment_minecraft_version=1.21.1\nparchment_mappings_version=2024.11.17\nother=1\n";
+        String modDevBuild = "neoForge {\n    parchment {\n        mappingsVersion = project.parchment_mappings_version\n        minecraftVersion = project.parchment_minecraft_version\n    }\n    runs { }\n}\n";
+        String loomBuild = "dependencies {\n\tmappings loom.layered {\n\t\tofficialMojangMappings()\n\t\tparchment(\"org.parchmentmc.data:parchment-1.21.1:2024.11.17@zip\")\n\t}\n}\n";
+        record Case(String name, String props, String build, String release, String wantProps, String wantBuild) {}
+        List<Case> cases = List.of(
+                new Case("NeoGradle, none for 26.3", neoGradle, "plugins { }\n", "", "neo_version=21.6.11-beta\nother=1\n", null),
+                new Case("NeoGradle, 1.21.6 published", neoGradle, "plugins { }\n", "2025.06.29",
+                        "neo_version=21.6.11-beta\nneogradle.subsystems.parchment.minecraftVersion=1.21.6\nneogradle.subsystems.parchment.mappingsVersion=2025.06.29\nother=1\n", null),
+                new Case("ModDevGradle, none for 26.3", modDevProps, modDevBuild, "", "other=1\n", "neoForge {\n    runs { }\n}\n"),
+                new Case("Loom layered, none for 26.3", "other=1\n", loomBuild, "", null, "dependencies {\n\tmappings loom.layered {\n\t\tofficialMojangMappings()\n\t}\n}\n"),
+                new Case("Loom layered, 1.21.6 published", "other=1\n", loomBuild, "2025.06.29", null, loomBuild.replace("parchment-1.21.1:2024.11.17", "parchment-1.21.6:2025.06.29")));
+        for (Case c : cases) {
+            Path root = scratch.resolve("parchment-" + c.name().replaceAll("\\W+", "-")); Files.createDirectories(root.resolve("gradle/wrapper"));
+            Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14-bin.zip\n");
+            Files.writeString(root.resolve("gradle.properties"), c.props()); Files.writeString(root.resolve("build.gradle"), c.build());
+            Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
+            Target.Setup setup = new Target.Setup(build, Json.map(), c.release().isEmpty() ? "26.3" : "1.21.6", List.of());
+            check(Target.parchmentEdit(setup, build, setup.to, c.release())
+                    && (c.wantProps() == null || setup.text(root.resolve("gradle.properties")).equals(c.wantProps()))
+                    && (c.wantBuild() == null || setup.text(root.resolve("build.gradle")).equals(c.wantBuild())),
+                    "Parchment follows the target (" + c.name() + "): " + setup.text(root.resolve("gradle.properties")).replace("\n", "|") + " / " + setup.text(root.resolve("build.gradle")).replace("\n", "|"));
+        }
+        Path plain = scratch.resolve("parchment-none"); Files.createDirectories(plain.resolve("gradle/wrapper"));
+        Files.writeString(plain.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14-bin.zip\n");
+        Files.writeString(plain.resolve("gradle.properties"), "other=1\n"); Files.writeString(plain.resolve("build.gradle"), "plugins { }\n");
+        Build plainBuild = new Build(new ProjectModel(plain), home, "", new Modaccel.Report(plain, "port"));
+        Target.Setup untouched = new Target.Setup(plainBuild, Json.map(), "26.3", List.of());
+        check(!Target.parchmentEdit(untouched, plainBuild, "26.3", null) && untouched.edits().isEmpty(), "a build without Parchment is left alone and nothing is looked up");
+    }
     static Map<String, Object> testModel(String... runtime) {
         return Json.map("projects", List.of(Json.map("sourceSets", List.of(Json.map("name", "main", "runtime", List.of()),
                 Json.map("name", "test", "runtime", List.of(runtime), "output", List.of())))));
@@ -337,6 +369,7 @@ public final class PortableTests {
         routeChecks(home, new Port(portBuild, model), scratch);
         learnedRuleChecks(home);
         loomEditChecks(home, scratch);
+        parchmentChecks(home, scratch);
         for (var groups : List.of(List.of("net.minecraftforge"), List.of("net.fabricmc", "net.neoforged"), List.<String>of())) {
             var dependencies = groups.stream().map(group -> Json.map("group", group)).toList();
             try {
