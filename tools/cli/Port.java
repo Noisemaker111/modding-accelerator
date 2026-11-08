@@ -187,6 +187,7 @@ final class Port {
             else excludeOtherTargets(repairTasks, model);
             repairTasks.add(0, "-Dmodaccel.recompile=true");
             applySilentRules(from, to);
+            renameClassesInStrings(map);
             var initial = build.gradle(tasks, explicitTask ? "port-initial-compile" : "port-initial-build"); log = initial.log(); compiled = initial.exit() == 0;
             Set<String> seen = new HashSet<>();
             int roundsTried = 0;
@@ -206,6 +207,12 @@ final class Port {
             // The mod's mixins are applied by Mixin itself against the target game (no window, no world).
             // The hand audit still runs as a fast hint for the report, never as the verdict.
             Map<String, Object> mixins = compiled ? mixinCheck(model, options) : null;
+            // What Mixin itself reports against the target game and can be repaired from its words alone; Mixin checks each repair.
+            for (int round = 0; mixins != null && !Boolean.TRUE.equals(mixins.get("ok")) && round < 3 && repairMixins(mixins); round++) {
+                var compile = build.gradle(repairTasks, "port-mixin-build-" + (round + 1)); log = compile.log(); compiled = compile.exit() == 0;
+                roundsTried++;
+                mixins = compiled ? mixinCheck(model, options) : null;
+            }
             var audit = compiled ? tools.audit(model) : null;
             boolean passed = compiled && mixins != null && Boolean.TRUE.equals(mixins.get("ok"));
             boolean built = !explicitTask && compiled;
@@ -577,6 +584,113 @@ final class Port {
                 if (!text.equals(original)) { Files.writeString(file, text); rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered); }
             }
         }
+    }
+    /**
+     * A moved or renamed game class written inside a string (a mixin target "of(Lnet/minecraft/client/item/TooltipData;)..."
+     * or @Mixin(targets = "net.minecraft...")) gets its full new name from the port's class map, before anything renames
+     * it by its simple name alone and leaves the old package behind.
+     */
+    void renameClassesInStrings(Path map) throws Exception {
+        if (!Files.isRegularFile(map)) return;
+        Object listed = Json.read(map).get("classes");
+        if (!(listed instanceof List<?> list) || list.isEmpty()) return;
+        Map<String, String> classes = new HashMap<>();
+        for (Object item : list) { var entry = Json.object(item); classes.put(Json.text(entry, "from", ""), Json.text(entry, "to", "")); }
+        for (Path file : ownedJava()) {
+            String original = Files.readString(file), text = classNamesInStrings(original, classes);
+            if (!text.equals(original)) { Files.writeString(file, text); rulesApplied.putIfAbsent("class-names-in-strings", List.of()); }
+        }
+    }
+    static String classNamesInStrings(String text, Map<String, String> classes) {
+        Matcher literal = Pattern.compile("\"(?:[^\"\\\\\\n]|\\\\.)*\"").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (literal.find()) {
+            // A name starts the string, follows punctuation, or follows a descriptor's L ("(Lnet/minecraft/...;").
+            Matcher name = Pattern.compile("(?:(?<=[^\\w$]L)|(?<![\\w$./]))net([/.])minecraft\\1[\\w/.$]*\\w").matcher(literal.group());
+            StringBuilder renamed = new StringBuilder();
+            while (name.find()) {
+                String separator = name.group(1), dotted = name.group().replace('/', '.'), to = classes.get(dotted);
+                // A dotted name may run on into a member ("net.minecraft.Foo.bar"): try its longest known class prefix.
+                String rest = "";
+                while (to == null && dotted.contains(".")) { rest = dotted.substring(dotted.lastIndexOf('.')) + rest; dotted = dotted.substring(0, dotted.lastIndexOf('.')); to = classes.get(dotted); }
+                name.appendReplacement(renamed, Matcher.quoteReplacement(to == null ? name.group() : (separator.equals("/") ? to.replace('.', '/') : to) + (separator.equals("/") ? rest.replace('.', '/') : rest)));
+            }
+            name.appendTail(renamed);
+            literal.appendReplacement(out, Matcher.quoteReplacement(renamed.toString()));
+        }
+        literal.appendTail(out);
+        return out.toString();
+    }
+    /**
+     * Repairs that Mixin's own failure messages fully determine, in the mixin's source file:
+     * a target method pinned by a descriptor that no longer exists is named by its name alone, and a handler whose
+     * descriptor Mixin rejects ("Expected (A;B;C) but found (A;C)") gets the parameters it now needs, keeping its own.
+     * True when a file changed; the port then compiles again and Mixin checks the result.
+     */
+    boolean repairMixins(Map<String, Object> mixins) throws IOException {
+        boolean changed = false;
+        Object failures = mixins.get("failures");
+        if (!(failures instanceof List<?> list)) return false;
+        List<Object> repaired = new ArrayList<>();
+        for (Object item : list) {
+            var failure = Json.object(item);
+            Path file = build.project.root.resolve(Json.text(failure, "file", "")).normalize();
+            if (Json.text(failure, "file", "").isEmpty() || !file.startsWith(build.project.root) || !Files.isRegularFile(file)) continue;
+            String original = Files.readString(file), text = repairMixinSource(original, Json.text(failure, "message", ""));
+            if (!text.equals(original)) { Files.writeString(file, text); changed = true; repaired.add(Json.map("mixin", failure.get("mixin"), "file", failure.get("file"))); }
+        }
+        if (changed) build.report.stages.add(Json.map("name", "mixin-repair", "repaired", repaired));
+        return changed;
+    }
+    static String repairMixinSource(String text, String message) {
+        Matcher missing = Pattern.compile("could not find any targets matching '(\\w+)(\\([^']*)'").matcher(message);
+        if (missing.find()) {
+            String pinned = "\"" + missing.group(1) + missing.group(2) + "\"";
+            if (text.contains(pinned)) return text.replace(pinned, "\"" + missing.group(1) + "\"");
+        }
+        Matcher descriptor = Pattern.compile("->@\\w+::(\\w+)\\([^)]*\\)[^!]*! Expected \\(([^)]*)\\)\\S* but found \\(([^)]*)\\)").matcher(message);
+        if (!descriptor.find()) return text;
+        List<String> expected = descriptorTypes(descriptor.group(2)), found = descriptorTypes(descriptor.group(3));
+        Matcher handler = Pattern.compile("\\b" + Pattern.quote(descriptor.group(1)) + "\\s*\\(").matcher(text);
+        while (handler.find()) {
+            List<int[]> params = arguments(text, handler.end() - 1);
+            int close = params.isEmpty() ? text.indexOf(')', handler.end()) : params.get(params.size() - 1)[1];
+            if (close < 0 || !text.substring(close + 1).matches("(?s)\\s*(?:throws[^{]*)?\\{.*") || params.size() != found.size()) continue;
+            List<String> written = new ArrayList<>(); Set<String> imports = new LinkedHashSet<>(); int next = 0;
+            for (String type : expected) {
+                if (next < found.size() && found.get(next).equals(type)) { written.add(text.substring(params.get(next)[0], params.get(next)[1]).strip()); next++; continue; }
+                String java = javaType(type, imports);
+                if (java == null) return text;
+                written.add(java + " modaccel$" + Character.toLowerCase(simpleName(java).charAt(0)) + simpleName(java).substring(1).replaceAll("\\W", "") + written.size());
+            }
+            if (next != found.size()) return text;
+            String out = text.substring(0, handler.end()) + String.join(", ", written) + text.substring(close);
+            for (String name : imports) out = addImport(out, name);
+            return out;
+        }
+        return text;
+    }
+    /** A method descriptor's parameter list, one type descriptor each. */
+    static List<String> descriptorTypes(String parameters) {
+        List<String> types = new ArrayList<>();
+        Matcher type = Pattern.compile("\\[*(?:L[^;]+;|[ZBCSIJFD])").matcher(parameters);
+        while (type.find()) types.add(type.group());
+        return types;
+    }
+    /** The Java source type for a descriptor (Item$TooltipContext as Item.TooltipContext), adding the import it needs; null for none. */
+    static String javaType(String descriptor, Set<String> imports) {
+        int dims = 0; while (dims < descriptor.length() && descriptor.charAt(dims) == '[') dims++;
+        String base = descriptor.substring(dims), java = switch (base) {
+            case "Z" -> "boolean"; case "B" -> "byte"; case "C" -> "char"; case "S" -> "short"; case "I" -> "int"; case "J" -> "long"; case "F" -> "float"; case "D" -> "double";
+            default -> null;
+        };
+        if (java == null) {
+            if (!base.startsWith("L") || !base.endsWith(";")) return null;
+            String binary = base.substring(1, base.length() - 1).replace('/', '.'), outer = binary.contains("$") ? binary.substring(0, binary.indexOf('$')) : binary;
+            if (!outer.startsWith("java.lang.") || outer.substring(10).contains(".")) imports.add(outer);
+            java = binary.substring(outer.lastIndexOf('.') + 1).replace('$', '.');
+        }
+        return java + "[]".repeat(dims);
     }
     /** True when a port from -> to crosses the release a jump ("A -> B" changed in B, "X+" in X) names, either way. */
     static boolean crosses(String jump, String from, String to) {

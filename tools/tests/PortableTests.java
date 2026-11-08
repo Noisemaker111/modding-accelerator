@@ -178,6 +178,20 @@ public final class PortableTests {
         check(Port.registerMixin("{\"package\": \"a\", \"mixins\": []}", "X").equals("{\"package\": \"a\", \"mixins\": [\"X\"]}")
                 && Port.registerMixin("{\"package\": \"a\", \"mixins\": [\"Y\"]}", "X").equals("{\"package\": \"a\", \"mixins\": [\"X\", \"Y\"]}"), "a mixin goes first in a config's common list, empty or not");
     }
+    /** Mixin targets that a port leaves stale, repaired from the class map and from Mixin's own words (AppleSkin 1.20.1 -> 1.21.6). */
+    static void mixinRepairChecks() {
+        Map<String, String> classes = Map.of("net.minecraft.client.item.TooltipData", "net.minecraft.item.tooltip.TooltipData", "net.minecraft.client.item.TooltipContext$Default", "net.minecraft.item.tooltip.TooltipType$Default");
+        String strings = "method = \"of(Lnet/minecraft/client/item/TooltipData;)Lnet/minecraft/client/gui/tooltip/TooltipComponent;\"\n@Mixin(targets = \"net.minecraft.client.item.TooltipContext$Default\")\nTooltipData data = null; // net/minecraft/client/item/TooltipData\n";
+        check(Port.classNamesInStrings(strings, classes).equals("method = \"of(Lnet/minecraft/item/tooltip/TooltipData;)Lnet/minecraft/client/gui/tooltip/TooltipComponent;\"\n@Mixin(targets = \"net.minecraft.item.tooltip.TooltipType$Default\")\nTooltipData data = null; // net/minecraft/client/item/TooltipData\n"),
+                "a moved game class inside a string gets its full new name, in descriptor and dotted form; code and comments are left to the other renames");
+        String stack = "\t@Inject(at = @At(\"RETURN\"), method = \"getTooltip(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/item/tooltip/TooltipType;)Ljava/util/List;\")\n\tprivate void getTooltipFromItem(PlayerEntity player, TooltipType context, CallbackInfoReturnable<List> info)\n\t{\n\t}\n";
+        String named = Port.repairMixinSource(stack, "Critical injection failure: @Inject annotation on getTooltipFromItem could not find any targets matching 'getTooltip(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/item/tooltip/TooltipType;)Ljava/util/List;' in net/minecraft/item/ItemStack. No refMap loaded.");
+        check(named.contains("method = \"getTooltip\")"), "a target pinned to a descriptor the game no longer has is named by its method name alone");
+        String handler = Port.repairMixinSource(named, "Invalid descriptor on appleskin.mixins.json:ItemStackMixin from mod appleskin->@Inject::getTooltipFromItem(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/item/tooltip/TooltipType;Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;)V! Expected (Lnet/minecraft/item/Item$TooltipContext;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/item/tooltip/TooltipType;Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;)V but found (Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/item/tooltip/TooltipType;Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;)V [INJECT_APPLY]");
+        check(handler.contains("private void getTooltipFromItem(Item.TooltipContext modaccel$tooltipContext0, PlayerEntity player, TooltipType context, CallbackInfoReturnable<List> info)") && handler.startsWith("import net.minecraft.item.Item;\n"),
+                "a handler gets the parameter its target gained, in Mixin's order, and keeps its own names: " + handler.lines().filter(l -> l.contains("getTooltipFromItem(")).findFirst().orElse(""));
+        check(Port.repairMixinSource(named, "Invalid descriptor on x->@Inject::getTooltipFromItem(La;)V! Expected (Lb;)V but found (La;)V").equals(named), "a handler whose own parameter is gone is left for a person, not guessed");
+    }
     /** Step 9: Loom follows the target. The new version lands where the build states it, a literal plugin line or the property it reads. */
     static void loomEditChecks(Path home, Path scratch) throws Exception {
         for (boolean property : List.of(false, true)) {
@@ -423,6 +437,7 @@ public final class PortableTests {
         learnedRuleChecks(home);
         loomEditChecks(home, scratch);
         accessorChecks(home, scratch);
+        mixinRepairChecks();
         parchmentChecks(home, scratch);
         for (var groups : List.of(List.of("net.minecraftforge"), List.of("net.fabricmc", "net.neoforged"), List.<String>of())) {
             var dependencies = groups.stream().map(group -> Json.map("group", group)).toList();
