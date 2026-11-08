@@ -118,7 +118,8 @@ public final class PortableTests {
             var test = Json.object(rule.get("test"));
             // A silent rule has no compiler error to match: it runs whenever the port crosses its update.
             if (!rule.containsKey("silent") && !java.util.regex.Pattern.compile(rule.get("match").toString()).matcher(test.get("error").toString()).find()) throw new AssertionError(id + ": match misses its test error");
-            String after = Port.rewrite(rule, test.get("before").toString());
+            String after = "line".equals(rule.get("scope")) ? Port.rewriteReported(rule, test.get("before").toString(), test.get("error").toString(), file -> true)
+                    : Port.rewrite(rule, test.get("before").toString());
             if (after.equals(test.get("before")) || !after.equals(test.get("after"))) throw new AssertionError(id + ": rewrite gave\n" + after + "\nexpected\n" + test.get("after"));
             String[] range = Json.text(rule, "jump", "").replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
             if (rule.containsKey("silent") && !(Port.crosses(Json.text(rule, "jump", ""), range[0], range[1]) && !Port.crosses(Json.text(rule, "jump", ""), range[1], range[1])))

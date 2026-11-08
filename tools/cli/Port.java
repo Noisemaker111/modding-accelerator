@@ -600,6 +600,16 @@ final class Port {
                 if (applyAccessor(rule, errors)) rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered);
                 continue;
             }
+            if ("line".equals(rule.get("scope"))) {
+                for (Path file : logged) {
+                    if (!all.contains(file)) continue;
+                    String original = Files.readString(file), text = rewriteReported(rule, original, errors, named -> {
+                        Path path = Path.of(named); return (path.isAbsolute() ? path : build.project.root.resolve(path)).normalize().equals(file);
+                    });
+                    if (!text.equals(original)) { Files.writeString(file, text); rulesApplied.putIfAbsent(Json.text(rule, "id", "rule"), covered); }
+                }
+                continue;
+            }
             for (Path file : all) {
                 if (!"repo".equals(rule.get("scope")) && !logged.contains(file)) continue;
                 String original = Files.readString(file), text = rewrite(rule, original);
@@ -687,6 +697,37 @@ final class Port {
         else if (apply.containsKey("find")) text = Pattern.compile(apply.get("find").toString()).matcher(text).replaceAll(Json.text(apply, "replace", ""));
         if (!text.equals(original)) for (String name : ProjectModel.strings(apply.get("ensureImports"))) text = addImport(text, name);
         return text;
+    }
+    /**
+     * A rule with scope "line" rewrites only the lines javac reported with an error its match fits, and {symbol} in its
+     * find or replace stands for the symbol that error names. Used where the same call is right elsewhere in the file:
+     * getCategory() needs .value() only where its receiver became a RegistryEntry.
+     */
+    static String rewriteReported(Map<String, Object> rule, String text, String errors, java.util.function.Predicate<String> sameFile) {
+        String when = Json.text(rule, "when", ""); if (!when.isEmpty() && !Pattern.compile(when).matcher(text).find()) return text;
+        Pattern match = Pattern.compile(rule.get("match").toString());
+        List<String> log = errors.lines().toList();
+        Map<Integer, String> sites = new TreeMap<>();
+        for (int i = 0; i < log.size(); i++) {
+            Matcher error = ERROR.matcher(log.get(i)); if (!error.find() || !sameFile.test(error.group(1))) continue;
+            StringBuilder block = new StringBuilder(log.get(i)).append('\n');
+            for (int j = i + 1; j < log.size() && j <= i + 5 && !ERROR.matcher(log.get(j)).find(); j++) block.append(log.get(j)).append('\n');
+            if (!match.matcher(block).find()) continue;
+            Matcher symbol = Pattern.compile("symbol:\\s+\\w+ (\\w+)").matcher(block);
+            sites.put(Integer.parseInt(error.group(2)), symbol.find() ? symbol.group(1) : "");
+        }
+        if (sites.isEmpty()) return text;
+        String[] lines = text.split("\n", -1);
+        for (var site : sites.entrySet()) {
+            int at = site.getKey() - 1; if (at < 0 || at >= lines.length) continue;
+            Map<String, Object> bound = new LinkedHashMap<>(rule), apply = new LinkedHashMap<>(Json.object(rule.get("apply")));
+            for (String key : List.of("find", "replace", "literal")) if (apply.get(key) instanceof String value) apply.put(key, value.replace("{symbol}", site.getValue()));
+            apply.remove("ensureImports"); bound.put("apply", apply); bound.put("when", "");
+            lines[at] = rewrite(bound, lines[at]);
+        }
+        String out = String.join("\n", lines);
+        if (!out.equals(text)) for (String name : ProjectModel.strings(Json.object(rule.get("apply")).get("ensureImports"))) out = addImport(out, name);
+        return out;
     }
     static String addImport(String text, String name) {
         if (text.contains("import " + name + ";")) return text;

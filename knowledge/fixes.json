@@ -3420,6 +3420,42 @@
       }
     },
     {
+      "id": "registry-entry-value",
+      "jump": "1.19.2 -> 1.21.11 (yarn)",
+      "match": "symbol:\\s+method \\w+\\([^\\n]*\\n\\s*location: interface RegistryEntry<",
+      "apply": {
+        "find": "\\.(\\s*)({symbol})(\\s*)\\(",
+        "replace": ".value().$1$2$3("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Updates from 1.19.3 on wrap more and more game objects in a RegistryEntry (status effects in 1.20.5, enchantments in 1.21). A method javac cannot find on a RegistryEntry<T> is T's own: call it on .value(). Only the reported line changes. Seen in AppleSkin 1.20.1 -> 1.21.6: getEffectType().getCategory().",
+      "verified": null,
+      "test": {
+        "error": "FoodHelper.java:2: error: cannot find symbol\n\t\tif (effect.getFirst().getEffectType().getCategory() == StatusEffectCategory.HARMFUL)\n\t\t                                     ^\n  symbol:   method getCategory()\n  location: interface RegistryEntry<StatusEffect>\n",
+        "before": "\t\tStatusEffectCategory own = category.getCategory();\n\t\tif (effect.getFirst().getEffectType().getCategory() == StatusEffectCategory.HARMFUL)\n",
+        "after": "\t\tStatusEffectCategory own = category.getCategory();\n\t\tif (effect.getFirst().getEffectType().value().getCategory() == StatusEffectCategory.HARMFUL)\n"
+      }
+    },
+    {
+      "id": "holder-value-official",
+      "jump": "1.19.2 -> 26.3 (official names)",
+      "match": "symbol:\\s+method \\w+\\([^\\n]*\\n\\s*location: interface Holder<",
+      "apply": {
+        "find": "\\.(\\s*)({symbol})(\\s*)\\(",
+        "replace": ".value().$1$2$3("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "The official-names twin of registry-entry-value: a method javac cannot find on a Holder<T> is T's own.",
+      "verified": null,
+      "test": {
+        "error": "FoodHelper.java:1: error: cannot find symbol\n\t\tif (instance.getEffect().getCategory() == MobEffectCategory.HARMFUL)\n\t\t                        ^\n  symbol:   method getCategory()\n  location: interface Holder<MobEffect>\n",
+        "before": "\t\tif (instance.getEffect().getCategory() == MobEffectCategory.HARMFUL)\n",
+        "after": "\t\tif (instance.getEffect().value().getCategory() == MobEffectCategory.HARMFUL)\n"
+      }
+    },
+    {
       "id": "hunger-exhaustion-accessor",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "symbol:\\s+method (?:getExhaustion|setExhaustion)\\(",
