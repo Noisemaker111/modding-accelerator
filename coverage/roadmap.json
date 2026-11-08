@@ -213,7 +213,7 @@
     {
      "id": "17",
      "title": "AppleSkin to 26.3, loaded in the client",
-     "status": "doing",
+     "status": "done",
      "text": "Port one mod to 26.3 to a build, then to a loaded client. AppleSkin NeoForge 1.21.6 → 26.3 reaches a packaged build with the mixin audit in 66s: build settings, NeoGradle, Java and 82 → 0 compile errors are handled by rules except the removed debug-text event, one hand-written file. Loading it in a real 26.3 client is the next rung.",
      "start": "2026-10-24",
      "target": "2026-11-27",
@@ -221,7 +221,9 @@
       "port.hand-files.appleskin-neoforge-1.21.6-26.3",
       "port.errors.zaa-neoforge-1.21.1-26.3",
       "port.time.appleskin-neoforge-1.21.6-26.3"
-     ]
+     ],
+     "done": "2026-11-08",
+     "result": "AppleSkin NeoForge 1.21.6 → 26.3 ports with no hand-written file and passes its HUD behaviour check in the real 26.3 client: the estimate for a golden carrot (+12.000002) matches real regeneration (+12.000001), and the same check fails when the estimate is broken on purpose. The debug-text event became a rule; a stale Parchment setting that compiled the 26.3 game wrong is now moved or removed by the port."
     }
    ]
   },

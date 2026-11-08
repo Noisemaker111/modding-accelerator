@@ -2,7 +2,7 @@ import java.util.*;
 
 /** Public capability labels; examples are evidence, never a version allowlist. */
 final class Support {
-    static final String VERSION = "0.1.0-beta.2";
+    static final String VERSION = "0.1.0-beta.3";
     private Support() { }
     static Map<String, Object> features() {
         return Json.map("version", VERSION, "input", "Gradle mod source checkout with a wrapper; a compiled mod JAR is not source",

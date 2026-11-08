@@ -131,7 +131,8 @@
    "machine": "jon-pc",
    "target": {"value": 0, "by": "2026-11-27", "step": "17"},
    "points": [
-    {"date": "2026-10-24", "value": 1, "note": "the removed debug-text event needs a new debug screen entry", "source": "coverage/ledger.json"}
+    {"date": "2026-10-24", "value": 1, "note": "the removed debug-text event needs a new debug screen entry", "source": "coverage/ledger.json"},
+    {"date": "2026-11-08", "value": 0, "note": "the debug-text event is a rule now; nothing written by hand", "source": "coverage/ledger.json"}
    ]
   },
   {

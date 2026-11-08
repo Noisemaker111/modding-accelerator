@@ -10,9 +10,9 @@ import java.util.concurrent.TimeUnit;
  * really heals once the player eats it. Not in PR CI (it starts the game); run it locally:
  *   java tools/tests/AppleSkinHudCheck.java <checkout> <modaccel.jar> <AppleSkin checkout>
  * The checkout is the Fabric 1.21.6 one (yarn names, snippets in appleskin-hud-yarn) or any Mojang-named one such as
- * the NeoForge 26.3 port (appleskin-hud-mojmap, written for 26.3). It then breaks AppleSkin on purpose in a copy (its
- * slow-regeneration estimate heals 1.5 instead of 1) and requires that run to fail at the comparison. Both runs stop
- * their client at the end.
+ * the NeoForge 26.3 port (appleskin-hud-mojmap, written for 26.3). It then breaks AppleSkin on purpose in the same
+ * checkout (its slow-regeneration estimate heals 1.5 instead of 1), requires that run to fail at the comparison, and
+ * puts the source back whatever happens. Both runs stop their client at the end.
  */
 public final class AppleSkinHudCheck {
     record Run(int exit, String output, double seconds) { }
@@ -37,20 +37,24 @@ public final class AppleSkinHudCheck {
         Names names = Files.isRegularFile(properties) && Files.readString(properties).matches("(?s).*\\byarn_mappings\\s*=.*") ? YARN : MOJMAP;
         System.out.println("  names: " + names.dir());
 
+        Path file = root.resolve(BREAK_FILE);
+        String source = Files.readString(file, StandardCharsets.UTF_8);
+        if (source.contains(BREAK_REPLACE)) throw new AssertionError(file + " still holds this check's break (" + BREAK_REPLACE + ") from a run that was killed; put back " + BREAK_FIND + " and rerun.");
+        int at = source.indexOf(BREAK_FIND);
+        if (at < 0 || source.indexOf(BREAK_FIND, at + 1) >= 0) throw new AssertionError("Expected exactly one " + BREAK_FIND + " in " + file);
+
         long start = System.nanoTime();
         String passed = check(home, jar, root, names);
         if (passed == null) throw new AssertionError("AppleSkin HUD check failed on the untouched mod; see the output above.");
         System.out.printf(Locale.ROOT, "PASS AppleSkin HUD (%.0fs): %s%n", (System.nanoTime() - start) / 1e9, passed);
 
-        Path copy = Files.createTempDirectory(home.resolve(".runs"), "appleskin-broken-").resolve("appleskin");
-        copyTree(root, copy);
-        Path file = copy.resolve(BREAK_FILE);
-        String source = Files.readString(file, StandardCharsets.UTF_8);
-        int at = source.indexOf(BREAK_FIND);
-        if (at < 0 || source.indexOf(BREAK_FIND, at + 1) >= 0) throw new AssertionError("Expected exactly one " + BREAK_FIND + " in " + file);
+        // The break goes into the same checkout and is always put back: a copy would rebuild the game from nothing,
+        // which for NeoForge (its NeoForm decompile) takes an hour, and the same build is the fairer comparison.
         Files.writeString(file, source.replace(BREAK_FIND, BREAK_REPLACE), StandardCharsets.UTF_8);
+        String broken;
         start = System.nanoTime();
-        String broken = check(home, jar, copy, names);
+        try { broken = check(home, jar, root, names); }
+        finally { Files.writeString(file, source, StandardCharsets.UTF_8); }
         if (broken != null) throw new AssertionError("The break (slow regeneration estimated as +1.5) still passed: " + broken);
         System.out.printf(Locale.ROOT, "PASS AppleSkin HUD break \"slow regeneration estimated as +1.5 health\" fails at the comparison (%.0fs)%n", (System.nanoTime() - start) / 1e9);
     }
@@ -90,16 +94,6 @@ public final class AppleSkinHudCheck {
         if (a < 0) return "";
         int b = text.indexOf(end, a + start.length());
         return text.substring(a + (start.endsWith(":") ? start.length() : 0), b < 0 ? text.length() : b);
-    }
-    static void copyTree(Path from, Path to) throws IOException {
-        try (var walk = Files.walk(from)) {
-            for (Path p : walk.toList()) {
-                Path rel = from.relativize(p);
-                if (rel.getNameCount() > 0 && Set.of(".git", ".gradle", "build", ".modaccel", ".runs", "run").contains(rel.getName(0).toString())) continue;
-                Path target = to.resolve(rel.toString());
-                if (Files.isDirectory(p)) Files.createDirectories(target); else Files.copy(p, target, StandardCopyOption.COPY_ATTRIBUTES);
-            }
-        }
     }
     static Run modaccel(Path home, Path jar, Path root, String... args) throws Exception {
         String java = Path.of(System.getProperty("java.home"), "bin", System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows") ? "java.exe" : "java").toString();

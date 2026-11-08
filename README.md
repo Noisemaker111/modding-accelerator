@@ -12,7 +12,7 @@
 3. **Make modpacks compatible.** Identify and resolve conflicts among installed mods and configurations, and check
    the affected behavior in the real game. `pack-check` does this for Forge packs today.
 
-Beta `0.1.0-beta.2` · [download](https://github.com/Noisemaker111/modding-accelerator/releases/latest) ·
+Beta `0.1.0-beta.3` · [download](https://github.com/Noisemaker111/modding-accelerator/releases/latest) ·
 [roadmap, numbers and porting map](https://noisemaker111.github.io/modding-accelerator/)
 
 ## Quick start

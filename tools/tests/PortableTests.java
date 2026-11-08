@@ -218,7 +218,8 @@ public final class PortableTests {
                 "a plugin-check failure names the check, the file relative to the project and the line: " + text);
     }
     public static void main(String[] args) throws Exception {
-        Path home = Path.of(args[0]), scratch = Path.of(args[1]); Files.createDirectories(scratch);
+        // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
+        Path home = Path.of(args[0]), scratch = Files.createTempDirectory(Files.createDirectories(Path.of(args[1])), "run-");
         String restartTimes = ServerCheck.text(Json.map("ok", true, "server", Json.map("minecraft", "26.3", "build", "1"), "bot", Json.map("version", "x"),
                 "steps", List.of(Json.map("line", 1, "step", "start-server", "status", "done", "seconds", 10.0, "serverStart", Json.map("seconds", 9.0)),
                         Json.map("line", 2, "step", "restart-server", "status", "done", "seconds", 6.0, "serverRestarts", List.of(Json.map("seconds", 5.0)))),
