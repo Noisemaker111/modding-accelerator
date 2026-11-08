@@ -41,6 +41,21 @@ public final class PortableTests {
                 "a remaining error names the update and hop that removed its symbol");
         var second = Json.object(named.get(1));
         check(Json.array(second.get("changedIn")).isEmpty() && second.get("why") != null, "an error the history cannot place is still listed, with the reason");
+        // Gradle's failure summary repeats the errors and glues javac's last note onto one (AppleSkin 1.20.1 -> 1.21.6, 2026-11-07).
+        Path glued = scratch.resolve("glued errors.log");
+        Files.writeString(glued, "C:\\mod\\src\\A.java:10: error: cannot find symbol\n  symbol:   method getMinBuildHeight()\n"
+                + "Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output\n1 error\n\n* What went wrong:\n"
+                + "  \t        ^Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full outputC:\\mod\\src\\A.java:10: error: cannot find symbol\n"
+                + "  \t        ^C:\\mod\\src\\A.java:10: error: cannot find symbol\n"
+                + "    (actual and formal argument lists differ in length)C:\\mod\\src\\A.java:10: error: cannot find symbol\n"
+                + "    ^/home/me/mod/src/A.java:10: error: cannot find symbol\n");
+        check(port.namedErrors(glued, null).size() == 1, "a javac note Gradle glued onto a repeated error is not read as a file path");
+        String exhaustion = "C:\\mod\\src\\H.java:67: error: cannot find symbol\n\t\tfloat e = player.getHungerManager().getExhaustion();\n\t\t                                   ^\n  symbol:   method getExhaustion()\n  location: class HungerManager\n";
+        var offered = Port.repairGuides(home, "1.20.1", "1.21.6", exhaustion).stream().map(guide -> guide.get("id")).toList();
+        check(offered.equals(List.of("hunger-exhaustion-accessor"))
+                && Port.repairGuides(home, "1.20.1", "1.21.1", exhaustion).isEmpty()
+                && Port.repairGuides(home, "1.20.1", "1.21.6", "> Task :compileJava\nsymbol:   method getExhaustion()\n").isEmpty(),
+                "a stopped port offers the repair guide for its error only when it crosses the release that changed it");
     }
     /**
      * Rules learned from Stonecutter switches (bench/stonecutter_rules.py): each one names switches that exist in
@@ -94,6 +109,72 @@ public final class PortableTests {
                     "GlStateManager's 1.21.5 package move is rewritten in yarn and mojmap sources, so javac no longer stops at the import");
         }
         check(learned >= 30, learned +" rules learned from Stonecutter switches name real switches in two or more mods, match their error, rewrite their example and run on their update");
+        // Every other rule that carries a test is held to the same three facts.
+        int written = 0;
+        for (Object item : Json.array(Json.read(home.resolve("knowledge/fixes.json")).get("rules"))) {
+            var rule = Json.object(item);
+            if ("stonecutter".equals(rule.get("source")) || !(rule.get("test") instanceof Map<?, ?>)) continue;
+            String id = Json.text(rule, "id", "?");
+            var test = Json.object(rule.get("test"));
+            if (!java.util.regex.Pattern.compile(rule.get("match").toString()).matcher(test.get("error").toString()).find()) throw new AssertionError(id + ": match misses its test error");
+            String after = Port.rewrite(rule, test.get("before").toString());
+            if (after.equals(test.get("before")) || !after.equals(test.get("after"))) throw new AssertionError(id + ": rewrite gave\n" + after + "\nexpected\n" + test.get("after"));
+            String[] range = Json.text(rule, "jump", "").replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
+            Route route = Route.plan(home, range[0], range[1]);
+            if (route == null || route.stepsCovered(Json.text(rule, "jump", ""), Json.text(rule, "jump", "").contains("yarn") ? "yarn" : "mojmap").isEmpty()) throw new AssertionError(id + ": no route " + Json.text(rule, "jump", "") + " runs it");
+            written++;
+        }
+        check(written >= 3, written + " written rules with a test match their error, rewrite their example and run on their update");
+    }
+    /** Step 9: Loom follows the target. The new version lands where the build states it, a literal plugin line or the property it reads. */
+    static void loomEditChecks(Path home, Path scratch) throws Exception {
+        for (boolean property : List.of(false, true)) {
+            Path root = scratch.resolve("loom-" + property); Files.createDirectories(root);
+            Files.writeString(root.resolve("build.gradle"), "plugins {\n\tid 'fabric-loom' version " + (property ? "\"${loom_version}\"" : "'1.8-SNAPSHOT'") + "\n}\n");
+            Files.writeString(root.resolve("gradle.properties"), property ? "loom_version=1.8-SNAPSHOT\nother=1\n" : "other=1\n");
+            Files.createDirectories(root.resolve("gradle/wrapper"));
+            Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+            ProjectModel project = new ProjectModel(root);
+            check(project.loomVersion().equals("1.8-SNAPSHOT"), "the Loom version is read from " + (property ? "the property the plugin line names" : "the plugin line"));
+            Build build = new Build(project, home, "", new Modaccel.Report(root, "port"));
+            Target.Setup setup = new Target.Setup(build, Json.map(), "1.21.6", List.of());
+            check(Target.loomEdit(setup, build, "1.8-SNAPSHOT", "1.10.5"), "a stated Loom version can be raised");
+            Path changed = root.resolve(property ? "gradle.properties" : "build.gradle");
+            check(setup.text(changed).contains(property ? "loom_version=1.10.5\n" : "id 'fabric-loom' version '1.10.5'") && setup.edits().size() == 1,
+                    "Loom 1.8-SNAPSHOT -> 1.10.5 is written to " + changed.getFileName() + " and nowhere else");
+        }
+    }
+    /** Parchment follows the target: names for another version once compiled the 26.3 game wrong (BundlerInfo "packet == packet"). */
+    static void parchmentChecks(Path home, Path scratch) throws Exception {
+        String neoGradle = "neo_version=21.6.11-beta\nneogradle.subsystems.parchment.minecraftVersion=1.21.5\nneogradle.subsystems.parchment.mappingsVersion=2025.06.15\nother=1\n";
+        String modDevProps = "parchment_minecraft_version=1.21.1\nparchment_mappings_version=2024.11.17\nother=1\n";
+        String modDevBuild = "neoForge {\n    parchment {\n        mappingsVersion = project.parchment_mappings_version\n        minecraftVersion = project.parchment_minecraft_version\n    }\n    runs { }\n}\n";
+        String loomBuild = "dependencies {\n\tmappings loom.layered {\n\t\tofficialMojangMappings()\n\t\tparchment(\"org.parchmentmc.data:parchment-1.21.1:2024.11.17@zip\")\n\t}\n}\n";
+        record Case(String name, String props, String build, String release, String wantProps, String wantBuild) {}
+        List<Case> cases = List.of(
+                new Case("NeoGradle, none for 26.3", neoGradle, "plugins { }\n", "", "neo_version=21.6.11-beta\nother=1\n", null),
+                new Case("NeoGradle, 1.21.6 published", neoGradle, "plugins { }\n", "2025.06.29",
+                        "neo_version=21.6.11-beta\nneogradle.subsystems.parchment.minecraftVersion=1.21.6\nneogradle.subsystems.parchment.mappingsVersion=2025.06.29\nother=1\n", null),
+                new Case("ModDevGradle, none for 26.3", modDevProps, modDevBuild, "", "other=1\n", "neoForge {\n    runs { }\n}\n"),
+                new Case("Loom layered, none for 26.3", "other=1\n", loomBuild, "", null, "dependencies {\n\tmappings loom.layered {\n\t\tofficialMojangMappings()\n\t}\n}\n"),
+                new Case("Loom layered, 1.21.6 published", "other=1\n", loomBuild, "2025.06.29", null, loomBuild.replace("parchment-1.21.1:2024.11.17", "parchment-1.21.6:2025.06.29")));
+        for (Case c : cases) {
+            Path root = scratch.resolve("parchment-" + c.name().replaceAll("\\W+", "-")); Files.createDirectories(root.resolve("gradle/wrapper"));
+            Files.writeString(root.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+            Files.writeString(root.resolve("gradle.properties"), c.props()); Files.writeString(root.resolve("build.gradle"), c.build());
+            Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
+            Target.Setup setup = new Target.Setup(build, Json.map(), c.release().isEmpty() ? "26.3" : "1.21.6", List.of());
+            check(Target.parchmentEdit(setup, build, setup.to, c.release())
+                    && (c.wantProps() == null || setup.text(root.resolve("gradle.properties")).equals(c.wantProps()))
+                    && (c.wantBuild() == null || setup.text(root.resolve("build.gradle")).equals(c.wantBuild())),
+                    "Parchment follows the target (" + c.name() + "): " + setup.text(root.resolve("gradle.properties")).replace("\n", "|") + " / " + setup.text(root.resolve("build.gradle")).replace("\n", "|"));
+        }
+        Path plain = scratch.resolve("parchment-none"); Files.createDirectories(plain.resolve("gradle/wrapper"));
+        Files.writeString(plain.resolve("gradle/wrapper/gradle-wrapper.properties"), "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+        Files.writeString(plain.resolve("gradle.properties"), "other=1\n"); Files.writeString(plain.resolve("build.gradle"), "plugins { }\n");
+        Build plainBuild = new Build(new ProjectModel(plain), home, "", new Modaccel.Report(plain, "port"));
+        Target.Setup untouched = new Target.Setup(plainBuild, Json.map(), "26.3", List.of());
+        check(!Target.parchmentEdit(untouched, plainBuild, "26.3", null) && untouched.edits().isEmpty(), "a build without Parchment is left alone and nothing is looked up");
     }
     static Map<String, Object> testModel(String... runtime) {
         return Json.map("projects", List.of(Json.map("sourceSets", List.of(Json.map("name", "main", "runtime", List.of()),
@@ -137,7 +218,8 @@ public final class PortableTests {
                 "a plugin-check failure names the check, the file relative to the project and the line: " + text);
     }
     public static void main(String[] args) throws Exception {
-        Path home = Path.of(args[0]), scratch = Path.of(args[1]); Files.createDirectories(scratch);
+        // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
+        Path home = Path.of(args[0]), scratch = Files.createTempDirectory(Files.createDirectories(Path.of(args[1])), "run-");
         String restartTimes = ServerCheck.text(Json.map("ok", true, "server", Json.map("minecraft", "26.3", "build", "1"), "bot", Json.map("version", "x"),
                 "steps", List.of(Json.map("line", 1, "step", "start-server", "status", "done", "seconds", 10.0, "serverStart", Json.map("seconds", 9.0)),
                         Json.map("line", 2, "step", "restart-server", "status", "done", "seconds", 6.0, "serverRestarts", List.of(Json.map("seconds", 5.0)))),
@@ -287,6 +369,8 @@ public final class PortableTests {
         Build portBuild = new Build(project, home, "", new Modaccel.Report(root, "port"));
         routeChecks(home, new Port(portBuild, model), scratch);
         learnedRuleChecks(home);
+        loomEditChecks(home, scratch);
+        parchmentChecks(home, scratch);
         for (var groups : List.of(List.of("net.minecraftforge"), List.of("net.fabricmc", "net.neoforged"), List.<String>of())) {
             var dependencies = groups.stream().map(group -> Json.map("group", group)).toList();
             try {

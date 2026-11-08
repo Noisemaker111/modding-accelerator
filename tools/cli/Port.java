@@ -221,10 +221,13 @@ final class Port {
                     return result;
                 }
                 Path repair = transaction.resolve("repair-request.json");
+                List<Map<String, Object>> guides = compiled ? List.of() : repairGuides(build.harness, from, to, Files.readString(log, StandardCharsets.UTF_8));
                 Json.save(repair, Json.map("root", build.project.root.toString(), "from", from, "to", to, "namespace", names, "map", map.toString(), "model", build.project.state().resolve("model.json").toString(),
                         "log", log.toString(), "mixinCheck", mixins, "diagnostics", compiled && mixins != null ? String.valueOf(mixins.get("details")) : Run.tail(log),
+                        "guides", guides,
                         "requirements", List.of("Preserve existing behavior, including debug hooks and rendering.", "Do not remove required injections or disable checks to make a build pass.", "Rebuild and exercise relevant real game scenarios after a semantic repair.")));
                 result.put("repairRequest", repair.toString());
+                if (!guides.isEmpty()) result.put("repairGuides", guides.stream().map(guide -> guide.get("id") + ": " + guide.get("title")).toList());
                 List<Object> unresolved = compiled ? List.of() : named;
                 result.put("unresolved", unresolved);
                 result.put("stoppedSafely", true);
@@ -335,7 +338,7 @@ final class Port {
     /** Distinct compiler errors left in a log, so a stopped port names exactly what a person must decide. */
     static List<Object> errors(Path log) throws IOException {
         List<Object> list = new ArrayList<>(); Set<String> seen = new HashSet<>();
-        Matcher reported = Pattern.compile("(?m)^\\s*(\\S.*?\\.(?:java|kt)):(\\d+): error: ([^\\r\\n]+)").matcher(Files.readString(log));
+        Matcher reported = ERROR.matcher(Files.readString(log));
         while (reported.find()) {
             String key = reported.group(1) + ":" + reported.group(2) + ":" + reported.group(3);
             if (!seen.add(key)) continue;
@@ -491,7 +494,7 @@ final class Port {
      */
     void removeDeadMixinTargets(Path log) throws Exception {
         String errors = Files.readString(log);
-        Matcher reported = Pattern.compile("(?m)^\\s*(\\S.*?\\.java):(\\d+): error: Multi-target reference conflict for @\\w+ target (\\w+): \\[\\]").matcher(errors);
+        Matcher reported = Pattern.compile("(?m)^\\s*" + FILE + ":(\\d+): error: Multi-target reference conflict for @\\w+ target (\\w+): \\[\\]").matcher(errors);
         Set<String> repaired = new HashSet<>();
         while (reported.find()) {
             Path file = Path.of(reported.group(1)); if (!file.isAbsolute()) file = build.project.root.resolve(file); file = file.normalize();
@@ -539,7 +542,7 @@ final class Port {
         List<Path> all = sources(build.project).stream().filter(p -> p.toString().endsWith(".java"))
                 .filter(p -> owned.isEmpty() || owned.stream().anyMatch(p.toAbsolutePath().normalize()::startsWith)).toList();
         Set<Path> logged = new HashSet<>();
-        Matcher reported = Pattern.compile("(?m)^\\s*(\\S.*?\\.java):[0-9]+: error:").matcher(errors);
+        Matcher reported = Pattern.compile("(?m)^\\s*" + FILE + ":[0-9]+: error:").matcher(errors);
         while (reported.find()) { Path file = Path.of(reported.group(1)); if (!file.isAbsolute()) file = build.project.root.resolve(file); file = file.normalize(); if (file.startsWith(build.project.root)) logged.add(file); }
         for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
             var rule = Json.object(item); if (!Pattern.compile(rule.get("match").toString()).matcher(errors).find()) continue;
@@ -556,6 +559,33 @@ final class Port {
             }
         }
     }
+    /**
+     * The repair guides (knowledge/structural.json) for what a stopped port left: a guide is offered when its match finds
+     * one of javac's errors and the port crosses the release its jump names ("A -> B" changed in B, "X+" in X), either way.
+     */
+    static List<Map<String, Object>> repairGuides(Path harness, String from, String to, String log) throws IOException {
+        Path file = harness.resolve("knowledge/structural.json");
+        if (!Files.exists(file)) return List.of();
+        StringBuilder errors = new StringBuilder();
+        // javac's own blocks (an error line and the lines under it), not Gradle's repeats or the rest of the log.
+        List<String> lines = log.lines().toList();
+        for (int i = 0; i < lines.size(); i++) {
+            if (!ERROR.matcher(lines.get(i)).find()) continue;
+            errors.append(lines.get(i)).append('\n');
+            for (int j = i + 1; j < lines.size() && j <= i + 5 && !ERROR.matcher(lines.get(j)).find(); j++) errors.append(lines.get(j)).append('\n');
+        }
+        List<Map<String, Object>> guides = new ArrayList<>();
+        for (Object item : Json.array(Json.parse(Files.readString(file, StandardCharsets.UTF_8)))) {
+            var guide = Json.object(item);
+            Matcher release = Pattern.compile("(?:->\\s*)?(\\d+(?:\\.\\d+)+)(\\+)?(?!.*->)").matcher(Json.text(guide, "jump", ""));
+            if (!release.find()) continue;
+            String changed = release.group(1);
+            boolean crosses = Versions.compare(from, changed) < 0 ? Versions.compare(to, changed) >= 0 : Versions.compare(to, changed) < 0;
+            if (!crosses || !Pattern.compile(Json.text(guide, "match", "(?!)")).matcher(errors).find()) continue;
+            guides.add(Json.map("id", guide.get("id"), "title", guide.get("title"), "steps", guide.get("steps"), "note", guide.get("note")));
+        }
+        return guides;
+    }
     /** One knowledge rule on one source text: its `when` gate, the literal or regex rewrite, then any imports it needs. */
     static String rewrite(Map<String, Object> rule, String original) {
         var apply = Json.object(rule.get("apply"));
@@ -571,7 +601,14 @@ final class Port {
         }
         return text;
     }
-    static final Pattern ERROR = Pattern.compile("(?m)^\\s*(\\S.*?\\.(?:java|kt)):(\\d+): error: ([^\\r\\n]+)");
+    /**
+     * A reported source file: an absolute path (C:\... or /...) or a relative one starting with a plain name. Gradle's
+     * failure summary repeats javac's errors with the previous line glued on ("^C:\...", "^Note: ... outputC:\...",
+     * "(actual and formal argument lists differ in length)C:\..."); those repeats do not start like a path, so they are
+     * skipped rather than read as one. The errors themselves were already read where javac printed them.
+     */
+    static final String FILE = "((?:[A-Za-z]:[\\\\/]|/)[^:\\r\\n]*?\\.(?:java|kt)|[\\w.-]+(?:[\\\\/][\\w .-]+)*\\.(?:java|kt))";
+    static final Pattern ERROR = Pattern.compile("(?m)^\\s*" + FILE + ":(\\d+): error: ([^\\r\\n]+)");
     /**
      * Every distinct compiler error left, each with the update that changed the name it uses when the
      * route's map history knows it. Nothing is dropped: an error the history cannot place still appears,

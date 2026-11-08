@@ -107,7 +107,9 @@ final class Run {
         return out.toString().strip();
     }
     private static final Pattern NETWORK = Pattern.compile("No such host is known|UnknownHostException|Unknown host|nodename nor servname|Name or service not known|Temporary failure in name resolution"
-            + "|Connect(?:ion)? timed out|Connection refused|Network is unreachable|No route to host|Read timed out|PKIX path building failed|Remote host terminated the handshake");
+            + "|Connect(?:ion)? timed out|Connection refused|Network is unreachable|No route to host|Read timed out|PKIX path building failed|Remote host terminated the handshake"
+            // NeoGradle's own downloader (Mojang's version manifest, game jars) says only this, with the URL.
+            + "|Failed to download the file from");
     private static final Pattern URL = Pattern.compile("(https?://[^\\s'\"()]+)");
     /** A build that failed because a repository could not be reached: name the host and say it is the network, not the dependency. */
     static String unreachable(List<String> lines) {
@@ -117,19 +119,24 @@ final class Run {
             String host = null;
             Matcher named = Pattern.compile("\\(([A-Za-z0-9.-]+\\.[A-Za-z]{2,})\\)").matcher(line);
             if (named.find()) host = named.group(1);
+            Matcher here = URL.matcher(line);
+            if (host == null && here.find()) host = java.net.URI.create(here.group(1)).getHost();
             if (host == null) for (String other : lines) {
                 Matcher url = URL.matcher(other);
-                if (other.contains("Could not GET") || other.contains("Could not HEAD") || other.contains("Could not get resource")) if (url.find()) { host = java.net.URI.create(url.group(1)).getHost(); break; }
+                // The wrapper prints "Downloading <url>" (and "Downloading from <url> failed") above a cause with no URL.
+                if (other.contains("Could not GET") || other.contains("Could not HEAD") || other.contains("Could not get resource") || other.contains("Downloading "))
+                    if (url.find()) { host = java.net.URI.create(url.group(1)).getHost(); break; }
             }
             String what = cause.group().startsWith("PKIX") || cause.group().startsWith("Remote host") ? "a secure connection failed (" + cause.group() + ")"
-                    : cause.group().matches("(?i).*(host|name|servname).*") ? "the name could not be looked up" : "the connection failed (" + cause.group() + ")";
+                    : cause.group().matches("(?i).*(host|name|servname).*") ? "the name could not be looked up"
+                    : cause.group().startsWith("Failed to download") ? "a download from it failed" : "the connection failed (" + cause.group() + ")";
             return "Gradle could not reach " + (host == null ? "a repository" : host) + ": " + what + ". This is the network or the repository address, not your code."
                     + " Check the internet connection, a proxy or VPN, and the repository URL in the build script, then rerun."
                     + " Without a network only dependencies already in the Gradle cache can be used.";
         }
         return null;
     }
-    private static final Pattern JAVA_ERROR = Pattern.compile("^\\s*(.+\\.java):(\\d+): error: (.*)$");
+    private static final Pattern JAVA_ERROR = Pattern.compile("^\\s*" + Port.FILE + ":(\\d+): error: (.*)$");
     private static final Pattern KOTLIN_ERROR = Pattern.compile("^\\s*e: (?:file:///?)?(.+\\.kts?):(\\d+):(?:\\d+)? ?(.*)$");
     /**
      * javac and kotlinc errors as "file:line  message", with the source line, paths relative to

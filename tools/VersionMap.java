@@ -590,7 +590,8 @@ public final class VersionMap {
 	static List<Err> readErrors(Path log) throws IOException {
 		List<String> lines = Files.readAllLines(log, StandardCharsets.UTF_8);
 		// Gradle indents javac's lines in multi-project builds.
-		Pattern head = Pattern.compile("^\\s*(\\S.*?\\.java):(\\d+): error: (.*)$");
+		// A path starts like one (Port.FILE): Gradle's summary repeats errors with the previous line glued on, and those are skipped.
+		Pattern head = Pattern.compile("^\\s*((?:[A-Za-z]:[\\\\/]|/)[^:\\r\\n]*?\\.java|[\\w.-]+(?:[\\\\/][\\w .-]+)*\\.java):(\\d+): error: (.*)$");
 		Map<String, Err> seen = new LinkedHashMap<>();
 		for (int i = 0; i < lines.size(); i++) {
 			Matcher m = head.matcher(lines.get(i));

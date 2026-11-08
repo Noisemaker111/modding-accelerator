@@ -36,6 +36,7 @@ final class Build {
         report.stage("stop-daemons", result, Json.map("registry", daemons().toString())); return result;
     }
     static final int GRADLE_TIMEOUT = 900;
+    static final int NETWORK_RETRY_SECONDS = 20;
     static final String TIMEOUT_VARIABLE = "MODACCEL_GRADLE_TIMEOUT";
     /** No evaluated model yet: Gradle may still download the game, mappings and every dependency. */
     boolean coldSetup() {
@@ -116,11 +117,10 @@ final class Build {
         // Test hook: make the init script miss under configure-on-demand to exercise the fallback.
         if ("true".equals(System.getenv("MODACCEL_SIMULATE_COD_MISS"))) command.add("-Dmodaccel.simulateCodMiss=true");
         List<String> toolchains = new ArrayList<>();
-        Path projectCache = harness.resolve(".modaccel/jdks").toAbsolutePath().normalize();
-        Path userCache = Path.of(System.getProperty("user.home"), ".modaccel/jdks").toAbsolutePath().normalize();
+        Path downloaded = JdkDownloads.cache();
         for (Runtimes.Jdk installed : Runtimes.installed(harness)) {
             Path home = installed.home().toAbsolutePath().normalize();
-            if (home.startsWith(projectCache) || home.startsWith(userCache)) toolchains.add(home.toString());
+            if (home.startsWith(downloaded)) toolchains.add(home.toString());
         }
         if (!toolchains.isEmpty()) {
             Path gradleHome = Path.of(System.getenv().getOrDefault("GRADLE_USER_HOME", Path.of(System.getProperty("user.home"), ".gradle").toString()));
@@ -155,7 +155,17 @@ final class Build {
                 report.stages.add(Json.map("name", "metadata", "cache", "hit", "seconds", 0)); return Json.read(model);
             }
         }
-        Run.Result result = gradle(planning ? List.of("-Dmodaccel.metadataMode=plan", ":modaccelMetadata") : List.of(":modaccelMetadata"), planning ? "metadata-plan" : "metadata");
+        List<String> task = planning ? List.of("-Dmodaccel.metadataMode=plan", ":modaccelMetadata") : List.of(":modaccelMetadata");
+        String stage = planning ? "metadata-plan" : "metadata";
+        Run.Result result = gradle(task, stage);
+        // The first read downloads Gradle and the build's dependencies, and the wrapper gives up after one 10 s try:
+        // on 2026-11-08 services.gradle.org timed out on CI for an hour. One more try after a pause rides that out.
+        String unreachable = result.exit() == 0 ? null : Run.unreachable(new String(Files.readAllBytes(result.log()), java.nio.charset.StandardCharsets.UTF_8).lines().toList());
+        if (unreachable != null) {
+            System.err.println("degraded: " + unreachable.substring(0, unreachable.indexOf(". ") + 1) + " Trying once more in " + NETWORK_RETRY_SECONDS + " s.");
+            Thread.sleep(NETWORK_RETRY_SECONDS * 1000L);
+            result = gradle(task, stage + "-retry");
+        }
         if (result.exit() != 0) { String why = Run.gradleFailure(result.log()); throw new IOException(discoveryHeadline(why) + "\n" + why + "\nLog: " + result.log()); }
         Map<String, Object> value = Json.read(model);
         Json.save(stamp, Json.map("key", key)); return value;

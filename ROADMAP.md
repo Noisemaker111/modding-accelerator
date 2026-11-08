@@ -12,9 +12,9 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
 
 | Phase | Done | Doing | Next | Later | Last target |
 |---|---|---|---|---|---|
-| 1. Neighbouring versions (1.21.x), Fabric and NeoForge | 6 | 1 | 3 | 0 | 2026-12-04 |
+| 1. Neighbouring versions (1.21.x), Fabric and NeoForge | 8 | 1 | 1 | 0 | 2026-12-04 |
 | 2. Big jumps across families (1.16.5, 1.18.2, 1.20.1 → 1.21.x) | 4 | 0 | 0 | 2 | 2027-01-08 |
-| 3. 26.x, the unobfuscated game | 0 | 3 | 1 | 0 | 2026-12-04 |
+| 3. 26.x, the unobfuscated game | 1 | 2 | 1 | 0 | 2026-12-04 |
 | 4. Loaders | 0 | 0 | 0 | 3 | 2027-03-12 |
 | 5. Proof: behaviour in the real game and server | 3 | 0 | 2 | 3 | 2027-02-12 |
 | 6. Modpack compatibility | 1 | 3 | 0 | 1 | 2027-02-05 |
@@ -42,15 +42,26 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
 6. A port refuses to pass while it still targets the old game: packaged metadata is read back.
     **done**
     Done 2026-10-24.
-7. A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. 62 errors down to 51 after seven
-    rules (Identifier, food components, debug HUD); the rest needs real code changes. **doing**
+7. A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. With the render rules (step 8) and
+    build tools that follow the target (step 9), 69 errors go to 11 with nothing done by hand. The
+    11 are four changes that need new code: the exhaustion getter, food effects on the consumable
+    component, server-only game rules and payload networking. The stopped port names a repair guide
+    for each. **doing**
     Started 2026-10-24, target 2026-11-20.
 8. Turn the render-pipeline family into rules (draw texture / render pipeline / texture view), then
-    re-run step 7 to a build. **next**
-    Starts 2026-11-09, target 2026-11-17.
+    re-run step 7 to a build. **done** — The GUI render family is rules in yarn and official names,
+    each tied to the update that changed it: the render type first in every blit (1.21.2), the
+    RenderPipeline (1.21.6), shader colour into each draw call (1.21.6), blend, depth and cull state
+    (1.21.5), texture-id binds (1.21.5) and texture views (1.21.6). They replace the two whole-jump
+    drawTexture rules. On AppleSkin 1.20.1 → 1.21.6 no render error is left; it still stops at 11
+    errors outside rendering (step 7).
+    Done 2026-11-07.
 9. Build-toolchain bumps follow the target automatically (AppleSkin needed Loom 1.10 + Gradle 8.13).
-    **next**
-    Starts 2026-11-12, target 2026-11-24.
+    **done** — A Fabric port raises Loom to the newest release of the line its target dependencies
+    were built with (from each jar's Fabric-Loom-Version), then raises the Gradle wrapper to the
+    version that Loom's published metadata asks for. It never lowers either. AppleSkin 1.20.1 →
+    1.21.6: Loom 1.8-SNAPSHOT to 1.10.5 and Gradle 8.10 to 8.12, with no hand edit.
+    Done 2026-11-07.
 10. One command, no hand edits, for 1.21.1 → 1.21.6 on this mod, and the same for a second mod.
     **next**
     Starts 2026-11-20, target 2026-12-04.
@@ -103,8 +114,12 @@ not done has a target date. Targets were set on 2026-11-06; a target that moves 
 17. Port one mod to 26.3 to a build, then to a loaded client. AppleSkin NeoForge 1.21.6 → 26.3
     reaches a packaged build with the mixin audit in 66s: build settings, NeoGradle, Java and 82 → 0
     compile errors are handled by rules except the removed debug-text event, one hand-written file.
-    Loading it in a real 26.3 client is the next rung. **doing**
-    Started 2026-10-24, target 2026-11-27.
+    Loading it in a real 26.3 client is the next rung. **done** — AppleSkin NeoForge 1.21.6 → 26.3
+    ports with no hand-written file and passes its HUD behaviour check in the real 26.3 client: the
+    estimate for a golden carrot (+12.000002) matches real regeneration (+12.000001), and the same
+    check fails when the estimate is broken on purpose. The debug-text event became a rule; a stale
+    Parchment setting that compiled the 26.3 game wrong is now moved or removed by the port.
+    Done 2026-11-08.
 
 ## Phase 4 — Loaders
 
@@ -273,14 +288,14 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
 | 1.21.x updates that work in the game, Fabric | — | 2 updates (Oct 24) | 22 updates by Jan 29, 2027, step 10 | Baseline |
-| 1.21.x updates that work in the game, NeoForge | — | 3 updates (Oct 24) | 22 updates by Jan 29, 2027, step 10 | Baseline |
+| 1.21.x updates that work in the game, NeoForge | 3 updates (Oct 24) | 8 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 26% of the way |
 | Real mods with a port that works in the game | — | 3 mods (Oct 24) | 6 mods by Dec 18, step 12 | Baseline |
-| Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 37 errors (Oct 25) | 0 errors by Nov 20, step 7 | 40% of the way |
+| Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 11 errors (Nov 7) | 0 errors by Nov 20, step 7 | 82% of the way |
 | Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6, warm | 38 errors (Oct 24) | 9 errors (Oct 25) | 0 errors by Dec 4, step 10 | 76% of the way |
 | Errors left: Notes, NeoForge 1.21 → 1.21.6, warm | — | 14 errors (Oct 25) | 0 errors by Dec 4, step 10 | Baseline |
 | Errors left: Jade, NeoForge 1.21.1 → 1.21.6, warm | — | 98 errors (Oct 24) | 0 errors by Jan 15, 2027, step 12 | Baseline |
 | Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm | 69 errors (Oct 25) | 50 errors (Oct 25) | 0 errors by Jan 15, 2027, step 17 | 28% of the way |
-| Hand-written files: AppleSkin, NeoForge 1.21.6 → 26.3 | — | 1 file (Oct 24) | 0 files by Nov 27, step 17 | Baseline |
+| Hand-written files: AppleSkin, NeoForge 1.21.6 → 26.3 | 1 file (Oct 24) | 0 files (Nov 8) | 0 files by Nov 27, step 17 | Met |
 | Port to a packaged build: Zombie Apocalypse 1.21.1 → 1.21.4, warm | 2.6 min (Oct 24) | 2.8 min (Oct 25) | 1.5 min by Dec 18, step 10 | 0% of the way |
 | Port to a packaged build: AppleSkin 1.21.6 → 26.3, warm | — | 66 s (Oct 24) | 60 s by Nov 27, step 17 | Baseline |
 | Port rules learned from Stonecutter mods | — | 38 rules (Oct 25) | 80 rules by Dec 31, step 13 | Baseline |
@@ -346,7 +361,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 18 steps (Nov 7) | 40 steps by Mar 12, 2027 | 37% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 21 steps (Nov 8) | 40 steps by Mar 12, 2027 | 46% of the way |
 
 ## Decisions
 

@@ -81,7 +81,7 @@ final class Explain {
             Run.Result audit = new JavaTools(build).audit(projectModel);
             String lastAudited = "";
             for (String line : new String(Files.readAllBytes(audit.log()), StandardCharsets.UTF_8).lines().toList()) {
-                Matcher finding = Pattern.compile("^(\\S.*?\\.java):(\\d+) (.*)$").matcher(line);
+                Matcher finding = Pattern.compile("^" + Port.FILE + ":(\\d+) (.*)$").matcher(line);
                 if (line.startsWith("note:") || !finding.matches()) continue;
                 if (hints++ == 0) out.append("\nHand audit hints (modaccel reads the class files; a guess, not Mixin's verdict):\n");
                 String file = source(build.project.root.resolve(finding.group(1)).toString());
@@ -127,7 +127,7 @@ final class Explain {
     /** javac's errors, once each: Gradle repeats them, indented, in its failure summary. */
     static List<Problem> parse(Path log) throws IOException {
         List<String> lines = new String(Files.readAllBytes(log), StandardCharsets.UTF_8).lines().toList();
-        Pattern head = Pattern.compile("^(\\S.*?\\.java):(\\d+): error: (.*)$");
+        Pattern head = Pattern.compile("^" + Port.FILE + ":(\\d+): error: (.*)$");
         List<Problem> problems = new ArrayList<>(); Set<String> seen = new HashSet<>();
         for (int i = 0; i < lines.size(); i++) {
             Matcher m = head.matcher(lines.get(i)); if (!m.matches()) continue;

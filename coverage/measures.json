@@ -62,7 +62,8 @@
    "points": [
     {"date": "2026-10-24", "value": 62, "note": "Loom and Gradle bumped by hand, before rules", "source": "coverage/ledger.json"},
     {"date": "2026-10-24", "value": 51, "note": "seven rules (Identifier, food components, debug HUD)", "source": "coverage/ledger.json"},
-    {"date": "2026-10-25", "value": 37, "note": "through the router, with the glstatemanager-opengl rule", "source": "coverage/ledger.json"}
+    {"date": "2026-10-25", "value": 37, "note": "through the router, with the glstatemanager-opengl rule", "source": "coverage/ledger.json"},
+    {"date": "2026-11-07", "value": 11, "note": "nothing by hand: build tools follow the target, render and tooltip rules; four new-code changes left", "source": "coverage/ledger.json"}
    ]
   },
   {
@@ -130,7 +131,8 @@
    "machine": "jon-pc",
    "target": {"value": 0, "by": "2026-11-27", "step": "17"},
    "points": [
-    {"date": "2026-10-24", "value": 1, "note": "the removed debug-text event needs a new debug screen entry", "source": "coverage/ledger.json"}
+    {"date": "2026-10-24", "value": 1, "note": "the removed debug-text event needs a new debug screen entry", "source": "coverage/ledger.json"},
+    {"date": "2026-11-08", "value": 0, "note": "the debug-text event is a rule now; nothing written by hand", "source": "coverage/ledger.json"}
    ]
   },
   {

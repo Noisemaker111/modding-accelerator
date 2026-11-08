@@ -15,7 +15,7 @@ final class Runtimes {
             String value = System.getenv(key); if (value != null && !value.isBlank()) paths.add(Path.of(value));
         }
         Path user = Path.of(System.getProperty("user.home"));
-        for (Path parent : List.of(harness.resolve(".modaccel/jdks"), harness.resolve(".tools"), user.resolve(".modaccel/jdks"), user.resolve(".gradle/jdks"),
+        for (Path parent : List.of(JdkDownloads.cache(), harness.resolve(".tools"), user.resolve(".gradle/jdks"),
                 user.resolve(".jdks"), user.resolve("tools"), Path.of("/usr/lib/jvm"), Path.of("/Library/Java/JavaVirtualMachines"))) {
             if (Files.isDirectory(parent)) try (var children = Files.list(parent)) {
                 for (Path child : children.filter(Files::isDirectory).toList()) { paths.add(child); paths.add(child.resolve("Contents/Home")); }
@@ -60,7 +60,7 @@ final class Runtimes {
                     : major == 8 && minor >= 5 ? 21 : major == 8 || major == 7 && minor >= 3 ? 17
                     : major == 7 ? 16 : major == 6 && minor >= 3 ? 14 : major >= 5 ? 11 : 8;
             for (int candidate : List.of(17, 11, 8, 21, 25)) if (candidate >= min && candidate <= max) {
-                JdkDownloads.install(harness, candidate);
+                JdkDownloads.install(candidate);
                 return forGradle(harness, wrapper);
             }
             throw missing;
@@ -70,13 +70,13 @@ final class Runtimes {
         try { return atLeast(harness, minimum); }
         catch (IOException missing) {
             int candidate = minimum <= 8 ? 8 : minimum <= 11 ? 11 : minimum <= 17 ? 17 : minimum <= 21 ? 21 : minimum <= 25 ? 25 : minimum;
-            JdkDownloads.install(harness, candidate);
+            JdkDownloads.install(candidate);
             return atLeast(harness, minimum);
         }
     }
     static Jdk ensureExact(Path harness, int version) throws IOException {
         for (Jdk jdk : installed(harness)) if (jdk.version == version) return jdk;
-        JdkDownloads.install(harness, version);
+        JdkDownloads.install(version);
         for (Jdk jdk : installed(harness)) if (jdk.version == version) return jdk;
         throw new IOException("Downloaded JDK " + version + " was not detected in the project cache");
     }
