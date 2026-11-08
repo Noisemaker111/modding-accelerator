@@ -1,0 +1,102 @@
+{
+ "warm": [
+  {
+   "screen": {
+    "wall": 3.86,
+    "check": 2.97,
+    "visibleWindows": 0
+   },
+   "world": {
+    "wall": 8.11,
+    "check": 7.27,
+    "visibleWindows": 0
+   },
+   "scenario": {
+    "wall": 5.89,
+    "check": 4.06,
+    "visibleWindows": 0
+   }
+  },
+  {
+   "screen": {
+    "wall": 3.94,
+    "check": 3.09,
+    "visibleWindows": 0
+   },
+   "world": {
+    "wall": 2.79,
+    "check": 1.97,
+    "visibleWindows": 0
+   },
+   "scenario": {
+    "wall": 5.01,
+    "check": 3.37,
+    "visibleWindows": 0
+   }
+  },
+  {
+   "screen": {
+    "wall": 3.84,
+    "check": 3.01,
+    "visibleWindows": 0
+   },
+   "world": {
+    "wall": 2.79,
+    "check": 1.96,
+    "visibleWindows": 0
+   },
+   "scenario": {
+    "wall": 5.07,
+    "check": 3.42,
+    "visibleWindows": 0
+   }
+  },
+  {
+   "screen": {
+    "wall": 4.12,
+    "check": 3.19,
+    "visibleWindows": 0
+   },
+   "world": {
+    "wall": 2.96,
+    "check": 2.07,
+    "visibleWindows": 0
+   },
+   "scenario": {
+    "wall": 5.14,
+    "check": 3.44,
+    "visibleWindows": 0
+   }
+  },
+  {
+   "screen": {
+    "wall": 4.42,
+    "check": 3.55,
+    "visibleWindows": 0
+   },
+   "world": {
+    "wall": 3.36,
+    "check": 2.4,
+    "visibleWindows": 0
+   },
+   "scenario": {
+    "wall": 5.17,
+    "check": 3.48,
+    "visibleWindows": 0
+   }
+  }
+ ],
+ "medians": {
+  "screen": 3.94,
+  "world": 2.96,
+  "scenario": 5.14
+ },
+ "mostWindowsOnScreen": 0,
+ "game": 57552,
+ "machineBusyPercent": 29.3,
+ "machine": {
+  "cpus": 24,
+  "os": "win32"
+ },
+ "measured": "2026-11-07T22:33:07+00:00"
+}

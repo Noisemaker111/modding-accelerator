@@ -50,6 +50,9 @@ jobs:
       - name: Roadmap and measures agree, ROADMAP.md is current
         working-directory: portable workspace
         run: python bench/test_measures.py
+      - name: Session cost meter reads processes on this system
+        working-directory: portable workspace
+        run: python bench/test_session_cost.py
       - name: Package without PowerShell
         working-directory: portable workspace
         run: java tools/cli/Bootstrap.java . package --json
@@ -71,6 +74,9 @@ jobs:
       - name: Fabric metadata and logic
         working-directory: portable workspace
         run: java -jar build/distributions/modaccel.jar fast --json
+      - name: Hidden window stays hidden with the agent named twice
+        working-directory: portable workspace
+        run: java tools/tests/BackgroundWindowsTest.java . build/distributions/modaccel.jar
       - name: Legacy launch agent with Gradle
         if: runner.os == 'Windows'
         shell: pwsh

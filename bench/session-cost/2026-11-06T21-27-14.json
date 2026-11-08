@@ -1,0 +1,80 @@
+{
+ "count": 8,
+ "jvm": "",
+ "visibleWindows": 0,
+ "checked": 8,
+ "allCheckedSeconds": 78.6,
+ "machineBusyPercent": 96.7,
+ "peakGBTotal": 7.72,
+ "privateGBTotal": 11.44,
+ "startCpuSeconds": 389.4,
+ "idle": {
+  "seconds": 20.0,
+  "cores": 1.76,
+  "rssGB": 7.34,
+  "machineBusyPercent": 96.7
+ },
+ "sessions": [
+  {
+   "name": "s1",
+   "pid": 53448,
+   "ready": 68.0,
+   "capture": "parallel-s1.png",
+   "checked": 75.1
+  },
+  {
+   "name": "s2",
+   "pid": 37776,
+   "ready": 48.1,
+   "capture": "parallel-s2.png",
+   "checked": 75.5
+  },
+  {
+   "name": "s3",
+   "pid": 22120,
+   "ready": 67.1,
+   "capture": "parallel-s3.png",
+   "checked": 75.8
+  },
+  {
+   "name": "s4",
+   "pid": 36100,
+   "ready": 49.3,
+   "capture": "parallel-s4.png",
+   "checked": 76.5
+  },
+  {
+   "name": "s5",
+   "pid": 55700,
+   "ready": 66.0,
+   "capture": "parallel-s5.png",
+   "checked": 77.4
+  },
+  {
+   "name": "s6",
+   "pid": 48156,
+   "ready": 47.0,
+   "capture": "parallel-s6.png",
+   "checked": 77.8
+  },
+  {
+   "name": "s7",
+   "pid": 34660,
+   "ready": 69.5,
+   "capture": "parallel-s7.png",
+   "checked": 78.2
+  },
+  {
+   "name": "s8",
+   "pid": 52828,
+   "ready": 49.3,
+   "capture": "parallel-s8.png",
+   "checked": 78.6
+  }
+ ],
+ "machine": {
+  "cpus": 24,
+  "os": "win32"
+ },
+ "measured": "2026-11-07T02:27:14+00:00"
+}

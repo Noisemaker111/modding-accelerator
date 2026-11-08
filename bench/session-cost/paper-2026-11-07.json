@@ -1,0 +1,109 @@
+{
+ "what": "modaccel server-check on AgentCraft (eca1d91) with bench/server-plugins/agentcraft.scenario: a real Paper server, a bot player, AgentCraft's own mock backend; cold = a fresh clone and --fresh-server, then warm twice",
+ "runs": [
+  {
+   "label": "paper-cold",
+   "exit": 0,
+   "wall": 317.8,
+   "game": null,
+   "server": null,
+   "other": {
+    "count": 9,
+    "peakGB": 3.33,
+    "cpu": 271.3
+   },
+   "machineBusyPercent": 31.3,
+   "machine": {
+    "cpus": 24,
+    "os": "win32"
+   },
+   "measured": "2026-11-07T23:24:25+00:00",
+   "modaccel": {
+    "ok": true,
+    "seconds": 315.9,
+    "stages": {
+     "metadata": 151.6,
+     "plugin-build": 111.9,
+     "server-check-tools": 4.1,
+     "server-check": 48.0
+    },
+    "serverStartSeconds": [
+     19.7
+    ],
+    "serverRestartSeconds": [
+     8.5
+    ],
+    "steps": 44,
+    "serverStopSeconds": 0.6
+   }
+  },
+  {
+   "label": "paper-warm-1",
+   "exit": 0,
+   "wall": 50.0,
+   "game": null,
+   "server": null,
+   "other": {
+    "count": 5,
+    "peakGB": 2.34,
+    "cpu": 129.3
+   },
+   "machineBusyPercent": 46.0,
+   "machine": {
+    "cpus": 24,
+    "os": "win32"
+   },
+   "measured": "2026-11-07T23:25:15+00:00",
+   "modaccel": {
+    "ok": true,
+    "seconds": 49.1,
+    "stages": {
+     "plugin-build": 1.5,
+     "server-check": 47.5
+    },
+    "serverStartSeconds": [
+     18.7
+    ],
+    "serverRestartSeconds": [
+     8.4
+    ],
+    "steps": 44,
+    "serverStopSeconds": 0.7
+   }
+  },
+  {
+   "label": "paper-warm-2",
+   "exit": 0,
+   "wall": 54.0,
+   "game": null,
+   "server": null,
+   "other": {
+    "count": 5,
+    "peakGB": 2.43,
+    "cpu": 129.8
+   },
+   "machineBusyPercent": 57.8,
+   "machine": {
+    "cpus": 24,
+    "os": "win32"
+   },
+   "measured": "2026-11-07T23:26:09+00:00",
+   "modaccel": {
+    "ok": true,
+    "seconds": 52.9,
+    "stages": {
+     "plugin-build": 2.2,
+     "server-check": 50.5
+    },
+    "serverStartSeconds": [
+     10.6
+    ],
+    "serverRestartSeconds": [
+     14.7
+    ],
+    "steps": 44,
+    "serverStopSeconds": 0.9
+   }
+  }
+ ]
+}

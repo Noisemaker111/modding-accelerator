@@ -1,0 +1,246 @@
+{
+ "machine": "Jon's PC (Ryzen 9 3900X, 12 cores, 64 GB), shared with other work",
+ "before": {
+  "note": "Oct 30: shipped and repaired packs one after the other; each new world's first start found the client-only mod and started again",
+  "command": "pack-check",
+  "seconds": 760.1,
+  "ok": true,
+  "stages": [
+   {
+    "name": "fetch",
+    "seconds": 0.1
+   },
+   {
+    "name": "server-place",
+    "seconds": 114.0,
+    "ended": "failed: Failed to start the minecraft server"
+   },
+   {
+    "name": "server-place",
+    "seconds": 199.2,
+    "ended": "probe done"
+   },
+   {
+    "name": "server-verify",
+    "seconds": 97.8,
+    "ended": "failed: Failed to load datapacks"
+   },
+   {
+    "name": "server-place",
+    "seconds": 199.3,
+    "ended": "probe done"
+   },
+   {
+    "name": "server-verify",
+    "seconds": 132.8,
+    "ended": "probe done"
+   }
+  ],
+  "pack": "instance1 ",
+  "minecraft": "1.20.1",
+  "loader": "forge 47.4.20",
+  "files": 368,
+  "newWorldOpened": true,
+  "reopenOpened": false,
+  "repairProven": true,
+  "repairApplied": [
+   {
+    "id": "biolith-saved-climate-list",
+    "add": "biolith-forge-1.0.1-beta.1.jar",
+    "page": "https://modrinth.com/mod/biolith/version/1.0.1-beta.1"
+   }
+  ],
+  "findings": [
+   {
+    "kind": "same-block-file",
+    "severity": "note",
+    "summary": "MutantMonsters-v8.0.8-1.20.1-Forge.jar and eatinganimation-1.20.1-5.1.0.jar both ship 1 block or item look/drop file(s); only one copy of each is used, so a block or item can look or drop like the other mod's: assets/minecraft/models/item/potion.json"
+   },
+   {
+    "kind": "same-block-file",
+    "severity": "note",
+    "summary": "VanillaBackport-forge-1.20.1-1.1.7.10.jar and adorable_eggs-Forge-1.20.1-1.0.3.jar both ship 82 block or item look/drop file(s); only one copy of each is used, so a block or item can look or drop like the other mod's: assets/minecraft/models/item/armadillo_spawn_egg.json, assets/minecraft/textures/i"
+   },
+   {
+    "kind": "same-block-name",
+    "severity": "note",
+    "summary": "221 block name(s) belong to blocks from two or more mods, so a player can place one while expecting the other: \"acacia chair\" [handcrafted:acacia_chair, mcwfurnitures:acacia_chair, refurbished_furniture:acacia_chair], \"acacia counter\" [handcrafted:acacia_counter, mcwfurnitures:acacia_counter], \"acac"
+   },
+   {
+    "kind": "known-fault",
+    "severity": "problem",
+    "summary": "biolith 1.0.1-alpha.1 (from traverse-forge-7.0.12.jar!biolith-forge-1.0.1-alpha.1.jar) has a proven fault, fixed in 1.0.1-beta.1: A world opens the first time and never again: \"Failed to load datapacks, can't proceed with server load\", caused by \"Overworld settings missing\"."
+   },
+   {
+    "kind": "client-only",
+    "severity": "note",
+    "summary": "3 mod(s) are client-only but not marked so on CurseForge; a server of this pack must leave them out."
+   },
+   {
+    "kind": "dimension-save",
+    "severity": "problem",
+    "summary": "minecraft:overworld cannot be saved so the next start can read it; the world will not open again. Biomes from traverse carry climate values outside -2..2: [traverse:woodlands offset=3.009999990463257, traverse:flatlands offset=3.009999990463257, traverse:coniferous_forest offset=3.009999990463257, t"
+   },
+   {
+    "kind": "world-reopen",
+    "severity": "problem",
+    "summary": "A world this pack made opens once and then fails to open again."
+   }
+  ]
+ },
+ "after": {
+  "note": "Nov 7: the repaired pack's server beside the shipped one; client-only mods remembered; read-only starts stopped once their probe is done; voice chat given a free port",
+  "command": "pack-check",
+  "seconds": 308.4,
+  "ok": true,
+  "stages": [
+   {
+    "name": "fetch",
+    "seconds": 0.1
+   },
+   {
+    "name": "modrinth-sides",
+    "seconds": 0.1
+   },
+   {
+    "name": "read",
+    "seconds": 10.3
+   },
+   {
+    "name": "static-checks",
+    "seconds": 2.5
+   },
+   {
+    "name": "server-place",
+    "seconds": 166.4,
+    "ended": "probe done"
+   },
+   {
+    "name": "repaired-server-place",
+    "seconds": 173.0,
+    "ended": "probe done"
+   },
+   {
+    "name": "server-verify",
+    "seconds": 85.6,
+    "ended": "failed: Failed to load datapacks"
+   },
+   {
+    "name": "repaired-server-verify",
+    "seconds": 100.9,
+    "ended": "probe done"
+   }
+  ],
+  "pack": "Prehistoric World 2  Unusual Prehistory 2 Dinosaurs Quests & More + buildpaste 2.4.0",
+  "minecraft": "1.20.1",
+  "loader": "forge 47.4.20",
+  "files": 374,
+  "newWorldOpened": true,
+  "reopenOpened": false,
+  "repairProven": true,
+  "repairApplied": [
+   {
+    "id": "biolith-saved-climate-list",
+    "add": "biolith-forge-1.0.1-beta.1.jar",
+    "page": "https://modrinth.com/mod/biolith/version/1.0.1-beta.1"
+   }
+  ],
+  "findings": [
+   {
+    "kind": "same-block-file",
+    "severity": "note",
+    "summary": "MutantMonsters-v8.0.8-1.20.1-Forge.jar and eatinganimation-1.20.1-5.1.0.jar both ship 1 block or item look/drop file(s); only one copy of each is used, so a block or item can look or drop like the other mod's: assets/minecraft/models/item/potion.json"
+   },
+   {
+    "kind": "same-block-file",
+    "severity": "note",
+    "summary": "VanillaBackport-forge-1.20.1-1.1.7.10.jar and adorable_eggs-Forge-1.20.1-1.0.3.jar both ship 82 block or item look/drop file(s); only one copy of each is used, so a block or item can look or drop like the other mod's: assets/minecraft/models/item/armadillo_spawn_egg.json, assets/minecraft/textures/i"
+   },
+   {
+    "kind": "same-block-name",
+    "severity": "note",
+    "summary": "221 block name(s) belong to blocks from two or more mods, so a player can place one while expecting the other: \"acacia chair\" [handcrafted:acacia_chair, mcwfurnitures:acacia_chair, refurbished_furniture:acacia_chair], \"acacia counter\" [handcrafted:acacia_counter, mcwfurnitures:acacia_counter], \"acac"
+   },
+   {
+    "kind": "known-fault",
+    "severity": "problem",
+    "summary": "biolith 1.0.1-alpha.1 (from traverse-forge-7.0.12.jar!biolith-forge-1.0.1-alpha.1.jar) has a proven fault, fixed in 1.0.1-beta.1: A world opens the first time and never again: \"Failed to load datapacks, can't proceed with server load\", caused by \"Overworld settings missing\"."
+   },
+   {
+    "kind": "client-only",
+    "severity": "note",
+    "summary": "1 mod(s) are client-only but not marked so on CurseForge or Modrinth; a server of this pack must leave them out."
+   },
+   {
+    "kind": "dimension-save",
+    "severity": "problem",
+    "summary": "minecraft:overworld cannot be saved so the next start can read it; the world will not open again. Biomes from traverse carry climate values outside -2..2: [traverse:coniferous_forest offset=3.009999990463257, traverse:woodlands offset=3.009999990463257, traverse:desert_shrubland offset=3.00999999046"
+   },
+   {
+    "kind": "placed-other-block",
+    "severity": "note",
+    "summary": "Placing minecraft:bamboo put down minecraft:bamboo_sapling instead of minecraft:bamboo: the item's own mod does this (a growth stage or a deliberate swap)."
+   },
+   {
+    "kind": "placed-other-block",
+    "severity": "note",
+    "summary": "Placing mynethersdelight:powder_cannon put down mynethersdelight:powdery_chubby_sapling instead of mynethersdelight:powdery_cannon: the item's own mod does this (a growth stage or a deliberate swap)."
+   },
+   {
+    "kind": "placed-other-block",
+    "severity": "note",
+    "summary": "Placing unusual_prehistory:guangdedendron put down unusual_prehistory:guangdedendron_spore instead of unusual_prehistory:guangdedendron: the item's own mod does this (a growth stage or a deliberate swap)."
+   },
+   {
+    "kind": "placed-other-block",
+    "severity": "note",
+    "summary": "Placing companions:eternal_fire put down minecraft:fire instead of companions:eternal_fire: the item's own mod does this (a growth stage or a deliberate swap)."
+   },
+   {
+    "kind": "placed-other-block",
+    "severity": "note",
+    "summary": "Placing craziness_awakened:dhfj put down minecraft:air instead of craziness_awakened:dhfj: the item's own mod does this (a growth stage or a deliberate swap)."
+   },
+   {
+    "kind": "placed-other-block",
+    "severity": "note",
+    "summary": "Placing craziness_awakened:random_structure_spawner put down minecraft:dirt_path instead of craziness_awakened:random_structure_spawner: the item's own mod does this (a growth stage or a deliberate swap)."
+   },
+   {
+    "kind": "placed-other-block",
+    "severity": "note",
+    "summary": "Placing craziness_awakened:ancient_dried_aspawner put down craziness_awakened:mghhgm instead of craziness_awakened:ancient_dried_aspawner: the item's own mod does this (a growth stage or a deliberate swap)."
+   },
+   {
+    "kind": "not-checked",
+    "severity": "note",
+    "summary": "158 block item(s) did not place on stone, grass, farmland, sand, a wall, a ceiling or in water, so the swap check did not cover them (some need other ground, darkness or an operator; a mod can also refuse a placement on purpose): minecraft:brown_mushroom, minecraft:red_mushroom, minecraft:small_drip"
+   },
+   {
+    "kind": "placement-error",
+    "severity": "note",
+    "summary": "Placing ftbquests:screen_1 by a fake player threw an error (a real player may differ)."
+   },
+   {
+    "kind": "placement-error",
+    "severity": "note",
+    "summary": "Placing ftbquests:screen_3 by a fake player threw an error (a real player may differ)."
+   },
+   {
+    "kind": "placement-error",
+    "severity": "note",
+    "summary": "Placing ftbquests:screen_5 by a fake player threw an error (a real player may differ)."
+   },
+   {
+    "kind": "placement-error",
+    "severity": "note",
+    "summary": "Placing ftbquests:screen_7 by a fake player threw an error (a real player may differ)."
+   },
+   {
+    "kind": "world-reopen",
+    "severity": "problem",
+    "summary": "A world this pack made opens once and then fails to open again."
+   }
+  ]
+ }
+}

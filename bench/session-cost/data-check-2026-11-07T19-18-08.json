@@ -1,0 +1,100 @@
+{
+ "schema": 1,
+ "id": "2026-11-07T19-18-08.158037Z-9cfcbcbd",
+ "command": "data-check",
+ "ok": true,
+ "exit": 0,
+ "seconds": 1.7072071,
+ "stageSeconds": 1.1111339,
+ "unaccountedSeconds": 0.5960732,
+ "stages": [
+  {
+   "name": "java-setup",
+   "seconds": 0.338637,
+   "required": 25,
+   "gradleJava": 25,
+   "home": "eclipse_adoptium-25-amd64-windows.2"
+  },
+  {
+   "name": "metadata",
+   "cache": "hit",
+   "seconds": 0
+  },
+  {
+   "name": "data-check",
+   "seconds": 0.7724969,
+   "exit": 0,
+   "log": "2-data-check.log",
+   "launch": "reused recording",
+   "game": "reused the loaded game (process 18104), data read again"
+  }
+ ],
+ "result": {
+  "ok": true,
+  "tier": "data-loaded",
+  "checked": true,
+  "checkedBy": "Minecraft's own Bootstrap, the mods' entrypoints and WorldLoader with a new world's data packs, in Fabric Loader's Knot (server side); no window, no world",
+  "mods": [
+   "prismlab"
+  ],
+  "registered": [
+   {
+    "mod": "prismlab",
+    "counts": {
+     "block": 1,
+     "block_entity_type": 1,
+     "item": 2,
+     "loot_table": 1,
+     "recipe": 1
+    }
+   }
+  ],
+  "items": [
+   {
+    "event": "item",
+    "id": "prismlab:prism_shard",
+    "name": "Prism Shard",
+    "maxStack": 16,
+    "maxDamage": 0,
+    "rarity": "common",
+    "nutrition": null,
+    "components": 13
+   },
+   {
+    "event": "item",
+    "id": "prismlab:prism_node",
+    "name": "Prism Node",
+    "maxStack": 64,
+    "maxDamage": 0,
+    "rarity": "common",
+    "nutrition": null,
+    "components": 13
+   }
+  ],
+  "packs": [
+   "vanilla",
+   "fabric-convention-tags-v2",
+   "fabric-gametest-api-v1",
+   "prismlab"
+  ],
+  "errors": [],
+  "warnings": [],
+  "failures": [],
+  "cpuSeconds": 2.2,
+  "firstInJvm": false,
+  "phaseCpu": {
+   "data": 21.7
+  },
+  "gameVerified": false,
+  "behaviorVerified": false,
+  "details": "prismlab: 1 block, 1 block entity type, 2 item, 1 loot table, 1 recipe.\n  prismlab:prism_shard \"Prism Shard\": stacks to 16, common\n  prismlab:prism_node \"Prism Node\": stacks to 64, common\n0 errors and 0 warnings logged by the game while loading",
+  "game": "reused the loaded game (process 18104), data read again",
+  "launch": {
+   "task": ":runClient",
+   "recorded": false,
+   "mode": "recorded run task"
+  },
+  "seconds": 1.2355698
+ },
+ "receipt": "result.json"
+}

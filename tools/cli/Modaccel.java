@@ -7,7 +7,7 @@ import java.util.*;
 public final class Modaccel {
     static final class Report {
         final Path root, directory; final String command, id = Instant.now().toString().replace(':', '-') + "-" + UUID.randomUUID().toString().substring(0, 8);
-        final long start = System.nanoTime(); final List<Object> stages = new ArrayList<>();
+        final long start = System.nanoTime(); final List<Object> stages = Collections.synchronizedList(new ArrayList<>());
         Report(Path root, String command) { this.root = root; this.command = command; directory = root.resolve(".runs/portable/" + id); }
         Path log(String name) { return directory.resolve(stages.size() + "-" + name + ".log"); }
         void stage(String name, Run.Result result, Map<String, Object> extra) {
@@ -24,18 +24,20 @@ public final class Modaccel {
         }
     }
     static final class Options {
+        /** Every --switch and --option any command reads; has() and get() refuse a name missing here, so a documented option cannot be read but rejected. */
+        static final Set<String> SWITCHES = Set.of("json", "refresh", "help", "dry-run", "fix", "direct", "expect-world", "save-roundtrip", "jbr", "fresh-server", "once");
+        static final Set<String> VALUES = Set.of("command", "root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only", "plugins", "server-version", "server-build", "server-xms", "background", "quiet", "pack", "minecraft", "loader", "memory");
         final Map<String, String> values = new LinkedHashMap<>(); final Set<String> flags = new HashSet<>(); String command = "fast";
         Options(String[] args) {
-            Set<String> switches = Set.of("json", "refresh", "help", "dry-run", "fix", "direct", "expect-world", "save-roundtrip", "jbr", "fresh-server");
             int i = 0; if (args.length > 0 && !args[0].startsWith("-")) command = args[i++];
             if (command.equals("help") && i < args.length && !args[i].startsWith("-")) values.put("command", args[i++]);
             for (; i < args.length; i++) {
                 String key = args[i]; if (!key.startsWith("--")) throw new IllegalArgumentException("Expected --option; got " + key);
                 key = key.substring(2);
-                if (switches.contains(key)) flags.add(key);
+                if (SWITCHES.contains(key)) flags.add(key);
                 // --undo with no transaction undoes the newest port.
                 else if (key.equals("undo") && (i + 1 == args.length || args[i + 1].startsWith("--"))) values.put(key, "latest");
-                else if (Set.of("root", "project", "task", "from", "to", "names", "map", "log", "rules", "rounds", "undo", "screen", "click", "click-at", "move-at", "key", "type", "assert", "expect-screen", "expect-value", "expect-change", "world", "server", "server-task", "client-task", "selection", "code", "file", "thread", "java", "until", "timeout", "against", "only", "plugins", "server-version", "server-build", "server-xms", "background", "quiet", "pack", "minecraft", "loader", "memory").contains(key)) {
+                else if (VALUES.contains(key)) {
                     if (++i == args.length || args[i].startsWith("--")) throw new IllegalArgumentException("Missing value for --" + key);
                     values.put(key, args[i]);
                 } else throw new IllegalArgumentException("Unknown option --" + key + ". Run modaccel help" + (command.equals("help") ? "" : " " + command) + " for the options it takes.");
@@ -47,10 +49,11 @@ public final class Modaccel {
                 values.put(key, String.join(",", paths));
             }
         }
-        String get(String key, String fallback) { return values.getOrDefault(key, fallback); }
-        boolean has(String key) { return flags.contains(key); }
+        String get(String key, String fallback) { known(VALUES, key); return values.getOrDefault(key, fallback); }
+        boolean has(String key) { known(SWITCHES, key); return flags.contains(key); }
+        private static void known(Set<String> names, String key) { if (!names.contains(key)) throw new IllegalStateException("--" + key + " is read but not in Options." + (names == SWITCHES ? "SWITCHES" : "VALUES")); }
     }
-    static final Set<String> COMMANDS = Set.of("support", "discover", "doctor", "setup", "compile", "fast", "test", "port", "explain", "dependencies", "mixin-check", "plugin-check", "server-check",
+    static final Set<String> COMMANDS = Set.of("support", "discover", "doctor", "setup", "compile", "fast", "test", "port", "explain", "dependencies", "mixin-check", "data-check", "plugin-check", "server-check",
             "ui-check", "world-check", "mp-check", "eval", "reload", "game-status", "game-stop", "package", "self-test", "preferences", "legacy-agent", "pack-check", "help");
     public static void main(String[] args) {
         int exit = 2; Options options = null; Report report = null; ProjectLock lock = null;
@@ -125,6 +128,7 @@ public final class Modaccel {
                     case "ui-check", "world-check", "mp-check", "game-status", "game-stop", "eval", "reload" -> { result = new Game(build, model).run(options); exit = "reload".equals(options.command) && Boolean.TRUE.equals(result.get("restartNeeded")) ? 1 : 0; }
                     case "port" -> { result = new Port(build, model).run(options); if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model)); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "explain" -> { result = new Explain(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
+                    case "data-check" -> { result = new DataCheck(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
                     case "mixin-check" -> {
                         result = new MixinCheck(build, model).run(options); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                         // Mixin applies a require = 0 injection that matches nothing without a word; the audit against the game jar names it.
@@ -315,6 +319,14 @@ public final class Modaccel {
                     + "Every class the mod's mixin configs target is loaded, so Mixin applies the mixins; nothing opens a window or a world. Mixin's debug\n"
                     + "injector check is on, so an injection that matches fewer places than it expects is reported as dead. Each finding is Mixin's own message,\n"
                     + "with the mixin's source file. Exit 1 when a mixin would stop the game or is dead; --refresh records the launch again.";
+            case "data-check" -> "Read what the game loads for the mod, without launching the game: modaccel data-check --root SOURCE [--project :module] [--client-task :p:runClient] [--once] [--refresh] --json\n"
+                    + "The mod's dev launch (recorded once, shared with mixin-check) starts the game's own code with no window, no world and no network:\n"
+                    + "Bootstrap, every mod's main and server entrypoints, the registries frozen, then a new world's data packs loaded by the game's WorldLoader.\n"
+                    + "Reports what the mod registered (items, blocks, recipes, loot tables, tags ...), each item as a real stack (stack size, durability, food),\n"
+                    + "and every warning and error the game logged. Exit 1 when the game logged an error, an item cannot be made, or nothing of the mod loaded.\n"
+                    + "The game's code stays loaded: the next data-check reads the data again (a changed recipe or loot table costs a few CPU-seconds);\n"
+                    + "changed classes or fabric.mod.json load it again. --once does not keep it; game-stop ends it.\n"
+                    + "Fabric on Minecraft 26.x; other versions and loaders are reported as unchecked with the reason.";
             case "plugin-check" -> "Load and enable a Paper/Bukkit plugin on MockBukkit, a fake Paper server, without a real server: modaccel plugin-check --root SOURCE [--project :module] [--task :shadowJar] [--plugins FOLDER] --json\n"
                     + "The plugin's own jar task builds the jar (shadowJar, reobfJar or jar; --task picks another). MockBukkit for the plugin's Paper API line\n"
                     + "(knowledge/mockbukkit.json) loads that jar in a fresh JVM, the way Paper does, and checks: plugin.yml / paper-plugin.yml parses and its\n"
@@ -385,6 +397,7 @@ public final class Modaccel {
                     + "  support                what works today        discover, doctor   what kind of build this is\n"
                     + "  setup                  evaluate the build      compile            compile + resource/metadata checks\n"
                     + "  fast, test             logic tests, no game    mixin-check        Mixin applies the mixins, no game\n"
+                    + "  data-check             what the game loads for the mod (items, recipes, errors), no game\n"
                     + "  port                   move to another version explain            explain compiler errors\n"
                     + "  dependencies           target dependencies     ui-check, world-check, mp-check   real game checks\n"
                     + "  eval, reload           talk to the running game          game-status, game-stop\n"
@@ -393,7 +406,7 @@ public final class Modaccel {
                     + "  pack-check             a modpack on its real loader server: conflicts, block swaps, worlds that will not reopen\n"
                     + "  preferences            show or change your game window and sound choices\n"
                     + "  package, self-test     build or test modaccel itself\n"
-                    + "Run modaccel help COMMAND for one command (port, fast, compile, mixin-check, explain, ui-check, eval, reload ...).\n"
+                    + "Run modaccel help COMMAND for one command (port, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n"
                     + "--root is the mod's Gradle source checkout (the folder with gradlew); a multi-version build needs --project, e.g. --project :1.21.6.";
         };
     }

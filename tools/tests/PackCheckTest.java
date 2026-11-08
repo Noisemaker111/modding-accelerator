@@ -81,6 +81,27 @@ public final class PackCheckTest {
                 PackCheck.Pack listed = check(harness, scratch).read(app);
                 Map<String, String> sides = new TreeMap<>(); for (PackCheck.Mod mod : listed.mods()) sides.put(mod.file(), mod.side());
                 expect(sides.equals(Map.of("blur-forge-3.1.1.jar", "client", "traverse-forge-7.0.12.jar", "both", "zoomify.jar", "client", "byhand.jar", "unknown")), "every mod gets its sides from CurseForge or Modrinth: " + sides);
+                // A CurseForge export is unpacked once, by its hash, and read from there on later runs.
+                Path export = scratch.resolve("export.zip"), extra = jar(scratch.resolve("extra.jar"), toml("extra", "1", ""), Map.of());
+                Files.writeString(modrinth.resolve(PackCheck.sha1(extra) + ".json"), "{\"project\":\"\"}");
+                try (var out = new ZipOutputStream(Files.newOutputStream(export))) {
+                    out.putNextEntry(new ZipEntry("manifest.json")); out.write("{\"name\":\"P\",\"version\":\"1\",\"minecraft\":{\"version\":\"1.20.1\",\"modLoaders\":[{\"id\":\"forge-47.4.20\",\"primary\":true}]},\"files\":[],\"overrides\":\"overrides\"}".getBytes(StandardCharsets.UTF_8)); out.closeEntry();
+                    out.putNextEntry(new ZipEntry("overrides/mods/extra.jar")); out.write(Files.readAllBytes(extra)); out.closeEntry();
+                }
+                PackCheck.Pack unpacked = check(harness, scratch).read(export);
+                Path unpackedAt = unpacked.overrides().getParent();
+                expect(unpacked.mods().size() == 1 && unpackedAt.startsWith(scratch.resolve("home/.modaccel/packs/exports")) && Files.isRegularFile(unpackedAt.resolve(".modaccel-unpacked")),
+                        "an export is unpacked into the cache: " + unpackedAt);
+                Files.writeString(unpackedAt.resolve("seen-before.txt"), "x");
+                PackCheck.Pack again = check(harness, scratch).read(export);
+                expect(again.overrides().equals(unpacked.overrides()) && Files.isRegularFile(unpackedAt.resolve("seen-before.txt")), "the same export is not unpacked again");
+                // A jar one start showed to be client-only is left out of the next run's starts from the beginning.
+                check(harness, scratch).drop("traverse-forge-7.0.12.jar", "traverse");
+                PackCheck next = check(harness, scratch);
+                expect(next.dropped.isEmpty(), "nothing is dropped before the remembered list is read");
+                next.readDropped();
+                expect(next.dropped.equals(Set.of("traverse-forge-7.0.12.jar")) && Json.read(next.clientOnlyFile()).get("traverse-forge-7.0.12.jar").toString().contains("traverse"),
+                        "a client-only jar is remembered with its mod id for the next run: " + next.dropped);
             } finally { System.setProperty("user.home", home); }
 
             // A failed start is told in the game's own words.
@@ -103,8 +124,24 @@ public final class PackCheckTest {
             expect(PackCheck.clientOnly(clientOnly.replace("Mod Loading has failed", "Done")).isEmpty(), "a server that started has no client-only mods to remove");
             // A result that holds a file path (the probe's output file) is written as text; it once overflowed the stack.
             expect(Json.write(Json.map("probeFile", scratch.resolve("probe-place.json"))).contains("probe-place.json"), "a path in a result is written as text");
+            // Simple Voice Chat's fixed UDP port, taken by the other lane's server, in the words of this pack's log: that start runs again alone.
+            String lost = String.join("\n", "[16:46:12] [VoiceChatServerThread/ERROR] [voicechat/]: [voicechat] Voice chat server error",
+                    "java.net.BindException: Address already in use: bind", "\tat sun.nio.ch.Net.bind0(Native Method) ~[?:?] {}",
+                    "[16:46:12] [VoiceChatServerThread/ERROR] [voicechat/]: [voicechat] Shutting down server", "[16:46:12] [Server thread/INFO] [minecraft/MinecraftServer]: Stopping server");
+            expect(PackCheck.lostPort(lost) && !PackCheck.lostPort(log) && !PackCheck.lostPort(clientOnly), "a port lost to another server is told apart from other failed starts");
+            // modaccel's copy of Simple Voice Chat's config gets a free port, so two servers side by side do not collide; other lines stay.
+            Path server = Files.createDirectories(scratch.resolve("server/mods")).getParent();
+            Path voice = Files.createDirectories(server.resolve("config/voicechat")).resolve("voicechat-server.properties");
+            Files.writeString(voice, "# Simple Voice Chat server config\n# Set this to '-1' to use the same port\nport=24454\nmax_voice_distance=48.0\n");
+            PackCheck.ServerLane.voiceChatPort(server);
+            expect(Files.readString(voice).contains("port=24454"), "a server without Simple Voice Chat keeps its config: " + Files.readString(voice));
+            Files.writeString(server.resolve("mods/voicechat-forge-1.20.1-2.6.22.jar"), "");
+            PackCheck.ServerLane.voiceChatPort(server);
+            String rewritten = Files.readString(voice);
+            expect(!rewritten.contains("port=24454") && rewritten.matches("(?s).*\nport=[1-9][0-9]*\n.*") && rewritten.contains("max_voice_distance=48.0") && rewritten.contains("use the same port"),
+                    "Simple Voice Chat's fixed port is replaced by a free one, nothing else changed: " + rewritten);
             expect(PackCheck.doneSeconds("[Server thread/INFO] Done (41.250s)! For help, type \"help\"") == 41.25, "the start time is read");
-            System.out.println(count + " pack-check checks passed: instance folder, bundled mods, duplicate ids, missing mods, shared look files, shared block names, mod sides from CurseForge and Modrinth, known fault and its repair, client-only mods, failed-start words");
+            System.out.println(count + " pack-check checks passed: instance folder, an export unpacked once, bundled mods, duplicate ids, missing mods, shared look files, shared block names, mod sides from CurseForge and Modrinth, known fault and its repair, client-only mods and remembering them, a port lost to the other server, a free voice chat port, failed-start words");
         } finally {
             try (var paths = Files.walk(scratch)) { for (Path p : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(p); }
         }

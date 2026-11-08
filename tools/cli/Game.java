@@ -299,6 +299,11 @@ final class Game {
             }
             // A stopped game didn't crash; later commands shouldn't say it exited.
             Files.deleteIfExists(build.project.state().resolve("agent.json"));
+            boolean loadedGame = DataCheck.stop(build), spare = DataCheck.stopSpare(build);
+            if (loadedGame || spare) {
+                String stopped = "Stopped data-check's " + (loadedGame && spare ? "loaded and spare games." : loadedGame ? "loaded game." : "spare game.");
+                result.put("details", current == null && !Boolean.TRUE.equals(result.get("stopped")) && result.get("details").toString().startsWith("No game was running") ? stopped : result.get("details") + " " + stopped);
+            }
             // The daemons that prepared, launched and recompiled the game hold a gigabyte or more each.
             Run.Result daemons = build.stopDaemons();
             result.put("gradleDaemonsStopped", daemons == null || daemons.exit() == 0); return result;
@@ -320,6 +325,8 @@ final class Game {
         request(current, Json.map("command", "ready"));
         // A never-started client opens first-run onboarding before any world; dismiss it like a person would.
         Map<String, Object> first = request(current, Json.map("command", "status"));
+        String notHidden = hiddenWindowFailure(current, first);
+        if (notHidden != null) throw new IOException(notHidden);
         if (String.valueOf(first.get("screen")).endsWith("AccessibilityOnboardingScreen")) {
             actions.add(request(current, Json.map("command", "click", "label", "Continue")));
         }
@@ -461,6 +468,20 @@ final class Game {
         return item instanceof Number number ? number.doubleValue() : 0;
     }
     /** A reloaded save must put the player back within a small tolerance of where they left. */
+    /**
+     * Why a game asked to stay hidden may not be, or null when it is hidden or was not asked to be.
+     * The agent rewrites the window library (GLFW or SDL) before it loads; when that fails for a new
+     * library version, the window or cursor grab would reach the user's screen, so the check stops.
+     */
+    static String hiddenWindowFailure(Map<String, Object> session, Map<String, Object> status) {
+        if (!Boolean.TRUE.equals(session.get("background")) || !status.containsKey("backgroundApplied")) return null;
+        String error = Json.text(status, "backgroundError", ""), applied = Json.text(status, "backgroundApplied", "");
+        if (error.isEmpty() && !applied.isEmpty()) return null;
+        return "The game was asked to stay hidden (modaccel preferences --background on) but its window could not be hidden"
+                + (error.isEmpty() ? ": no window library was rewritten" : ": " + error)
+                + ". The window may be open on your screen, so this check did not run. Run game-stop; to check with a visible window instead, run modaccel preferences --background off."
+                + "\nGame log: " + session.get("log");
+    }
     static boolean samePosition(Map<String, Object> before, Map<String, Object> after, double tolerance) {
         double moved = Math.abs(number(before, "x") - number(after, "x")) + Math.abs(number(before, "y") - number(after, "y")) + Math.abs(number(before, "z") - number(after, "z"));
         return moved <= tolerance;

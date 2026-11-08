@@ -18,11 +18,21 @@ public final class PortableAgent {
     private static Object pauseOptions; private static Field pauseField; private static boolean originalPauseOnLostFocus;
     private static String pauseControlError;
     private static Object lastScreen; private static long screenSince;
+    // A hidden game that has answered a request, has none open and none for IDLE_AFTER draws at most IDLE_FPS frames a
+    // second: each frame waits on `wake`, which a request signals, so a request (a world loading, a screen settling) runs
+    // at full rate. Until the first answer the game is still loading, and loading finishes its work between frames.
+    private static final int IDLE_FPS = 10; private static final long IDLE_AFTER = 2000000000L;
+    private static volatile long lastRequest; private static volatile boolean serving, answered; private static final Object wake = new Object();
     private static final Map<String, Object> identity = new LinkedHashMap<String, Object>();
-    public static void premain(String args, Instrumentation instrumentation) {
+    private static boolean installed;
+    public static synchronized void premain(String args, Instrumentation instrumentation) {
         if ("legacy".equals(args) && System.getProperty("sun.java.command", "").startsWith("org.gradle.launcher.daemon.bootstrap.GradleDaemon")) return;
         GameLaunchAgent.install(instrumentation);
         if ("legacy".equals(args)) return;
+        // A launch can name this agent twice (recorded launches listed every JVM argument twice). A
+        // second set of transformers hooked every frame twice and failed on already-rewritten classes.
+        if (installed) return;
+        installed = true;
         // Only JDK classes are referenced by transformed game code. Isolated loaders
         // need neither our jar on their mod path nor access to our implementation classes.
         HotReload.install(instrumentation);
@@ -78,6 +88,9 @@ public final class PortableAgent {
             server.setDaemon(true); server.start();
         }
         try { Object current = screen(); if (current != lastScreen) { lastScreen = current; screenSince = System.nanoTime(); } } catch (Exception ignored) {}
+        if (serving || !pending.isEmpty()) lastRequest = System.nanoTime();
+        else if (answered && Boolean.getBoolean("modaccel.background") && System.nanoTime() - lastRequest > IDLE_AFTER)
+            synchronized (wake) { try { wake.wait(1000 / IDLE_FPS); } catch (InterruptedException stop) { Thread.currentThread().interrupt(); } }
         int count = pending.size();
         for (int i = 0; i < count; i++) { Runnable action = pending.poll(); if (action != null) action.run(); }
     }
@@ -97,12 +110,14 @@ public final class PortableAgent {
                     String line = input.readLine(); if (line == null) continue;
                     final Map<String, Object> request = Json.object(Json.parse(line));
                     if (!token.equals(request.get("token"))) { output.println(Json.write(Json.map("ok", false, "error", "Wrong session token"))); continue; }
+                    serving = true; synchronized (wake) { wake.notifyAll(); }
                     if ("eval".equals(request.get("command"))) { output.println(Json.write(eval(request))); continue; }
                     final CompletableFuture<Map<String, Object>> result = new CompletableFuture<Map<String, Object>>();
                     pending.add(new Runnable() { public void run() { try { perform(request, result); } catch (Throwable e) { result.complete(Json.map("ok", false, "error", cause(e))); } } });
                     try { output.println(Json.write(result.get(130, TimeUnit.SECONDS))); }
                     catch (Exception error) { result.cancel(false); output.println(Json.write(Json.map("ok", false, "error", "Game did not finish the requested action: " + cause(error)))); }
                 } catch (Throwable error) { System.err.println("MODACCEL_CONTROL_ERROR " + cause(error)); }
+                finally { if (serving) { lastRequest = System.nanoTime(); serving = false; answered = true; } }
             }
         } catch (Throwable error) { System.err.println("MODACCEL_AGENT_ERROR " + cause(error)); }
     }
@@ -163,7 +178,8 @@ public final class PortableAgent {
             done.complete(Json.map("ok", true, "identity", identity, "screen", screen == null ? "" : screen.getClass().getName(), "inWorld", inWorld(),
                     "integratedServer", singleplayer != null, "level", hasLevel, "worldPath", singleplayer == null ? "" : worldPath(singleplayer),
                     "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput,
-                    "gameDirectory", gameDirectory(), "narrator", narrator(), "masterVolume", masterVolume()));
+                    "gameDirectory", gameDirectory(), "narrator", narrator(), "masterVolume", masterVolume(),
+                    "backgroundApplied", System.getProperty("modaccel.background.applied", ""), "backgroundError", System.getProperty("modaccel.background.error", "")));
         } else if (command.equals("resize")) {
             int width = number(request, "width"), height = number(request, "height");
             if (width < 320 || width > 7680 || height < 240 || height > 4320) throw new IllegalArgumentException("Unsupported frame size");
@@ -218,7 +234,7 @@ public final class PortableAgent {
             // fades its background over 2 s and then its buttons over 2 more (1.21.6), so wait 4.5 s.
             boolean transition = screenName.equals("MessageScreen") || screenName.equals("GenericMessageScreen")
                     || screenName.equals("LevelLoadingScreen") || screenName.equals("ProgressScreen") || screenName.equals("ReceivingLevelScreen")
-                    || System.nanoTime() - screenSince < (screenName.equals("TitleScreen") ? 4500000000L : 1000000000L);
+                    || System.nanoTime() - screenSince < (screenName.equals("TitleScreen") && titleFading(current) ? 4500000000L : 1000000000L);
             String expectedScreen = Json.text(request, "expectScreen", ""), leaveScreen = Json.text(request, "leaveScreen", "");
             boolean outcomePending = !expectedScreen.isEmpty() && (current == null || !expectedScreen.equals(current.getClass().getName()))
                     || !leaveScreen.isEmpty() && current != null && leaveScreen.equals(current.getClass().getName())
@@ -466,6 +482,10 @@ public final class PortableAgent {
             types.addAll(Arrays.asList(type.getInterfaces()));
         }
         throw new NoSuchMethodException(owner.getClass().getName() + "." + name + " through a public type");
+    }
+    /** The title screen fades in only when the game opens it at start-up; one opened later (--screen) shows at once. Unknown names: assume it fades. */
+    private static boolean titleFading(Object title) {
+        try { return Boolean.TRUE.equals(field(title, "fading")); } catch (Exception unknown) { return true; }
     }
     private static Object field(Object owner, String... names) throws Exception {
         for (String name : names) for (Class<?> type = owner.getClass(); type != null; type = type.getSuperclass()) try {

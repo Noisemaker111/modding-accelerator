@@ -1,0 +1,134 @@
+{
+ "count": 16,
+ "checked": 16,
+ "allCheckedSeconds": 100.5,
+ "machineBusyPercent": 99.7,
+ "peakGBTotal": 18.23,
+ "privateGBTotal": 25.64,
+ "startCpuSeconds": 1590.6,
+ "idle": {
+  "seconds": 20.0,
+  "cores": 2.79,
+  "rssGB": 17.62,
+  "machineBusyPercent": 99.5
+ },
+ "sessions": [
+  {
+   "name": "s1",
+   "pid": 25100,
+   "ready": 55.6,
+   "capture": "parallel-s1.png",
+   "checked": 91.7
+  },
+  {
+   "name": "s2",
+   "pid": 25888,
+   "ready": 74.4,
+   "capture": "parallel-s2.png",
+   "checked": 92.0
+  },
+  {
+   "name": "s3",
+   "pid": 42072,
+   "ready": 57.5,
+   "capture": "parallel-s3.png",
+   "checked": 92.4
+  },
+  {
+   "name": "s4",
+   "pid": 41812,
+   "ready": 75.8,
+   "capture": "parallel-s4.png",
+   "checked": 92.7
+  },
+  {
+   "name": "s5",
+   "pid": 29100,
+   "ready": 54.9,
+   "capture": "parallel-s5.png",
+   "checked": 93.1
+  },
+  {
+   "name": "s6",
+   "pid": 55588,
+   "ready": 87.1,
+   "capture": "parallel-s6.png",
+   "checked": 96.6
+  },
+  {
+   "name": "s7",
+   "pid": 55016,
+   "ready": 59.3,
+   "capture": "parallel-s7.png",
+   "checked": 97.0
+  },
+  {
+   "name": "s8",
+   "pid": 53276,
+   "ready": 84.0,
+   "capture": "parallel-s8.png",
+   "checked": 97.4
+  },
+  {
+   "name": "s9",
+   "pid": 56284,
+   "ready": 61.2,
+   "capture": "parallel-s9.png",
+   "checked": 97.7
+  },
+  {
+   "name": "s10",
+   "pid": 44896,
+   "ready": 80.5,
+   "capture": "parallel-s10.png",
+   "checked": 98.1
+  },
+  {
+   "name": "s11",
+   "pid": 36116,
+   "ready": 45.4,
+   "capture": "parallel-s11.png",
+   "checked": 98.5
+  },
+  {
+   "name": "s12",
+   "pid": 41532,
+   "ready": 71.9,
+   "capture": "parallel-s12.png",
+   "checked": 98.8
+  },
+  {
+   "name": "s13",
+   "pid": 53968,
+   "ready": 55.0,
+   "capture": "parallel-s13.png",
+   "checked": 99.2
+  },
+  {
+   "name": "s14",
+   "pid": 57032,
+   "ready": 90.8,
+   "capture": "parallel-s14.png",
+   "checked": 99.7
+  },
+  {
+   "name": "s15",
+   "pid": 50204,
+   "ready": 54.2,
+   "capture": "parallel-s15.png",
+   "checked": 100.1
+  },
+  {
+   "name": "s16",
+   "pid": 50836,
+   "ready": 78.3,
+   "capture": "parallel-s16.png",
+   "checked": 100.5
+  }
+ ],
+ "machine": {
+  "cpus": 24,
+  "os": "win32"
+ },
+ "measured": "2026-11-07T01:52:48+00:00"
+}

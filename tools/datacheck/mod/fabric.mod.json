@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "modaccel_datacheck",
+  "version": "1",
+  "name": "modaccel data-check",
+  "description": "Loaded only by modaccel data-check's own game: skips work a data check never reads.",
+  "environment": "*",
+  "mixins": ["modaccel_datacheck.mixins.json"]
+}

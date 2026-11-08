@@ -20,7 +20,10 @@ import java.util.zip.*;
  * dimension the way level.dat stores it and reads it back, and places every block item through the server's own
  * right-click path; start 2 opens the same world again and reads every placed block back. --world SAVE also opens a
  * copy of the user's own save (the original is never touched). --fix applies the repairs the findings name, to an
- * instance folder (undo with --undo) or as a fixed copy of an export, and runs both starts again to prove them.
+ * instance folder (undo with --undo) or as a fixed copy of an export, and proves them with both starts on the repaired
+ * pack. Every repair comes from a known fault, found before the game runs, so the repaired pack's server runs beside the
+ * shipped one instead of after it. Mods a server start showed to be client-only are kept in client-only.json and left
+ * out of every later start, so a pack pays that extra start once.
  */
 final class PackCheck {
     static final List<String> PROBE = List.of("tools/packcheck/ModaccelPackProbe.java", "tools/packcheck/ModaccelPackOpener.java", "tools/packcheck/mods.toml", "tools/packcheck/pack.mcmeta", "tools/packcheck/ProbeNames.java");
@@ -36,8 +39,10 @@ final class PackCheck {
     final List<Object> findings = new ArrayList<>();
     /** Mod id to the jars that provide it, from scan(). */
     Map<String, List<Provider>> providers = Map.of();
-    /** Jars a server start showed to be client-only; later starts (the repair's recheck) leave them out from the start. */
-    final Set<String> dropped = new LinkedHashSet<>();
+    /** Jars a server start showed to be client-only, on this run or an earlier one (client-only.json); every start leaves them out. */
+    final Set<String> dropped = Collections.synchronizedSet(new LinkedHashSet<>());
+    /** Server starts share this; a start that lost a fixed port (a mod's own, such as a voice chat server's) to the other lane runs again alone. */
+    final java.util.concurrent.locks.ReentrantReadWriteLock starts = new java.util.concurrent.locks.ReentrantReadWriteLock();
     PackCheck(Path harness, Modaccel.Options options, Modaccel.Report report) {
         this.harness = harness; this.options = options; this.report = report;
         cache = Path.of(System.getProperty("user.home"), ".modaccel", "packs");
@@ -48,21 +53,32 @@ final class PackCheck {
         Path input = Path.of(options.get("pack", "")).toAbsolutePath().normalize();
         if (options.get("pack", "").isEmpty() || !Files.exists(input)) throw new IllegalArgumentException("Name the pack: modaccel pack-check --pack EXPORT.zip|FOLDER. Got: " + options.get("pack", "(nothing)"));
         if (options.values.containsKey("undo")) return undo(input);
+        long started = System.nanoTime();
         Pack pack = read(input);
+        report.stages.add(Json.map("name", "read", "seconds", (System.nanoTime() - started) / 1e9, "note", "includes fetch and modrinth-sides"));
         var result = Json.map("pack", pack.name() + " " + pack.version(), "minecraft", pack.minecraft(), "loader", pack.loader() + " " + pack.loaderVersion(), "mods", pack.mods().size());
+        started = System.nanoTime();
         providers = scan(pack);
         List<Map<String, Object>> fixes = knownFaults(pack, providers);
+        report.stages.add(Json.map("name", "static-checks", "seconds", (System.nanoTime() - started) / 1e9));
         result.put("staticChecks", Json.map("modIds", providers.size(), "findings", findings.size()));
         if (!pack.loader().equals("forge")) {
             result.put("game", Json.map("ran", false, "blocker", "The in-game checks run Forge packs so far; this pack uses " + pack.loader() + "."));
         } else {
-            Map<String, Object> game = new ServerLane(pack, List.of()).check(options.get("world", ""));
-            result.put("game", game);
-            if (options.has("fix")) {
-                List<Map<String, Object>> chosen = new ArrayList<>();
-                for (Object finding : findings) { Object fix = Json.object(finding).get("fix"); if (fix != null && !chosen.contains(fix)) chosen.add(Json.object(fix)); }
-                result.put("fix", apply(pack, chosen));
-            }
+            readDropped();
+            // Every repair is a known fault's, so it is known now: the repaired pack's server starts beside the shipped one.
+            List<Map<String, Object>> chosen = options.has("fix") ? fixes : List.of();
+            List<Path> jars = fixJars(chosen);
+            ServerLane shipped = new ServerLane(pack, List.of(), "", findings);
+            shipped.prepare();
+            ServerLane repaired = jars.isEmpty() ? null : new ServerLane(pack, jars, "repaired-", new ArrayList<>());
+            ExecutorService side = Executors.newSingleThreadExecutor();
+            try {
+                Future<Map<String, Object>> recheck = null;
+                if (repaired != null) { repaired.prepare(); recheck = side.submit(() -> repaired.check(options.get("world", ""))); }
+                result.put("game", shipped.check(options.get("world", "")));
+                if (options.has("fix")) result.put("fix", apply(pack, chosen, jars, recheck, repaired));
+            } finally { side.shutdownNow(); }
         }
         long problems = findings.stream().filter(f -> "problem".equals(Json.object(f).get("severity"))).count();
         result.put("findings", findings);
@@ -75,8 +91,16 @@ final class PackCheck {
     Pack read(Path input) throws Exception {
         Path directory = input;
         if (Files.isRegularFile(input)) {
-            directory = report.directory.resolve("pack");
-            unzip(input, directory);
+            // Unpacked once per export (by its SHA-256) and only read after: 1,800 small files took 10-25 s each run on Windows.
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            try (var in = Files.newInputStream(input)) { byte[] buffer = new byte[1 << 16]; for (int n; (n = in.read(buffer)) > 0; ) digest.update(buffer, 0, n); }
+            directory = cache.resolve("exports").resolve(HexFormat.of().formatHex(digest.digest()).substring(0, 16));
+            if (!Files.isRegularFile(directory.resolve(".modaccel-unpacked"))) {
+                Path temporary = Files.createDirectories(cache.resolve("exports")).resolve(directory.getFileName() + "-" + ProcessHandle.current().pid());
+                deleteTree(temporary); unzip(input, temporary);
+                Files.writeString(temporary.resolve(".modaccel-unpacked"), input.getFileName() + "\n");
+                deleteTree(directory); Files.move(temporary, directory);
+            }
         }
         Path manifest = directory.resolve("manifest.json"), instance = directory.resolve("minecraftinstance.json");
         if (Files.isRegularFile(manifest)) {
@@ -371,26 +395,45 @@ final class PackCheck {
         return matched;
     }
 
+    /** Client-only jars earlier starts found (any pack: a jar's file name is its version), so no start pays for them again. */
+    Path clientOnlyFile() { return cache.resolve("client-only.json"); }
+    void readDropped() throws IOException { if (Files.isRegularFile(clientOnlyFile())) dropped.addAll(Json.read(clientOnlyFile()).keySet()); }
+    synchronized void drop(String jar, String modId) throws IOException {
+        dropped.add(jar);
+        Map<String, Object> known = Files.isRegularFile(clientOnlyFile()) ? Json.read(clientOnlyFile()) : new TreeMap<>();
+        known.put(jar, Json.map("modId", modId, "seen", java.time.LocalDate.now().toString(), "evidence", "the server stopped at start-up with this mod's client-only code"));
+        Json.save(clientOnlyFile(), known);
+    }
+
     // ------------------------------------------------------------------ in the game
     /** The pack's own loader server, its mods (less client-only ones) and configs, and the probe. */
     final class ServerLane {
-        final Pack pack; final List<Path> extra;
+        final Pack pack; final List<Path> extra; final String lane;
+        /** What this lane's starts found; known: the findings before any start (the known faults), read only. */
+        final List<Object> found, known;
         Path install, instance, probe; Runtimes.Jdk java;
-        ServerLane(Pack pack, List<Path> extra) { this.pack = pack; this.extra = extra; }
+        ServerLane(Pack pack, List<Path> extra, String lane, List<Object> found) {
+            this.pack = pack; this.extra = extra; this.lane = lane; this.found = found; known = List.copyOf(findings);
+        }
+
+        /** The server and the probe, installed or built once and shared by every lane: run before lanes start side by side. */
+        void prepare() throws Exception {
+            java = Runtimes.ensureExact(harness, Versions.compare(pack.minecraft(), "1.20.5") >= 0 ? 21 : 17);
+            install = forgeServer(pack.minecraft(), pack.loaderVersion());
+            probe = probe();
+        }
 
         Map<String, Object> check(String userWorld) throws Exception {
             String mc = pack.minecraft();
-            java = Runtimes.ensureExact(harness, Versions.compare(mc, "1.20.5") >= 0 ? 21 : 17);
-            install = forgeServer(mc, pack.loaderVersion());
-            probe = probe();
             instance = instance();
             var game = Json.map("ran", true, "server", "Forge " + mc + "-" + pack.loaderVersion(), "java", java.version(), "instance", instance.toString());
             // Start 1: a new world.
             Map<String, Object> first = start("place", "world", Map.of());
             game.put("newWorld", first);
-            if (!dropped.isEmpty()) {
-                game.put("clientOnly", new ArrayList<>(dropped));
-                findings.add(Json.map("kind", "client-only", "severity", "note", "summary", dropped.size() + " mod(s) are client-only but not marked so on CurseForge or Modrinth; a server of this pack must leave them out.", "jars", new ArrayList<>(dropped)));
+            List<String> left = pack.mods().stream().map(Mod::file).filter(dropped::contains).toList();
+            if (!left.isEmpty()) {
+                game.put("clientOnly", left);
+                found.add(Json.map("kind", "client-only", "severity", "note", "summary", left.size() + " mod(s) are client-only but not marked so on CurseForge or Modrinth; a server of this pack must leave them out.", "jars", left));
             }
             if (Boolean.TRUE.equals(first.get("opened"))) {
                 Map<String, Object> probeResult = Json.object(first.get("probe"));
@@ -400,18 +443,18 @@ final class PackCheck {
                 Map<String, Object> second = start("verify", "world", Map.of("modaccel.probe.placed", first.get("probeFile").toString()));
                 game.put("reopen", second);
                 if (!Boolean.TRUE.equals(second.get("opened")))
-                    findings.add(Json.map("kind", "world-reopen", "severity", "problem", "summary", "A world this pack made opens once and then fails to open again.", "evidence", second.get("failure")));
+                    found.add(Json.map("kind", "world-reopen", "severity", "problem", "summary", "A world this pack made opens once and then fails to open again.", "evidence", second.get("failure")));
                 else {
                     var verify = Json.object(second.get("probe"));
                     for (Object change : Json.array(verify.get("changed")))
-                        findings.add(Json.map("kind", "changed-by-save", "severity", "problem", "summary", "Saving and reopening changed a block: " + Json.text(Json.object(change), "before", "") + " became " + Json.text(Json.object(change), "after", ""), "evidence", change));
+                        found.add(Json.map("kind", "changed-by-save", "severity", "problem", "summary", "Saving and reopening changed a block: " + Json.text(Json.object(change), "before", "") + " became " + Json.text(Json.object(change), "after", ""), "evidence", change));
                 }
             } else if (String.valueOf(first.get("failure")).contains("invalid dist DEDICATED_SERVER"))
                 // Forge names a mod only when its own constructor fails; game code reached through another route names none.
-                findings.add(Json.map("kind", "server-start", "severity", "problem", "summary", "A client-only mod stopped the pack's server and Forge did not say which. Neither CurseForge nor Modrinth knows the sides of the mods listed here;"
+                found.add(Json.map("kind", "server-start", "severity", "problem", "summary", "A client-only mod stopped the pack's server and Forge did not say which. Neither CurseForge nor Modrinth knows the sides of the mods listed here;"
                         + " one of them is the likely cause. Remove the client-only ones from a copy of this folder and run again.", "evidence", first.get("failure"),
                         "unknownSides", pack.mods().stream().filter(m -> m.side().equals("unknown")).map(Mod::file).toList()));
-            else findings.add(Json.map("kind", "server-start", "severity", "problem", "summary", "The pack's server did not finish starting a new world.", "evidence", first.get("failure")));
+            else found.add(Json.map("kind", "server-start", "severity", "problem", "summary", "The pack's server did not finish starting a new world.", "evidence", first.get("failure")));
             if (!userWorld.isEmpty()) {
                 Path save = Path.of(userWorld).toAbsolutePath().normalize();
                 if (!Files.isRegularFile(save.resolve("level.dat"))) throw new IllegalArgumentException("--world needs a save folder with level.dat; got " + save);
@@ -421,7 +464,7 @@ final class PackCheck {
                 opened.put("save", save.toString()); opened.put("copiedTo", copy.toString());
                 game.put("userWorld", opened);
                 if (!Boolean.TRUE.equals(opened.get("opened")))
-                    findings.add(Json.map("kind", "user-world", "severity", "problem", "summary", "Your save does not open with this pack (checked on a copy; the original is untouched).", "evidence", opened.get("failure")));
+                    found.add(Json.map("kind", "user-world", "severity", "problem", "summary", "Your save does not open with this pack (checked on a copy; the original is untouched).", "evidence", opened.get("failure")));
                 else dimensionFindings(Json.object(opened.get("probe")));
             }
             return game;
@@ -439,8 +482,8 @@ final class PackCheck {
                         "summary", dimension.get("dimension") + " " + what + "; the world will not open again" + (mods.isEmpty() ? "." : ". Biomes from " + String.join(", ", mods) + " carry climate values outside -2..2: " + biomes),
                         "evidence", Json.map("write", dimension.get("write"), "read", dimension.get("read"), "part", dimension.get("failingPart"), "error", dimension.get("error")));
                 // A proven repair for this check, when the pack has a matching mod, travels with the finding.
-                for (Object f : findings) if ("known-fault".equals(Json.object(f).get("kind")) && "dimension-save".equals(Json.object(Json.object(f).get("fix")).get("check"))) finding.put("fix", Json.object(f).get("fix"));
-                findings.add(finding);
+                for (Object f : known) if ("known-fault".equals(Json.object(f).get("kind")) && "dimension-save".equals(Json.object(Json.object(f).get("fix")).get("check"))) finding.put("fix", Json.object(f).get("fix"));
+                found.add(finding);
             }
         }
 
@@ -450,7 +493,7 @@ final class PackCheck {
                 String item = Json.text(row, "item", ""), expected = Json.text(row, "expected", ""), landed = Json.text(row, "landed", "");
                 String itemMod = item.split(":")[0], landedMod = landed.split(":")[0];
                 boolean otherMod = !landedMod.equals(itemMod) && !landedMod.equals(expected.split(":")[0]) && !landedMod.equals("minecraft");
-                findings.add(Json.map("kind", "placed-other-block", "severity", otherMod ? "problem" : "note",
+                found.add(Json.map("kind", "placed-other-block", "severity", otherMod ? "problem" : "note",
                         "summary", "Placing " + item + " put down " + landed + " instead of " + expected + (otherMod ? ": a block from another mod." : ": the item's own mod does this (a growth stage or a deliberate swap)."),
                         "evidence", row));
             }
@@ -459,50 +502,64 @@ final class PackCheck {
             if (!unplaced.isEmpty()) {
                 List<String> items = new ArrayList<>();
                 for (Object u : unplaced) items.add(Json.text(Json.object(u), "item", ""));
-                findings.add(Json.map("kind", "not-checked", "severity", "note", "summary", unplaced.size() + " block item(s) did not place on stone, grass, farmland, sand, a wall, a ceiling or in water, so the swap check did not cover them"
+                found.add(Json.map("kind", "not-checked", "severity", "note", "summary", unplaced.size() + " block item(s) did not place on stone, grass, farmland, sand, a wall, a ceiling or in water, so the swap check did not cover them"
                         + " (some need other ground, darkness or an operator; a mod can also refuse a placement on purpose): "
                         + String.join(", ", items.subList(0, Math.min(12, items.size()))) + (items.size() > 12 ? " ..." : ""), "items", items));
             }
             for (Object f : Json.array(probeResult.get("failed")))
-                findings.add(Json.map("kind", "placement-error", "severity", "note", "summary", "Placing " + Json.text(Json.object(f), "item", "") + " by a fake player threw an error (a real player may differ).", "evidence", Json.text(Json.object(f), "error", "").lines().findFirst().orElse("")));
+                found.add(Json.map("kind", "placement-error", "severity", "note", "summary", "Placing " + Json.text(Json.object(f), "item", "") + " by a fake player threw an error (a real player may differ).", "evidence", Json.text(Json.object(f), "error", "").lines().findFirst().orElse("")));
         }
 
         /** One server start. place makes the world; verify and open read an existing one. */
         Map<String, Object> start(String mode, String level, Map<String, String> properties) throws Exception {
+            boolean alone = false;
             for (int round = 0; ; round++) {
-                Path out = report.directory.resolve("probe-" + mode + ".json"); Files.deleteIfExists(out);
-                Path log = report.log("server-" + mode);
+                Path out = report.directory.resolve(lane + "probe-" + mode + ".json"); Files.deleteIfExists(out);
+                Path log = report.log(lane + "server-" + mode);
                 writeServerFiles(level);
                 List<String> command = new ArrayList<>(List.of(java.java().toString(), "-Xmx" + options.get("memory", "6G"),
                         "-Dmodaccel.probe.mode=" + mode, "-Dmodaccel.probe.out=" + out));
                 for (var p : properties.entrySet()) command.add("-D" + p.getKey() + "=" + p.getValue());
                 if (!options.get("only", "").isEmpty()) command.add("-Dmodaccel.probe.only=" + options.get("only", ""));
                 command.add("@" + argsFile()); command.add("nogui");
-                long start = System.nanoTime();
-                String ended = runServer(command, log, out);
+                var lock = alone ? starts.writeLock() : starts.readLock();
+                lock.lock();
+                long start = System.nanoTime(); String ended;
+                try { ended = runServer(command, log, out, mode.equals("place")); } finally { lock.unlock(); }
                 double seconds = (System.nanoTime() - start) / 1e9;
                 // Mods log in the system code page as well as UTF-8; a strict read would fail on the first such byte.
                 String text = Files.isRegularFile(log) ? new String(Files.readAllBytes(log), StandardCharsets.UTF_8) : "";
-                var stage = Json.map("name", "server-" + mode, "seconds", seconds, "log", log.toString(), "ended", ended);
+                var stage = Json.map("name", lane + "server-" + mode, "seconds", seconds, "log", log.toString(), "ended", ended);
+                if (alone) stage.put("alone", "started again with no other server running: the side-by-side start lost a port");
                 report.stages.add(stage);
                 if (Files.isRegularFile(out)) {
                     var probeResult = Json.read(out);
                     return Json.map("opened", true, "seconds", seconds, "log", log.toString(), "probeFile", out, "probe", probeResult, "doneSeconds", doneSeconds(text));
                 }
                 // A mod that only works in a game client stops a server at start-up; leave it out and start again.
-                Set<String> clientOnly = new LinkedHashSet<>();
-                for (String id : clientOnly(text)) for (Provider p : providers.getOrDefault(id, List.of())) if (!p.bundled()) clientOnly.add(p.jar());
+                Map<String, String> clientOnly = new LinkedHashMap<>();
+                for (String id : clientOnly(text)) for (Provider p : providers.getOrDefault(id, List.of())) if (!p.bundled()) clientOnly.put(p.jar(), id);
                 if (mode.equals("place") && !clientOnly.isEmpty() && round < 5) {
-                    for (String jar : clientOnly) { Files.deleteIfExists(instance.resolve("mods").resolve(jar)); dropped.add(jar); }
+                    for (var jar : clientOnly.entrySet()) { Files.deleteIfExists(instance.resolve("mods").resolve(jar.getKey())); drop(jar.getKey(), jar.getValue()); }
                     deleteTree(instance.resolve(level));
+                    continue;
+                }
+                // Two servers side by side can want the same fixed port; the one that lost it starts again once nothing else runs.
+                if (!alone && lostPort(text)) {
+                    alone = true;
+                    if (mode.equals("place")) deleteTree(instance.resolve(level));
                     continue;
                 }
                 return Json.map("opened", false, "seconds", seconds, "log", log.toString(), "failure", failure(text));
             }
         }
 
-        /** Runs until the probe is done or the server fails; a server whose main thread died is stopped, since leftover threads keep its JVM alive. */
-        String runServer(List<String> command, Path log, Path out) throws Exception {
+        /**
+         * Runs until the probe is done or the server fails; a server whose main thread died is stopped, since leftover threads keep its JVM alive.
+         * Only a start that made the world (keepWorld) is let save it; a start that only read it is stopped as soon as the probe is done
+         * (this pack's server once spent 2 minutes saving a world nothing reads again).
+         */
+        String runServer(List<String> command, Path log, Path out, boolean keepWorld) throws Exception {
             Files.createDirectories(log.getParent());
             Process process = new ProcessBuilder(command).directory(instance.toFile()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
             process.getOutputStream().close();
@@ -511,10 +568,11 @@ final class PackCheck {
             try {
                 while (process.isAlive()) {
                     String text = Files.readString(log, StandardCharsets.ISO_8859_1);
-                    String failed = FAILED.stream().filter(text::contains).findFirst().orElse(null);
+                    String failed = text.contains("MODACCEL-PROBE-DONE") ? null : FAILED.stream().filter(text::contains).findFirst()
+                            .orElse(text.contains("MODACCEL-PROBE-STARTED") && text.contains("Stopping server") ? "the server stopped before the probe finished" : null);
                     if (failed != null || text.contains("MODACCEL-PROBE-DONE")) {
                         ended = failed != null ? "failed: " + failed : "probe done";
-                        if (!process.waitFor(failed != null ? 15 : 120, TimeUnit.SECONDS)) stop(process);
+                        if (!process.waitFor(failed != null ? 15 : keepWorld ? 120 : 0, TimeUnit.SECONDS)) stop(process);
                         break;
                     }
                     if (System.nanoTime() > deadline) { ended = "timed out"; stop(process); break; }
@@ -533,6 +591,21 @@ final class PackCheck {
             Files.writeString(instance.resolve("eula.txt"), "# Accepted by modaccel pack-check for a throwaway local test server (offline mode, 127.0.0.1 only).\neula=true\n");
             int port; try (var socket = new java.net.ServerSocket(0)) { port = socket.getLocalPort(); }
             Files.writeString(instance.resolve("server.properties"), "server-ip=127.0.0.1\nserver-port=" + port + "\nonline-mode=false\nspawn-protection=0\nlevel-name=" + level + "\nmotd=modaccel pack-check\n");
+            voiceChatPort(instance);
+        }
+
+        /**
+         * Simple Voice Chat, in many packs, opens a fixed UDP port (24454) and stops the whole server when it cannot, so two
+         * servers side by side (the shipped and the repaired pack) collide. modaccel's copy of its config gets a free port.
+         */
+        static void voiceChatPort(Path instance) throws IOException {
+            try (var mods = Files.list(instance.resolve("mods"))) { if (mods.noneMatch(p -> p.getFileName().toString().startsWith("voicechat-"))) return; }
+            int port; try (var socket = new java.net.DatagramSocket(0)) { port = socket.getLocalPort(); }
+            Path config = instance.resolve("config/voicechat/voicechat-server.properties");
+            String text = Files.isRegularFile(config) ? Files.readString(config, StandardCharsets.ISO_8859_1) : "";
+            text = Pattern.compile("(?m)^port=.*$").matcher(text).find() ? text.replaceAll("(?m)^port=.*$", "port=" + port) : text + "port=" + port + "\n";
+            Files.createDirectories(config.getParent());
+            Files.writeString(config, text, StandardCharsets.ISO_8859_1);
         }
 
         /** The loader's own launch arguments, with its library paths made absolute so the server can run in the instance folder. */
@@ -625,6 +698,8 @@ final class PackCheck {
         }
     }
 
+    /** A port another process held, in the start's own log: Java's bind failure. */
+    static boolean lostPort(String log) { return log.contains("java.net.BindException: Address already in use"); }
     static final List<String> FAILED = List.of("Failed to start the minecraft server", "Failed to load datapacks", "Crash report saved to", "Encountered an unexpected exception", "Mod Loading has failed", "Failed to complete lifecycle event");
     static double doneSeconds(String log) {
         Matcher m = Pattern.compile("Done \\(([0-9.]+)s\\)").matcher(log);
@@ -662,10 +737,9 @@ final class PackCheck {
     }
 
     // ------------------------------------------------------------------ repairs
-    /** Runs both starts again with each catalogued repair added, and changes the user's pack only when that shows it working. */
-    Map<String, Object> apply(Pack pack, List<Map<String, Object>> fixes) throws Exception {
-        if (fixes.isEmpty()) return Json.map("applied", List.of(), "details", "No finding has a proven repair in knowledge/pack-fixes.json.");
-        List<Path> jars = new ArrayList<>(); List<Object> applied = new ArrayList<>();
+    /** Each catalogued repair's jar, from the cache or its recorded URL, checked against its SHA-512. */
+    List<Path> fixJars(List<Map<String, Object>> fixes) throws Exception {
+        List<Path> jars = new ArrayList<>();
         for (var fix : fixes) {
             var add = Json.object(fix.get("add"));
             Path jar = cache.resolve("fixes").resolve(Json.text(add, "file", ""));
@@ -674,15 +748,21 @@ final class PackCheck {
                 if (!sha512(bytes).equals(add.get("sha512"))) throw new IOException(add.get("file") + " from " + add.get("url") + " does not match its recorded SHA-512; not applied.");
                 Files.createDirectories(jar.getParent()); Files.write(jar, bytes);
             }
-            jars.add(jar); applied.add(Json.map("id", fix.get("id"), "add", add.get("file"), "page", add.get("page")));
+            jars.add(jar);
         }
+        return jars;
+    }
+
+    /** Waits for both starts on the repaired pack (run beside the shipped one), and changes the user's pack only when they show it working. */
+    Map<String, Object> apply(Pack pack, List<Map<String, Object>> fixes, List<Path> jars, Future<Map<String, Object>> recheck, ServerLane lane) throws Exception {
+        if (fixes.isEmpty()) return Json.map("applied", List.of(), "details", "No finding has a proven repair in knowledge/pack-fixes.json.");
+        List<Object> applied = new ArrayList<>();
+        for (var fix : fixes) { var add = Json.object(fix.get("add")); applied.add(Json.map("id", fix.get("id"), "add", add.get("file"), "page", add.get("page"))); }
         var result = Json.map("applied", applied);
         // Proof first: the same two starts with the repair added, on modaccel's own copy. The user's files change only after it passes.
-        List<Object> before = new ArrayList<>(findings);
-        findings.clear();
-        Map<String, Object> again = new ServerLane(pack, jars).check(options.get("world", ""));
-        List<Object> after = new ArrayList<>(findings);
-        findings.clear(); findings.addAll(before);
+        Map<String, Object> again;
+        try { again = recheck.get(); } catch (ExecutionException failed) { throw failed.getCause() instanceof Exception e ? e : failed; }
+        List<Object> after = new ArrayList<>(lane.found);
         long remaining = after.stream().filter(f -> "problem".equals(Json.object(f).get("severity")) && !"known-fault".equals(Json.object(f).get("kind"))).count();
         boolean proven = remaining == 0 && Boolean.TRUE.equals(Json.object(again.getOrDefault("reopen", Json.map())).get("opened"));
         result.put("recheck", again); result.put("recheckFindings", after); result.put("proven", proven);

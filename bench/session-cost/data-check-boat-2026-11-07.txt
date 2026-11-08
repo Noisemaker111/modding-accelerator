@@ -1,0 +1,22 @@
+boat.dev default machine (4 vCPU, 8 GB, Ubuntu, OpenJDK 21 for modaccel, JBR 25 for the game), clean copy of PR #42
+bash bench/data_check_linux.sh: package modaccel, data-check on the Prism Lab demo mod, then again with a broken recipe
+
+creating a default sandbox...
+bx_cbpp5da5 ready in 1.1s
+pushed 552 files (23.2 MB) to ~/modaccel-no-window
+== clean run, exit 0
+ok: True | seconds: 59 | probe CPU-s: 5.7 {'bootstrap': 4.2, 'mods': 4.3, 'data': 5.7}
+prismlab: 1 block, 1 block entity type, 2 item, 1 loot table, 1 recipe.
+  prismlab:prism_shard "Prism Shard": stacks to 16, common
+  prismlab:prism_node "Prism Node": stacks to 64, common
+0 errors and 0 warnings logged by the game while loading
+== broken recipe, exit 1
+ok: False | seconds: 4 | probe CPU-s: -1.0 {'bootstrap': 4.4, 'mods': 4.5}
+data-check did not complete: java.util.concurrent.ExecutionException: net.minecraft.ReportedException: Registry Loading. Log: .runs/portable/2026-11-07T07-59-56.986717640Z-4192bb42/2-data-check.log
+  [error] net.minecraft.resources.RegistryDataLoader: Registry loading errors:
+> Errors in registry minecraft:recipe:
+>> Errors in element prismlab:broken_probe:
+java.lang.IllegalStateException: Failed to parse prismlab:broken_probe from pack prismlab
+Caused by: java.lang.IllegalStateException: Map entry '#' : Failed to parse either. First: Not a JSON object: "prismlab:no_such_item"; Second: Failed to parse either. First: Not a tag id; Second: Failed to parse either. First: Not a json array: "prismlab:no_such_item"; Second: Unknown registry key in ResourceKey[minecraft:root / minecraft:item]: prismlab:no_such_item
+exit 0 · 1m 39s · default · $0.0010 · bx_cbpp5da5 deleted
+exit 0

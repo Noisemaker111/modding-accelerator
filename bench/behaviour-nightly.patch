@@ -1,0 +1,38 @@
+The nightly behaviour-check job, waiting for Jon's approval of the spending (roadmap step 26, Phase 5). Not applied:
+.github/workflows/portable.yml has no such job. To turn it on, from the repo root: git apply bench/behaviour-nightly.patch
+
+What it runs: bash bench/behaviour_checks.sh once a night (the workflow's existing 06:41 UTC schedule) and on
+demand, never on a pull request or a push. On a fresh boat.dev 4-core Linux machine the same script took
+10 minutes and passed (bench/session-cost/behaviour-boat-2026-11-07.txt).
+
+Expected spend: GitHub bills nothing for standard GitHub-hosted runners in public repositories, and this
+repository is public (docs.github.com/en/billing/concepts/product-billing/github-actions, read 2026-11-07).
+It would use about 10 to 15 runner-minutes a night, about 300 to 450 a month, at $0. If the repository were
+private, the same minutes on a 2-core Linux runner would be $0.006 a minute: about $1.80 to $2.70 a month.
+
+diff --git a/.github/workflows/portable.yml b/.github/workflows/portable.yml
+index 055736c..a0b88bd 100644
+--- a/.github/workflows/portable.yml
++++ b/.github/workflows/portable.yml
+@@ -290,6 +290,21 @@ jobs:
+           name: sample-${{ runner.os }}-${{ matrix.mod }}
+           path: ${{ runner.temp }}/real-mods-results
+           if-no-files-found: ignore
++  behaviour:
++    # The real-game behaviour checks (bench/behaviour_checks.sh): AppleSkin's HUD estimate and Zombie
++    # Apocalypse's AI in a hidden, quiet client on Xvfb with software OpenGL, each passing on the mod and
++    # failing on a copy broken on purpose. Nightly and on demand only, never on a PR or a push.
++    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
++    runs-on: ubuntu-latest
++    timeout-minutes: 30
++    steps:
++      - uses: actions/checkout@v7
++      - uses: actions/setup-java@v6
++        with:
++          distribution: temurin
++          java-version: '21'
++      - name: Behaviour checks in a real client
++        run: bash bench/behaviour_checks.sh
+   budget:
+     # The 5-minute rule as a check that can fail: once every PR job has finished, read this run's jobs
+     # and fail when the workflow has been running for more than 300 s since it started, queue time

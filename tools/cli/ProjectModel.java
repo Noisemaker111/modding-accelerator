@@ -149,7 +149,8 @@ public final class ProjectModel {
                 if (name.endsWith(".gradle") || name.endsWith(".gradle.kts") || name.equals("gradle.properties")
                         || name.equals("gradle-wrapper.properties") || name.equals("gradle-daemon-jvm.properties") || name.endsWith(".versions.toml")
                         || name.equals("gradle.lockfile") || name.equals("verification-metadata.xml")
-                        || name.endsWith(".java") && relative.startsWith("buildSrc")) files.add(path);
+                        || (name.endsWith(".java") || name.endsWith(".kt") || name.endsWith(".groovy"))
+                            && (relative.startsWith("buildSrc") || relative.startsWith("build-logic"))) files.add(path);
                 return FileVisitResult.CONTINUE;
             }
         });
@@ -160,6 +161,11 @@ public final class ProjectModel {
         digest.update(root.toString().getBytes(StandardCharsets.UTF_8));
         for (Path file : inputs()) { digest.update(root.relativize(file).toString().getBytes(StandardCharsets.UTF_8)); digest.update(Files.readAllBytes(file)); }
         digest.update(Files.readAllBytes(init));
+        // The user's own Gradle settings and init scripts shape every build too.
+        Path gradleHome = Path.of(System.getenv().getOrDefault("GRADLE_USER_HOME", Path.of(System.getProperty("user.home"), ".gradle").toString()));
+        List<Path> userFiles = new ArrayList<>(List.of(gradleHome.resolve("gradle.properties"), gradleHome.resolve("init.gradle"), gradleHome.resolve("init.gradle.kts")));
+        if (Files.isDirectory(gradleHome.resolve("init.d"))) try (var list = Files.list(gradleHome.resolve("init.d"))) { list.sorted().forEach(userFiles::add); }
+        for (Path file : userFiles) if (Files.isRegularFile(file)) { digest.update(file.toString().getBytes(StandardCharsets.UTF_8)); digest.update(Files.readAllBytes(file)); }
         // Java/Gradle environment changes invalidate captured launch and classpath data.
         for (String key : List.of("JAVA_HOME", "GRADLE_USER_HOME", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "GRADLE_OPTS"))
             digest.update((key + "=" + System.getenv().getOrDefault(key, "")).getBytes(StandardCharsets.UTF_8));

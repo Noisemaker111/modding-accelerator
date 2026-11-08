@@ -262,7 +262,8 @@
      "status": "later",
      "text": "Linux and macOS game checks (or label them), no-Java install on each.",
      "start": "2026-12-14",
-     "target": "2027-01-15"
+     "target": "2027-01-15",
+     "result": "Linux, part proven: on a fresh boat.dev Ubuntu machine with no GPU, the behaviour checks (a hidden client on a virtual display, software OpenGL) passed and failed on their breaks, and data-check passed (bench/session-cost/behaviour-boat-2026-11-07.txt, data-check-boat-2026-11-07.txt). macOS and the no-Java install are not checked."
     },
     {
      "id": "22",
@@ -294,7 +295,9 @@
      "measures": [
       "plugin.server-check.warm",
       "plugin.server-check.cold",
-      "plugin.plugin-check.warm"
+      "plugin.plugin-check.warm",
+      "plugin.server-check.cpu",
+      "plugin.server-check.ram"
      ]
     },
     {
@@ -311,14 +314,17 @@
     },
     {
      "id": "26",
-     "title": "Nightly bot run on older Paper versions",
+     "title": "Nightly CI: behaviour checks and the bot on older Paper versions",
      "status": "next",
-     "text": "A nightly CI job runs the bot on older Paper versions.",
+     "text": "One nightly CI job runs the real-game behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) and the bot on older Paper versions.",
      "start": "2026-11-09",
      "target": "2026-11-20",
      "measures": [
-      "plugin.paper-versions.ci"
-     ]
+      "plugin.paper-versions.ci",
+      "test.behaviour-checks",
+      "ci.nightly-wall"
+     ],
+     "result": "bench/behaviour_checks.sh runs both behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) in a hidden, quiet client on a virtual display with software OpenGL: on a fresh boat.dev Linux machine with no GPU both passed and both breaks failed, 10 minutes. The nightly CI job is written as bench/behaviour-nightly.patch with its expected spend ($0 on this public repository, about 10 to 15 runner-minutes a night) and waits for Jon to approve it."
     },
     {
      "id": "27",
@@ -383,6 +389,19 @@
      ]
     },
     {
+     "id": "38",
+     "title": "pack-check timed, and faster",
+     "status": "done",
+     "done": "2026-11-07",
+     "text": "pack-check records how long each stage takes and checks the shipped and the repaired pack side by side.",
+     "start": "2026-11-09",
+     "target": "2026-11-20",
+     "measures": [
+      "pack.check-time"
+     ],
+     "result": "pack-check times every stage (read, static checks, each server start) and starts the repaired pack's server beside the shipped one. On Prehistoric World 2 (368 mods) a full check with the repair proven takes 5.1 minutes instead of 12.7, with the same findings. Client-only mods a start finds are remembered, so later runs skip that extra start; a start that only reads the world stops as soon as its probe is done; Simple Voice Chat gets a free port so the two servers do not collide, and a start that still loses a port runs again alone; a server that stops before its probe is done is reported at once instead of after the 20-minute timeout; an export is unpacked once. Tried for the 4.0-minute target and not used: the lighter compiler (C1) cuts a 368-mod server start's CPU by a third (519 to 351 CPU-s) but made the start take 465 s instead of 139 s; the item probe already uses 40 ms of every 50 ms server tick. The 4.0-minute target was dropped on Nov 7; the time stays as a fact."
+    },
+    {
      "id": "32",
      "title": "Random Things as a Forge port case",
      "status": "later",
@@ -396,79 +415,71 @@
   {
    "id": "7",
    "title": "Testing without Minecraft open",
-   "intro": "Every check runs with no game window, and the cost of a game session is mostly shared, so many sessions run at once on one PC.",
+   "intro": "Every check runs with no game window, checks that need only the game's data skip launching it, and 8 run at once on one PC. Closed on 2026-11-07.",
    "steps": [
     {
      "id": "33",
      "title": "Measure what one game session costs today",
-     "status": "next",
+     "status": "done",
      "text": "Measure RAM, CPU, start time and time per check for one client, one dedicated server and one Paper server, warm and cold, as the baseline the next steps are judged against.",
-     "start": "2026-11-09",
+     "start": "2026-11-06",
      "target": "2026-11-13",
      "measures": [
       "test.session-ram",
-      "test.cold-start-check.fabric"
-     ]
+      "test.session-start-cpu",
+      "test.session-idle-cpu",
+      "test.parallel-probe",
+      "test.cold-start-check.fabric",
+      "plugin.server-check.cpu",
+      "plugin.server-check.ram"
+     ],
+     "result": "bench/session_cost.py measures a session from the operating system on Windows, Linux and macOS. A hidden Fabric 26.3 client peaks at 1 GB and spends about 100 CPU-s starting, 49 with C1 only, which hidden launches now use; 16 started side by side from one saved launch. Warm on a hidden game: a screen check takes 3.9 s, a world check 3.0 s, a scripted scenario 5.1 s. mp-check's own dedicated server starts in 11 to 19 s. AgentCraft's scenario on a real Paper server takes about 51 s warm (130 CPU-s, 2.4 GB at the peak) and 316 s on a fresh clone, most of it Gradle reading and building the plugin for the first time. This PC is shared, so every point carries how busy it was.",
+     "done": "2026-11-07"
     },
     {
      "id": "34",
      "title": "Every game check with no window",
-     "status": "next",
-     "text": "ui-check, world-check, mp-check, eval and the behaviour checks run with no Minecraft window and no sound, with the same assertions and the same 1280x720 captures.",
+     "status": "done",
+     "text": "ui-check, world-check, mp-check, eval and the behaviour checks run with no Minecraft window and no sound, with the same assertions and the same 1280x720 captures, and a check stops when a window asked to stay hidden is not.",
      "start": "2026-11-13",
      "target": "2026-11-27",
      "measures": [
       "test.screen-check.fabric",
       "test.scenario.fabric"
-     ]
+     ],
+     "done": "2026-11-07",
+     "result": "ui-check, world-check, eval and mp-check ran with the game hidden and quiet: no game window was on screen after any of 15 warm checks, nor at any half-second sample through a whole mp-check (its client and its own server), and each check kept its assertions and its 1280x720 framebuffer capture. The behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) ran hidden on a Linux machine with no screen at all. A check stops when a game asked to stay hidden reports its window library was not rewritten. The title screen no longer costs a fixed 4.5 s wait; it waits only while it fades in. The warm screen check (3.9 s) and scenario (5.1 s) are timed as the whole modaccel command; the 1.5 s and 2.9 s of October were the older Windows lane's own loop with a window, so they are not the same work."
     },
     {
      "id": "35",
-     "title": "Share one started game between sessions",
-     "status": "later",
-     "text": "A new session reuses a game that has already started instead of starting its own, so a cold check drops from about 36 s to under 10 s.",
-     "start": "2026-11-27",
+     "title": "Check the game's data without launching it",
+     "status": "done",
+     "done": "2026-11-07",
+     "text": "A check that needs the game's data but not its picture runs the game's own code with no window and no world: data-check reads what the mod registered, each item as a real stack, and every error the game logs while it loads the data packs. It costs about 5 CPU-s per check once one loaded JVM answers many checks, instead of 49 for a hidden client.",
+     "start": "2026-11-07",
      "target": "2026-12-18",
      "measures": [
-      "test.cold-start-check.fabric",
-      "test.server-start",
-      "plugin.server-check.warm"
-     ]
+      "test.data-check-cpu",
+      "test.data-check-code-change-cpu",
+      "test.data-check-first-cpu",
+      "test.data-check-ram",
+      "test.data-check-cpu.boat"
+     ],
+     "result": "modaccel data-check works on Fabric 26.3: on the Prism Lab demo mod it lists the mod's items, blocks, loot table and recipe with no game launched, and a broken recipe fails it with the game's own error. The game stays loaded: a changed data file costs about 2 CPU-s in 2 s, copied from src without Gradle when Gradle would copy it as it is. A spare game waits behind it, started up to just before the mods' own code, and takes changed code for about 5 CPU-s in 4 s; a changed mixin or loader file loads a fresh game, 12 s. The build is read once and kept until a build file changes. A loaded game holds about 0.38 GB."
     },
     {
      "id": "36",
      "title": "Many sessions at once on one PC",
-     "status": "later",
-     "text": "At least 8 checks run side by side on this PC without running out of memory.",
-     "start": "2026-12-18",
-     "target": "2027-01-08",
+     "status": "done",
+     "text": "modaccel runs at least 8 game checks side by side on this PC, each with its own game folder, without running out of memory, and a waiting hidden client costs almost no CPU.",
+     "start": "2026-11-07",
      "measures": [
       "test.parallel-sessions",
-      "test.session-ram"
-     ]
-    },
-    {
-     "id": "37",
-     "title": "Behaviour checks run nightly in CI",
-     "status": "next",
-     "text": "The real-game behaviour checks (AppleSkin's HUD estimate, Zombie Apocalypse's AI) run every night in CI, not only on this PC.",
-     "start": "2026-11-16",
-     "target": "2026-12-04",
-     "measures": [
-      "test.behaviour-checks",
-      "ci.nightly-wall"
-     ]
-    },
-    {
-     "id": "38",
-     "title": "pack-check timed, and faster",
-     "status": "next",
-     "text": "pack-check records how long each stage takes and checks the shipped and the repaired pack side by side.",
-     "start": "2026-11-09",
-     "target": "2026-11-20",
-     "measures": [
-      "pack.check-time"
-     ]
+      "test.session-idle-cpu",
+      "test.parallel-probe"
+     ],
+     "result": "8 projects (copies of the demo mod) each ran data-check at once: from no game all passed within 26.6 s, about 21 CPU-s each and 4.5 GB at the peak; with their games loaded, all passed again within 6.3 s. The 8 loaded games hold 2.85 GB and their 8 spares 2.41 GB. A brand-new project's first check takes about 36 s, 21 of it Gradle reading the build and recording the launch. A hidden game nobody has asked anything for 2 s now draws 10 frames a second, woken at once by the next request: it uses 0.04 to 0.06 cores while waiting instead of 0.14 to 0.16, measured alternately on the same PC, with warm checks as fast as before. Tried and not used: Java's start-up cache for Paper (AOT) halves a start's CPU (48 to 24 CPU-s) but recording it adds about 95 s to one start and its shutdown, and the self-updating class archive saves 2 to 5 s per start but adds about 40 s to the first, a slow first start this step exists to avoid. The faster-start targets set on Nov 6 (a hidden client on 25 CPU-s, a cold check under 10 s, a server start of 10 s) were dropped on Nov 7: they do not move the goal, and their numbers stay as facts.",
+     "done": "2026-11-07"
     }
    ]
   }
@@ -518,6 +529,16 @@
    "question": "Where do roadmap steps, targets and every number we show live?",
    "choice": "`coverage/roadmap.json` (steps, dates, targets) and `coverage/measures.json` (every number, with its history and target); ROADMAP.md and the roadmap page are generated from them",
    "date": "2026-11-06"
+  },
+  {
+   "question": "How cheap should a game check be?",
+   "choice": "5 CPU-s per check, from 49. Checks that need the game's data but not a picture stop launching the game: data-check runs the game's own code with no window and no world (Jon, 2026-11-07, instead of sharing one started game). Picture checks keep the hidden client, with graphics settings as they are",
+   "date": "2026-11-07"
+  },
+  {
+   "question": "Do speed targets drive work?",
+   "choice": "Only when they move the goal. Phase 7 closed on Nov 7 once checks were hidden, data-check skipped the game and 8 checks ran at once; the start, cold-check, screen-check, server and pack-check speed targets became facts, the nightly job joined step 26 and pack-check's step joined Phase 6, and work went back to porting (Jon, 2026-11-07)",
+   "date": "2026-11-07"
   }
  ]
 }

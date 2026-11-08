@@ -1,0 +1,11 @@
+data-check's game on the Prism Lab demo mod, Fabric 26.3, Jon's PC (Ryzen 9 3900X, 64 GB), 2026-11-07.
+The probe started as data-check starts it, its first check done, then the process measured from Windows
+(Get-Process) after one idle full GC (jcmd GC.run). One run each, the machine 30-50% busy.
+
+collector and heap                      working set   private   CPU-s to the first check done
+G1 (Java's default; starts at 1/64 RAM)    517 MB       604 MB    16.7
+Serial, 1/64-of-RAM starting heap           611 MB      1228 MB    14.2
+Serial, -Xms64m (what data-check uses)      382 MB       453 MB    14.0
+Serial, -Xms64m (again)                     379 MB       454 MB    13.6
+
+Script: the session's scratch dc_cold.py (DUMP + GCRUN mode), the same command DataCheck.command() builds.

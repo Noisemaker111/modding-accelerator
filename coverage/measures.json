@@ -1,6 +1,6 @@
 {
  "about": "Every number modaccel shows: on the roadmap page, in ROADMAP.md, in a PR or a report. One entry per thing measured, with every point it ever had and the target it is heading for. Record a point with python bench/measures.py add; print a table for a PR with python bench/measures.py table. A point carries its date, value, how many runs (n), what it was measured on, and where the receipt is. Cold and warm are separate measures, and so is the same check on another loader: a measure only ever compares the same work. A measure with 'computed' gets its points from the ledger or the roadmap at render time instead of from 'points'. A target with value null is set once its step measures a baseline. 'context' measures are other people's numbers we compare against, and 'info' measures are facts worth showing; neither has a target. Every other measure has one.",
- "machines": {"jon-pc": "Ryzen 9 3900X, Windows 11, JDK 25 (JDK 21 for NeoForge 1.21.1)", "ci": "GitHub-hosted runners (windows, macos, ubuntu)"},
+ "machines": {"jon-pc": "Ryzen 9 3900X, Windows 11, JDK 25 (JDK 21 for NeoForge 1.21.1)", "ci": "GitHub-hosted runners (windows, macos, ubuntu)", "boat": "boat.dev default machine: 4 vCPU, 8 GB, Ubuntu, idle apart from the check"},
  "areas": {"port": "Porting", "test": "Game checks", "plugin": "Plugins", "pack": "Modpacks", "ci": "CI", "roadmap": "Roadmap", "context": "Compared with"},
  "headline": [
   "port.mods-working",
@@ -179,10 +179,10 @@
    "better": "lower",
    "condition": "cold",
    "machine": "jon-pc",
-   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
    "points": [
     {"date": "2026-10-21", "value": 36.5, "n": 1, "source": "bench/data.json loop"}
-   ]
+   ],
+   "info": true
   },
   {
    "id": "test.cold-start.neoforge",
@@ -192,10 +192,10 @@
    "better": "lower",
    "condition": "cold",
    "machine": "jon-pc",
-   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
    "points": [
     {"date": "2026-10-22", "value": 18.4, "n": 1, "source": "bench/data.json neoforgeloop"}
-   ]
+   ],
+   "info": true
   },
   {
    "id": "test.server-start",
@@ -205,10 +205,11 @@
    "better": "lower",
    "condition": "cold",
    "machine": "jon-pc",
-   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
    "points": [
-    {"date": "2026-10-22", "value": 24.2, "n": 1, "source": "bench/data.json multiplayer"}
-   ]
+    {"date": "2026-10-22", "value": 24.2, "n": 1, "source": "bench/data.json multiplayer"},
+    {"date": "2026-11-07", "value": 15, "n": 2, "note": "mp-check's own server, 19 and 11 s: the loader's first log line to Done, a hidden client starting beside it; machine busy with other work", "source": "bench/session-cost/mp-check-2026-11-07.json"}
+   ],
+   "info": true
   },
   {
    "id": "test.mp-first-join",
@@ -218,10 +219,10 @@
    "better": "lower",
    "condition": "cold",
    "machine": "jon-pc",
-   "target": {"value": 10, "by": "2026-12-18", "step": "35"},
    "points": [
     {"date": "2026-10-22", "value": 27.1, "n": 1, "source": "bench/data.json multiplayer"}
-   ]
+   ],
+   "info": true
   },
   {
    "id": "test.fresh-registration",
@@ -231,10 +232,10 @@
    "better": "lower",
    "condition": "warm",
    "machine": "jon-pc",
-   "target": {"value": 5, "by": "2026-12-18", "step": "35"},
    "points": [
     {"date": "2026-10-21", "value": 15.0, "n": 3, "source": "bench/data.json loop"}
-   ]
+   ],
+   "info": true
   },
   {
    "id": "test.logic",
@@ -257,10 +258,11 @@
    "better": "lower",
    "condition": "warm",
    "machine": "jon-pc",
-   "target": {"value": 1.5, "by": "2026-11-27", "step": "34", "note": "hold, with no window"},
    "points": [
-    {"date": "2026-10-21", "value": 1.49, "n": 5, "note": "with a game window", "source": "bench/data.json loop"}
-   ]
+    {"date": "2026-10-21", "value": 1.49, "n": 5, "note": "with a game window", "source": "bench/data.json loop"},
+    {"date": "2026-11-07", "value": 3.94, "n": 5, "note": "ui-check --screen, hidden game, 0 windows on screen, the whole modaccel command; machine 29.3% busy", "source": "bench/session-cost/warm-2026-11-07T17-33-07.json"}
+   ],
+   "info": true
   },
   {
    "id": "test.screen-check.neoforge",
@@ -296,10 +298,11 @@
    "better": "lower",
    "condition": "warm",
    "machine": "jon-pc",
-   "target": {"value": 3, "by": "2026-11-27", "step": "34", "note": "hold, with no window"},
    "points": [
-    {"date": "2026-10-21", "value": 2.9, "n": 5, "source": "bench/data.json loop"}
-   ]
+    {"date": "2026-10-21", "value": 2.9, "n": 5, "source": "bench/data.json loop"},
+    {"date": "2026-11-07", "value": 5.14, "n": 5, "note": "eval step then ui-check capture, hidden game, 0 windows on screen, the whole modaccel command; machine 29.3% busy", "source": "bench/session-cost/warm-2026-11-07T17-33-07.json"}
+   ],
+   "info": true
   },
   {
    "id": "test.scenario.mp",
@@ -320,30 +323,165 @@
    "name": "Mods with their own behaviour asserted in a real client",
    "unit": "mods",
    "better": "higher",
-   "target": {"value": 4, "by": "2026-12-04", "step": "37"},
+   "target": {"value": 4, "by": "2026-12-04", "step": "26"},
    "points": [
-    {"date": "2026-10-26", "value": 2, "note": "AppleSkin HUD estimate, Zombie Apocalypse AI; local only", "source": "tools/tests/AppleSkinHudCheck.java, tools/tests/ZombieAiCheck.java"}
+    {"date": "2026-10-26", "value": 2, "note": "AppleSkin HUD estimate, Zombie Apocalypse AI; local only", "source": "tools/tests/AppleSkinHudCheck.java, tools/tests/ZombieAiCheck.java"},
+    {"date": "2026-11-07", "value": 2, "note": "the same two, also on a fresh Linux machine with no GPU or screen (bench/behaviour_checks.sh on boat), each break failing; not in cloud CI until Jon approves that spending", "source": "bench/session-cost/behaviour-boat-2026-11-07.txt"}
    ]
   },
   {
    "id": "test.session-ram",
    "area": "test",
-   "name": "Memory for one game session",
+   "name": "Memory for one hidden game session, Fabric 26.3",
    "unit": "GB",
    "better": "lower",
    "machine": "jon-pc",
-   "target": {"value": null, "by": "2026-11-13", "step": "33", "note": "set from the baseline"},
-   "points": []
+   "points": [
+    {"date": "2026-11-06", "value": 1.08, "n": 1, "note": "peak working set, title screen, default JIT", "source": "bench/session-cost/2026-11-06T20-46-13.json"},
+    {"date": "2026-11-06", "value": 0.98, "n": 1, "note": "peak working set, saved launch, C1 only", "source": "bench/session-cost/2026-11-06T21-25-10.json"}
+   ],
+   "condition": "warm",
+   "info": true
   },
   {
    "id": "test.parallel-sessions",
    "area": "test",
-   "name": "Game sessions running at once on one PC",
+   "name": "Game checks modaccel runs at once on one PC",
    "unit": "sessions",
    "better": "higher",
    "machine": "jon-pc",
    "target": {"value": 8, "by": "2027-01-08", "step": "36"},
-   "points": []
+   "points": [
+    {"date": "2026-11-07", "value": 8, "n": 1, "note": "data-check on 8 projects at once, each starting its own game: longest 26.6 s; 2.85 GB loaded and 2.41 GB spare games together", "source": "bench/session-cost/projects-2026-11-07T17-46-36.json"}
+   ]
+  },
+  {
+   "id": "test.session-start-cpu",
+   "area": "test",
+   "name": "CPU to start one hidden client, saved launch, Fabric 26.3",
+   "unit": "CPU-s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-06", "value": 95, "n": 8, "note": "8 clients at once, 759 CPU-s in all, default JIT", "source": "bench/session-cost/2026-11-06T20-50-36.json"},
+    {"date": "2026-11-06", "value": 49, "n": 8, "note": "8 clients at once, 389 CPU-s in all, C1 only", "source": "bench/session-cost/2026-11-06T21-27-14.json"}
+   ],
+   "info": true
+  },
+  {
+   "id": "test.data-check-cpu.boat",
+   "area": "test",
+   "name": "CPU for data-check on the Prism Lab demo mod, quiet 4-core Linux machine, Fabric 26.3",
+   "unit": "CPU-s",
+   "better": "lower",
+   "info": true,
+   "condition": "cold",
+   "machine": "boat",
+   "points": [
+    {"date": "2026-11-07", "value": 5.7, "n": 1, "note": "fresh machine, first run; the game JVM alone, Gradle not counted", "source": "bench/session-cost/data-check-boat-2026-11-07.txt"},
+    {"date": "2026-11-07", "value": 6.2, "n": 1, "note": "fresh machine, first run; then a changed recipe 0.7 and a new class taken by the spare 1.7", "source": "bench/session-cost/data-check-boat-2026-11-07-spare.txt"}
+   ]
+  },
+  {
+   "id": "test.data-check-first-cpu",
+   "area": "test",
+   "name": "CPU for the first data-check on a mod, the game's code started for it, Fabric 26.3",
+   "unit": "CPU-s",
+   "better": "lower",
+   "info": true,
+   "condition": "warm",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-07", "value": 33, "n": 1, "note": "first full run, machine 98% busy", "source": "bench/session-cost/data-check-2026-11-07T07-42-47.json"},
+    {"date": "2026-11-07", "value": 28.3, "n": 1, "note": "machine 98% busy", "source": "bench/session-cost/data-check-2026-11-07T07-48-20.json"},
+    {"date": "2026-11-07", "value": 19.6, "n": 1, "note": "machine about 25% busy; the game stays loaded after it", "source": "bench/session-cost/data-check-2026-11-07T19-17-21.json"},
+    {"date": "2026-11-07", "value": 14.3, "n": 1, "note": "a changed mixin class loaded a fresh game; serial collector, block shapes skipped", "source": "bench/session-cost/data-check-2026-11-07T21-14-41.json"}
+   ]
+  },
+  {
+   "id": "test.data-check-cpu",
+   "area": "test",
+   "name": "CPU per data-check on a mod once its game is loaded, no game launched, Fabric 26.3",
+   "unit": "CPU-s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 5, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-11-07", "value": 2.2, "n": 1, "note": "Prism Lab demo mod, data read again by the loaded game, 2 s", "source": "bench/session-cost/data-check-2026-11-07T19-18-08.json"},
+    {"date": "2026-11-07", "value": 2.5, "n": 1, "note": "the same after a broken recipe was added and removed", "source": "bench/session-cost/data-check-2026-11-07T19-18-15.json"},
+    {"date": "2026-11-07", "value": 1.5, "n": 1, "note": "a recipe removed under src, copied to the build without Gradle, 1.8 s", "source": "bench/session-cost/data-check-2026-11-07T21-14-22.json"}
+   ]
+  },
+  {
+   "id": "test.data-check-code-change-cpu",
+   "area": "test",
+   "name": "CPU per data-check after the mod's code changed, the spare game taking it, Fabric 26.3",
+   "unit": "CPU-s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 5, "by": "2026-12-18", "step": "35"},
+   "points": [
+    {"date": "2026-11-07", "value": 6.2, "n": 1, "note": "Prism Lab's initializer changed, 3.9 s; the spare's 15.8 CPU-s start was paid in the background before", "source": "bench/session-cost/data-check-2026-11-07T20-37-54.json"},
+    {"date": "2026-11-07", "value": 4.9, "n": 1, "note": "the same with the serial collector and block shapes skipped, 3.7 s; spare start 9.9 CPU-s in the background", "source": "bench/session-cost/data-check-2026-11-07T21-14-25.json"}
+   ]
+  },
+  {
+   "id": "test.data-check-fresh-seconds",
+   "area": "test",
+   "name": "Seconds for a data-check that loads a fresh game, Fabric 26.3",
+   "unit": "s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-07", "value": 45.6, "n": 1, "note": "25 s of it Gradle reading the build again, its cache expired after an hour", "source": "bench/session-cost/data-check-2026-11-07T19-17-21.json"},
+    {"date": "2026-11-07", "value": 11.7, "n": 1, "note": "no Gradle: the build read once and kept; serial collector, block shapes skipped", "source": "bench/session-cost/data-check-2026-11-07T21-14-41.json"}
+   ],
+   "info": true
+  },
+  {
+   "id": "test.data-check-ram",
+   "area": "test",
+   "name": "Memory of data-check's loaded game, Fabric 26.3",
+   "unit": "GB",
+   "better": "lower",
+   "info": true,
+   "condition": "warm",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-07", "value": 0.52, "n": 1, "note": "Java's default collector (G1)", "source": "bench/session-cost/data-check-memory-2026-11-07.txt"},
+    {"date": "2026-11-07", "value": 0.38, "n": 2, "note": "serial collector, 64 MB starting heap", "source": "bench/session-cost/data-check-memory-2026-11-07.txt"}
+   ]
+  },
+  {
+   "id": "test.session-idle-cpu",
+   "area": "test",
+   "name": "CPU a hidden client uses while it waits",
+   "unit": "cores",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "target": {"value": 0.05, "by": "2027-01-08", "step": "36"},
+   "points": [
+    {"date": "2026-11-06", "value": 0.21, "n": 1, "note": "title screen, 20 s, default JIT", "source": "bench/session-cost/2026-11-06T20-46-13.json"},
+    {"date": "2026-11-06", "value": 0.15, "n": 1, "note": "title screen, 20 s, C1 only", "source": "bench/session-cost/2026-11-06T21-25-10.json"},
+    {"date": "2026-11-07", "value": 0.05, "n": 4, "note": "title screen, 30 s, C1 only, idle frame wait: 0.06, 0.05, 0.05 and 0.04 (0.16 and 0.14 without it, alternated on the same PC); warm checks no slower", "source": "bench/session-cost/idle-wait-2026-11-07.json"}
+   ]
+  },
+  {
+   "id": "test.parallel-probe",
+   "area": "test",
+   "name": "Hidden clients this PC held at once, each to a 1280x720 capture",
+   "unit": "sessions",
+   "better": "higher",
+   "info": true,
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-06", "value": 16, "n": 1, "note": "bench/session_cost.py parallel from one saved launch, 18.2 GB, 100 s on a busy PC; not yet a modaccel command", "source": "bench/session-cost/2026-11-06T20-52-48.json"}
+   ]
   },
   {
    "id": "plugin.server-check.warm",
@@ -353,10 +491,11 @@
    "better": "lower",
    "condition": "warm",
    "machine": "jon-pc",
-   "target": {"value": 15, "by": "2026-12-18", "step": "35"},
    "points": [
-    {"date": "2026-10-26", "value": 25, "note": "about 25 s", "source": "SCOPE.md section 5"}
-   ]
+    {"date": "2026-10-26", "value": 25, "note": "about 25 s", "source": "SCOPE.md section 5"},
+    {"date": "2026-11-07", "value": 51.0, "n": 2, "note": "bench/server-plugins/agentcraft.scenario, 44 steps with a server restart, mock backend; Paper started in 18.7 and 10.6 s; machine 46 to 58% busy; the Oct 26 figure was a shorter scenario", "source": "bench/session-cost/paper-2026-11-07.json"}
+   ],
+   "info": true
   },
   {
    "id": "plugin.server-check.cold",
@@ -366,9 +505,36 @@
    "better": "lower",
    "condition": "cold",
    "machine": "jon-pc",
-   "target": {"value": 30, "by": "2026-12-18", "step": "35"},
    "points": [
-    {"date": "2026-10-26", "value": 55, "note": "about 55 s, Paper download included", "source": "SCOPE.md section 5"}
+    {"date": "2026-10-26", "value": 55, "note": "about 55 s, Paper download included", "source": "SCOPE.md section 5"},
+    {"date": "2026-11-07", "value": 316.0, "n": 1, "note": "a fresh clone: 152 s Gradle reading the build, 112 s building the plugin, 48 s the scenario on a fresh Paper server", "source": "bench/session-cost/paper-2026-11-07.json"}
+   ],
+   "info": true
+  },
+  {
+   "id": "plugin.server-check.cpu",
+   "area": "plugin",
+   "name": "CPU for server-check on a real Paper server, AgentCraft",
+   "unit": "CPU-s",
+   "better": "lower",
+   "info": true,
+   "condition": "warm",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-07", "value": 130, "n": 2, "note": "everything server-check started: Gradle, Paper, the bot, the mock backend", "source": "bench/session-cost/paper-2026-11-07.json"}
+   ]
+  },
+  {
+   "id": "plugin.server-check.ram",
+   "area": "plugin",
+   "name": "Memory at the peak of server-check on a real Paper server, AgentCraft",
+   "unit": "GB",
+   "better": "lower",
+   "info": true,
+   "condition": "warm",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-07", "value": 2.4, "n": 2, "note": "peak of everything server-check started", "source": "bench/session-cost/paper-2026-11-07.json"}
    ]
   },
   {
@@ -447,8 +613,12 @@
    "unit": "min",
    "better": "lower",
    "machine": "jon-pc",
-   "target": {"value": null, "by": "2026-11-20", "step": "38", "note": "set once each stage is timed"},
-   "points": []
+   "condition": "warm",
+   "points": [
+    {"date": "2026-10-30", "value": 12.7, "n": 1, "note": "shipped then repaired pack, one after the other; each lane's first start found the client-only mod and started again", "source": "bench/session-cost/pack-check-2026-11-07.json"},
+    {"date": "2026-11-07", "value": 5.1, "n": 1, "note": "repaired pack beside the shipped one, client-only mod remembered, read-only starts stopped once their probe was done", "source": "bench/session-cost/pack-check-2026-11-07.json"}
+   ],
+   "info": true
   },
   {
    "id": "ci.pr-wall",
@@ -474,7 +644,7 @@
    "unit": "min",
    "better": "lower",
    "machine": "ci",
-   "target": {"value": 30, "by": "2026-12-04", "step": "37"},
+   "target": {"value": 30, "by": "2026-12-04", "step": "26"},
    "points": [
     {"date": "2026-10-28", "value": 45.9, "note": "failed", "source": "gh run list, Stonecutter nodes (nightly)"},
     {"date": "2026-10-29", "value": 46.9, "note": "failed", "source": "gh run list, Stonecutter nodes (nightly)"},
