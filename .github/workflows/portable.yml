@@ -41,8 +41,15 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
           key: command-${{ runner.os }}-${{ hashFiles('portable workspace/build.gradle', 'portable workspace/settings.gradle', 'portable workspace/gradle.properties', 'portable workspace/gradle/wrapper/gradle-wrapper.properties') }}
+      # Downloaded JDKs live in ~/.modaccel/jdks and have their own cache, so the Gradle cache keeps main's paths
+      # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
+      - name: Downloaded JDKs
+        id: jdks
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.modaccel/jdks
+          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Map and bench colour per loader
         working-directory: portable workspace
         run: python bench/test_ledger_rule.py
@@ -106,14 +113,16 @@ jobs:
         run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
       - name: Anything downloaded worth caching
         id: worth
-        if: always() && steps.cache.outputs.cache-hit != 'true'
+        if: always() && (steps.cache.outputs.cache-hit != 'true' || steps.jdks.outputs.cache-hit != 'true')
         shell: bash
         # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
-          kb=$( (du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null || true) | awk '{s+=$1} END {print s+0}')
-          echo "kb=$kb" >> "$GITHUB_OUTPUT"
-          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
+          size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
+          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/servers ~/.modaccel/tools)
+          jdk_kb=$(size ~/.modaccel/jdks)
+          echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
+          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
       - name: Save caches on a miss
         if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
         uses: actions/cache/save@v4
@@ -122,8 +131,13 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
           key: command-${{ runner.os }}-${{ hashFiles('portable workspace/build.gradle', 'portable workspace/settings.gradle', 'portable workspace/gradle.properties', 'portable workspace/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Save downloaded JDKs on a miss
+        if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.modaccel/jdks
+          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Outcome receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -159,8 +173,16 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
+            .modaccel/jdks
           key: server-plugins-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json') }}
+      # Downloaded JDKs live in ~/.modaccel/jdks and have their own cache, so the Gradle cache keeps main's paths
+      # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
+      - name: Downloaded JDKs
+        id: jdks
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.modaccel/jdks
+          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Package without PowerShell
         run: java tools/cli/Bootstrap.java . package --json
       - name: Server plugins through modaccel
@@ -171,14 +193,16 @@ jobs:
         run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
       - name: Anything downloaded worth caching
         id: worth
-        if: always() && steps.cache.outputs.cache-hit != 'true'
+        if: always() && (steps.cache.outputs.cache-hit != 'true' || steps.jdks.outputs.cache-hit != 'true')
         shell: bash
         # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
-          kb=$( (du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null || true) | awk '{s+=$1} END {print s+0}')
-          echo "kb=$kb" >> "$GITHUB_OUTPUT"
-          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
+          size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
+          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/servers ~/.modaccel/tools)
+          jdk_kb=$(size ~/.modaccel/jdks)
+          echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
+          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
       - name: Save caches on a miss, even when the check fails
         if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
         uses: actions/cache/save@v4
@@ -187,8 +211,14 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
+            .modaccel/jdks
           key: server-plugins-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json') }}
+      - name: Save downloaded JDKs on a miss
+        if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.modaccel/jdks
+          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Outcome receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -228,10 +258,18 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
+            .modaccel/jdks
             ~/.modaccel/servers
             ~/.modaccel/tools
           key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
+      # Downloaded JDKs live in ~/.modaccel/jdks and have their own cache, so the Gradle cache keeps main's paths
+      # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
+      - name: Downloaded JDKs
+        id: jdks
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.modaccel/jdks
+          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Package without PowerShell
         run: java tools/cli/Bootstrap.java . package --json
       - name: Plugins on a real Paper server through modaccel
@@ -242,14 +280,16 @@ jobs:
         run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
       - name: Anything downloaded worth caching
         id: worth
-        if: always() && steps.cache.outputs.cache-hit != 'true'
+        if: always() && (steps.cache.outputs.cache-hit != 'true' || steps.jdks.outputs.cache-hit != 'true')
         shell: bash
         # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
-          kb=$( (du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null || true) | awk '{s+=$1} END {print s+0}')
-          echo "kb=$kb" >> "$GITHUB_OUTPUT"
-          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
+          size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
+          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/servers ~/.modaccel/tools)
+          jdk_kb=$(size ~/.modaccel/jdks)
+          echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
+          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
       - name: Save caches on a miss, even when the check fails
         if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
         uses: actions/cache/save@v4
@@ -258,10 +298,16 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
+            .modaccel/jdks
             ~/.modaccel/servers
             ~/.modaccel/tools
           key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
+      - name: Save downloaded JDKs on a miss
+        if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.modaccel/jdks
+          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Outcome receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -299,20 +345,30 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
+            .modaccel/jdks
           key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
+      # Downloaded JDKs live in ~/.modaccel/jdks and have their own cache, so the Gradle cache keeps main's paths
+      # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
+      - name: Downloaded JDKs
+        id: jdks
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.modaccel/jdks
+          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Setup and compile the node
         run: python bench/real-mods/run.py --compile-nodes --only ${{ matrix.mod }} --cache "${{ runner.temp }}/real-mods" --out "${{ runner.temp }}/real-mods-results" --label ${{ matrix.mod }}
       - name: Anything downloaded worth caching
         id: worth
-        if: always() && steps.cache.outputs.cache-hit != 'true'
+        if: always() && (steps.cache.outputs.cache-hit != 'true' || steps.jdks.outputs.cache-hit != 'true')
         shell: bash
         # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
-          kb=$( (du -sk ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools 2>/dev/null || true) | awk '{s+=$1} END {print s+0}')
-          echo "kb=$kb" >> "$GITHUB_OUTPUT"
-          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so no cache is saved and the next run downloads again"; fi
+          size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
+          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/servers ~/.modaccel/tools)
+          jdk_kb=$(size ~/.modaccel/jdks)
+          echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
+          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
       - name: Save caches on a miss, even when the node fails
         if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
         uses: actions/cache/save@v4
@@ -321,8 +377,14 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
+            .modaccel/jdks
           key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
+      - name: Save downloaded JDKs on a miss
+        if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.modaccel/jdks
+          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Node results
         if: always()
         uses: actions/upload-artifact@v4
