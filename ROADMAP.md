@@ -139,7 +139,9 @@ The second half of the goal, worked on alongside porting.
     height. **done** — (1.8.8, 1.12.2, 1.16.5, 1.20.1 and 1.21.4 passed locally; CI covers 26.3
     only)
     Done 2026-10-26.
-26. A nightly CI job runs the bot on older Paper versions. **next**
+26. The bot's run on older Paper versions (1.8.8 to 1.21.4) is one command anyone can start on
+    demand (boat or workflow_dispatch), rerun when the bot or ViaProxy code changes; not a nightly
+    job, since the Paper builds are pinned. **next**
     Starts 2026-11-09, target 2026-11-20.
 27. The bot joins a modded server (NeoForge or Fabric dedicated server), so mods get scenario checks
     like plugins do. **next**
@@ -322,7 +324,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Memory at the peak of server-check on a real Paper server, AgentCraft, warm | — | 2.4 GB (Nov 7) | — | Fact |
 | plugin-check on MockBukkit, AgentCraft, warm | — | 7 s (Oct 26) | 7 s (hold) by Nov 27, step 34 | Met |
 | Paper versions the test player passed on | — | 6 versions (Oct 26) | 8 versions by Nov 20, step 26 | Baseline |
-| Paper versions the test player passes on in CI | — | 1 version (Oct 26) | 6 versions by Nov 20, step 26 | Baseline |
+| Paper versions the test player passes on in CI | — | 1 version (Oct 26) | — | Fact |
 
 ### Modpacks
 
@@ -362,3 +364,4 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | How cheap should a game check be? | 5 CPU-s per check, from 49. Checks that need the game's data but not a picture stop launching the game: data-check runs the game's own code with no window and no world (Jon, 2026-11-07, instead of sharing one started game). Picture checks keep the hidden client, with graphics settings as they are | 2026-11-07 |
 | Do speed targets drive work? | Only when they move the goal. Phase 7 closed on Nov 7 once checks were hidden, data-check skipped the game and 8 checks ran at once; the start, cold-check, screen-check, server and pack-check speed targets became facts, the nightly job joined step 26 and pack-check's step joined Phase 6, and work went back to porting (Jon, 2026-11-07) | 2026-11-07 |
 | Run the real-game behaviour checks nightly? | No. Their inputs (game, mods, Java) are pinned, so a nightly run repeats yesterday's answer; they run when a port reaches the game or the code they test changes (Jon, 2026-11-08) | 2026-11-08 |
+| Run CI on a schedule? | No. Every input is pinned, so a scheduled run repeats the last answer: Stonecutter's nightly run failed one of its 100 jobs six nights in a row (Nov 2 to 7) with nobody looking. Slow checks run on demand when the code they test changes. The PR budget gate that failed a run over 300 s, queue time included, is gone too: a budget is not a check (Jon, 2026-11-08) | 2026-11-08 |

@@ -568,10 +568,10 @@
    "unit": "versions",
    "better": "higher",
    "machine": "ci",
-   "target": {"value": 6, "by": "2026-11-20", "step": "26"},
    "points": [
     {"date": "2026-10-26", "value": 1, "note": "26.3 only", "source": ".github/workflows/portable.yml"}
-   ]
+   ],
+   "info": true
   },
   {
    "id": "pack.packs-in-game",

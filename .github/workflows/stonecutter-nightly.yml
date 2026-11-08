@@ -3,10 +3,10 @@ name: Stonecutter nodes (nightly)
 # pinned clones, Windows, Linux and macOS, no game. One job per node and OS, so each job is one
 # cold node (a few minutes; Forge decompiles take the longest) instead of a whole mod's 30+.
 # No Gradle cache: a node is measured from first use, and per-node caches would evict the PR
-# sample caches. Runs nightly and on demand, never blocks a merge; PRs run stonecutter-sample.
+# sample caches. Runs on demand (a change to the build or a mod pin), never blocks a merge; PRs run
+# stonecutter-sample. No schedule: the clones are pinned, so a nightly run repeated the last answer, and from
+# Nov 2 to Nov 7, 2026 one of its 100 jobs failed every night with nobody looking.
 on:
-  schedule:
-    - cron: '17 7 * * *'
   workflow_dispatch:
 permissions:
   contents: read

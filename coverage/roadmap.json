@@ -314,12 +314,13 @@
     },
     {
      "id": "26",
-     "title": "Nightly bot run on older Paper versions",
+     "title": "The bot on older Paper versions, on demand",
      "status": "next",
-     "text": "A nightly CI job runs the bot on older Paper versions.",
+     "text": "The bot's run on older Paper versions (1.8.8 to 1.21.4) is one command anyone can start on demand (boat or workflow_dispatch), rerun when the bot or ViaProxy code changes; not a nightly job, since the Paper builds are pinned.",
      "start": "2026-11-09",
      "target": "2026-11-20",
      "measures": [
+      "plugin.paper-versions.local",
       "plugin.paper-versions.ci"
      ]
     },
@@ -543,6 +544,11 @@
   {
    "question": "Run the real-game behaviour checks nightly?",
    "choice": "No. Their inputs (game, mods, Java) are pinned, so a nightly run repeats yesterday's answer; they run when a port reaches the game or the code they test changes (Jon, 2026-11-08)",
+   "date": "2026-11-08"
+  },
+  {
+   "question": "Run CI on a schedule?",
+   "choice": "No. Every input is pinned, so a scheduled run repeats the last answer: Stonecutter's nightly run failed one of its 100 jobs six nights in a row (Nov 2 to 7) with nobody looking. Slow checks run on demand when the code they test changes. The PR budget gate that failed a run over 300 s, queue time included, is gone too: a budget is not a check (Jon, 2026-11-08)",
    "date": "2026-11-08"
   }
  ]
