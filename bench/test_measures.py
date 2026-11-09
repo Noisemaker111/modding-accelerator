@@ -47,14 +47,17 @@ check(any("no source" in p for p in broken(lambda d, r: first(d)["points"][0].po
 check(any("date order" in p for p in broken(lambda d, r: first(d)["points"].insert(0, {"date": "2099-01-01", "value": 1, "source": "x"}))), "points out of order must fail")
 check(any("no target" in p for p in broken(lambda d, r: next(m for m in d["measures"] if m.get("target") and not m.get("computed")).pop("target"))), "a measure without a target must fail")
 check(any("not in the roadmap" in p for p in broken(lambda d, r: next(m for m in d["measures"] if (m.get("target") or {}).get("step")).__setitem__("target", {"value": 1, "by": "2026-12-01", "step": "999"}))), "a target on a missing step must fail")
-check(any("not in coverage/measures.json" in p for p in broken(lambda d, r: r["phases"][0]["steps"][0].setdefault("measures", []).append("no.such.measure"))), "a step naming a missing measure must fail")
-check(any("no target date" in p for p in broken(lambda d, r: next(s for p in r["phases"] for s in p["steps"] if s["status"] != "done").pop("target"))), "an open step without a target date must fail")
-check(any("no done date" in p for p in broken(lambda d, r: next(s for p in r["phases"] for s in p["steps"] if s["status"] == "done").pop("done"))), "a done step without a done date must fail")
+check(any("not in coverage/measures.json" in p for p in broken(lambda d, r: r["goals"][0]["steps"][0].setdefault("measures", []).append("no.such.measure"))), "a step naming a missing measure must fail")
+check(any("no target date" in p for p in broken(lambda d, r: next(s for p in r["goals"] for s in p["steps"] if s["status"] != "done").pop("target"))), "an open step without a target date must fail")
+check(any("no done date" in p for p in broken(lambda d, r: next(s for p in r["goals"] for s in p["steps"] if s["status"] == "done").pop("done"))), "a done step without a done date must fail")
 check(any("used twice" in p for p in broken(lambda d, r: d["measures"].append(copy.deepcopy(d["measures"][-1])))), "a repeated id must fail")
+check(any("headline no.such.measure" in p for p in broken(lambda d, r: r["goals"][0]["headline"].append("no.such.measure"))), "a goal headline naming a missing measure must fail")
+check(any("no headline" in p for p in broken(lambda d, r: r["goals"][0].pop("headline"))), "a goal without a headline measure must fail")
+check(any("no part" in p for p in broken(lambda d, r: r["goals"][0]["steps"][0].pop("part"))), "a step without a part must fail")
 
 # a stale ROADMAP.md is caught: change one step's text and the render no longer matches
 road = copy.deepcopy(book.roadmap)
-road["phases"][0]["steps"][0]["text"] += " (edited)"
+road["goals"][0]["steps"][0]["text"] += " (edited)"
 check(bench_page.roadmap_md(M.Book(book.data, road, book.ledger, book.index)) != have, "an edited roadmap.json must make ROADMAP.md stale")
 
 # state and format: one rule, the same everywhere

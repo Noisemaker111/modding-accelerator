@@ -13,6 +13,10 @@ STYLE = r"""
   --accent:#2a78d6; --accent-wash:rgba(42,120,214,.12); --accent-ink:#1c5cab;
   --hi:rgba(42,120,214,.12); --hi-edge:#2a78d6; --hi-ink:#0b0b0b; --best:#ecebe6;
   --green:#0ca30c; --good-ink:#006300; --yellow:#fab219; --red:#d03b3b; --bad-ink:#b02a2a; --grey:#c3c2b7; --link:#1c5cab;
+  /* the brand mark: a grass block, three greens over two browns. The terminal stays dark in both themes. */
+  --grass:#5d9c3f; --grass2:#4a8232; --grass3:#7bb659; --dirt:#8a5a3b; --dirt2:#6f4630; --term:#16181d; --term-ink:#e8e6df; --term-dim:#8d8f96; --term-key:#8fd06a;
+  --f-head:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif; --f-body:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono","Cascadia Mono",Consolas,ui-monospace,monospace; --f-pixel:"Pixelify Sans","Space Grotesk",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   color-scheme: dark;
@@ -32,19 +36,20 @@ STYLE = r"""
 }
 * { box-sizing:border-box }
 html { -webkit-text-size-adjust:100%; scroll-behavior:smooth }
-body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif }
-main { max-width:1160px; margin:0 auto; padding:24px 16px 56px }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 var(--f-body) }
+main { max-width:1120px; margin:0 auto; padding:0 20px 64px }
 a { color:var(--link) }
-h1 { font-size:32px; margin:0; letter-spacing:-.01em; font-weight:650 }
-h2 { font-size:24px; margin:48px 0 6px; font-weight:650; scroll-margin-top:64px }
-h3 { font-size:19px; margin:28px 0 6px; font-weight:600 }
-p { margin:6px 0; color:var(--ink2) }
-code { font-family:"Cascadia Mono",Consolas,ui-monospace,monospace; font-size:.9em }
+h1, h2, h3 { font-family:var(--f-head); text-wrap:balance }
+h1 { font-size:clamp(34px, 5vw, 52px); line-height:1.05; margin:0; letter-spacing:-.025em; font-weight:700 }
+h2 { font-size:30px; line-height:1.15; margin:88px 0 8px; letter-spacing:-.02em; font-weight:700; scroll-margin-top:76px }
+h3 { font-size:19px; margin:32px 0 6px; font-weight:600; letter-spacing:-.01em; scroll-margin-top:76px }
+p { margin:6px 0; color:var(--ink2); max-width:72ch }
+code { font-family:var(--f-mono); font-size:.9em }
 .top { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap }
 .top nav { display:flex; gap:6px 14px; align-items:center; flex-wrap:wrap; font-size:14.5px }
-.lede { font-size:17.5px; max-width:820px; margin-top:10px; color:var(--ink2) }
+.lede { font-size:18.5px; line-height:1.5; max-width:56ch; margin-top:14px; color:var(--ink2) }
 .small { font-size:13.5px; color:var(--ink3) }
-.mono { font-family:"Cascadia Mono",Consolas,ui-monospace,monospace; font-size:13.5px }
+.mono { font-family:var(--f-mono); font-size:.86em }
 button { font:inherit; cursor:pointer; border:1px solid var(--rule); background:var(--chip); color:var(--ink); border-radius:8px; padding:7px 12px }
 button:hover { border-color:var(--ink3) }
 .theme { font-size:14px; padding:4px 10px }

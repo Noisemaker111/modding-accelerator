@@ -1,4 +1,4 @@
-name: Stonecutter nodes (nightly)
+name: Stonecutter nodes (on demand)
 # Every node of Diorama and In-Game Account Switcher: setup and compile through modaccel on fresh
 # pinned clones, Windows, Linux and macOS, no game. One job per node and OS, so each job is one
 # cold node (a few minutes; Forge decompiles take the longest) instead of a whole mod's 30+.

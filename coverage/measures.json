@@ -1,13 +1,7 @@
 {
- "about": "Every number modaccel shows: on the roadmap page, in ROADMAP.md, in a PR or a report. One entry per thing measured, with every point it ever had and the target it is heading for. Record a point with python bench/measures.py add; print a table for a PR with python bench/measures.py table. A point carries its date, value, how many runs (n), what it was measured on, and where the receipt is. Cold and warm are separate measures, and so is the same check on another loader: a measure only ever compares the same work. A measure with 'computed' gets its points from the ledger or the roadmap at render time instead of from 'points'. A target with value null is set once its step measures a baseline. 'context' measures are other people's numbers we compare against, and 'info' measures are facts worth showing; neither has a target. Every other measure has one.",
+ "about": "Every number modaccel shows: on the roadmap page, in ROADMAP.md, in a PR or a report. One entry per thing measured, with every point it ever had and the target it is heading for. Record a point with python bench/measures.py add; print a table for a PR with python bench/measures.py table. A point carries its date, value, how many runs (n), what it was measured on, and where the receipt is. Cold and warm are separate measures, and so is the same check on another loader: a measure only ever compares the same work. A measure with 'computed' gets its points from the ledger or the roadmap at render time instead of from 'points'. A target with value null is set once its step measures a baseline. 'context' measures are other people's numbers we compare against, and 'info' measures are facts worth showing; neither has a target. Every other measure has one. The measures that say most about each goal are named in that goal's 'headline' in coverage/roadmap.json.",
  "machines": {"jon-pc": "Ryzen 9 3900X, Windows 11, JDK 25 (JDK 21 for NeoForge 1.21.1)", "ci": "GitHub-hosted runners (windows, macos, ubuntu)", "boat": "boat.dev default machine: 4 vCPU, 8 GB, Ubuntu, idle apart from the check", "boat-host": "boat.dev Linux T3 host: 8 cores, 16 GB, Ubuntu 24.04, Temurin 21, idle apart from one thread's work"},
- "areas": {"port": "Porting", "test": "Game checks", "plugin": "Plugins", "pack": "Modpacks", "ci": "CI", "roadmap": "Roadmap", "context": "Compared with"},
- "headline": [
-  "port.mods-working",
-  "port.errors.zaa-neoforge-1.21.1-26.3",
-  "test.cold-start-check.fabric",
-  "pack.packs-in-game"
- ],
+ "areas": {"test": "Goal 1 · Testing mods", "plugin": "Goal 1 · Testing plugins", "port": "Goal 2 · Porting versions", "pack": "Goal 3 · Modpacks", "loader": "Goal 4 · Loaders and platforms", "ci": "CI", "roadmap": "Roadmap", "context": "Compared with"},
  "measures": [
   {
    "id": "roadmap.steps-done",
@@ -174,6 +168,46 @@
    "target": {"value": 80, "by": "2026-12-31", "step": "13"},
    "points": [
     {"date": "2026-10-25", "value": 38, "note": "from 5,045 switches in 33 mods", "source": "knowledge/fixes.json"}
+   ]
+  },
+  {
+   "id": "setup.neoform.neoforge-1.21.6.cold",
+   "area": "port",
+   "name": "NeoForge 1.21.6 game setup (NeoForm), first mod on the machine",
+   "unit": "s",
+   "better": "lower",
+   "condition": "cold",
+   "machine": "boat-host",
+   "info": true,
+   "points": [
+    {"date": "2026-11-08", "value": 137, "n": 1, "note": "NeoGradle 7.1.39, Notes port: decompile 33 s, transformSource 11 s, recompile 30 s; 24 cache entries made", "source": "bench/neoform_steps.py on .runs/porting/notes (PR #47)"}
+   ]
+  },
+  {
+   "id": "setup.neoform.neoforge-1.21.6.cold.jon-pc",
+   "area": "port",
+   "name": "NeoForge 1.21.6 game setup (NeoForm), first mod, on Jon's PC",
+   "unit": "min",
+   "better": "lower",
+   "condition": "cold",
+   "machine": "jon-pc",
+   "info": true,
+   "points": [
+    {"date": "2026-11-08", "value": 92, "n": 1, "note": "lower bound: decompile 12, inject 24, transformSource 34, recompile 22+ min under fairshare's idle priority with the PC busy; killed in recompile, once per mod folder", "source": "Jon's step timings, 2026-11-08 (PR #47)"}
+   ]
+  },
+  {
+   "id": "setup.neoform.second-mod-steps-run",
+   "area": "port",
+   "name": "NeoForm steps a second mod on the same NeoForge version runs again",
+   "unit": "steps",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "boat-host",
+   "target": {"value": 0, "by": "2026-11-08", "step": "10b"},
+   "points": [
+    {"date": "2026-11-08", "value": 16, "note": "before: a different NeoGradle per mod re-runs every step (Notes' folder moving NeoGradle 7.0.145 -> 7.0.192 re-ran all 16 with 7.0.145's setup cached)", "source": "bench/neoform_steps.py on .runs/porting/notes (PR #47)"},
+    {"date": "2026-11-08", "value": 0, "note": "after: one NeoGradle per port; Zombie Apocalypse 1.21.1 -> 1.21.6 after Notes ran none and made 0 cache entries, port 30 s", "source": "bench/neoform_steps.py on .runs/porting/zaa (PR #47)"}
    ]
   },
   {
@@ -627,13 +661,24 @@
    "info": true
   },
   {
+   "id": "loader.pairs-working",
+   "area": "loader",
+   "name": "Loader or platform changes that work in the game",
+   "unit": "pairs",
+   "better": "higher",
+   "target": {"value": 1, "by": "2027-01-29", "step": "18"},
+   "points": [
+    {"date": "2026-11-09", "value": 0, "note": "none built: all 4 loader pairs in the ledger are unbuilt, and no mod ↔ plugin move exists", "source": "coverage/ledger.json loader_pairs"}
+   ]
+  },
+  {
    "id": "ci.pr-wall",
    "area": "ci",
    "name": "PR checks, start to finish",
    "unit": "min",
    "better": "lower",
    "machine": "ci",
-   "target": {"value": 5, "by": "2026-11-05", "note": "hold; the budget job fails a PR run that takes longer"},
+   "target": {"value": 5, "by": "2026-11-05", "note": "hold; every PR job stops at a 5-minute timeout"},
    "points": [
     {"date": "2026-10-27", "value": 2.0, "source": "gh run list, Portable command, pull_request"},
     {"date": "2026-10-28", "value": 4.1, "source": "gh run list, Portable command, pull_request"},
@@ -646,7 +691,7 @@
   {
    "id": "ci.nightly-wall",
    "area": "ci",
-   "name": "Nightly multi-version run, start to finish",
+   "name": "Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since)",
    "unit": "min",
    "better": "lower",
    "machine": "ci",
@@ -714,46 +759,6 @@
    "context": true,
    "points": [
     {"date": "2026-10-21", "value": 158.55, "n": 6, "note": "median of 6 Fabric mods", "source": "bench/port/results.json"}
-   ]
-  },
-  {
-   "id": "setup.neoform.neoforge-1.21.6.cold",
-   "area": "port",
-   "name": "NeoForge 1.21.6 game setup (NeoForm), first mod on the machine",
-   "unit": "s",
-   "better": "lower",
-   "condition": "cold",
-   "machine": "boat-host",
-   "info": true,
-   "points": [
-    {"date": "2026-11-08", "value": 137, "n": 1, "note": "NeoGradle 7.1.39, Notes port: decompile 33 s, transformSource 11 s, recompile 30 s; 24 cache entries made", "source": "bench/neoform_steps.py on .runs/porting/notes (PR #47)"}
-   ]
-  },
-  {
-   "id": "setup.neoform.neoforge-1.21.6.cold.jon-pc",
-   "area": "port",
-   "name": "NeoForge 1.21.6 game setup (NeoForm), first mod, on Jon's PC",
-   "unit": "min",
-   "better": "lower",
-   "condition": "cold",
-   "machine": "jon-pc",
-   "info": true,
-   "points": [
-    {"date": "2026-11-08", "value": 92, "n": 1, "note": "lower bound: decompile 12, inject 24, transformSource 34, recompile 22+ min under fairshare's idle priority with the PC busy; killed in recompile, once per mod folder", "source": "Jon's step timings, 2026-11-08 (PR #47)"}
-   ]
-  },
-  {
-   "id": "setup.neoform.second-mod-steps-run",
-   "area": "port",
-   "name": "NeoForm steps a second mod on the same NeoForge version runs again",
-   "unit": "steps",
-   "better": "lower",
-   "condition": "warm",
-   "machine": "boat-host",
-   "target": {"value": 0, "by": "2026-11-08", "step": "10b"},
-   "points": [
-    {"date": "2026-11-08", "value": 16, "note": "before: a different NeoGradle per mod re-runs every step (Notes' folder moving NeoGradle 7.0.145 -> 7.0.192 re-ran all 16 with 7.0.145's setup cached)", "source": "bench/neoform_steps.py on .runs/porting/notes (PR #47)"},
-    {"date": "2026-11-08", "value": 0, "note": "after: one NeoGradle per port; Zombie Apocalypse 1.21.1 -> 1.21.6 after Notes ran none and made 0 cache entries, port 30 s", "source": "bench/neoform_steps.py on .runs/porting/zaa (PR #47)"}
    ]
   }
  ]

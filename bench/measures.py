@@ -26,7 +26,7 @@ INDEX = ROOT / "coverage" / "changes" / "index.json"
 
 STATUSES = ("done", "doing", "next", "later")
 UNITS = {"s", "min", "GB", "errors", "files", "rules", "mods", "updates", "steps", "versions", "packs", "repairs",
-         "items", "sessions", "cores", "CPU-s"}
+         "items", "sessions", "cores", "CPU-s", "pairs"}
 ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 
@@ -51,7 +51,7 @@ class Book:
         self.ledger = ledger if ledger is not None else load(LEDGER)
         self.index = index if index is not None else (load(INDEX) if INDEX.is_file() else None)
         self.by_id = {m["id"]: m for m in self.data["measures"]}
-        self.steps = {s["id"]: dict(s, phase=p["id"]) for p in self.roadmap["phases"] for s in p["steps"]}
+        self.steps = {s["id"]: dict(s, goal=g["id"]) for g in self.roadmap["goals"] for s in g["steps"]}
 
     # ---- points ------------------------------------------------------------------------------
     def points(self, m):
@@ -142,7 +142,7 @@ def num(v, unit, minutes=False):
 
 
 SINGULAR = {"errors": "error", "files": "file", "rules": "rule", "mods": "mod", "updates": "update", "steps": "step",
-            "versions": "version", "packs": "pack", "repairs": "repair", "items": "item", "sessions": "session", "cores": "core"}
+            "versions": "version", "packs": "pack", "repairs": "repair", "items": "item", "sessions": "session", "cores": "core", "pairs": "pair"}
 
 
 def unit_word(v, unit, minutes=False):
@@ -265,23 +265,28 @@ def problems(book):
                 out.append(f"{i}: target.by {t.get('by')} is not YYYY-MM-DD")
             if t.get("step") and t["step"] not in book.steps:
                 out.append(f"{i}: target step {t['step']} is not in the roadmap")
-    for h in book.data.get("headline", []):
-        if h not in book.by_id:
-            out.append(f"headline {h} is not a measure")
         try:
             book.points(m)
         except (ValueError, KeyError, TypeError) as e:
             out.append(f"{i}: computed points failed: {e}")
     sids = set()
-    for p in book.roadmap["phases"]:
-        for s in p["steps"]:
+    for g in book.roadmap["goals"]:
+        for k in ("id", "title", "intro", "today", "steps"):
+            if not g.get(k):
+                out.append(f"goal {g.get('id', '?')}: no {k}")
+        if not g.get("headline"):
+            out.append(f"goal {g.get('id', '?')}: no headline measure")
+        for h in g.get("headline", []):
+            if h not in book.by_id:
+                out.append(f"goal {g.get('id', '?')}: headline {h} is not in coverage/measures.json")
+        for s in g.get("steps", []):
             sid = s.get("id", "?")
             if sid in sids:
                 out.append(f"step {sid}: id used twice")
             sids.add(sid)
             if s.get("status") not in STATUSES:
                 out.append(f"step {sid}: status {s.get('status')} is not one of {STATUSES}")
-            for k in ("title", "text", "start"):
+            for k in ("title", "text", "start", "part"):
                 if not s.get(k):
                     out.append(f"step {sid}: no {k}")
             for k in ("start", "target", "done"):
