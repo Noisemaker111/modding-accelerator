@@ -1,6 +1,8 @@
 # Scope: what modaccel supports, and how new things get in
 
-Status: adopted 2026-10-25. ROADMAP.md holds the steps; platform-change for Paper is still open.
+Status: adopted 2026-10-25; platform change, Paper included, became a goal on 2026-11-09. ROADMAP.md holds the steps.
+
+The four goals (AGENTS.md) meet this file in the ladder of section 2: rungs 1 to 4 are Goal 1 (test a mod in seconds), rung 5 is Goal 2 (port to any version) and rung 6 is Goal 4 (change loader or platform). Goal 3 (modpacks) takes installed packs, not source projects, so it has no rung.
 
 ## 1. Kinds of projects
 
@@ -36,7 +38,7 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 | 3 Run check | Loads in the real game/server, screenshot or command proof | yes | yes | partial | yes (26.3 node) | yes, on MockBukkit (a fake Paper server, no real server): `plugin-check` |
 | 4 Multiplayer check | Dedicated server plus client, or server plus bot | partial | partial | no | no | yes, real Paper server plus a bot player: `server-check` (bot speaks 26.3 only) |
 | 5 Version port | `port --from --to`, routed through hubs | yes (1.14.4+) | yes (1.14.4+) | no | via its nodes | no: config only, done by hand (AgentCraft 26.3 to 1.21.10 passes `plugin-check`); `port` refuses plugins and names the edits |
-| 6 Platform change | e.g. Fabric → NeoForge | later | later | later | n/a | not planned |
+| 6 Platform change | e.g. Fabric → NeoForge, Forge → Paper | later | later | later | n/a | later: server-side code only |
 
 ## 3. Policy
 
@@ -47,11 +49,11 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
    - The bench shows a measured gain.
    - One fixture from that platform joins the merge gate.
 4. **Ports between Paper versions: yes.** The Paper API changes slowly; AgentCraft runs on 1.21.10 through 26.3 with config changes only. This is rung 5 and should be cheap.
-5. **Plugin ↔ mod conversion: no for now.**
-   - A plugin uses the Bukkit API, while a mod changes the game directly. Converting means rewriting, not porting.
-   - Hybrid servers (Arclight and similar) already run plugins next to mods.
-   - Revisit only if real demand shows up.
-6. **Loader changes (Fabric ↔ NeoForge) stay separate from version ports**, with separate claims. This is already decided in ROADMAP.
+5. **Plugin ↔ mod moves: yes, as part of Goal 4.**
+   - Server-side code can be mapped between a loader's API and the Bukkit API: events, commands, the scheduler, config.
+   - Client code, mixins into the game and new blocks or items cannot exist on a plugin server, where vanilla clients join. A move names each of them and stops; it never drops them.
+   - Decided 2026-11-09, replacing "no for now" from 2026-10-25. Nothing is built yet (ROADMAP step 39).
+6. **Loader and platform changes stay separate from version ports**, with separate claims. This is already decided in ROADMAP.
 7. **Every claim carries its rung.** The README and the roadmap page (with its porting map) say which rung a platform reached, never "supports X".
 
 ## 4. Intake: what happens when someone brings a new project
@@ -61,33 +63,18 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 3. **Decide.**
    - **Fits a supported platform and passes:** add it to the test set if it covers a new kind of build.
    - **Fits but fails a rung:** the smallest fix goes on a branch, and a ROADMAP step is added with the exact blocker.
-   - **New platform:** apply policy 3. If it qualifies, add a ROADMAP phase step for rung 1 or 2 only, not the whole ladder.
+   - **New platform:** apply policy 3. If it qualifies, add a ROADMAP step under its goal for rung 1 or 2 only, not the whole ladder.
    - **Out of scope:** say so plainly in the report, with the reason.
 4. **Record it.** A ledger row for any port run, the pages regenerated (AGENTS.md rule), and the merge gate updated if it became a fixture.
 
-## 5. Where AgentCraft lands
+## 5. Example: where AgentCraft lands
 
-- Paper plugin, server side, at rung 3.
-- Rung 1: `modaccel compile --task :jar` builds the plugin jar (about 3 s warm).
-- Rung 2: `modaccel fast` runs every test when no Minecraft or loader is on the test classpath,
-  so AgentCraft's 17 untagged tests run in 2-5 s warm. Fabric, NeoForge and Forge still run
-  only tests tagged `pure`.
-- Rung 3: `modaccel plugin-check` builds the jar with the plugin's own task and loads it on
-  MockBukkit for the plugin's Paper API line: descriptor and api-version, main class, onLoad,
-  onEnable, plugin.yml command handlers and Brigadier commands, permissions, listeners, hard
-  dependencies, 100 ticks of its tasks, onDisable. About 4-7 s warm. It is a fake server: code
-  through server internals (net.minecraft, CraftBukkit) or API MockBukkit lacks is reported
-  unchecked, and world, entity and network behaviour are not proven. A real Paper server check
-  stays a later, optional step.
-- It is the first server fixture in the merge gate: `bench/server-plugins/manifest.json`, run by
-  `tools/tests/ServerPluginFixtures.java` in the server-plugins CI job, which also breaks the
-  plugin on purpose in a throwaway copy and requires each break to fail.
-- Rung 4: `modaccel server-check` starts the real Paper server (downloaded once from PaperMC's
-  API, SHA-256 checked, headless, offline, 127.0.0.1 only, EULA accepted only for that throwaway
-  test server) with the plugin jar, joins a protocol bot (MCProtocolLib, Minecraft 26.3 only) and
-  runs a scenario of chat, commands and RCON with expect steps on chat, titles, the server log,
-  HTTP, entities, blocks, inventory and position. AgentCraft against its own mock backend: an agent
-  is summoned as a real mannequin, answers in chat and leaves its messages as written books. Two
-  breaks made on purpose fail at the step that catches them. About 25 s warm, about 55 s cold.
-  The real Capy backend needs your key and is not run (`bench/server-plugins/agentcraft-live.scenario`).
-- Next: rung 5 (`port` between Paper versions, config only), and more bot versions.
+- Paper plugin, server side, at rung 4.
+- Rung 1: `modaccel compile --task :jar` builds the plugin jar.
+- Rung 2: `modaccel fast` runs all 17 of its tests, because no Minecraft or loader is on the test classpath.
+- Rung 3: `modaccel plugin-check` loads the jar on MockBukkit. It is a fake server: world, entity and network behaviour are not proven.
+- Rung 4: `modaccel server-check` starts a real Paper server with the plugin, joins a bot player and runs a scenario with expect steps. Two breaks made on purpose fail at the step that catches them.
+- It is the first server fixture in the merge gate (`bench/server-plugins/manifest.json`, run by `tools/tests/ServerPluginFixtures.java`).
+- Next: rung 5, `port` between Paper versions (ROADMAP step 28).
+
+What each check covers is in `modaccel help plugin-check` and `modaccel help server-check`; the timings are measures in `ROADMAP.md`.

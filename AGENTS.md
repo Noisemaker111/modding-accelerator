@@ -1,64 +1,117 @@
 # Modding Accelerator
 
-This file holds only what is specific to this project.
+`modaccel` is one command for Minecraft mod, plugin and modpack work. This file is the rules for working in this repo. It does not repeat `modaccel help COMMAND` (how a command works), `README.md` (what works today) or `ROADMAP.md` (what is done and what is next).
 
-## Goal
+## The four goals
 
-A mod or plugin author never has to launch Minecraft, and a modpack user can find and resolve compatibility problems without diagnosing them by hand. The goals are:
+Everything here serves one of these. They are in priority order.
 
-1. **Port** any mod source project (a Gradle checkout; compiled JARs are unsupported) to any Minecraft version, forward or back, reversibly, through the change index and hub routing. Changing loader is a separate job.
-2. **Prove it behaves** in the real game or a real server: the mod's own state asserted in a real client (`eval`, `--assert`, `--expect-value`), plugins on a real Paper server with a bot player following a scenario. A build, a fake server (MockBukkit) or "the mod loaded" is a floor, never "tested".
-3. **Make modpacks work together**: detect and resolve incompatibilities in installed mods and their configurations, including incorrect blocks or items and worlds that fail to reopen, with reversible changes and real-game behavior checks. Compiled mods are inputs for pack diagnosis; source is still required for source ports.
+| # | Goal | Done means | Commands |
+|---|---|---|---|
+| 1 | **Test a mod in seconds** | An author changes code and gets an answer about the mod's real behaviour in seconds, and never opens Minecraft by hand | `fast`, `data-check`, `mixin-check`, `ui-check`, `world-check`, `mp-check`, `eval`, `reload`; plugins: `plugin-check`, `server-check` |
+| 2 | **Port a mod to any Minecraft version** | One command, no hand edits, forward or back, every edit reversible, the result checked in the real game | `port`, `explain`, `dependencies` |
+| 3 | **Make modpacks work together** | Conflicts in an installed pack are found and repaired (wrong blocks or items, worlds that fail to reopen), reversibly, checked on the pack's real server | `pack-check` |
+| 4 | **Change loader or platform** | The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a version port, with separate claims | not built yet |
 
-Windows, Linux and macOS; Java and Kotlin; Fabric, NeoForge, Forge and Paper, climbing SCOPE.md's ladder.
+- Windows, Linux and macOS; Java and Kotlin; Fabric, NeoForge, Forge and Paper, climbing `SCOPE.md`'s ladder.
+- Ports need source (a Gradle checkout). Compiled jars are inputs for pack diagnosis only.
+- Work that moves none of the four goals is not roadmap work. A speed target, a page or a refactor earns its place by moving a goal's step; otherwise it is a small fix or it waits.
 
-## Where the truth is
+## How work is done
 
-- The roadmap is one file, `coverage/roadmap.json`: every phase and step with its status, start, target and done dates, and the measures it moves. Porting, proof, modpacks and future work are all steps there. Only statuses there are claims; update it when a step changes, then run `python bench/bench_page.py --roadmap` to rewrite `ROADMAP.md` (generated; never edit it by hand). A target that moves keeps its old date in `moved`.
-- Every number shown anywhere (the page, `ROADMAP.md`, a PR body, a report to Jon) is a measure in `coverage/measures.json`: the same work measured the same way, with its points, its source, and a target with a date and step. Record a point with `python bench/measures.py add ID VALUE --source WHERE` (it rewrites `ROADMAP.md` too) and show numbers with `python bench/measures.py table`, never a hand-made table. A new kind of number gets a new measure entry first. `bench/viz.py` is the only code that draws a number on a page; add a component there rather than a one-off chart. `python bench/test_measures.py` (PR CI) fails when the two files disagree or `ROADMAP.md` is behind them. `README.md` is the public goal and support table. `modaccel help COMMAND` is how each command works; don't repeat it in a doc.
-- `coverage/ledger.json` records port runs. A run that is not in the ledger did not happen. `python bench/bench_page.py` renders the roadmap, every measure, the porting map and the ledger into `docs/index.html`, the one public page (`docs/porting-map.html` only redirects old links there). After any port run, or any change to the rules or the router, record it in the ledger in the same change, so a hop turns green only once a port on it has been seen working. Regenerate `docs/` only in the final commit before a milestone merge (see "Branches and PRs").
-- `coverage/changes/` is the change index (every neighbouring-release diff 1.14.4 → 26.3 in Mojang names) and its `index.json` the families, hubs, rule coverage and best ledger run. Refresh: `java tools/ChangeIndex.java`, `python bench/change_routes.py`, `python bench/porting_map.py`, `python bench/bench_page.py`.
-- Rules mined from Stonecutter mods are the `source: "stonecutter"` rules in `knowledge/fixes.json`; regenerate with `python bench/stonecutter_mine.py extract` then `python bench/stonecutter_rules.py`.
-- Trial trees live under `.runs/beta-trials/`; logs under `.runs/logs`, history in `.runs/index.jsonl`.
+1. **Find the step.** `ROADMAP.md` opens with where each goal stands: the steps being worked on and the steps up next. Take one of those. Finish a `doing` step in a goal before starting another one there. Work with no step gets a step first, under its goal in `coverage/roadmap.json`; a small fix needs none.
+2. **Work in your own worktree**, on that goal's branch, and never edit the same files as another agent.
+3. **Run it through modaccel.** See Commands.
+4. **Prove it** at the level the claim needs. See Evidence.
+5. **Record it in the same change.** See Recording. A step is `done` only when it ran and was checked.
+6. **Put it in the goal's PR**, with the goal and step in the body. See Branches and PRs.
+
+## Recording
+
+Three files are the truth. Everything else that shows a status or a number is generated from them.
+
+| What happened | Where it goes | Then run |
+|---|---|---|
+| A step started, finished, moved or was added | `coverage/roadmap.json`, under its goal. A target that moves keeps its old date in `moved` | `python bench/bench_page.py --roadmap` (rewrites `ROADMAP.md`) |
+| A number was measured | `coverage/measures.json` | `python bench/measures.py add ID VALUE --source WHERE` (rewrites `ROADMAP.md` too) |
+| A port ran, or the rules or the router changed | a row in `coverage/ledger.json`, in the same change | nothing; a hop turns green only once a port on it was seen working |
+| A number goes in a PR body or a report | never a hand-made table | `python bench/measures.py table` |
+| A milestone is about to merge | `docs/` | `python bench/bench_page.py` and `python bench/porting_map.py`, once, in the final commit |
+
+- Only statuses in `coverage/roadmap.json` are claims. `ROADMAP.md` is generated; never edit it by hand.
+- Every number shown anywhere (the page, `ROADMAP.md`, a PR body, a report to Jon) is a measure: the same work measured the same way, with its points, its source, and a target with a date and a step. A new kind of number gets a new measure entry first.
+- A port run that is not in the ledger did not happen.
+- `bench/viz.py` is the only code that draws a number on a page. Add a component there, not a one-off chart.
+- `python bench/test_measures.py` (PR CI) fails when the roadmap and the measures disagree or `ROADMAP.md` is behind them.
+- `docs/index.html` is the one public page: roadmap, every measure, the porting map and the ledger. `docs/porting-map.html` only redirects old links there.
+
+## Evidence
+
+- A passing build, mixin audit or loaded world is not proof of the mod's behaviour. A build, a fake server (MockBukkit) or "the mod loaded" is a floor, never "tested". Proof is the mod's own state asserted in a real client (`eval`, `--assert`, `--expect-value`), or a plugin on a real Paper server with a bot player following a scenario.
+- Report port/build, game start and behaviour checks separately, each with its cache condition (cold or warm).
+- Never present preview or edit-only timings as complete ports, and never invent a universal speed target. Warm caches and reusable sessions are welcome; first-use setup matters too.
+- A rendering claim needs an inspected 1280x720 Minecraft framebuffer capture, never a desktop grab and never a hash of a frame. Say which tier you ran; a tier that cannot catch the mistake you made is not evidence.
+- When dependencies or behaviour cannot be verified, return the precise blocker. No silent feature removal and no weakened checks to make a port pass.
 
 ## Commands
 
-The portable command: `modaccel.cmd` on Windows, `./modaccel` on POSIX, or `java -jar modaccel.jar`. `help` lists the verbs and `support` the version table. Porting: `port`, `explain`, `mixin-check`. Mods: `fast`, `data-check` (the game's data, items and load errors from the game's own code, no game launched; Fabric 26.x; its game stays loaded, so a changed data file costs about 2 CPU-s, and a spare started behind it takes changed code in about 6; `--once` keeps nothing and `game-stop` ends both), `ui-check`, `world-check`, `mp-check`, `eval`, `reload`, `game-status`, `game-stop`. Plugins: `plugin-check`, `server-check`.
-
-`modaccel.ps1` (called by `modaccel.cmd` for `ui`, `node`, `suite`, `world`, `look`, `mp`, ...) and `bench/bridge`, `bench/forgebridge` are the older Windows lane, kept until the portable command covers each of its jobs; don't add to them.
+The portable command is `modaccel.cmd` on Windows, `./modaccel` on POSIX, or `java -jar modaccel.jar`. `modaccel help` lists the verbs, `modaccel help COMMAND` explains one, and `modaccel support` prints the version table. The goals table above says which verb serves which goal.
 
 Run builds and game launches through modaccel, never raw Gradle or a manual launch, and never add `--no-daemon`. Package locally; publishing needs Jon's approval.
 
+The older Windows lane is `modaccel.ps1` (called by `modaccel.cmd` for `ui`, `node`, `suite`, `world`, `look`, `mp`, ...), `install.ps1`, the `.ps1` and `Lab*.java` files directly in `tools/`, `bench/bridge`, `bench/forgebridge`, `scenarios/` and `skills/modding-accelerator/` (the skill `install.ps1` copies into a mod repo, which describes this lane only). It is kept until the portable command covers each of its jobs. Don't add to it.
+
+## Where things are
+
+| Path | What it is |
+|---|---|
+| `tools/cli/` | The portable command. `Modaccel.java` is the entry and the help text; one file per job (`Port`, `Game`, `PackCheck`, `ServerCheck`, ...) |
+| `tools/agent/`, `tools/datacheck/`, `tools/mixincheck/`, `tools/packcheck/`, `tools/plugincheck/`, `tools/servercheck/` | The code that runs inside the game or server for each check |
+| `tools/tests/` | The command's own tests and fixtures; `PortableTests.java` is what `self-test` runs |
+| `knowledge/` | Port rules and repairs. `fixes.json` holds the rules; those with `source: "stonecutter"` are mined (`python bench/stonecutter_mine.py extract`, then `python bench/stonecutter_rules.py`) |
+| `coverage/` | The truth files (`roadmap.json`, `measures.json`, `ledger.json`) and `changes/`, the change index: every neighbouring-release diff from 1.14.4 to 26.3 in Mojang names, with families, hubs and rule coverage in `index.json` |
+| `bench/` | The generators (`bench_page.py`, `measures.py`, `viz.py`, `porting_map.py`), the measuring scripts, and the real mods and plugins the checks run on (`real-mods/`, `server-plugins/`) |
+| `docs/` | The generated public page. Regenerated only before a milestone merge |
+| `src/`, `build.gradle`, `versions/` | Prism Lab, the demo Fabric mod the checks run against. The repo root is both modaccel's home and this fixture |
+| `site/` | A second website (Cloudflare Worker) that was never deployed. `site/scripts/export_data.py` parses `README.md`, `ROADMAP.md`, `SCOPE.md` and this file, and the Website CI job runs when they change, so run that script after reshaping any of them |
+| `.runs/` (ignored) | Trial trees in `.runs/beta-trials/`, logs in `.runs/logs`, history in `.runs/index.jsonl` |
+
+Refresh the change index with `java tools/ChangeIndex.java`, `python bench/change_routes.py`, `python bench/porting_map.py`, `python bench/bench_page.py`.
+
 ## Branches and PRs
 
-- One PR per feature or support area (e.g. "Paper plugin support", "Porting"), not one per step. Keep it a draft and add commits as steps land; the PR body is the checklist.
-- Merge when it reaches a milestone worth shipping (a new rung on SCOPE.md's ladder, or a big porting jump such as every 1.14 mod reaching 1.16), with CI green on all 3 OS. Agents merge; Jon has asked not to be waited on. Publishing a release still needs his approval.
-- PR CI stays quick: every PR job has a 5-minute timeout against hangs. A check that is slower runs on demand (workflow_dispatch, boat, or locally) when the code it tests changes, never on a schedule: every input is pinned, so a scheduled run repeats the last answer, and Stonecutter's nightly run failed six nights in a row in Nov 2026 with nobody looking. The real-game behaviour checks (`bench/behaviour_checks.sh`, a hidden client on Xvfb with software OpenGL) run on boat or locally when a port reaches the game or the game-check code changes.
-- Porting work goes on one long-running branch, `porting`, merged at those jumps.
-- Small fixes outside any feature may go in one hardening/fixes PR at a time.
-- A PR body follows `.github/pull_request_template.md` and fits on one screen: a bold one-line result, before/after (a table row per change), what was checked, what is not covered. A title that needs a comma-joined list is several PRs. When a push changes what the PR does, rewrite the body in the same push.
-- Every port run gets its ledger row in that branch. Regenerate `docs/` (`python bench/bench_page.py`, `python bench/porting_map.py`) once, in the final commit before merge, so the site changes only when a milestone lands.
-- Agents work in their own worktree and never edit the same files as another agent.
+- One PR per goal or support area (e.g. "Porting", "Paper plugin support"), not one per step. Keep it a draft and add commits as steps land; the PR body is the checklist. Goal 2 work goes on the long-running `porting` branch.
+- Merge when it reaches a milestone worth shipping (a new rung on `SCOPE.md`'s ladder, or a big porting jump such as every 1.14 mod reaching 1.16), with CI green on all 3 OS. Agents merge; Jon has asked not to be waited on. Publishing a release still needs his approval.
+- Small fixes outside any goal's step go in one hardening/fixes PR at a time.
+- A PR body follows `.github/pull_request_template.md` and fits on one screen: the goal and step, a bold one-line result, before/after (a table row per change), what was checked, what is not covered. A title that needs a comma-joined list is several PRs. When a push changes what the PR does, rewrite the body in the same push.
+- PR CI stays quick: every PR job has a 5-minute timeout against hangs. A slower check runs on demand (workflow_dispatch, boat, or locally) when the code it tests changes, never on a schedule: every input is pinned, so a scheduled run repeats the last answer.
+- The real-game behaviour checks (`bench/behaviour_checks.sh`, a hidden client on Xvfb with software OpenGL) run on boat or locally when a port reaches the game or the game-check code changes.
 
 ## Releases
 
 A release is how someone without a source checkout gets modaccel. Cut one when a milestone merges:
 
-1. Bump `VERSION` in `tools/cli/Support.java` and regenerate `docs/` (`python bench/bench_page.py`, `python bench/porting_map.py`) in the milestone PR.
+1. Bump `VERSION` in `tools/cli/Support.java` and regenerate `docs/` in the milestone PR.
 2. After merge, tag `main` as `v<VERSION>` and push the tag. `.github/workflows/release.yml` checks the tag matches the code and `docs/` is current, packages, runs the extracted-ZIP test, and opens a draft release whose notes are the merged PR titles. That list is the changelog; there is no hand-kept one, so PR titles must read well.
 3. Jon reads the draft and publishes it.
 
-## What counts as evidence
+## Things that cost time to learn
 
-- A passing build, mixin audit or loaded world is not proof of the mod's behaviour. Report port/build, game start and behaviour checks separately, each with its cache condition (cold or warm).
-- Never present preview or edit-only timings as complete ports, and never invent a universal speed target. Warm caches and reusable sessions are welcome; first-use setup matters too.
-- A rendering claim needs an inspected 1280x720 Minecraft framebuffer capture, never a desktop grab and never a hash of a frame. Say which tier you ran; a tier that cannot catch the mistake you made is not evidence.
-- When dependencies or behaviour cannot be verified, return the precise blocker. No silent feature removal and no weakened checks to make a port pass.
+Goal 1, the hidden client:
 
-## Modpacks
+- It runs on JBR (`.tools\jbr-*`) with `-XX:+AllowEnhancedClassRedefinition -XX:TieredStopAtLevel=1`. Keep the C1-only flag: C2 plus redefinition crashes the VM. C1 only also halves the CPU a hidden game spends starting (`bench/session_cost.py`).
+- A check stops when a game asked to stay hidden reports its window library was not rewritten.
+- `reload` swaps edited code into the running game. Adding a field, method or registry entry still needs a restart; mixin edits need a clean client.
+- `data-check` (Fabric 26.x) runs the game's own code with no game launched, and its game stays loaded: a changed data file costs about 2 CPU-s, and a spare started behind it takes changed code in about 6. `--once` keeps nothing; `game-stop` ends both.
+- A dedicated server sends block entity data only when the class overrides `getUpdatePacket()` and `getUpdateTag()`, and 26.3's default update tag is empty. Singleplayer hides what a real client never receives; `mp-check` is the tier that shows it.
+- The primary mouse button in `MouseButtonInfo` is 1, not 0.
+- Item components bind only once a datapack loads, so a title-screen UI cannot build an `ItemStack`.
+- `BlockBehaviour.Properties` needs `.setId(...)`.
 
-`pack-check` runs a pack on its own Forge server. Forge 1.20.1 runs on SRG names, so the probe in `tools/packcheck` is written in Mojang names and renamed with ART; ART's `--lib` must be the Mojang-named jars or nothing is renamed. A server whose start fails keeps its JVM alive on leftover threads: stop it on the failure line, by PID. Mods marked for both sides on CurseForge can still be client-only and stop a server; leave them out and say so, and remember them in `~/.modaccel/packs/client-only.json` so no later start pays that extra start again. Every repair comes from a known fault, found before the game runs, so `--fix` starts the repaired pack's server beside the shipped one (each with its own instance folder, logs prefixed `repaired-`); keep the two lanes' findings apart. Forge loads the highest version of a mod id, bundled or standalone, so a newer jar in mods/ replaces a bundled copy.
+Goal 3, `pack-check`:
 
-## Resident client
-
-The hidden client runs on JBR (`.tools\jbr-*`) with `-XX:+AllowEnhancedClassRedefinition -XX:TieredStopAtLevel=1`. Keep the C1-only flag: C2 plus redefinition crashes the VM. A hidden (background) game also runs C1 only, which halves the CPU it spends starting (`bench/session_cost.py`), and a check stops when a game asked to stay hidden reports its window library was not rewritten. Adding a field, method or registry entry still needs a restart; mixin edits need a clean client. A dedicated server sends block entity data only when the class overrides `getUpdatePacket()` and `getUpdateTag()`, and 26.3's default update tag is empty, so singleplayer hides what a real client never receives: `mp-check` is the tier that shows it. Primary mouse button in `MouseButtonInfo` is 1, not 0. Item components bind only once a datapack loads, so a title-screen UI cannot build an `ItemStack`. `BlockBehaviour.Properties` needs `.setId(...)`.
+- It runs a pack on its own Forge server. Forge 1.20.1 runs on SRG names, so the probe in `tools/packcheck` is written in Mojang names and renamed with ART. ART's `--lib` must be the Mojang-named jars or nothing is renamed.
+- A server whose start fails keeps its JVM alive on leftover threads: stop it on the failure line, by PID.
+- Mods marked for both sides on CurseForge can still be client-only and stop a server. Leave them out, say so, and remember them in `~/.modaccel/packs/client-only.json` so no later start pays for that again.
+- Every repair comes from a known fault found before the game runs, so `--fix` starts the repaired pack's server beside the shipped one (each with its own instance folder, logs prefixed `repaired-`). Keep the two lanes' findings apart.
+- Forge loads the highest version of a mod id, bundled or standalone, so a newer jar in `mods/` replaces a bundled copy.
