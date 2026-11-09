@@ -1,13 +1,7 @@
 {
- "about": "Every number modaccel shows: on the roadmap page, in ROADMAP.md, in a PR or a report. One entry per thing measured, with every point it ever had and the target it is heading for. Record a point with python bench/measures.py add; print a table for a PR with python bench/measures.py table. A point carries its date, value, how many runs (n), what it was measured on, and where the receipt is. Cold and warm are separate measures, and so is the same check on another loader: a measure only ever compares the same work. A measure with 'computed' gets its points from the ledger or the roadmap at render time instead of from 'points'. A target with value null is set once its step measures a baseline. 'context' measures are other people's numbers we compare against, and 'info' measures are facts worth showing; neither has a target. Every other measure has one.",
+ "about": "Every number modaccel shows: on the roadmap page, in ROADMAP.md, in a PR or a report. One entry per thing measured, with every point it ever had and the target it is heading for. Record a point with python bench/measures.py add; print a table for a PR with python bench/measures.py table. A point carries its date, value, how many runs (n), what it was measured on, and where the receipt is. Cold and warm are separate measures, and so is the same check on another loader: a measure only ever compares the same work. A measure with 'computed' gets its points from the ledger or the roadmap at render time instead of from 'points'. A target with value null is set once its step measures a baseline. 'context' measures are other people's numbers we compare against, and 'info' measures are facts worth showing; neither has a target. Every other measure has one. The measures that say most about each goal are named in that goal's 'headline' in coverage/roadmap.json.",
  "machines": {"jon-pc": "Ryzen 9 3900X, Windows 11, JDK 25 (JDK 21 for NeoForge 1.21.1)", "ci": "GitHub-hosted runners (windows, macos, ubuntu)", "boat": "boat.dev default machine: 4 vCPU, 8 GB, Ubuntu, idle apart from the check"},
- "areas": {"port": "Porting", "test": "Game checks", "plugin": "Plugins", "pack": "Modpacks", "ci": "CI", "roadmap": "Roadmap", "context": "Compared with"},
- "headline": [
-  "port.mods-working",
-  "port.errors.zaa-neoforge-1.21.1-26.3",
-  "test.cold-start-check.fabric",
-  "pack.packs-in-game"
- ],
+ "areas": {"test": "Goal 1 · Testing mods", "plugin": "Goal 1 · Testing plugins", "port": "Goal 2 · Porting versions", "pack": "Goal 3 · Modpacks", "loader": "Goal 4 · Loaders and platforms", "ci": "CI", "roadmap": "Roadmap", "context": "Compared with"},
  "measures": [
   {
    "id": "roadmap.steps-done",
@@ -623,13 +617,24 @@
    "info": true
   },
   {
+   "id": "loader.pairs-working",
+   "area": "loader",
+   "name": "Loader or platform changes that work in the game",
+   "unit": "pairs",
+   "better": "higher",
+   "target": {"value": 1, "by": "2027-01-29", "step": "18"},
+   "points": [
+    {"date": "2026-11-09", "value": 0, "note": "none built: all 4 loader pairs in the ledger are unbuilt, and no mod ↔ plugin move exists", "source": "coverage/ledger.json loader_pairs"}
+   ]
+  },
+  {
    "id": "ci.pr-wall",
    "area": "ci",
    "name": "PR checks, start to finish",
    "unit": "min",
    "better": "lower",
    "machine": "ci",
-   "target": {"value": 5, "by": "2026-11-05", "note": "hold; the budget job fails a PR run that takes longer"},
+   "target": {"value": 5, "by": "2026-11-05", "note": "hold; every PR job stops at a 5-minute timeout"},
    "points": [
     {"date": "2026-10-27", "value": 2.0, "source": "gh run list, Portable command, pull_request"},
     {"date": "2026-10-28", "value": 4.1, "source": "gh run list, Portable command, pull_request"},
@@ -642,7 +647,7 @@
   {
    "id": "ci.nightly-wall",
    "area": "ci",
-   "name": "Nightly multi-version run, start to finish",
+   "name": "Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since)",
    "unit": "min",
    "better": "lower",
    "machine": "ci",

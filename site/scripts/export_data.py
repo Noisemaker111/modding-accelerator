@@ -232,9 +232,10 @@ def roadmap():
     text = (ROOT / "ROADMAP.md").read_text(encoding="utf-8")
     goal = re.search(r"^Goal: (.+?)\n\n", text, re.S | re.M).group(1)
     phases = []
-    for m in re.finditer(r"^## (Phase \d+) — (.+?)\n(.*?)(?=^## |\Z)", text, re.S | re.M):
+    for m in re.finditer(r"^## (Goal \d+) — (.+?)\n(.*?)(?=^## |\Z)", text, re.S | re.M):
         steps = []
-        for s in re.finditer(r"^(\d+[a-z]?)\. (.+?)(?=^\d+[a-z]?\. |\Z)", m.group(3), re.S | re.M):
+        body = re.sub(r"^### .*$", "", m.group(3), flags=re.M)   # part headings inside a goal are not step text
+        for s in re.finditer(r"^(\d+[a-z]?)\. (.+?)(?=^\d+[a-z]?\. |\Z)", body, re.S | re.M):
             body = " ".join(s.group(2).split())
             status = re.search(r"\*\*(done|doing|next|later)\*\*", body)
             steps.append({"id": s.group(1), "status": status.group(1) if status else "later",

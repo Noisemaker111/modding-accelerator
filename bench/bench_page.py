@@ -1,7 +1,7 @@
 """Render the one roadmap: docs/index.html (timeline, every number, the porting map, every port run)
 and ROADMAP.md (the same roadmap as text).
 
-Reads coverage/roadmap.json (phases, steps, dates, targets) and coverage/measures.json (every number,
+Reads coverage/roadmap.json (the four goals, their steps, dates, targets) and coverage/measures.json (every number,
 with its history and target) through bench/measures.py, draws them with bench/viz.py, and embeds the
 porting map from bench/porting_map.py. The evidence tables read coverage/ledger.json,
 bench/port/results.json (2026-10-21 version bumps on six real mods) and bench/mods/results.json
@@ -28,6 +28,7 @@ from porting_map import MAP_CSS, MAP_BODY, section, stonecutter_items  # noqa: E
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "index.html"
+PORT_GOAL, LOADER_GOAL = "2", "4"   # the porting map follows the first, the loader grid sits in the second
 ROADMAP_MD = ROOT / "ROADMAP.md"
 _, _, MAP_JS = section()
 
@@ -185,15 +186,25 @@ def loader_grid():
 
 
 # ---- the one roadmap ----------------------------------------------------------------------------
-def phase_counts(p):
+def goal_counts(g):
     counts = {k: 0 for k in M.STATUSES}
-    for s in p["steps"]:
+    for s in g["steps"]:
         counts[s["status"]] += 1
     return counts
 
 
-def phase_end(p):
-    return max(s.get("target") or s["done"] for s in p["steps"])
+def goal_end(g):
+    return max(s.get("target") or s["done"] for s in g["steps"])
+
+
+def parts(g):
+    """A goal's steps in order, grouped by their part: [(part, [step, ...]), ...]."""
+    out = []
+    for s in g["steps"]:
+        if not out or out[-1][0] != s["part"]:
+            out.append((s["part"], []))
+        out[-1][1].append(s)
+    return out
 
 
 def step_html(book, s):
@@ -210,20 +221,25 @@ def step_html(book, s):
             f'{viz.rows(book, ms) if ms else ""}</li>')
 
 
-def phase_html(book, p):
-    counts = phase_counts(p)
+def code(text):
+    """Escaped text with `backticks` as <code>."""
+    return re.sub(r"`([^`]+)`", r'<span class="mono">\1</span>', escape(text))
+
+
+def goal_html(book, g):
+    counts = goal_counts(g)
     done = counts["done"]
-    end = phase_end(p)
-    intro = f"<p>{escape(p['intro'])}</p>" if p.get("intro") else ""
+    end = goal_end(g)
     extra = ""
-    if p["id"] == "4":
+    if g["id"] == LOADER_GOAL:
         l_head, l_body = loader_grid()
         extra = (f'<h3>Loader pairs</h3><table class="tbl stack"><thead><tr><th class="l">From</th>{l_head}</tr></thead>'
                  f"<tbody>{l_body}</tbody></table>")
-    return (f'<section class="v-phase" id="phase-{escape(p["id"])}"><div class="v-phead"><h2>Phase {escape(p["id"])} · {escape(p["title"])}</h2>'
-            f'<span>{done} of {len(p["steps"])} done · {"finished" if done == len(p["steps"]) else "last target " + M.day(end)}'
-            f' <b class="v-plate" hidden></b></span></div>{intro}{viz.segbar(counts, len(p["steps"]))}'
-            f'<ol class="v-steps">{"".join(step_html(book, s) for s in p["steps"])}</ol>{extra}</section>')
+    steps = "".join(f'<h3 class="v-part">{escape(part)}</h3><ol class="v-steps">{"".join(step_html(book, s) for s in ss)}</ol>' for part, ss in parts(g))
+    return (f'<section class="v-phase" id="goal-{escape(g["id"])}"><div class="v-phead"><h2>Goal {escape(g["id"])} · {escape(g["title"])}</h2>'
+            f'<span>{done} of {len(g["steps"])} done · {"finished" if done == len(g["steps"]) else "last target " + M.day(end)}'
+            f' <b class="v-plate" hidden></b></span></div><p>{code(g["intro"])}</p>{viz.segbar(counts, len(g["steps"]))}'
+            f'{viz.rows(book, [book.by_id[i] for i in g["headline"]])}{steps}{extra}</section>')
 
 
 def numbers_html(book):
@@ -243,20 +259,20 @@ def page(book):
     doing = [s for s in steps if s["status"] == "doing"]
     upcoming = sorted((s for s in steps if s["status"] != "done"), key=lambda s: s["target"])
     nxt = upcoming[0] if upcoming else None
-    phases = book.roadmap["phases"]
+    goals = book.roadmap["goals"]
     body = []
-    for p in phases:
-        body.append(phase_html(book, p))
-        if p["id"] == "4":
+    for p in goals:
+        body.append(goal_html(book, p))
+        if p["id"] == PORT_GOAL:
             pm = [m for m in book.data["measures"] if m["id"].startswith("port.updates-working.")]
             chart = viz.columns(stonecutter_items(), "Stonecutter switches",
                                 '<span><i class="k-col"></i>A rule was learned from these switches</span><span><i class="k-col off"></i>No rule yet</span>')
             body.append(f'<section id="porting"><h2>Porting map</h2><p>How much of the map works today, against the target:</p>{viz.rows(book, pm)}'
                         f'{MAP_BODY.replace("{SC_CHART}", chart)}</section>')
-    head = [book.by_id[i] for i in book.data.get("headline", [])]
+    head = [book.by_id[i] for g in goals for i in g["headline"]]
     t_rows, vers, n_mods = tested_table()
-    nav = "".join(f'<a href="#{a}">{w}</a>' for a, w in (("now", "Where we are"), ("timeline", "Timeline"), ("phase-1", "Porting"), ("porting", "Porting map"),
-                                                          ("phase-5", "Proof"), ("phase-6", "Modpacks"), ("phase-7", "No game window"), ("numbers", "Every number"), ("evidence", "Evidence")))
+    nav = "".join(f'<a href="#{a}">{w}</a>' for a, w in (("now", "Where we are"), ("timeline", "Timeline"), ("goal-1", "1 Test"), ("goal-2", "2 Port"), ("porting", "Porting map"),
+                                                          ("goal-3", "3 Modpacks"), ("goal-4", "4 Loaders"), ("numbers", "Every number"), ("evidence", "Evidence")))
     html = TEMPLATE
     for k, v in {
         "/*STYLE*/": STYLE + viz.VIZ_CSS + MAP_CSS + PAGE_CSS, "/*THEME*/": THEME_JS, "/*VIZ*/": viz.VIZ_JS, "/*MAP*/": MAP_JS,
@@ -278,32 +294,38 @@ def roadmap_md(book):
     r = book.roadmap
     wrap = lambda text, first="", rest="    ": textwrap.fill(text, 100, initial_indent=first, subsequent_indent=rest, break_on_hyphens=False, break_long_words=False)
     out = ["# Roadmap", "",
-           "Generated from `coverage/roadmap.json` (phases, steps, dates) and `coverage/measures.json` (every number, its",
+           "Generated from `coverage/roadmap.json` (goals, steps, dates) and `coverage/measures.json` (every number, its",
            "history and its target) by `python bench/bench_page.py --roadmap`. Edit those two files, not this one;",
            "`python bench/test_measures.py` fails while this file is behind them. The page with the timeline, every number",
            "and the porting map: https://noisemaker111.github.io/modding-accelerator/", "",
            f"Goal: {r['goal']}", "",
            "Status words: **done** (ran and checked), **doing** (being worked on), **next**, **later**. Every step that is",
            f"not done has a target date. Targets were set on {r['targetsSet']}; a target that moves keeps its old date in `moved`.", "",
-           "| Phase | Done | Doing | Next | Later | Last target |", "|---|---|---|---|---|---|"]
-    for p in r["phases"]:
-        c = phase_counts(p)
-        out.append(f"| {p['id']}. {p['title']} | {c['done']} | {c['doing']} | {c['next']} | {c['later']} | {phase_end(p)} |")
+           "## Where each goal stands", "",
+           "Every step belongs to one of the four goals. Working on and Up next are step numbers.", "",
+           "| Goal | Steps done | Working on | Up next | Last target | The number that says most |", "|---|---|---|---|---|---|"]
+    for g in r["goals"]:
+        c = goal_counts(g)
+        ids = lambda status: ", ".join(s["id"] for s in g["steps"] if s["status"] == status) or "—"
+        m = book.by_id[g["headline"][0]]
+        pts, mins = book.points(m), M.minutes(book, m)
+        number = f"{M.label(m)}: {M.fmt(pts[-1]['value'], m['unit'], mins) if pts else 'not measured'}" + (f", target {M.target_words(book, m)}" if M.target_words(book, m) else "")
+        out.append(f"| {g['id']}. {g['title']} | {c['done']} of {len(g['steps'])} | {ids('doing')} | {ids('next')} | {goal_end(g)} | {number} |")
     out.append("")
-    for p in r["phases"]:
-        out += [f"## Phase {p['id']} — {p['title']}", ""]
-        if p.get("intro"):
-            out += [wrap(p["intro"], "", ""), ""]
-        for s in p["steps"]:
-            line = f"{s['id']}. {s['text']} **{s['status']}**" + (f" — {s['result']}" if s.get("result") else "")
-            out.append(wrap(line))
-            for x in s.get("points", []):
-                out.append(wrap(x, "    - ", "      "))
-            if s.get("done"):
-                out.append(f"    Done {s['done']}.")
-            else:
-                out.append(f"    {'Started' if s['status'] == 'doing' else 'Starts'} {s['start']}, target {s['target']}.")
-        out.append("")
+    for g in r["goals"]:
+        out += [f"## Goal {g['id']} — {g['title']}", "", wrap(g["intro"], "", ""), ""]
+        for part, ss in parts(g):
+            out += [f"### {part}", ""]
+            for s in ss:
+                line = f"{s['id']}. {s['text']} **{s['status']}**" + (f" — {s['result']}" if s.get("result") else "")
+                out.append(wrap(line))
+                for x in s.get("points", []):
+                    out.append(wrap(x, "    - ", "      "))
+                if s.get("done"):
+                    out.append(f"    Done {s['done']}.")
+                else:
+                    out.append(f"    {'Started' if s['status'] == 'doing' else 'Starts'} {s['start']}, target {s['target']}.")
+            out.append("")
     out += ["## Numbers", "",
             "Every number with a target, from `coverage/measures.json`. The same table for a PR or report:",
             "`python bench/measures.py table [ID ...] [--area AREA] [--step STEP]`.", ""]
@@ -365,7 +387,7 @@ TEMPLATE = r"""<!doctype html>
 <div class="v-kpis">{KPIS}</div>
 
 <h2 id="now">Where we are</h2>
-<p>Steps done against the plan, and the numbers that say most about each goal. Every number on this page is a measure in <span class="mono">coverage/measures.json</span>: its points, its target and the date it should get there. A ring is the target; the dashed line is the way still to go.</p>
+<p>Steps done against the plan, and the numbers that say most about each of the four goals. Every number on this page is a measure in <span class="mono">coverage/measures.json</span>: its points, its target and the date it should get there. A ring is the target; the dashed line is the way still to go.</p>
 <div class="v-score">{BURNUP}<div class="v-cards">{HEADLINE}</div></div>
 
 <h2 id="timeline">Timeline</h2>

@@ -1,138 +1,35 @@
 # Roadmap
 
-Generated from `coverage/roadmap.json` (phases, steps, dates) and `coverage/measures.json` (every number, its
+Generated from `coverage/roadmap.json` (goals, steps, dates) and `coverage/measures.json` (every number, its
 history and its target) by `python bench/bench_page.py --roadmap`. Edit those two files, not this one;
 `python bench/test_measures.py` fails while this file is behind them. The page with the timeline, every number
 and the porting map: https://noisemaker111.github.io/modding-accelerator/
 
-Goal: a mod or plugin author never launches Minecraft, and a modpack user need not diagnose mod conflicts by hand. Port source from any version to any other (and, separately, any loader to any other), resolve modpack incompatibilities, and prove behavior in the real game or a real server.
+Goal: a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 
 Status words: **done** (ran and checked), **doing** (being worked on), **next**, **later**. Every step that is
 not done has a target date. Targets were set on 2026-11-06; a target that moves keeps its old date in `moved`.
 
-| Phase | Done | Doing | Next | Later | Last target |
+## Where each goal stands
+
+Every step belongs to one of the four goals. Working on and Up next are step numbers.
+
+| Goal | Steps done | Working on | Up next | Last target | The number that says most |
 |---|---|---|---|---|---|
-| 1. Neighbouring versions (1.21.x), Fabric and NeoForge | 8 | 1 | 1 | 0 | 2026-12-04 |
-| 2. Big jumps across families (1.16.5, 1.18.2, 1.20.1 → 1.21.x) | 4 | 0 | 0 | 2 | 2027-01-08 |
-| 3. 26.x, the unobfuscated game | 1 | 2 | 1 | 0 | 2026-12-04 |
-| 4. Loaders | 0 | 0 | 0 | 3 | 2027-03-12 |
-| 5. Proof: behaviour in the real game and server | 3 | 0 | 2 | 3 | 2027-02-12 |
-| 6. Modpack compatibility | 1 | 3 | 0 | 1 | 2027-02-05 |
-| 7. Testing without Minecraft open | 4 | 0 | 0 | 0 | 2026-12-18 |
+| 1. Test a mod in seconds | 7 of 11 | — | 27, 26 | 2027-02-12 | One-file edit, modaccel fast, warm: 4 s, target 4 s (hold) by Nov 27, step 34 |
+| 2. Port a mod to any Minecraft version | 13 of 22 | 7, 14, 15 | 10, 16 | 2027-02-05 | Real mods with a port that works in the game: 3 mods, target 6 mods by Dec 18, step 12 |
+| 3. Make modpacks work together | 1 of 4 | 29, 30, 31 | — | 2027-01-15 | Modpacks checked in the game by pack-check: 1 pack, target 5 packs by Jan 15, 2027, step 31 |
+| 4. Change loader or platform | 0 of 4 | — | — | 2027-03-26 | Loader or platform changes that work in the game: 0 pairs, target 1 pair by Jan 29, 2027, step 18 |
 
-## Phase 1 — Neighbouring versions (1.21.x), Fabric and NeoForge
+## Goal 1 — Test a mod in seconds
 
-1. Port a real Fabric mod one minor forward: F3Nope 1.21.5 → 1.21.6, build + mixin audit. **done**
-    Done 2026-10-24.
-2. Same mod backwards: untouched upstream 1.21.6 → 1.21.5, real client loads it. **done**
-    Done 2026-10-24.
-3. Prove a port's behaviour, not just its build. The first try (overlay inspected, AppleSkin
-    inventory change 95.6%, save reloads at the same position) was re-marked to "loads" on
-    2026-10-26: a frame change and a save reload happen without the mod. Behaviour needs an
-    assertion on the mod's own state (`--assert` on its class, `--expect-value` on its screen).
-    **done** — `tools/tests/AppleSkinHudCheck.java` checks AppleSkin's HUD estimate against real
-    regeneration on the 1.21.6 port, and fails when the estimate is broken on purpose.
-    Done 2026-10-26.
-4. Second loader end to end: NeoForge ZombieApocalypseAddon 1.21.1 → 1.21.4 with no hand edits; its
-    `/za` command runs in a 1.21.4 world. **done**
-    Done 2026-10-24.
-5. Dependency blockers become one-file answers: verified selection, disable with proof, and a
-    reference that is not an `import` still counts (AppleSkin's JEI mixin). **done**
-    Done 2026-10-24.
-6. A port refuses to pass while it still targets the old game: packaged metadata is read back.
-    **done**
-    Done 2026-10-24.
-7. A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. With the render rules (step 8) and
-    build tools that follow the target (step 9), 69 errors go to 11 with nothing done by hand. The
-    11 are four changes that need new code: the exhaustion getter, food effects on the consumable
-    component, server-only game rules and payload networking. The stopped port names a repair guide
-    for each. **doing**
-    Started 2026-10-24, target 2026-11-20.
-8. Turn the render-pipeline family into rules (draw texture / render pipeline / texture view), then
-    re-run step 7 to a build. **done** — The GUI render family is rules in yarn and official names,
-    each tied to the update that changed it: the render type first in every blit (1.21.2), the
-    RenderPipeline (1.21.6), shader colour into each draw call (1.21.6), blend, depth and cull state
-    (1.21.5), texture-id binds (1.21.5) and texture views (1.21.6). They replace the two whole-jump
-    drawTexture rules. On AppleSkin 1.20.1 → 1.21.6 no render error is left; it still stops at 11
-    errors outside rendering (step 7).
-    Done 2026-11-07.
-9. Build-toolchain bumps follow the target automatically (AppleSkin needed Loom 1.10 + Gradle 8.13).
-    **done** — A Fabric port raises Loom to the newest release of the line its target dependencies
-    were built with (from each jar's Fabric-Loom-Version), then raises the Gradle wrapper to the
-    version that Loom's published metadata asks for. It never lowers either. AppleSkin 1.20.1 →
-    1.21.6: Loom 1.8-SNAPSHOT to 1.10.5 and Gradle 8.10 to 8.12, with no hand edit.
-    Done 2026-11-07.
-10. One command, no hand edits, for 1.21.1 → 1.21.6 on this mod, and the same for a second mod.
-    **next**
-    Starts 2026-11-20, target 2026-12-04.
+An author changes code and gets an answer about the mod's real behaviour in seconds, without opening
+Minecraft: logic tests with no game, the game's own data with no game launched, and a hidden client
+or a real server with a bot player when the game is needed. Commands: `fast`, `data-check`,
+`mixin-check`, `ui-check`, `world-check`, `mp-check`, `eval`, `reload`, `plugin-check`,
+`server-check`.
 
-## Phase 2 — Big jumps across families (1.16.5, 1.18.2, 1.20.1 → 1.21.x)
-
-11a. Change index and hub-and-spoke families: every release from 1.14.4 to 26.3 diffed against the
-    next in Mojang's names (`coverage/changes/`, `tools/ChangeIndex.java`), 24 families cut where an
-    update breaks 1% or more of the game's names, each with a hub picked by Modrinth mod count, rule
-    coverage and the best ledger run per step, shown in the porting map (`docs/index.html#porting`).
-    Releases before 1.14.4 are listed as blocked (no official mappings). **done**
-    Done 2026-10-25.
-11b. Router: `port` chains hops X → family hub → hub → … → Y from `coverage/changes/index.json`, one
-    record per hop; renames inside a family applied from the index. **done** — `port --from A --to B
-    --fix` walks the hubs, joins every update's renames and moves into one map by intermediary ids
-    (`VersionMap --chain`), runs only the rules whose jump covers an update it crosses, builds once,
-    and names the update behind each error left. Releases before 1.14.4 are refused.
-    ZombieApocalypseAddon 1.21.1 → 1.21.4 (three families) builds and loads; → 1.21.6 stops at the
-    same 9 errors as the one-jump path, all placed on 1.21.4 → 1.21.5; → 26.3 stops at 69 instead of
-    100+.
-    Done 2026-10-25.
-11. Chain mappings across more than one family in a single port, with one record per hop. **done** —
-    with 11b up to 1.21.11; updates into 26.x have no shared ids, so there the router relies on
-    rules and names errors from the step files by name only.
-    Done 2026-10-25.
-11c. Learn rules from Stonecutter mods: 33 open-source multi-version mods pinned in
-    `coverage/stonecutter/mods.json`, 5,045 `//? if` switches extracted with file, method and the
-    update their boundary falls on (`bench/stonecutter_mine.py`). Changes made the same way in two
-    or more mods became 38 rules in `knowledge/fixes.json` (22 forward, 16 backports), each with its
-    switches as examples and a test that self-test re-runs (`bench/stonecutter_rules.py`). **done**
-    — ZombieApocalypseAddon 1.21.1 → 26.3 stops at 50 errors instead of 69; → 1.21.6 (9) and the
-    untouched Notes 1.21 → 1.21.6 (14) are unchanged, their errors have no repeated switch. The map
-    shows rules learned per update.
-    Done 2026-10-25.
-12. Prove one untouched mod from 1.20.1 (or older) to 1.21.6 to a build, then to a loaded client.
-    **later**
-    Starts 2026-12-01, target 2026-12-18.
-13. Publish the family list each jump still needs, so a stop is a shopping list. **later**
-    Starts 2026-12-14, target 2027-01-08.
-
-## Phase 3 — 26.x, the unobfuscated game
-
-14. Convert a source tree from yarn to the game's own names (works for one version already; needs a
-    full-tree pass). **doing**
-    Started 2026-10-24, target 2026-11-27.
-15. Switch the build with the version: Loom 1.17, Gradle 9.5, Java 25, no mappings. **doing**
-    Started 2026-10-24, target 2026-11-20.
-16. Diff the old official names against the 26.3 jar to name what moved. **next**
-    Starts 2026-11-20, target 2026-12-04.
-17. Port one mod to 26.3 to a build, then to a loaded client. AppleSkin NeoForge 1.21.6 → 26.3
-    reaches a packaged build with the mixin audit in 66s: build settings, NeoGradle, Java and 82 → 0
-    compile errors are handled by rules except the removed debug-text event, one hand-written file.
-    Loading it in a real 26.3 client is the next rung. **done** — AppleSkin NeoForge 1.21.6 → 26.3
-    ports with no hand-written file and passes its HUD behaviour check in the real 26.3 client: the
-    estimate for a golden carrot (+12.000002) matches real regeneration (+12.000001), and the same
-    check fails when the estimate is broken on purpose. The debug-text event became a rule; a stale
-    Parchment setting that compiled the 26.3 game wrong is now moved or removed by the port.
-    Done 2026-11-08.
-
-## Phase 4 — Loaders
-
-18. Fabric → NeoForge on one small mod, measured end to end. **later**
-    Starts 2027-01-04, target 2027-01-29.
-19. Forge → NeoForge and Fabric → Quilt, which are close pairs. **later**
-    Starts 2027-02-01, target 2027-02-26.
-20. Publish which loader pairs are real, which are blocked, and why. **later**
-    Starts 2027-02-22, target 2027-03-12.
-
-## Phase 5 — Proof: behaviour in the real game and server
-
-The second half of the goal, worked on alongside porting.
+### Behaviour in the real game
 
 21. Linux and macOS game checks (or label them), no-Java install on each. **later** — Linux, part
     proven: on a fresh boat.dev Ubuntu machine with no GPU, the behaviour checks (a hidden client on
@@ -146,6 +43,12 @@ The second half of the goal, worked on alongside porting.
     Done 2026-10-26.
 23. Optional pixel comparison for regressions, off by default. **later**
     Starts 2027-01-25, target 2027-02-12.
+27. The bot joins a modded server (NeoForge or Fabric dedicated server), so mods get scenario checks
+    like plugins do. **next**
+    Starts 2026-11-23, target 2026-12-11.
+
+### Plugins on a real Paper server
+
 24. Paper plugins: `plugin-check` on MockBukkit (fast floor), then `server-check` on a real Paper
     server with a bot player following a scenario, secrets masked. AgentCraft passes, and each break
     made on purpose fails at its step. **done**
@@ -158,74 +61,8 @@ The second half of the goal, worked on alongside porting.
     demand (boat or workflow_dispatch), rerun when the bot or ViaProxy code changes; not a nightly
     job, since the Paper builds are pinned. **next**
     Starts 2026-11-09, target 2026-11-20.
-27. The bot joins a modded server (NeoForge or Fabric dedicated server), so mods get scenario checks
-    like plugins do. **next**
-    Starts 2026-11-23, target 2026-12-11.
-28. Port a Paper plugin between versions (SCOPE.md rung 5; config-only so far). **later**
-    Starts 2027-01-04, target 2027-01-22.
 
-## Phase 6 — Modpack compatibility
-
-29. Reproduce Sismeel's Forge 1.20.1 pack problems: an item becomes a different block when placed,
-    and a world fails to reopen. Identify the affected item and obtain or recreate the failing
-    world; the supplied pack export has configurations and mod download references, but no world or
-    logs. Determine each cause independently. **doing**
-    - World that will not reopen: done. Traverse 7.0.12 bundles Biolith 1.0.1-alpha.1, which gives 7
-      Traverse biomes climate values of 3.01; Blueprint saves the overworld's biome list in full,
-      and the next start rejects it ("Overworld settings missing"). Seen on the pack's real Forge
-      server and in its real client (the save gets the datapack-failure screen). Biolith
-      1.0.1-beta.1 in mods/ fixes it: new worlds reopen, and a world saved by the broken version
-      opens too.
-    - Item that becomes another block: not reproduced. Every block item (14,129 in singleplayer),
-      placed by a player's right-click on the pack's server and again in singleplayer with every
-      client-only mod, land as themselves or as their own mod's deliberate variant (bamboo shoot,
-      sapling stages, Craziness Awakened's random spawners); the 29 that change afterwards are
-      vanilla rules (coral dying out of water) or the mod's own. No two mods override the same block
-      look. 221 block names belong to blocks from two or more mods (e.g. "Azure Planks" in Outer End
-      and Slugterra), the likeliest cause on the evidence; `pack-check` now lists them. Items are
-      also placed on a wall, a ceiling and in water (ladders, hanging signs, spore blossoms, kelp).
-      Sweet berries never place in this pack: Sizeable Foliage refuses it on purpose and plants its
-      bush from "Sweet Berry Seeds" instead. The item's name from Sismeel is still needed.
-    Started 2026-10-29, target 2026-11-20.
-30. Detect the demonstrated failure with a code check that fails on the broken case and passes on
-    the corrected and normal cases; verify the correction and affected behavior in a real game,
-    including save and reload when relevant. Preserve the original pack and world. **doing** —
-    `pack-check` saves every dimension the way level.dat stores it and reads it back, starts the
-    same world a second time, and reads back every placed block; it fails on the shipped pack and
-    passes with the repair. `PackCheckTest` covers the checks that need no game.
-    Started 2026-10-30, target 2026-11-27.
-31. Accept installed modpacks and exports as inputs, identify versions and loaders from evidence,
-    and diagnose and repair proven incompatibilities with reversible changes and clear blockers.
-    Expand across Minecraft versions and loaders with real pack cases. **doing** — CurseForge
-    exports and CurseForge app instances, both run in the game with `--fix` (a fixed .zip copy; an
-    instance changed only after the recheck passes, and `--undo` restores it exactly). Jars no
-    CurseForge list describes (other launchers' folders, hand-added jars) get their sides from
-    Modrinth by SHA-1; a client-only mod neither site knows, and Forge does not name, still stops
-    the game checks and is listed. Forge only in the game; repairs come from
-    `knowledge/pack-fixes.json` (one entry).
-    Started 2026-10-30, target 2027-01-15.
-38. pack-check records how long each stage takes and checks the shipped and the repaired pack side
-    by side. **done** — pack-check times every stage (read, static checks, each server start) and
-    starts the repaired pack's server beside the shipped one. On Prehistoric World 2 (368 mods) a
-    full check with the repair proven takes 5.1 minutes instead of 12.7, with the same findings.
-    Client-only mods a start finds are remembered, so later runs skip that extra start; a start that
-    only reads the world stops as soon as its probe is done; Simple Voice Chat gets a free port so
-    the two servers do not collide, and a start that still loses a port runs again alone; a server
-    that stops before its probe is done is reported at once instead of after the 20-minute timeout;
-    an export is unpacked once. Tried for the 4.0-minute target and not used: the lighter compiler
-    (C1) cuts a 368-mod server start's CPU by a third (519 to 351 CPU-s) but made the start take 465
-    s instead of 139 s; the item probe already uses 40 ms of every 50 ms server tick. The 4.0-minute
-    target was dropped on Nov 7; the time stays as a fact.
-    Done 2026-11-07.
-32. Bring Random Things forward from its source as a Forge version-port case, and prove its behavior
-    on the target version. Automatic Forge porting is not yet supported. **later** — its newest
-    source is a partial 1.14.4 rewrite (36 files, 2019 MCP snapshot names); the full mod is 1.12.2.
-    Starts 2027-01-18, target 2027-02-05.
-
-## Phase 7 — Testing without Minecraft open
-
-Every check runs with no game window, checks that need only the game's data skip launching it, and 8
-run at once on one PC. Closed on 2026-11-07.
+### No game window, low cost
 
 33. Measure RAM, CPU, start time and time per check for one client, one dedicated server and one
     Paper server, warm and cold, as the baseline the next steps are judged against. **done** —
@@ -278,29 +115,213 @@ run at once on one PC. Closed on 2026-11-07.
     s) were dropped on Nov 7: they do not move the goal, and their numbers stay as facts.
     Done 2026-11-07.
 
+## Goal 2 — Port a mod to any Minecraft version
+
+One command moves a mod's source from any version to any other, forward or back, with no hand edits,
+and the result is checked in the real game. Every edit can be undone; what cannot be ported is
+named, never guessed or dropped. Commands: `port`, `explain`, `dependencies`.
+
+### Neighbouring versions (1.21.x), Fabric and NeoForge
+
+1. Port a real Fabric mod one minor forward: F3Nope 1.21.5 → 1.21.6, build + mixin audit. **done**
+    Done 2026-10-24.
+2. Same mod backwards: untouched upstream 1.21.6 → 1.21.5, real client loads it. **done**
+    Done 2026-10-24.
+3. Prove a port's behaviour, not just its build. The first try (overlay inspected, AppleSkin
+    inventory change 95.6%, save reloads at the same position) was re-marked to "loads" on
+    2026-10-26: a frame change and a save reload happen without the mod. Behaviour needs an
+    assertion on the mod's own state (`--assert` on its class, `--expect-value` on its screen).
+    **done** — `tools/tests/AppleSkinHudCheck.java` checks AppleSkin's HUD estimate against real
+    regeneration on the 1.21.6 port, and fails when the estimate is broken on purpose.
+    Done 2026-10-26.
+4. Second loader end to end: NeoForge ZombieApocalypseAddon 1.21.1 → 1.21.4 with no hand edits; its
+    `/za` command runs in a 1.21.4 world. **done**
+    Done 2026-10-24.
+5. Dependency blockers become one-file answers: verified selection, disable with proof, and a
+    reference that is not an `import` still counts (AppleSkin's JEI mixin). **done**
+    Done 2026-10-24.
+6. A port refuses to pass while it still targets the old game: packaged metadata is read back.
+    **done**
+    Done 2026-10-24.
+7. A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. With the render rules (step 8) and
+    build tools that follow the target (step 9), 69 errors go to 11 with nothing done by hand. The
+    11 are four changes that need new code: the exhaustion getter, food effects on the consumable
+    component, server-only game rules and payload networking. The stopped port names a repair guide
+    for each. **doing**
+    Started 2026-10-24, target 2026-11-20.
+8. Turn the render-pipeline family into rules (draw texture / render pipeline / texture view), then
+    re-run step 7 to a build. **done** — The GUI render family is rules in yarn and official names,
+    each tied to the update that changed it: the render type first in every blit (1.21.2), the
+    RenderPipeline (1.21.6), shader colour into each draw call (1.21.6), blend, depth and cull state
+    (1.21.5), texture-id binds (1.21.5) and texture views (1.21.6). They replace the two whole-jump
+    drawTexture rules. On AppleSkin 1.20.1 → 1.21.6 no render error is left; it still stops at 11
+    errors outside rendering (step 7).
+    Done 2026-11-07.
+9. Build-toolchain bumps follow the target automatically (AppleSkin needed Loom 1.10 + Gradle 8.13).
+    **done** — A Fabric port raises Loom to the newest release of the line its target dependencies
+    were built with (from each jar's Fabric-Loom-Version), then raises the Gradle wrapper to the
+    version that Loom's published metadata asks for. It never lowers either. AppleSkin 1.20.1 →
+    1.21.6: Loom 1.8-SNAPSHOT to 1.10.5 and Gradle 8.10 to 8.12, with no hand edit.
+    Done 2026-11-07.
+10. One command, no hand edits, for 1.21.1 → 1.21.6 on this mod, and the same for a second mod.
+    **next**
+    Starts 2026-11-20, target 2026-12-04.
+
+### Big jumps across families (1.16.5, 1.18.2, 1.20.1 → 1.21.x)
+
+11a. Change index and hub-and-spoke families: every release from 1.14.4 to 26.3 diffed against the
+    next in Mojang's names (`coverage/changes/`, `tools/ChangeIndex.java`), 24 families cut where an
+    update breaks 1% or more of the game's names, each with a hub picked by Modrinth mod count, rule
+    coverage and the best ledger run per step, shown in the porting map (`docs/index.html#porting`).
+    Releases before 1.14.4 are listed as blocked (no official mappings). **done**
+    Done 2026-10-25.
+11b. Router: `port` chains hops X → family hub → hub → … → Y from `coverage/changes/index.json`, one
+    record per hop; renames inside a family applied from the index. **done** — `port --from A --to B
+    --fix` walks the hubs, joins every update's renames and moves into one map by intermediary ids
+    (`VersionMap --chain`), runs only the rules whose jump covers an update it crosses, builds once,
+    and names the update behind each error left. Releases before 1.14.4 are refused.
+    ZombieApocalypseAddon 1.21.1 → 1.21.4 (three families) builds and loads; → 1.21.6 stops at the
+    same 9 errors as the one-jump path, all placed on 1.21.4 → 1.21.5; → 26.3 stops at 69 instead of
+    100+.
+    Done 2026-10-25.
+11. Chain mappings across more than one family in a single port, with one record per hop. **done** —
+    with 11b up to 1.21.11; updates into 26.x have no shared ids, so there the router relies on
+    rules and names errors from the step files by name only.
+    Done 2026-10-25.
+11c. Learn rules from Stonecutter mods: 33 open-source multi-version mods pinned in
+    `coverage/stonecutter/mods.json`, 5,045 `//? if` switches extracted with file, method and the
+    update their boundary falls on (`bench/stonecutter_mine.py`). Changes made the same way in two
+    or more mods became 38 rules in `knowledge/fixes.json` (22 forward, 16 backports), each with its
+    switches as examples and a test that self-test re-runs (`bench/stonecutter_rules.py`). **done**
+    — ZombieApocalypseAddon 1.21.1 → 26.3 stops at 50 errors instead of 69; → 1.21.6 (9) and the
+    untouched Notes 1.21 → 1.21.6 (14) are unchanged, their errors have no repeated switch. The map
+    shows rules learned per update.
+    Done 2026-10-25.
+12. Prove one untouched mod from 1.20.1 (or older) to 1.21.6 to a build, then to a loaded client.
+    **later**
+    Starts 2026-12-01, target 2026-12-18.
+13. Publish the family list each jump still needs, so a stop is a shopping list. **later**
+    Starts 2026-12-14, target 2027-01-08.
+
+### 26.x, the unobfuscated game
+
+14. Convert a source tree from yarn to the game's own names (works for one version already; needs a
+    full-tree pass). **doing**
+    Started 2026-10-24, target 2026-11-27.
+15. Switch the build with the version: Loom 1.17, Gradle 9.5, Java 25, no mappings. **doing**
+    Started 2026-10-24, target 2026-11-20.
+16. Diff the old official names against the 26.3 jar to name what moved. **next**
+    Starts 2026-11-20, target 2026-12-04.
+17. Port one mod to 26.3 to a build, then to a loaded client. AppleSkin NeoForge 1.21.6 → 26.3
+    reaches a packaged build with the mixin audit in 66s: build settings, NeoGradle, Java and 82 → 0
+    compile errors are handled by rules except the removed debug-text event, one hand-written file.
+    Loading it in a real 26.3 client is the next rung. **done** — AppleSkin NeoForge 1.21.6 → 26.3
+    ports with no hand-written file and passes its HUD behaviour check in the real 26.3 client: the
+    estimate for a golden carrot (+12.000002) matches real regeneration (+12.000001), and the same
+    check fails when the estimate is broken on purpose. The debug-text event became a rule; a stale
+    Parchment setting that compiled the 26.3 game wrong is now moved or removed by the port.
+    Done 2026-11-08.
+
+### Forge mods and Paper plugins
+
+32. Bring Random Things forward from its source as a Forge version-port case, and prove its behavior
+    on the target version. Automatic Forge porting is not yet supported. **later** — its newest
+    source is a partial 1.14.4 rewrite (36 files, 2019 MCP snapshot names); the full mod is 1.12.2.
+    Starts 2027-01-18, target 2027-02-05.
+28. Port a Paper plugin between versions (SCOPE.md rung 5; config-only so far). **later**
+    Starts 2027-01-04, target 2027-01-22.
+
+## Goal 3 — Make modpacks work together
+
+A pack user points modaccel at an installed pack or an export and gets its conflicts found and
+repaired: duplicate and missing mods, blocks that place as another block, worlds that will not
+reopen. Every repair is reversible and checked on the pack's real server. Command: `pack-check`.
+
+### Forge 1.20.1 packs
+
+29. Reproduce Sismeel's Forge 1.20.1 pack problems: an item becomes a different block when placed,
+    and a world fails to reopen. Identify the affected item and obtain or recreate the failing
+    world; the supplied pack export has configurations and mod download references, but no world or
+    logs. Determine each cause independently. **doing**
+    - World that will not reopen: done. Traverse 7.0.12 bundles Biolith 1.0.1-alpha.1, which gives 7
+      Traverse biomes climate values of 3.01; Blueprint saves the overworld's biome list in full,
+      and the next start rejects it ("Overworld settings missing"). Seen on the pack's real Forge
+      server and in its real client (the save gets the datapack-failure screen). Biolith
+      1.0.1-beta.1 in mods/ fixes it: new worlds reopen, and a world saved by the broken version
+      opens too.
+    - Item that becomes another block: not reproduced. Every block item (14,129 in singleplayer),
+      placed by a player's right-click on the pack's server and again in singleplayer with every
+      client-only mod, land as themselves or as their own mod's deliberate variant (bamboo shoot,
+      sapling stages, Craziness Awakened's random spawners); the 29 that change afterwards are
+      vanilla rules (coral dying out of water) or the mod's own. No two mods override the same block
+      look. 221 block names belong to blocks from two or more mods (e.g. "Azure Planks" in Outer End
+      and Slugterra), the likeliest cause on the evidence; `pack-check` now lists them. Items are
+      also placed on a wall, a ceiling and in water (ladders, hanging signs, spore blossoms, kelp).
+      Sweet berries never place in this pack: Sizeable Foliage refuses it on purpose and plants its
+      bush from "Sweet Berry Seeds" instead. The item's name from Sismeel is still needed.
+    Started 2026-10-29, target 2026-11-20.
+30. Detect the demonstrated failure with a code check that fails on the broken case and passes on
+    the corrected and normal cases; verify the correction and affected behavior in a real game,
+    including save and reload when relevant. Preserve the original pack and world. **doing** —
+    `pack-check` saves every dimension the way level.dat stores it and reads it back, starts the
+    same world a second time, and reads back every placed block; it fails on the shipped pack and
+    passes with the repair. `PackCheckTest` covers the checks that need no game.
+    Started 2026-10-30, target 2026-11-27.
+38. pack-check records how long each stage takes and checks the shipped and the repaired pack side
+    by side. **done** — pack-check times every stage (read, static checks, each server start) and
+    starts the repaired pack's server beside the shipped one. On Prehistoric World 2 (368 mods) a
+    full check with the repair proven takes 5.1 minutes instead of 12.7, with the same findings.
+    Client-only mods a start finds are remembered, so later runs skip that extra start; a start that
+    only reads the world stops as soon as its probe is done; Simple Voice Chat gets a free port so
+    the two servers do not collide, and a start that still loses a port runs again alone; a server
+    that stops before its probe is done is reported at once instead of after the 20-minute timeout;
+    an export is unpacked once. Tried for the 4.0-minute target and not used: the lighter compiler
+    (C1) cuts a 368-mod server start's CPU by a third (519 to 351 CPU-s) but made the start take 465
+    s instead of 139 s; the item probe already uses 40 ms of every 50 ms server tick. The 4.0-minute
+    target was dropped on Nov 7; the time stays as a fact.
+    Done 2026-11-07.
+31. Accept installed modpacks and exports as inputs, identify versions and loaders from evidence,
+    and diagnose and repair proven incompatibilities with reversible changes and clear blockers.
+    Expand across Minecraft versions and loaders with real pack cases. **doing** — CurseForge
+    exports and CurseForge app instances, both run in the game with `--fix` (a fixed .zip copy; an
+    instance changed only after the recheck passes, and `--undo` restores it exactly). Jars no
+    CurseForge list describes (other launchers' folders, hand-added jars) get their sides from
+    Modrinth by SHA-1; a client-only mod neither site knows, and Forge does not name, still stops
+    the game checks and is listed. Forge only in the game; repairs come from
+    `knowledge/pack-fixes.json` (one entry).
+    Started 2026-10-30, target 2027-01-15.
+
+## Goal 4 — Change loader or platform
+
+The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a
+version port, with separate claims. Nothing is built yet.
+
+### Loader pairs
+
+18. Fabric → NeoForge on one small mod, measured end to end. **later**
+    Starts 2027-01-04, target 2027-01-29.
+19. Forge → NeoForge and Fabric → Quilt, which are close pairs. **later**
+    Starts 2027-02-01, target 2027-02-26.
+
+### Mods and plugins
+
+39. Move one server-side project across the mod and plugin line: a Forge or Fabric mod with no
+    client code to a Paper plugin (events, commands, scheduler and config mapped to the Bukkit API),
+    and a plugin the other way. Client code, mixins into the game and new blocks or items cannot
+    exist on a plugin server, so the port stops and names each one instead of dropping it. **later**
+    Starts 2027-02-22, target 2027-03-26.
+
+### What works
+
+20. Publish which loader pairs are real, which are blocked, and why. **later**
+    Starts 2027-02-22, target 2027-03-12.
+
 ## Numbers
 
 Every number with a target, from `coverage/measures.json`. The same table for a PR or report:
 `python bench/measures.py table [ID ...] [--area AREA] [--step STEP]`.
 
-### Porting
-
-| Measure | First | Now | Target | Status |
-|---|---|---|---|---|
-| 1.21.x updates that work in the game, Fabric | — | 2 updates (Oct 24) | 22 updates by Jan 29, 2027, step 10 | Baseline |
-| 1.21.x updates that work in the game, NeoForge | 3 updates (Oct 24) | 8 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 26% of the way |
-| Real mods with a port that works in the game | — | 3 mods (Oct 24) | 6 mods by Dec 18, step 12 | Baseline |
-| Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 11 errors (Nov 7) | 0 errors by Nov 20, step 7 | 82% of the way |
-| Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6, warm | 38 errors (Oct 24) | 9 errors (Oct 25) | 0 errors by Dec 4, step 10 | 76% of the way |
-| Errors left: Notes, NeoForge 1.21 → 1.21.6, warm | — | 14 errors (Oct 25) | 0 errors by Dec 4, step 10 | Baseline |
-| Errors left: Jade, NeoForge 1.21.1 → 1.21.6, warm | — | 98 errors (Oct 24) | 0 errors by Jan 15, 2027, step 12 | Baseline |
-| Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm | 69 errors (Oct 25) | 50 errors (Oct 25) | 0 errors by Jan 15, 2027, step 17 | 28% of the way |
-| Hand-written files: AppleSkin, NeoForge 1.21.6 → 26.3 | 1 file (Oct 24) | 0 files (Nov 8) | 0 files by Nov 27, step 17 | Met |
-| Port to a packaged build: Zombie Apocalypse 1.21.1 → 1.21.4, warm | 2.6 min (Oct 24) | 2.8 min (Oct 25) | 1.5 min by Dec 18, step 10 | 0% of the way |
-| Port to a packaged build: AppleSkin 1.21.6 → 26.3, warm | — | 66 s (Oct 24) | 60 s by Nov 27, step 17 | Baseline |
-| Port rules learned from Stonecutter mods | — | 38 rules (Oct 25) | 80 rules by Dec 31, step 13 | Baseline |
-
-### Game checks
+### Goal 1 · Testing mods
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
@@ -329,7 +350,7 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Hidden clients this PC held at once, each to a 1280x720 capture | — | 16 sessions (Nov 6) | — | Fact |
 | One-file edit, modaccel fast, warm | — | 4 s (Oct 23) | 4 s (hold) by Nov 27, step 34 | Met |
 
-### Plugins
+### Goal 1 · Testing plugins
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
@@ -341,7 +362,24 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Paper versions the test player passed on | — | 6 versions (Oct 26) | 8 versions by Nov 20, step 26 | Baseline |
 | Paper versions the test player passes on in CI | — | 1 version (Oct 26) | — | Fact |
 
-### Modpacks
+### Goal 2 · Porting versions
+
+| Measure | First | Now | Target | Status |
+|---|---|---|---|---|
+| 1.21.x updates that work in the game, Fabric | — | 2 updates (Oct 24) | 22 updates by Jan 29, 2027, step 10 | Baseline |
+| 1.21.x updates that work in the game, NeoForge | 3 updates (Oct 24) | 8 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 26% of the way |
+| Real mods with a port that works in the game | — | 3 mods (Oct 24) | 6 mods by Dec 18, step 12 | Baseline |
+| Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 11 errors (Nov 7) | 0 errors by Nov 20, step 7 | 82% of the way |
+| Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6, warm | 38 errors (Oct 24) | 9 errors (Oct 25) | 0 errors by Dec 4, step 10 | 76% of the way |
+| Errors left: Notes, NeoForge 1.21 → 1.21.6, warm | — | 14 errors (Oct 25) | 0 errors by Dec 4, step 10 | Baseline |
+| Errors left: Jade, NeoForge 1.21.1 → 1.21.6, warm | — | 98 errors (Oct 24) | 0 errors by Jan 15, 2027, step 12 | Baseline |
+| Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm | 69 errors (Oct 25) | 50 errors (Oct 25) | 0 errors by Jan 15, 2027, step 17 | 28% of the way |
+| Hand-written files: AppleSkin, NeoForge 1.21.6 → 26.3 | 1 file (Oct 24) | 0 files (Nov 8) | 0 files by Nov 27, step 17 | Met |
+| Port to a packaged build: Zombie Apocalypse 1.21.1 → 1.21.4, warm | 2.6 min (Oct 24) | 2.8 min (Oct 25) | 1.5 min by Dec 18, step 10 | 0% of the way |
+| Port to a packaged build: AppleSkin 1.21.6 → 26.3, warm | — | 66 s (Oct 24) | 60 s by Nov 27, step 17 | Baseline |
+| Port rules learned from Stonecutter mods | — | 38 rules (Oct 25) | 80 rules by Dec 31, step 13 | Baseline |
+
+### Goal 3 · Modpacks
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
@@ -350,18 +388,24 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Block items placed and read back in one pack | — | 14,129 items (Oct 30) | — | Fact |
 | pack-check on a 368-mod pack, shipped and repaired, warm | 12.7 min (Oct 30) | 5.1 min (Nov 7) | — | Fact |
 
+### Goal 4 · Loaders and platforms
+
+| Measure | First | Now | Target | Status |
+|---|---|---|---|---|
+| Loader or platform changes that work in the game | — | 0 pairs (Nov 9) | 1 pair by Jan 29, 2027, step 18 | Baseline |
+
 ### CI
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
-| Nightly multi-version run, start to finish | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
+| Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since) | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
 
 ### Roadmap
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 21 steps (Nov 8) | 40 steps by Mar 12, 2027 | 46% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 21 steps (Nov 8) | 41 steps by Mar 26, 2027 | 44% of the way |
 
 ## Decisions
 
@@ -373,10 +417,12 @@ Every number with a target, from `coverage/measures.json`. The same table for a 
 | Does a passing build prove a port? | No; loader-refused jars, invisible UI and unloaded mods all passed builds | 2026-10-24 |
 | What counts as progress? | A row in `coverage/ledger.json` with a receipt, shown on the progress page | 2026-10-24 |
 | What do we support, and how does a new kind of project get in? | `SCOPE.md`: platforms by side, a six-rung support ladder, intake through the `bench-new-mod` skill | 2026-10-25 |
-| Plugin ↔ mod conversion? | Not for now; it's a rewrite, not a port, and hybrid servers already exist | 2026-10-25 |
+| Plugin ↔ mod conversion? | Not for now; it's a rewrite, not a port, and hybrid servers already exist. Replaced on 2026-11-09 | 2026-10-25 |
 | Ports between Paper versions? | Yes, as rung 5 for Paper once rungs 2–3 land | 2026-10-25 |
 | Where do roadmap steps, targets and every number we show live? | `coverage/roadmap.json` (steps, dates, targets) and `coverage/measures.json` (every number, with its history and target); ROADMAP.md and the roadmap page are generated from them | 2026-11-06 |
 | How cheap should a game check be? | 5 CPU-s per check, from 49. Checks that need the game's data but not a picture stop launching the game: data-check runs the game's own code with no window and no world (Jon, 2026-11-07, instead of sharing one started game). Picture checks keep the hidden client, with graphics settings as they are | 2026-11-07 |
 | Do speed targets drive work? | Only when they move the goal. Phase 7 closed on Nov 7 once checks were hidden, data-check skipped the game and 8 checks ran at once; the start, cold-check, screen-check, server and pack-check speed targets became facts, the nightly job joined step 26 and pack-check's step joined Phase 6, and work went back to porting (Jon, 2026-11-07) | 2026-11-07 |
 | Run the real-game behaviour checks nightly? | No. Their inputs (game, mods, Java) are pinned, so a nightly run repeats yesterday's answer; they run when a port reaches the game or the code they test changes (Jon, 2026-11-08) | 2026-11-08 |
 | Run CI on a schedule? | No. Every input is pinned, so a scheduled run repeats the last answer: Stonecutter's nightly run failed one of its 100 jobs six nights in a row (Nov 2 to 7) with nobody looking. Slow checks run on demand when the code they test changes. The PR budget gate that failed a run over 300 s, queue time included, is gone too: a budget is not a check (Jon, 2026-11-08) | 2026-11-08 |
+| What are the goals, and in what order? | Four (Jon, 2026-11-09): 1 test a mod in seconds, 2 port any mod to any version automatically, 3 make modpacks work together, 4 change loader or platform. The roadmap is grouped by goal, not by phase: old Phases 5 and 7 are Goal 1, Phases 1 to 3 are Goal 2, Phase 6 is Goal 3 and Phase 4 is Goal 4. Step ids did not change; steps 28 and 32 moved to Goal 2 because they are version ports | 2026-11-09 |
+| Is moving between mods and plugins a goal? | Yes (Jon, 2026-11-09): Goal 4 covers every loader and platform, Paper included. Server-side code can be mapped between a loader's API and Bukkit's; client code and new blocks or items cannot run on a plugin server, and a port names them instead of dropping them (step 39) | 2026-11-09 |

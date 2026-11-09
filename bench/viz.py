@@ -187,7 +187,7 @@ def step_dates(s):
 
 
 def segbar(counts, total):
-    """Thin segmented bar: one whole (the phase), split by step status. No text inside; the legend line names it."""
+    """Thin segmented bar: one whole (the goal), split by step status. No text inside; the legend line names it."""
     parts = "".join(f'<i class="v-s-{k}" style="flex:{counts[k]}"></i>' for k in M.STATUSES if counts.get(k))
     words = " · ".join(f"{counts[k]} {k}" for k in M.STATUSES if counts.get(k))
     return f'<div class="v-seg" role="img" aria-label="{esc(words)}">{parts}</div><div class="v-seglegend">{esc(words)} of {total}</div>'
@@ -220,10 +220,10 @@ def gantt(book):
                     for d in months(x0, x1))
     out = [f'<div class="v-gantt" data-x0="{date.fromordinal(x0).isoformat()}" data-x1="{date.fromordinal(x1).isoformat()}">',
            f'<div class="v-grow v-gaxis"><div class="v-glab"></div><div class="v-gtrack">{ticks}<b class="v-today-l">Today</b></div></div>']
-    for p in book.roadmap["phases"]:
+    for p in book.roadmap["goals"]:
         ss = p["steps"]
         done = sum(s["status"] == "done" for s in ss)
-        out.append(f'<a class="v-grow v-gphase" href="#phase-{esc(p["id"])}"><div class="v-glab"><b>Phase {esc(p["id"])}</b> {esc(p["title"])}</div>'
+        out.append(f'<a class="v-grow v-gphase" href="#goal-{esc(p["id"])}"><div class="v-glab"><b>Goal {esc(p["id"])}</b> {esc(p["title"])}</div>'
                    f'<div class="v-gtrack"><span class="v-gcount">{done} of {len(ss)} done</span></div></a>')
         for s in ss:
             end = s.get("done") or s["target"]
