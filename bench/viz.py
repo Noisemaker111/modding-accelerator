@@ -321,14 +321,14 @@ def columns(items, unit, legend, w=1080, h=220, every=4):
 VIZ_CSS = r"""
 /* ---- measures (bench/viz.py) ---- */
 .v-cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:14px; margin-top:14px }
-.v-card { background:var(--surface); border:1px solid var(--ring); border-radius:12px; padding:14px 16px 12px; display:flex; flex-direction:column; gap:4px; min-width:0; scroll-margin-top:72px }
+.v-card { background:var(--surface); border:1px solid var(--ring); border-radius:8px; padding:14px 16px 12px; display:flex; flex-direction:column; gap:4px; min-width:0; scroll-margin-top:72px }
 .v-card:target { box-shadow:0 0 0 2px var(--accent) }
 .v-top { display:flex; gap:8px; align-items:center; font-size:12.5px; color:var(--ink3) }
 .v-area { text-transform:uppercase; letter-spacing:.05em; font-weight:600 }
 .v-cond { border:1px solid var(--rule); border-radius:999px; padding:0 7px; color:var(--ink2) }
 .v-name { margin:2px 0 0; font-size:15px; font-weight:550; line-height:1.3; color:var(--ink) }
 .v-now { margin-top:4px; color:var(--ink) }
-.v-now b { font-size:34px; font-weight:650; letter-spacing:-.01em; line-height:1.05 }
+.v-now b { font-family:var(--f-head); font-size:34px; font-weight:700; letter-spacing:-.02em; line-height:1.05 }
 .v-now .v-unit { font-size:15px; color:var(--ink2) }
 .v-now .v-of { font-size:14px; color:var(--ink3) }
 .v-now .v-none { color:var(--ink3) }
@@ -371,18 +371,21 @@ VIZ_CSS = r"""
 .v-seg { display:flex; gap:2px; height:8px; margin:12px 0 4px; max-width:520px }
 .v-seg i { display:block; border-radius:4px; min-width:4px }
 .v-seglegend { font-size:13px; color:var(--ink3) }
-.v-steps { list-style:none; padding:0; margin:14px 0 0 }
-.v-step { border-top:1px solid var(--rule); padding:12px 0; scroll-margin-top:72px }
-.v-step:target { background:var(--accent-wash); box-shadow:-16px 0 0 var(--accent-wash), 16px 0 0 var(--accent-wash) }
-.v-sl { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:baseline }
-.v-sid { display:inline-block; min-width:30px; font-weight:700; color:var(--ink3); font-variant-numeric:tabular-nums }
-.v-sl b { font-weight:600; font-size:16.5px }
-.v-dates { font-size:13px; color:var(--ink3); font-variant-numeric:tabular-nums }
-.v-step details { margin:4px 0 0 42px }
-.v-step summary { cursor:pointer; font-size:13.5px; color:var(--ink2) }
-.v-step details p, .v-step details li { font-size:14.5px }
-.v-step details ul { margin:6px 0; padding-left:18px; color:var(--ink2) }
-.v-step .v-rows { margin-left:42px }
+.v-steps { list-style:none; padding:0; margin:8px 0 0; border-bottom:1px solid var(--rule) }
+.v-step { border-top:1px solid var(--rule); scroll-margin-top:76px }
+.v-step:target { background:var(--accent-wash) }
+.v-sl { display:grid; grid-template-columns:38px minmax(0,1fr) auto 72px; gap:4px 14px; align-items:baseline; padding:10px 2px; cursor:pointer; list-style:none }
+.v-sl::-webkit-details-marker { display:none }
+.v-sl:hover b { text-decoration:underline }
+.v-sid { font-family:var(--f-mono); font-size:13px; font-weight:500; color:var(--ink3); font-variant-numeric:tabular-nums }
+.v-sl b { font-weight:500; font-size:15.5px }
+.v-step[data-status="doing"] .v-sl b, .v-step[data-status="next"] .v-sl b { font-weight:600 }
+.v-step[data-status="done"] .v-sl b { color:var(--ink2) }
+.v-dates { font-size:13px; color:var(--ink3); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap }
+.v-sl .v-latechip { grid-column:3; justify-self:end } .late .v-sl .v-dates { display:none }
+.v-sbody { padding:0 2px 16px 54px }
+.v-sbody p, .v-sbody li { font-size:14.5px } .v-sbody ul { margin:6px 0; padding-left:18px; color:var(--ink2) }
+.v-sbody .v-rows { margin-top:12px }
 .v-phead { display:flex; flex-wrap:wrap; gap:4px 16px; align-items:baseline; justify-content:space-between }
 .v-phead h2 { margin-bottom:0 }
 .v-phead span { font-size:14px; color:var(--ink3) }
@@ -402,7 +405,7 @@ VIZ_CSS = r"""
 .v-gphase .v-gtrack { height:24px }
 .v-gcount { position:absolute; left:6px; top:3px; font-size:12px; color:var(--ink3) }
 .v-gstep:hover .v-glab { text-decoration:underline }
-.v-gstep .v-sid { min-width:28px; font-size:12px }
+.v-gstep .v-sid { display:inline-block; min-width:30px; font-size:11.5px }
 .v-gbar { position:absolute; top:5px; height:12px; border-radius:4px; min-width:5px }
 .v-gbar.v-s-doing { background:var(--accent-wash); box-shadow:inset 0 0 0 1.5px var(--accent) }
 .v-gbar.v-s-next { background:transparent; box-shadow:inset 0 0 0 1.5px var(--ink3) }
@@ -412,14 +415,14 @@ VIZ_CSS = r"""
 .v-glegend { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; color:var(--ink2); margin-top:8px }
 .v-glegend i { display:inline-block; width:22px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px }
 /* burn-up */
-.v-burn { margin:0; background:var(--surface); border:1px solid var(--ring); border-radius:12px; padding:14px 16px }
+.v-burn { margin:0; background:var(--surface); border:1px solid var(--ring); border-radius:8px; padding:14px 16px }
 .v-burn svg { width:100%; height:auto; display:block; overflow:visible }
 .v-legend { display:flex; flex-wrap:wrap; gap:4px 18px; font-size:13px; color:var(--ink2); margin-bottom:6px }
 .v-legend i { display:inline-block; width:18px; height:0; border-top:2px solid; margin-right:6px; vertical-align:4px }
 .k-done { border-color:var(--accent) !important } .k-plan { border-color:var(--ink3) !important }
 .v-dlabel { font-size:12.5px; fill:var(--ink); font-weight:600 } .v-dlabel.muted { fill:var(--ink2); font-weight:500 }
 .v-todayline { stroke:var(--ink); stroke-width:1.5; visibility:hidden }
-.v-cols { margin:12px 0 0; background:var(--surface); border:1px solid var(--ring); border-radius:12px; padding:14px 16px }
+.v-cols { margin:12px 0 0; background:var(--surface); border:1px solid var(--ring); border-radius:8px; padding:14px 16px }
 .v-cols svg { width:100%; height:auto; display:block; overflow:visible }
 .v-col { fill:var(--ink3); opacity:.55 } .v-col.on { fill:var(--accent); opacity:1 }
 .v-legend i.k-col { width:12px; height:12px; border:0; border-radius:3px; vertical-align:-1px; background:var(--accent) }
@@ -429,7 +432,7 @@ VIZ_CSS = r"""
 .v-score .v-cards { grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)) }
 .v-kpis { display:flex; flex-wrap:wrap; gap:8px 28px; margin:14px 0 4px }
 .v-kpis div { font-size:14px; color:var(--ink2) }
-.v-kpis b { display:block; font-size:28px; font-weight:650; color:var(--ink) }
+.v-kpis b { display:block; font-family:var(--f-head); font-size:28px; font-weight:700; letter-spacing:-.02em; color:var(--ink) }
 #v-tip { position:fixed; z-index:50; pointer-events:none; max-width:320px; background:var(--ink); color:var(--bg); font-size:13px; line-height:1.35; padding:6px 9px; border-radius:6px; opacity:0; transition:opacity .08s }
 #v-tip.on { opacity:1 }
 @media (max-width: 720px) {
@@ -441,7 +444,7 @@ VIZ_CSS = r"""
   .v-row .v-spark.mini, .v-row .v-rtgt { display:none }
   .v-burn, .v-cols { overflow-x:auto }
   .v-burn svg, .v-cols svg { min-width:640px }
-  .v-step details, .v-step .v-rows { margin-left:0 }
+  .v-sl { grid-template-columns:30px minmax(0,1fr) auto } .v-sl .v-dates { display:none } .v-sbody { padding-left:2px }
 }
 """
 

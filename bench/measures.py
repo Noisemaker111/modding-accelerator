@@ -271,7 +271,7 @@ def problems(book):
             out.append(f"{i}: computed points failed: {e}")
     sids = set()
     for g in book.roadmap["goals"]:
-        for k in ("id", "title", "intro", "steps"):
+        for k in ("id", "title", "intro", "today", "steps"):
             if not g.get(k):
                 out.append(f"goal {g.get('id', '?')}: no {k}")
         if not g.get("headline"):

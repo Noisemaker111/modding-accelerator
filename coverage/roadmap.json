@@ -1,5 +1,5 @@
 {
- "about": "The one roadmap: the four goals, each with its steps, dates and targets. ROADMAP.md and docs/index.html are generated from this file by python bench/bench_page.py. Every step belongs to one goal; 'part' groups steps inside a goal and 'headline' names the measures that say most about it. Status words: done (ran and checked), doing (being worked on), next, later. start/target/done are dates; a target is a proposal and may move, but the old one is kept in 'moved' when it does. measures are ids in coverage/measures.json.",
+ "about": "The one roadmap: the four goals, each with its steps, dates and targets. ROADMAP.md and docs/index.html are generated from this file by python bench/bench_page.py. Every step belongs to one goal; 'part' groups steps inside a goal, 'headline' names the measures that say most about it, 'today' says in a sentence what works now, and 'try' is the commands the page shows for it. Status words: done (ran and checked), doing (being worked on), next, later. start/target/done are dates; a target is a proposal and may move, but the old one is kept in 'moved' when it does. measures are ids in coverage/measures.json.",
  "goal": "a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.",
  "targetsSet": "2026-11-06",
  "goals": [
@@ -10,6 +10,16 @@
    "headline": [
     "test.edit-fast",
     "test.behaviour-checks"
+   ],
+   "today": "Logic tests, the game's data and real-game checks all run with no game window. Paper plugins run on a real server with a bot player.",
+   "try": [
+    {
+     "say": "logic tests in seconds, then the real game with no window",
+     "run": "modaccel fast --root my-mod"
+    },
+    {
+     "run": "modaccel ui-check --root my-mod"
+    }
    ],
    "steps": [
     {
@@ -175,6 +185,13 @@
    "headline": [
     "port.mods-working",
     "port.errors.zaa-neoforge-1.21.1-26.3"
+   ],
+   "today": "Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Small jumps need no hand edits; big jumps stop with named errors.",
+   "try": [
+    {
+     "say": "move to another Minecraft version; every edit can be undone",
+     "run": "modaccel port --root my-mod --from 1.21.5 --to 1.21.6 --fix"
+    }
    ],
    "steps": [
     {
@@ -431,6 +448,13 @@
    "headline": [
     "pack.packs-in-game"
    ],
+   "today": "Forge 1.20.1 packs: duplicate and missing mods, blocks that place as another block, worlds that will not reopen. One proven repair so far.",
+   "try": [
+    {
+     "say": "find and repair what breaks a modpack",
+     "run": "modaccel pack-check --pack my-pack.zip --fix"
+    }
+   ],
    "steps": [
     {
      "id": "29",
@@ -498,6 +522,8 @@
    "headline": [
     "loader.pairs-working"
    ],
+   "today": "Not built yet.",
+   "try": [],
    "steps": [
     {
      "id": "18",

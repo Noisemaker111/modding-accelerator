@@ -1,65 +1,90 @@
-# Modding Accelerator
+<p align="center"><img src="docs/logo.svg" width="64" height="64" alt=""></p>
 
-**Test a Minecraft mod in seconds, port it to any version, and make modpacks work together, without opening the game or diagnosing problems by hand.**
+<h1 align="center">Modding Accelerator</h1>
 
-`modaccel` is one command with four jobs:
+<p align="center">
+  <b>Test a Minecraft mod in seconds, port it to any version, and make modpacks work together.</b><br>
+  One command, <code>modaccel</code>. You never open the game to check a change, and never diagnose a conflict by hand.
+</p>
 
-1. **Test it fast.** Your logic tests run in seconds without the game. When the game is needed, a hidden client or a
-   real server runs your mod or plugin, and a check asserts on the mod's own state, so you never launch Minecraft
-   and click through it yourself.
-2. **Port it.** Point it at your Gradle project and name a Minecraft version. It rewrites what changed in the game
-   between the two versions, builds the result, and lists anything it couldn't fix, with the game update that
-   caused it. Every edit can be undone.
-3. **Make modpacks compatible.** Identify and resolve conflicts among installed mods and configurations, and check
-   the affected behavior on the pack's real server. `pack-check` does this for Forge packs today.
-4. **Change loader.** Move a project between Fabric, NeoForge, Forge, Quilt and Paper. Planned; nothing is built yet.
+<p align="center">
+  <a href="https://github.com/Noisemaker111/modding-accelerator/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/Noisemaker111/modding-accelerator?include_prereleases&label=download&color=5d9c3f"></a>
+  <a href="https://github.com/Noisemaker111/modding-accelerator/actions/workflows/portable.yml"><img alt="Checks" src="https://github.com/Noisemaker111/modding-accelerator/actions/workflows/portable.yml/badge.svg?branch=main"></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-lightgrey"></a>
+</p>
 
-Beta `0.1.0-beta.3` · [download](https://github.com/Noisemaker111/modding-accelerator/releases/latest) ·
-[roadmap, numbers and porting map](https://noisemaker111.github.io/modding-accelerator/)
+<p align="center">
+  <a href="https://noisemaker111.github.io/modding-accelerator/"><b>Website</b></a> ·
+  <a href="ROADMAP.md">Roadmap</a> ·
+  <a href="https://noisemaker111.github.io/modding-accelerator/#porting">Porting map</a> ·
+  <a href="SCOPE.md">What is supported</a>
+</p>
+
+## What it does
+
+| | Goal | You run | Today |
+|:-:|---|---|---|
+| 1 | **Test a mod in seconds** | `fast` `data-check` `ui-check` `world-check` `mp-check` `server-check` | Works. Logic tests, the game's data and real-game checks all run with no game window |
+| 2 | **Port a mod to any Minecraft version** | `port` `explain` | Works for Fabric and NeoForge, 1.14.4 to 26.3. Small jumps need no hand edits |
+| 3 | **Make modpacks work together** | `pack-check` | Works for Forge 1.20.1 packs, with one proven repair so far |
+| 4 | **Change loader or platform** | | Planned. Nothing is built yet |
 
 ## Quick start
 
-Download the portable ZIP from the release, check it against its `.sha256`, extract it, then:
+1. Download the portable ZIP from the [latest release](https://github.com/Noisemaker111/modding-accelerator/releases/latest) and check it against its `.sha256`.
+2. Extract it anywhere. It needs Java 17 or newer; on Windows, a machine with no Java downloads a checked runtime once.
+3. Point it at your project:
 
 ```sh
-./modaccel doctor --root /path/to/mod                     # what modaccel sees in your project
-./modaccel fast --root /path/to/mod                       # compile and run logic tests, no game
-./modaccel ui-check --root /path/to/mod                   # real client, 1280x720 capture
-./modaccel server-check --root /path/to/plugin --file my.scenario
-./modaccel port --root /path/to/mod --from 1.21.5 --to 1.21.6 --fix
-./modaccel pack-check --pack /path/to/pack                # a modpack on its real server
+./modaccel doctor --root my-mod          # what modaccel sees in your project
+./modaccel fast --root my-mod            # compile and run your logic tests, no game
+./modaccel ui-check --root my-mod        # your mod in the real client, no window on screen
+./modaccel port --root my-mod --from 1.21.5 --to 1.21.6 --fix
+./modaccel pack-check --pack my-pack.zip --fix
 ```
 
-Windows: `modaccel.cmd`. Any shell: `java -jar modaccel.jar`. Needs Java 17+; on Windows a machine with none
-downloads a checked runtime once. `modaccel help` lists every command; `modaccel help COMMAND` explains one.
+On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.jar`. `modaccel help` lists every command and `modaccel help COMMAND` explains one.
 
 ## What works today
 
-| Goal | Job | Works | Not yet |
-|---|---|---|---|
-| 1 Test | Mod logic | `fast` runs your JUnit tests without the game | |
-| 1 Test | Mod data, no game | `data-check`: what the game loads for the mod (items, recipes, load errors) from the game's own code, with no game launched. `mixin-check` applies every mixin, no game window | `data-check` covers Fabric 26.x |
-| 1 Test | Mod in the real game | `ui-check`, `world-check`, `mp-check` (dedicated server plus client), `eval` (run code inside the game), `reload` (swap edited code into a running game), all with no game window | Proven on Windows; on Linux in part; not on macOS |
-| 1 Test | Plugin on a server | `server-check`: a real Paper server with a test player (`serverFakeBot`) following your scenario, any Paper version from 1.8. `plugin-check`: a fast fake-server check | The test player can't join modded servers. `plugin-check` covers Paper 1.21 and newer |
-| 2 Port | Port a Fabric or NeoForge mod | Any version from 1.14.4 to 26.3, routed through the versions most mods use. Proven with no hand edits on F3Nope 1.21.5 ↔ 1.21.6 and Zombie Apocalypse Addon 1.21.1 → 1.21.4 | Big jumps stop with named errors (AppleSkin 1.20.1 → 1.21.6 stops at 11). Forge, Quilt, Paper plugins, and versions before 1.14.4 |
-| 2 Port | Explain a port's errors | `explain`: each compiler error beside what that class looks like in both versions | |
-| 3 Modpacks | Diagnose and repair a modpack | `pack-check`: a CurseForge export or instance folder on its own Forge server. Finds duplicate and missing mods, blocks that place as another block, and worlds that open once but not again; `--fix` applies a proven repair and checks it | Forge 1.20.1, one known repair so far. Other loaders get the checks without the game |
-| 4 Loaders | Change loader (e.g. Fabric → NeoForge, Forge → Paper) | | Not built |
+### 1 · Test a mod in seconds
 
-A check that only shows the mod loaded is not proof it works. Proof is a check on the mod's own code or state:
-`--assert`, `--expect-value`, or a server scenario's expect lines.
+- **Logic:** `fast` runs your JUnit tests without the game.
+- **Data, no game:** `data-check` reads what the game loads for your mod (items, recipes, load errors) from the game's own code, with no game launched. `mixin-check` applies every mixin, with no game window.
+- **The real game:** `ui-check`, `world-check` and `mp-check` (a dedicated server plus a client) run your mod in a hidden client. `eval` runs code inside the running game and `reload` swaps edited code into it.
+- **Plugins:** `server-check` starts a real Paper server, any version from 1.8, and a test player follows your scenario. `plugin-check` is a faster check on a fake server.
+- **Not yet:** game checks are proven on Windows and partly on Linux, not on macOS. `data-check` covers Fabric 26.x. The test player can't join modded servers.
+
+### 2 · Port a mod to any Minecraft version
+
+- **Fabric and NeoForge**, any version from 1.14.4 to 26.3, forward or back, routed through the versions most mods use. Every edit can be undone with `port --undo`.
+- **Proven with no hand edits** on F3Nope 1.21.5 ↔ 1.21.6 and Zombie Apocalypse Addon 1.21.1 → 1.21.4.
+- **`explain`** shows each compiler error beside what that class looks like in both versions.
+- **Not yet:** big jumps stop with named errors (AppleSkin 1.20.1 → 1.21.6 stops at 11). Forge, Quilt, Paper plugins and versions before 1.14.4 are not ported.
+
+### 3 · Make modpacks work together
+
+- **`pack-check`** takes a CurseForge export or an instance folder and runs it on its own Forge server. It finds duplicate and missing mods, blocks that place as another block, and worlds that open once but not again.
+- **`--fix`** applies a proven repair, then starts the repaired pack beside the original to show it working.
+- **Not yet:** Forge 1.20.1 only in the game, and one known repair. Other loaders get the checks that need no game.
+
+### 4 · Change loader or platform
+
+Moving a project between Fabric, NeoForge, Forge, Quilt and Paper is the fourth goal. Nothing is built yet; the [roadmap](ROADMAP.md#goal-4--change-loader-or-platform) has the steps.
+
+## What counts as working
+
+A check that only shows the mod loaded is not proof it works. Proof is a check on the mod's own code or state: `--assert`, `--expect-value`, or a server scenario's expect lines. Every port that was run is listed on the [website](https://noisemaker111.github.io/modding-accelerator/#evidence), with how far it got.
 
 ## Limits
 
-- **Source only.** A compiled mod JAR can't be ported.
-- **No AI guessing.** Ports use the game's own name lists, rules learned from real multi-version mods, and checked
-  repairs. What's left is listed, not guessed.
+- **Source only.** A compiled mod JAR can't be ported. Compiled mods are only read when a modpack is checked.
+- **No AI guessing.** Ports use the game's own name lists, rules learned from real multi-version mods, and checked repairs. What's left is listed, not guessed.
 
-## Where things are
+## More
 
-- [`ROADMAP.md`](ROADMAP.md): where each of the four goals stands, every step with its dates, every number with its target. Generated from [`coverage/roadmap.json`](coverage/roadmap.json) and [`coverage/measures.json`](coverage/measures.json). The same as a [page](https://noisemaker111.github.io/modding-accelerator/), with the porting map and every port run.
+- [`ROADMAP.md`](ROADMAP.md): where each goal stands, every step with its dates, every number with its target.
 - [`SCOPE.md`](SCOPE.md): which kinds of projects are supported, and how far.
 - [`AGENTS.md`](AGENTS.md): the rules for working in this repo.
-- [Porting map](https://noisemaker111.github.io/modding-accelerator/#porting): every release with its route and what was really run. Data in [`coverage/changes/`](coverage/changes/), made by [`tools/ChangeIndex.java`](tools/ChangeIndex.java); runs in [`coverage/ledger.json`](coverage/ledger.json).
 - [`bench/alternatives.md`](bench/alternatives.md): how this compares with Loom, GameTest, HeadlessMC and others.
 - [Releases](https://github.com/Noisemaker111/modding-accelerator/releases): what changed in each version.

@@ -43,7 +43,8 @@ Three files are the truth. Everything else that shows a status or a number is ge
 - A port run that is not in the ledger did not happen.
 - `bench/viz.py` is the only code that draws a number on a page. Add a component there, not a one-off chart.
 - `python bench/test_measures.py` (PR CI) fails when the roadmap and the measures disagree or `ROADMAP.md` is behind them.
-- `docs/index.html` is the one public page: roadmap, every measure, the porting map and the ledger. `docs/porting-map.html` only redirects old links there.
+- `docs/index.html` is the website and the only one: what modaccel is and how to get it, the four goals, the roadmap, the porting map, every measure and the ledger. `bench/bench_page.py` writes it; its look is `bench/page_style.py` and the CSS in `bench_page.py`. `docs/porting-map.html` only redirects old links there.
+- A goal's `today` sentence and `try` commands in `coverage/roadmap.json` are what the website and `ROADMAP.md` say works now. Change them when what works changes.
 
 ## Evidence
 
@@ -71,9 +72,8 @@ The older Windows lane is `modaccel.ps1` (called by `modaccel.cmd` for `ui`, `no
 | `knowledge/` | Port rules and repairs. `fixes.json` holds the rules; those with `source: "stonecutter"` are mined (`python bench/stonecutter_mine.py extract`, then `python bench/stonecutter_rules.py`) |
 | `coverage/` | The truth files (`roadmap.json`, `measures.json`, `ledger.json`) and `changes/`, the change index: every neighbouring-release diff from 1.14.4 to 26.3 in Mojang names, with families, hubs and rule coverage in `index.json` |
 | `bench/` | The generators (`bench_page.py`, `measures.py`, `viz.py`, `porting_map.py`), the measuring scripts, and the real mods and plugins the checks run on (`real-mods/`, `server-plugins/`) |
-| `docs/` | The generated public page. Regenerated only before a milestone merge |
+| `docs/` | The public website, served by GitHub Pages: `index.html` is generated, `logo.svg` is the mark. Regenerated only before a milestone merge |
 | `src/`, `build.gradle`, `versions/` | Prism Lab, the demo Fabric mod the checks run against. The repo root is both modaccel's home and this fixture |
-| `site/` | A second website (Cloudflare Worker) that was never deployed. `site/scripts/export_data.py` parses `README.md`, `ROADMAP.md`, `SCOPE.md` and this file, and the Website CI job runs when they change, so run that script after reshaping any of them |
 | `.runs/` (ignored) | Trial trees in `.runs/beta-trials/`, logs in `.runs/logs`, history in `.runs/index.jsonl` |
 
 Refresh the change index with `java tools/ChangeIndex.java`, `python bench/change_routes.py`, `python bench/porting_map.py`, `python bench/bench_page.py`.
