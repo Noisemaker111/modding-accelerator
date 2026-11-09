@@ -361,6 +361,8 @@ public final class StrangerTest {
     static void readOnly(Path scratch) throws Exception {
         Path file = scratch.resolve("read only/gradle.properties"); write(file, "minecraft_version=1.21.5\n");
         file.toFile().setReadOnly();
+        // An administrator (root in a container) can write a read-only file, so there is nothing to refuse.
+        if (Files.isWritable(file)) { System.out.println("SKIP a read-only file stops the port: this user can write read-only files"); return; }
         try { Target.requireWritable(List.of(new Target.Edit(file, "minecraft_version=1.21.5\n", "minecraft_version=1.21.6\n"))); throw new AssertionError("a read-only file was accepted"); }
         catch (java.io.IOException expected) { require(expected.getMessage().contains("read-only") && expected.getMessage().contains("Nothing was changed"), "a read-only file stops the port before any write: " + expected.getMessage()); }
         require(Files.readString(file).equals("minecraft_version=1.21.5\n"), "nothing was written");
