@@ -320,7 +320,7 @@ jobs:
   stonecutter-sample:
     # Three representative Stonecutter nodes, fresh pinned clones, setup and compile through
     # modaccel, one job per node. No game. Every node of both
-    # mods compiles on demand in stonecutter-nightly.yml (not a merge blocker).
+    # mods compiles on demand in stonecutter-nodes.yml (not a merge blocker).
     strategy:
       fail-fast: false
       matrix:
