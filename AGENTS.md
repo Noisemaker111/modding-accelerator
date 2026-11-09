@@ -65,6 +65,8 @@ Before you push, run what CI runs, without a game or a network: `modaccel self-t
 
 When you change a port rule or the porter, run `python bench/port_board.py`: it ports every pinned mod in `bench/port-cases.json` from a clean checkout and shows each one against what is recorded and against the last run, then lists the errors still left by the game update that caused them. It exits 1 when a port got worse. A new rule in `knowledge/fixes.json` needs a `test {error, before, after}`; the 81 older rules without one are listed in `tools/tests/rules-without-test.txt`, and that list only shrinks.
 
+Write new Java one statement per line, with lines under about 140 characters. `tools/cli` has 212 lines over 200 characters, and two agents who touch the same long line conflict. The old lines get reformatted in one commit once `porting` has merged; don't reformat them in passing.
+
 The older Windows lane is `modaccel.ps1` (called by `modaccel.cmd` for `ui`, `node`, `suite`, `world`, `look`, `mp`, ...), `install.ps1`, the `.ps1` and `Lab*.java` files directly in `tools/`, `bench/bridge`, `bench/forgebridge`, `scenarios/` and `skills/modding-accelerator/` (the skill `install.ps1` copies into a mod repo, which describes this lane only). It is kept until the portable command covers each of its jobs. Don't add to it.
 
 ## Where things are
