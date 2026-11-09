@@ -29,10 +29,11 @@ book = M.Book()
 found = M.problems(book)
 check(not found, "coverage files have problems:\n  " + "\n  ".join(found))
 
-# ROADMAP.md is exactly what roadmap.json renders to
-want = bench_page.roadmap_md(book)
-have = bench_page.ROADMAP_MD.read_text(encoding="utf-8")
-check(have == want, "ROADMAP.md is behind coverage/roadmap.json or coverage/measures.json: run python bench/bench_page.py --roadmap")
+# ROADMAP.md and the page render from the two files. Neither is compared with the copy in the checkout:
+# main rewrites both after every merge (.github/workflows/generated.yml), so a branch never has to.
+have = bench_page.roadmap_md(book)
+check(have.startswith("# Roadmap") and all(f"## Goal {g['id']} — " in have for g in book.roadmap["goals"]), "ROADMAP.md renders every goal")
+check("<title>Modding Accelerator</title>" in bench_page.page(book), "the page renders")
 
 
 def broken(edit):
@@ -55,10 +56,10 @@ check(any("headline no.such.measure" in p for p in broken(lambda d, r: r["goals"
 check(any("no headline" in p for p in broken(lambda d, r: r["goals"][0].pop("headline"))), "a goal without a headline measure must fail")
 check(any("no part" in p for p in broken(lambda d, r: r["goals"][0]["steps"][0].pop("part"))), "a step without a part must fail")
 
-# a stale ROADMAP.md is caught: change one step's text and the render no longer matches
+# the render follows the data: change one step's text and ROADMAP.md changes
 road = copy.deepcopy(book.roadmap)
 road["goals"][0]["steps"][0]["text"] += " (edited)"
-check(bench_page.roadmap_md(M.Book(book.data, road, book.ledger, book.index)) != have, "an edited roadmap.json must make ROADMAP.md stale")
+check(bench_page.roadmap_md(M.Book(book.data, road, book.ledger, book.index)) != have, "an edited roadmap.json must change what ROADMAP.md renders to")
 
 # state and format: one rule, the same everywhere
 m = {"id": "t", "area": "test", "name": "t", "unit": "errors", "better": "lower", "target": {"value": 0, "by": "2026-12-01"},

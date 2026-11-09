@@ -30,19 +30,20 @@ Everything here serves one of these. They are in priority order.
 
 Three files are the truth. Everything else that shows a status or a number is generated from them.
 
-| What happened | Where it goes | Then run |
+| What happened | Record it with | It writes |
 |---|---|---|
-| A step started, finished, moved or was added | `coverage/roadmap.json`, under its goal. A target that moves keeps its old date in `moved` | `python bench/bench_page.py --roadmap` (rewrites `ROADMAP.md`) |
-| A number was measured | `coverage/measures.json` | `python bench/measures.py add ID VALUE --source WHERE` (rewrites `ROADMAP.md` too) |
-| A port ran, or the rules or the router changed | a row in `coverage/ledger.json`, in the same change | nothing; a hop turns green only once a port on it was seen working |
-| A number goes in a PR body or a report | never a hand-made table | `python bench/measures.py table` |
-| A milestone is about to merge | `docs/` | `python bench/bench_page.py` and `python bench/porting_map.py`, once, in the final commit |
+| A step started, finished or moved | `python bench/record.py step ID start\|done\|next\|later [--result TEXT] [--target DATE]` | `coverage/roadmap.json`. `done` needs `--result`: what ran and what decided the pass. A target that moves keeps its old date in `moved` |
+| A port ran | `python bench/record.py port RECEIPT --mod NAME` (or `python bench/port_board.py --record` for the pinned ports) | A row in `coverage/ledger.json`, read from the receipt `modaccel port` printed. `load` and `behaviour` need `--status` and a `--detail` saying what was checked |
+| A number was measured | `python bench/measures.py add ID VALUE --source WHERE` | A point in `coverage/measures.json` |
+| A number goes in a PR body or a report | `python bench/measures.py table` | Nothing. Never a hand-made table |
+| A step is added, or the rules or the router changed | by hand, in the same change | `coverage/roadmap.json` under its goal; a ledger row for the port that shows the change working |
 
-- Only statuses in `coverage/roadmap.json` are claims. `ROADMAP.md` is generated; never edit it by hand.
+- Only statuses in `coverage/roadmap.json` are claims.
+- `ROADMAP.md` and `docs/` are generated, and only `main` writes them: the Generated files workflow runs `bench/bench_page.py` and `bench/porting_map.py` after every merge and commits the result. Never edit or regenerate them in a branch. If a merge conflicts on one, take main's copy (`git checkout origin/main -- ROADMAP.md docs`); main rewrites it anyway. To read the roadmap as your branch has it, run `python bench/bench_page.py --roadmap` and don't commit the file.
 - Every number shown anywhere (the page, `ROADMAP.md`, a PR body, a report to Jon) is a measure: the same work measured the same way, with its points, its source, and a target with a date and a step. A new kind of number gets a new measure entry first.
 - A port run that is not in the ledger did not happen.
 - `bench/viz.py` is the only code that draws a number on a page. Add a component there, not a one-off chart.
-- `python bench/test_measures.py` (PR CI) fails when the roadmap and the measures disagree or `ROADMAP.md` is behind them.
+- `python bench/test_measures.py` (PR CI) fails when the roadmap and the measures disagree or do not render.
 - `docs/index.html` is the website and the only one: what modaccel is and how to get it, the four goals, the roadmap, the porting map, every measure and the ledger. `bench/bench_page.py` writes it; its look is `bench/page_style.py` and the CSS in `bench_page.py`. `docs/porting-map.html` only redirects old links there.
 - A goal's `today` sentence and `try` commands in `coverage/roadmap.json` are what the website and `ROADMAP.md` say works now. Change them when what works changes.
 
@@ -60,6 +61,12 @@ The portable command is `modaccel.cmd` on Windows, `./modaccel` on POSIX, or `ja
 
 Run builds and game launches through modaccel, never raw Gradle or a manual launch, and never add `--no-daemon`. Package locally; publishing needs Jon's approval.
 
+Before you push, run what CI runs, without a game or a network: `modaccel self-test` (about 8 seconds; `--only SUITE` runs one suite, and a failure is reported first), then `python bench/test_measures.py`, `python bench/test_record.py` and `python bench/test_ledger_rule.py`.
+
+When you change a port rule or the porter, run `python bench/port_board.py`: it ports every pinned mod in `bench/port-cases.json` from a clean checkout and shows each one against what is recorded and against the last run, then lists the errors still left by the game update that caused them. It exits 1 when a port got worse. A new rule in `knowledge/fixes.json` needs a `test {error, before, after}`; the 81 older rules without one are listed in `tools/tests/rules-without-test.txt`, and that list only shrinks.
+
+Write new Java one statement per line, with lines under about 140 characters. `tools/cli` has 212 lines over 200 characters, and two agents who touch the same long line conflict. The old lines get reformatted in one commit once `porting` has merged; don't reformat them in passing.
+
 The older Windows lane is `modaccel.ps1` (called by `modaccel.cmd` for `ui`, `node`, `suite`, `world`, `look`, `mp`, ...), `install.ps1`, the `.ps1` and `Lab*.java` files directly in `tools/`, `bench/bridge`, `bench/forgebridge`, `scenarios/` and `skills/modding-accelerator/` (the skill `install.ps1` copies into a mod repo, which describes this lane only). It is kept until the portable command covers each of its jobs. Don't add to it.
 
 ## Where things are
@@ -71,8 +78,8 @@ The older Windows lane is `modaccel.ps1` (called by `modaccel.cmd` for `ui`, `no
 | `tools/tests/` | The command's own tests and fixtures; `PortableTests.java` is what `self-test` runs |
 | `knowledge/` | Port rules and repairs. `fixes.json` holds the rules; those with `source: "stonecutter"` are mined (`python bench/stonecutter_mine.py extract`, then `python bench/stonecutter_rules.py`) |
 | `coverage/` | The truth files (`roadmap.json`, `measures.json`, `ledger.json`) and `changes/`, the change index: every neighbouring-release diff from 1.14.4 to 26.3 in Mojang names, with families, hubs and rule coverage in `index.json` |
-| `bench/` | The generators (`bench_page.py`, `measures.py`, `viz.py`, `porting_map.py`), the measuring scripts, and the real mods and plugins the checks run on (`real-mods/`, `server-plugins/`) |
-| `docs/` | The public website, served by GitHub Pages: `index.html` is generated, `logo.svg` is the mark. Regenerated only before a milestone merge |
+| `bench/` | The recorders (`record.py`, `measures.py`), the port scoreboard (`port_board.py`, cases pinned in `port-cases.json`), the generators (`bench_page.py`, `viz.py`, `porting_map.py`), the measuring scripts, and the real mods and plugins the checks run on (`real-mods/`, `server-plugins/`) |
+| `docs/` | The public website, served by GitHub Pages: `index.html` and `porting-map/` are generated on main, `logo.svg` is the mark |
 | `src/`, `build.gradle`, `versions/` | Prism Lab, the demo Fabric mod the checks run against. The repo root is both modaccel's home and this fixture |
 | `.runs/` (ignored) | Trial trees in `.runs/beta-trials/`, logs in `.runs/logs`, history in `.runs/index.jsonl` |
 
@@ -91,8 +98,8 @@ Refresh the change index with `java tools/ChangeIndex.java`, `python bench/chang
 
 A release is how someone without a source checkout gets modaccel. Cut one when a milestone merges:
 
-1. Bump `VERSION` in `tools/cli/Support.java` and regenerate `docs/` in the milestone PR.
-2. After merge, tag `main` as `v<VERSION>` and push the tag. `.github/workflows/release.yml` checks the tag matches the code and `docs/` is current, packages, runs the extracted-ZIP test, and opens a draft release whose notes are the merged PR titles. That list is the changelog; there is no hand-kept one, so PR titles must read well.
+1. Bump `VERSION` in `tools/cli/Support.java` in the milestone PR.
+2. After merge, wait for the Generated files workflow to commit the regenerated website, then tag that commit on `main` as `v<VERSION>` and push the tag. `.github/workflows/release.yml` checks the tag matches the code and `docs/` is current, packages, runs the extracted-ZIP test, and opens a draft release whose notes are the merged PR titles. That list is the changelog; there is no hand-kept one, so PR titles must read well.
 3. Jon reads the draft and publishes it.
 
 ## Things that cost time to learn

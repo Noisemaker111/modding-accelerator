@@ -102,7 +102,7 @@ public final class Modaccel {
                         + ". Run modaccel setup to evaluate the build itself.");
             }
             else if (options.command.equals("package")) { result = Installation.pack(home, report); exit = 0; }
-            else if (options.command.equals("self-test")) { result = Installation.test(home, report); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
+            else if (options.command.equals("self-test")) { result = Installation.test(home, report, options.get("only", "")); exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1; }
             else if (options.command.equals("doctor")) {
                 result = project.discover(); result.put("support", Support.discovered(result)); result.put("jdks", Runtimes.installed(home).stream().map(j -> Json.map("home", j.home().toString(), "version", j.version())).toList());
                 result.put("selectedJava", Runtimes.forGradle(home, project.wrapperVersion()).home().toString()); exit = 0;
@@ -300,6 +300,9 @@ public final class Modaccel {
     static String help() { return help(""); }
     static String help(String command) {
         return switch (command) {
+            case "self-test" -> "Test modaccel itself, with no game and no network: modaccel self-test [--only SUITE,SUITE] [--json]\n"
+                    + "Suites: " + String.join(", ", Installation.SUITES.stream().map(Installation.Suite::name).toList()) + ". Each is a class in tools/tests.\n"
+                    + "A failed suite is reported first, with the end of its log; --only runs the named suites alone.";
             case "preferences" -> "See or save your game launch preferences: modaccel preferences [--background on|off] [--quiet on|off] [--json]\n"
                     + "Background keeps the client hidden and prevents cursor capture; quiet saves sound and narrator off in the client's game settings. Both default to off.";
             case "port" -> "Port a Gradle mod source checkout (not a JAR):\n"

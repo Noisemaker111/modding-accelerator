@@ -35,7 +35,7 @@ jobs:
           python bench/porting_map.py
           if ! git diff --quiet -- docs/; then
             git diff --stat -- docs/
-            echo "docs/ is out of date with coverage/. Run python bench/bench_page.py and python bench/porting_map.py, commit, then tag again."
+            echo "docs/ is out of date with coverage/. The Generated files workflow rewrites it on main after every merge: wait for it to finish (or run it from the Actions tab), then tag the commit it made."
             exit 1
           fi
       - name: Package

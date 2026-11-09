@@ -6,13 +6,22 @@ There is one roadmap and one way to show a number.
 - `coverage/measures.json`: every number we show. A measure is one thing measured the same way (warm and cold are separate measures), with dated points that each name a source, and a target with a date and the step that reaches it.
 - `coverage/ledger.json`: every port that was run, with its timing. A run not in the ledger did not happen. Measures such as mods working and updates working per loader are computed from it.
 
-Commands:
+Recording, so no one edits those files by hand:
 
-- `python bench/measures.py add ID VALUE --source WHERE [--n N] [--note TEXT]` records a point and rewrites `ROADMAP.md`.
+- `python bench/record.py step ID start|done|next|later [--result TEXT] [--target DATE]` changes a roadmap step.
+- `python bench/record.py port RECEIPT --mod NAME [--status S --detail TEXT] [--measure ID]` turns a port run into a ledger row, read from the receipt `modaccel port` printed.
+- `python bench/measures.py add ID VALUE --source WHERE [--n N] [--note TEXT]` records a point.
 - `python bench/measures.py table [IDS] [--area AREA] [--step N]` prints the standard Markdown table for a PR body or report.
-- `python bench/measures.py check` validates both files.
-- `python bench/bench_page.py` renders `docs/index.html` (roadmap, timeline, every measure, the porting map, the ledger); `--roadmap` rewrites only `ROADMAP.md`.
-- `python bench/test_measures.py` fails when the files disagree or `ROADMAP.md` is behind them. PR CI runs it.
+- `python bench/measures.py check` validates the roadmap and the measures.
+
+The porting scoreboard:
+
+- `python bench/port_board.py` ports every pinned mod in `bench/port-cases.json` from a clean checkout with `modaccel port --fix`, and shows each against what is recorded and against the last run, then the errors still left grouped by the game update that caused them. `--only ID`, `--list`, `--record`, and `--modaccel PATH` to test another worktree's modaccel. Clones and results live in `.runs/port-board/`.
+
+Generated, on main only (`.github/workflows/generated.yml` runs these after every merge and commits the result):
+
+- `python bench/bench_page.py` renders `docs/index.html` (the website: goals, roadmap, every measure, the porting map, the ledger) and `ROADMAP.md`; `--roadmap` writes only `ROADMAP.md`, to read your branch's roadmap without committing it.
+- `python bench/test_measures.py`, `python bench/test_record.py` and `python bench/test_ledger_rule.py` are the PR checks for all of the above.
 
 What a game session costs (step 33 onward):
 

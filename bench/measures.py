@@ -5,7 +5,7 @@ its points and the target it is heading for. The roadmap page, ROADMAP.md and PR
 measures through this module, so a number looks the same and means the same everywhere.
 
     python bench/measures.py table [ID ...] [--area AREA] [--step STEP]   Markdown table for a PR or report
-    python bench/measures.py add ID VALUE --source S [--date D] [--n N] [--note T]   also rewrites ROADMAP.md
+    python bench/measures.py add ID VALUE --source S [--date D] [--n N] [--note T]
     python bench/measures.py check                                         validate both files
 """
 import argparse
@@ -353,9 +353,7 @@ def main(argv=None):
         m.setdefault("points", []).append(p)
         m["points"].sort(key=lambda x: x["date"])
         MEASURES.write_text(dump(book.data), encoding="utf-8", newline="\n")
-        fresh = Book()
-        import bench_page  # ROADMAP.md shows every number, so it follows the new point
-        bench_page.ROADMAP_MD.write_text(bench_page.roadmap_md(fresh), encoding="utf-8", newline="\n")
+        fresh = Book()   # ROADMAP.md and the page follow on main, after the merge
         print(table(fresh, [fresh.by_id[args.id]]))
         return 0
     found = problems(book)

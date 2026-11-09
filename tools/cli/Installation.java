@@ -8,7 +8,7 @@ final class Installation {
     static final List<String> RESOURCES = List.of("tools/cli/gradle.init.gradle", "tools/cli/Json.java", "tools/cli/Relocate.java", "tools/cli/QuietOptions.java", "tools/agent/PortableAgent.java", "tools/agent/BackgroundWindows.java", "tools/agent/GameLaunchAgent.java", "tools/agent/Console.java", "tools/agent/HotReload.java", "tools/runner/PureTests.java", "tools/plugincheck/ModaccelPluginCheck.java", "knowledge/mockbukkit.json", "tools/servercheck/ModaccelServerCheck.java", "knowledge/mcprotocollib.json", "knowledge/viaproxy.json",
             "tools/packcheck/ModaccelPackProbe.java", "tools/packcheck/ModaccelPackOpener.java", "tools/packcheck/mods.toml", "tools/packcheck/pack.mcmeta", "tools/packcheck/ProbeNames.java", "knowledge/pack-fixes.json",
             "tools/VersionMap.java", "tools/MixinAudit.java", "tools/mixincheck/ModaccelMixinCheck.java", "tools/mixincheck/ModaccelMixinErrors.java", "tools/mixincheck/ModaccelLaunchRecorder.java", "tools/mixincheck/ModaccelNeoForgeTarget.java", "tools/datacheck/ModaccelDataCheck.java", "tools/datacheck/ModaccelDataProbe.java", "tools/datacheck/mod/SkipShapeCache.java", "tools/datacheck/mod/fabric.mod.json", "tools/datacheck/mod/modaccel_datacheck.mixins.json",
-            "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinErrorHandler.java", "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinInfo.java", "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinConfig.java", "tools/GamePrep.java", "tools/tests/PortableTests.java", "tools/tests/JdkDownloadsTest.java", "tools/tests/DependenciesTest.java", "tools/tests/FabricMetadataTest.java", "tools/tests/HardeningTest.java", "tools/tests/MixinCheckTest.java", "tools/tests/TrustTest.java", "tools/tests/StrangerTest.java", "tools/tests/PackCheckTest.java", "knowledge/fixes.json", "knowledge/structural.json", "knowledge/port-corpus.json", "coverage/changes/index.json");
+            "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinErrorHandler.java", "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinInfo.java", "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinConfig.java", "tools/GamePrep.java", "tools/tests/PortableTests.java", "tools/tests/JdkDownloadsTest.java", "tools/tests/DependenciesTest.java", "tools/tests/FabricMetadataTest.java", "tools/tests/HardeningTest.java", "tools/tests/MixinCheckTest.java", "tools/tests/TrustTest.java", "tools/tests/StrangerTest.java", "tools/tests/PackCheckTest.java", "tools/tests/RulesTest.java", "tools/tests/rules-without-test.txt", "knowledge/fixes.json", "knowledge/structural.json", "knowledge/port-corpus.json", "coverage/changes/index.json");
     static Path home() throws Exception {
         Path location = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         if (!location.toString().endsWith(".jar")) return Path.of(System.getProperty("modaccel.home", ".")).toAbsolutePath().normalize();
@@ -104,31 +104,69 @@ final class Installation {
     }
     private static int u16(byte[] bytes, int offset) { return (bytes[offset] & 255) | ((bytes[offset + 1] & 255) << 8); }
     private static long u32(byte[] bytes, int offset) { return (u16(bytes, offset) & 65535L) | ((u16(bytes, offset + 2) & 65535L) << 16); }
-    static Map<String, Object> test(Path harness, Modaccel.Report report) throws Exception {
-        Runtimes.Jdk jdk = Runtimes.ensureAtLeast(harness, 17); Path classes = report.directory.resolve("test-classes"); Files.createDirectories(classes);
+    /** One self-test suite: a class in tools/tests with a main, and what it is given beside the classpath. */
+    record Suite(String name, String main, boolean wantsHarness, boolean wantsScratch) {}
+
+    static final List<Suite> SUITES = List.of(
+            new Suite("portable", "PortableTests", true, true),
+            new Suite("jdk", "JdkDownloadsTest", false, false),
+            new Suite("dependency", "DependenciesTest", false, false),
+            new Suite("manifest", "FabricMetadataTest", false, false),
+            new Suite("hardening", "HardeningTest", false, false),
+            new Suite("trust", "TrustTest", false, false),
+            new Suite("mixin-check", "MixinCheckTest", true, false),
+            new Suite("stranger", "StrangerTest", true, false),
+            new Suite("pack-check", "PackCheckTest", true, false),
+            new Suite("rules", "RulesTest", true, false));
+
+    /**
+     * Runs the suites (all of them, or the comma-separated names in only) and reports the failed ones first,
+     * each with the end of its log, so the cause is the first thing read. A passed suite is one line.
+     */
+    static Map<String, Object> test(Path harness, Modaccel.Report report, String only) throws Exception {
+        List<String> wanted = only.isBlank() ? List.of() : Arrays.stream(only.split(",")).map(String::strip).toList();
+        List<String> known = SUITES.stream().map(Suite::name).toList();
+        for (String name : wanted) {
+            if (!known.contains(name)) {
+                throw new IllegalArgumentException("self-test has no suite " + name + ". Suites: " + String.join(", ", known) + ".");
+            }
+        }
+        List<Suite> suites = SUITES.stream().filter(s -> wanted.isEmpty() || wanted.contains(s.name())).toList();
+
+        Runtimes.Jdk jdk = Runtimes.ensureAtLeast(harness, 17);
+        Path classes = report.directory.resolve("test-classes");
+        Files.createDirectories(classes);
         Path own = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-        var compile = Run.command(List.of(jdk.home().resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(), "--release", "17", "-encoding", "UTF-8", "-cp", own.toString(), "-d", classes.toString(), harness.resolve("tools/tests/PortableTests.java").toString(), harness.resolve("tools/tests/JdkDownloadsTest.java").toString(), harness.resolve("tools/tests/DependenciesTest.java").toString(), harness.resolve("tools/tests/FabricMetadataTest.java").toString(), harness.resolve("tools/tests/HardeningTest.java").toString(), harness.resolve("tools/tests/MixinCheckTest.java").toString(), harness.resolve("tools/tests/TrustTest.java").toString(), harness.resolve("tools/tests/StrangerTest.java").toString(), harness.resolve("tools/tests/PackCheckTest.java").toString()),
-                report.root, Map.of(), report.log("test-compile"), 120); report.stage("test-compile", compile, Map.of());
+        List<String> javac = new ArrayList<>(List.of(jdk.home().resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
+                "--release", "17", "-encoding", "UTF-8", "-cp", own.toString(), "-d", classes.toString()));
+        for (Suite suite : suites) javac.add(harness.resolve("tools/tests/" + suite.main() + ".java").toString());
+        var compile = Run.command(javac, report.root, Map.of(), report.log("test-compile"), 120);
+        report.stage("test-compile", compile, Map.of());
         if (compile.exit() != 0) throw new IOException(Run.tail(compile.log()));
-        var run = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "PortableTests", harness.toString(), report.directory.resolve("fixtures").toString()),
-                report.root, Map.of(), report.log("portable-tests"), 120); report.stage("portable-tests", run, Map.of());
-        var jdkRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "JdkDownloadsTest"),
-                report.root, Map.of(), report.log("jdk-tests"), 120); report.stage("jdk-tests", jdkRun, Map.of());
-        var dependencyRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "DependenciesTest"),
-                report.root, Map.of(), report.log("dependency-tests"), 120); report.stage("dependency-tests", dependencyRun, Map.of());
-        var metadataRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "FabricMetadataTest"),
-                report.root, Map.of(), report.log("manifest-tests"), 120); report.stage("manifest-tests", metadataRun, Map.of());
-        var hardeningRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "HardeningTest"),
-                report.root, Map.of(), report.log("hardening-tests"), 120); report.stage("hardening-tests", hardeningRun, Map.of());
-        var trustRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "TrustTest"),
-                report.root, Map.of(), report.log("trust-tests"), 120); report.stage("trust-tests", trustRun, Map.of());
-        var mixinRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "MixinCheckTest", harness.toString()),
-                report.root, Map.of(), report.log("mixin-check-tests"), 120); report.stage("mixin-check-tests", mixinRun, Map.of());
-        var strangerRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "StrangerTest", harness.toString()),
-                report.root, Map.of(), report.log("stranger-tests"), 120); report.stage("stranger-tests", strangerRun, Map.of());
-        var packRun = Run.command(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, "PackCheckTest", harness.toString()),
-                report.root, Map.of(), report.log("pack-check-tests"), 120); report.stage("pack-check-tests", packRun, Map.of());
-        return Json.map("ok", run.exit() == 0 && jdkRun.exit() == 0 && dependencyRun.exit() == 0 && metadataRun.exit() == 0 && hardeningRun.exit() == 0 && mixinRun.exit() == 0 && trustRun.exit() == 0 && strangerRun.exit() == 0 && packRun.exit() == 0,
-                "details", Run.tail(run.log()) + "\n" + Run.tail(jdkRun.log()) + "\n" + Run.tail(dependencyRun.log()) + "\n" + Run.tail(metadataRun.log()) + "\n" + Run.tail(hardeningRun.log()) + "\n" + Run.tail(mixinRun.log()) + "\n" + Run.tail(trustRun.log()) + "\n" + Run.tail(strangerRun.log()) + "\n" + Run.tail(packRun.log()));
+
+        List<Object> results = new ArrayList<>();
+        List<String> failed = new ArrayList<>(), passedLines = new ArrayList<>(), failedText = new ArrayList<>();
+        for (Suite suite : suites) {
+            List<String> command = new ArrayList<>(List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, suite.main()));
+            if (suite.wantsHarness()) command.add(harness.toString());
+            if (suite.wantsScratch()) command.add(report.directory.resolve("fixtures").toString());
+            var run = Run.command(command, report.root, Map.of(), report.log(suite.name() + "-tests"), 120);
+            report.stage(suite.name() + "-tests", run, Map.of());
+            boolean ok = run.exit() == 0;
+            results.add(Json.map("name", suite.name(), "ok", ok, "seconds", run.seconds(), "log", run.log().toString()));
+            String tail = Run.tail(run.log()).strip();
+            if (ok) {
+                passedLines.add("  " + suite.name() + ": " + tail.substring(tail.lastIndexOf('\n') + 1).strip());
+            } else {
+                failed.add(suite.name());
+                failedText.add("FAILED " + suite.name() + " (modaccel self-test --only " + suite.name() + " runs it alone)\n" + tail + "\nLog: " + run.log());
+            }
+        }
+        String summary = failed.isEmpty()
+                ? suites.size() + " of " + suites.size() + " suites passed"
+                : failed.size() + " of " + suites.size() + " suites failed: " + String.join(", ", failed);
+        String details = (failedText.isEmpty() ? "" : String.join("\n\n", failedText) + "\n\n") + summary
+                + (passedLines.isEmpty() ? "" : "\nPassed:\n" + String.join("\n", passedLines));
+        return Json.map("ok", failed.isEmpty(), "suites", results, "failed", failed, "details", details);
     }
 }

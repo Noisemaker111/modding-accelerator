@@ -10,3 +10,6 @@
 *.bat           text eol=crlf
 *.cmd           text eol=crlf
 
+ROADMAP.md linguist-generated=true
+docs/index.html linguist-generated=true
+docs/porting-map/** linguist-generated=true
