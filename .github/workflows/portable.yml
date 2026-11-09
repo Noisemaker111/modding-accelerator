@@ -53,9 +53,12 @@ jobs:
       - name: Map and bench colour per loader
         working-directory: portable workspace
         run: python bench/test_ledger_rule.py
-      - name: Roadmap and measures agree, ROADMAP.md is current
+      - name: Roadmap and measures agree, and render
         working-directory: portable workspace
         run: python bench/test_measures.py
+      - name: The recorder and the port scoreboard
+        working-directory: portable workspace
+        run: python bench/test_record.py
       - name: Session cost meter reads processes on this system
         working-directory: portable workspace
         run: python bench/test_session_cost.py
