@@ -537,13 +537,27 @@
   {
    "id": "4",
    "title": "Change loader or platform",
-   "intro": "The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a version port, with separate claims. Nothing is built yet.",
+   "intro": "The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a version port, with separate claims.",
    "headline": [
     "loader.pairs-working"
    ],
-   "today": "Not built yet.",
+   "today": "No command yet. What exists is a catalogue of which loader call stands in for which, read from mods that ship for several loaders.",
    "try": [],
    "steps": [
+    {
+     "id": "40",
+     "title": "Which loader call stands in for which",
+     "part": "Loader pairs",
+     "status": "done",
+     "text": "Before any project is moved between loaders, read what mods that ship for several loaders already wrote down: the same job done once per loader. python bench/loader_api.py records each pair of loader calls that one switch or one method proves (FabricLoader.isModLoaded on Fabric is ModList.isLoaded on NeoForge), where it was seen and in how many mods, and lists the calls mods use most that have no known counterpart yet. That list is the work for steps 18 and 19.",
+     "start": "2026-11-10",
+     "target": "2026-11-10",
+     "measures": [
+      "loader.fabric-neoforge.counterparts"
+     ],
+     "done": "2026-11-10",
+     "result": "python bench/loader_api.py extract read 34 mined Stonecutter mods and Architectury API at their pinned commits and wrote coverage/loader/api.json: 112 pairs of loader calls, each proven at a switch or a method where each loader's side makes that one call, or by a shared class name and member. Fabric to NeoForge has 21 pairs, 5 of them written the same way in two or more mods; the rest are Forge to NeoForge and Fabric to Forge. No project was moved between loaders with it. python bench/test_loader_api.py checks the pairing on a made-up mod and fails when a side with two calls is accepted."
+    },
     {
      "id": "18",
      "title": "Fabric → NeoForge on one mod",

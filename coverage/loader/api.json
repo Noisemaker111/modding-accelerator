@@ -1,0 +1,4095 @@
+{
+ "about": "Loader calls that stand in for each other, read from mods that ship for more than one loader (bench/loader_api.py). counterparts: two calls proven at one switch or one method, where each loader's side made that one loader call (how: one) or they alone share a class name and member (how: name). used: every loader call two or more of these mods make, and the loaders a counterpart is known on.",
+ "sources": [
+  {
+   "repo": "SunkenInTime/diorama",
+   "commit": "8d490b41faf1256f2c9619d7a29d079806da3e5a"
+  },
+  {
+   "repo": "isXander/Controlify",
+   "commit": "f756225fcf94970458589cb5122b97671f450a75"
+  },
+  {
+   "repo": "isXander/Zoomify",
+   "commit": "4abaf61b97e9615b98de57c5171393b8f8ef5bb0"
+  },
+  {
+   "repo": "isXander/YetAnotherConfigLib",
+   "commit": "97f89e5bd0eff3811324680b6dec9e0e1009b8c0"
+  },
+  {
+   "repo": "Faboslav/friends-and-foes",
+   "commit": "ede6ba999e4b0edf0932b74a6165cb6917c76530"
+  },
+  {
+   "repo": "FemaleGenderMod/FemaleGenderMod",
+   "commit": "6f6ec1f9760cf56b57f2a1d8f82700cbddf6d2db"
+  },
+  {
+   "repo": "Leawind/Third-Person",
+   "commit": "7c9ba2a54d41acd3e32eec773b928b1fe76e5ec4"
+  },
+  {
+   "repo": "Mirsario/Minecraft-CameraOverhaul",
+   "commit": "51bae6f73d4b5efe9e27ed64df5445828e71a6b6"
+  },
+  {
+   "repo": "MinecraftFreecam/Freecam",
+   "commit": "aad378b5a30c438a9ba9de3b7856f8457b070f0e"
+  },
+  {
+   "repo": "TeamMidnightDust/MidnightLib",
+   "commit": "bd2aa72c2862c67ff5b72ba49b152a3a69d1f9a9"
+  },
+  {
+   "repo": "TeamMidnightDust/MidnightControls",
+   "commit": "719dfdfe9f137b55d7314c9ed87b94c95c170292"
+  },
+  {
+   "repo": "chrrs/scribble",
+   "commit": "bf88a49b43cee3486e5389adb3bf89b21895226c"
+  },
+  {
+   "repo": "Bawnorton/Neruina",
+   "commit": "61c3f8f4c3dbdfc7e74a5809aa6b426c12e96ae0"
+  },
+  {
+   "repo": "IMB11-Mods/SkinShuffle",
+   "commit": "1930d54f6af334f0c18ac95fbdb517c5ee22d0bd"
+  },
+  {
+   "repo": "Skidamek/AutoModpack",
+   "commit": "dcedad1da8f2028fb17e53ee6a39d088a1e17f93"
+  },
+  {
+   "repo": "mrbuilder1961/ChatPatches",
+   "commit": "987cf24502ad737c83959fd5f1297a2fd42165d7"
+  },
+  {
+   "repo": "NikitaCartes/EasyAuth",
+   "commit": "89e473a150eecf748f603d1c71228fae196e4321"
+  },
+  {
+   "repo": "Octol1ttle/FlightAssistant",
+   "commit": "266e2f2f14592737c529956273312b1dcfcfa043"
+  },
+  {
+   "repo": "PigCart/particle-rain",
+   "commit": "c01178778bb0200139b80587ee69fa60bff3560f"
+  },
+  {
+   "repo": "The-Fireplace-Minecraft-Mods/In-Game-Account-Switcher",
+   "commit": "e2716598866b0aba93a595517b5225e88a9674b2"
+  },
+  {
+   "repo": "Wilyicaro/Legacy-Minecraft",
+   "commit": "f49505dab97480f687025f8a54208d2caa3ff86c"
+  },
+  {
+   "repo": "Trainguy9512/locomotion",
+   "commit": "d1cab66e949dcfcd98481bc31eb42111edeeceac"
+  },
+  {
+   "repo": "meza/Inventory-Sorter",
+   "commit": "fbe3e9423ac4739a17d66aaed6ad5d6715c36730"
+  },
+  {
+   "repo": "yurisuika/Raised",
+   "commit": "f8f80b755c348a636e271542edd823c313173ebf"
+  },
+  {
+   "repo": "DrexHD/Vanish",
+   "commit": "7a30b8c6c7edc8faef14c8cf86896ab9e67359fb"
+  },
+  {
+   "repo": "Clickism/ClickVillagers",
+   "commit": "1e3b1859e6c50145e8ef3aa0222366157d237817"
+  },
+  {
+   "repo": "North-West-Wind/AutoFish",
+   "commit": "5aed37400a20266bb026ba8ed88b802f72fa98b4"
+  },
+  {
+   "repo": "Polyfrost/OverflowAnimationsV2",
+   "commit": "352231fe7c170714220a62063ab77a0154943190"
+  },
+  {
+   "repo": "TeamMidnightDust/CullLeaves",
+   "commit": "c2ed2b6503ff89f2c7a84367ffca31efe5a7f8d6"
+  },
+  {
+   "repo": "godemperoroftheworld/strawgolem",
+   "commit": "d54940ebecabb9126f6714c085de81dfc66c1b26"
+  },
+  {
+   "repo": "decce6/Ixeris",
+   "commit": "98f5e507bb2a25dfb9f927f5b3614e6d3b8cbf43"
+  },
+  {
+   "repo": "Zolo101/RenderScale",
+   "commit": "0cf43868636048efb45aeebc88acebc90848fe14"
+  },
+  {
+   "repo": "DeDiamondPro/Resourcify",
+   "commit": "35f2d71eb7e2fa2609d200b48d6a6a8092e1db56"
+  },
+  {
+   "repo": "not-coded/WayFix",
+   "commit": "7e926f0c6b4bc57d1532a39c135999fd7485451e"
+  },
+  {
+   "repo": "architectury/architectury-api",
+   "commit": "321ad305a1caacd20ea655f4c392a87c3376a244"
+  }
+ ],
+ "counterparts": [
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#getConfigDir",
+   "b": "net.minecraftforge.fml.loading.FMLPaths#CONFIGDIR",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 2,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/platform/fabric/PlatformImpl.java",
+     "where": "method getConfigFolder"
+    },
+    {
+     "repo": "isXander/YetAnotherConfigLib",
+     "file": "src/main/java/dev/isxander/yacl3/platform/YACLPlatform.java",
+     "where": "switch at line 49"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#isModLoaded",
+   "b": "net.minecraftforge.fml.ModList#isLoaded",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 2,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "Faboslav/friends-and-foes",
+     "file": "fabric/src/main/java/com/faboslav/friendsandfoes/fabric/platform/PlatformHelper.java",
+     "where": "method isModLoaded"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/platform/fabric/PlatformImpl.java",
+     "where": "method isModLoaded"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.api.ModInitializer",
+   "b": "net.minecraftforge.fml.common.Mod",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "Bawnorton/Neruina",
+     "file": "src/main/java/com/bawnorton/neruina/platform/NeruinaWrapper.java",
+     "where": "switch at line 5"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper#registerKeyBinding",
+   "b": "net.minecraftforge.client.ClientRegistry#registerKeyBinding",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.18.2-fabric/src/main/java/dev/yurisuika/raised/RaisedClient.java",
+     "where": "method registerKeyMappings"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper#registerKeyBinding",
+   "b": "net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.16.5-fabric/src/main/java/dev/yurisuika/raised/RaisedClient.java",
+     "where": "method registerKeyMappings"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper#registerKeyBinding",
+   "b": "net.minecraftforge.fmlclient.registry.ClientRegistry#registerKeyBinding",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.17.1-fabric/src/main/java/dev/yurisuika/raised/RaisedClient.java",
+     "where": "method registerKeyMappings"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#modifyEntriesEvent",
+   "b": "net.minecraftforge.common.CreativeModeTabRegistry#getName",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/registry/fabric/CreativeTabRegistryImpl.java",
+     "where": "method modify"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.registry.FuelRegistry",
+   "b": "net.minecraftforge.common.ForgeHooks#getBurnTime",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/registry/fuel/fabric/FuelRegistryImpl.java",
+     "where": "method get"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType",
+   "b": "net.minecraftforge.common.extensions.IForgeMenuType#create",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/registry/menu/fabric/MenuRegistryImpl.java",
+     "where": "method ofExtended"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
+   "b": "net.minecraftforge.fml.loading.FMLEnvironment#dist",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/platform/fabric/PlatformImpl.java",
+     "where": "method getEnv"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
+   "b": "net.minecraftforge.fml.loading.FMLEnvironment#getDist",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/YetAnotherConfigLib",
+     "file": "src/main/java/dev/isxander/yacl3/platform/YACLPlatform.java",
+     "where": "switch at line 34"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#getGameDir",
+   "b": "net.minecraftforge.fml.loading.FMLPaths#GAMEDIR",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/platform/fabric/PlatformImpl.java",
+     "where": "method getGameFolder"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
+   "b": "net.minecraftforge.fml.loading.FMLEnvironment#isProduction",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/YetAnotherConfigLib",
+     "file": "src/main/java/dev/isxander/yacl3/platform/YACLPlatform.java",
+     "where": "switch at line 57"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
+   "b": "net.minecraftforge.fml.loading.FMLLoader#isProduction",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/platform/fabric/PlatformImpl.java",
+     "where": "method isDevelopmentEnvironment"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.ModContainer",
+   "b": "net.minecraftforge.fml.ModContainer",
+   "loaders": [
+    "fabric",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.16.5-fabric/src/main/java/dev/yurisuika/raised/util/Parse.java",
+     "where": "method parseNamespace"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.17.1-fabric/src/main/java/dev/yurisuika/raised/util/Parse.java",
+     "where": "method parseNamespace"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.18.2-fabric/src/main/java/dev/yurisuika/raised/util/Parse.java",
+     "where": "method parseNamespace"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#isModLoaded",
+   "b": "net.neoforged.fml.ModList#isLoaded",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 4,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "Faboslav/friends-and-foes",
+     "file": "fabric/src/main/java/com/faboslav/friendsandfoes/fabric/platform/PlatformHelper.java",
+     "where": "method isModLoaded"
+    },
+    {
+     "repo": "NikitaCartes/EasyAuth",
+     "file": "src/main/java/xyz/nikitacartes/easyauth/utils/StoneCutterUtils.java",
+     "where": "switch at line 202"
+    },
+    {
+     "repo": "SunkenInTime/diorama",
+     "file": "src/main/java/dev/diorama/XaeroChannels.java",
+     "where": "switch at line 152"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader",
+   "b": "net.neoforged.fml.ModList",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 3,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "NikitaCartes/EasyAuth",
+     "file": "src/main/java/xyz/nikitacartes/easyauth/utils/StoneCutterUtils.java",
+     "where": "switch at line 4"
+    },
+    {
+     "repo": "SunkenInTime/diorama",
+     "file": "src/main/java/dev/diorama/data/Copycats.java",
+     "where": "switch at line 8"
+    },
+    {
+     "repo": "SunkenInTime/diorama",
+     "file": "src/main/java/dev/diorama/waypoint/Waystones.java",
+     "where": "switch at line 19"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#getConfigDir",
+   "b": "net.neoforged.fml.loading.FMLPaths#CONFIGDIR",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 3,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "SunkenInTime/diorama",
+     "file": "src/main/java/dev/diorama/waypoint/XaeroImport.java",
+     "where": "switch at line 107"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/platform/fabric/PlatformImpl.java",
+     "where": "method getConfigFolder"
+    },
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/platform/FabricPlatformMainImpl.java",
+     "where": "method getConfigDir"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#send",
+   "b": "net.neoforged.neoforge.network.PacketDistributor#sendToPlayer",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 2,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "NikitaCartes/EasyAuth",
+     "file": "src/main/java/xyz/nikitacartes/easyauth/integrations/ClientModBridge.java",
+     "where": "switch at line 276"
+    },
+    {
+     "repo": "NikitaCartes/EasyAuth",
+     "file": "src/main/java/xyz/nikitacartes/easyauth/integrations/ClientModBridge.java",
+     "where": "switch at line 294"
+    },
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/platform/network/S2CNetworkApiFabric.java",
+     "where": "method sendPacket"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#getGameDir",
+   "b": "net.neoforged.fml.loading.FMLPaths#GAMEDIR",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 2,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/platform/fabric/PlatformImpl.java",
+     "where": "method getGameFolder"
+    },
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/platform/FabricPlatformMainImpl.java",
+     "where": "method getGameDir"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.api.ClientModInitializer",
+   "b": "net.neoforged.fml.common.Mod",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/YetAnotherConfigLib",
+     "file": "src/testmod/java/dev/isxander/yacl3/test/Entrypoint.java",
+     "where": "switch at line 3"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.api.ModInitializer",
+   "b": "net.neoforged.fml.common.Mod",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "Bawnorton/Neruina",
+     "file": "src/main/java/com/bawnorton/neruina/platform/NeruinaWrapper.java",
+     "where": "switch at line 5"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#END_CLIENT_TICK",
+   "b": "net.neoforged.neoforge.common.NeoForge#EVENT_BUS",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/platform/client/FabricPlatformClientImpl.java",
+     "where": "method registerClientTickEnded"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#START_CLIENT_TICK",
+   "b": "net.neoforged.neoforge.common.NeoForge#EVENT_BUS",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/platform/client/FabricPlatformClientImpl.java",
+     "where": "method registerClientTickStarted"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#DISCONNECT",
+   "b": "net.neoforged.neoforge.common.NeoForge#EVENT_BUS",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/platform/client/FabricPlatformClientImpl.java",
+     "where": "method registerClientDisconnected"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#send",
+   "b": "net.neoforged.neoforge.client.network.ClientPacketDistributor#sendToServer",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/platform/network/C2SNetworkApiFabric.java",
+     "where": "method sendPacket"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#modifyEntriesEvent",
+   "b": "net.neoforged.neoforge.common.CreativeModeTabRegistry#getName",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/registry/fabric/CreativeTabRegistryImpl.java",
+     "where": "method modify"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType",
+   "b": "net.neoforged.neoforge.common.extensions.IMenuTypeExtension#create",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/registry/menu/fabric/MenuRegistryImpl.java",
+     "where": "method ofExtended"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader",
+   "b": "net.neoforged.fml.loading.FMLPaths",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "SunkenInTime/diorama",
+     "file": "src/main/java/dev/diorama/waypoint/XaeroImport.java",
+     "where": "switch at line 16"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
+   "b": "net.neoforged.fml.loading.FMLEnvironment#dist",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/platform/fabric/PlatformImpl.java",
+     "where": "method getEnv"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
+   "b": "net.neoforged.fml.loading.FMLEnvironment#getDist",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/platform/FabricPlatformMainImpl.java",
+     "where": "method getEnv"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#getModContainer",
+   "b": "net.neoforged.fml.ModList#getModFileById",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/platform/FabricPlatformMainImpl.java",
+     "where": "method getControlifyVersion"
+    },
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/platform/FabricPlatformMainImpl.java",
+     "where": "method getModFileInputStream"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
+   "b": "net.neoforged.fml.loading.FMLEnvironment#isProduction",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/platform/FabricPlatformMainImpl.java",
+     "where": "method isDevEnv"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
+   "b": "net.neoforged.fml.loading.FMLLoader#isProduction",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "fabric/src/main/java/dev/architectury/platform/fabric/PlatformImpl.java",
+     "where": "method isDevelopmentEnvironment"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.FabricLoader#isModLoaded",
+   "b": "net.neoforged.fml.loading.FMLLoader#getLoadingModList",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/Controlify",
+     "file": "src/fabric/java/dev/isxander/controlify/fabric/compatibility/FabricCompatMixinPlatform.java",
+     "where": "method isModLoaded"
+    }
+   ]
+  },
+  {
+   "a": "net.fabricmc.loader.api.ModContainer",
+   "b": "net.neoforged.fml.ModContainer",
+   "loaders": [
+    "fabric",
+    "neoforge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-fabric/src/main/java/dev/yurisuika/raised/util/Parse.java",
+     "where": "method parseNamespace"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-fabric/src/main/java/dev/yurisuika/raised/util/Parse.java",
+     "where": "method parseNamespace"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.6-fabric/src/main/java/dev/yurisuika/raised/util/Parse.java",
+     "where": "method parseNamespace"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.common.Mod",
+   "b": "net.minecraftforge.fml.common.Mod",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 4,
+   "how": [
+    "name",
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "Bawnorton/Neruina",
+     "file": "src/main/java/com/bawnorton/neruina/platform/NeruinaWrapper.java",
+     "where": "switch at line 5"
+    },
+    {
+     "repo": "Octol1ttle/FlightAssistant",
+     "file": "src/main/kotlin/ru/octol1ttle/flightassistant/FlightAssistantForge.kt",
+     "where": "switch at line 5"
+    },
+    {
+     "repo": "Wilyicaro/Legacy-Minecraft",
+     "file": "src/main/java/wily/legacy/Legacy4J.java",
+     "where": "switch at line 38"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.loading.moddiscovery.ModInfo",
+   "b": "net.minecraftforge.fml.loading.moddiscovery.ModInfo",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 3,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Bawnorton/Neruina",
+     "file": "src/main/java/com/bawnorton/neruina/platform/Platform.java",
+     "where": "switch at line 4"
+    },
+    {
+     "repo": "MinecraftFreecam/Freecam",
+     "file": "forge/src/main/java/net/xolt/freecam/forge/ForgePlatform.java",
+     "where": "method isModLoaded"
+    },
+    {
+     "repo": "Skidamek/AutoModpack",
+     "file": "loader/forge/earlyservices/src/main/java/pl/skidam/automodpack_loader_core_forge/loader/LoaderManager.java",
+     "where": "method getModVersion"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.ModList#getModContainerById",
+   "b": "net.minecraftforge.fml.ModList#getModContainerById",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 2,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method ModImpl"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/util/Parse.java",
+     "where": "method parseNamespace"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/util/Parse.java",
+     "where": "method parseNamespace"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.ModList#isLoaded",
+   "b": "net.minecraftforge.fml.ModList#isLoaded",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 2,
+   "how": [
+    "name",
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "Faboslav/friends-and-foes",
+     "file": "forge/src/main/java/com/faboslav/friendsandfoes/forge/FriendsAndFoesForgeClient.java",
+     "where": "method onClientSetup"
+    },
+    {
+     "repo": "Faboslav/friends-and-foes",
+     "file": "forge/src/main/java/com/faboslav/friendsandfoes/forge/platform/PlatformHelper.java",
+     "where": "method isModLoaded"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method isModLoaded"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.ModLoadingContext#registerExtensionPoint",
+   "b": "net.minecraftforge.fml.ModLoadingContext#registerExtensionPoint",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 2,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Faboslav/friends-and-foes",
+     "file": "forge/src/main/java/com/faboslav/friendsandfoes/forge/FriendsAndFoesForgeClient.java",
+     "where": "method onClientSetup"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/RaisedClient.java",
+     "where": "method registerConfigScreens"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/RaisedClient.java",
+     "where": "method registerConfigScreens"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.loading.FMLEnvironment",
+   "b": "net.minecraftforge.fml.loading.FMLEnvironment",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 2,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Wilyicaro/Legacy-Minecraft",
+     "file": "src/main/java/wily/legacy/Legacy4J.java",
+     "where": "switch at line 38"
+    },
+    {
+     "repo": "isXander/YetAnotherConfigLib",
+     "file": "src/main/java/dev/isxander/yacl3/platform/YACLPlatform.java",
+     "where": "switch at line 3"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.loading.FMLLoader#isProduction",
+   "b": "net.minecraftforge.fml.loading.FMLLoader#isProduction",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 2,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "Skidamek/AutoModpack",
+     "file": "loader/forge/earlyservices/src/main/java/pl/skidam/automodpack_loader_core_forge/loader/LoaderManager.java",
+     "where": "method isDevelopmentEnvironment"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method isDevelopmentEnvironment"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.IConfigScreenFactory",
+   "b": "net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 2,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "DeDiamondPro/Resourcify",
+     "file": "src/main/kotlin/dev/dediamondpro/resourcify/Resourcify.kt",
+     "where": "switch at line 48"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method registerConfigurationScreen"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.common.NeoForge#EVENT_BUS",
+   "b": "net.minecraftforge.common.MinecraftForge#EVENT_BUS",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 2,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventFactoryImpl.java",
+     "where": "method attachToForge"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImpl.java",
+     "where": "method registerClient"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImpl.java",
+     "where": "method registerCommon"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.api.distmarker.Dist",
+   "b": "net.minecraftforge.api.distmarker.Dist",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Wilyicaro/Legacy-Minecraft",
+     "file": "src/main/java/wily/legacy/Legacy4J.java",
+     "where": "switch at line 38"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.api.distmarker.Dist#CLIENT",
+   "b": "net.minecraftforge.api.distmarker.Dist#CLIENT",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Skidamek/AutoModpack",
+     "file": "loader/forge/earlyservices/src/main/java/pl/skidam/automodpack_loader_core_forge/loader/LoaderManager.java",
+     "where": "method getEnvironmentType"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.bus.api.IEventBus",
+   "b": "net.minecraftforge.eventbus.api.IEventBus",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Octol1ttle/FlightAssistant",
+     "file": "src/main/kotlin/ru/octol1ttle/flightassistant/FlightAssistantForge.kt",
+     "where": "switch at line 5"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.bus.api.SubscribeEvent",
+   "b": "net.minecraftforge.eventbus.api.SubscribeEvent",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Bawnorton/Neruina",
+     "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+     "where": "switch at line 67"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.ModContainer",
+   "b": "net.minecraftforge.fml.ModContainer",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/util/Parse.java",
+     "where": "method parseNamespace"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/util/Parse.java",
+     "where": "method parseNamespace"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.6-forge/src/main/java/dev/yurisuika/raised/util/Parse.java",
+     "where": "method parseNamespace"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.ModList#getMods",
+   "b": "net.minecraftforge.fml.ModList#getMods",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method ModImpl"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method getModIds"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method getMods"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.ModLoadingContext",
+   "b": "net.minecraftforge.fml.ModLoadingContext",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Octol1ttle/FlightAssistant",
+     "file": "src/main/kotlin/ru/octol1ttle/flightassistant/FlightAssistantForge.kt",
+     "where": "switch at line 5"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.common.EventBusSubscriber",
+   "b": "net.minecraftforge.fml.common.Mod.EventBusSubscriber",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Bawnorton/Neruina",
+     "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+     "where": "switch at line 67"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.common.EventBusSubscriber.Bus#MOD",
+   "b": "net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus#MOD",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "TeamMidnightDust/CullLeaves",
+     "file": "src/main/java/eu/midnightdust/cullleaves/CullLeavesClient.java",
+     "where": "switch at line 139"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.loading.FMLEnvironment#dist",
+   "b": "net.minecraftforge.fml.loading.FMLEnvironment#dist",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method getEnv"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.loading.FMLLoader#getDist",
+   "b": "net.minecraftforge.fml.loading.FMLLoader#getDist",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Skidamek/AutoModpack",
+     "file": "loader/forge/earlyservices/src/main/java/pl/skidam/automodpack_loader_core_forge/loader/LoaderManager.java",
+     "where": "method getEnvironmentType"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.loading.FMLLoader#getLoadingModList",
+   "b": "net.minecraftforge.fml.loading.FMLLoader#getLoadingModList",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Skidamek/AutoModpack",
+     "file": "loader/forge/earlyservices/src/main/java/pl/skidam/automodpack_loader_core_forge/loader/LoaderManager.java",
+     "where": "method getModVersion"
+    },
+    {
+     "repo": "Skidamek/AutoModpack",
+     "file": "loader/forge/earlyservices/src/main/java/pl/skidam/automodpack_loader_core_forge/loader/LoaderManager.java",
+     "where": "method isModLoaded"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.loading.FMLPaths",
+   "b": "net.minecraftforge.fml.loading.FMLPaths",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "isXander/YetAnotherConfigLib",
+     "file": "src/main/java/dev/isxander/yacl3/platform/YACLPlatform.java",
+     "where": "switch at line 3"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.loading.FMLPaths#CONFIGDIR",
+   "b": "net.minecraftforge.fml.loading.FMLPaths#CONFIGDIR",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method getConfigFolder"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.loading.FMLPaths#GAMEDIR",
+   "b": "net.minecraftforge.fml.loading.FMLPaths#GAMEDIR",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method getGameFolder"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.loading.FMLPaths#MODSDIR",
+   "b": "net.minecraftforge.fml.loading.FMLPaths#MODSDIR",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method getModsFolder"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.fml.loading.moddiscovery.ModFileInfo",
+   "b": "net.minecraftforge.fml.loading.moddiscovery.ModFileInfo",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method getIssueTracker"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory",
+   "b": "net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/RaisedClient.java",
+     "where": "method registerConfigScreens"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/RaisedClient.java",
+     "where": "method registerConfigScreens"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent",
+   "b": "net.minecraftforge.client.event.RegisterKeyMappingsEvent",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Octol1ttle/FlightAssistant",
+     "file": "src/main/kotlin/ru/octol1ttle/flightassistant/FlightAssistantForge.kt",
+     "where": "switch at line 5"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.event.RegisterPresetEditorsEvent",
+   "b": "net.minecraftforge.client.event.RegisterPresetEditorsEvent",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Wilyicaro/Legacy-Minecraft",
+     "file": "src/main/java/wily/legacy/Legacy4JClient.java",
+     "where": "switch at line 93"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.event.RenderTooltipEvent",
+   "b": "net.minecraftforge.client.event.RenderTooltipEvent",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Wilyicaro/Legacy-Minecraft",
+     "file": "src/main/java/wily/legacy/util/client/LegacyRenderUtil.java",
+     "where": "switch at line 46"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions",
+   "b": "net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/core/fluid/forge/imitator/ArchitecturyFluidAttributesForge.java",
+     "where": "method initializeClient"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions#of",
+   "b": "net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions#of",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/hooks/fluid/forge/FluidStackHooksImpl.java",
+     "where": "method getColor"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/hooks/fluid/forge/FluidStackHooksImpl.java",
+     "where": "method getFlowingTexture"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/hooks/fluid/forge/FluidStackHooksImpl.java",
+     "where": "method getStillTexture"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.extensions.common.IClientItemExtensions",
+   "b": "net.minecraftforge.client.extensions.common.IClientItemExtensions",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Wilyicaro/Legacy-Minecraft",
+     "file": "src/main/java/wily/legacy/util/client/LegacyRenderUtil.java",
+     "where": "switch at line 46"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#AIR_LEVEL",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#AIR_LEVEL",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#ARMOR_LEVEL",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#ARMOR_LEVEL",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#BOSS_EVENT_PROGRESS",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#BOSS_EVENT_PROGRESS",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#CHAT_PANEL",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#CHAT_PANEL",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#EXPERIENCE_BAR",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#EXPERIENCE_BAR",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#FOOD_LEVEL",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#FOOD_LEVEL",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#HOTBAR",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#HOTBAR",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#ITEM_NAME",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#ITEM_NAME",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#JUMP_BAR",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#JUMP_BAR",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#MOUNT_HEALTH",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#MOUNT_HEALTH",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#PLAYER_HEALTH",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#PLAYER_HEALTH",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#PLAYER_LIST",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#PLAYER_LIST",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#POTION_ICONS",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#POTION_ICONS",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#RECORD_OVERLAY",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#RECORD_OVERLAY",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#SCOREBOARD",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#SCOREBOARD",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#SUBTITLES",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#SUBTITLES",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay#TITLE_TEXT",
+   "b": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#TITLE_TEXT",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.2-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    },
+    {
+     "repo": "yurisuika/Raised",
+     "file": "versions/1.20.4-forge/src/main/java/dev/yurisuika/raised/mixin/minecraftforge/client/gui/overlay/GuiOverlayManagerMixin.java",
+     "where": "method curateName"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.common.CreativeModeTabRegistry#getName",
+   "b": "net.minecraftforge.common.CreativeModeTabRegistry#getName",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/registry/forge/CreativeTabRegistryImpl.java",
+     "where": "method modify"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.common.extensions.IMenuTypeExtension#create",
+   "b": "net.minecraftforge.common.extensions.IForgeMenuType#create",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/registry/menu/forge/MenuRegistryImpl.java",
+     "where": "method ofExtended"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.data.event.GatherDataEvent",
+   "b": "net.minecraftforge.data.event.GatherDataEvent",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "Bawnorton/Neruina",
+     "file": "src/main/java/com/bawnorton/neruina/data/NeruinaDataGen.java",
+     "where": "switch at line 67"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent",
+   "b": "net.minecraftforge.event.BuildCreativeModeTabContentsEvent",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/registry/forge/CreativeTabRegistryImpl.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent.Operation#AND",
+   "b": "net.minecraftforge.event.entity.SpawnPlacementRegisterEvent.Operation#AND",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "Faboslav/friends-and-foes",
+     "file": "forge/src/main/java/com/faboslav/friendsandfoes/forge/FriendsAndFoesForge.java",
+     "where": "method register"
+    },
+    {
+     "repo": "Faboslav/friends-and-foes",
+     "file": "forge/src/main/java/com/faboslav/friendsandfoes/forge/FriendsAndFoesForge.java",
+     "where": "method registerEntitySpawnRestriction"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#ATTACK_ENTITY",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#ATTACK_ENTITY",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#CHANGE_DIMENSION",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#CHANGE_DIMENSION",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#CLOSE_MENU",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#CLOSE_MENU",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method eventPlayerContainerEvent"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#CRAFT_ITEM",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#CRAFT_ITEM",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#DROP_ITEM",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#DROP_ITEM",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#OPEN_MENU",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#OPEN_MENU",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method eventPlayerContainerEvent"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#PICKUP_ITEM_POST",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#PICKUP_ITEM_POST",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#PICKUP_ITEM_PRE",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#PICKUP_ITEM_PRE",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#PLAYER_ADVANCEMENT",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#PLAYER_ADVANCEMENT",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#PLAYER_CLONE",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#PLAYER_CLONE",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method eventPlayerEvent"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#PLAYER_JOIN",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#PLAYER_JOIN",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#PLAYER_QUIT",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#PLAYER_QUIT",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#PLAYER_RESPAWN",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#PLAYER_RESPAWN",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.entity.player.PlayerEvent#SMELT_ITEM",
+   "b": "net.minecraftforge.event.entity.player.PlayerEvent#SMELT_ITEM",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.level.BlockEvent.BlockToolModificationEvent",
+   "b": "net.minecraftforge.event.level.BlockEvent.BlockToolModificationEvent",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/hooks/item/tool/forge/HoeItemHooksImpl.java",
+     "where": "method addTillable"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.event.level.ChunkDataEvent.Load",
+   "b": "net.minecraftforge.event.level.ChunkDataEvent.Load",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/mixin/forge/minecraftforge/MixinChunkSerializer.java",
+     "where": "method modifyProtoChunkLevel"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.fluids.FluidStack",
+   "b": "net.minecraftforge.fluids.FluidStack",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name",
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/core/fluid/forge/imitator/ArchitecturyFluidAttributesForge.java",
+     "where": "method getSound"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/core/fluid/forge/imitator/ArchitecturyFluidAttributesForge.java",
+     "where": "method initializeClient"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/fluid/forge/FluidStackImpl.java",
+     "where": "method create"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.fluids.FluidType.Properties#create",
+   "b": "net.minecraftforge.fluids.FluidType.Properties#create",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/core/fluid/forge/imitator/ArchitecturyFlowingFluid.java",
+     "where": "method toForgeProperties"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforge.server.ServerLifecycleHooks#getCurrentServer",
+   "b": "net.minecraftforge.server.ServerLifecycleHooks#getCurrentServer",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name",
+    "one"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/event/forge/EventHandlerImplCommon.java",
+     "where": "method event"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "forge/src/main/java/dev/architectury/utils/forge/GameInstanceImpl.java",
+     "where": "method getServer"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforgespi.language.IModFileInfo",
+   "b": "net.minecraftforge.forgespi.language.IModFileInfo",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method getIssueTracker"
+    }
+   ]
+  },
+  {
+   "a": "net.neoforged.neoforgespi.language.IModInfo",
+   "b": "net.minecraftforge.forgespi.language.IModInfo",
+   "loaders": [
+    "neoforge",
+    "forge"
+   ],
+   "mods": 1,
+   "how": [
+    "name"
+   ],
+   "sites": [
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method getModIds"
+    },
+    {
+     "repo": "architectury/architectury-api",
+     "file": "minecraftforge/src/main/java/dev/architectury/platform/forge/PlatformImpl.java",
+     "where": "method getMods"
+    }
+   ]
+  }
+ ],
+ "used": {
+  "fabric": [
+   {
+    "call": "net.fabricmc.api.ClientModInitializer",
+    "mods": 24,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.loader.api.FabricLoader#isModLoaded",
+    "mods": 16,
+    "counterpart_on": [
+     "forge",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#END_CLIENT_TICK",
+    "mods": 14,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.loader.api.FabricLoader#getConfigDir",
+    "mods": 14,
+    "counterpart_on": [
+     "forge",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.api.ModInitializer",
+    "mods": 13,
+    "counterpart_on": [
+     "forge",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.loader.api.FabricLoader#getModContainer",
+    "mods": 11,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#registerKeyMapping",
+    "mods": 10,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
+    "mods": 10,
+    "counterpart_on": [
+     "forge",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.api.EnvType#CLIENT",
+    "mods": 9,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback#EVENT",
+    "mods": 8,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#DISCONNECT",
+    "mods": 8,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback#EVENT",
+    "mods": 8,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#clientboundPlay",
+    "mods": 8,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#serverboundPlay",
+    "mods": 8,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
+    "mods": 8,
+    "counterpart_on": [
+     "forge",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.loader.api.ModContainer",
+    "mods": 8,
+    "counterpart_on": [
+     "forge",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#JOIN",
+    "mods": 7,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#registerGlobalReceiver",
+    "mods": 7,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#registerGlobalReceiver",
+    "mods": 7,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.api.Environment",
+    "mods": 6,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#send",
+    "mods": 6,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.loader.api.FabricLoader",
+    "mods": 6,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.api.EnvType",
+    "mods": 5,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource",
+    "mods": 5,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STOPPING",
+    "mods": 5,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#START_CLIENT_TICK",
+    "mods": 5,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper#registerKeyBinding",
+    "mods": 5,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#canSend",
+    "mods": 5,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#canSend",
+    "mods": 5,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#send",
+    "mods": 5,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.fabric.api.resource.ResourceManagerHelper#registerReloadListener",
+    "mods": 5,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.resource.v1.ResourceLoader#registerReloadListener",
+    "mods": 5,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.loader.api.FabricLoader#getGameDir",
+    "mods": 5,
+    "counterpart_on": [
+     "forge",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#AFTER_INIT",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.event.EventFactory#createArrayBacked",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents#JOIN",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.resource.v1.ResourceLoader#registerBuiltinPack",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.resource.v1.pack.PackActivationType#NORMAL",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.api.DedicatedServerModInitializer",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.command.v2.ClientCommands#literal",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.event.Event",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTED",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.event.player.UseBlockCallback#EVENT",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#playC2S",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#playS2C",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.resource.v1.ResourceLoader",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.resource.v1.pack.PackActivationType",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.loader.api.FabricLoader#getAllMods",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.loader.api.metadata.ModMetadata",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.api.EnvType#SERVER",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#create",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.attachment.v1.AttachmentType",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.biome.v1.ModificationPhase#ADDITIONS",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.command.v2.ClientCommandManager#literal",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.command.v2.ClientCommands#argument",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents#GAME",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#INIT",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.Context",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback#EVENT",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#addLast",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#afterExtract",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.screen.v1.Screens#getButtons",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.client.screen.v1.Screens#getWidgets",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.event.Event#DEFAULT_PHASE",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STOPPED",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#START_SERVER_TICK",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.gametest.v1.GameTest",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.message.v1.ServerMessageEvents#ALLOW_CHAT_MESSAGE",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.PacketByteBufs#create",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#clientboundConfiguration",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.ServerLoginConnectionEvents#QUERY_START",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents#INIT",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.resource.ResourceManagerHelper",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.resource.ResourcePackActivationType",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.fabricmc.loader.api.FabricLoader#gameDir",
+    "mods": 2,
+    "counterpart_on": []
+   }
+  ],
+  "neoforge": [
+   {
+    "call": "net.neoforged.fml.common.Mod",
+    "mods": 28,
+    "counterpart_on": [
+     "fabric",
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.api.distmarker.Dist#CLIENT",
+    "mods": 17,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.IConfigScreenFactory",
+    "mods": 17,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.bus.api.IEventBus",
+    "mods": 15,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.bus.api.SubscribeEvent",
+    "mods": 15,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.common.EventBusSubscriber",
+    "mods": 12,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent",
+    "mods": 12,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.common.NeoForge#EVENT_BUS",
+    "mods": 12,
+    "counterpart_on": [
+     "fabric",
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.ModContainer",
+    "mods": 11,
+    "counterpart_on": [
+     "fabric",
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.event.lifecycle.FMLClientSetupEvent",
+    "mods": 10,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.fml.loading.FMLPaths#CONFIGDIR",
+    "mods": 10,
+    "counterpart_on": [
+     "fabric",
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.ModList#isLoaded",
+    "mods": 9,
+    "counterpart_on": [
+     "fabric",
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.ModLoadingContext#registerExtensionPoint",
+    "mods": 8,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.ClientTickEvent.Post",
+    "mods": 8,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.RegisterCommandsEvent",
+    "mods": 8,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.api.distmarker.Dist",
+    "mods": 7,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent",
+    "mods": 7,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.fml.ModList#getModContainerById",
+    "mods": 6,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.loading.FMLEnvironment#getDist",
+    "mods": 6,
+    "counterpart_on": [
+     "fabric"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.RegisterClientCommandsEvent",
+    "mods": 6,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.network.registration.PayloadRegistrar",
+    "mods": 6,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.fml.ModList",
+    "mods": 5,
+    "counterpart_on": [
+     "fabric"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.loading.FMLEnvironment#dist",
+    "mods": 5,
+    "counterpart_on": [
+     "fabric",
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.AddClientReloadListenersEvent",
+    "mods": 5,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.fml.loading.FMLEnvironment",
+    "mods": 4,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.loading.FMLLoader",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.fml.loading.FMLLoader#isProduction",
+    "mods": 4,
+    "counterpart_on": [
+     "fabric",
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.loading.FMLPaths#GAMEDIR",
+    "mods": 4,
+    "counterpart_on": [
+     "fabric",
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.RegisterGuiLayersEvent",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.AddPackFindersEvent",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.GameShuttingDownEvent",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.registries.DeferredHolder",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.registries.DeferredRegister#create",
+    "mods": 4,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.bus.api.EventPriority#LOWEST",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.fml.ModList#getModFileById",
+    "mods": 3,
+    "counterpart_on": [
+     "fabric"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.common.EventBusSubscriber.Bus#MOD",
+    "mods": 3,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.fml.loading.FMLLoader#getLoadingModList",
+    "mods": 3,
+    "counterpart_on": [
+     "fabric",
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.loading.FMLPaths",
+    "mods": 3,
+    "counterpart_on": [
+     "fabric",
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.loading.moddiscovery.ModInfo",
+    "mods": 3,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.ClientTickEvent.Pre",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.VanillaGuiLayers#HOTBAR",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.network.PacketDistributor#sendToPlayer",
+    "mods": 3,
+    "counterpart_on": [
+     "fabric"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.registries.RegisterEvent",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforgespi.language.IModInfo",
+    "mods": 3,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.api.distmarker.Dist#DEDICATED_SERVER",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.bus.api.Event",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.bus.api.EventPriority#HIGH",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.bus.api.EventPriority#HIGHEST",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.fml.ModList#getMods",
+    "mods": 2,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.common.EventBusSubscriber.Bus#GAME",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.fml.loading.FMLEnvironment#isProduction",
+    "mods": 2,
+    "counterpart_on": [
+     "fabric"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.loading.FMLLoader#getDist",
+    "mods": 2,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.fml.loading.LoadingModList",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.fml.loading.VersionInfo",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory",
+    "mods": 2,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.ClientChatReceivedEvent.System",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterLayerDefinitions",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.InputEvent.Key",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.RegisterDebugEntriesEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.event.ScreenEvent.Init.Post",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions",
+    "mods": 2,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions#of",
+    "mods": 2,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.GuiLayer",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.VanillaGuiLayers#AIR_LEVEL",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.VanillaGuiLayers#ARMOR_LEVEL",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.VanillaGuiLayers#CONTEXTUAL_INFO_BAR",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.VanillaGuiLayers#CONTEXTUAL_INFO_BAR_BACKGROUND",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.VanillaGuiLayers#EXPERIENCE_LEVEL",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.VanillaGuiLayers#FOOD_LEVEL",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.VanillaGuiLayers#PLAYER_HEALTH",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.VanillaGuiLayers#TAB_LIST",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.gui.VanillaGuiLayers#VEHICLE_HEALTH",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.network.ClientPacketDistributor",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.client.network.ClientPacketDistributor#sendToServer",
+    "mods": 2,
+    "counterpart_on": [
+     "fabric"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.common.extensions.ICommonPacketListener",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.data.event.GatherDataEvent",
+    "mods": 2,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.event.AddReloadListenerEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.AddServerReloadListenersEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent",
+    "mods": 2,
+    "counterpart_on": [
+     "forge"
+    ]
+   },
+   {
+    "call": "net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.entity.EntityJoinLevelEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.level.BlockEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.level.BlockEvent.BreakEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.level.LevelEvent.Load",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.server.ServerStartedEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.tick.PlayerTickEvent.Pre",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.event.village.VillagerTradesEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.network.PacketDistributor",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforge.registries.NeoForgeRegistries.Keys#BIOME_MODIFIER_SERIALIZERS",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforgespi.earlywindow.GraphicsBootstrapper",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforgespi.locating.IDependencyLocator",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforgespi.locating.IDiscoveryPipeline",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.neoforged.neoforgespi.locating.IModFile#create",
+    "mods": 2,
+    "counterpart_on": []
+   }
+  ],
+  "forge": [
+   {
+    "call": "net.minecraftforge.fml.common.Mod",
+    "mods": 17,
+    "counterpart_on": [
+     "fabric",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory",
+    "mods": 11,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.api.distmarker.Dist#CLIENT",
+    "mods": 10,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.eventbus.api.SubscribeEvent",
+    "mods": 9,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.ModLoadingContext#registerExtensionPoint",
+    "mods": 9,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.client.event.RegisterKeyMappingsEvent",
+    "mods": 7,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.common.MinecraftForge#EVENT_BUS",
+    "mods": 7,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent",
+    "mods": 6,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.loading.FMLLoader#isProduction",
+    "mods": 6,
+    "counterpart_on": [
+     "fabric",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.client.event.RegisterClientReloadListenersEvent",
+    "mods": 5,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.ModList#isLoaded",
+    "mods": 5,
+    "counterpart_on": [
+     "fabric",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus#MOD",
+    "mods": 5,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext#getModEventBus",
+    "mods": 5,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.loading.FMLEnvironment#dist",
+    "mods": 5,
+    "counterpart_on": [
+     "fabric",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.loading.FMLPaths#CONFIGDIR",
+    "mods": 5,
+    "counterpart_on": [
+     "fabric",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.api.distmarker.Dist",
+    "mods": 4,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.eventbus.api.IEventBus",
+    "mods": 4,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.ModList#getModContainerById",
+    "mods": 4,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.client.event.RegisterParticleProvidersEvent",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.event.RegisterCommandsEvent",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.event.TickEvent.ClientTickEvent",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.ModContainer",
+    "mods": 3,
+    "counterpart_on": [
+     "fabric",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.common.Mod.EventBusSubscriber",
+    "mods": 3,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus#FORGE",
+    "mods": 3,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.loading.FMLLoader#getDist",
+    "mods": 3,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.loading.FMLLoader#getLoadingModList",
+    "mods": 3,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.loading.moddiscovery.ModInfo",
+    "mods": 3,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.api.distmarker.OnlyIn",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.client.ClientRegistry",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.client.ConfigGuiHandler.ConfigGuiFactory",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.client.ConfigScreenHandler",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.client.event.EntityRenderersEvent.RegisterLayerDefinitions",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.client.event.InputEvent.Key",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.client.event.RegisterClientCommandsEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.client.event.RegisterGuiOverlaysEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.client.gui.overlay.ForgeLayer",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.client.gui.overlay.ForgeLayeredDraw#HOTBAR_AND_DECOS",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.client.gui.overlay.VanillaGuiOverlay#HOTBAR",
+    "mods": 2,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.common.world.BiomeModifier",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.event.AddReloadListenerEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.event.BuildCreativeModeTabContentsEvent",
+    "mods": 2,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.event.TickEvent.Phase#END",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.event.TickEvent.Phase#START",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.event.TickEvent.PlayerTickEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.event.entity.EntityAttributeCreationEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.event.entity.living.MobSpawnEvent.FinalizeSpawn",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.event.level.LevelEvent.Load",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.event.village.VillagerTradesEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.eventbus.api.EventPriority#HIGH",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.eventbus.api.EventPriority#LOWEST",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.eventbus.api.listener.SubscribeEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.LogicalSide#CLIENT",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.ModList#getModFileById",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.ModLoadingContext",
+    "mods": 2,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding",
+    "mods": 2,
+    "counterpart_on": [
+     "fabric"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.loading.FMLEnvironment",
+    "mods": 2,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.loading.FMLLoader#versionInfo",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.loading.FMLPaths#GAMEDIR",
+    "mods": 2,
+    "counterpart_on": [
+     "fabric",
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.fml.loading.LoadingModList#getMods",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.fml.loading.moddiscovery.ModFileInfo",
+    "mods": 2,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.forgespi.language.IModFileInfo",
+    "mods": 2,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.forgespi.language.IModInfo",
+    "mods": 2,
+    "counterpart_on": [
+     "neoforge"
+    ]
+   },
+   {
+    "call": "net.minecraftforge.forgespi.locating.IModFile",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.registries.DeferredRegister#create",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.registries.ForgeRegistries.Keys#BIOME_MODIFIER_SERIALIZERS",
+    "mods": 2,
+    "counterpart_on": []
+   },
+   {
+    "call": "net.minecraftforge.registries.RegistryObject",
+    "mods": 2,
+    "counterpart_on": []
+   }
+  ],
+  "quilt": [
+   {
+    "call": "org.quiltmc.parsers.json.JsonReader#json5",
+    "mods": 2,
+    "counterpart_on": []
+   }
+  ]
+ }
+}
