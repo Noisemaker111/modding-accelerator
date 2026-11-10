@@ -1,5 +1,5 @@
 """The porting map: every Minecraft release, the hub-to-hub route between any two, and what has
-really been ported. It is a section of the roadmap page (docs/index.html, bench/bench_page.py);
+really been ported. It is a section of the reference page (docs/index.html, bench/bench_page.py);
 docs/porting-map.html only sends old links there.
 
 Reads coverage/changes/index.json (bench/change_routes.py) and every <from>__<to>.json step file
@@ -14,6 +14,7 @@ import gzip
 import zlib
 import json
 from pathlib import Path
+import ledger_rule
 
 ROOT = Path(__file__).resolve().parent.parent
 CHANGES = ROOT / "coverage" / "changes"
@@ -29,7 +30,13 @@ def payload():
     for s in index["steps"]:
         cov = {k: v for k, v in s["coverage"].items() if k != "matched"}
         slim_steps.append({**{k: v for k, v in s.items() if k != "coverage"}, "coverage": cov})
-    slim = {k: index[k] for k in ("generated", "allVersions", "blocked", "runs", "doing", "stepStatus")}
+    slim = {k: index[k] for k in ("allVersions", "blocked")}
+    # The map needs evidence for route readiness, not a dated run log or a work plan.
+    slim["runs"] = [{k: r[k] for k in ("mod", "loader", "from", "to", "status")} for r in index["runs"]]
+    ledger = json.loads((ROOT / "coverage" / "ledger.json").read_text(encoding="utf-8"))
+    versions = [v["id"] for v in index["allVersions"]]
+    early = {v["id"] for v in index["allVersions"] if v["status"] == "blocked"}
+    slim["stepStatus"] = ledger_rule.all_statuses(versions, early, ledger["hops"], [])
     slim["families"] = [{k: f[k] for k in ("id", "versions", "hub") if k in f} | {"estimated": f.get("estimated", False)} for f in index["families"]["list"]]
     slim["steps"] = slim_steps
     sc = ROOT / "coverage" / "stonecutter" / "index.json"
@@ -95,7 +102,7 @@ REDIRECT = """<!doctype html>
 <link rel="canonical" href="index.html#porting">
 <script>location.replace("index.html" + (location.hash && location.hash.length > 1 ? location.hash : "#porting"));</script>
 <style>body{font:16px system-ui,sans-serif;margin:40px 16px;background:#f9f9f7;color:#0b0b0b}@media (prefers-color-scheme:dark){body{background:#0d0d0d;color:#f0efec}a{color:#6da7ec}}</style>
-</head><body><p>The porting map is now part of the roadmap: <a href="index.html#porting">open it</a>.</p></body></html>
+</head><body><p><a href="index.html#porting">Open the porting map</a>.</p></body></html>
 """
 
 
@@ -238,7 +245,7 @@ MAP_BODY = r"""<p class="lede">Pick the version your mod is on and the one you w
 <p class="small">Stonecutter mods keep one source for many versions, with switches like <span class="mono">//? if &gt;=1.21.2</span>: each one is a person showing the code before and after an update. These are the switches mined from <span id="scmods"></span> open-source mods, placed on the update their version boundary falls on, and the rules learned where the same change repeats across mods. A rule runs only on its own update, and only when the compiler reports the old name.</p>
 {SC_CHART}<details class="v-tablefold"><summary>Every update as a table</summary><table class="tbl stack" id="sctable"><thead><tr><th class="l">Update</th><th>Switches</th><th>Mods</th><th class="l">Rules learned (forward)</th><th class="l">Backport rules</th></tr></thead><tbody></tbody></table></details>
 
-<p class="foot">Made by <span class="mono">bench/porting_map.py</span> from <span class="mono">coverage/changes/index.json</span>, <span class="mono">coverage/ledger.json</span> and <span class="mono">ROADMAP.md</span> on <span id="gen"></span>. Before 1.14.4 Mojang published no official names, so those families are grouped by version number and nothing there is measured.</p>
+<p class="foot">Made by <span class="mono">bench/porting_map.py</span> from <span class="mono">coverage/changes/index.json</span> and <span class="mono">coverage/ledger.json</span>. Before 1.14.4 Mojang published no official names, so those families are grouped by version number and nothing there is measured.</p>
 """
 
 MAP_JS = r"""const IX = /*INDEX*/null;
@@ -256,7 +263,7 @@ const RUN_SAID = { behaviour: "behaviour checked in the game", load: "loads in t
 const WORST = { red: 0, yellow: 1, green: 2 };
 
 // ---- colours: bench/ledger_rule.py gives every update a colour per direction from
-// coverage/ledger.json and the ROADMAP's "doing" steps; a hop takes its worst update ----
+// coverage/ledger.json; a hop takes its worst update ----
 const LOADERS = { fabric: "Fabric", neoforge: "NeoForge", forge: "Forge", quilt: "Quilt" };
 let LOADER = LOADERS[new URLSearchParams(location.hash.slice(1)).get("loader")] ? new URLSearchParams(location.hash.slice(1)).get("loader") : "fabric";
 const stepSt = (i, fwd) => IX.stepStatus[LOADER][ALL[i] + "__" + ALL[i + 1]][fwd ? "fwd" : "back"];
@@ -555,7 +562,6 @@ function scTable() {
 const START = new URLSearchParams(location.hash.slice(1));
 drawMap(); pickers(); render(); scTable();
 if (START.get("step") && STEP[START.get("step")]) openStep(START.get("step"), START.get("back") !== "1");
-$("#gen").textContent = IX.generated;
 """
 
 if __name__ == "__main__":

@@ -313,15 +313,8 @@ def main():
     fam_out = est + fam_out
 
     # ---- hop colours from evidence ---------------------------------------------------------
-    roadmap = (ROOT / "ROADMAP.md").read_text(encoding="utf-8")
+    # Work-in-progress status belongs in PRs/issues and is not evidence of a working port.
     doing = []
-    for m in re.finditer(r"(?ms)^(\d+[a-z]?)\. (.*?)(?=^\d+[a-z]?\. |^## |\Z)", roadmap):
-        if "**doing**" in m.group(2):
-            for a, b in re.findall(r"(\d+\.\d+(?:\.\d+)?)\s*(?:→|->)\s*(\d+\.\d+(?:\.\d+)?)", m.group(2)):
-                if a in order and b in order:
-                    full = " ".join(m.group(2).split())
-                    item = {"step": m.group(1), "from": a, "to": b, "text": full}
-                    doing.append({**item, "text": full[:160], "loaders": sorted(ledger_rule.doing_loader(item, ledger["hops"]))})
     every = [v["id"] for v in meta["versions"]]
     step_status = ledger_rule.all_statuses(every, set(early), ledger["hops"], doing)
 

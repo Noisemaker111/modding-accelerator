@@ -7,6 +7,11 @@
   One command, <code>modaccel</code>. You never open the game to check a change, and never diagnose a conflict by hand.
 </p>
 
+modaccel has a Java 17+ CLI and Java game probes, Python bench tools, a JavaScript porting map, Groovy Gradle files, and shell/Windows launchers; older PowerShell tooling remains in the repo.<br>
+It drives Gradle builds for Fabric (Loom), NeoForge (ModDevGradle/NeoGradle), Forge (ForgeGradle), and Paper/Bukkit plugins; plugin checks use MockBukkit or real Paper with MCProtocolLib and ViaProxy.<br>
+The CLI runs on Windows, Linux and macOS; game checks have platform limits below. The root Gradle project is Prism Lab, a Java 25 Fabric demo mod, not the CLI.<br>
+Version tags build a standalone JAR and portable ZIP with SHA-256 files in a draft GitHub release for manual publication.
+
 <p align="center">
   <a href="https://github.com/Noisemaker111/modding-accelerator/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/Noisemaker111/modding-accelerator?include_prereleases&label=download&color=5d9c3f"></a>
   <a href="https://github.com/Noisemaker111/modding-accelerator/actions/workflows/portable.yml"><img alt="Checks" src="https://github.com/Noisemaker111/modding-accelerator/actions/workflows/portable.yml/badge.svg?branch=main"></a>
@@ -15,7 +20,7 @@
 
 <p align="center">
   <a href="https://noisemaker111.github.io/modding-accelerator/"><b>Website</b></a> ·
-  <a href="ROADMAP.md">Roadmap</a> ·
+  <a href="https://github.com/Noisemaker111/modding-accelerator/issues">Issues</a> ·
   <a href="https://noisemaker111.github.io/modding-accelerator/#porting">Porting map</a> ·
   <a href="SCOPE.md">What is supported</a>
 </p>
@@ -70,11 +75,11 @@ On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.ja
 
 ### 4 · Change loader or platform
 
-Moving a project between Fabric, NeoForge, Forge, Quilt and Paper is the fourth goal. Nothing is built yet; the [roadmap](ROADMAP.md#goal-4--change-loader-or-platform) has the steps.
+Moving a project between Fabric, NeoForge, Forge, Quilt and Paper is the fourth goal. There is no conversion command yet; `coverage/loader/api.json` records loader API counterparts mined from multi-loader source.
 
 ## What counts as working
 
-A check that only shows the mod loaded is not proof it works. Proof is a check on the mod's own code or state: `--assert`, `--expect-value`, or a server scenario's expect lines. Every port that was run is listed on the [website](https://noisemaker111.github.io/modding-accelerator/#evidence), with how far it got.
+A check that only shows the mod loaded is not proof it works. Proof is a check on the mod's own code or state: `--assert`, `--expect-value`, or a server scenario's expect lines. Machine-readable port receipts live in `coverage/ledger.json`; status and plans belong in [PRs](https://github.com/Noisemaker111/modding-accelerator/pulls) and [issues](https://github.com/Noisemaker111/modding-accelerator/issues).
 
 ## Limits
 
@@ -83,8 +88,8 @@ A check that only shows the mod loaded is not proof it works. Proof is a check o
 
 ## More
 
-- [`ROADMAP.md`](ROADMAP.md): where each goal stands, every step with its dates, every number with its target.
+- [Issues](https://github.com/Noisemaker111/modding-accelerator/issues) and [PRs](https://github.com/Noisemaker111/modding-accelerator/pulls): plans, status and findings.
 - [`SCOPE.md`](SCOPE.md): which kinds of projects are supported, and how far.
 - [`AGENTS.md`](AGENTS.md): the rules for working in this repo.
-- [`bench/alternatives.md`](bench/alternatives.md): how this compares with Loom, GameTest, HeadlessMC and others.
+- [`bench/README.md`](bench/README.md): recording receipts and comparing measurements.
 - [Releases](https://github.com/Noisemaker111/modding-accelerator/releases): what changed in each version.
