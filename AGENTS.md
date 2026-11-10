@@ -40,8 +40,8 @@ gh pr merge --squash
 - CLI: `tools/cli/Modaccel.java` (entry/help), one class per command; `tools/tests/PortableTests.java` (self-test).
 - Game probes: `tools/{agent,datacheck,mixincheck,packcheck,plugincheck,servercheck}/`.
 - Porter/rules: `tools/cli/Port.java`, `knowledge/fixes.json`, `coverage/changes/`. Run `python3 bench/port_board.py` when changing them; each rule needs a `test {error,before,after}`. Writer: `python3 bench/rule_test.py --help`.
-- Roadmap, port receipts, measures: `coverage/{roadmap,ledger,measures}.json`; recording commands in `bench/README.md`. Finish a doing step first; small fixes need no step.
-- Website: `bench/bench_page.py`, `bench/page_style.py`; numbers use `bench/viz.py`. `ROADMAP.md` and `docs/` are generated on main: never edit or commit regenerated copies on a branch.
+- Port receipts and measures: `coverage/{ledger,measures}.json`; recording commands in `bench/README.md`. Plans, dated status and findings belong in PRs/issues, never docs or memory notes.
+- Website: `bench/bench_page.py`, `bench/page_style.py`; map uses `bench/porting_map.py`. `docs/` is generated on main; change its generators. Keep docs about current use, not history or plans.
 
 ## Gotchas
 

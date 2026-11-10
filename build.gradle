@@ -106,7 +106,7 @@ dependencies {
 
 test {
 	useJUnitPlatform {
-		// `lab pure` runs only the tests tagged "pure": no Minecraft registry bootstrap.
+		// Passing -PpureOnly selects tests without Minecraft registry bootstrap.
 		if (project.hasProperty('pureOnly')) {
 			includeTags 'pure'
 		}
@@ -168,8 +168,8 @@ publishing {
 	}
 }
 
-// Writes the test runtime classpath once so the resident fast lane (tools/LabDaemon.java)
-// can compile and run without Gradle in the loop.
+// Classpath export for the retained tools/LabDaemon.java lane.
+// The portable CLI's FastLane reads the evaluated model from tools/cli/gradle.init.gradle instead.
 tasks.register("labClasspath") {
 	def out = layout.projectDirectory.file(".modaccel/classpath.txt")
 	def cp = sourceSets["test"].runtimeClasspath.asPath

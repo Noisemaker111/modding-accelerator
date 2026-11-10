@@ -54,8 +54,8 @@ reload on that lane (a code edit means a new client).
   picture; there is no pixel comparison to maintain.
 - No rendering claim without a screenshot; no "fixed" without a check this session.
 - New block/item id, a new mixin target or a changed `@Shadow`: `.\modaccel world`, once.
-- `bench\fault-matrix.md` records seven injected faults and which tier caught each, plus the gaps
-  that remain. Read it before trusting a green line as proof.
+- Break the check once before trusting a green line. A warm process can miss a fault that predates it;
+  registry and mixin edits need a restart, and multiplayer state needs a dedicated-server check.
 
 ## Limits
 
@@ -71,4 +71,4 @@ reload on that lane (a code edit means a new client).
   versions need `gradle.properties`, the Loom plugin id and mappings changed; NeoForge and Forge
   are their own lanes.
 
-What works today: `README.md`. What's next: `ROADMAP.md`.
+What works today: `README.md`. Plans, status and findings: GitHub PRs and issues.

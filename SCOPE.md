@@ -1,7 +1,5 @@
 # Scope: what modaccel supports, and how new things get in
 
-Status: adopted 2026-10-25; platform change, Paper included, became a goal on 2026-11-09. ROADMAP.md holds the steps.
-
 The four goals (README.md) meet this file in the ladder of section 2: rungs 1 to 4 are Goal 1 (test a mod in seconds), rung 5 is Goal 2 (port to any version) and rung 6 is Goal 4 (change loader or platform). Goal 3 (modpacks) takes installed packs, not source projects, so it has no rung.
 
 ## 1. Kinds of projects
@@ -36,25 +34,25 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 | 1 Build | Fast, warm build of the jar | yes | yes | yes | yes | yes (1.8 s jar) |
 | 2 Tests | Logic tests in seconds, no game | yes | yes | yes | yes | yes (all 17 AgentCraft tests, 2-5 s warm) |
 | 3 Run check | Loads in the real game/server, screenshot or command proof | yes | yes | partial | yes (26.3 node) | yes, on MockBukkit (a fake Paper server, no real server): `plugin-check` |
-| 4 Multiplayer check | Dedicated server plus client, or server plus bot | partial | partial | no | no | yes, real Paper server plus a bot player: `server-check` (bot speaks 26.3 only) |
+| 4 Multiplayer check | Dedicated server plus client, or server plus bot | partial | partial | no | no | yes, real Paper server plus a bot player: `server-check` (MCProtocolLib, with ViaProxy for other versions) |
 | 5 Version port | `port --from --to`, routed through hubs | yes (1.14.4+) | yes (1.14.4+) | no | via its nodes | no: config only, done by hand (AgentCraft 26.3 to 1.21.10 passes `plugin-check`); `port` refuses plugins and names the edits |
-| 6 Platform change | e.g. Fabric → NeoForge, Forge → Paper | later | later | later | n/a | later: server-side code only |
+| 6 Platform change | e.g. Fabric → NeoForge, Forge → Paper | no | no | no | n/a | no |
 
 ## 3. Policy
 
-1. **Who we're for.** People who write mods or plugins from source, and modpack users who need their installed mods to work together. Compiled jars and pack exports are planned inputs for compatibility diagnosis; porting a mod still requires its source.
-2. **What gets first-class support.** Fabric and NeoForge first, then Forge (old modpacks), then Paper (servers). Quilt rides on Fabric. Proxies and datapacks come later.
+1. **Who we're for.** People who write mods or plugins from source, and modpack users who need their installed mods to work together. `pack-check` diagnoses installed jars and CurseForge exports; porting a mod requires its source.
+2. **What gets first-class support.** Fabric and NeoForge first, then Forge (old modpacks), then Paper (servers). Quilt rides on Fabric. Proxy plugins and standalone datapacks have no dedicated commands.
 3. **When a platform earns the next rung.**
    - A real project someone uses needs it.
    - The bench shows a measured gain.
    - One fixture from that platform joins the merge gate.
-4. **Ports between Paper versions: yes.** The Paper API changes slowly; AgentCraft runs on 1.21.10 through 26.3 with config changes only. This is rung 5 and should be cheap.
+4. **Ports between Paper versions need manual edits.** `port` refuses plugin projects and names the required changes; `server-check` can check them against a real Paper server.
 5. **Plugin ↔ mod moves: yes, as part of Goal 4.**
    - Server-side code can be mapped between a loader's API and the Bukkit API: events, commands, the scheduler, config.
    - Client code, mixins into the game and new blocks or items cannot exist on a plugin server, where vanilla clients join. A move names each of them and stops; it never drops them.
-   - Decided 2026-11-09, replacing "no for now" from 2026-10-25. Nothing is built yet (ROADMAP step 39).
-6. **Loader and platform changes stay separate from version ports**, with separate claims. This is already decided in ROADMAP.
-7. **Every claim carries its rung.** The README and the roadmap page (with its porting map) say which rung a platform reached, never "supports X".
+   - No conversion command exists yet.
+6. **Loader and platform changes stay separate from version ports**, with separate claims.
+7. **Every claim carries its rung.** The README says which rung a platform reached, never just "supports X".
 
 ## 4. Intake: what happens when someone brings a new project
 
@@ -62,8 +60,8 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 2. **Classify it.** Platform and side from section 1, and the highest rung it passes today.
 3. **Decide.**
    - **Fits a supported platform and passes:** add it to the test set if it covers a new kind of build.
-   - **Fits but fails a rung:** the smallest fix goes on a branch, and a ROADMAP step is added with the exact blocker.
-   - **New platform:** apply policy 3. If it qualifies, add a ROADMAP step under its goal for rung 1 or 2 only, not the whole ladder.
+   - **Fits but fails a rung:** the smallest fix goes on a branch, and an issue names the exact blocker.
+   - **New platform:** apply policy 3. If it qualifies, open an issue under its goal for rung 1 or 2 only, not the whole ladder.
    - **Out of scope:** say so plainly in the report, with the reason.
 4. **Record it.** A ledger row for any port run and the merge gate updated if it became a fixture. Pages regenerate on main from the source records.
 
@@ -75,6 +73,4 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 - Rung 3: `modaccel plugin-check` loads the jar on MockBukkit. It is a fake server: world, entity and network behaviour are not proven.
 - Rung 4: `modaccel server-check` starts a real Paper server with the plugin, joins a bot player and runs a scenario with expect steps. Two breaks made on purpose fail at the step that catches them.
 - It is the first server fixture in the merge gate (`bench/server-plugins/manifest.json`, run by `tools/tests/ServerPluginFixtures.java`).
-- Next: rung 5, `port` between Paper versions (ROADMAP step 28).
-
-What each check covers is in `modaccel help plugin-check` and `modaccel help server-check`; the timings are measures in `ROADMAP.md`.
+What each check covers is in `modaccel help plugin-check` and `modaccel help server-check`; use `python3 bench/measures.py table --area plugin` for timings.
