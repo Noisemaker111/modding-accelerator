@@ -3,8 +3,10 @@ import java.util.*;
 import java.util.regex.*;
 
 /**
- * Every port rule in knowledge/fixes.json is well formed, whether or not it has a test: its patterns
- * compile, its replacement only names groups its pattern has, and some route on the porting map runs it.
+ * Every port rule in knowledge/fixes.json is well formed, whether or not it has a test: something
+ * selects it (a match on a compiler error, or "silent" saying what goes wrong when the compiler says
+ * nothing), it rewrites something (find, literal or a named transform), its patterns compile, its
+ * replacement only names groups its pattern has, and some route on the porting map runs it.
  * A rule with no test must be on the list of rules that predate this check; a new rule needs a test.
  * (PortableTests runs each test a rule carries.)
  */
@@ -27,14 +29,19 @@ public final class RulesTest {
             Pattern find = null;
             try {
                 Pattern.compile(Json.text(rule, "match", ""));
-                if (Json.text(rule, "match", "").isEmpty()) problems.add(id + ": no match, so no compiler error would ever select it");
+                if (Json.text(rule, "match", "").isEmpty() && Json.text(rule, "silent", "").isBlank()) {
+                    problems.add(id + ": no match, so no compiler error would ever select it (a rule for a change the compiler never reports says so in \"silent\")");
+                }
                 String when = Json.text(rule, "when", "");
                 if (!when.isEmpty()) Pattern.compile(when);
                 var apply = Json.object(rule.get("apply"));
-                if (apply.containsKey("find")) find = Pattern.compile(apply.get("find").toString());
-                else if (!apply.containsKey("literal")) problems.add(id + ": apply has neither find nor literal, so it rewrites nothing");
+                // {symbol} stands for the name javac reported; the porter fills it in before it compiles the pattern.
+                if (apply.containsKey("find")) find = Pattern.compile(apply.get("find").toString().replace("{symbol}", "symbol"));
+                else if (!apply.containsKey("literal") && Json.text(apply, "transform", "").isBlank()) {
+                    problems.add(id + ": apply has no find, literal or transform, so it rewrites nothing");
+                }
                 if (find != null) {
-                    String bad = badReplacement(find, Json.text(apply, "replace", ""));
+                    String bad = badReplacement(find, Json.text(apply, "replace", "").replace("{symbol}", "symbol"));
                     if (bad != null) problems.add(id + ": replace " + bad);
                 }
             } catch (PatternSyntaxException error) {

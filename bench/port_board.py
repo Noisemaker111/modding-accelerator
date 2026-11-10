@@ -180,7 +180,8 @@ def left_by_cause(cases, results):
     return "\n".join(lines)
 
 
-def main(argv=None):
+def main(argv=None, book=None, ledger=None):
+    """book and ledger are what is recorded; the tests pass their own so they do not depend on today's numbers."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--only", help="comma-separated case ids")
     ap.add_argument("--list", action="store_true", help="print the cases and what is recorded, run nothing")
@@ -202,7 +203,8 @@ def main(argv=None):
             print(f"No case {', '.join(unknown)}. Cases: {', '.join(c['id'] for c in cases)}", file=sys.stderr)
             return 2
         cases = [c for c in cases if c["id"] in want]
-    book, ledger = M.Book(), record.load_json(record.LEDGER)
+    book = book or M.Book()
+    ledger = ledger or record.load_json(record.LEDGER)
     last = args.cache / "latest.json"
     previous = json.loads(last.read_text(encoding="utf-8")) if last.is_file() else {}
 
