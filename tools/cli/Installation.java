@@ -53,7 +53,6 @@ final class Installation {
         "tools/tests/StrangerTest.java",
         "tools/tests/PackCheckTest.java",
         "tools/tests/RulesTest.java",
-        "tools/tests/rules-without-test.txt",
         "knowledge/fixes.json",
         "knowledge/structural.json",
         "knowledge/port-corpus.json",

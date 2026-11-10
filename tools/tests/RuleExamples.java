@@ -11,7 +11,8 @@ import java.util.stream.Stream;
  *
  *   java -cp modaccel.jar:classes RuleExamples request.json response.json
  *
- * request:  {"rules": [rule, ...], "samples": {id: text the rule's match should find}, "sources": [{"dir", "names", "label"}]}
+ * request:  {"rules": [rule, ...], "samples": {id: text the rule's match should find}, "sources": [{"dir", "names", "label"}],
+ *            "after": [rule, ...]}   rules an earlier round of the same port runs first; each file is read as they leave it
  * response: {"found": [{"id", "label", "file", "line", "error", "before", "after"}], "missed": [{"id", "why"}]}
  */
 public final class RuleExamples {
@@ -24,15 +25,22 @@ public final class RuleExamples {
         for (Object item : Json.array(request.get("rules"))) {
             var rule = Json.object(item);
             String id = Json.text(rule, "id", "");
-            String names = Json.text(rule, "jump", "").contains("yarn") ? "yarn" : "mojmap";
+            // A jump that names no mapping is about names every mapping shares (com.mojang.*), so any source will do.
+            String jump = Json.text(rule, "jump", "");
+            String names = jump.contains("yarn")
+                ? "yarn"
+                : jump.contains("mojmap") || jump.contains("official") ? "mojmap" : "";
             Map<String, Object> hit = null;
-            String why = "no pinned " + names + " source has code its find matches";
+            String why = "no " + (names.isEmpty() ? "" : names + " ") + "source has code its find matches";
             for (Object s : Json.array(request.get("sources"))) {
                 var source = Json.object(s);
-                if (!names.equals(source.get("names"))) continue;
+                if (!names.isEmpty() && !names.equals(source.get("names"))) continue;
                 Path dir = Path.of(Json.text(source, "dir", ""));
                 for (Path file : files.computeIfAbsent(dir.toString(), k -> javaFiles(dir))) {
                     String text = Files.readString(file, StandardCharsets.UTF_8).replace("\r\n", "\n");
+                    for (Object earlier : Json.array(request.get("after"))) {
+                        text = Port.rewrite(Json.object(earlier), text);
+                    }
                     int[] span = span(rule, text);
                     if (span == null) continue;
                     String before = snippet(rule, text, span);
