@@ -18,6 +18,8 @@ The porting scoreboard:
 
 - `python bench/port_board.py` ports every pinned mod in `bench/port-cases.json` from a clean checkout with `modaccel port --fix`, and shows each against what is recorded and against the last run, then the errors still left grouped by the game update that caused them. `--only ID`, `--list`, `--record`, and `--modaccel PATH` to test another worktree's modaccel. Clones and results live in `.runs/port-board/`.
 
+- `python bench/rule_test.py [--only RULE_ID] [--write]` gives each port rule without a test one from real mod source: the first code in the pinned mods its `find` matches, and what the porter's own rewrite makes of it. `--source DIR:yarn|mojmap:LABEL` searches another checkout too.
+
 Generated, on main only (`.github/workflows/generated.yml` runs these after every merge and commits the result):
 
 - `python bench/bench_page.py` renders `docs/index.html` (the website: goals, roadmap, every measure, the porting map, the ledger) and `ROADMAP.md`; `--roadmap` writes only `ROADMAP.md`, to read your branch's roadmap without committing it.
