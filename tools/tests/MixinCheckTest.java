@@ -120,7 +120,9 @@ public final class MixinCheckTest {
         Files.writeString(fake.resolve("FakeDist.java"), "package net.neoforged.fml.loading.targets;\npublic class FakeDist { public static final String DEDICATED_SERVER = new String(\"server\"), CLIENT = new String(\"client\"); }\n");
         Files.writeString(fake.resolve("JUnitFakeTarget.java"), "package net.neoforged.fml.loading.targets;\npublic class JUnitFakeTarget {\n"
                 + "  public String getDist() { return FakeDist.DEDICATED_SERVER; }\n"
-                + "  protected void runService(String[] arguments, ModuleLayer layer) throws Throwable { if (arguments.length >= 0) throw new IllegalStateException(\"ran\"); System.out.println(layer); }\n}\n");
+                // A branch that leaves a local behind, as FML 4.0.43's runService does: its StackMapTable then describes
+                // a Class local the emptied code never sets, and a kept table fails verification when the class loads.
+                + "  protected void runService(String[] arguments, ModuleLayer layer) throws Throwable { Class<?> type = layer.getClass(); if (arguments.length > 100) System.out.println(type); throw new IllegalStateException(\"ran\"); }\n}\n");
         Path fakeClasses = scratch.resolve("fake-classes"); Files.createDirectories(fakeClasses);
         require(javac.run(null, null, null, "-d", fakeClasses.toString(), fake.resolve("FakeDist.java").toString(), fake.resolve("JUnitFakeTarget.java").toString()) == 0, "fake launch target compiles");
         byte[] original = Files.readAllBytes(fakeClasses.resolve("net/neoforged/fml/loading/targets/JUnitFakeTarget.class"));
@@ -140,6 +142,23 @@ public final class MixinCheckTest {
                 count++;
             }
         }
+        // The launch target's name comes from the loader jar: FML 4 has the userdev target, FML 9 only the dev one.
+        Map<String, Map<String, String>> loaders = Map.of(
+                "fml4", Map.of("JUnitUserDevLaunchTarget", "forgejunituserdev", "JUnitDevLaunchTarget", "forgejunitdev"),
+                "fml9", Map.of("JUnitDevLaunchTarget", "neoforgejunitdev"));
+        for (var loader : loaders.entrySet()) {
+            Path jar = scratch.resolve(loader.getKey() + ".jar");
+            try (var out = new java.util.zip.ZipOutputStream(Files.newOutputStream(jar))) {
+                for (var type : loader.getValue().entrySet()) {
+                    out.putNextEntry(new java.util.zip.ZipEntry("net/neoforged/fml/loading/targets/" + type.getKey() + ".class"));
+                    out.write(("\u0001\u0000\u0010" + type.getValue() + "\u0001\u0000\u0026net.neoforged.neoforge.junit.JUnitMain").getBytes(java.nio.charset.StandardCharsets.ISO_8859_1));
+                }
+            }
+            var launch = new MixinCheck.Launch("java", List.of("--module-path", jar.toString()), "", "x", List.of(), scratch, Map.of(), false, "");
+            String want = loader.getKey().equals("fml4") ? "forgejunituserdev" : "neoforgejunitdev";
+            require(MixinCheck.junitTarget(launch).equals(want), "the unit-test launch target is " + want + " for " + loader.getKey() + ": " + MixinCheck.junitTarget(launch));
+        }
+        require(MixinCheck.junitTarget(new MixinCheck.Launch("java", List.of(), "", "x", List.of(), scratch, Map.of(), false, "")).equals("forgejunituserdev"), "with no loader jar the target stays forgejunituserdev");
     }
 
     static void require(boolean condition, String message) {

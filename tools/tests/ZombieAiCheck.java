@@ -5,10 +5,10 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Zombie Apocalypse Addon's own effect on a zombie, checked in the real NeoForge 1.21.4 client through modaccel's eval:
+ * Zombie Apocalypse Addon's own effect on a zombie, checked in the real NeoForge client (ported 1.21.1 -> 1.21.4 and -> 1.21.6) through modaccel's eval:
  * a zombie summoned by a command gets the mod's AI goals and scaling tag, and hunts a pig three blocks away (a vanilla
  * zombie never targets a pig). Not in PR CI (it starts the game); run it locally on the ported checkout:
- *   java tools/tests/ZombieAiCheck.java <checkout> <modaccel.jar> <ZombieApocalypseAddon 1.21.4 checkout>
+ *   java tools/tests/ZombieAiCheck.java <checkout> <modaccel.jar> <ported ZombieApocalypseAddon checkout>
  * It then breaks the mod on purpose in a copy (EventHandler no longer injects its goals) and requires that run to fail.
  */
 public final class ZombieAiCheck {
@@ -91,7 +91,8 @@ public final class ZombieAiCheck {
         Path output = Files.createTempFile("modaccel-za-", ".log");
         long start = System.nanoTime();
         Process process = new ProcessBuilder(command).directory(home.toFile()).redirectErrorStream(true).redirectOutput(output.toFile()).start();
-        if (!process.waitFor(10, TimeUnit.MINUTES)) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); throw new AssertionError("Timed out: " + command); }
+        // Longer than modaccel's own 20-minute game start limit, so its reason is reported rather than this kill.
+        if (!process.waitFor(25, TimeUnit.MINUTES)) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); throw new AssertionError("Timed out: " + command); }
         String text = new String(Files.readAllBytes(output), StandardCharsets.UTF_8); Files.deleteIfExists(output);
         return new Run(process.exitValue(), text, (System.nanoTime() - start) / 1e9);
     }

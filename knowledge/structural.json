@@ -129,7 +129,7 @@
 			"Add a mixin accessor interface on HungerManager with @Accessor(\"exhaustion\") float getExhaustion() (and a setter only if the mod wrote it), list it in the mod's mixins json, and read it as ((ThatAccessor) hungerManager).getExhaustion().",
 			"Do not read the field by reflection: a Fabric mod runs on intermediary names outside the dev environment, so the yarn field name does not exist there."
 		],
-		"note": "coverage/changes/1.21.1__1.21.2.json records FoodData getExhaustionLevel()float and setExhaustion(float)void removed. Upstream AppleSkin 1.21.6 reads it through its own ExhaustionHelper."
+		"note": "coverage/changes/1.21.1__1.21.2.json records FoodData getExhaustionLevel()float and setExhaustion(float)void removed. Upstream AppleSkin 1.21.6 reads it through its own ExhaustionHelper. port --fix writes this accessor itself (rule hunger-exhaustion-accessor) when the mod has a mixins config; this guide is left for a mod without one."
 	},
 	{
 		"id": "food-effects-consumable",
@@ -154,7 +154,7 @@
 			"Server code: cast to or take a ServerWorld. Client code has no game rules: in singleplayer read them from MinecraftClient.getServer() (the integrated server) and its world; on a remote server either sync the rule from the server or keep the vanilla default, and say which in the code.",
 			"Keep the guard's meaning: a check that used to skip work when a rule was off must still skip it when the rule is known to be off."
 		],
-		"note": "coverage/changes/1.21.1__1.21.2.json records LevelData.getGameRules removed and ServerLevel.getGameRules added."
+		"note": "coverage/changes/1.21.1__1.21.2.json records LevelData.getGameRules removed and ServerLevel.getGameRules added. port --fix handles a call on a World or Level itself (rule client-game-rules-default: the server's rules on a server, the defaults a client always had); this guide is for the rest, or for a mod that wants the real rule on a client."
 	},
 	{
 		"id": "custom-payload-records",

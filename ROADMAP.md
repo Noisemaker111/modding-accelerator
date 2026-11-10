@@ -6,14 +6,14 @@
 
 **The goal:** a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 
-**21 of 41 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
+**24 of 42 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
 
 ## Where each goal stands
 
 | Goal | Steps done | Now |
 |---|---|---|
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
-| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `██████░░░░`&nbsp;13&nbsp;of&nbsp;22 | 🔵 7 · AppleSkin 1.20.1 → 1.21.6, five minors in one jump<br>🔵 14 · Yarn to the game's own names, whole tree<br>🔵 15 · The build switches with the version (26.x)<br>⚪ 10 · 1.21.1 → 1.21.6 in one command, on two mods<br>⚪ 16 · Name what moved in 26.3 |
+| **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `███████░░░`&nbsp;16&nbsp;of&nbsp;23 | 🔵 14 · Yarn to the game's own names, whole tree<br>🔵 15 · The build switches with the version (26.x)<br>⚪ 16 · Name what moved in 26.3 |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
 | **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `░░░░░░░░░░`&nbsp;0&nbsp;of&nbsp;4 | Not started |
 
@@ -23,7 +23,7 @@ An author changes code and gets an answer about the mod's real behaviour in seco
 
 - **Today:** Logic tests, the game's data and real-game checks all run with no game window. Paper plugins run on a real server with a bot player.
 - **The number that says most:** One-file edit, modaccel fast, warm is **4 s**, target 4 s (hold) by Nov 27, step 34
-- **Also:** Mods with their own behaviour asserted in a real client is **2 mods**, target 4 mods by Dec 4, step 27
+- **Also:** Mods with their own behaviour asserted in a real client is **3 mods**, target 4 mods by Dec 4, step 27
 
 ### Behaviour in the real game
 
@@ -92,7 +92,7 @@ An author changes code and gets an answer about the mod's real behaviour in seco
 | Block entity in a live world, Fabric 26.3, warm | — | 2.1 s (Oct 21) | 2.5 s (hold) by Nov 27, step 34 | Met |
 | Scripted scenario + screenshot, warm game, Fabric 26.3 | 2.9 s (Oct 21) | 5.1 s (Nov 7) | — | Fact |
 | Multiplayer scenario, warm client and server | — | 4.1 s (Oct 22) | 4 s by Nov 27, step 34 | Baseline |
-| Mods with their own behaviour asserted in a real client | 2 mods (Oct 26) | 2 mods (Nov 7) | 4 mods by Dec 4, step 27 | 0% of the way |
+| Mods with their own behaviour asserted in a real client | 2 mods (Oct 26) | 3 mods (Nov 8) | 4 mods by Dec 4, step 27 | 50% of the way |
 | Memory for one hidden game session, Fabric 26.3, warm | 1.1 GB (Nov 6) | 1.0 GB (Nov 6) | — | Fact |
 | Game checks modaccel runs at once on one PC | — | 8 sessions (Nov 7) | 8 sessions by Jan 8, 2027, step 36 | Met |
 | CPU to start one hidden client, saved launch, Fabric 26.3, warm | 95 CPU-s (Nov 6) | 49 CPU-s (Nov 6) | — | Fact |
@@ -120,7 +120,7 @@ An author changes code and gets an answer about the mod's real behaviour in seco
 One command moves a mod's source from any version to any other, forward or back, with no hand edits, and the result is checked in the real game. Every edit can be undone; what cannot be ported is named, never guessed or dropped. Commands: `port`, `explain`, `dependencies`.
 
 - **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Small jumps need no hand edits; big jumps stop with named errors.
-- **The number that says most:** Real mods with a port that works in the game is **3 mods**, target 6 mods by Dec 18, step 12
+- **The number that says most:** Real mods with a port that works in the game is **4 mods**, target 6 mods by Dec 18, step 12
 - **Also:** Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm is **50 errors**, target 0 errors by Jan 15, 2027, step 17
 
 ### Neighbouring versions (1.21.x), Fabric and NeoForge
@@ -133,10 +133,11 @@ One command moves a mod's source from any version to any other, forward or back,
 | 4 | NeoForge end to end: Zombie Apocalypse 1.21.1 → 1.21.4 | 🟢 done | Oct 24 |
 | 5 | Dependency blockers become one-file answers | 🟢 done | Oct 24 |
 | 6 | Refuse a port that still targets the old game | 🟢 done | Oct 24 |
-| 7 | AppleSkin 1.20.1 → 1.21.6, five minors in one jump | 🔵 doing | Oct 24 → Nov 20 |
+| 7 | AppleSkin 1.20.1 → 1.21.6, five minors in one jump | 🟢 done | Nov 8 |
 | 8 | Render-pipeline changes become rules | 🟢 done | Nov 7 |
 | 9 | Build tools follow the target version | 🟢 done | Nov 7 |
-| 10 | 1.21.1 → 1.21.6 in one command, on two mods | ⚪ next | Nov 20 → Dec 4 |
+| 10 | 1.21.1 → 1.21.6 in one command, on two mods | 🟢 done | Nov 8 |
+| 10b | NeoForge's game setup is paid once per machine, not once per mod | 🟢 done | Nov 8 |
 
 ### Big jumps across families (1.16.5, 1.18.2, 1.20.1 → 1.21.x)
 
@@ -179,13 +180,15 @@ One command moves a mod's source from any version to any other, forward or back,
 
 **6 · Refuse a port that still targets the old game** (done). A port refuses to pass while it still targets the old game: packaged metadata is read back.
 
-**7 · AppleSkin 1.20.1 → 1.21.6, five minors in one jump** (doing). A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. With the render rules (step 8) and build tools that follow the target (step 9), 69 errors go to 11 with nothing done by hand. The 11 are four changes that need new code: the exhaustion getter, food effects on the consumable component, server-only game rules and payload networking. The stopped port names a repair guide for each.
+**7 · AppleSkin 1.20.1 → 1.21.6, five minors in one jump** (done). A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. With the render rules (step 8) and build tools that follow the target (step 9), 69 errors go to 11 with nothing done by hand. The 11 are four changes that need new code: the exhaustion getter, food effects on the consumable component, server-only game rules and payload networking. The stopped port names a repair guide for each. *So far:* AppleSkin 1.20.1 → 1.21.6 ports with nothing written by hand and passes its HUD behaviour check in the real 1.21.6 client (+12.000002 estimated, +12.000001 healed; the break fails). The four new-code changes became port features: accessor mixins for a getter the game removed but whose field it kept, helpers the port adds to a class, and old networking carried over as a payload of the same bytes. Mixins Mixin refuses are repaired from its own messages. The check also caught a rule that compiled but was wrong (the 1.20.5 saturation change).
 
 **8 · Render-pipeline changes become rules** (done). Turn the render-pipeline family into rules (draw texture / render pipeline / texture view), then re-run step 7 to a build. *So far:* The GUI render family is rules in yarn and official names, each tied to the update that changed it: the render type first in every blit (1.21.2), the RenderPipeline (1.21.6), shader colour into each draw call (1.21.6), blend, depth and cull state (1.21.5), texture-id binds (1.21.5) and texture views (1.21.6). They replace the two whole-jump drawTexture rules. On AppleSkin 1.20.1 → 1.21.6 no render error is left; it still stops at 11 errors outside rendering (step 7).
 
 **9 · Build tools follow the target version** (done). Build-toolchain bumps follow the target automatically (AppleSkin needed Loom 1.10 + Gradle 8.13). *So far:* A Fabric port raises Loom to the newest release of the line its target dependencies were built with (from each jar's Fabric-Loom-Version), then raises the Gradle wrapper to the version that Loom's published metadata asks for. It never lowers either. AppleSkin 1.20.1 → 1.21.6: Loom 1.8-SNAPSHOT to 1.10.5 and Gradle 8.10 to 8.12, with no hand edit.
 
-**10 · 1.21.1 → 1.21.6 in one command, on two mods** (next). One command, no hand edits, for 1.21.1 → 1.21.6 on this mod, and the same for a second mod.
+**10 · 1.21.1 → 1.21.6 in one command, on two mods** (done). One command, no hand edits, for 1.21.1 → 1.21.6 on this mod, and the same for a second mod. *So far:* Two NeoForge mods port to 1.21.6 with nothing written by hand and pass behaviour checks in the real 1.21.6 client: Notes 1.21 → 1.21.6 (13 errors to 0; its key, a saved note and its pinned-note HUD layer) and Zombie Apocalypse Addon 1.21.1 → 1.21.6 (9 to 0; its zombie AI). The new rules run in official names (layer API, drawString, saved data codec, saddle slot, owner reference); an accessor mixin now works in a mod with no mixins (the port adds the config); NeoGradle and Gradle follow the target; the Mixin check reaches NeoForge 21.6's renamed unit-test launch target. Both checks ran on the boat Linux host, hidden on Xvfb.
+
+**10b · NeoForge's game setup is paid once per machine, not once per mod** (done). NeoForge's first setup for a game version (NeoForm: decompile, inject, transformSource, recompile) ran in each mod folder: on Jon's PC on 2026-11-08 Notes and Zombie Apocalypse each began it for 1.21.6, its steps took 12, 24, 34 and 22+ minutes under fairshare's idle priority, and both were killed. A second mod on the same NeoForge and Minecraft version must reuse the first one's setup and start compiling within minutes. *So far:* Every forward NeoForge port now moves to the same NeoGradle (the newest 7.x), so NeoGradle's own cross-project cache (~/.gradle/caches/ng_execute, keyed by task class, inputs and file contents, not by folder) serves every mod on that version. Zombie Apocalypse 1.21.1 → 1.21.6 right after Notes ran 0 NeoForm steps and made 0 cache entries; its whole port took 30 s. The cold setup itself takes 137 s on an idle 8-core machine (decompile 33 s, recompile 30 s): the hours on the PC were the PC starved, not the work. bench/neoform_steps.py times each step and counts the cache entries a build made.
 
 **11a · Change index and version families** (done). Change index and hub-and-spoke families: every release from 1.14.4 to 26.3 diffed against the next in Mojang's names (`coverage/changes/`, `tools/ChangeIndex.java`), 24 families cut where an update breaks 1% or more of the game's names, each with a hub picked by Modrinth mod count, rule coverage and the best ledger run per step, shown in the porting map (`docs/index.html#porting`). Releases before 1.14.4 are listed as blocked (no official mappings).
 
@@ -213,22 +216,25 @@ One command moves a mod's source from any version to any other, forward or back,
 
 </details>
 
-<details><summary>Every number for this goal (12)</summary>
+<details><summary>Every number for this goal (15)</summary>
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| 1.21.x updates that work in the game, Fabric | — | 2 updates (Oct 24) | 22 updates by Jan 29, 2027, step 10 | Baseline |
-| 1.21.x updates that work in the game, NeoForge | 3 updates (Oct 24) | 8 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 26% of the way |
-| Real mods with a port that works in the game | — | 3 mods (Oct 24) | 6 mods by Dec 18, step 12 | Baseline |
-| Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 11 errors (Nov 7) | 0 errors by Nov 20, step 7 | 82% of the way |
-| Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6, warm | 38 errors (Oct 24) | 9 errors (Oct 25) | 0 errors by Dec 4, step 10 | 76% of the way |
-| Errors left: Notes, NeoForge 1.21 → 1.21.6, warm | — | 14 errors (Oct 25) | 0 errors by Dec 4, step 10 | Baseline |
+| 1.21.x updates that work in the game, Fabric | 2 updates (Oct 24) | 7 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 25% of the way |
+| 1.21.x updates that work in the game, NeoForge | 3 updates (Oct 24) | 11 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 42% of the way |
+| Real mods with a port that works in the game | 3 mods (Oct 24) | 4 mods (Nov 8) | 6 mods by Dec 18, step 12 | 33% of the way |
+| Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 0 errors (Nov 8) | 0 errors by Nov 20, step 7 | Met |
+| Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6, warm | 38 errors (Oct 24) | 0 errors (Nov 8) | 0 errors by Dec 4, step 10 | Met |
+| Errors left: Notes, NeoForge 1.21 → 1.21.6, warm | 14 errors (Oct 25) | 0 errors (Nov 8) | 0 errors by Dec 4, step 10 | Met |
 | Errors left: Jade, NeoForge 1.21.1 → 1.21.6, warm | — | 98 errors (Oct 24) | 0 errors by Jan 15, 2027, step 12 | Baseline |
 | Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm | 69 errors (Oct 25) | 50 errors (Oct 25) | 0 errors by Jan 15, 2027, step 17 | 28% of the way |
 | Hand-written files: AppleSkin, NeoForge 1.21.6 → 26.3 | 1 file (Oct 24) | 0 files (Nov 8) | 0 files by Nov 27, step 17 | Met |
 | Port to a packaged build: Zombie Apocalypse 1.21.1 → 1.21.4, warm | 2.6 min (Oct 24) | 2.8 min (Oct 25) | 1.5 min by Dec 18, step 10 | 0% of the way |
 | Port to a packaged build: AppleSkin 1.21.6 → 26.3, warm | — | 66 s (Oct 24) | 60 s by Nov 27, step 17 | Baseline |
 | Port rules learned from Stonecutter mods | — | 38 rules (Oct 25) | 80 rules by Dec 31, step 13 | Baseline |
+| NeoForge 1.21.6 game setup (NeoForm), first mod on the machine, cold | — | 2.3 min (Nov 8) | — | Fact |
+| NeoForge 1.21.6 game setup (NeoForm), first mod, on Jon's PC, cold | — | 92.0 min (Nov 8) | — | Fact |
+| NeoForm steps a second mod on the same NeoForge version runs again, warm | 16 steps (Nov 8) | 0 steps (Nov 8) | 0 steps by Nov 8, step 10b | Met |
 
 </details>
 
@@ -328,7 +334,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 21 steps (Nov 8) | 41 steps by Mar 26, 2027 | 44% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 24 steps (Nov 8) | 42 steps by Mar 26, 2027 | 51% of the way |
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
 | Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since) | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
 

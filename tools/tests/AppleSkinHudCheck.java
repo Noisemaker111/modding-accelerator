@@ -10,7 +10,8 @@ import java.util.concurrent.TimeUnit;
  * really heals once the player eats it. Not in PR CI (it starts the game); run it locally:
  *   java tools/tests/AppleSkinHudCheck.java <checkout> <modaccel.jar> <AppleSkin checkout>
  * The checkout is the Fabric 1.21.6 one (yarn names, snippets in appleskin-hud-yarn) or any Mojang-named one such as
- * the NeoForge 26.3 port (appleskin-hud-mojmap, written for 26.3). It then breaks AppleSkin on purpose in the same
+ * the NeoForge 26.3 port (appleskin-hud-mojmap, written for 26.3); a yarn port of AppleSkin's 1.20.1 code, which keeps
+ * its older FoodValues API, is read with estimate-foodvalues.java. It then breaks AppleSkin on purpose in the same
  * checkout (its slow-regeneration estimate heals 1.5 instead of 1), requires that run to fail at the comparison, and
  * puts the source back whatever happens. Both runs stop their client at the end.
  */
@@ -73,7 +74,10 @@ public final class AppleSkinHudCheck {
             }
             step(home, jar, root, "eval", "--file", snippets.resolve("setup.java").toString());
             step(home, jar, root, "eval", "--until", names.setUp(), "--timeout", "20");
-            System.out.println("  " + value(step(home, jar, root, "eval", "--file", snippets.resolve("estimate.java").toString())));
+            // A port of AppleSkin's 1.20.1 code keeps its older FoodValues API; the author's own later versions use ConsumableFood.
+            String estimate = Files.readString(root.resolve(BREAK_FILE)).contains("FoodValues getModifiedFoodValues(") && Files.isRegularFile(snippets.resolve("estimate-foodvalues.java"))
+                    ? "estimate-foodvalues.java" : "estimate.java";
+            System.out.println("  " + value(step(home, jar, root, "eval", "--file", snippets.resolve(estimate).toString())));
             step(home, jar, root, "eval", "--until", names.foodDropped(), "--timeout", "90");
             Run measure = modaccel(home, jar, root, "eval", "--file", snippets.resolve("measure.java").toString());
             if (measure.exit() == 0) return value(measure);
@@ -102,7 +106,8 @@ public final class AppleSkinHudCheck {
         Path output = Files.createTempFile("modaccel-appleskin-", ".log");
         long start = System.nanoTime();
         Process process = new ProcessBuilder(command).directory(home.toFile()).redirectErrorStream(true).redirectOutput(output.toFile()).start();
-        if (!process.waitFor(10, TimeUnit.MINUTES)) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); throw new AssertionError("Timed out: " + command); }
+        // Longer than modaccel's own 20-minute game start limit, so its reason is reported rather than this kill.
+        if (!process.waitFor(25, TimeUnit.MINUTES)) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); throw new AssertionError("Timed out: " + command); }
         String text = new String(Files.readAllBytes(output), StandardCharsets.UTF_8); Files.deleteIfExists(output);
         return new Run(process.exitValue(), text, (System.nanoTime() - start) / 1e9);
     }

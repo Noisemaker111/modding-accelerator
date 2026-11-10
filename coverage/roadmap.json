@@ -262,10 +262,12 @@
      "id": "7",
      "title": "AppleSkin 1.20.1 → 1.21.6, five minors in one jump",
      "part": "Neighbouring versions (1.21.x), Fabric and NeoForge",
-     "status": "doing",
+     "status": "done",
      "text": "A five-minor jump on a bigger mod: AppleSkin 1.20.1 → 1.21.6. With the render rules (step 8) and build tools that follow the target (step 9), 69 errors go to 11 with nothing done by hand. The 11 are four changes that need new code: the exhaustion getter, food effects on the consumable component, server-only game rules and payload networking. The stopped port names a repair guide for each.",
      "start": "2026-10-24",
      "target": "2026-11-20",
+     "done": "2026-11-08",
+     "result": "AppleSkin 1.20.1 → 1.21.6 ports with nothing written by hand and passes its HUD behaviour check in the real 1.21.6 client (+12.000002 estimated, +12.000001 healed; the break fails). The four new-code changes became port features: accessor mixins for a getter the game removed but whose field it kept, helpers the port adds to a class, and old networking carried over as a payload of the same bytes. Mixins Mixin refuses are repaired from its own messages. The check also caught a rule that compiled but was wrong (the 1.20.5 saturation change).",
      "measures": [
       "port.errors.appleskin-fabric-1.20.1-1.21.6"
      ]
@@ -299,7 +301,7 @@
      "id": "10",
      "title": "1.21.1 → 1.21.6 in one command, on two mods",
      "part": "Neighbouring versions (1.21.x), Fabric and NeoForge",
-     "status": "next",
+     "status": "done",
      "text": "One command, no hand edits, for 1.21.1 → 1.21.6 on this mod, and the same for a second mod.",
      "start": "2026-11-20",
      "target": "2026-12-04",
@@ -308,6 +310,23 @@
       "port.errors.notes-neoforge-1.21-1.21.6",
       "port.updates-working.fabric",
       "port.updates-working.neoforge"
+     ],
+     "done": "2026-11-08",
+     "result": "Two NeoForge mods port to 1.21.6 with nothing written by hand and pass behaviour checks in the real 1.21.6 client: Notes 1.21 → 1.21.6 (13 errors to 0; its key, a saved note and its pinned-note HUD layer) and Zombie Apocalypse Addon 1.21.1 → 1.21.6 (9 to 0; its zombie AI). The new rules run in official names (layer API, drawString, saved data codec, saddle slot, owner reference); an accessor mixin now works in a mod with no mixins (the port adds the config); NeoGradle and Gradle follow the target; the Mixin check reaches NeoForge 21.6's renamed unit-test launch target. Both checks ran on the boat Linux host, hidden on Xvfb."
+    },
+    {
+     "id": "10b",
+     "title": "NeoForge's game setup is paid once per machine, not once per mod",
+     "part": "Neighbouring versions (1.21.x), Fabric and NeoForge",
+     "status": "done",
+     "text": "NeoForge's first setup for a game version (NeoForm: decompile, inject, transformSource, recompile) ran in each mod folder: on Jon's PC on 2026-11-08 Notes and Zombie Apocalypse each began it for 1.21.6, its steps took 12, 24, 34 and 22+ minutes under fairshare's idle priority, and both were killed. A second mod on the same NeoForge and Minecraft version must reuse the first one's setup and start compiling within minutes.",
+     "start": "2026-11-08",
+     "done": "2026-11-08",
+     "result": "Every forward NeoForge port now moves to the same NeoGradle (the newest 7.x), so NeoGradle's own cross-project cache (~/.gradle/caches/ng_execute, keyed by task class, inputs and file contents, not by folder) serves every mod on that version. Zombie Apocalypse 1.21.1 → 1.21.6 right after Notes ran 0 NeoForm steps and made 0 cache entries; its whole port took 30 s. The cold setup itself takes 137 s on an idle 8-core machine (decompile 33 s, recompile 30 s): the hours on the PC were the PC starved, not the work. bench/neoform_steps.py times each step and counts the cache entries a build made.",
+     "measures": [
+      "setup.neoform.neoforge-1.21.6.cold",
+      "setup.neoform.neoforge-1.21.6.cold.jon-pc",
+      "setup.neoform.second-mod-steps-run"
      ]
     },
     {
