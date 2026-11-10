@@ -14,20 +14,34 @@ import java.util.*;
  * file with a ${...} placeholder, or anything outside a resource folder runs Gradle as before.
  */
 final class ResourceCopy {
+
     private ResourceCopy() {}
 
     /** Each source set's resource folders with the output folder Gradle copied them to (the output holding most of their files). */
     static List<List<String>> roots(Map<String, Object> model) throws IOException {
         List<List<String>> roots = new ArrayList<>();
-        for (Object p : Json.array(model.get("projects"))) for (Object s : Json.array(Json.object(p).get("sourceSets"))) {
+        for (Object p : Json.array(model.get("projects"))) for (Object s : Json.array(
+            Json.object(p).get("sourceSets")
+        )) {
             var set = Json.object(s);
             for (String resources : ProjectModel.strings(set.get("resources"))) {
-                Path source = Path.of(resources); if (!Files.isDirectory(source)) continue;
-                List<Path> files; try (var walk = Files.walk(source)) { files = walk.filter(Files::isRegularFile).toList(); }
-                String best = null; long most = 0;
+                Path source = Path.of(resources);
+                if (!Files.isDirectory(source)) continue;
+                List<Path> files;
+                try (var walk = Files.walk(source)) {
+                    files = walk.filter(Files::isRegularFile).toList();
+                }
+                String best = null;
+                long most = 0;
                 for (String output : ProjectModel.strings(set.get("output"))) {
-                    long found = files.stream().filter(f -> Files.isRegularFile(Path.of(output).resolve(source.relativize(f).toString()))).count();
-                    if (found > most) { most = found; best = output; }
+                    long found = files
+                        .stream()
+                        .filter(f -> Files.isRegularFile(Path.of(output).resolve(source.relativize(f).toString())))
+                        .count();
+                    if (found > most) {
+                        most = found;
+                        best = output;
+                    }
                 }
                 if (best != null) roots.add(List.of(source.toString(), best));
             }
@@ -59,12 +73,15 @@ final class ResourceCopy {
         if (!(record.get("inputs") instanceof Map<?, ?>) || record.get("resourceRoots") == null) return -1;
         Map<String, Object> then = Json.object(record.get("inputs"));
         Set<String> filtered = new HashSet<>(ProjectModel.strings(record.get("filtered")));
-        List<List<String>> roots = new ArrayList<>(); for (Object r : Json.array(record.get("resourceRoots"))) roots.add(ProjectModel.strings(r));
-        Set<String> keys = new TreeSet<>(then.keySet()); keys.addAll(now.keySet());
+        List<List<String>> roots = new ArrayList<>();
+        for (Object r : Json.array(record.get("resourceRoots"))) roots.add(ProjectModel.strings(r));
+        Set<String> keys = new TreeSet<>(then.keySet());
+        keys.addAll(now.keySet());
         List<Path[]> plan = new ArrayList<>();
         for (String key : keys) {
             if (Objects.equals(then.get(key), now.get(key))) continue;
-            Path file = Path.of(key); List<String> root = null;
+            Path file = Path.of(key);
+            List<String> root = null;
             for (List<String> r : roots) if (file.startsWith(Path.of(r.get(0)))) root = r;
             if (root == null || filtered.contains(key)) return -1;
             Path target = Path.of(root.get(1)).resolve(Path.of(root.get(0)).relativize(file).toString());
@@ -75,7 +92,10 @@ final class ResourceCopy {
         }
         for (Path[] step : plan) {
             if (step[0] == null) Files.deleteIfExists(step[1]);
-            else { Files.createDirectories(step[1].getParent()); Files.copy(step[0], step[1], StandardCopyOption.REPLACE_EXISTING); }
+            else {
+                Files.createDirectories(step[1].getParent());
+                Files.copy(step[0], step[1], StandardCopyOption.REPLACE_EXISTING);
+            }
         }
         return plan.size();
     }

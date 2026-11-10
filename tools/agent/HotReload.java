@@ -15,11 +15,14 @@ import java.util.*;
  * stock JVM, a mixin, the mod's metadata) is reported as needing a restart instead.
  */
 final class HotReload {
+
     private static Instrumentation instrumentation;
     private static final List<Path> folders = new ArrayList<Path>();
     private static final Map<Path, String> known = new HashMap<Path, String>();
 
-    static void install(Instrumentation value) { instrumentation = value; }
+    static void install(Instrumentation value) {
+        instrumentation = value;
+    }
 
     /** Records what the game started with. Runs once, on the first frame. */
     static void baseline() {
@@ -35,18 +38,25 @@ final class HotReload {
     }
 
     static Map<String, Object> reload(ClassLoader game) throws Exception {
-        if (instrumentation == null) throw new IllegalStateException("The agent has no Instrumentation; reload needs the portable agent from premain");
+        if (instrumentation == null) throw new IllegalStateException(
+            "The agent has no Instrumentation; reload needs the portable agent from premain"
+        );
         long start = System.nanoTime();
         Map<Path, String> now = new HashMap<Path, String>();
         for (Path folder : folders) now.putAll(scan(folder));
-        List<Path> changedClasses = new ArrayList<Path>(), changedResources = new ArrayList<Path>(), added = new ArrayList<Path>();
+        List<Path> changedClasses = new ArrayList<Path>(), changedResources = new ArrayList<Path>(), added =
+            new ArrayList<Path>();
         for (Map.Entry<Path, String> file : now.entrySet()) {
             String before = known.get(file.getKey());
             if (before == null) added.add(file.getKey());
-            else if (!before.equals(file.getValue())) (file.getKey().toString().endsWith(".class") ? changedClasses : changedResources).add(file.getKey());
+            else if (!before.equals(file.getValue())) (file.getKey().toString().endsWith(".class")
+                    ? changedClasses
+                    : changedResources).add(file.getKey());
         }
         List<String> restart = new ArrayList<String>();
-        for (Path gone : known.keySet()) if (!now.containsKey(gone) && gone.toString().endsWith(".class")) restart.add("removed " + relative(gone));
+        for (Path gone : known.keySet()) if (!now.containsKey(gone) && gone.toString().endsWith(".class")) restart.add(
+            "removed " + relative(gone)
+        );
         for (Path file : added) if (!file.toString().endsWith(".class")) changedResources.add(file);
 
         Map<String, Class<?>> loaded = new HashMap<String, Class<?>>();
@@ -60,15 +70,31 @@ final class HotReload {
         for (Path file : changedClasses) {
             String name = className(file);
             byte[] bytes = Files.readAllBytes(file);
-            if (contains(bytes, "Lorg/spongepowered/asm/mixin/Mixin;")) { restart.add("mixin " + name); continue; }
+            if (contains(bytes, "Lorg/spongepowered/asm/mixin/Mixin;")) {
+                restart.add("mixin " + name);
+                continue;
+            }
             Class<?> type = loaded.get(name);
-            if (type == null) { notLoaded.add(name); applied.add(file); continue; }
-            definitions.add(new ClassDefinition(type, bytes)); redefined.add(name); applied.add(file);
+            if (type == null) {
+                notLoaded.add(name);
+                applied.add(file);
+                continue;
+            }
+            definitions.add(new ClassDefinition(type, bytes));
+            redefined.add(name);
+            applied.add(file);
         }
         String failure = null;
         if (!definitions.isEmpty()) {
-            try { instrumentation.redefineClasses(definitions.toArray(new ClassDefinition[0])); }
-            catch (UnsupportedOperationException | ClassFormatError | VerifyError | ClassNotFoundException | UnmodifiableClassException error) {
+            try {
+                instrumentation.redefineClasses(definitions.toArray(new ClassDefinition[0]));
+            } catch (
+                UnsupportedOperationException
+                | ClassFormatError
+                | VerifyError
+                | ClassNotFoundException
+                | UnmodifiableClassException error
+            ) {
                 // All or nothing: the JVM applies none of the batch when one class can't change.
                 failure = error.toString();
                 restart.add("class shape changed (" + error.getMessage() + "); a stock JVM swaps method bodies only");
@@ -76,13 +102,22 @@ final class HotReload {
                 redefined.clear();
             }
         }
-        for (Path file : added) if (file.toString().endsWith(".class")) { notLoaded.add(className(file)); applied.add(file); }
+        for (Path file : added) if (file.toString().endsWith(".class")) {
+            notLoaded.add(className(file));
+            applied.add(file);
+        }
 
         boolean metadata = false;
         for (Path file : changedResources) {
             String name = file.getFileName().toString();
-            if (name.equals("fabric.mod.json") || name.endsWith(".mixins.json") || name.equals("neoforge.mods.toml") || name.endsWith(".accesswidener")) {
-                restart.add("mod metadata " + relative(file)); metadata = true;
+            if (
+                name.equals("fabric.mod.json") ||
+                name.endsWith(".mixins.json") ||
+                name.equals("neoforge.mods.toml") ||
+                name.endsWith(".accesswidener")
+            ) {
+                restart.add("mod metadata " + relative(file));
+                metadata = true;
             }
         }
         boolean resources = false;
@@ -119,13 +154,16 @@ final class HotReload {
     }
 
     private static boolean enhanced() {
-        for (String argument : java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments())
-            if (argument.equals("-XX:+AllowEnhancedClassRedefinition")) return true;
+        for (String argument : java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments()) if (
+            argument.equals("-XX:+AllowEnhancedClassRedefinition")
+        ) return true;
         return false;
     }
 
     private static boolean sees(ClassLoader game, ClassLoader loader) {
-        for (ClassLoader current = loader; current != null; current = current.getParent()) if (current == game) return true;
+        for (ClassLoader current = loader; current != null; current = current.getParent()) if (
+            current == game
+        ) return true;
         return false;
     }
 
@@ -138,7 +176,10 @@ final class HotReload {
     }
 
     private static String relative(Path file) {
-        for (Path folder : folders) if (file.startsWith(folder)) return folder.relativize(file).toString().replace(File.separatorChar, '/');
+        for (Path folder : folders) if (file.startsWith(folder)) return folder
+            .relativize(file)
+            .toString()
+            .replace(File.separatorChar, '/');
         return file.toString();
     }
 
@@ -155,17 +196,24 @@ final class HotReload {
         final Map<Path, String> files = new HashMap<Path, String>();
         try {
             final MessageDigest digest = MessageDigest.getInstance("SHA-1");
-            Files.walkFileTree(folder, new SimpleFileVisitor<Path>() {
-                @Override public FileVisitResult visitFile(Path file, java.nio.file.attribute.BasicFileAttributes attributes) throws IOException {
-                    digest.reset();
-                    byte[] hash = digest.digest(Files.readAllBytes(file));
-                    StringBuilder text = new StringBuilder();
-                    for (byte b : hash) text.append(String.format("%02x", b));
-                    files.put(file.toAbsolutePath().normalize(), text.toString());
-                    return FileVisitResult.CONTINUE;
+            Files.walkFileTree(
+                folder,
+                new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, java.nio.file.attribute.BasicFileAttributes attributes)
+                        throws IOException {
+                        digest.reset();
+                        byte[] hash = digest.digest(Files.readAllBytes(file));
+                        StringBuilder text = new StringBuilder();
+                        for (byte b : hash) text.append(String.format("%02x", b));
+                        files.put(file.toAbsolutePath().normalize(), text.toString());
+                        return FileVisitResult.CONTINUE;
+                    }
                 }
-            });
-        } catch (Exception error) { System.err.println("MODACCEL_RELOAD_SCAN_ERROR " + folder + " " + error); }
+            );
+        } catch (Exception error) {
+            System.err.println("MODACCEL_RELOAD_SCAN_ERROR " + folder + " " + error);
+        }
         return files;
     }
 }

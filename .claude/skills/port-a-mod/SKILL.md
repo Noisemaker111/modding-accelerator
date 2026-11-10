@@ -48,7 +48,8 @@ Pick the next (mod, loader, from, to) from what is weakest on the map: a step wi
    - **A mechanical change** (rename, moved package, new signature, replaced call): a rule in `knowledge/fixes.json`
      with `jump` and `match`. Write it in Mojang names and, for Fabric, yarn names too. Then
      `python bench/rule_test.py --only <rule id> --write` gives it its `test {error, before, after}` from the pinned
-     mods' real source (`--source DIR:yarn|mojmap:LABEL` for a mod that is not pinned); a rule with no test fails
+     mods' real source (`--source DIR:yarn|mojmap:LABEL` for a mod that is not pinned, with the commit in the label;
+     `--after OTHER_RULE` for a rule that only applies once another rule has run); a rule with no test fails
      `modaccel self-test`.
    - **Needs new code** (a removed system, a redesigned API): a guide in `knowledge/structural.json`, so a stopped port
      names it with the fix to write.

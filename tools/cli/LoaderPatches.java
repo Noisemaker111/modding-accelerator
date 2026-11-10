@@ -12,9 +12,14 @@ import java.util.zip.*;
  * when it adds the missing member, say the cache is stale and name the jar to rebuild.
  */
 final class LoaderPatches {
+
     private static final Pattern MISSING = Pattern.compile("error: cannot find symbol");
-    private static final Pattern SYMBOL = Pattern.compile("^\\s*symbol:\\s+(method|variable|class)\\s+([A-Za-z_$][A-Za-z0-9_$]*)");
-    private static final Pattern LOCATION = Pattern.compile("^\\s*location:\\s+(?:(?:class|interface)\\s+([A-Za-z0-9_$.]+)|variable\\s+\\S+\\s+of\\s+type\\s+([A-Za-z0-9_$.]+))");
+    private static final Pattern SYMBOL = Pattern.compile(
+        "^\\s*symbol:\\s+(method|variable|class)\\s+([A-Za-z_$][A-Za-z0-9_$]*)"
+    );
+    private static final Pattern LOCATION = Pattern.compile(
+        "^\\s*location:\\s+(?:(?:class|interface)\\s+([A-Za-z0-9_$.]+)|variable\\s+\\S+\\s+of\\s+type\\s+([A-Za-z0-9_$.]+))"
+    );
 
     record Missing(String kind, String member, String type) {}
 
@@ -29,7 +34,7 @@ final class LoaderPatches {
                 String hint = hint(userdev, version, missing, compileClasspath(model));
                 if (!hint.isEmpty()) return hint;
             }
-        } catch (IOException | RuntimeException unreadable) { }
+        } catch (IOException | RuntimeException unreadable) {}
         return "";
     }
 
@@ -37,19 +42,41 @@ final class LoaderPatches {
         try (ZipFile zip = new ZipFile(userdev.toFile())) {
             for (Missing item : missing) {
                 String simple = item.type().substring(item.type().lastIndexOf('.') + 1);
-                String exact = item.type().contains(".") ? "patches/" + item.type().replace('.', '/') + ".java.patch" : null;
-                for (var entries = zip.entries(); entries.hasMoreElements(); ) {
+                String exact = item.type().contains(".")
+                    ? "patches/" + item.type().replace('.', '/') + ".java.patch"
+                    : null;
+                for (var entries = zip.entries(); entries.hasMoreElements();) {
                     ZipEntry entry = entries.nextElement();
                     String name = entry.getName();
-                    if (!(exact != null ? name.equals(exact) : name.startsWith("patches/") && name.endsWith("/" + simple + ".java.patch"))) continue;
+                    if (
+                        !(exact != null
+                                ? name.equals(exact)
+                                : name.startsWith("patches/") && name.endsWith("/" + simple + ".java.patch"))
+                    ) continue;
                     String patch = new String(zip.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8);
                     if (!adds(patch, item)) continue;
-                    String className = name.substring("patches/".length(), name.length() - ".java.patch".length()).replace('/', '.');
+                    String className = name
+                        .substring("patches/".length(), name.length() - ".java.patch".length())
+                        .replace('/', '.');
                     Path jar = holder(classpath, className);
-                    return "NeoForge " + version + " adds " + simple + "." + item.member() + (item.kind().equals("method") ? "()" : "") + " to the game (its own patch to " + className
-                            + "), but the game jar this build compiled against does not have it: that jar is a stale NeoForge build in the Gradle cache, not a mistake in your code. "
-                            + (jar == null ? "Rebuild NeoForge's patched game jar (delete it from the Gradle cache)" : "Delete " + jar + " so NeoForge rebuilds it")
-                            + ", then compile again. Decided by " + userdev.getFileName() + ".";
+                    return (
+                        "NeoForge " +
+                        version +
+                        " adds " +
+                        simple +
+                        "." +
+                        item.member() +
+                        (item.kind().equals("method") ? "()" : "") +
+                        " to the game (its own patch to " +
+                        className +
+                        "), but the game jar this build compiled against does not have it: that jar is a stale NeoForge build in the Gradle cache, not a mistake in your code. " +
+                        (jar == null
+                                ? "Rebuild NeoForge's patched game jar (delete it from the Gradle cache)"
+                                : "Delete " + jar + " so NeoForge rebuilds it") +
+                        ", then compile again. Decided by " +
+                        userdev.getFileName() +
+                        "."
+                    );
                 }
             }
         }
@@ -59,8 +86,16 @@ final class LoaderPatches {
     /** Whether a patch's added lines declare the member: a method header, or a field. */
     static boolean adds(String patch, Missing item) {
         Pattern declared = item.kind().equals("method")
-                ? Pattern.compile("(?m)^\\+(?!\\+)\\s*(?:@\\w+\\s+)*(?:(?:public|protected|private|static|final|default|abstract|synchronized)\\s+)*[\\w<>\\[\\].,? ]+\\s+" + Pattern.quote(item.member()) + "\\s*\\(")
-                : Pattern.compile("(?m)^\\+(?!\\+)\\s*(?:(?:public|protected|private|static|final|volatile|transient)\\s+)*[\\w<>\\[\\].,? ]+\\s+" + Pattern.quote(item.member()) + "\\s*[=;]");
+            ? Pattern.compile(
+                "(?m)^\\+(?!\\+)\\s*(?:@\\w+\\s+)*(?:(?:public|protected|private|static|final|default|abstract|synchronized)\\s+)*[\\w<>\\[\\].,? ]+\\s+" +
+                Pattern.quote(item.member()) +
+                "\\s*\\("
+            )
+            : Pattern.compile(
+                "(?m)^\\+(?!\\+)\\s*(?:(?:public|protected|private|static|final|volatile|transient)\\s+)*[\\w<>\\[\\].,? ]+\\s+" +
+                Pattern.quote(item.member()) +
+                "\\s*[=;]"
+            );
         return declared.matcher(patch).find();
     }
 
@@ -72,8 +107,10 @@ final class LoaderPatches {
             String kind = null, member = null, type = null;
             for (int j = i + 1; j < lines.size() && j <= i + 5; j++) {
                 Matcher symbol = SYMBOL.matcher(lines.get(j)), location = LOCATION.matcher(lines.get(j));
-                if (symbol.find()) { kind = symbol.group(1); member = symbol.group(2); }
-                else if (location.find()) type = location.group(1) != null ? location.group(1) : location.group(2);
+                if (symbol.find()) {
+                    kind = symbol.group(1);
+                    member = symbol.group(2);
+                } else if (location.find()) type = location.group(1) != null ? location.group(1) : location.group(2);
             }
             if (member != null && type != null && !kind.equals("class")) {
                 Missing found = new Missing(kind, member, type);
@@ -89,7 +126,12 @@ final class LoaderPatches {
             var project = Json.object(item);
             for (Object dependency : project.get("dependencies") instanceof List<?> deps ? deps : List.of()) {
                 var d = Json.object(dependency);
-                if ("net.neoforged".equals(d.get("group")) && "neoforge".equals(d.get("name")) && d.get("version") instanceof String v && !v.isBlank()) versions.add(v);
+                if (
+                    "net.neoforged".equals(d.get("group")) &&
+                    "neoforge".equals(d.get("name")) &&
+                    d.get("version") instanceof String v &&
+                    !v.isBlank()
+                ) versions.add(v);
             }
         }
         return versions;
@@ -97,19 +139,30 @@ final class LoaderPatches {
 
     static Path userdev(String version) throws IOException {
         String gradleHome = System.getenv("GRADLE_USER_HOME");
-        Path base = (gradleHome == null || gradleHome.isBlank() ? Path.of(System.getProperty("user.home"), ".gradle") : Path.of(gradleHome))
-                .resolve("caches/modules-2/files-2.1/net.neoforged/neoforge").resolve(version);
+        Path base =
+            (gradleHome == null || gradleHome.isBlank()
+                    ? Path.of(System.getProperty("user.home"), ".gradle")
+                    : Path.of(gradleHome)).resolve("caches/modules-2/files-2.1/net.neoforged/neoforge").resolve(
+                    version
+                );
         if (!Files.isDirectory(base)) return null;
         try (var walk = Files.walk(base, 2)) {
-            return walk.filter(p -> p.getFileName().toString().equals("neoforge-" + version + "-userdev.jar")).findFirst().orElse(null);
+            return walk
+                .filter(p -> p.getFileName().toString().equals("neoforge-" + version + "-userdev.jar"))
+                .findFirst()
+                .orElse(null);
         }
     }
 
     static List<Path> compileClasspath(Map<String, Object> model) {
         List<Path> out = new ArrayList<>();
-        for (Object item : model.get("projects") instanceof List<?> projects ? projects : List.of())
-            for (Object compile : Json.object(item).get("compile") instanceof List<?> list ? list : List.of())
-                for (String entry : ProjectModel.strings(Json.object(compile).get("classpath"))) if (entry.endsWith(".jar")) out.add(Path.of(entry));
+        for (Object item : model.get("projects") instanceof List<?> projects
+            ? projects
+            : List.of()) for (Object compile : Json.object(item).get("compile") instanceof List<?> list
+            ? list
+            : List.of()) for (String entry : ProjectModel.strings(Json.object(compile).get("classpath"))) if (
+            entry.endsWith(".jar")
+        ) out.add(Path.of(entry));
         return out;
     }
 
@@ -118,7 +171,9 @@ final class LoaderPatches {
         String entry = className.replace('.', '/') + ".class";
         for (Path jar : classpath) {
             if (!Files.isRegularFile(jar)) continue;
-            try (ZipFile zip = new ZipFile(jar.toFile())) { if (zip.getEntry(entry) != null) return jar; } catch (IOException unreadable) { }
+            try (ZipFile zip = new ZipFile(jar.toFile())) {
+                if (zip.getEntry(entry) != null) return jar;
+            } catch (IOException unreadable) {}
         }
         return null;
     }

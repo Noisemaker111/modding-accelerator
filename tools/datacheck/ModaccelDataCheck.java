@@ -16,35 +16,55 @@ import java.nio.charset.StandardCharsets;
  * Output: one JSON object per line, appended to the file named by -Dmodaccel.datacheck.out.
  */
 public final class ModaccelDataCheck {
+
     public static void main(String[] args) throws Throwable {
         String out = System.getProperty("modaccel.datacheck.out");
         new FileOutputStream(out).close();
         ClassLoader game;
         try {
             Class<?> envType = Class.forName("net.fabricmc.api.EnvType");
-            @SuppressWarnings({"unchecked", "rawtypes"}) Object server = Enum.valueOf((Class) envType, "SERVER");
+            @SuppressWarnings({ "unchecked", "rawtypes" })
+            Object server = Enum.valueOf((Class) envType, "SERVER");
             Class<?> knot = Class.forName("net.fabricmc.loader.impl.launch.knot.Knot");
             Object instance = knot.getConstructor(envType).newInstance(server);
             game = (ClassLoader) knot.getMethod("init", String[].class).invoke(instance, (Object) args);
         } catch (Throwable failure) {
             fail(out, "loader", failure);
-            Runtime.getRuntime().halt(3); return;
+            Runtime.getRuntime().halt(3);
+            return;
         }
         Thread.currentThread().setContextClassLoader(game);
         int code = 0;
-        try { Class.forName("ModaccelDataProbe", true, game).getMethod("run").invoke(null); }
-        catch (Throwable failure) {
-            Throwable cause = failure instanceof java.lang.reflect.InvocationTargetException ? failure.getCause() : failure;
-            fail(out, "probe", cause); code = 4;
+        try {
+            Class.forName("ModaccelDataProbe", true, game).getMethod("run").invoke(null);
+        } catch (Throwable failure) {
+            Throwable cause = failure instanceof java.lang.reflect.InvocationTargetException
+                ? failure.getCause()
+                : failure;
+            fail(out, "probe", cause);
+            code = 4;
         }
         // The game never started; its background threads must not keep this JVM alive.
         Runtime.getRuntime().halt(code);
     }
 
     static void fail(String out, String phase, Throwable failure) throws Exception {
-        StringWriter trace = new StringWriter(); failure.printStackTrace(new PrintWriter(trace));
-        try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(out, true), StandardCharsets.UTF_8))) {
-            writer.println("{\"event\":\"error\",\"phase\":" + quote(phase) + ",\"message\":" + quote(String.valueOf(failure)) + ",\"trace\":" + quote(trace.toString()) + "}");
+        StringWriter trace = new StringWriter();
+        failure.printStackTrace(new PrintWriter(trace));
+        try (
+            PrintWriter writer = new PrintWriter(
+                new OutputStreamWriter(new FileOutputStream(out, true), StandardCharsets.UTF_8)
+            )
+        ) {
+            writer.println(
+                "{\"event\":\"error\",\"phase\":" +
+                quote(phase) +
+                ",\"message\":" +
+                quote(String.valueOf(failure)) +
+                ",\"trace\":" +
+                quote(trace.toString()) +
+                "}"
+            );
         }
     }
 

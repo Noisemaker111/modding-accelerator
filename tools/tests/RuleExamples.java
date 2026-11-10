@@ -11,10 +11,12 @@ import java.util.stream.Stream;
  *
  *   java -cp modaccel.jar:classes RuleExamples request.json response.json
  *
- * request:  {"rules": [rule, ...], "samples": {id: text the rule's match should find}, "sources": [{"dir", "names", "label"}]}
+ * request:  {"rules": [rule, ...], "samples": {id: text the rule's match should find}, "sources": [{"dir", "names", "label"}],
+ *            "after": [rule, ...]}   rules an earlier round of the same port runs first; each file is read as they leave it
  * response: {"found": [{"id", "label", "file", "line", "error", "before", "after"}], "missed": [{"id", "why"}]}
  */
 public final class RuleExamples {
+
     public static void main(String[] args) throws Exception {
         var request = Json.read(Path.of(args[0]));
         var samples = Json.object(request.get("samples"));
@@ -23,26 +25,62 @@ public final class RuleExamples {
         for (Object item : Json.array(request.get("rules"))) {
             var rule = Json.object(item);
             String id = Json.text(rule, "id", "");
-            String names = Json.text(rule, "jump", "").contains("yarn") ? "yarn" : "mojmap";
+            // A jump that names no mapping is about names every mapping shares (com.mojang.*), so any source will do.
+            String jump = Json.text(rule, "jump", "");
+            String names = jump.contains("yarn")
+                ? "yarn"
+                : jump.contains("mojmap") || jump.contains("official") ? "mojmap" : "";
             Map<String, Object> hit = null;
-            String why = "no pinned " + names + " source has code its find matches";
+            String why = "no " + (names.isEmpty() ? "" : names + " ") + "source has code its find matches";
             for (Object s : Json.array(request.get("sources"))) {
                 var source = Json.object(s);
-                if (!names.equals(source.get("names"))) continue;
+                if (!names.isEmpty() && !names.equals(source.get("names"))) continue;
                 Path dir = Path.of(Json.text(source, "dir", ""));
                 for (Path file : files.computeIfAbsent(dir.toString(), k -> javaFiles(dir))) {
                     String text = Files.readString(file, StandardCharsets.UTF_8).replace("\r\n", "\n");
+                    for (Object earlier : Json.array(request.get("after"))) {
+                        text = Port.rewrite(Json.object(earlier), text);
+                    }
                     int[] span = span(rule, text);
                     if (span == null) continue;
                     String before = snippet(rule, text, span);
                     String after = before == null ? null : Port.rewrite(rule, before);
-                    if (before == null || after.equals(before)) { why = "it matches " + dir.relativize(file) + " but not once the lines around the match are cut out"; continue; }
+                    if (before == null || after.equals(before)) {
+                        why =
+                            "it matches " +
+                            dir.relativize(file) +
+                            " but not once the lines around the match are cut out";
+                        continue;
+                    }
                     int line = 1 + (int) text.substring(0, span[0]).chars().filter(c -> c == '\n').count();
                     String sample = Json.text(samples, id, "");
-                    String error = file.getFileName() + ":" + line + ": error: " + (sample.startsWith("symbol:") ? "cannot find symbol\n  " + sample : sample) + "\n";
-                    if (!Pattern.compile(Json.text(rule, "match", "")).matcher(error).find()) { why = "could not word a compiler error its match finds (tried: " + sample + ")"; continue; }
-                    hit = Json.map("id", id, "label", source.get("label"), "file", dir.relativize(file).toString().replace('\\', '/'), "line", line,
-                            "error", error, "before", before, "after", after);
+                    String error =
+                        file.getFileName() +
+                        ":" +
+                        line +
+                        ": error: " +
+                        (sample.startsWith("symbol:") ? "cannot find symbol\n  " + sample : sample) +
+                        "\n";
+                    if (!Pattern.compile(Json.text(rule, "match", "")).matcher(error).find()) {
+                        why = "could not word a compiler error its match finds (tried: " + sample + ")";
+                        continue;
+                    }
+                    hit = Json.map(
+                        "id",
+                        id,
+                        "label",
+                        source.get("label"),
+                        "file",
+                        dir.relativize(file).toString().replace('\\', '/'),
+                        "line",
+                        line,
+                        "error",
+                        error,
+                        "before",
+                        before,
+                        "after",
+                        after
+                    );
                     break;
                 }
                 if (hit != null) break;
@@ -56,8 +94,19 @@ public final class RuleExamples {
     static List<Path> javaFiles(Path dir) {
         try (Stream<Path> walk = Files.walk(dir)) {
             // The mod's own src/ first: a checkout may also hold the same mod for another loader in a subfolder.
-            return walk.filter(p -> p.toString().endsWith(".java") && !p.toString().contains("/build/") && !p.toString().contains("\\build\\"))
-                    .sorted(Comparator.comparing((Path p) -> !dir.relativize(p).startsWith("src")).thenComparing(Comparator.naturalOrder())).toList();
+            return walk
+                .filter(
+                    p ->
+                        p.toString().endsWith(".java") &&
+                        !p.toString().contains("/build/") &&
+                        !p.toString().contains("\\build\\")
+                )
+                .sorted(
+                    Comparator.comparing((Path p) -> !dir.relativize(p).startsWith("src")).thenComparing(
+                        Comparator.naturalOrder()
+                    )
+                )
+                .toList();
         } catch (IOException e) {
             return List.of();
         }
@@ -93,11 +142,17 @@ public final class RuleExamples {
         int from = Math.max(0, first - 1), to = Math.min(lines.length - 1, last + 1);
         List<String> out = new ArrayList<>();
         Matcher pkg = Pattern.compile("(?m)^package [^;]+;").matcher(text);
-        if (pkg.find() && from > 0) { out.add(pkg.group()); out.add(""); }
+        if (pkg.find() && from > 0) {
+            out.add(pkg.group());
+            out.add("");
+        }
         String when = Json.text(rule, "when", "");
         String body = String.join("\n", Arrays.copyOfRange(lines, from, to + 1));
         if (!when.isEmpty() && !Pattern.compile(when).matcher(String.join("\n", out) + "\n" + body).find()) {
-            for (String line : lines) if (Pattern.compile(when).matcher(line).find()) { out.add(line); break; }
+            for (String line : lines) if (Pattern.compile(when).matcher(line).find()) {
+                out.add(line);
+                break;
+            }
         }
         out.add(body);
         return String.join("\n", out) + "\n";

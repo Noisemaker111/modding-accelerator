@@ -818,30 +818,38 @@
       "jump": "1.21.5 -> 1.21.6 (yarn, fabric-data-generation 23.2.3)",
       "match": "getOrCreateTagBuilder",
       "apply": {
-        "literal": {
-          "from": "getOrCreateTagBuilder(",
-          "to": "valueLookupBuilder("
-        }
+        "literal": "getOrCreateTagBuilder(",
+        "replace": "valueLookupBuilder("
       },
       "scope": "log",
       "when": "FabricValueLookupTagProvider|FabricTagProvider\\.(Block|Item)TagProvider",
       "note": "Block and item providers hold registry values, so their builder is valueLookupBuilder(TagKey) -> ProvidedTagBuilder<T, T>. The fluent chain afterwards (add/addTag/setReplace/forceAddTag) is unchanged.",
-      "verified": "Traverse 1.21.5->1.21.6: 24 sites (22 block, 2 item), round 1 of a 2-round green run (bench/fix-test/traverse, .runs/logs/port-fix-20261022-205541.log)"
+      "verified": "Traverse 1.21.5->1.21.6: 24 sites (22 block, 2 item), round 1 of a 2-round green run (bench/fix-test/traverse, .runs/logs/port-fix-20261022-205541.log)",
+      "test": {
+        "error": "TraverseBlockTagProvider.java:23: error: getOrCreateTagBuilder\n",
+        "before": "package com.terraformersmc.traverse.data;\n\npublic class TraverseBlockTagProvider extends FabricTagProvider.BlockTagProvider {\n\t\t */\n\t\tgetOrCreateTagBuilder(BlockTags.FENCE_GATES)\n\t\t\t\t.add(TraverseBlocks.FIR_FENCE_GATE);\n",
+        "after": "package com.terraformersmc.traverse.data;\n\npublic class TraverseBlockTagProvider extends FabricTagProvider.BlockTagProvider {\n\t\t */\n\t\tvalueLookupBuilder(BlockTags.FENCE_GATES)\n\t\t\t\t.add(TraverseBlocks.FIR_FENCE_GATE);\n",
+        "from": "Traverse fabric 1.21.5 at c9e324bb, common/src/main/java/com/terraformersmc/traverse/data/TraverseBlockTagProvider.java:23"
+      }
     },
     {
       "id": "fabrictag-provider-plain",
       "jump": "1.21.5 -> 1.21.6 (yarn, fabric-data-generation 23.2.3)",
       "match": "getOrCreateTagBuilder",
       "apply": {
-        "literal": {
-          "from": "getOrCreateTagBuilder(",
-          "to": "builder("
-        }
+        "literal": "getOrCreateTagBuilder(",
+        "replace": "builder("
       },
       "scope": "log",
       "when": "extends FabricTagProvider<|EntityTypeTagProvider",
       "note": "A plain FabricTagProvider<T> (biomes) and an entity-type provider take builder(TagKey) -> ProvidedTagBuilder<RegistryKey<T>, T>. The entity-type one must use this form because it adds registry keys, not values.",
-      "verified": "Traverse 1.21.5->1.21.6: 44 sites (42 biome, 2 entity type), round 1 of the same green run (bench/fix-test/traverse)"
+      "verified": "Traverse 1.21.5->1.21.6: 44 sites (42 biome, 2 entity type), round 1 of the same green run (bench/fix-test/traverse)",
+      "test": {
+        "error": "TraverseBiomeTagProvider.java:26: error: getOrCreateTagBuilder\n",
+        "before": "package com.terraformersmc.traverse.data;\n\npublic class TraverseBiomeTagProvider extends FabricTagProvider<Biome> {\n\t\t */\n\t\tgetOrCreateTagBuilder(BiomeTags.ALLOWS_SURFACE_SLIME_SPAWNS)\n\t\t\t\t.addOptional(TraverseBiomes.LUSH_SWAMP);\n",
+        "after": "package com.terraformersmc.traverse.data;\n\npublic class TraverseBiomeTagProvider extends FabricTagProvider<Biome> {\n\t\t */\n\t\tbuilder(BiomeTags.ALLOWS_SURFACE_SLIME_SPAWNS)\n\t\t\t\t.addOptional(TraverseBiomes.LUSH_SWAMP);\n",
+        "from": "Traverse fabric 1.21.5 at c9e324bb, common/src/main/java/com/terraformersmc/traverse/data/TraverseBiomeTagProvider.java:26"
+      }
     },
     {
       "id": "fabrictag-entitytype-add-key",
@@ -995,7 +1003,13 @@
       "scope": "log",
       "when": "TooltipDisplay tooltipDisplay",
       "note": "Same error, same round, same file as the signature rule: the super call also gains the TooltipDisplay argument. Guarded by the file already declaring TooltipDisplay tooltipDisplay, so a class whose parent is not an Item (or was already fixed) is never touched. Without this the override compiles but the super call fails with 'Consumer<Component> cannot be converted to List<Component>'.",
-      "verified": "Traveler's Backpack copy: 1 site round 1 and 3 sites round 2, same files as the signature rule; probe: 1 site, clean compile"
+      "verified": "Traveler's Backpack copy: 1 site round 1 and 3 sites round 2, same files as the signature rule; probe: 1 site, clean compile",
+      "test": {
+        "error": "TravelersBackpackItem.java:167: error: method appendHoverText in class x cannot be applied\n",
+        "before": "package com.tiviacz.travelersbackpack.items;\n\n    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltipComponents, TooltipFlag tooltipFlag) {\n        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);\n\n",
+        "after": "package com.tiviacz.travelersbackpack.items;\n\n    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltipComponents, TooltipFlag tooltipFlag) {\n        super.appendHoverText(stack, context, tooltipDisplay, tooltipComponents, tooltipFlag);\n\n",
+        "from": "Traveler's Backpack neoforge 1.21.4 at 32fbb9dd, src/main/java/com/tiviacz/travelersbackpack/items/TravelersBackpackItem.java:167, as item-appendhovertext-signature left it"
+      }
     },
     {
       "id": "item-appendhovertext-consumer",
@@ -1008,7 +1022,13 @@
       "scope": "log",
       "when": "Consumer<Component>",
       "note": "After the signature round the tooltip parameter is a Consumer<Component>, so tooltipComponents.add(x) must become tooltipComponents.accept(x). The first version also matched a variable named components and the build caught it: TravelersBackpackItem.addAttributeModifierTooltip takes a real List<Component> components, so those three sites became 'cannot find symbol: method accept(MutableComponent)' and the file stopped compiling. The counter-example is now excluded by name - tooltipComponents is what every tooltip consumer in this mod is called, components is what the surviving List helpers use - plus the when guard (file must already contain Consumer<Component>) and log scope.",
-      "verified": "Traveler's Backpack copy: 2 sites in round 2 and 15 in round 3, after which no accept/add error remained (100 -> 33); probe: 1 site with a List<Component> helper next to it, clean compile"
+      "verified": "Traveler's Backpack copy: 2 sites in round 2 and 15 in round 3, after which no accept/add error remained (100 -> 33); probe: 1 site with a List<Component> helper next to it, clean compile",
+      "test": {
+        "error": "HoseItem.java:400: error: method add(MutableComponent)\n",
+        "before": "package com.tiviacz.travelersbackpack.items;\n\n    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltipComponents, TooltipFlag tooltipFlag) {\n            if(mode == SUCK_MODE) {\n                tooltipComponents.add(Component.translatable(\"hose.travelersbackpack.mode_suck\").withStyle(ChatFormatting.BLUE));\n            }\n",
+        "after": "package com.tiviacz.travelersbackpack.items;\n\n    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltipComponents, TooltipFlag tooltipFlag) {\n            if(mode == SUCK_MODE) {\n                tooltipComponents.accept(Component.translatable(\"hose.travelersbackpack.mode_suck\").withStyle(ChatFormatting.BLUE));\n            }\n",
+        "from": "Traveler's Backpack neoforge 1.21.4 at 32fbb9dd, src/main/java/com/tiviacz/travelersbackpack/items/HoseItem.java:400, as item-appendhovertext-signature left it"
+      }
     },
     {
       "id": "serverplayer-setrespawnposition",
@@ -1062,7 +1082,13 @@
       "scope": "repo",
       "when": "",
       "note": "1.21.6 DrawContext.getMatrices() returns org.joml.Matrix3x2fStack instead of MatrixStack, so the stack verbs are pushMatrix/popMatrix. The prefix keeps the rule on a draw context and leaves an unrelated MatrixStack alone.",
-      "verified": ""
+      "verified": "",
+      "test": {
+        "error": "TrinketScreenManager.java:204: error: location: class org.joml.Matrix3x2fStack\n",
+        "before": "package dev.emi.trinkets;\n\n\t\tGlStateManager._enableDepthTest();\n\t\tcontext.getMatrices().push();\n\t\tcontext.getMatrices().translate(0, 0, 305);\n",
+        "after": "package dev.emi.trinkets;\n\n\t\tGlStateManager._enableDepthTest();\n\t\tcontext.getMatrices().pushMatrix();\n\t\tcontext.getMatrices().translate(0, 0, 305);\n",
+        "from": "Trinkets fabric 1.21.5 at c49e0aaa, src/main/java/dev/emi/trinkets/TrinketScreenManager.java:204"
+      }
     },
     {
       "id": "drawcontext-matrix-pop",
@@ -1075,7 +1101,13 @@
       "scope": "repo",
       "when": "",
       "note": "Same class change as drawcontext-matrix-push; popMatrix is the only stack verb on Matrix3x2fStack.",
-      "verified": ""
+      "verified": "",
+      "test": {
+        "error": "TrinketScreenManager.java:273: error: location: class org.joml.Matrix3x2fStack\n",
+        "before": "package dev.emi.trinkets;\n\n\n\t\tcontext.getMatrices().pop();\n\t\tGlStateManager._disableDepthTest();\n",
+        "after": "package dev.emi.trinkets;\n\n\n\t\tcontext.getMatrices().popMatrix();\n\t\tGlStateManager._disableDepthTest();\n",
+        "from": "Trinkets fabric 1.21.5 at c49e0aaa, src/main/java/dev/emi/trinkets/TrinketScreenManager.java:273"
+      }
     },
     {
       "id": "drawcontext-matrix-translate-2d",
@@ -1088,7 +1120,13 @@
       "scope": "repo",
       "when": "",
       "note": "The 2D matrix stack only translates in x and y, so the z argument disappears. Vanilla 1.21.6 draw ordering comes from render layers, so dropping the third component is the documented migration; calls whose arguments contain a comma or call are left for a person.",
-      "verified": ""
+      "verified": "",
+      "test": {
+        "error": "TrinketScreenManager.java:205: error: int cannot be converted to Matrix3x2f\n",
+        "before": "package dev.emi.trinkets;\n\n\t\tcontext.getMatrices().push();\n\t\tcontext.getMatrices().translate(0, 0, 305);\n\n",
+        "after": "package dev.emi.trinkets;\n\n\t\tcontext.getMatrices().push();\n\t\tcontext.getMatrices().translate(0, 0);\n\n",
+        "from": "Trinkets fabric 1.21.5 at c49e0aaa, src/main/java/dev/emi/trinkets/TrinketScreenManager.java:205"
+      }
     },
     {
       "id": "level-getminy",
@@ -1504,7 +1542,13 @@
       "scope": "log",
       "when": "",
       "note": "Partner of level-day-rename.",
-      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)",
+      "test": {
+        "error": "FluidClientOverlay.java:72: error: cannot find symbol\n  symbol: method isNight\n",
+        "before": "package com.telepathicgrunt.the_bumblezone.client.rendering.fluids;\n\n            level.updateSkyBrightness();\n            if (level.isNight()) {\n                float moonBrightness = level.getMoonBrightness();\n",
+        "after": "package com.telepathicgrunt.the_bumblezone.client.rendering.fluids;\n\n            level.updateSkyBrightness();\n            if (level.isDarkOutside()) {\n                float moonBrightness = level.getMoonBrightness();\n",
+        "from": "Bumblezone 1.21.1 at 42902b5e, common/src/main/java/com/telepathicgrunt/the_bumblezone/client/rendering/fluids/FluidClientOverlay.java:72"
+      }
     },
     {
       "id": "entity-snapto",
@@ -1574,7 +1618,13 @@
       "scope": "log",
       "when": "",
       "note": "1.21.5 moved GlStateManager from com.mojang.blaze3d.platform to com.mojang.blaze3d.opengl (coverage/changes/1.21.4__1.21.5.json lists it removed and added, so no mapping links the two). com.mojang names are the same in every mapping set. Only the import moves: members it lost (SrcFactor, DstFactor) stay as named errors. Before this, javac stopped at the import and hid every other error.",
-      "verified": null
+      "verified": null,
+      "test": {
+        "error": "HUDOverlayHandler.java:3: error: cannot find symbol\n  symbol: class GlStateManager location: package com.mojang.blaze3d.platform\n",
+        "before": "package squeek.appleskin.client;\n\n\nimport com.mojang.blaze3d.platform.GlStateManager;\nimport com.mojang.blaze3d.systems.RenderSystem;\n",
+        "after": "package squeek.appleskin.client;\n\n\nimport com.mojang.blaze3d.opengl.GlStateManager;\nimport com.mojang.blaze3d.systems.RenderSystem;\n",
+        "from": "AppleSkin fabric 1.20.1 at c6751d6d, java/squeek/appleskin/client/HUDOverlayHandler.java:3"
+      }
     },
     {
       "id": "gui-blit-render-type-7",
@@ -2139,7 +2189,13 @@
       "scope": "log",
       "when": "",
       "note": "Backport of glstatemanager-opengl.",
-      "verified": null
+      "verified": null,
+      "test": {
+        "error": "HUDOverlayHandler.java:3: error: cannot find symbol\n  symbol: class GlStateManager location: package com.mojang.blaze3d.opengl\n",
+        "before": "package squeek.appleskin.client;\n\n\nimport com.mojang.blaze3d.opengl.GlStateManager;\nimport com.mojang.blaze3d.systems.RenderSystem;\n",
+        "after": "package squeek.appleskin.client;\n\n\nimport com.mojang.blaze3d.platform.GlStateManager;\nimport com.mojang.blaze3d.systems.RenderSystem;\n",
+        "from": "AppleSkin fabric 1.20.1 at c6751d6d, java/squeek/appleskin/client/HUDOverlayHandler.java:3, as glstatemanager-opengl left it"
+      }
     },
     {
       "id": "sc-permissions-source-level",

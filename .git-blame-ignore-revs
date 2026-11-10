@@ -1,0 +1,6 @@
+# Commits that only reformat code. git blame skips them with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# (GitHub reads this file by itself.)
+
+# Format the Java in tools/: one statement per line
+a7dac8af024b327be05a19d653ec0faf686febdf
