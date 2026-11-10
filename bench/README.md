@@ -2,7 +2,7 @@
 
 There is one roadmap and one way to show a number.
 
-- `coverage/roadmap.json`: the four goals (AGENTS.md), each with its steps: status, start, target and done dates, the part of the goal a step belongs to, and the measures it moves. A goal's `headline` names the measures that say most about it.
+- `coverage/roadmap.json`: the four goals (README.md), each with its steps: status, start, target and done dates, the part of the goal a step belongs to, and the measures it moves. A goal's `headline` names the measures that say most about it.
 - `coverage/measures.json`: every number we show. A measure is one thing measured the same way (warm and cold are separate measures), with dated points that each name a source, and a target with a date and the step that reaches it.
 - `coverage/ledger.json`: every port that was run, with its timing. A run not in the ledger did not happen. Measures such as mods working and updates working per loader are computed from it.
 
