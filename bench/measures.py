@@ -26,7 +26,7 @@ INDEX = ROOT / "coverage" / "changes" / "index.json"
 
 STATUSES = ("done", "doing", "next", "later")
 UNITS = {"s", "min", "GB", "errors", "files", "rules", "mods", "updates", "steps", "versions", "packs", "repairs",
-         "items", "sessions", "cores", "CPU-s", "pairs"}
+         "items", "sessions", "cores", "CPU-s", "pairs", "calls"}
 ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 

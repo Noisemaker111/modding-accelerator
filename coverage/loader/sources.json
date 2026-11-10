@@ -1,0 +1,12 @@
+{
+ "note": "Sources bench/loader_api.py reads besides the mined Stonecutter mods (coverage/stonecutter/mods.json). Each is a project that implements one interface once per loader, pinned to a commit. Only its text is read; nothing from it is copied into this repository except the names of the loader calls it makes.",
+ "sources": [
+  {
+   "repo": "architectury/architectury-api",
+   "commit": "321ad305a1caacd20ea655f4c392a87c3376a244",
+   "license": "LGPL-3.0",
+   "loaders": ["fabric", "forge", "neoforge"],
+   "why": "One common API with a Fabric, a Forge and a NeoForge implementation of every method: the same method name in fabric/ and neoforge/ is the same job on each loader."
+  }
+ ]
+}

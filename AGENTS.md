@@ -11,7 +11,7 @@ Everything here serves one of these. They are in priority order.
 | 1 | **Test a mod in seconds** | An author changes code and gets an answer about the mod's real behaviour in seconds, and never opens Minecraft by hand | `fast`, `data-check`, `mixin-check`, `ui-check`, `world-check`, `mp-check`, `eval`, `reload`; plugins: `plugin-check`, `server-check` |
 | 2 | **Port a mod to any Minecraft version** | One command, no hand edits, forward or back, every edit reversible, the result checked in the real game | `port`, `explain`, `dependencies` |
 | 3 | **Make modpacks work together** | Conflicts in an installed pack are found and repaired (wrong blocks or items, worlds that fail to reopen), reversibly, checked on the pack's real server | `pack-check` |
-| 4 | **Change loader or platform** | The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a version port, with separate claims | not built yet |
+| 4 | **Change loader or platform** | The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a version port, with separate claims | not built yet; `python bench/loader_api.py show FROM TO` lists the loader calls known to stand in for each other |
 
 - Windows, Linux and macOS; Java and Kotlin; Fabric, NeoForge, Forge and Paper, climbing `SCOPE.md`'s ladder.
 - Ports need source (a Gradle checkout). Compiled jars are inputs for pack diagnosis only.
@@ -61,7 +61,7 @@ The portable command is `modaccel.cmd` on Windows, `./modaccel` on POSIX, or `ja
 
 Run builds and game launches through modaccel, never raw Gradle or a manual launch, and never add `--no-daemon`. Package locally; publishing needs Jon's approval.
 
-Before you push, run what CI runs, without a game or a network: `modaccel self-test` (about 8 seconds; `--only SUITE` runs one suite, and a failure is reported first), then `python bench/test_measures.py`, `python bench/test_record.py`, `python bench/test_ledger_rule.py` and `python bench/test_java_lines.py`.
+Before you push, run what CI runs, without a game or a network: `modaccel self-test` (about 8 seconds; `--only SUITE` runs one suite, and a failure is reported first), then `python bench/test_measures.py`, `python bench/test_record.py`, `python bench/test_ledger_rule.py`, `python bench/test_java_lines.py` and `python bench/test_loader_api.py`.
 
 When you change a port rule or the porter, run `python bench/port_board.py`: it ports every pinned mod in `bench/port-cases.json` from a clean checkout and shows each one against what is recorded and against the last run, then lists the errors still left by the game update that caused them. It exits 1 when a port got worse. Every rule in `knowledge/fixes.json` carries a `test {error, before, after}`, and `self-test` fails on one that does not. `python bench/rule_test.py --only RULE_ID --write` writes it from the pinned mods' real source, with the porter's own rewrite as the expected result; `--source` adds the checkout of a mod that is not pinned, and `--after OTHER_RULE` is for a rule that only applies once another rule has run.
 
@@ -77,8 +77,8 @@ The older Windows lane is `modaccel.ps1` (called by `modaccel.cmd` for `ui`, `no
 | `tools/agent/`, `tools/datacheck/`, `tools/mixincheck/`, `tools/packcheck/`, `tools/plugincheck/`, `tools/servercheck/` | The code that runs inside the game or server for each check |
 | `tools/tests/` | The command's own tests and fixtures; `PortableTests.java` is what `self-test` runs |
 | `knowledge/` | Port rules and repairs. `fixes.json` holds the rules; those with `source: "stonecutter"` are mined (`python bench/stonecutter_mine.py extract`, then `python bench/stonecutter_rules.py`) |
-| `coverage/` | The truth files (`roadmap.json`, `measures.json`, `ledger.json`) and `changes/`, the change index: every neighbouring-release diff from 1.14.4 to 26.3 in Mojang names, with families, hubs and rule coverage in `index.json` |
-| `bench/` | The recorders (`record.py`, `measures.py`), the port scoreboard (`port_board.py`, cases pinned in `port-cases.json`), the rule test writer (`rule_test.py`), the generators (`bench_page.py`, `viz.py`, `porting_map.py`), the measuring scripts, and the real mods and plugins the checks run on (`real-mods/`, `server-plugins/`) |
+| `coverage/` | The truth files (`roadmap.json`, `measures.json`, `ledger.json`) and `changes/`, the change index: every neighbouring-release diff from 1.14.4 to 26.3 in Mojang names, with families, hubs and rule coverage in `index.json`. `loader/api.json` is the loader catalogue: which loader call stands in for which, and where it was seen (`python bench/loader_api.py fetch`, then `extract`; more sources go in `loader/sources.json`) |
+| `bench/` | The recorders (`record.py`, `measures.py`), the port scoreboard (`port_board.py`, cases pinned in `port-cases.json`), the rule test writer (`rule_test.py`), the loader catalogue (`loader_api.py`), the generators (`bench_page.py`, `viz.py`, `porting_map.py`), the measuring scripts, and the real mods and plugins the checks run on (`real-mods/`, `server-plugins/`) |
 | `docs/` | The public website, served by GitHub Pages: `index.html` and `porting-map/` are generated on main, `logo.svg` is the mark |
 | `src/`, `build.gradle`, `versions/` | Prism Lab, the demo Fabric mod the checks run against. The repo root is both modaccel's home and this fixture |
 | `.runs/` (ignored) | Trial trees in `.runs/beta-trials/`, logs in `.runs/logs`, history in `.runs/index.jsonl` |

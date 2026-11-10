@@ -62,6 +62,9 @@ jobs:
       - name: No overlong lines in tools/cli
         working-directory: portable workspace
         run: python bench/test_java_lines.py
+      - name: The loader catalogue pairs only what the code proves
+        working-directory: portable workspace
+        run: python bench/test_loader_api.py
       - name: Session cost meter reads processes on this system
         working-directory: portable workspace
         run: python bench/test_session_cost.py

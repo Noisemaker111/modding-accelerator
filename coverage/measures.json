@@ -672,6 +672,17 @@
    ]
   },
   {
+   "id": "loader.fabric-neoforge.counterparts",
+   "area": "loader",
+   "name": "Fabric calls that two or more mods make, with a known NeoForge counterpart",
+   "unit": "calls",
+   "better": "higher",
+   "info": true,
+   "points": [
+    {"date": "2026-11-10", "value": 15, "note": "of the 91 Fabric calls two or more of the 35 sources make; 5 of the 15 are written the same way in two or more mods, the other 10 seen in one", "source": "python bench/loader_api.py show fabric neoforge"}
+   ]
+  },
+  {
    "id": "ci.pr-wall",
    "area": "ci",
    "name": "PR checks, start to finish",
