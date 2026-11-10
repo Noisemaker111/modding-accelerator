@@ -61,11 +61,11 @@ The portable command is `modaccel.cmd` on Windows, `./modaccel` on POSIX, or `ja
 
 Run builds and game launches through modaccel, never raw Gradle or a manual launch, and never add `--no-daemon`. Package locally; publishing needs Jon's approval.
 
-Before you push, run what CI runs, without a game or a network: `modaccel self-test` (about 8 seconds; `--only SUITE` runs one suite, and a failure is reported first), then `python bench/test_measures.py`, `python bench/test_record.py` and `python bench/test_ledger_rule.py`.
+Before you push, run what CI runs, without a game or a network: `modaccel self-test` (about 8 seconds; `--only SUITE` runs one suite, and a failure is reported first), then `python bench/test_measures.py`, `python bench/test_record.py`, `python bench/test_ledger_rule.py` and `python bench/test_java_lines.py`.
 
 When you change a port rule or the porter, run `python bench/port_board.py`: it ports every pinned mod in `bench/port-cases.json` from a clean checkout and shows each one against what is recorded and against the last run, then lists the errors still left by the game update that caused them. It exits 1 when a port got worse. A new rule in `knowledge/fixes.json` needs a `test {error, before, after}`: `python bench/rule_test.py --only RULE_ID --write` writes it from the pinned mods' real source, with the porter's own rewrite as the expected result. The 10 older rules still without one are listed in `tools/tests/rules-without-test.txt`, and that list only shrinks.
 
-Write new Java one statement per line, with lines under about 140 characters. `tools/cli` has 212 lines over 200 characters, and two agents who touch the same long line conflict. The old lines get reformatted in one commit of their own (google-java-format, `--aosp`), when no branch has open work in `tools/`; don't reformat them in passing.
+Write Java one statement per line. `python bench/format_java.py` formats `tools/` (prettier-java, 120 columns; it needs Node) and writes back only files whose compiled bytecode is unchanged, so it cannot alter what the code does; `--check` changes nothing. The code that runs inside the game or a server does not compile outside it, so it is left alone. `python bench/test_java_lines.py` (PR CI) fails on a line over 200 characters in `tools/cli` unless it is one long string.
 
 The older Windows lane is `modaccel.ps1` (called by `modaccel.cmd` for `ui`, `node`, `suite`, `world`, `look`, `mp`, ...), `install.ps1`, the `.ps1` and `Lab*.java` files directly in `tools/`, `bench/bridge`, `bench/forgebridge`, `scenarios/` and `skills/modding-accelerator/` (the skill `install.ps1` copies into a mod repo, which describes this lane only). It is kept until the portable command covers each of its jobs. Don't add to it.
 

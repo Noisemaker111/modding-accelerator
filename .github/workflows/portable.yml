@@ -59,6 +59,9 @@ jobs:
       - name: The recorder and the port scoreboard
         working-directory: portable workspace
         run: python bench/test_record.py
+      - name: No overlong lines in tools/cli
+        working-directory: portable workspace
+        run: python bench/test_java_lines.py
       - name: Session cost meter reads processes on this system
         working-directory: portable workspace
         run: python bench/test_session_cost.py
