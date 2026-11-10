@@ -115,20 +115,26 @@ print(json.dumps({"command": "port", "seconds": 1, "receipt": str(root / "result
 ''', encoding="utf-8")
     cases = tmp / "cases.json"
     cases.write_text(json.dumps({"cases": [
-        {"id": "known", "mod": "AppleSkin", "repo": str(mod), "commit": commit, "loader": "fabric", "from": "1.20.1", "to": "1.21.6", "measure": "port.errors.appleskin-fabric-1.20.1-1.21.6"},
+        {"id": "known", "mod": "Known Mod", "repo": str(mod), "commit": commit, "loader": "fabric", "from": "1.20.1", "to": "1.21.6", "measure": "port.errors.known"},
         {"id": "fresh", "mod": "Made Up Mod", "repo": str(mod), "commit": commit, "loader": "fabric", "from": "1.21.5", "to": "1.21.6"}]}), encoding="utf-8")
-    recorded_errors = M.Book().points(M.Book().by_id["port.errors.appleskin-fabric-1.20.1-1.21.6"])[-1]["value"]
+    # What is "recorded" is made up here too, so the test does not change when the real numbers do.
+    recorded_errors = 5
+    data = copy.deepcopy(M.load(M.MEASURES))
+    data["measures"].append({"id": "port.errors.known", "area": "port", "name": "Errors left: Known Mod", "unit": "errors", "better": "lower",
+                             "target": {"value": 0, "by": "2027-01-01"}, "points": [{"date": "2026-11-01", "value": recorded_errors, "source": "test"}]})
+    fake_book = M.Book(measures=data)
+    fake_ledger = {"hops": [{"mod": "Known Mod", "loader": "fabric", "from": "1.20.1", "to": "1.21.6", "status": "stop", "detail": "5 errors", "date": "2026-11-01"}]}
 
     def board(errors, *extra):
         (tmp / "errors.txt").write_text(str(errors))
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            code = port_board.main(["--cases", str(cases), "--cache", str(tmp / "cache"), "--modaccel", str(stub), *extra])
+            code = port_board.main(["--cases", str(cases), "--cache", str(tmp / "cache"), "--modaccel", str(stub), *extra], book=fake_book, ledger=fake_ledger)
         return code, out.getvalue()
 
     code, text = board(recorded_errors)
     check(code == 0 and f"| {recorded_errors} errors | — | {recorded_errors} errors | same |" in text and "| — | — |" in text and "| new |" in text, f"an unchanged port is same, a port never seen is new:\n{text}")
-    check("| 1.21.5 -> 1.21.6 | blit |" in text and "AppleSkin, Made Up Mod" in text, f"what is left is grouped by update across mods:\n{text}")
+    check("| 1.21.5 -> 1.21.6 | blit |" in text and "Known Mod, Made Up Mod" in text, f"what is left is grouped by update across mods:\n{text}")
     check((tmp / "cache" / "known" / "Mod.java").read_text(encoding="utf-8") != "class Mod {}\n", "the port really edited the clone")
     code, text = board(recorded_errors + 2)
     check(code == 1 and "**worse**" in text and f"| {recorded_errors} errors | {recorded_errors + 2} errors |" in text, f"more errors than recorded is worse, exits 1, and shows the last run:\n{text}")
