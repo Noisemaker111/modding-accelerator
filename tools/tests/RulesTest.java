@@ -11,6 +11,7 @@ import java.util.regex.*;
  * (PortableTests runs each test a rule carries.)
  */
 public final class RulesTest {
+
     public static void main(String[] args) throws Exception {
         Path home = Path.of(args[0]);
         Set<String> old = new TreeSet<>();
@@ -24,19 +25,27 @@ public final class RulesTest {
             var rule = Json.object(item);
             String id = Json.text(rule, "id", "");
             rules++;
-            if (id.isEmpty()) { problems.add("rule " + rules + " has no id"); continue; }
+            if (id.isEmpty()) {
+                problems.add("rule " + rules + " has no id");
+                continue;
+            }
             if (!ids.add(id)) problems.add(id + ": id used twice");
             Pattern find = null;
             try {
                 Pattern.compile(Json.text(rule, "match", ""));
                 if (Json.text(rule, "match", "").isEmpty() && Json.text(rule, "silent", "").isBlank()) {
-                    problems.add(id + ": no match, so no compiler error would ever select it (a rule for a change the compiler never reports says so in \"silent\")");
+                    problems.add(
+                        id +
+                        ": no match, so no compiler error would ever select it (a rule for a change the compiler never reports says so in \"silent\")"
+                    );
                 }
                 String when = Json.text(rule, "when", "");
                 if (!when.isEmpty()) Pattern.compile(when);
                 var apply = Json.object(rule.get("apply"));
                 // {symbol} stands for the name javac reported; the porter fills it in before it compiles the pattern.
-                if (apply.containsKey("find")) find = Pattern.compile(apply.get("find").toString().replace("{symbol}", "symbol"));
+                if (apply.containsKey("find")) find = Pattern.compile(
+                    apply.get("find").toString().replace("{symbol}", "symbol")
+                );
                 else if (!apply.containsKey("literal") && Json.text(apply, "transform", "").isBlank()) {
                     problems.add(id + ": apply has no find, literal or transform, so it rewrites nothing");
                 }
@@ -45,7 +54,9 @@ public final class RulesTest {
                     if (bad != null) problems.add(id + ": replace " + bad);
                 }
             } catch (PatternSyntaxException error) {
-                problems.add(id + ": a pattern does not compile: " + error.getDescription() + " in " + error.getPattern());
+                problems.add(
+                    id + ": a pattern does not compile: " + error.getDescription() + " in " + error.getPattern()
+                );
             }
             String jump = Json.text(rule, "jump", "");
             String[] range = jump.replaceAll("\\(.*", "").trim().split("\\s*->\\s*");
@@ -61,18 +72,31 @@ public final class RulesTest {
             if (!tested) {
                 untested.add(id);
                 if (!old.contains(id)) {
-                    problems.add(id + ": a new rule needs a test {error, before, after} (see a neighbour in knowledge/fixes.json)");
+                    problems.add(
+                        id +
+                        ": a new rule needs a test {error, before, after} (see a neighbour in knowledge/fixes.json)"
+                    );
                 }
             }
         }
         for (String id : old) {
             if (!untested.contains(id)) {
-                System.out.println("note: " + id + " has a test now (or is gone); delete it from tools/tests/rules-without-test.txt");
+                System.out.println(
+                    "note: " + id + " has a test now (or is gone); delete it from tools/tests/rules-without-test.txt"
+                );
             }
         }
-        if (!problems.isEmpty()) throw new AssertionError(problems.size() + " rule problem(s):\n  " + String.join("\n  ", problems));
-        System.out.println(rules + " port rules are well formed: " + (rules - untested.size()) + " with a test, " + untested.size()
-                + " older ones still without");
+        if (!problems.isEmpty()) throw new AssertionError(
+            problems.size() + " rule problem(s):\n  " + String.join("\n  ", problems)
+        );
+        System.out.println(
+            rules +
+            " port rules are well formed: " +
+            (rules - untested.size()) +
+            " with a test, " +
+            untested.size() +
+            " older ones still without"
+        );
     }
 
     /** What is wrong with a replacement for this pattern, the way Matcher.replaceAll would refuse it; null when nothing is. */
@@ -89,7 +113,9 @@ public final class RulesTest {
                     int close = replace.indexOf('}', i);
                     if (close < 0) return "has an unclosed ${";
                     String name = replace.substring(i + 2, close);
-                    if (!find.pattern().contains("(?<" + name + ">")) return "names group ${" + name + "}, which the pattern does not have";
+                    if (!find.pattern().contains("(?<" + name + ">")) return (
+                        "names group ${" + name + "}, which the pattern does not have"
+                    );
                     i = close;
                 } else if (Character.isDigit(next)) {
                     if (next - '0' > groups) return "uses $" + next + ", but the pattern has " + groups + " group(s)";

@@ -13,6 +13,7 @@ import java.util.*;
  * the working directory. Nothing from the environment is recorded.
  */
 public final class ModaccelLaunchRecorder {
+
     public static void premain(String output, java.lang.instrument.Instrumentation instrumentation) throws Exception {
         List<String> options = new ArrayList<String>(ManagementFactory.getRuntimeMXBean().getInputArguments());
         StringBuilder json = new StringBuilder("{");
@@ -25,11 +26,16 @@ public final class ModaccelLaunchRecorder {
         for (int i = 0; i < options.size(); i++) json.append(i == 0 ? "" : ",").append(quote(options.get(i)));
         json.append("]}");
         Writer out = new OutputStreamWriter(new FileOutputStream(output), "UTF-8");
-        try { out.write(json.toString()); } finally { out.close(); }
+        try {
+            out.write(json.toString());
+        } finally {
+            out.close();
+        }
         System.out.println("MODACCEL_RECORDED " + output);
         System.out.flush();
         Runtime.getRuntime().halt(0);
     }
+
     static String quote(String text) {
         StringBuilder quoted = new StringBuilder("\"");
         for (char c : text.toCharArray()) {

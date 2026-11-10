@@ -18,7 +18,9 @@ import java.util.Map;
  * a version that does not know a key ignores it. Other keys in an existing file are kept as they are.
  */
 final class QuietOptions {
+
     static final Map<String, String> VALUES = new LinkedHashMap<>();
+
     static {
         VALUES.put("narrator", "0");
         VALUES.put("onboardAccessibility", "false");
@@ -27,6 +29,7 @@ final class QuietOptions {
         VALUES.put("skipMultiplayerWarning", "true");
         VALUES.put("joinedFirstServer", "true");
     }
+
     private QuietOptions() {}
 
     /** Seeds the game's options before Minecraft reads them. */
@@ -39,11 +42,17 @@ final class QuietOptions {
                 break;
             }
             seed(directory);
-        } catch (Exception error) { throw new IllegalStateException("Cannot start Minecraft quietly: could not set its sound and narrator options", error); }
+        } catch (Exception error) {
+            throw new IllegalStateException(
+                "Cannot start Minecraft quietly: could not set its sound and narrator options",
+                error
+            );
+        }
     }
 
     static Path seed(Path gameDirectory) throws IOException {
-        Path file = gameDirectory.resolve("options.txt"); Files.createDirectories(gameDirectory);
+        Path file = gameDirectory.resolve("options.txt");
+        Files.createDirectories(gameDirectory);
         String existing = Files.exists(file) ? new String(Files.readAllBytes(file), StandardCharsets.UTF_8) : "";
         Files.write(file, merge(existing).getBytes(StandardCharsets.UTF_8));
         return file;
@@ -51,12 +60,16 @@ final class QuietOptions {
 
     /** Sets the quiet values, keeps every other line and its order, appends keys that were missing. */
     static String merge(String existing) {
-        List<String> lines = new ArrayList<>(); Map<String, String> missing = new LinkedHashMap<>(VALUES);
+        List<String> lines = new ArrayList<>();
+        Map<String, String> missing = new LinkedHashMap<>(VALUES);
         for (String line : existing.split("\r?\n")) {
             if (line.isEmpty()) continue;
-            int colon = line.indexOf(':'); String key = colon < 0 ? line : line.substring(0, colon);
-            if (VALUES.containsKey(key)) { lines.add(key + ":" + VALUES.get(key)); missing.remove(key); }
-            else lines.add(line);
+            int colon = line.indexOf(':');
+            String key = colon < 0 ? line : line.substring(0, colon);
+            if (VALUES.containsKey(key)) {
+                lines.add(key + ":" + VALUES.get(key));
+                missing.remove(key);
+            } else lines.add(line);
         }
         missing.forEach((key, value) -> lines.add(key + ":" + value));
         return String.join("\n", lines) + "\n";
