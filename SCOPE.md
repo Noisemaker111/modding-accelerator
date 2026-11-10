@@ -2,7 +2,7 @@
 
 Status: adopted 2026-10-25; platform change, Paper included, became a goal on 2026-11-09. ROADMAP.md holds the steps.
 
-The four goals (AGENTS.md) meet this file in the ladder of section 2: rungs 1 to 4 are Goal 1 (test a mod in seconds), rung 5 is Goal 2 (port to any version) and rung 6 is Goal 4 (change loader or platform). Goal 3 (modpacks) takes installed packs, not source projects, so it has no rung.
+The four goals (README.md) meet this file in the ladder of section 2: rungs 1 to 4 are Goal 1 (test a mod in seconds), rung 5 is Goal 2 (port to any version) and rung 6 is Goal 4 (change loader or platform). Goal 3 (modpacks) takes installed packs, not source projects, so it has no rung.
 
 ## 1. Kinds of projects
 
@@ -65,7 +65,7 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
    - **Fits but fails a rung:** the smallest fix goes on a branch, and a ROADMAP step is added with the exact blocker.
    - **New platform:** apply policy 3. If it qualifies, add a ROADMAP step under its goal for rung 1 or 2 only, not the whole ladder.
    - **Out of scope:** say so plainly in the report, with the reason.
-4. **Record it.** A ledger row for any port run, the pages regenerated (AGENTS.md rule), and the merge gate updated if it became a fixture.
+4. **Record it.** A ledger row for any port run and the merge gate updated if it became a fixture. Pages regenerate on main from the source records.
 
 ## 5. Example: where AgentCraft lands
 
