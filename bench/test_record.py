@@ -7,6 +7,7 @@ import contextlib
 import copy
 import io
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -162,6 +163,22 @@ print(json.dumps({"command": "port", "seconds": 1, "receipt": str(root / "result
     # each run starts from the pinned source: the last port's edits and stray files are gone before the next
     work = port_board.checkout({"id": "known", "repo": str(mod), "commit": commit}, tmp / "cache", [sys.executable, str(stub)])
     check((work / "Mod.java").read_text(encoding="utf-8") == "class Mod {}\n" and not (work / "left-over.txt").exists(), "a case is put back to its pinned commit before it runs")
+
+# ---- bench/rule_test.py: wording an error from a rule's match, and writing a test without moving the file
+import rule_test  # noqa: E402
+
+for pattern, want in ((r"symbol:\s+variable GLFW", "symbol: variable GLFW"), (r"package org\.lwjgl\.glfw does not exist", "package org.lwjgl.glfw does not exist"),
+                      (r"symbol:\s+method getWindow\(\)|symbol:\s+method isKeyDown\(", "symbol: method getWindow()"), (r"symbol:\s+variable (leftHeight|rightHeight)", "symbol: variable leftHeight"),
+                      (r"method send in class (?:Client|Server)PlayNetworking cannot be applied", "method send in class ClientPlayNetworking cannot be applied")):
+    got = rule_test.sample(pattern)
+    check(got == want and re.search(pattern, got), f"an example of {pattern!r} is {want!r}, got {got!r}")
+check(rule_test.sample("(unclosed") == "", "a pattern the sampler cannot read gives no example instead of a wrong one")
+fixes = rule_test.FIXES.read_text(encoding="utf-8")
+some = json.loads(fixes)["rules"][3]
+with_test = rule_test.insert_test(fixes, some["id"], {"error": "e", "before": "a\n", "after": "b\n", "from": "test"})
+parsed = next(r for r in json.loads(with_test)["rules"] if r["id"] == some["id"])
+check(parsed["test"]["after"] == "b\n" and list(parsed)[-1] == "test" and {k: v for k, v in parsed.items() if k != "test" or "test" in some} .keys() >= some.keys(), "a test is added as the rule's last key")
+check(len(with_test.splitlines()) - len(fixes.splitlines()) == 6 and all(l in with_test for l in fixes.splitlines()[:40]), "adding a test changes no other line of knowledge/fixes.json")
 
 check(record.LEDGER.read_text(encoding="utf-8") == before, "the real ledger was not touched")
 print(f"{checks} record and board checks passed")

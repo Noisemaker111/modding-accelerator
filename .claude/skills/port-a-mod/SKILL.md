@@ -30,8 +30,10 @@ Pick the next (mod, loader, from, to) from what is weakest on the map: a step wi
 
 ## Steps
 
-1. **Pin it.** Clone into `.runs/porting/<mod>` at a recorded commit. Check `owl answers whats-running` before heavy
-   work.
+1. **Pin it.** Add the port to `bench/port-cases.json`: the mod's name, repository, the commit, loader, from and to
+   (and a `measure` once it has an errors-left measure). `python bench/port_board.py --only <id>` then clones it into
+   `.runs/port-board/<id>`, puts it back to that commit before every run, and refuses a pin whose `gradle.properties`
+   is on another version than `from`. Check `owl answers whats-running` before heavy work.
 2. **Baseline.** `modaccel compile --root <mod> --json` on its own version. If it does not build there, that is not a
    porting problem: fix the setup first or pick another mod.
 3. **Port.** `modaccel port --root <mod> --from A --to B --fix --json`. A cold NeoForge setup decompiles the game once
@@ -39,11 +41,15 @@ Pick the next (mod, loader, from, to) from what is weakest on the map: a step wi
    PC. Every forward port moves to the same NeoGradle, so the next mod on that version reuses the setup from NeoGradle's
    shared cache; `python -I bench/neoform_steps.py <mod> --since <port start>` shows each step's time and how many cache
    entries the build made (0 = nothing decompiled again). Run NeoForge ports one at a time, so the second finds the
-   first one's setup. Record the remaining error count as a measure
-   (`python -I bench/measures.py add port.errors.<mod>-<loader>-<A>-<B> N ...`).
+   first one's setup. `python bench/port_board.py --only <id>` runs the same port from the pinned source and shows
+   the errors left against the record and the last run, grouped by the update that caused them; add `--record` to
+   write the ledger row and the measure point when the result changed.
 4. **Sort the errors by cause, not one by one.** The port names the update behind each error. For each cause:
    - **A mechanical change** (rename, moved package, new signature, replaced call): a rule in `knowledge/fixes.json`
-     with `jump`, `match`, and a `test {error, before, after}`. Write it in Mojang names and, for Fabric, yarn names too.
+     with `jump` and `match`. Write it in Mojang names and, for Fabric, yarn names too. Then
+     `python bench/rule_test.py --only <rule id> --write` gives it its `test {error, before, after}` from the pinned
+     mods' real source (`--source DIR:yarn|mojmap:LABEL` for a mod that is not pinned); a rule with no test fails
+     `modaccel self-test`.
    - **Needs new code** (a removed system, a redesigned API): a guide in `knowledge/structural.json`, so a stopped port
      names it with the fix to write.
    - **Build setup** (Loom, Gradle, NeoForge or Fabric versions, Parchment, Java): the planner in
@@ -52,8 +58,8 @@ Pick the next (mod, loader, from, to) from what is weakest on the map: a step wi
    - **The porter crashed or said something unclear**: fix it in `tools/cli`, with a `StrangerTest` or `PortableTests`
      line.
    - **The network** (a timeout, a 504): not code. Rerun; if it keeps happening, make the failure retry or say so.
-   Then undo the port (`port --undo`) and run it again from the original source. The error must be gone with no hand
-   edit.
+   Then run `python bench/port_board.py` again: it ports every pinned mod from its original source, so the error
+   must be gone with no hand edit, and no other mod may have got worse (it exits 1 if one did).
 5. **Repeat 3 and 4 until it builds.** Ledger status `build`.
 6. **Load.** Start the game hidden through modaccel (`ui-check`, then `world-check` or `eval --until` a world is
    loaded). If the world never loads, suspect the build setup before the mod: disable the mod's own registrations to
@@ -66,11 +72,14 @@ Pick the next (mod, loader, from, to) from what is weakest on the map: a step wi
    layer. Then break the mod on purpose once (one changed number in its
    source, restored in `finally`) and see the check fail at the comparison. Ledger status `behaviour`.
 8. **Record and check**, on the `porting` branch:
-   - a `coverage/ledger.json` row: mod, loader, from, to, status, date, and a detail saying what was proven and any
-     hand-written file;
-   - measure points and the roadmap step's status and result in `coverage/roadmap.json`;
-   - `python bench/bench_page.py --roadmap`, `python bench/test_measures.py`, `python -I bench/measures.py check`,
-     `python bench/test_ledger_rule.py`, and the self-test from a freshly packaged jar;
+   - the ledger row: `python bench/record.py port RECEIPT --mod NAME` writes it from the receipt `modaccel port`
+     printed. `load` and `behaviour` are claims about the game, so they need `--status` and a `--detail` saying what
+     was checked, by which command, and any hand-written file;
+   - measure points with `python -I bench/measures.py add`, and the roadmap step with
+     `python bench/record.py step ID done --result "what ran and what decided the pass"`;
+   - `modaccel self-test` from a freshly packaged jar (a failure is reported first; `--only SUITE` reruns one suite),
+     `python bench/test_measures.py`, `python bench/test_record.py` and `python bench/test_ledger_rule.py`.
+     `ROADMAP.md` and `docs/` are written on main after the merge; don't regenerate them;
    - every new check broken once on purpose and seen to fail.
 9. **Next rung.** A bigger mod on the same step, or the same mod one family further. Back to step 1.
 

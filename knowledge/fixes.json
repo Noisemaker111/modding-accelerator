@@ -13,7 +13,13 @@
       "scope": "log",
       "when": "",
       "note": "26.3 reads keys through InputConstants, so the GLFW import has no owner left.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "KeyHelper.java:5: error: package org.lwjgl.glfw does not exist\n",
+        "before": "package squeek.appleskin.helpers;\n\nimport net.minecraft.client.Minecraft;\nimport org.lwjgl.glfw.GLFW;\n\n",
+        "after": "package squeek.appleskin.helpers;\n\nimport net.minecraft.client.Minecraft;\n\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/helpers/KeyHelper.java:5"
+      }
     },
     {
       "id": "neo263-key-left-control",
@@ -26,7 +32,13 @@
       "scope": "log",
       "when": "",
       "note": "GLFW key codes became InputConstants constants; LEFT_CONTROL is KEY_LCONTROL.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "KeyHelper.java:13: error: cannot find symbol\n  symbol: variable GLFW\n",
+        "before": "package squeek.appleskin.helpers;\n\n\t\t// prioritize CONTROL, but allow OPTION as well on Mac (note: GuiScreen's isCtrlKeyDown only checks for the OPTION key on Mac)\n\t\tboolean isCtrlKeyDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);\n\t\tif (!isCtrlKeyDown && Minecraft.ON_OSX)\n",
+        "after": "package squeek.appleskin.helpers;\n\n\t\t// prioritize CONTROL, but allow OPTION as well on Mac (note: GuiScreen's isCtrlKeyDown only checks for the OPTION key on Mac)\n\t\tboolean isCtrlKeyDown = InputConstants.isKeyDown(handle, InputConstants.KEY_LCONTROL) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);\n\t\tif (!isCtrlKeyDown && Minecraft.ON_OSX)\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/helpers/KeyHelper.java:13"
+      }
     },
     {
       "id": "neo263-key-right-control",
@@ -39,7 +51,13 @@
       "scope": "log",
       "when": "",
       "note": "GLFW key codes became InputConstants constants; RIGHT_CONTROL is KEY_RCONTROL.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "KeyHelper.java:13: error: cannot find symbol\n  symbol: variable GLFW\n",
+        "before": "package squeek.appleskin.helpers;\n\n\t\t// prioritize CONTROL, but allow OPTION as well on Mac (note: GuiScreen's isCtrlKeyDown only checks for the OPTION key on Mac)\n\t\tboolean isCtrlKeyDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);\n\t\tif (!isCtrlKeyDown && Minecraft.ON_OSX)\n",
+        "after": "package squeek.appleskin.helpers;\n\n\t\t// prioritize CONTROL, but allow OPTION as well on Mac (note: GuiScreen's isCtrlKeyDown only checks for the OPTION key on Mac)\n\t\tboolean isCtrlKeyDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL) || InputConstants.isKeyDown(handle, InputConstants.KEY_RCONTROL);\n\t\tif (!isCtrlKeyDown && Minecraft.ON_OSX)\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/helpers/KeyHelper.java:13"
+      }
     },
     {
       "id": "neo263-key-left-shift",
@@ -52,7 +70,13 @@
       "scope": "log",
       "when": "",
       "note": "GLFW key codes became InputConstants constants; LEFT_SHIFT is KEY_LSHIFT.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "KeyHelper.java:23: error: cannot find symbol\n  symbol: variable GLFW\n",
+        "before": "package squeek.appleskin.helpers;\n\n\t\tlong handle = Minecraft.getInstance().getWindow().getWindow();\n\t\treturn InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SHIFT);\n\t}\n",
+        "after": "package squeek.appleskin.helpers;\n\n\t\tlong handle = Minecraft.getInstance().getWindow().getWindow();\n\t\treturn InputConstants.isKeyDown(handle, InputConstants.KEY_LSHIFT) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SHIFT);\n\t}\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/helpers/KeyHelper.java:23"
+      }
     },
     {
       "id": "neo263-key-right-shift",
@@ -65,7 +89,13 @@
       "scope": "log",
       "when": "",
       "note": "GLFW key codes became InputConstants constants; RIGHT_SHIFT is KEY_RSHIFT.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "KeyHelper.java:23: error: cannot find symbol\n  symbol: variable GLFW\n",
+        "before": "package squeek.appleskin.helpers;\n\n\t\tlong handle = Minecraft.getInstance().getWindow().getWindow();\n\t\treturn InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SHIFT);\n\t}\n",
+        "after": "package squeek.appleskin.helpers;\n\n\t\tlong handle = Minecraft.getInstance().getWindow().getWindow();\n\t\treturn InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT) || InputConstants.isKeyDown(handle, InputConstants.KEY_RSHIFT);\n\t}\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/helpers/KeyHelper.java:23"
+      }
     },
     {
       "id": "neo263-key-left-super",
@@ -78,7 +108,13 @@
       "scope": "log",
       "when": "",
       "note": "The Mac command key is KEY_LGUI, not KEY_LSUPER.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "KeyHelper.java:15: error: cannot find symbol\n  symbol: variable GLFW\n",
+        "before": "package squeek.appleskin.helpers;\n\n\t\tif (!isCtrlKeyDown && Minecraft.ON_OSX)\n\t\t\tisCtrlKeyDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SUPER) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SUPER);\n\n",
+        "after": "package squeek.appleskin.helpers;\n\n\t\tif (!isCtrlKeyDown && Minecraft.ON_OSX)\n\t\t\tisCtrlKeyDown = InputConstants.isKeyDown(handle, InputConstants.KEY_LGUI) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SUPER);\n\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/helpers/KeyHelper.java:15"
+      }
     },
     {
       "id": "neo263-key-right-super",
@@ -91,7 +127,13 @@
       "scope": "log",
       "when": "",
       "note": "The Mac command key is KEY_RGUI, not KEY_RSUPER.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "KeyHelper.java:15: error: cannot find symbol\n  symbol: variable GLFW\n",
+        "before": "package squeek.appleskin.helpers;\n\n\t\tif (!isCtrlKeyDown && Minecraft.ON_OSX)\n\t\t\tisCtrlKeyDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SUPER) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SUPER);\n\n",
+        "after": "package squeek.appleskin.helpers;\n\n\t\tif (!isCtrlKeyDown && Minecraft.ON_OSX)\n\t\t\tisCtrlKeyDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SUPER) || InputConstants.isKeyDown(handle, InputConstants.KEY_RGUI);\n\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/helpers/KeyHelper.java:15"
+      }
     },
     {
       "id": "neo263-iskeydown-window-argument",
@@ -104,7 +146,13 @@
       "scope": "log",
       "when": "",
       "note": "26.3's InputConstants.isKeyDown takes only the key; the window handle is gone.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "KeyHelper.java:13: error: cannot find symbol\n  symbol: method getWindow()\n",
+        "before": "package squeek.appleskin.helpers;\n\n\t\t// prioritize CONTROL, but allow OPTION as well on Mac (note: GuiScreen's isCtrlKeyDown only checks for the OPTION key on Mac)\n\t\tboolean isCtrlKeyDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);\n\t\tif (!isCtrlKeyDown && Minecraft.ON_OSX)\n",
+        "after": "package squeek.appleskin.helpers;\n\n\t\t// prioritize CONTROL, but allow OPTION as well on Mac (note: GuiScreen's isCtrlKeyDown only checks for the OPTION key on Mac)\n\t\tboolean isCtrlKeyDown = InputConstants.isKeyDown(GLFW.GLFW_KEY_LEFT_CONTROL) || InputConstants.isKeyDown(GLFW.GLFW_KEY_RIGHT_CONTROL);\n\t\tif (!isCtrlKeyDown && Minecraft.ON_OSX)\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/helpers/KeyHelper.java:13"
+      }
     },
     {
       "id": "neo263-drop-window-handle",
@@ -117,7 +165,13 @@
       "scope": "log",
       "when": "",
       "note": "The handle line only existed to feed the two-argument isKeyDown; 26.3 has no window argument.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "KeyHelper.java:11: error: cannot find symbol\n  symbol: method getWindow()\n",
+        "before": "package squeek.appleskin.helpers;\n\n\t{\n\t\tlong handle = Minecraft.getInstance().getWindow().getWindow();\n\t\t// prioritize CONTROL, but allow OPTION as well on Mac (note: GuiScreen's isCtrlKeyDown only checks for the OPTION key on Mac)\n",
+        "after": "package squeek.appleskin.helpers;\n\n\t{\n\t\t// prioritize CONTROL, but allow OPTION as well on Mac (note: GuiScreen's isCtrlKeyDown only checks for the OPTION key on Mac)\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/helpers/KeyHelper.java:11"
+      }
     },
     {
       "id": "neo263-platform-check",
@@ -133,7 +187,13 @@
       "scope": "log",
       "when": "",
       "note": "Minecraft.ON_OSX became Util.getPlatform() == Util.OS.OSX.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "KeyHelper.java:14: error: cannot find symbol\n  symbol: variable ON_OSX\n",
+        "before": "package squeek.appleskin.helpers;\n\n\t\tboolean isCtrlKeyDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);\n\t\tif (!isCtrlKeyDown && Minecraft.ON_OSX)\n\t\t\tisCtrlKeyDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SUPER) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SUPER);\n",
+        "after": "package squeek.appleskin.helpers;\nimport net.minecraft.util.Util;\n\n\t\tboolean isCtrlKeyDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);\n\t\tif (!isCtrlKeyDown && Util.getPlatform() == Util.OS.OSX)\n\t\t\tisCtrlKeyDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SUPER) || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SUPER);\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/helpers/KeyHelper.java:14"
+      }
     },
     {
       "id": "neo263-hud-fields",
@@ -146,7 +206,13 @@
       "scope": "log",
       "when": "",
       "note": "The HUD's left and right heights live on mc.gui.hud in 26.3.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "HUDOverlayHandler.java:53: error: cannot find symbol\n  symbol: variable leftHeight\n",
+        "before": "package squeek.appleskin.client;\n\n\t\t\tResourceLocation.fromNamespaceAndPath(ModInfo.MODID, \"health_offset\"),\n\t\t\t(guiGraphics, deltaTracker) -> healthIconsOffset = Minecraft.getInstance().gui.leftHeight\n\t\t);\n",
+        "after": "package squeek.appleskin.client;\n\n\t\t\tResourceLocation.fromNamespaceAndPath(ModInfo.MODID, \"health_offset\"),\n\t\t\t(guiGraphics, deltaTracker) -> healthIconsOffset = Minecraft.getInstance().gui.hud.leftHeight\n\t\t);\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/client/HUDOverlayHandler.java:53"
+      }
     },
     {
       "id": "neo263-hud-ticks",
@@ -159,7 +225,13 @@
       "scope": "log",
       "when": "",
       "note": "The GUI tick counter moved with the HUD state.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "HUDOverlayHandler.java:79: error: cannot find symbol\n  symbol: method getGuiTicks()\n",
+        "before": "package squeek.appleskin.client;\n\n\t\t\tMinecraft mc = Minecraft.getInstance();\n\t\t\tif (mc.player == null || !shouldRenderOverlay(mc, mc.player, guiGraphics, mc.gui.getGuiTicks()))\n\t\t\t\treturn;\n",
+        "after": "package squeek.appleskin.client;\n\n\t\t\tMinecraft mc = Minecraft.getInstance();\n\t\t\tif (mc.player == null || !shouldRenderOverlay(mc, mc.player, guiGraphics, mc.gui.hud.getGuiTicks()))\n\t\t\t\treturn;\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/client/HUDOverlayHandler.java:79"
+      }
     },
     {
       "id": "neo263-hud-hidden",
@@ -172,7 +244,13 @@
       "scope": "log",
       "when": "",
       "note": "GameOptions.hideGui became the HUD's own isHidden(); !hideGui and the new call agree.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "HUDOverlayHandler.java:91: error: cannot find symbol\n  symbol: variable hideGui\n",
+        "before": "package squeek.appleskin.client;\n\n\t\t{\n\t\t\treturn !mc.options.hideGui && mc.gameMode != null && mc.gameMode.canHurtPlayer();\n\t\t}\n",
+        "after": "package squeek.appleskin.client;\n\n\t\t{\n\t\t\treturn !mc.gui.hud.isHidden() && mc.gameMode != null && mc.gameMode.canHurtPlayer();\n\t\t}\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/client/HUDOverlayHandler.java:91"
+      }
     },
     {
       "id": "neo263-current-screen",
@@ -185,7 +263,13 @@
       "scope": "log",
       "when": "",
       "note": "The current screen is read through the GUI in 26.3.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "TooltipOverlayHandler.java:121: error: cannot find symbol\n  symbol: variable screen\n",
+        "before": "package squeek.appleskin.client;\n\n\n\t\t\tScreen gui = mc.screen;\n\t\t\tif (gui == null)\n",
+        "after": "package squeek.appleskin.client;\n\n\n\t\t\tScreen gui = mc.gui.screen();\n\t\t\tif (gui == null)\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/client/TooltipOverlayHandler.java:121"
+      }
     },
     {
       "id": "neo263-tooltip-extract-image",
@@ -198,7 +282,13 @@
       "scope": "log",
       "when": "",
       "note": "ClientTooltipComponent renamed renderImage to extractImage in 26.3.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "TooltipOverlayHandler.java:114: error: method does not override or implement a method from a supertype\n",
+        "before": "package squeek.appleskin.client;\n\n\t\t@Override\n\t\tpublic void renderImage(Font font, int x, int y, int width, int height, GuiGraphics guiGraphics)\n\t\t{\n",
+        "after": "package squeek.appleskin.client;\n\n\t\t@Override\n\t\tpublic void extractImage(Font font, int x, int y, int width, int height, GuiGraphics guiGraphics)\n\t\t{\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/client/TooltipOverlayHandler.java:114"
+      }
     },
     {
       "id": "neo263-tooltip-extract-text",
@@ -211,7 +301,13 @@
       "scope": "log",
       "when": "",
       "note": "ClientTooltipComponent renamed renderText to extractText in 26.3.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "TooltipComponentsElement.java:55: error: method does not override or implement a method from a supertype\n",
+        "before": "//\t\tfor (ClientTooltipComponent component : components) {\n//\t\t\tcomponent.renderText(font, (int) x, ly, matrixStack.last().pose(), multibuffersource$buffersource);\n//\t\t\tly += component.getHeight() + 2;\n",
+        "after": "//\t\tfor (ClientTooltipComponent component : components) {\n//\t\t\tcomponent.extractText(font, (int) x, ly, matrixStack.last().pose(), multibuffersource$buffersource);\n//\t\t\tly += component.getHeight() + 2;\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/impl/ui/TooltipComponentsElement.java:55"
+      }
     },
     {
       "id": "neo263-extractor-text",
@@ -224,7 +320,13 @@
       "scope": "log",
       "when": "",
       "note": "GuiGraphicsExtractor exposes text(...) instead of drawString(...).",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "TooltipOverlayHandler.java:180: error: cannot find symbol\n  symbol: method drawString(Font\n",
+        "before": "package squeek.appleskin.client;\n\n\t\t\t\tposeStack.scale(0.75f, 0.75f);\n\t\t\t\tguiGraphics.drawString(font, foodTooltip.hungerBarsText, 2, 2, 0xFFAAAAAA);\n\t\t\t\tposeStack.popMatrix();\n",
+        "after": "package squeek.appleskin.client;\n\n\t\t\t\tposeStack.scale(0.75f, 0.75f);\n\t\t\t\tguiGraphics.text(font, foodTooltip.hungerBarsText, 2, 2, 0xFFAAAAAA);\n\t\t\t\tposeStack.popMatrix();\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/client/TooltipOverlayHandler.java:180"
+      }
     },
     {
       "id": "neo263-dist-getter",
@@ -237,7 +339,13 @@
       "scope": "log",
       "when": "",
       "note": "FMLEnvironment.dist became a getter in NeoForge 26.3.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "AppleSkin.java:29: error: cannot find symbol\n  symbol: variable dist\n",
+        "before": "package squeek.appleskin;\n\n\t\tmodEventBus.addListener(this::onRegisterPayloadHandler);\n\t\tif (FMLEnvironment.dist.isClient())\n\t\t{\n",
+        "after": "package squeek.appleskin;\n\n\t\tmodEventBus.addListener(this::onRegisterPayloadHandler);\n\t\tif (FMLEnvironment.getDist().isClient())\n\t\t{\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/AppleSkin.java:29"
+      }
     },
     {
       "id": "neo263-gamerule-name",
@@ -250,7 +358,13 @@
       "scope": "log",
       "when": "",
       "note": "26.3 renamed the natural regeneration rule.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "SyncHandler.java:90: error: cannot find symbol\n  symbol: variable GameRules\n",
+        "before": "package squeek.appleskin.network;\n\n\t{\n\t\tvar cur = event.getServer().getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION);\n\t\tif (naturalRegeneration != cur)\n",
+        "after": "package squeek.appleskin.network;\n\n\t{\n\t\tvar cur = event.getServer().getGameRules().getBoolean(GameRules.NATURAL_HEALTH_REGENERATION);\n\t\tif (naturalRegeneration != cur)\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/network/SyncHandler.java:90"
+      }
     },
     {
       "id": "neo263-gamerule-get",
@@ -263,7 +377,13 @@
       "scope": "log",
       "when": "",
       "note": "GameRules.get takes a typed rule in 26.3.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: part of the rule set that took 82 compile errors to 1 and a packaged build with the mixin audit (.runs/appleskin-nf-263-run7.json)",
+      "test": {
+        "error": "SyncHandler.java:90: error: cannot find symbol\n  symbol: method getBoolean\n",
+        "before": "package squeek.appleskin.network;\n\n\t{\n\t\tvar cur = event.getServer().getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION);\n\t\tif (naturalRegeneration != cur)\n",
+        "after": "package squeek.appleskin.network;\n\n\t{\n\t\tvar cur = event.getServer().getGameRules().get(GameRules.RULE_NATURAL_REGENERATION);\n\t\tif (naturalRegeneration != cur)\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/network/SyncHandler.java:90"
+      }
     },
     {
       "id": "neo-debug-text-entry",
@@ -333,7 +453,13 @@
       "scope": "repo",
       "when": "",
       "note": "26.x renamed ResourceLocation to Identifier; the import line moves with the type because the same replacement rewrites net.minecraft.resources.ResourceLocation.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)",
+      "test": {
+        "error": "HUDOverlayHandler.java:7: error: cannot find symbol\n  symbol: class ResourceLocation\n",
+        "before": "package squeek.appleskin.client;\n\nimport net.minecraft.client.renderer.RenderPipelines;\nimport net.minecraft.resources.ResourceLocation;\nimport net.minecraft.util.RandomSource;\n",
+        "after": "package squeek.appleskin.client;\n\nimport net.minecraft.client.renderer.RenderPipelines;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.util.RandomSource;\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/client/HUDOverlayHandler.java:7"
+      }
     },
     {
       "id": "gui-graphics-extractor",
@@ -349,7 +475,13 @@
       "scope": "repo",
       "when": "",
       "note": "26.x replaced GuiGraphics with GuiGraphicsExtractor; the drawing calls it exposes are the same ones the 1.21.6 branch used.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)",
+      "test": {
+        "error": "HUDOverlayEvent.java:3: error: cannot find symbol\n  symbol: class GuiGraphics\n",
+        "before": "package squeek.appleskin.api.event;\n\n\nimport net.minecraft.client.gui.GuiGraphics;\nimport net.minecraft.world.food.FoodProperties;\n",
+        "after": "package squeek.appleskin.api.event;\n\n\nimport net.minecraft.client.gui.GuiGraphicsExtractor;\nimport net.minecraft.world.food.FoodProperties;\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/api/event/HUDOverlayEvent.java:3"
+      }
     },
     {
       "id": "gamerules-package-move",
@@ -362,7 +494,13 @@
       "scope": "repo",
       "when": "",
       "note": "26.x moved GameRules into net.minecraft.world.level.gamerules; both the yarn and the NeoForge import paths are rewritten, and the simple name stayed.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)",
+      "test": {
+        "error": "FoodHelper.java:14: error: cannot find symbol\n  symbol: class GameRules\n",
+        "before": "package squeek.appleskin.helpers;\n\nimport net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;\nimport net.minecraft.world.level.GameRules;\nimport net.minecraft.world.level.Level;\n",
+        "after": "package squeek.appleskin.helpers;\n\nimport net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;\nimport net.minecraft.world.level.gamerules.GameRules;\nimport net.minecraft.world.level.Level;\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/helpers/FoodHelper.java:14"
+      }
     },
     {
       "id": "rendertype-package-move",
@@ -375,7 +513,13 @@
       "scope": "repo",
       "when": "",
       "note": "26.x moved RenderType into net.minecraft.client.renderer.rendertype.",
-      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)"
+      "verified": "AppleSkin 1.21.6-neoforge -> 26.3: applied in one round, 82 -> 22 compile errors, no new error (.runs/appleskin-nf-263-run2.json)",
+      "test": {
+        "error": "TooltipOverlayHandler.java:11: error: cannot find symbol\n  symbol: class RenderType\n",
+        "before": "package squeek.appleskin.client;\n\nimport net.minecraft.client.renderer.RenderPipelines;\nimport net.minecraft.client.renderer.RenderType;\nimport net.minecraft.core.component.DataComponents;\n",
+        "after": "package squeek.appleskin.client;\n\nimport net.minecraft.client.renderer.RenderPipelines;\nimport net.minecraft.client.renderer.rendertype.RenderType;\nimport net.minecraft.core.component.DataComponents;\n",
+        "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/client/TooltipOverlayHandler.java:11"
+      }
     },
     {
       "id": "identifier-constructor-two-arg",
@@ -388,7 +532,13 @@
       "scope": "log",
       "when": "",
       "note": "1.21.2 privatised the Identifier constructors; the two-argument form is Identifier.of(namespace, path).",
-      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)",
+      "test": {
+        "error": "TextureHelper.java:8: error: Identifier(String,String) has private access\n",
+        "before": "package squeek.appleskin.helpers;\n\n\tpublic static final Identifier MC_ICONS = new Identifier(\"textures/gui/icons.png\");\n\tpublic static final Identifier MOD_ICONS = new Identifier(\"appleskin\", \"textures/icons.png\");\n}\n",
+        "after": "package squeek.appleskin.helpers;\n\n\tpublic static final Identifier MC_ICONS = new Identifier(\"textures/gui/icons.png\");\n\tpublic static final Identifier MOD_ICONS = Identifier.of(\"appleskin\", \"textures/icons.png\");\n}\n",
+        "from": "AppleSkin fabric 1.20.1 at c6751d6d, java/squeek/appleskin/helpers/TextureHelper.java:8"
+      }
     },
     {
       "id": "identifier-constructor-one-arg",
@@ -401,7 +551,13 @@
       "scope": "log",
       "when": "",
       "note": "The single-argument form is Identifier.ofVanilla(path) for vanilla resources; mod-owned paths use the two-argument rule.",
-      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)",
+      "test": {
+        "error": "TextureHelper.java:7: error: constructor Identifier in class Identifier cannot be applied\n",
+        "before": "package squeek.appleskin.helpers;\n\n\n\tpublic static final Identifier MC_ICONS = new Identifier(\"textures/gui/icons.png\");\n\tpublic static final Identifier MOD_ICONS = new Identifier(\"appleskin\", \"textures/icons.png\");\n",
+        "after": "package squeek.appleskin.helpers;\n\n\n\tpublic static final Identifier MC_ICONS = Identifier.ofVanilla(\"textures/gui/icons.png\");\n\tpublic static final Identifier MOD_ICONS = new Identifier(\"appleskin\", \"textures/icons.png\");\n",
+        "from": "AppleSkin fabric 1.20.1 at c6751d6d, java/squeek/appleskin/helpers/TextureHelper.java:7"
+      }
     },
     {
       "id": "item-is-food-component",
@@ -417,7 +573,13 @@
       "scope": "log",
       "when": "",
       "note": "Item#isFood() was removed with the component migration; a stack is food when it carries the FOOD component.",
-      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)",
+      "test": {
+        "error": "FoodHelper.java:22: error: cannot find symbol\n  symbol: method isFood()\n",
+        "before": "package squeek.appleskin.helpers;\n\n\n\t\treturn itemStack.getItem().isFood();\n\t}\n",
+        "after": "package squeek.appleskin.helpers;\nimport net.minecraft.component.DataComponentTypes;\n\n\n\t\treturn itemStack.contains(DataComponentTypes.FOOD);\n\t}\n",
+        "from": "AppleSkin fabric 1.20.1 at c6751d6d, java/squeek/appleskin/helpers/FoodHelper.java:22"
+      }
     },
     {
       "id": "item-get-food-component",
@@ -433,7 +595,13 @@
       "scope": "log",
       "when": "",
       "note": "The food values moved onto the stack; get(FOOD) replaces Item#getFoodComponent().",
-      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)",
+      "test": {
+        "error": "FoodHelper.java:31: error: cannot find symbol\n  symbol: method getFoodComponent()\n",
+        "before": "package squeek.appleskin.helpers;\n\n\n\t\tFoodComponent itemFood = itemStack.getItem().getFoodComponent();\n\t\tif (itemFood == null)\n",
+        "after": "package squeek.appleskin.helpers;\nimport net.minecraft.component.DataComponentTypes;\n\n\n\t\tFoodComponent itemFood = itemStack.get(DataComponentTypes.FOOD);\n\t\tif (itemFood == null)\n",
+        "from": "AppleSkin fabric 1.20.1 at c6751d6d, java/squeek/appleskin/helpers/FoodHelper.java:31"
+      }
     },
     {
       "id": "food-component-nutrition",
@@ -446,7 +614,13 @@
       "scope": "log",
       "when": "",
       "note": "FoodComponent is a record in 1.21.2+: the hunger value is the nutrition() accessor.",
-      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)",
+      "test": {
+        "error": "FoodHelper.java:41: error: cannot find symbol\n  symbol: method getHunger()\n",
+        "before": "package squeek.appleskin.helpers;\n\n\t\tFoodComponent itemFood = itemStack.getItem().getFoodComponent();\n\t\tint hunger = itemFood != null ? itemFood.getHunger() : 0;\n\t\tfloat saturationModifier = itemFood != null ? itemFood.getSaturationModifier() : 0;\n",
+        "after": "package squeek.appleskin.helpers;\n\n\t\tFoodComponent itemFood = itemStack.getItem().getFoodComponent();\n\t\tint hunger = itemFood != null ? itemFood.nutrition() : 0;\n\t\tfloat saturationModifier = itemFood != null ? itemFood.getSaturationModifier() : 0;\n",
+        "from": "AppleSkin fabric 1.20.1 at c6751d6d, java/squeek/appleskin/helpers/FoodHelper.java:41"
+      }
     },
     {
       "id": "food-component-saturation",
@@ -479,7 +653,13 @@
       "scope": "log",
       "when": "",
       "note": "GameOptions.debugEnabled was removed; the debug HUD answers for itself in 1.21.6.",
-      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)"
+      "verified": "AppleSkin 1.20.1->1.21.6 (yarn): applied in one round, 62 -> 51 compile errors, no new error (.runs/appleskin-rule-run.json, .runs/beta-trials/appleskin-1201-port7.json)",
+      "test": {
+        "error": "DebugInfoHandler.java:37: error: cannot find symbol\n  symbol: variable debugEnabled\n",
+        "before": "package squeek.appleskin.client;\n\n\n\t\tif (!mc.options.debugEnabled)\n\t\t\treturn;\n",
+        "after": "package squeek.appleskin.client;\n\n\n\t\tif (!mc.getDebugHud().shouldShowDebugHud())\n\t\t\treturn;\n",
+        "from": "AppleSkin fabric 1.20.1 at c6751d6d, java/squeek/appleskin/client/DebugInfoHandler.java:37"
+      }
     },
     {
       "id": "nbt-getboolean-optional",
@@ -492,7 +672,13 @@
       "scope": "repo",
       "when": "",
       "note": "Every getter rule carries the same match: the whole Optional family, not one type. javac stops after the first wave, so a log that shows only Optional<Integer> still proves the target API and the sweep must cover the Boolean/Long/String sites it has not reached. The key group is a string literal, an ALL_CAPS constant or a single lowercase identifier (a ListTag index); the lookahead leaves a call that is already consumed as an Optional alone.",
-      "verified": "Traveler's Backpack 1.21.4->1.21.5: 39 sites in one round; the copy went 100 -> 6 reported errors, and with only the six removed-class imports hand-cleared javac reported 64 errors, none of them getter-family (bench/fix-test/tb, .runs/logs/port-fix-20261022-205549.log)"
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 39 sites in one round; the copy went 100 -> 6 reported errors, and with only the six removed-class imports hand-cleared javac reported 64 errors, none of them getter-family (bench/fix-test/tb, .runs/logs/port-fix-20261022-205549.log)",
+      "test": {
+        "error": "ApocalypseWorldData.java:32: error: incompatible types: Optional<Boolean> cannot be converted\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        ApocalypseWorldData data = new ApocalypseWorldData();\n        data.hordeActive = tag.getBoolean(\"hordeActive\");\n        data.hordeEndGameTime = tag.getLong(\"hordeEndGameTime\");\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        ApocalypseWorldData data = new ApocalypseWorldData();\n        data.hordeActive = tag.getBooleanOr(\"hordeActive\", false);\n        data.hordeEndGameTime = tag.getLong(\"hordeEndGameTime\");\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ApocalypseWorldData.java:32"
+      }
     },
     {
       "id": "nbt-getint-optional",
@@ -505,7 +691,13 @@
       "scope": "repo",
       "when": "",
       "note": "getInt returned 0 for a missing key before 1.21.5, so 0 is behaviour-preserving. One site used Tiers.LEATHER.getOrdinal(), which is also 0, so the same default held.",
-      "verified": "Traveler's Backpack 1.21.4->1.21.5: 38 sites, one round, no getter-family error in the 64-error follow-up build (bench/fix-test/tb)"
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 38 sites, one round, no getter-family error in the 64-error follow-up build (bench/fix-test/tb)",
+      "test": {
+        "error": "StatisticsManager.java:41: error: incompatible types: Optional<Boolean> cannot be converted\n",
+        "before": "package com.rique.zombieapocalypse;\n\n                if (entry.hasUUID(\"uuid\")) {\n                    manager.playerKills.put(entry.getUUID(\"uuid\"), Math.max(0, entry.getInt(\"count\")));\n                }\n",
+        "after": "package com.rique.zombieapocalypse;\n\n                if (entry.hasUUID(\"uuid\")) {\n                    manager.playerKills.put(entry.getUUID(\"uuid\"), Math.max(0, entry.getIntOr(\"count\", 0)));\n                }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/StatisticsManager.java:41"
+      }
     },
     {
       "id": "nbt-getlong-optional",
@@ -518,7 +710,13 @@
       "scope": "repo",
       "when": "",
       "note": "0L is what getLong returned for a missing key before 1.21.5.",
-      "verified": "Traveler's Backpack 1.21.4->1.21.5: 8 sites, one round, no getter-family error later (bench/fix-test/tb)"
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 8 sites, one round, no getter-family error later (bench/fix-test/tb)",
+      "test": {
+        "error": "ApocalypseWorldData.java:33: error: incompatible types: Optional<Boolean> cannot be converted\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        data.hordeActive = tag.getBoolean(\"hordeActive\");\n        data.hordeEndGameTime = tag.getLong(\"hordeEndGameTime\");\n        data.lastHordeRollDay = tag.contains(\"lastHordeRollDay\") ? tag.getLong(\"lastHordeRollDay\") : -1L;\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        data.hordeActive = tag.getBoolean(\"hordeActive\");\n        data.hordeEndGameTime = tag.getLongOr(\"hordeEndGameTime\", 0L);\n        data.lastHordeRollDay = tag.contains(\"lastHordeRollDay\") ? tag.getLongOr(\"lastHordeRollDay\", 0L) : -1L;\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ApocalypseWorldData.java:33"
+      }
     },
     {
       "id": "nbt-getfloat-optional",
@@ -531,7 +729,13 @@
       "scope": "repo",
       "when": "",
       "note": "0F keeps the pre-1.21.5 absent-key value.",
-      "verified": "Traveler's Backpack 1.21.4->1.21.5: 1 site, one round (bench/fix-test/tb)"
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 1 site, one round (bench/fix-test/tb)",
+      "test": {
+        "error": "ItemStorageProvider.java:144: error: incompatible types: Optional<Boolean> cannot be converted\n",
+        "before": "package snownee.jade.addon.universal;\n\n\t\t\t\tif (data != null && data.contains(\"Collecting\", Tag.TAG_ANY_NUMERIC)) {\n\t\t\t\t\tfloat progress = data.getFloat(\"Collecting\");\n\t\t\t\t\tif (progress < 1) {\n",
+        "after": "package snownee.jade.addon.universal;\n\n\t\t\t\tif (data != null && data.contains(\"Collecting\", Tag.TAG_ANY_NUMERIC)) {\n\t\t\t\t\tfloat progress = data.getFloatOr(\"Collecting\", 0F);\n\t\t\t\t\tif (progress < 1) {\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/universal/ItemStorageProvider.java:144"
+      }
     },
     {
       "id": "nbt-getdouble-optional",
@@ -544,7 +748,13 @@
       "scope": "repo",
       "when": "",
       "note": "0D keeps the pre-1.21.5 absent-key value.",
-      "verified": "Traveler's Backpack 1.21.4->1.21.5: 2 sites, one round (bench/fix-test/tb)"
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 2 sites, one round (bench/fix-test/tb)",
+      "test": {
+        "error": "ServerboundActionTagPacket.java:84: error: incompatible types: Optional<Boolean> cannot be converted\n",
+        "before": "package com.tiviacz.travelersbackpack.network;\n\n                case SWAP_TOOL -> {\n                    double scrollDelta = actionTag.getDouble(\"Arg0\");\n                    ServerActions.swapTool(player, scrollDelta);\n",
+        "after": "package com.tiviacz.travelersbackpack.network;\n\n                case SWAP_TOOL -> {\n                    double scrollDelta = actionTag.getDoubleOr(\"Arg0\", 0D);\n                    ServerActions.swapTool(player, scrollDelta);\n",
+        "from": "Traveler's Backpack neoforge 1.21.4 at 32fbb9dd, src/main/java/com/tiviacz/travelersbackpack/network/ServerboundActionTagPacket.java:84"
+      }
     },
     {
       "id": "nbt-getstring-optional",
@@ -557,7 +767,13 @@
       "scope": "repo",
       "when": "",
       "note": "Empty string is the old absent-key value. Chaining after the call is normal and safe: nbt.getString(k).split(\",\") becomes nbt.getStringOr(k, \"\").split(\",\"). The first, unguarded version of this rule also rewrote Brigadier's StringArgumentType.getString(ctx, name), which keeps its old signature in 1.21.5; requiring the key to be a literal, a constant or a single identifier stops that, because a two-argument call no longer matches.",
-      "verified": "Traveler's Backpack 1.21.4->1.21.5: 10 sites, one round, no getter-family error later (bench/fix-test/tb)"
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 10 sites, one round, no getter-family error later (bench/fix-test/tb)",
+      "test": {
+        "error": "EnergyStorageProvider.java:66: error: incompatible types: Optional<Boolean> cannot be converted\n",
+        "before": "package snownee.jade.addon.universal;\n\n\n\t\tvar provider = Optional.ofNullable(ResourceLocation.tryParse(accessor.getServerData().getString(\"JadeEnergyStorageUid\"))).map(\n\t\t\t\tWailaClientRegistration.instance().energyStorageProviders::get).orElse(null);\n",
+        "after": "package snownee.jade.addon.universal;\n\n\n\t\tvar provider = Optional.ofNullable(ResourceLocation.tryParse(accessor.getServerData().getStringOr(\"JadeEnergyStorageUid\", \"\"))).map(\n\t\t\t\tWailaClientRegistration.instance().energyStorageProviders::get).orElse(null);\n",
+        "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/addon/universal/EnergyStorageProvider.java:66"
+      }
     },
     {
       "id": "nbt-getcompound-optional",
@@ -570,7 +786,13 @@
       "scope": "repo",
       "when": "",
       "note": "There is no getCompoundOr(key, default): getCompoundOrEmpty(key) returns a new empty tag, exactly what the old getter returned for a missing key. The same rule covers ListTag.getCompound(index), which is why the key group accepts a bare lowercase identifier.",
-      "verified": "Traveler's Backpack 1.21.4->1.21.5: 12 sites, one round, no getter-family error later (bench/fix-test/tb)"
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: 12 sites, one round, no getter-family error later (bench/fix-test/tb)",
+      "test": {
+        "error": "StatisticsManager.java:39: error: incompatible types: Optional<Boolean> cannot be converted\n",
+        "before": "package com.rique.zombieapocalypse;\n\n            for (int i = 0; i < killsList.size(); i++) {\n                CompoundTag entry = killsList.getCompound(i);\n                if (entry.hasUUID(\"uuid\")) {\n",
+        "after": "package com.rique.zombieapocalypse;\n\n            for (int i = 0; i < killsList.size(); i++) {\n                CompoundTag entry = killsList.getCompoundOrEmpty(i);\n                if (entry.hasUUID(\"uuid\")) {\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/StatisticsManager.java:39"
+      }
     },
     {
       "id": "nbt-getlist-optional",
@@ -583,7 +805,13 @@
       "scope": "repo",
       "when": "",
       "note": "Covers both the Optional return and the removed two-argument getList(key, elementType), which had no Or form; the type argument is dropped because getListOrEmpty only takes the key.",
-      "verified": "Traveler's Backpack 1.21.4->1.21.5: nbt.getList(\"Items\", Tag.TAG_COMPOUND) -> nbt.getListOrEmpty(\"Items\") in ItemStackHandler.deserializeNBT, and the file compiled in the follow-up build (bench/fix-test/tb)"
+      "verified": "Traveler's Backpack 1.21.4->1.21.5: nbt.getList(\"Items\", Tag.TAG_COMPOUND) -> nbt.getListOrEmpty(\"Items\") in ItemStackHandler.deserializeNBT, and the file compiled in the follow-up build (bench/fix-test/tb)",
+      "test": {
+        "error": "StatisticsManager.java:37: error: incompatible types: Optional<Boolean> cannot be converted\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        if (tag.contains(KILLS_KEY, Tag.TAG_LIST)) {\n            ListTag killsList = tag.getList(KILLS_KEY, Tag.TAG_COMPOUND);\n            for (int i = 0; i < killsList.size(); i++) {\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        if (tag.contains(KILLS_KEY, Tag.TAG_LIST)) {\n            ListTag killsList = tag.getListOrEmpty(KILLS_KEY);\n            for (int i = 0; i < killsList.size(); i++) {\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/StatisticsManager.java:37"
+      }
     },
     {
       "id": "fabrictag-provider-valuelookup",
@@ -630,7 +858,13 @@
       "scope": "log",
       "when": "EntityTypeTagProvider",
       "note": "ProvidedTagBuilder has no add(Identifier); only the removed FabricTagBuilder did. Entity-type tags therefore wrap the Identifier in RegistryKey.of(RegistryKeys.ENTITY_TYPE, id), and the two registry imports are added when absent. This is the only site the old chain cannot keep, which is why it needs its own round.",
-      "verified": "Traverse 1.21.5->1.21.6: 2 sites in round 2, then BUILD SUCCESSFUL; the four rewritten providers are byte-identical to the recorded manual repair (bench/fix-test/traverse, .runs/logs/port-fix-20261022-205544.log)"
+      "verified": "Traverse 1.21.5->1.21.6: 2 sites in round 2, then BUILD SUCCESSFUL; the four rewritten providers are byte-identical to the recorded manual repair (bench/fix-test/traverse, .runs/logs/port-fix-20261022-205544.log)",
+      "test": {
+        "error": "TraverseEntityTypeTagProvider.java:26: error: cannot find symbol\n  symbol:   method add(Identifier)\n",
+        "before": "package com.terraformersmc.traverse.data;\n\npublic class TraverseEntityTypeTagProvider extends FabricTagProvider.EntityTypeTagProvider {\n\t\tgetOrCreateTagBuilder(EntityTypeTags.BOAT)\n\t\t\t\t.add(TraverseBoats.FIR.withSuffixedPath(\"_boat\"));\n\n",
+        "after": "package com.terraformersmc.traverse.data;\nimport net.minecraft.registry.RegistryKeys;\nimport net.minecraft.registry.RegistryKey;\n\npublic class TraverseEntityTypeTagProvider extends FabricTagProvider.EntityTypeTagProvider {\n\t\tgetOrCreateTagBuilder(EntityTypeTags.BOAT)\n\t\t\t\t.add(RegistryKey.of(RegistryKeys.ENTITY_TYPE, TraverseBoats.FIR.withSuffixedPath(\"_boat\")));\n\n",
+        "from": "Traverse fabric 1.21.5 at c9e324bb, common/src/main/java/com/terraformersmc/traverse/data/TraverseEntityTypeTagProvider.java:26"
+      }
     },
     {
       "id": "inventory-items-get",
@@ -643,7 +877,13 @@
       "scope": "repo",
       "when": "",
       "note": "Inventory.items became private and Inventory exposes getItem(int)/getNonEquipmentItems(). The receiver must be getInventory() or a variable literally named inventory (the player inventory field of AbstractContainerMenu, as in the two menu classes); that prefix is what keeps the sweep off a mod's own NonNullList fields such as BackpackContainerContents.items and AbstractSmeltingUpgrade.items, which javap cannot tell apart but the text can. javap 1.21.5 Inventory: no public items field, getItem(int) and getNonEquipmentItems() present.",
-      "verified": "Traveler's Backpack 1.21.4->1.21.5 copy (bench/fix-test/tbx): 10 sites in round 1 of a 100-error wave, 100 -> 33 errors over 3 rounds (.runs/logs/port-fix-20261023-113005.log); green-sources probe: 1 site, then clean compile"
+      "verified": "Traveler's Backpack 1.21.4->1.21.5 copy (bench/fix-test/tbx): 10 sites in round 1 of a 100-error wave, 100 -> 33 errors over 3 rounds (.runs/logs/port-fix-20261023-113005.log); green-sources probe: 1 site, then clean compile",
+      "test": {
+        "error": "ServerActions.java:183: error: items has private access in Inventory\n",
+        "before": "package com.tiviacz.travelersbackpack.common;\n\n        if(index >= 0 && index < player.getInventory().items.size()) {\n            ItemStack backpackStack = player.getInventory().items.get(index);\n            if(backpackStack.getItem() instanceof TravelersBackpackItem) {\n",
+        "after": "package com.tiviacz.travelersbackpack.common;\n\n        if(index >= 0 && index < player.getInventory().items.size()) {\n            ItemStack backpackStack = player.getInventory().getItem(index);\n            if(backpackStack.getItem() instanceof TravelersBackpackItem) {\n",
+        "from": "Traveler's Backpack neoforge 1.21.4 at 32fbb9dd, src/main/java/com/tiviacz/travelersbackpack/common/ServerActions.java:183"
+      }
     },
     {
       "id": "inventory-items-set",
@@ -656,7 +896,13 @@
       "scope": "repo",
       "when": "",
       "note": "Inventory.setItem(int, ItemStack) has the same two arguments as the old NonNullList.set, so only the field access moves out of the way. Same receiver guard as inventory-items-get: a mod's own items.set (BackpackContainerContents.items.set, AbstractSmeltingUpgrade.items.setStackInSlot) has no getInventory()/inventory prefix and is left alone.",
-      "verified": "Traveler's Backpack copy: 3 sites in round 1 of the same run (100 -> 33); probe: 1 site, then clean compile"
+      "verified": "Traveler's Backpack copy: 3 sites in round 1 of the same run (100 -> 33); probe: 1 site, then clean compile",
+      "test": {
+        "error": "FeedingUpgrade.java:166: error: items has private access in Inventory\n",
+        "before": "package com.tiviacz.travelersbackpack.inventory.upgrades.feeding;\n\n            ItemStack mainHandItem = player.getMainHandItem();\n            player.getInventory().items.set(player.getInventory().selected, stack);\n\n",
+        "after": "package com.tiviacz.travelersbackpack.inventory.upgrades.feeding;\n\n            ItemStack mainHandItem = player.getMainHandItem();\n            player.getInventory().setItem(player.getInventory().selected, stack);\n\n",
+        "from": "Traveler's Backpack neoforge 1.21.4 at 32fbb9dd, src/main/java/com/tiviacz/travelersbackpack/inventory/upgrades/feeding/FeedingUpgrade.java:166"
+      }
     },
     {
       "id": "inventory-items-size",
@@ -669,7 +915,13 @@
       "scope": "repo",
       "when": "",
       "note": "getNonEquipmentItems() returns the same NonNullList<ItemStack>, so size() and iteration keep their meaning (41 slots, hotbar included). Needed because javac reports one error per statement: a for loop written as items.size() reports at the guard, not at the loop body.",
-      "verified": "Traveler's Backpack copy: 3 sites in round 1 of the same run (100 -> 33); probe: 1 site, then clean compile"
+      "verified": "Traveler's Backpack copy: 3 sites in round 1 of the same run (100 -> 33); probe: 1 site, then clean compile",
+      "test": {
+        "error": "ServerActions.java:182: error: items has private access in Inventory\n",
+        "before": "package com.tiviacz.travelersbackpack.common;\n\n    public static void openBackpackFromSlot(ServerPlayer player, int index, boolean fromSlot) {\n        if(index >= 0 && index < player.getInventory().items.size()) {\n            ItemStack backpackStack = player.getInventory().items.get(index);\n",
+        "after": "package com.tiviacz.travelersbackpack.common;\n\n    public static void openBackpackFromSlot(ServerPlayer player, int index, boolean fromSlot) {\n        if(index >= 0 && index < player.getInventory().getNonEquipmentItems().size()) {\n            ItemStack backpackStack = player.getInventory().items.get(index);\n",
+        "from": "Traveler's Backpack neoforge 1.21.4 at 32fbb9dd, src/main/java/com/tiviacz/travelersbackpack/common/ServerActions.java:182"
+      }
     },
     {
       "id": "inventory-selected-slot",
@@ -682,7 +934,13 @@
       "scope": "repo",
       "when": "",
       "note": "Inventory.selected became private; getSelectedSlot() reads the same index. The (?!\\s*\\() lookahead is the counter-example guard: getInventory().getSelected() is a different, still-existing method name and is not rewritten (its own removal to getSelectedItem() is a separate family with no rule).",
-      "verified": "Traveler's Backpack copy: 11 sites in round 1 of the same run (100 -> 33); probe: 2 sites, and getSelectedItem() in the same method stayed (clean compile)"
+      "verified": "Traveler's Backpack copy: 11 sites in round 1 of the same run (100 -> 33); probe: 2 sites, and getSelectedItem() in the same method stayed (clean compile)",
+      "test": {
+        "error": "BackpackScreen.java:250: error: items has private access in Inventory\n",
+        "before": "package com.tiviacz.travelersbackpack.client.screens;\n\n        int xOffset = 0;\n        if(getWrapper().getScreenID() == Reference.ITEM_SCREEN_ID && getWrapper().getBackpackSlotIndex() == getScreenPlayer().getInventory().selected) {\n            if(!TravelersBackpack.enableIntegration()) {\n",
+        "after": "package com.tiviacz.travelersbackpack.client.screens;\n\n        int xOffset = 0;\n        if(getWrapper().getScreenID() == Reference.ITEM_SCREEN_ID && getWrapper().getBackpackSlotIndex() == getScreenPlayer().getInventory().getSelectedSlot()) {\n            if(!TravelersBackpack.enableIntegration()) {\n",
+        "from": "Traveler's Backpack neoforge 1.21.4 at 32fbb9dd, src/main/java/com/tiviacz/travelersbackpack/client/screens/BackpackScreen.java:250"
+      }
     },
     {
       "id": "itemstack-parseoptional",
@@ -695,7 +953,13 @@
       "scope": "repo",
       "when": "",
       "note": "ItemStack.parseOptional(provider, tag) is gone; ItemStack.parse(provider, tag) returns Optional<ItemStack>, and orElse(ItemStack.EMPTY) is what parseOptional itself returned for an absent or malformed tag, so this is behaviour-preserving rather than a guess. javap 1.21.5 ItemStack shows parse(HolderLookup.Provider, Tag) -> Optional<ItemStack> and no parseOptional. Counter-example: the mod's own static FluidVariantWrapper.parseOptional(provider, tag) stays, because the find requires the ItemStack. qualifier (its own call sites in FluidTank/RenderInfo are untouched). Argument capture handles one nesting level of parens, which covers every real call site seen.",
-      "verified": "Traveler's Backpack copy: 3 sites in round 1 (BackpackBlockEntity, BackpackManager, TravelersBackpackComponent); probe: 2 sites, and FluidVariantWrapper.parseOptional stayed (clean compile)"
+      "verified": "Traveler's Backpack copy: 3 sites in round 1 (BackpackBlockEntity, BackpackManager, TravelersBackpackComponent); probe: 2 sites, and FluidVariantWrapper.parseOptional stayed (clean compile)",
+      "test": {
+        "error": "BackpackBlockEntity.java:108: error: method parseOptional(\n",
+        "before": "package com.tiviacz.travelersbackpack.blockentity;\n\n    private void setBackpackFromNbt(CompoundTag nbt, HolderLookup.Provider pRegistries) {\n        setBackpack(ItemStack.parseOptional(pRegistries, nbt.getCompound(BACKPACK)), pRegistries);\n    }\n",
+        "after": "package com.tiviacz.travelersbackpack.blockentity;\n\n    private void setBackpackFromNbt(CompoundTag nbt, HolderLookup.Provider pRegistries) {\n        setBackpack(ItemStack.parse(pRegistries, nbt.getCompound(BACKPACK)).orElse(ItemStack.EMPTY), pRegistries);\n    }\n",
+        "from": "Traveler's Backpack neoforge 1.21.4 at 32fbb9dd, src/main/java/com/tiviacz/travelersbackpack/blockentity/BackpackBlockEntity.java:108"
+      }
     },
     {
       "id": "item-appendhovertext-signature",
@@ -712,7 +976,13 @@
       "scope": "log",
       "when": "",
       "note": "javap 1.21.5 Item.appendHoverText(ItemStack, Item.TooltipContext, TooltipDisplay, Consumer<Component>, TooltipFlag); the old List<Component> parameter became a consumer and TooltipDisplay is new. The find only matches a declaration (it needs the literal List<Component> in the parameter list), so the 4-argument call site in a mixin keeps its error instead of being half-rewritten; that one is a judgement call and out of scope. The body still calls .add(), which is why item-appendhovertext-consumer runs as a second round.",
-      "verified": "Traveler's Backpack copy: 1 site in round 1 (UpgradeItem), 3 sites in round 2 (TravelersBackpackItem, MagnetUpgradeItem, TanksUpgradeItem); probe: 1 site, clean compile"
+      "verified": "Traveler's Backpack copy: 1 site in round 1 (UpgradeItem), 3 sites in round 2 (TravelersBackpackItem, MagnetUpgradeItem, TanksUpgradeItem); probe: 1 site, clean compile",
+      "test": {
+        "error": "HoseItem.java:394: error: method appendHoverText in class x cannot be applied\n",
+        "before": "package com.tiviacz.travelersbackpack.items;\n\n    @Override\n    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {\n        if(stack.has(ModDataComponents.HOSE_MODES)) {\n",
+        "after": "package com.tiviacz.travelersbackpack.items;\nimport net.minecraft.world.item.component.TooltipDisplay;\nimport java.util.function.Consumer;\n\n    @Override\n    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltipComponents, TooltipFlag tooltipFlag) {\n        if(stack.has(ModDataComponents.HOSE_MODES)) {\n",
+        "from": "Traveler's Backpack neoforge 1.21.4 at 32fbb9dd, src/main/java/com/tiviacz/travelersbackpack/items/HoseItem.java:394"
+      }
     },
     {
       "id": "item-appendhovertext-super-call",
@@ -754,7 +1024,13 @@
       "scope": "log",
       "when": "",
       "note": "javap 1.21.5: the five-argument ServerPlayer.setRespawnPosition(ResourceKey, BlockPos, float, boolean, boolean) is gone and setRespawnPosition(ServerPlayer.RespawnConfig, boolean) replaces it; RespawnConfig has exactly the record constructor (dimension, pos, angle, forced). The old 5th argument (sendMessage) stays the outer boolean, so the arity mapping is 4 greedy arguments plus one flag. Counter-example: nothing else in the API is named setRespawnPosition, and the dimension argument itself contains a call (pLevel.dimension()), which the [^,]+ groups keep intact.",
-      "verified": "Traveler's Backpack copy: 1 site in round 1 (SleepingBagBlock); probe: 1 site, clean compile"
+      "verified": "Traveler's Backpack copy: 1 site in round 1 (SleepingBagBlock); probe: 1 site, clean compile",
+      "test": {
+        "error": "SleepingBagBlock.java:127: error: method setRespawnPosition in class ServerPlayer cannot be applied to given types\n",
+        "before": "package com.tiviacz.travelersbackpack.blocks;\n\n                    if(pPlayer instanceof ServerPlayer serverPlayer) {\n                        serverPlayer.setRespawnPosition(pLevel.dimension(), pPos, serverPlayer.getYRot(), true, true);\n                    }\n",
+        "after": "package com.tiviacz.travelersbackpack.blocks;\nimport net.minecraft.server.level.ServerPlayer;\n\n                    if(pPlayer instanceof ServerPlayer serverPlayer) {\n                        serverPlayer.setRespawnPosition(new ServerPlayer.RespawnConfig(pLevel.dimension(), pPos, serverPlayer.getYRot(), true), true);\n                    }\n",
+        "from": "Traveler's Backpack neoforge 1.21.4 at 32fbb9dd, src/main/java/com/tiviacz/travelersbackpack/blocks/SleepingBagBlock.java:127"
+      }
     },
     {
       "id": "level-blockupdated-neighbors",
@@ -767,7 +1043,13 @@
       "scope": "log",
       "when": "",
       "note": "Level.blockUpdated(BlockPos, Block) was removed and LevelAccessor.updateNeighborsAt(BlockPos, Block) is the same default method the old call delegated to, so this is a pure rename with identical arguments. javap 1.21.5 LevelAccessor shows updateNeighborsAt(BlockPos, Block); Level also has a 3-argument Orientation overload, which is why this rule leaves the call arity alone. Counter-example: no mod in the bench names its own method blockUpdated, and the match is javac's unresolved-symbol text, so it cannot fire on a call that resolves.",
-      "verified": "Traveler's Backpack copy: 1 site in round 1 (SleepingBagBlock:224); probe: 1 site with the already-correct updateNeighborsAt call beside it, clean compile"
+      "verified": "Traveler's Backpack copy: 1 site in round 1 (SleepingBagBlock:224); probe: 1 site with the already-correct updateNeighborsAt call beside it, clean compile",
+      "test": {
+        "error": "SleepingBagBlock.java:225: error: method blockUpdated(\n",
+        "before": "package com.tiviacz.travelersbackpack.blocks;\n\n            level.setBlock(var6, state.setValue(PART, BedPart.HEAD), 3);\n            level.blockUpdated(pos, Blocks.AIR);\n            state.updateNeighbourShapes(level, pos, 3);\n",
+        "after": "package com.tiviacz.travelersbackpack.blocks;\n\n            level.setBlock(var6, state.setValue(PART, BedPart.HEAD), 3);\n            level.updateNeighborsAt(pos, Blocks.AIR);\n            state.updateNeighbourShapes(level, pos, 3);\n",
+        "from": "Traveler's Backpack neoforge 1.21.4 at 32fbb9dd, src/main/java/com/tiviacz/travelersbackpack/blocks/SleepingBagBlock.java:225"
+      }
     },
     {
       "id": "drawcontext-matrix-push",
@@ -819,7 +1101,13 @@
       "scope": "log",
       "when": "",
       "note": "LevelHeightAccessor renamed getMinBuildHeight to getMinY in 1.21.2 with the same value. The match is javac's unresolved-symbol text, so the sweep only runs in files that reported the missing method.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "EventHandler.java:591: error: cannot find symbol\n  symbol: method getMinBuildHeight\n",
+        "before": "package com.rique.zombieapocalypse;\n\n                    ? nearbyY\n                    : Mth.clamp(playerY, level.getMinBuildHeight() + 1, level.getMaxBuildHeight() - 2);\n        }\n",
+        "after": "package com.rique.zombieapocalypse;\n\n                    ? nearbyY\n                    : Mth.clamp(playerY, level.getMinY() + 1, level.getMaxBuildHeight() - 2);\n        }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/EventHandler.java:591"
+      }
     },
     {
       "id": "level-getmaxy",
@@ -832,7 +1120,13 @@
       "scope": "log",
       "when": "",
       "note": "Same rename as getMinBuildHeight; getMaxY is a default method on LevelHeightAccessor.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "EventHandler.java:591: error: cannot find symbol\n  symbol: method getMaxBuildHeight\n",
+        "before": "package com.rique.zombieapocalypse;\n\n                    ? nearbyY\n                    : Mth.clamp(playerY, level.getMinBuildHeight() + 1, level.getMaxBuildHeight() - 2);\n        }\n",
+        "after": "package com.rique.zombieapocalypse;\n\n                    ? nearbyY\n                    : Mth.clamp(playerY, level.getMinBuildHeight() + 1, level.getMaxY() - 2);\n        }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/EventHandler.java:591"
+      }
     },
     {
       "id": "loottable-get-optional",
@@ -845,7 +1139,13 @@
       "scope": "log",
       "when": "",
       "note": "Entity.getLootTable returns Optional<ResourceKey<LootTable>> from 1.21.2; orElse(null) restores the old nullable contract the call site expects. The lookahead leaves a call already used as an Optional alone.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "ZombieHuntCompat.java:117: error: Optional<ResourceKey<LootTable>> cannot be converted\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        }\n        LootTable table = level.getServer().reloadableRegistries().getLootTable(zombie.getLootTable());\n        LootParams params = new LootParams.Builder(level)\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        }\n        LootTable table = level.getServer().reloadableRegistries().getLootTable(zombie.getLootTable().orElse(null));\n        LootParams params = new LootParams.Builder(level)\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieHuntCompat.java:117"
+      }
     },
     {
       "id": "equipable-to-component",
@@ -862,7 +1162,13 @@
       "scope": "log",
       "when": "",
       "note": "The Equipable helper class was replaced by the equippable data component, so Equipable.get(stack) becomes stack.get(DataComponents.EQUIPPABLE).",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "ZombieGear.java:279: error: cannot find symbol\n  symbol: class Equipable\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        if (slot == null) {\n            Equipable equipable = Equipable.get(stack);\n            slot = equipable != null ? equipable.getEquipmentSlot() : EquipmentSlot.MAINHAND;\n",
+        "after": "package com.rique.zombieapocalypse;\nimport net.minecraft.world.item.equipment.Equippable;\nimport net.minecraft.core.component.DataComponents;\n\n        if (slot == null) {\n            Equipable equipable = stack.get(DataComponents.EQUIPPABLE);\n            slot = equipable != null ? equipable.getEquipmentSlot() : EquipmentSlot.MAINHAND;\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieGear.java:279"
+      }
     },
     {
       "id": "equipable-import",
@@ -875,7 +1181,13 @@
       "scope": "log",
       "when": "",
       "note": "The replacement type lives in net.minecraft.world.item.equipment; the literal import swap cannot touch a file that never imported the old class.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "ZombieGear.java:22: error: cannot find symbol\n  symbol: class Equipable\n",
+        "before": "package com.rique.zombieapocalypse;\n\nimport net.minecraft.world.entity.Mob;\nimport net.minecraft.world.item.Equipable;\nimport net.minecraft.world.item.Item;\n",
+        "after": "package com.rique.zombieapocalypse;\n\nimport net.minecraft.world.entity.Mob;\nimport net.minecraft.world.item.equipment.Equippable;\nimport net.minecraft.world.item.Item;\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieGear.java:22"
+      }
     },
     {
       "id": "equippable-slot",
@@ -888,7 +1200,13 @@
       "scope": "log",
       "when": "",
       "note": "Equippable is a record whose accessor is slot(); java.util.EquipmentSlot has no getEquipmentSlot method, so this cannot fire on an unrelated class.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "ZombieGear.java:280: error: cannot find symbol\n  symbol: class Equipable\n",
+        "before": "package com.rique.zombieapocalypse;\n\n            Equipable equipable = Equipable.get(stack);\n            slot = equipable != null ? equipable.getEquipmentSlot() : EquipmentSlot.MAINHAND;\n        }\n",
+        "after": "package com.rique.zombieapocalypse;\n\n            Equipable equipable = Equipable.get(stack);\n            slot = equipable != null ? equipable.slot() : EquipmentSlot.MAINHAND;\n        }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieGear.java:280"
+      }
     },
     {
       "id": "equippable-type-name",
@@ -901,7 +1219,13 @@
       "scope": "log",
       "when": "",
       "note": "Runs after the Equipable.get(...) call rewrite and the import swap, so every remaining token is a type usage that must take the new class name. The negative lookahead keeps a call site for the old helper intact.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "ZombieGear.java:22: error: cannot find symbol\n  symbol: class Equipable\n",
+        "before": "package com.rique.zombieapocalypse;\n\nimport net.minecraft.world.entity.Mob;\nimport net.minecraft.world.item.Equipable;\nimport net.minecraft.world.item.Item;\n",
+        "after": "package com.rique.zombieapocalypse;\n\nimport net.minecraft.world.entity.Mob;\nimport net.minecraft.world.item.Equippable;\nimport net.minecraft.world.item.Item;\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieGear.java:22"
+      }
     },
     {
       "id": "level-getgamerules-serverlevel",
@@ -914,7 +1238,13 @@
       "scope": "log",
       "when": "",
       "note": "Level.getGameRules moved to ServerLevel in 1.21.2. The cast is explicit so a client level fails loudly instead of returning null; game-rule reads in this family are server-side.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "EventHandler.java:274: error: cannot find symbol\n  symbol: method getGameRules\n",
+        "before": "package com.rique.zombieapocalypse;\n\n                || !Config.COMMON.enableExtraDrops.get()\n                || !event.getEntity().level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {\n            return;\n",
+        "after": "package com.rique.zombieapocalypse;\n\n                || !Config.COMMON.enableExtraDrops.get()\n                || !((net.minecraft.server.level.ServerLevel) event.getEntity().level()).getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {\n            return;\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/EventHandler.java:274"
+      }
     },
     {
       "id": "entitytype-create-spawn-reason-command",
@@ -930,7 +1260,13 @@
       "scope": "log",
       "when": "CommandSourceStack",
       "note": "EntityType.create(Level) became create(Level, EntitySpawnReason). A file that builds its level from a command source gets COMMAND, which keeps command-spawned mobs out of natural-spawn bonuses.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "GearCommands.java:295: error: no suitable method found for create(ServerLevel)\n",
+        "before": "package com.rique.zombieapocalypse.commands;\n\nimport net.minecraft.commands.CommandSourceStack;\n        }\n        Zombie zombie = EntityType.ZOMBIE.create(level);\n        if (zombie == null) {\n",
+        "after": "package com.rique.zombieapocalypse.commands;\nimport net.minecraft.world.entity.EntitySpawnReason;\n\nimport net.minecraft.commands.CommandSourceStack;\n        }\n        Zombie zombie = EntityType.ZOMBIE.create(level, EntitySpawnReason.COMMAND);\n        if (zombie == null) {\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/commands/GearCommands.java:295"
+      }
     },
     {
       "id": "entitytype-create-spawn-reason-natural",
@@ -946,7 +1282,13 @@
       "scope": "log",
       "when": "",
       "note": "The remaining create(Level) sites are gameplay spawns, so NATURAL is the closest match to the old no-reason call. Runs after the COMMAND variant because that one is restricted to command files.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "EventHandler.java:816: error: no suitable method found for create(ServerLevel)\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        if (!settings.variantsEnabled()) {\n            return net.minecraft.world.entity.EntityType.ZOMBIE.create(level);\n        }\n",
+        "after": "package com.rique.zombieapocalypse;\nimport net.minecraft.world.entity.EntitySpawnReason;\n\n        if (!settings.variantsEnabled()) {\n            return net.minecraft.world.entity.EntityType.ZOMBIE.create(level, EntitySpawnReason.NATURAL);\n        }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/EventHandler.java:816"
+      }
     },
     {
       "id": "registry-get-item-optional",
@@ -959,7 +1301,13 @@
       "scope": "log",
       "when": "",
       "note": "Registry.get returns Optional<Reference<T>> from 1.21.2, so a plain Item lookup needs the holder unwrapped. The declaration type and the single-argument shape keep the rule off a Map lookup that happens to sit in the same file.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "ZombieGear.java:256: error: incompatible types: Optional<Reference<Item>> cannot be converted\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        }\n        Item item = items.get(location);\n        if (item == Items.AIR) {\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        }\n        Item item = items.get(location).map(h -> h.value()).orElse(null);\n        if (item == Items.AIR) {\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieGear.java:256"
+      }
     },
     {
       "id": "registry-get-block-optional",
@@ -972,7 +1320,13 @@
       "scope": "log",
       "when": "",
       "note": "Same registry change for blocks; callers already handle a missing entry as AIR in this family.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "ZombieBlockPlacer.java:379: error: incompatible types: Optional<Reference<Block>> cannot be converted\n",
+        "before": "package com.rique.zombieapocalypse;\n\n\n        Block block = registry.get(id);\n        if (block == Blocks.AIR || block instanceof EntityBlock || block instanceof FallingBlock) {\n",
+        "after": "package com.rique.zombieapocalypse;\n\n\n        Block block = registry.get(id).map(h -> h.value()).orElse(null);\n        if (block == Blocks.AIR || block instanceof EntityBlock || block instanceof FallingBlock) {\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieBlockPlacer.java:379"
+      }
     },
     {
       "id": "targeting-selector-lambda",
@@ -985,7 +1339,13 @@
       "scope": "log",
       "when": "NearestAttackableTargetGoal",
       "note": "NearestAttackableTargetGoal takes a TargetingConditions.Selector (two arguments: entity and level) instead of a Predicate. Restricted to files that build that goal so an unrelated one-argument lambda is left alone.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "ZombieHuntGoal.java:20: error: incompatible parameter types in lambda expression\n",
+        "before": "package com.rique.zombieapocalypse;\n\nimport net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;\n        super(zombie, LivingEntity.class, 10, true, true,\n                candidate -> ZombieHunt.isHuntableTarget(zombie, candidate));\n        this.hunter = zombie;\n",
+        "after": "package com.rique.zombieapocalypse;\n\nimport net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;\n        super(zombie, LivingEntity.class, 10, true, true,\n                (candidate, serverLevel) -> ZombieHunt.isHuntableTarget(zombie, candidate));\n        this.hunter = zombie;\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieHuntGoal.java:20"
+      }
     },
     {
       "id": "mob-convert-to-conversion-params",
@@ -1002,7 +1362,13 @@
       "scope": "log",
       "when": "",
       "note": "Mob.convertTo(EntityType, boolean) became convertTo(EntityType, ConversionParams, EntitySpawnReason, AfterConversion). The old boolean was keepEquipment, so it maps to ConversionParams.single(mob, keepEquipment, false); no after-conversion hook is needed because the caller continues with the returned mob.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "ZombieHunt.java:431: error: no suitable method found for convertTo\n",
+        "before": "package com.rique.zombieapocalypse;\n\n\n        ZombieHorse zombieHorse = horse.convertTo(EntityType.ZOMBIE_HORSE, false);\n        if (zombieHorse == null) {\n",
+        "after": "package com.rique.zombieapocalypse;\nimport net.minecraft.world.entity.EntitySpawnReason;\nimport net.minecraft.world.entity.ConversionParams;\n\n\n        ZombieHorse zombieHorse = horse.convertTo(EntityType.ZOMBIE_HORSE, ConversionParams.single(horse, false, false), EntitySpawnReason.TRIGGERED, null);\n        if (zombieHorse == null) {\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieHunt.java:431"
+      }
     },
     {
       "id": "spawn-at-location-serverlevel",
@@ -1015,7 +1381,13 @@
       "scope": "log",
       "when": "",
       "note": "Entity.spawnAtLocation now takes the ServerLevel it drops into. The cast keeps the rule local and fails loudly if the entity is ever in a client level, which is the only place this call is valid.",
-      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)"
+      "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
+      "test": {
+        "error": "ZombieHuntCompat.java:109: error: no suitable method found for spawnAtLocation\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        if (!armor.isEmpty()) {\n            zombieHorse.spawnAtLocation(armor.copy());\n        }\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        if (!armor.isEmpty()) {\n            zombieHorse.spawnAtLocation((net.minecraft.server.level.ServerLevel) zombieHorse.level(), armor.copy());\n        }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieHuntCompat.java:109"
+      }
     },
     {
       "id": "nbt-contains-typed",
@@ -1028,7 +1400,13 @@
       "scope": "log",
       "when": "",
       "note": "CompoundTag.contains(String, int) was removed in 1.21.6; contains(String) is the only form left. The typed tag argument carried no decision the caller used, because the following getListOrEmpty/getIntOr callers already tolerate a missing key.",
-      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)",
+      "test": {
+        "error": "StatisticsManager.java:36: error: method contains in class CompoundTag cannot be applied\n",
+        "before": "package com.rique.zombieapocalypse;\n\n\n        if (tag.contains(KILLS_KEY, Tag.TAG_LIST)) {\n            ListTag killsList = tag.getList(KILLS_KEY, Tag.TAG_COMPOUND);\n",
+        "after": "package com.rique.zombieapocalypse;\n\n\n        if (tag.contains(KILLS_KEY)) {\n            ListTag killsList = tag.getList(KILLS_KEY, Tag.TAG_COMPOUND);\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/StatisticsManager.java:36"
+      }
     },
     {
       "id": "nbt-uuid-has",
@@ -1044,7 +1422,13 @@
       "scope": "log",
       "when": "",
       "note": "CompoundTag.hasUUID/getUUID were replaced by codec reads in 1.21.6. UUIDUtil.CODEC is the same int-array form the old helpers wrote.",
-      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)",
+      "test": {
+        "error": "StatisticsManager.java:40: error: cannot find symbol\n  symbol: method hasUUID\n",
+        "before": "package com.rique.zombieapocalypse;\n\n                CompoundTag entry = killsList.getCompound(i);\n                if (entry.hasUUID(\"uuid\")) {\n                    manager.playerKills.put(entry.getUUID(\"uuid\"), Math.max(0, entry.getInt(\"count\")));\n",
+        "after": "package com.rique.zombieapocalypse;\nimport net.minecraft.core.UUIDUtil;\n\n                CompoundTag entry = killsList.getCompound(i);\n                if (entry.read(\"uuid\", UUIDUtil.CODEC).isPresent()) {\n                    manager.playerKills.put(entry.getUUID(\"uuid\"), Math.max(0, entry.getInt(\"count\")));\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/StatisticsManager.java:40"
+      }
     },
     {
       "id": "nbt-uuid-get",
@@ -1060,7 +1444,13 @@
       "scope": "log",
       "when": "",
       "note": "Same codec read as hasUUID; orElse(null) matches the old nullable contract at call sites that already check presence.",
-      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)",
+      "test": {
+        "error": "StatisticsManager.java:41: error: cannot find symbol\n  symbol: method getUUID\n",
+        "before": "package com.rique.zombieapocalypse;\n\n                if (entry.hasUUID(\"uuid\")) {\n                    manager.playerKills.put(entry.getUUID(\"uuid\"), Math.max(0, entry.getInt(\"count\")));\n                }\n",
+        "after": "package com.rique.zombieapocalypse;\nimport net.minecraft.core.UUIDUtil;\n\n                if (entry.hasUUID(\"uuid\")) {\n                    manager.playerKills.put(entry.read(\"uuid\", UUIDUtil.CODEC).orElse(null), Math.max(0, entry.getInt(\"count\")));\n                }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/StatisticsManager.java:41"
+      }
     },
     {
       "id": "nbt-uuid-put",
@@ -1076,7 +1466,13 @@
       "scope": "log",
       "when": "",
       "note": "putUUID became a codec store in 1.21.6; UUIDUtil.CODEC keeps the on-disk shape compatible with data written by older builds.",
-      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)",
+      "test": {
+        "error": "StatisticsManager.java:84: error: cannot find symbol\n  symbol: method putUUID\n",
+        "before": "package com.rique.zombieapocalypse;\n\n            CompoundTag killEntry = new CompoundTag();\n            killEntry.putUUID(\"uuid\", entry.getKey());\n            killEntry.putInt(\"count\", entry.getValue());\n",
+        "after": "package com.rique.zombieapocalypse;\nimport net.minecraft.core.UUIDUtil;\n\n            CompoundTag killEntry = new CompoundTag();\n            killEntry.store(\"uuid\", UUIDUtil.CODEC, entry.getKey());\n            killEntry.putInt(\"count\", entry.getValue());\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/StatisticsManager.java:84"
+      }
     },
     {
       "id": "level-day-rename",
@@ -1089,7 +1485,13 @@
       "scope": "log",
       "when": "",
       "note": "Level.isDay/isNight were renamed to isBrightOutside/isDarkOutside in 1.21.6 with the same daylight predicate. isNight uses its own rule so each replacement stays literal.",
-      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)",
+      "test": {
+        "error": "EventHandler.java:404: error: cannot find symbol\n  symbol: method isDay\n",
+        "before": "package com.rique.zombieapocalypse;\n\n                !level.dimensionType().hasFixedTime(),\n                level.isDay(),\n                Config.COMMON.enableNightBoost.get())) {\n",
+        "after": "package com.rique.zombieapocalypse;\n\n                !level.dimensionType().hasFixedTime(),\n                level.isBrightOutside(),\n                Config.COMMON.enableNightBoost.get())) {\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/EventHandler.java:404"
+      }
     },
     {
       "id": "level-night-rename",
@@ -1115,7 +1517,13 @@
       "scope": "log",
       "when": "",
       "note": "Entity.moveTo became snapTo in 1.21.6; the overloads (x,y,z and x,y,z,yaw,pitch) are identical.",
-      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)",
+      "test": {
+        "error": "EventHandler.java:527: error: cannot find symbol\n  symbol: method moveTo\n",
+        "before": "package com.rique.zombieapocalypse;\n\n\n            zombie.moveTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D,\n                    random.nextFloat() * 360.0F, 0.0F);\n",
+        "after": "package com.rique.zombieapocalypse;\n\n\n            zombie.snapTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D,\n                    random.nextFloat() * 360.0F, 0.0F);\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/EventHandler.java:527"
+      }
     },
     {
       "id": "entity-water-rain",
@@ -1128,7 +1536,13 @@
       "scope": "log",
       "when": "",
       "note": "Entity.isInWaterRainOrBubble was reduced to isInWaterOrRain in 1.21.6; the bubble check it carried is covered by isInWater on the same call sites.",
-      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)",
+      "test": {
+        "error": "EventHandler.java:866: error: cannot find symbol\n  symbol: method isInWaterRainOrBubble\n",
+        "before": "package com.rique.zombieapocalypse;\n\n\n        if (zombie.isInWaterRainOrBubble() || zombie.isInLava()) {\n            return false;\n",
+        "after": "package com.rique.zombieapocalypse;\n\n\n        if (zombie.isInWaterOrRain() || zombie.isInLava()) {\n            return false;\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/EventHandler.java:866"
+      }
     },
     {
       "id": "soundevents-holder-argument",
@@ -1141,7 +1555,13 @@
       "scope": "log",
       "when": "",
       "note": "About a hundred SoundEvents constants became Holder.Reference in 1.21.2 while the rest stayed plain SoundEvent, so the rule carries the exact holder list read from the target SoundEvents class and only rewrites a playSound argument in a file javac already reported. A constant outside the list is left alone, which is what keeps a plain SoundEvent argument compiling.",
-      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)"
+      "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)",
+      "test": {
+        "error": "ZombieHunt.java:329: error: Reference<SoundEvent>\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        Level level = zombie.level();\n        level.playSound(null, zombie.blockPosition(), SoundEvents.GENERIC_EAT, SoundSource.HOSTILE, 1.0F, 1.0F);\n        level.playSound(null, zombie.blockPosition(), SoundEvents.ZOMBIE_AMBIENT, SoundSource.HOSTILE, 0.2F, 0.8F);\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        Level level = zombie.level();\n        level.playSound(null, zombie.blockPosition(), SoundEvents.GENERIC_EAT.value(), SoundSource.HOSTILE, 1.0F, 1.0F);\n        level.playSound(null, zombie.blockPosition(), SoundEvents.ZOMBIE_AMBIENT, SoundSource.HOSTILE, 0.2F, 0.8F);\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieHunt.java:329"
+      }
     },
     {
       "id": "glstatemanager-opengl",
