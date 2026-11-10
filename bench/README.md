@@ -2,7 +2,7 @@
 
 Plans, dated status and findings belong in PRs/issues. Documentation describes current use.
 
-- `coverage/roadmap.json`: retained bench schema used to validate measure and step IDs; do not use it to publish plans or status in docs.
+- `coverage/roadmap.json`: the existing goals, step and measure schema consumed by the bench tools and generated dashboard. Keep new plans and status in PRs/issues.
 - `coverage/measures.json`: every number we show. A measure is one thing measured the same way (warm and cold are separate measures), with dated points that each name a source, and a target with a date and the step that reaches it.
 - `coverage/ledger.json`: every port that was run, with its timing. A run not in the ledger did not happen. Measures such as mods working and updates working per loader are computed from it.
 
@@ -21,7 +21,7 @@ The porting scoreboard:
 
 Generated, on main only (`.github/workflows/generated.yml` runs these after every merge and commits the result):
 
-- `python bench/bench_page.py` renders `docs/index.html` (current usage links and the interactive porting map). It does not write a roadmap, plan, dated report or run-history table.
+- `python bench/bench_page.py` renders `docs/index.html` (the existing dashboard and porting map) and recreates `ROADMAP.md`; `--roadmap` writes only `ROADMAP.md`. The generators and their output are unchanged by this documentation cleanup.
 - `python bench/test_measures.py`, `python bench/test_record.py` and `python bench/test_ledger_rule.py` are the PR checks for all of the above.
 
 What a game session costs:

@@ -1,8 +1,8 @@
 """Every number modaccel shows, in one format: coverage/measures.json, tied to coverage/roadmap.json.
 
 A measure is one thing measured the same way each time (same work, same cache condition), with all
-its points and the target it is heading for. PR tables read measures through this module,
-so a number looks the same and means the same everywhere.
+its points and the target it is heading for. The roadmap page, ROADMAP.md and PR tables all read
+measures through this module, so a number looks the same and means the same everywhere.
 
     python bench/measures.py table [ID ...] [--area AREA] [--step STEP]   Markdown table for a PR or report
     python bench/measures.py add ID VALUE --source S [--date D] [--n N] [--note T]
@@ -207,7 +207,7 @@ def target_words(book, m):
 
 # ---- markdown -----------------------------------------------------------------------------------
 def table(book, ms):
-    """The Markdown table for numbers in a PR or report."""
+    """The one Markdown table for numbers in a PR, report or ROADMAP.md."""
     rows = ["| Measure | First | Now | Target | Status |", "|---|---|---|---|---|"]
     for m in ms:
         pts, mins = book.points(m), minutes(book, m)
@@ -353,7 +353,7 @@ def main(argv=None):
         m.setdefault("points", []).append(p)
         m["points"].sort(key=lambda x: x["date"])
         MEASURES.write_text(dump(book.data), encoding="utf-8", newline="\n")
-        fresh = Book()   # Re-read the records after writing the new point.
+        fresh = Book()   # ROADMAP.md and the page follow on main, after the merge
         print(table(fresh, [fresh.by_id[args.id]]))
         return 0
     found = problems(book)
