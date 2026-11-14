@@ -1,0 +1,421 @@
+diff --git a/src/main/java/dev/diorama/bake/TileBaker.java b/src/main/java/dev/diorama/bake/TileBaker.java
+index 28ba3de..45ef07a 100644
+--- a/src/main/java/dev/diorama/bake/TileBaker.java
++++ b/src/main/java/dev/diorama/bake/TileBaker.java
+@@ -219,6 +219,14 @@ public final class TileBaker {
+ 	 * has no data for above where its saved ray stood, the cell was open then and counts as open.
+ 	 */
+ 	private int @Nullable [] savedSpots;
++	// Direct mapped and owned by this baker. Zero means no cached result.
++	private static final int SAVED_CACHE_SIZE = 4096;
++	private int @Nullable [] savedCacheX;
++	private int @Nullable [] savedCacheY;
++	private int @Nullable [] savedCacheZ;
++	private byte @Nullable [] savedCacheResult;
++	private long savedCacheSin;
++	private long savedCacheCos;
+ 
+ 	/** Finds where rays land without lighting them, for {@link #surface}. */
+ 	private boolean surfaceOnly;
+@@ -378,6 +386,7 @@ public final class TileBaker {
+ 
+ 	private void useSavedSpots(int @Nullable [] spots) {
+ 		this.savedSpots = this.lit || this.key.lod() != 0 ? null : spots;
++		this.savedCacheResult = null;
+ 	}
+ 
+ 	/** Whether every saved ray crossing block {@code (x, y, z)} passed through it; see {@link TileSpots#passedWhenSaved}. */
+@@ -385,6 +394,40 @@ public final class TileBaker {
+ 		return TileSpots.passedWhenSaved(this.key, this.savedSpots, x, y, z);
+ 	}
+ 
++	/** The saved spots must remain unchanged for the duration of this bake. */
++	private boolean cachedPassedWhenSaved(int x, int y, int z) {
++		if (this.savedSpots == null) {
++			return false;
++		}
++		long sin = Double.doubleToRawLongBits(Projection.sin());
++		long cos = Double.doubleToRawLongBits(Projection.cos());
++		byte[] results = this.savedCacheResult;
++		if (results != null && (sin != this.savedCacheSin || cos != this.savedCacheCos)) {
++			java.util.Arrays.fill(results, (byte) 0);
++		}
++		this.savedCacheSin = sin;
++		this.savedCacheCos = cos;
++		if (results == null) {
++			this.savedCacheX = new int[SAVED_CACHE_SIZE];
++			this.savedCacheY = new int[SAVED_CACHE_SIZE];
++			this.savedCacheZ = new int[SAVED_CACHE_SIZE];
++			results = new byte[SAVED_CACHE_SIZE];
++			this.savedCacheResult = results;
++		}
++		int hash = x * 0x8da6b343 ^ y * 0xd8163841 ^ z * 0xcb1ab31f;
++		hash ^= hash >>> 16;
++		int slot = hash & (SAVED_CACHE_SIZE - 1);
++		if (results[slot] != 0 && this.savedCacheX[slot] == x && this.savedCacheY[slot] == y && this.savedCacheZ[slot] == z) {
++			return results[slot] == 2;
++		}
++		boolean passed = TileSpots.passedWhenSaved(this.key, this.savedSpots, x, y, z);
++		this.savedCacheX[slot] = x;
++		this.savedCacheY[slot] = y;
++		this.savedCacheZ[slot] = z;
++		results[slot] = (byte) (passed ? 2 : 1);
++		return passed;
++	}
++
+ 	/**
+ 	 * What each pixel of tile pixels (x0, y0) to (x0 + width, y0 + height) shows: where its camera
+ 	 * ray lands and which way the face there points. On a surface tile, how much of the light there
+@@ -898,6 +941,20 @@ public final class TileBaker {
+ 		return (abgr & 0xFF000000) | (b << 16) | (g << 8) | r;
+ 	}
+ 
++	// The samples of neighbouring pixels share v and often the same block x. For an
++	// ordinary surface trace, remember the exact DDA state after its initial known-air
++	// prefix. Never cache later air, since glass, water and shapes affect the ray.
++	private final boolean[] airPrefixValid = new boolean[4];
++	private final int[] airPrefixX = new int[4];
++	private final int[] airPrefixTop = new int[4];
++	private final long[] airPrefixV = new long[4];
++	private final int[] airPrefixY = new int[4];
++	private final int[] airPrefixZ = new int[4];
++	private final double[] airPrefixT = new double[4];
++	private final double[] airPrefixMaxY = new double[4];
++	private final double[] airPrefixMaxZ = new double[4];
++	private final boolean[] airPrefixEnteredTop = new boolean[4];
++
+ 	/** Traces one ray. Returns false when it ran into a chunk the map has no data for. */
+ 	private boolean trace(double u, double v, int sample) {
+ 		final double sin = this.sin;
+@@ -917,6 +974,22 @@ public final class TileBaker {
+ 		double t = 0;
+ 		boolean enteredTop = true;
+ 
++		boolean cacheAirPrefix = !this.lit && this.caveCut == null;
++		boolean collectingAirPrefix = cacheAirPrefix;
++		long vBits = Double.doubleToRawLongBits(v);
++		if (cacheAirPrefix && this.airPrefixValid[sample]
++			&& this.airPrefixX[sample] == x && this.airPrefixTop[sample] == top && this.airPrefixV[sample] == vBits) {
++			by = this.airPrefixY[sample];
++			bz = this.airPrefixZ[sample];
++			t = this.airPrefixT[sample];
++			tMaxY = this.airPrefixMaxY[sample];
++			tMaxZ = this.airPrefixMaxZ[sample];
++			enteredTop = this.airPrefixEnteredTop[sample];
++			collectingAirPrefix = false;
++		} else if (cacheAirPrefix) {
++			this.airPrefixValid[sample] = false;
++		}
++
+ 		boolean skippingRock = this.lit;
+ 		this.hitSolid = false;
+ 		this.outBlockLight = 0;
+@@ -959,8 +1032,45 @@ public final class TileBaker {
+ 				skippingRock = false;
+ 			}
+ 			int id = this.reader.state(x, by, bz);
++			// Walk known air directly in the current decoded section. Keep every original
++			// DDA addition and tie decision; re-enter the full path at terrain/section edges.
++			if (id == VoxelReader.AIR_ID && this.caveCut == null) {
++				int[] ids = this.reader.airRunIdsAt(by);
++				if (ids != null) {
++					int bottom = Math.max(this.limitY, by & ~15);
++					int north = bz & ~15;
++					int localX = x & 15;
++					do {
++						if (tMaxY < tMaxZ) {
++							by--;
++							t = tMaxY;
++							tMaxY += tDeltaY;
++							enteredTop = true;
++						} else {
++							bz--;
++							t = tMaxZ;
++							tMaxZ += tDeltaZ;
++							enteredTop = false;
++						}
++					} while (by >= bottom && bz >= north && ids[((by & 15) << 8) | ((bz & 15) << 4) | localX] == VoxelReader.AIR_ID);
++					if (collectingAirPrefix) {
++						this.airPrefixValid[sample] = true;
++						this.airPrefixX[sample] = x;
++						this.airPrefixTop[sample] = top;
++						this.airPrefixV[sample] = vBits;
++						this.airPrefixY[sample] = by;
++						this.airPrefixZ[sample] = bz;
++						this.airPrefixT[sample] = t;
++						this.airPrefixMaxY[sample] = tMaxY;
++						this.airPrefixMaxZ[sample] = tMaxZ;
++						this.airPrefixEnteredTop[sample] = enteredTop;
++					}
++					continue;
++				}
++			}
++			collectingAirPrefix = false;
+ 			if (id == VoxelReader.UNKNOWN) {
+-				if (!this.passesMissing(by) && !TileSpots.passedWhenSaved(this.key, this.savedSpots, x, by, bz)) {
++				if (!this.passesMissing(by) && !this.cachedPassedWhenSaved(x, by, bz)) {
+ 					return false;
+ 				}
+ 				id = VoxelReader.AIR_ID;
+@@ -1110,8 +1220,21 @@ public final class TileBaker {
+ 	float albedoG;
+ 	float albedoB;
+ 
++	// Consecutive samples often meet the same face. Cache the unmixed colour because shade
++	// modifies albedo* after this call, while a bake's snapshots and looks stay fixed.
++	private boolean albedoCached;
++	private int albedoId, albedoX, albedoZ;
++	private boolean albedoTop;
++	private float cachedAlbedoR, cachedAlbedoG, cachedAlbedoB;
++
+ 	/** Sets {@code albedo*} to the block's linear colour for its top or front face at this column. */
+ 	void albedo(int id, int x, int z, boolean top) {
++		if (this.albedoCached && this.albedoId == id && this.albedoX == x && this.albedoZ == z && this.albedoTop == top) {
++			this.albedoR = this.cachedAlbedoR;
++			this.albedoG = this.cachedAlbedoG;
++			this.albedoB = this.cachedAlbedoB;
++			return;
++		}
+ 		Looks l = this.looks;
+ 		int base = top ? l.top[id] : l.side[id];
+ 		int tinted = top ? l.topTinted[id] : l.sideTinted[id];
+@@ -1121,6 +1244,14 @@ public final class TileBaker {
+ 		this.albedoR = SRGB_TO_LINEAR[(base >> 16) & 0xFF] * bw + SRGB_TO_LINEAR[(tinted >> 16) & 0xFF] * SRGB_TO_LINEAR[(tint >> 16) & 0xFF] * w;
+ 		this.albedoG = SRGB_TO_LINEAR[(base >> 8) & 0xFF] * bw + SRGB_TO_LINEAR[(tinted >> 8) & 0xFF] * SRGB_TO_LINEAR[(tint >> 8) & 0xFF] * w;
+ 		this.albedoB = SRGB_TO_LINEAR[base & 0xFF] * bw + SRGB_TO_LINEAR[tinted & 0xFF] * SRGB_TO_LINEAR[tint & 0xFF] * w;
++		this.albedoId = id;
++		this.albedoX = x;
++		this.albedoZ = z;
++		this.albedoTop = top;
++		this.cachedAlbedoR = this.albedoR;
++		this.cachedAlbedoG = this.albedoG;
++		this.cachedAlbedoB = this.albedoB;
++		this.albedoCached = true;
+ 	}
+ 
+ 	private int tint(int id, int x, int z) {
+@@ -1321,14 +1452,40 @@ public final class TileBaker {
+ 		return this.blocked(ox, oy, oz, dx, dy, dz, SHADOW_DISTANCE, SHADOW_STEPS, true);
+ 	}
+ 
++	// Sky rays are cached by corner. Consecutive samples often share all four corners as well.
++	private boolean skyTopCached, skySouthCached;
++	private int skyTopX, skyTopY, skyTopZ, skySouthX, skySouthY, skySouthZ;
++	private float skyTopNW, skyTopNE, skyTopSW, skyTopSE;
++	private float skySouthTW, skySouthTE, skySouthBW, skySouthBE;
++
+ 	/** Sky visibility on a top face at {@code y}, blended from its four corners. */
+ 	private float skyTop(int x, int y, int z, double fx, double fz) {
+-		return bilinear(this.skyAt(x, y, z), this.skyAt(x + 1, y, z), this.skyAt(x, y, z + 1), this.skyAt(x + 1, y, z + 1), fx, fz);
++		if (!this.skyTopCached || this.skyTopX != x || this.skyTopY != y || this.skyTopZ != z) {
++			this.skyTopNW = this.skyAt(x, y, z);
++			this.skyTopNE = this.skyAt(x + 1, y, z);
++			this.skyTopSW = this.skyAt(x, y, z + 1);
++			this.skyTopSE = this.skyAt(x + 1, y, z + 1);
++			this.skyTopX = x;
++			this.skyTopY = y;
++			this.skyTopZ = z;
++			this.skyTopCached = true;
++		}
++		return bilinear(this.skyTopNW, this.skyTopNE, this.skyTopSW, this.skyTopSE, fx, fz);
+ 	}
+ 
+ 	/** Sky visibility on a south face at {@code z}, blended from its four corners; {@code fy} runs bottom to top. */
+ 	private float skySouth(int x, int y, int z, double fx, double fy) {
+-		return bilinear(this.skyAt(x, y + 1, z), this.skyAt(x + 1, y + 1, z), this.skyAt(x, y, z), this.skyAt(x + 1, y, z), fx, 1 - fy);
++		if (!this.skySouthCached || this.skySouthX != x || this.skySouthY != y || this.skySouthZ != z) {
++			this.skySouthTW = this.skyAt(x, y + 1, z);
++			this.skySouthTE = this.skyAt(x + 1, y + 1, z);
++			this.skySouthBW = this.skyAt(x, y, z);
++			this.skySouthBE = this.skyAt(x + 1, y, z);
++			this.skySouthX = x;
++			this.skySouthY = y;
++			this.skySouthZ = z;
++			this.skySouthCached = true;
++		}
++		return bilinear(this.skySouthTW, this.skySouthTE, this.skySouthBW, this.skySouthBE, fx, 1 - fy);
+ 	}
+ 
+ 	/** Share of the sky seen from a block corner, 0..1, from a few short rays upward. */
+@@ -1391,6 +1548,14 @@ public final class TileBaker {
+ 		double tMaxX = dx == 0 ? Double.MAX_VALUE : (dx > 0 ? cx + 1 - ox : ox - cx) * tDeltaX;
+ 		double tMaxY = dy == 0 ? Double.MAX_VALUE : (dy > 0 ? cy + 1 - oy : oy - cy) * tDeltaY;
+ 		double tMaxZ = dz == 0 ? Double.MAX_VALUE : (dz > 0 ? cz + 1 - oz : oz - cz) * tDeltaZ;
++		// A ray often stays in the same section for many steps. Keep its immutable
++		// solid and partial masks locally; advance the DDA exactly as before, including
++		// repeated floating-point additions and its tie-breaking order.
++		int maskX = Integer.MIN_VALUE;
++		int maskY = Integer.MIN_VALUE;
++		int maskZ = Integer.MIN_VALUE;
++		long[] mask = null;
++		long[] partial = null;
+ 		for (int i = 0; i < steps; i++) {
+ 			if (Math.min(tMaxX, Math.min(tMaxY, tMaxZ)) > distance) {
+ 				return false;
+@@ -1408,9 +1573,27 @@ public final class TileBaker {
+ 			if (cy >= top) {
+ 				return false;
+ 			}
+-			int solid = this.reader.solid(cx, cy, cz);
+-			if (solid == VoxelReader.UNKNOWN) {
+-				return false;
++			int solid;
++			if (!this.reader.solidHeight(cy)) {
++				solid = 0;
++			} else {
++				int sx = cx >> 4;
++				int sy = cy >> 4;
++				int sz = cz >> 4;
++				if (sx != maskX || sy != maskY || sz != maskZ) {
++					solid = this.reader.solid(cx, cy, cz);
++					if (solid == VoxelReader.UNKNOWN) {
++						return false;
++					}
++					mask = this.reader.lastSolidMask();
++					partial = this.reader.lastPartialMask();
++					maskX = sx;
++					maskY = sy;
++					maskZ = sz;
++				} else {
++					int at = ((cy & 15) << 8) | ((cz & 15) << 4) | (cx & 15);
++					solid = (mask[at >> 6] >>> at & 1) == 0 ? 0 : 1 + ((int) (partial[at >> 6] >>> at) & 1);
++				}
+ 			}
+ 			if (this.lifted && solid > 0 && cy >= this.lid(cx, cz)) {
+ 				continue;
+@@ -1496,30 +1679,51 @@ public final class TileBaker {
+ 		return this.reader.solid(x, y, z) > 0;
+ 	}
+ 
++	// Each baker reads immutable snapshots. Adjacent samples share face corners;
++	// only their interpolation coordinates differ. Keep separate last-face caches.
++	private int aoTopX = Integer.MIN_VALUE;
++	private int aoTopY;
++	private int aoTopZ;
++	private float aoTopNW, aoTopNE, aoTopSW, aoTopSE;
++	private int aoSouthX = Integer.MIN_VALUE;
++	private int aoSouthY;
++	private int aoSouthZ;
++	private float aoSouthTW, aoSouthTE, aoSouthBW, aoSouthBE;
++
+ 	/** Smooth corner occlusion on a top face, from the eight blocks around the cell above it. */
+ 	private float ambientOcclusionTop(int x, int y, int z, double fx, double fz) {
+-		boolean n = this.occludes(x, y, z - 1);
+-		boolean s = this.occludes(x, y, z + 1);
+-		boolean w = this.occludes(x - 1, y, z);
+-		boolean e = this.occludes(x + 1, y, z);
+-		float nw = corner(w, n, this.occludes(x - 1, y, z - 1));
+-		float ne = corner(e, n, this.occludes(x + 1, y, z - 1));
+-		float sw = corner(w, s, this.occludes(x - 1, y, z + 1));
+-		float se = corner(e, s, this.occludes(x + 1, y, z + 1));
+-		return bilinear(nw, ne, sw, se, fx, fz);
++		if (x != this.aoTopX || y != this.aoTopY || z != this.aoTopZ) {
++			boolean n = this.occludes(x, y, z - 1);
++			boolean s = this.occludes(x, y, z + 1);
++			boolean w = this.occludes(x - 1, y, z);
++			boolean e = this.occludes(x + 1, y, z);
++			this.aoTopNW = corner(w, n, this.occludes(x - 1, y, z - 1));
++			this.aoTopNE = corner(e, n, this.occludes(x + 1, y, z - 1));
++			this.aoTopSW = corner(w, s, this.occludes(x - 1, y, z + 1));
++			this.aoTopSE = corner(e, s, this.occludes(x + 1, y, z + 1));
++			this.aoTopX = x;
++			this.aoTopY = y;
++			this.aoTopZ = z;
++		}
++		return bilinear(this.aoTopNW, this.aoTopNE, this.aoTopSW, this.aoTopSE, fx, fz);
+ 	}
+ 
+ 	/** Same for a south face; {@code z} is the open layer in front of it, {@code fy} runs bottom to top. */
+ 	private float ambientOcclusionSouth(int x, int y, int z, double fx, double fy) {
+-		boolean up = this.occludes(x, y + 1, z);
+-		boolean down = this.occludes(x, y - 1, z);
+-		boolean w = this.occludes(x - 1, y, z);
+-		boolean e = this.occludes(x + 1, y, z);
+-		float tw = corner(w, up, this.occludes(x - 1, y + 1, z));
+-		float te = corner(e, up, this.occludes(x + 1, y + 1, z));
+-		float bw = corner(w, down, this.occludes(x - 1, y - 1, z));
+-		float be = corner(e, down, this.occludes(x + 1, y - 1, z));
+-		return bilinear(tw, te, bw, be, fx, 1 - fy);
++		if (x != this.aoSouthX || y != this.aoSouthY || z != this.aoSouthZ) {
++			boolean up = this.occludes(x, y + 1, z);
++			boolean down = this.occludes(x, y - 1, z);
++			boolean w = this.occludes(x - 1, y, z);
++			boolean e = this.occludes(x + 1, y, z);
++			this.aoSouthTW = corner(w, up, this.occludes(x - 1, y + 1, z));
++			this.aoSouthTE = corner(e, up, this.occludes(x + 1, y + 1, z));
++			this.aoSouthBW = corner(w, down, this.occludes(x - 1, y - 1, z));
++			this.aoSouthBE = corner(e, down, this.occludes(x + 1, y - 1, z));
++			this.aoSouthX = x;
++			this.aoSouthY = y;
++			this.aoSouthZ = z;
++		}
++		return bilinear(this.aoSouthTW, this.aoSouthTE, this.aoSouthBW, this.aoSouthBE, fx, 1 - fy);
+ 	}
+ 
+ 	static float corner(boolean side1, boolean side2, boolean diagonal) {
+diff --git a/src/main/java/dev/diorama/bake/VoxelReader.java b/src/main/java/dev/diorama/bake/VoxelReader.java
+index 403a096..a57adef 100644
+--- a/src/main/java/dev/diorama/bake/VoxelReader.java
++++ b/src/main/java/dev/diorama/bake/VoxelReader.java
+@@ -127,6 +127,11 @@ public final class VoxelReader {
+ 		return ids == null ? UNKNOWN : ids[((y & 15) << 8) | ((z & 15) << 4) | (x & 15)];
+ 	}
+ 
++	/** After state(x,y,z): immutable decoded IDs for this section, null outside known world data. */
++	int @Nullable [] airRunIdsAt(int y) {
++		return y >= this.minY && y < this.maxY ? this.sectionIds : null;
++	}
++
+ 	private void enterSection(int sx, int sy, int sz) {
+ 		Decoded chunk = this.chunk(sx, sz);
+ 		if (chunk == null) {
+@@ -169,6 +174,20 @@ public final class VoxelReader {
+ 		return 1 + ((int) (this.partialMask[i >> 6] >>> i) & 1);
+ 	}
+ 
++	/** True if solid() can read this height from a section. */
++	boolean solidHeight(int y) {
++		return y >= this.minY && y < this.maxY;
++	}
++
++	/** Masks installed by the most recent in-world solid() lookup; null if its chunk is missing. */
++	long @Nullable [] lastSolidMask() {
++		return this.solidMask;
++	}
++
++	long @Nullable [] lastPartialMask() {
++		return this.partialMask;
++	}
++
+ 	/**
+ 	 * Whether an open cell is a pocket one block tall, with solid blocks right above and below it:
+ 	 * a lone air bubble, a buried lava spring or a crawlspace. Under a roof, rays skipping rock
+@@ -319,7 +338,14 @@ public final class VoxelReader {
+ 	 * returns {@code Integer.MAX_VALUE} instead of asking, so the blocks a job sees don't depend on
+ 	 * this call.
+ 	 */
++	private boolean solidTopCached;
++	private int solidTopX0, solidTopZ0, solidTopX1, solidTopZ1, solidTopValue;
++
+ 	int solidTop(int chunkX0, int chunkZ0, int chunkX1, int chunkZ1) {
++		if (this.solidTopCached && this.solidTopX0 == chunkX0 && this.solidTopZ0 == chunkZ0
++			&& this.solidTopX1 == chunkX1 && this.solidTopZ1 == chunkZ1) {
++			return this.solidTopValue;
++		}
+ 		int top = Integer.MIN_VALUE;
+ 		for (int cx = chunkX0; cx <= chunkX1; cx++) {
+ 			for (int cz = chunkZ0; cz <= chunkZ1; cz++) {
+@@ -339,6 +365,13 @@ public final class VoxelReader {
+ 				}
+ 			}
+ 		}
++		// Only cache completed scans. A scan with an unasked chunk may become answerable later.
++		this.solidTopX0 = chunkX0;
++		this.solidTopZ0 = chunkZ0;
++		this.solidTopX1 = chunkX1;
++		this.solidTopZ1 = chunkZ1;
++		this.solidTopValue = top;
++		this.solidTopCached = true;
+ 		return top;
+ 	}
+ 
