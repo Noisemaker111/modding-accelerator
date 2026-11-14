@@ -77,6 +77,8 @@ Prepare a clean, disposable Diorama checkout with an unchanged reference baker:
 
 ```sh
 python3 bench/diorama/prepare_comparison.py --root DIORAMA_SOURCE --patch bench/diorama/air-runs.patch
+./modaccel game-stop --root DIORAMA_SOURCE --project :1.21.1
+./modaccel compile --root DIORAMA_SOURCE --project :1.21.1
 ./modaccel world-check --root DIORAMA_SOURCE --project :1.21.1 --world DISPOSABLE_WORLD
 ./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/compare.java
 ./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/equivalence.java
