@@ -20,7 +20,8 @@ the samples. Run in that order: the bake experiment retains a real terrain tile
 in the session for the mipmap comparison. These temporarily block the render
 thread; resulting frame stalls are **benchmark-induced**, not ordinary gameplay.
 
-- `bake.java`: alternating Fancy/Fast CPU bakes of three nearby tiles, two warmup
+- `bake.java`: preflights a 3×3 neighborhood and selects up to three tiles with
+  at least 5% mapped coverage, then alternates Fancy/Fast CPU bakes with two warmup
   rounds and six measured rounds. Reports coverage and pixel hashes. Restores
   the original quality flag. Fast deliberately changes visual quality.
 - `mipmaps.java`: the upstream alpha-weighted mip builder versus an opaque-pixel

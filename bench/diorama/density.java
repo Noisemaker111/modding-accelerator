@@ -11,7 +11,7 @@ import net.minecraft.world.item.Items;
 
 if (mc.level == null || mc.player == null) throw new IllegalStateException("Enter a disposable world first");
 var view = new MapViewport.View(0, 0, 640, 360, Projection.u(mc.player.getX(), mc.player.getZ()),
-    Projection.v(mc.player.getY(), mc.player.getZ()), 2, TileKey.SURFACE, false, true);
+    Projection.v(mc.player.getX(), mc.player.getY(), mc.player.getZ()), 2, TileKey.SURFACE, false, true);
 List<Object> radar = new ArrayList<>(), waypoints = new ArrayList<>();
 List<int[]> cases = new ArrayList<>();
 for (int count : new int[] {0, 64, 256, 1024}) for (int stack : new int[] {1, 64}) cases.add(new int[] {count, stack});
@@ -67,4 +67,5 @@ for (int count : new int[] {0, 120, 1000, 5000}) {
     waypoints.add(Map.of("waypoints", count, "millisecondsPerLayout", samples, "checksum", checksum));
 }
 return new com.google.gson.Gson().toJson(Map.of("schema", 1, "kind", "diorama-density", "radar", radar, "waypoints", waypoints,
+    "facing", Projection.facing().name(), "position", List.of(mc.player.getX(), mc.player.getY(), mc.player.getZ()),
     "limit", "Client-only item entities, removed in finally; waypoint lists never saved. Measures collection/layout CPU, excludes drawing, networking and entity ticking."));
