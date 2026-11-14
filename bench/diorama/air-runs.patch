@@ -1,0 +1,121 @@
+diff --git a/src/main/java/dev/diorama/bake/TileBaker.java b/src/main/java/dev/diorama/bake/TileBaker.java
+index 28ba3de..5e0b6c1 100644
+--- a/src/main/java/dev/diorama/bake/TileBaker.java
++++ b/src/main/java/dev/diorama/bake/TileBaker.java
+@@ -959,6 +959,30 @@ public final class TileBaker {
+ 				skippingRock = false;
+ 			}
+ 			int id = this.reader.state(x, by, bz);
++			// Walk known air directly in the current decoded section. Keep every original
++			// DDA addition and tie decision; re-enter the full path at terrain/section edges.
++			if (id == VoxelReader.AIR_ID && this.caveCut == null) {
++				int[] ids = this.reader.airRunIdsAt(by);
++				if (ids != null) {
++					int bottom = Math.max(this.limitY, by & ~15);
++					int north = bz & ~15;
++					int localX = x & 15;
++					do {
++						if (tMaxY < tMaxZ) {
++							by--;
++							t = tMaxY;
++							tMaxY += tDeltaY;
++							enteredTop = true;
++						} else {
++							bz--;
++							t = tMaxZ;
++							tMaxZ += tDeltaZ;
++							enteredTop = false;
++						}
++					} while (by >= bottom && bz >= north && ids[((by & 15) << 8) | ((bz & 15) << 4) | localX] == VoxelReader.AIR_ID);
++					continue;
++				}
++			}
+ 			if (id == VoxelReader.UNKNOWN) {
+ 				if (!this.passesMissing(by) && !TileSpots.passedWhenSaved(this.key, this.savedSpots, x, by, bz)) {
+ 					return false;
+@@ -1496,30 +1520,51 @@ public final class TileBaker {
+ 		return this.reader.solid(x, y, z) > 0;
+ 	}
+ 
++	// Each baker reads immutable snapshots. Adjacent samples share face corners;
++	// only their interpolation coordinates differ. Keep separate last-face caches.
++	private int aoTopX = Integer.MIN_VALUE;
++	private int aoTopY;
++	private int aoTopZ;
++	private float aoTopNW, aoTopNE, aoTopSW, aoTopSE;
++	private int aoSouthX = Integer.MIN_VALUE;
++	private int aoSouthY;
++	private int aoSouthZ;
++	private float aoSouthTW, aoSouthTE, aoSouthBW, aoSouthBE;
++
+ 	/** Smooth corner occlusion on a top face, from the eight blocks around the cell above it. */
+ 	private float ambientOcclusionTop(int x, int y, int z, double fx, double fz) {
+-		boolean n = this.occludes(x, y, z - 1);
+-		boolean s = this.occludes(x, y, z + 1);
+-		boolean w = this.occludes(x - 1, y, z);
+-		boolean e = this.occludes(x + 1, y, z);
+-		float nw = corner(w, n, this.occludes(x - 1, y, z - 1));
+-		float ne = corner(e, n, this.occludes(x + 1, y, z - 1));
+-		float sw = corner(w, s, this.occludes(x - 1, y, z + 1));
+-		float se = corner(e, s, this.occludes(x + 1, y, z + 1));
+-		return bilinear(nw, ne, sw, se, fx, fz);
++		if (x != this.aoTopX || y != this.aoTopY || z != this.aoTopZ) {
++			boolean n = this.occludes(x, y, z - 1);
++			boolean s = this.occludes(x, y, z + 1);
++			boolean w = this.occludes(x - 1, y, z);
++			boolean e = this.occludes(x + 1, y, z);
++			this.aoTopNW = corner(w, n, this.occludes(x - 1, y, z - 1));
++			this.aoTopNE = corner(e, n, this.occludes(x + 1, y, z - 1));
++			this.aoTopSW = corner(w, s, this.occludes(x - 1, y, z + 1));
++			this.aoTopSE = corner(e, s, this.occludes(x + 1, y, z + 1));
++			this.aoTopX = x;
++			this.aoTopY = y;
++			this.aoTopZ = z;
++		}
++		return bilinear(this.aoTopNW, this.aoTopNE, this.aoTopSW, this.aoTopSE, fx, fz);
+ 	}
+ 
+ 	/** Same for a south face; {@code z} is the open layer in front of it, {@code fy} runs bottom to top. */
+ 	private float ambientOcclusionSouth(int x, int y, int z, double fx, double fy) {
+-		boolean up = this.occludes(x, y + 1, z);
+-		boolean down = this.occludes(x, y - 1, z);
+-		boolean w = this.occludes(x - 1, y, z);
+-		boolean e = this.occludes(x + 1, y, z);
+-		float tw = corner(w, up, this.occludes(x - 1, y + 1, z));
+-		float te = corner(e, up, this.occludes(x + 1, y + 1, z));
+-		float bw = corner(w, down, this.occludes(x - 1, y - 1, z));
+-		float be = corner(e, down, this.occludes(x + 1, y - 1, z));
+-		return bilinear(tw, te, bw, be, fx, 1 - fy);
++		if (x != this.aoSouthX || y != this.aoSouthY || z != this.aoSouthZ) {
++			boolean up = this.occludes(x, y + 1, z);
++			boolean down = this.occludes(x, y - 1, z);
++			boolean w = this.occludes(x - 1, y, z);
++			boolean e = this.occludes(x + 1, y, z);
++			this.aoSouthTW = corner(w, up, this.occludes(x - 1, y + 1, z));
++			this.aoSouthTE = corner(e, up, this.occludes(x + 1, y + 1, z));
++			this.aoSouthBW = corner(w, down, this.occludes(x - 1, y - 1, z));
++			this.aoSouthBE = corner(e, down, this.occludes(x + 1, y - 1, z));
++			this.aoSouthX = x;
++			this.aoSouthY = y;
++			this.aoSouthZ = z;
++		}
++		return bilinear(this.aoSouthTW, this.aoSouthTE, this.aoSouthBW, this.aoSouthBE, fx, 1 - fy);
+ 	}
+ 
+ 	static float corner(boolean side1, boolean side2, boolean diagonal) {
+diff --git a/src/main/java/dev/diorama/bake/VoxelReader.java b/src/main/java/dev/diorama/bake/VoxelReader.java
+index 403a096..116e6d7 100644
+--- a/src/main/java/dev/diorama/bake/VoxelReader.java
++++ b/src/main/java/dev/diorama/bake/VoxelReader.java
+@@ -127,6 +127,11 @@ public final class VoxelReader {
+ 		return ids == null ? UNKNOWN : ids[((y & 15) << 8) | ((z & 15) << 4) | (x & 15)];
+ 	}
+ 
++	/** After state(x,y,z): immutable decoded IDs for this section, null outside known world data. */
++	int @Nullable [] airRunIdsAt(int y) {
++		return y >= this.minY && y < this.maxY ? this.sectionIds : null;
++	}
++
+ 	private void enterSection(int sx, int sy, int sz) {
+ 		Decoded chunk = this.chunk(sx, sz);
+ 		if (chunk == null) {
