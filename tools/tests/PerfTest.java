@@ -11,6 +11,9 @@ public final class PerfTest {
         checks++;
     }
     public static void main(String[] args) throws Exception {
+        check(Run.running(ProcessHandle.current()), "current process is running");
+        check(Run.exitedProcStat("123 (name with ) spaces) Z 1 2 3"), "unreaped Linux exits are not running games");
+        check(!Run.exitedProcStat("123 (java) S 1 2 3"), "sleeping Linux process remains live");
         Path home = Path.of(args[0]);
         Path scratch = Files.createTempDirectory(Path.of(args[1]).toAbsolutePath().getParent(), "perf-fixture-");
         Modaccel.Report receipt = new Modaccel.Report(scratch, "perf-test");

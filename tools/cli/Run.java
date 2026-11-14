@@ -8,6 +8,23 @@ import java.util.regex.*;
 
 /** Argument arrays throughout: no PowerShell, cmd, bash, or shell escaping. */
 final class Run {
+    /** Linux keeps an unreaped exit visible to ProcessHandle.isAlive(). It cannot serve requests. */
+    static boolean running(ProcessHandle process) {
+        if (!process.isAlive()) return false;
+        if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("linux")) {
+            try {
+                return !exitedProcStat(Files.readString(Path.of("/proc", Long.toString(process.pid()), "stat")));
+            } catch (IOException ignored) {
+                return process.isAlive();
+            }
+        }
+        return true;
+    }
+
+    static boolean exitedProcStat(String stat) {
+        int end = stat.lastIndexOf(')');
+        return end >= 0 && end + 2 < stat.length() && "ZXx".indexOf(stat.charAt(end + 2)) >= 0;
+    }
 
     record Result(int exit, Path log, double seconds) {}
 
