@@ -26,12 +26,27 @@ public final class PerfTest {
             public class Minecraft {
                 static volatile long sink;
                 public void runTick(boolean render) throws Exception {
+                    if (outer() != 7L) throw new AssertionError("return value changed");
                     long end = System.nanoTime() + 8_000_000;
                     while (System.nanoTime() < end) sink++;
                     Thread.sleep(2);
                 }
+                public long outer() throws Exception {
+                    inner();
+                    try { fails(); } catch (NumberFormatException expected) { }
+                    recursive(2);
+                    return 7L;
+                }
+                public void inner() throws Exception { Thread.sleep(22); }
+                public void fails() { Integer.parseInt("not-a-number"); }
+                public int recursive(int n) { return n > 0 ? recursive(n - 1) : n; }
                 public static void main(String[] args) throws Exception {
                     Minecraft mc = new Minecraft();
+                    Thread worker = new Thread(() -> {
+                        try { while (true) mc.outer(); } catch (Exception error) { throw new RuntimeException(error); }
+                    }, "fixture-worker");
+                    worker.setDaemon(true);
+                    worker.start();
                     net.minecraft.server.MinecraftServer server = new net.minecraft.server.MinecraftServer();
                     while (true) {
                         mc.runTick(true);
@@ -63,8 +78,14 @@ public final class PerfTest {
             Files.createDirectories(first);
             Path request = Performance.request(first, 2, 0, false);
             Path probes = scratch.resolve("probes.json");
-            Json.save(probes, Json.map("probes", List.of(Json.map("class", "net.minecraft.client.Minecraft",
-                "method", "runTick", "descriptor", "(Z)V", "label", "renderCalls"))));
+            List<Object> selectors = new ArrayList<>();
+            selectors.add(Json.map("class", "net.minecraft.client.Minecraft", "method", "runTick", "descriptor", "(Z)V", "label", "renderCalls"));
+            for (String method : List.of("outer", "inner", "fails", "recursive")) {
+                String descriptor = method.equals("outer") ? "()J" : method.equals("recursive") ? "(I)I" : "()V";
+                selectors.add(Json.map("class", "net.minecraft.client.Minecraft", "method", method,
+                    "descriptor", descriptor, "label", method, "mode", "timing"));
+            }
+            Json.save(probes, Json.map("probes", selectors));
             Performance.probes(request, new Modaccel.Options(new String[]{"perf", "--probes", probes.toString()}));
             Performance.capture(pid, agent, request, first, 2, 0, false);
             check(process.isAlive(), "profiling must leave the target running");
@@ -80,12 +101,15 @@ public final class PerfTest {
             check(Files.readString(first.resolve("report.html")).contains("What this session costs"), "HTML report generated");
             check(!Files.readString(first.resolve("report.html")).contains("__DATA__"), "report has embedded data");
             check(Files.isRegularFile(first.resolve("stacks.speedscope.json")), "sampled stack export exists");
+            functionTiming(report, first);
             Path second = scratch.resolve("no-hooks");
             Files.createDirectories(second);
             Performance.capture(pid, agent, Performance.request(second, 1, 0, true), second, 1, 0, false);
             PerfReport.write(second, second);
             Map<String, Object> unhooked = Json.read(second.resolve("report.json"));
             check(!Json.object(unhooked.get("metrics")).containsKey("frame_ms"), "hooks removed and missing FPS is not fabricated");
+            check(((Number) Json.object(unhooked.get("functionTiming")).get("retainedCalls")).longValue() == 0,
+                "timing probes are restored and do not leak into the next capture");
             Path third = scratch.resolve("repeat");
             Files.createDirectories(third);
             Performance.capture(pid, agent, Performance.request(third, 1, 0, false), third, 1, 0, false);
@@ -116,6 +140,44 @@ public final class PerfTest {
         rconProtocol();
         System.out.println(checks + " performance checks passed (synthetic JVM fixture; no Minecraft claims)");
     }
+    static void functionTiming(Map<String, Object> report, Path directory) throws Exception {
+        Map<String, Object> timing = Json.object(report.get("functionTiming"));
+        List<Object> rows = Json.array(timing.get("methods"));
+        Map<String, Object> outer = rows.stream().map(Json::object).filter(r -> r.get("name").equals("outer")).findFirst().orElseThrow();
+        check(((Number) outer.get("inclusiveTotalMs")).doubleValue() > ((Number) outer.get("selfTotalMs")).doubleValue(),
+            "nested sleeps are subtracted from parent self time");
+        Map<String, Object> inner = rows.stream().map(Json::object).filter(r -> r.get("name").equals("inner")).findFirst().orElseThrow();
+        check(((Number) Json.object(inner.get("inclusive")).get("mean")).doubleValue() >= 1,
+            "function timing records real elapsed sleeps, not sampled CPU percentages");
+        Map<String, Object> fails = rows.stream().map(Json::object).filter(r -> r.get("name").equals("fails")).findFirst().orElseThrow();
+        check(fails.get("calls").toString().equals(fails.get("exceptionalCalls").toString()), "implicit propagated exceptions close every timing scope");
+        check(((Number) outer.get("exceptionalCalls")).longValue() == 0, "caught child exceptions do not mark the parent exceptional");
+        check(Json.array(timing.get("edges")).stream().map(Json::object).anyMatch(r -> r.get("name").equals("recursive → recursive")),
+            "recursive calls retain their nearest timed caller");
+        List<Object> trace = Json.array(Json.read(directory.resolve("functions.trace.json")).get("traceEvents"));
+        check(trace.stream().map(Json::object).anyMatch(e -> e.get("name").equals("jdk.ThreadSleep")), "recorded blocking context accompanies function durations");
+        List<Object> events = trace.stream().filter(e -> Json.object(e).get("cat").equals("instrumented-function")).toList();
+        check(events.stream().map(Json::object).map(r -> r.get("tid")).distinct().count() >= 2, "timelines retain separate threads");
+        Map<String, Map<String, Object>> byId = new HashMap<>();
+        for (Object event : events) {
+            Map<String, Object> e = Json.object(event);
+            byId.put(Json.object(e.get("args")).get("callId").toString(), e);
+        }
+        boolean sameThread = true;
+        for (Object event : events) {
+            Map<String, Object> e = Json.object(event), args = Json.object(e.get("args"));
+            Map<String, Object> parent = byId.get(args.get("parentId").toString());
+            if (parent != null && !parent.get("tid").equals(e.get("tid"))) sameThread = false;
+        }
+        check(sameThread, "parent IDs never cross threads");
+        check(!Boolean.TRUE.equals(timing.get("partial")), "small timing fixture retains complete emitted history");
+        PerfFunctions truncated = new PerfFunctions();
+        Properties status = new Properties();
+        status.setProperty("timingCompleted", "100001");
+        status.setProperty("timingDropped", "1");
+        check(Boolean.TRUE.equals(truncated.finish(status).get("partial")), "dropped timing events must mark totals incomplete");
+    }
+
     static void adviceEvidence() {
         Map<String, Object> absent = Json.map("metrics", Map.of(), "executionSamples", 0);
         PerfAdvice.enrich(absent);

@@ -27,6 +27,33 @@ public final class PerfAgent {
     private static volatile List<String[]> probes = List.of();
     private static final Map<String, java.util.concurrent.atomic.LongAdder> calls = new ConcurrentHashMap<>();
     private static final Set<String> hooks = ConcurrentHashMap.newKeySet();
+    private static final ThreadLocal<TimingStack> timing = ThreadLocal.withInitial(TimingStack::new);
+    private static final java.util.concurrent.atomic.AtomicLong sequence = new java.util.concurrent.atomic.AtomicLong();
+    private static final java.util.concurrent.atomic.AtomicLong completed = new java.util.concurrent.atomic.AtomicLong();
+    private static final java.util.concurrent.atomic.AtomicLong depthDropped = new java.util.concurrent.atomic.AtomicLong();
+    private static final long TIMING_LIMIT = 100_000;
+
+    private static final class TimingStack {
+        long generation;
+        int overflow;
+        final Deque<Span> spans = new ArrayDeque<>();
+    }
+
+    private static final class Span {
+        final MethodTiming event = new MethodTiming();
+        long started, children;
+    }
+
+    @Name("modaccel.MethodTiming") @jdk.jfr.Label("Selected function wall time") @StackTrace(false)
+    public static final class MethodTiming extends Event {
+        public String label;
+        public String caller;
+        public long callId;
+        public long parentId;
+        @Timespan(Timespan.NANOSECONDS) public long inclusiveNanos;
+        @Timespan(Timespan.NANOSECONDS) public long selfNanos;
+        public boolean exceptional;
+    }
 
     @Name("modaccel.Pulse") @jdk.jfr.Label("Mod Accel timing") @StackTrace(false)
     public static final class Pulse extends Event {
@@ -68,12 +95,16 @@ public final class PerfAgent {
         List<String[]> selected = new ArrayList<>();
         for (String key : p.stringPropertyNames()) if (key.startsWith("probe.")) {
             String[] fields = p.getProperty(key).split("\\|", -1);
-            if (fields.length != 4) throw new IllegalArgumentException("Invalid probe selector");
+            if (fields.length == 4) fields = new String[]{fields[0], fields[1], fields[2], fields[3], "count"};
+            if (fields.length != 5 || !Set.of("count", "timing").contains(fields[4])) throw new IllegalArgumentException("Invalid probe selector");
             selected.add(fields);
         }
         if (selected.size() > 32) throw new IllegalArgumentException("At most 32 probes");
         probes = List.copyOf(selected);
         calls.clear();
+        sequence.set(0);
+        completed.set(0);
+        depthDropped.set(0);
         official1211 = false;
         busy = true;
         errors.clear();
@@ -85,6 +116,10 @@ public final class PerfAgent {
 
     private static void pulse(String kind) {
         if (!measuring) return;
+        if (kind.startsWith("enter.") || kind.startsWith("exit.") || kind.startsWith("throw.")) {
+            timed(kind);
+            return;
+        }
         if (kind.startsWith("call.")) {
             java.util.concurrent.atomic.LongAdder counter = calls.get(kind);
             if (counter != null) counter.increment();
@@ -110,6 +145,55 @@ public final class PerfAgent {
         }
     }
 
+    private static void timed(String kind) {
+        TimingStack stack = timing.get();
+        if (stack.generation != generation) {
+            stack.spans.clear();
+            stack.overflow = 0;
+            stack.generation = generation;
+        }
+        int dot = kind.indexOf('.');
+        String label = kind.substring(dot + 1);
+        if (kind.startsWith("enter.")) {
+            if (stack.spans.size() >= 128 || stack.overflow > 0) {
+                stack.overflow++;
+                depthDropped.incrementAndGet();
+                return;
+            }
+            Span span = new Span();
+            span.event.label = label;
+            span.event.callId = sequence.incrementAndGet();
+            Span parent = stack.spans.peek();
+            span.event.parentId = parent == null ? 0 : parent.event.callId;
+            span.event.caller = parent == null ? "[outside timed scope]" : parent.event.label;
+            span.event.begin();
+            span.started = System.nanoTime();
+            stack.spans.push(span);
+            return;
+        }
+        if (stack.overflow > 0) {
+            stack.overflow--;
+            return;
+        }
+        Span span = stack.spans.peek();
+        // Calls begun before the capture are not timed; never invent a partial duration.
+        if (span == null) return;
+        if (!span.event.label.equals(label)) {
+            stack.spans.clear();
+            if (errors.size() < 16) errors.add("Unbalanced timing scope " + label);
+            return;
+        }
+        long elapsed = System.nanoTime() - span.started;
+        stack.spans.pop();
+        Span parent = stack.spans.peek();
+        if (parent != null) parent.children += elapsed;
+        span.event.inclusiveNanos = elapsed;
+        span.event.selfNanos = Math.max(0, elapsed - span.children);
+        span.event.exceptional = kind.startsWith("throw.");
+        span.event.end();
+        if (completed.incrementAndGet() <= TIMING_LIMIT) span.event.commit();
+    }
+
     private static void capture(Instrumentation inst, Path out, int seconds, int warmup, Properties request) {
         Set<Class<?>> changed = ConcurrentHashMap.newKeySet();
         ClassFileTransformer transformer = new ClassFileTransformer() {
@@ -125,22 +209,34 @@ public final class PerfAgent {
                 }
                 try {
                     ClassReader reader = new ClassReader(bytes);
-                    ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
+                    boolean deep = probes.stream().anyMatch(p -> p[4].equals("timing"));
+                    ClassWriter writer = new ClassWriter(reader, deep ? ClassWriter.COMPUTE_FRAMES : ClassWriter.COMPUTE_MAXS) {
+                        protected ClassLoader getClassLoader() { return loader == null ? ClassLoader.getSystemClassLoader() : loader; }
+                    };
                     boolean[] edited = {false};
                     reader.accept(new ClassVisitor(Opcodes.ASM9, writer) {
                         public MethodVisitor visitMethod(int access, String method, String desc, String signature, String[] exceptions) {
                             MethodVisitor mv = super.visitMethod(access, method, desc, signature, exceptions);
                             String kind = hook(name, method, desc);
                             List<String> counters = new ArrayList<>();
+                            String timer = null;
                             for (String[] probe : probes) {
-                                if (probe[0].equals(name) && probe[1].equals(method) && probe[2].equals(desc)) counters.add("call." + probe[3]);
+                                if (probe[0].equals(name) && probe[1].equals(method) && probe[2].equals(desc)) {
+                                    counters.add("call." + probe[3]);
+                                    if (probe[4].equals("timing")) timer = probe[3];
+                                }
                             }
+                            if (deep && kind != null && timer == null) timer = "@" + kind;
                             if (kind == null && counters.isEmpty()) return mv;
                             if ((access & (Opcodes.ACC_NATIVE | Opcodes.ACC_ABSTRACT)) != 0) return mv;
                             for (String counter : counters) calls.putIfAbsent(counter, new java.util.concurrent.atomic.LongAdder());
                             edited[0] = true;
                             hooks.add(name + "." + method + desc + "=" + kind + counters);
+                            final String timedLabel = timer;
                             return new MethodVisitor(Opcodes.ASM9, mv) {
+                                final org.objectweb.asm.Label begin = new org.objectweb.asm.Label();
+                                final org.objectweb.asm.Label end = new org.objectweb.asm.Label();
+                                final org.objectweb.asm.Label handler = new org.objectweb.asm.Label();
                                 private void emit(String label) {
                                     super.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "getProperties", "()Ljava/util/Properties;", false);
                                     super.visitLdcInsn(KEY);
@@ -153,10 +249,26 @@ public final class PerfAgent {
                                     super.visitCode();
                                     if ("tick".equals(kind)) emit("tick-start");
                                     for (String counter : counters) emit(counter);
+                                    if (timedLabel != null) {
+                                        emit("enter." + timedLabel);
+                                        super.visitLabel(begin);
+                                    }
                                 }
                                 public void visitInsn(int opcode) {
+                                    if (timedLabel != null && opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) emit("exit." + timedLabel);
                                     if (opcode == Opcodes.RETURN && kind != null) emit(kind);
                                     super.visitInsn(opcode);
+                                }
+                                public void visitMaxs(int maxStack, int maxLocals) {
+                                    if (timedLabel != null) {
+                                        super.visitLabel(end);
+                                        // Last handler: existing catches run first; only propagated exceptions leave the scope.
+                                        super.visitTryCatchBlock(begin, end, handler, null);
+                                        super.visitLabel(handler);
+                                        emit("throw." + timedLabel);
+                                        super.visitInsn(Opcodes.ATHROW);
+                                    }
+                                    super.visitMaxs(maxStack, maxLocals);
                                 }
                             };
                         }
@@ -177,6 +289,7 @@ public final class PerfAgent {
             recording.enable(Pulse.class).withoutStackTrace();
             recording.enable(ProcessSample.class).withoutStackTrace();
             recording.enable(ProbeCalls.class).withoutStackTrace();
+            recording.enable(MethodTiming.class).withoutStackTrace().withThreshold(Duration.ZERO);
             if (!request.getProperty("hooks", "on").equals("off")) {
                 System.getProperties().put(KEY, (Consumer<String>) kind -> {
                     try { pulse(kind); }
@@ -262,6 +375,11 @@ public final class PerfAgent {
             } catch (Throwable error) { errors.add("hook cleanup: " + error); }
             status.setProperty("agentBuild", BUILD_ID);
             status.setProperty("requestedProbes", String.join("\n", probes.stream().map(p -> p[3]).toList()));
+            status.setProperty("timingProbes", String.join("\n", probes.stream().filter(p -> p[4].equals("timing"))
+                .map(p -> p[3] + "=" + p[0].replace('/', '.') + "." + p[1] + p[2]).toList()));
+            status.setProperty("timingCompleted", Long.toString(completed.get()));
+            status.setProperty("timingDropped", Long.toString(Math.max(0, completed.get() - TIMING_LIMIT)));
+            status.setProperty("timingDepthDropped", Long.toString(depthDropped.get()));
             status.setProperty("hooks", String.join("\n", new TreeSet<>(hooks)));
             status.setProperty("errors", String.join("\n", errors));
             try { save(out.resolve("status.properties"), status); }

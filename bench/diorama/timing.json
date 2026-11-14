@@ -1,0 +1,39 @@
+{
+  "probes": [
+    {
+      "class": "dev.diorama.bake.TileBaker",
+      "method": "bake",
+      "descriptor": "(Ldev/diorama/bake/TileKey;Ldev/diorama/bake/ChunkSource;Ldev/diorama/bake/Looks;Ljava/util/BitSet;Z[I[B[ILdev/diorama/bake/Overlays;)Ldev/diorama/bake/TileImage;",
+      "label": "tileBake",
+      "mode": "timing"
+    },
+    {
+      "class": "dev.diorama.bake.TileBaker",
+      "method": "bakePixels",
+      "descriptor": "(IIII[I[B[F[B)V",
+      "label": "bakePixels",
+      "mode": "timing"
+    },
+    {
+      "class": "dev.diorama.bake.Mipmaps",
+      "method": "build",
+      "descriptor": "([II)[[I",
+      "label": "mipmapBuild",
+      "mode": "timing"
+    },
+    {
+      "class": "dev.diorama.render.Radar",
+      "method": "collect",
+      "descriptor": "(Ldev/diorama/render/MapViewport$View;FZ)Ljava/util/List;",
+      "label": "radarCollect",
+      "mode": "timing"
+    },
+    {
+      "class": "dev.diorama.waypoint.WaypointOverlay",
+      "method": "layout",
+      "descriptor": "(Ldev/diorama/render/MapViewport$View;Ljava/util/List;Z)Ljava/util/List;",
+      "label": "waypointLayout",
+      "mode": "timing"
+    }
+  ]
+}
