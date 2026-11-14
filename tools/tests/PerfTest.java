@@ -11,6 +11,7 @@ public final class PerfTest {
         checks++;
     }
     public static void main(String[] args) throws Exception {
+        adviceEvidence();
         check(Run.running(ProcessHandle.current()), "current process is running");
         check(Run.exitedProcStat("123 (name with ) spaces) Z 1 2 3"), "unreaped Linux exits are not running games");
         check(!Run.exitedProcStat("123 (java) S 1 2 3"), "sleeping Linux process remains live");
@@ -115,6 +116,31 @@ public final class PerfTest {
         rconProtocol();
         System.out.println(checks + " performance checks passed (synthetic JVM fixture; no Minecraft claims)");
     }
+    static void adviceEvidence() {
+        Map<String, Object> absent = Json.map("metrics", Map.of(), "executionSamples", 0);
+        PerfAdvice.enrich(absent);
+        List<Object> catalog = Json.array(absent.get("metricCatalog"));
+        check(catalog.size() >= 24, "report exposes a broad metric checklist");
+        check(catalog.stream().allMatch(v -> Json.object(v).get("value") == null), "missing telemetry must not become measured zero");
+        check(Json.array(absent.get("recommendations")).size() == 1
+            && Json.object(Json.array(absent.get("recommendations")).get(0)).get("id").equals("capture-coverage"),
+            "missing telemetry requests evidence rather than inventing a bottleneck");
+        Map<String, Object> quiet = Json.map("metrics", Map.of(), "framesOver50ms", 0, "ticksOver50ms", 0);
+        PerfAdvice.enrich(quiet);
+        check(Json.array(quiet.get("metricCatalog")).stream().filter(v -> Json.object(v).get("availability").equals("recorded")).count() == 2,
+            "recorded zero counts remain available");
+        Map<String, Object> slow = Json.map("metrics", Json.map("frame_ms", Json.map("p99", 90)),
+            "framesOver50ms", 12, "ticksOver50ms", 4, "gcPauseTotalMs", 30, "observedMonitorBlockedMs", 70,
+            "hotMethods", List.of(Json.map("name", "fixture.Expensive.work()V", "samples", 100, "percent", 50)), "executionSamples", 200);
+        PerfAdvice.enrich(slow);
+        List<Object> findings = Json.array(slow.get("recommendations"));
+        check(findings.size() == 5, "frame, tick, GC, contention and method evidence produce separate investigation steps");
+        check(findings.stream().allMatch(v -> Boolean.FALSE.equals(Json.object(v).get("fixVerified"))
+            && !Json.object(Json.object(v).get("evidence")).isEmpty() && !Json.object(v).get("validation").toString().isBlank()),
+            "every suggestion has evidence and a validation procedure; none asserts an untested fix");
+        check(Json.object(Json.object(findings.get(0)).get("evidence")).get("framesOver50ms").equals(12), "recommendations preserve exact source evidence");
+    }
+
     static void rconProtocol() throws Exception {
         try (java.net.ServerSocket listener = new java.net.ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress())) {
             var task = java.util.concurrent.Executors.newSingleThreadExecutor();
