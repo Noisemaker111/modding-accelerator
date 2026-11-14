@@ -147,10 +147,12 @@ independent-launch evidence. Setup and command traffic can affect results.
 The scene template places 1, 16, 64 and 256 instances and establishes a camera
 position. Connect a client to the disposable server and attach to the **client PID**
 for frame measurements; RCON controls the server. Substitute a valid mod block ID
-to exercise its default placed-block rendering. Complex Diorama contents, animations,
-inventories and other custom state need scenario commands or an adapter; merely
-placing its block does not establish coverage of all its mechanics. Inspect the
-rendered scene to confirm it actually contains the intended content.
+to exercise its default placed-block rendering. Diorama is a minimap/world-map
+renderer: placed-block scenes do not exercise its map baking, radar or waypoint
+paths. Use the dedicated [Diorama CPU experiments](bench/diorama/README.md) for
+those subsystems. Other mods' animations, inventories and custom state need
+appropriate scenario commands or an adapter. Inspect the rendered scene to
+confirm the intended content.
 
 ## Custom mechanics and deeper probes
 

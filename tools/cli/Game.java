@@ -38,7 +38,7 @@ final class Game {
 
     static boolean alive(Map<String, Object> session) {
         var process = ProcessHandle.of(((Number) session.get("pid")).longValue());
-        if (process.isEmpty() || !process.get().isAlive()) return false;
+        if (process.isEmpty() || !Run.running(process.get())) return false;
         String recorded = Json.text(session, "processStart", "");
         return (
             !recorded.isEmpty() &&
@@ -309,7 +309,7 @@ final class Game {
             // A dropped connection usually means the game died. A dying JVM keeps the socket
             // until its crash file is written, so give it a moment to finish exiting.
             var process = ProcessHandle.of(((Number) session.get("pid")).longValue());
-            if (!(failure instanceof SocketTimeoutException) && process.isPresent()) try {
+            if (!(failure instanceof SocketTimeoutException) && process.filter(Run::running).isPresent()) try {
                 process.get().onExit().get(10, TimeUnit.SECONDS);
             } catch (Exception stillRunning) {}
             if (!alive(session)) throw new IOException(failure.getMessage() + "\n" + exited(session), failure);
@@ -506,7 +506,11 @@ final class Game {
             } else {
                 var process = ProcessHandle.of(((Number) current.get("pid")).longValue());
                 result = request(current, Json.map("command", "quit"));
-                if (process.isPresent()) process.get().onExit().get(20, TimeUnit.SECONDS);
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+                while (process.filter(Run::running).isPresent()) {
+                    if (System.nanoTime() >= deadline) throw new TimeoutException("Game did not stop within 20 seconds");
+                    Thread.sleep(100);
+                }
                 result.put("stopped", true);
                 result.put("details", "Stopped the game (process " + current.get("pid") + ").");
             }

@@ -236,7 +236,7 @@ final class Performance {
             previous = state;
             if (state.equals("complete")) return;
             if (state.equals("failed")) throw new IOException(status.getProperty("error"));
-            if (ProcessHandle.of(Long.parseLong(pid)).filter(ProcessHandle::isAlive).isEmpty()) {
+            if (ProcessHandle.of(Long.parseLong(pid)).filter(Run::running).isEmpty()) {
                 throw new IOException("Target exited before capture completed. Partial files: " + out);
             }
             Thread.sleep(250);

@@ -1,0 +1,15 @@
+--- a/src/main/java/dev/diorama/bake/Mipmaps.java
++++ b/src/main/java/dev/diorama/bake/Mipmaps.java
+@@ -36,6 +36,12 @@
+ 		if (alpha == 0) {
+ 			return 0;
+ 		}
++		// Opaque pixels have equal alpha; spare the weighted multiplications and divisions.
++		if (alpha == 1020) {
++			int rb = (((p0 & 0x00ff00ff) + (p1 & 0x00ff00ff) + (p2 & 0x00ff00ff) + (p3 & 0x00ff00ff)) >>> 2) & 0x00ff00ff;
++			int g = (((p0 & 0x0000ff00) + (p1 & 0x0000ff00) + (p2 & 0x0000ff00) + (p3 & 0x0000ff00)) >>> 2) & 0x0000ff00;
++			return 0xff000000 | rb | g;
++		}
+ 		int r = ((p0 & 0xFF) * a0 + (p1 & 0xFF) * a1 + (p2 & 0xFF) * a2 + (p3 & 0xFF) * a3) / alpha;
+ 		int g = (((p0 >> 8) & 0xFF) * a0 + ((p1 >> 8) & 0xFF) * a1 + ((p2 >> 8) & 0xFF) * a2 + ((p3 >> 8) & 0xFF) * a3) / alpha;
+ 		int b = (((p0 >> 16) & 0xFF) * a0 + ((p1 >> 16) & 0xFF) * a1 + ((p2 >> 16) & 0xFF) * a2 + ((p3 >> 16) & 0xFF) * a3) / alpha;
