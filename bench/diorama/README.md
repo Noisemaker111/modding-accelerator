@@ -64,3 +64,49 @@ See [function timing semantics](../../PERFORMANCE.md#custom-mechanics-and-deeper
 Diorama's prescribed visual regression workflow is separate. These experiments
 do not replace it or claim exhaustive coverage of caves, dimensions, terrain,
 mod compatibility, GPU baking, web maps, or saved-map behavior.
+
+## Compare the CPU air-run optimization
+
+`air-runs.patch` is an experimental optimization for the pinned commit above.
+It walks consecutive air cells directly inside the current decoded section,
+preserving ray-step arithmetic and boundary decisions. It also reuses the last
+face's ambient-occlusion corners within each bake; subpixel interpolation remains
+unchanged. It adds no cross-bake cache or change in image quality.
+
+Prepare a clean, disposable Diorama checkout with an unchanged reference baker:
+
+```sh
+python3 bench/diorama/prepare_comparison.py --root DIORAMA_SOURCE --patch bench/diorama/air-runs.patch
+./modaccel world-check --root DIORAMA_SOURCE --project :1.21.1 --world DISPOSABLE_WORLD
+./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/compare.java
+./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/equivalence.java
+```
+
+Wait until the world is mapped. The comparison requires a tile with at least 50%
+known pixels. It freezes chunk references, retains up to two terrain-heavy tiles,
+warms both bakers, and randomizes their order for eight measured rounds per quality.
+Every pair checks all mip pixels, coverage and auxiliary arrays. A mismatch fails
+the experiment. The result preserves individual timing samples and restores quality
+settings. The all-seen source policy measures rendering rather than fog discovery.
+Run ordinary frame captures separately: this experiment blocks the render thread.
+
+`equivalence.java` checks 32 combinations: four map facings, both quality settings,
+and full surface tiles, partial updates, a cave slice, or an artificial roof/fog
+policy over the captured Overworld chunks. Overlay and light arrays are compared
+alongside pixels. This is not a real Nether fixture or exhaustive modded-block test.
+
+The reference and candidate share supporting classes, including mip generation;
+this comparison is suitable for the supplied TileBaker/VoxelReader patch, not for
+arbitrary changes to shared helpers. Same-JVM timings do not establish hardware FPS
+gains, universal speedups, or independent-process confidence. Repeat fresh launches
+and test representative terrain and modded content before distributing a build.
+
+Remove the reference before packaging the modified mod:
+
+```sh
+python3 bench/diorama/prepare_comparison.py --root DIORAMA_SOURCE --remove-reference
+./modaccel compile --root DIORAMA_SOURCE --project :1.21.1 --task :1.21.1:remapJar
+```
+
+The cleanup refuses to delete an edited reference and leaves the candidate changes
+in place. Keep any distributed build clearly labeled as modified and experimental.
