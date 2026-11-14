@@ -30,6 +30,7 @@ public final class PackageAcceptanceTest {
             "modaccel.cmd",
             "LICENSE",
             "NOTICE",
+            "PERFORMANCE.md",
             "GETTING_STARTED.txt",
             "bootstrap-jre.ps1"
         );
