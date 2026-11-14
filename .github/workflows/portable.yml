@@ -65,6 +65,9 @@ jobs:
       - name: The loader catalogue pairs only what the code proves
         working-directory: portable workspace
         run: python bench/test_loader_api.py
+      - name: Performance evidence rejects incomparable runs
+        working-directory: portable workspace
+        run: python bench/test_performance.py
       - name: Session cost meter reads processes on this system
         working-directory: portable workspace
         run: python bench/test_session_cost.py

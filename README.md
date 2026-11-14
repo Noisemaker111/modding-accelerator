@@ -73,6 +73,10 @@ On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.ja
 - **`--fix`** applies a proven repair, then starts the repaired pack beside the original to show it working.
 - **Not yet:** Forge 1.20.1 only in the game, and one known repair. Other loaders get the checks that need no game.
 
+### Performance evidence for mods and packs
+
+`python3 bench/performance.py` validates supplied measurement captures, reports latency distributions and missing metrics, and compares repeated paired runs with uncertainty and regression budgets. See [the capture contract](bench/performance.md). This is an offline analysis tool: game telemetry collection and per-mod cost attribution are not implemented.
+
 ### 4 · Change loader or platform
 
 Moving a project between Fabric, NeoForge, Forge, Quilt and Paper is the fourth goal. There is no conversion command yet; `coverage/loader/api.json` records loader API counterparts mined from multi-loader source.
