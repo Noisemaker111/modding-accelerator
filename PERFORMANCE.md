@@ -45,6 +45,12 @@ Source launches retain the existing control agent's focus behavior.
   sampled-stack export. Open the latter in a compatible local viewer for flame graphs.
 - Installed top-level jar inventory and hashes where a `mods` directory is found.
   This is distinct from proof that every jar loaded.
+- A 27-metric checklist with values, units and measurement basis. Missing metrics
+  remain unavailable, including events that were not recorded; they are not zero.
+- Evidence-linked investigation steps for frame stalls, slow ticks, GC pauses,
+  monitor contention and the leading sampled method. Each includes a suggested
+  change and a controlled retest with correctness checks. These rules do not
+  identify an exact cause automatically or mark an untested fix as verified.
 
 A server capture has no client FPS. A client connected to a dedicated server does
 not measure that server's tick time: capture the server separately. Menus, pauses,

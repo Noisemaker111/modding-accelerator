@@ -241,6 +241,7 @@ final class PerfReport {
         }
         result.put("unavailable", unavailable);
         result.put("warnings", warnings);
+        PerfAdvice.enrich(result);
         return result;
     }
 
@@ -322,6 +323,14 @@ background:#80e4b3}
 <div class="cards" id="cards">
 </div>
 <p class="muted">Observation only. Menus, loading and pauses remain in the capture. Missing metrics are not zero.</p>
+<h2>What to investigate and how to verify a fix</h2>
+<p id="advice-policy" class="muted"></p>
+<div id="advice"></div>
+<h2>Metric checklist</h2>
+<p id="metric-count" class="muted"></p>
+<div class="scroll"><table id="catalog">
+<thead><tr><th>Metric</th><th>Value</th><th>Unit</th><th>Measurement basis</th></tr></thead><tbody></tbody>
+</table></div>
 <h2>Timeline</h2>
 <label>Signal <select id="signal">
 <option value="frameMaxMs">Worst frame interval / second (ms)</option>
@@ -405,6 +414,16 @@ function row(body,values){const tr=document.createElement('tr');
 for(const v of values){const td=document.createElement('td');
 td.textContent=v;
 tr.append(td)}body.append(tr)}
+el('advice-policy').textContent=d.recommendationPolicy;
+for(const f of d.recommendations||[]){const box=document.createElement('details');
+const title=document.createElement('summary');title.textContent=f.title+' · '+f.status;box.append(title);
+for(const [label,text] of [['Interpretation',f.interpretation],['Try',f.suggestedChange],['Verify',f.validation]]){
+const p=document.createElement('p');p.textContent=label+': '+text;box.append(p)}
+const evidence=document.createElement('pre');evidence.style.whiteSpace='pre-wrap';evidence.style.overflowWrap='anywhere';
+evidence.textContent=JSON.stringify(f.evidence,null,2);box.append(evidence);el('advice').append(box)}
+const catalog=d.metricCatalog||[];
+el('metric-count').textContent=catalog.filter(m=>m.availability==='recorded').length+' of '+catalog.length+' metrics available in this capture.';
+for(const m of catalog)row(el('catalog').tBodies[0],[m.name,fmt(m.value),m.unit,m.basis+(m.availability==='unavailable'?' · No usable measurement':'')]);
 for(const [name,s] of Object.entries(d.metrics))row(el('metrics').tBodies[0],[name,s.n,fmt(s.mean),fmt(s.p95),fmt(s.p99),fmt(s.max)]);
 
 for(const [id,values] of [['missing',d.unavailable],['warnings',d.warnings]])for(const text of values){const li=document.createElement('li');
