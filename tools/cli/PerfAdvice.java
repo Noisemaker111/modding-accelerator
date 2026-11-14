@@ -27,6 +27,17 @@ final class PerfAdvice {
         metric(catalog, report, "Socket writes", "observedSocketWriteBytes", "bytes", "Recorded events only; not full network traffic");
         report.put("metricCatalog", catalog);
         List<Object> findings = new ArrayList<>();
+        Object timings = value(report, "functionTiming.methods");
+        if (timings instanceof List<?> measured && !measured.isEmpty()) {
+            Map<String, Object> costly = measured.stream().map(Json::object)
+                .max(Comparator.comparingDouble(m -> ((Number) m.get("selfTotalMs")).doubleValue())).orElseThrow();
+            finding(findings, "measured-function", "Inspect measured self time: " + costly.get("name"),
+                Json.map("function", costly, "partial", value(report, "functionTiming.partial"), "selectors", value(report, "functionTiming.selectors")),
+                "This method has the most retained self wall time among timed scopes. Uninstrumented callees, waits and profiler overhead remain included; this is not CPU attribution.",
+                "Open its slow calls in functions.trace.json, inspect the caller edges, and add timing selectors for suspicious callees. "
+                    + "Use call count and mean/max duration to separate repeated work from expensive individual calls. Check blocking and I/O before rewriting computation.",
+                "Change one measured cause, verify behavior, and repeat the workload. Compare both timed runs and runs without timing probes; do not claim wins from partial histories.");
+        }
         if (number(report, "framesOver50ms") > 0) finding(findings, "frame-stalls", "Investigate frame stalls",
             evidence(report, "framesOver50ms", "metrics.frame_ms.p99"),
             "Intervals over 50 ms occurred; loading, pauses, FPS caps and background throttling can also cause them.",

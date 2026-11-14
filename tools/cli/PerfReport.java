@@ -15,6 +15,7 @@ final class PerfReport {
     final Map<Long, Map<String, Object>> timeline = new TreeMap<>();
     final List<String> warnings = new ArrayList<>();
     final Properties classes;
+    final PerfFunctions functions = new PerfFunctions();
     Instant start, end;
     final Map<String, Long> allocationSites = new HashMap<>(), allocationClasses = new HashMap<>();
     final Map<String, Double> lockSites = new HashMap<>();
@@ -47,6 +48,7 @@ final class PerfReport {
         if (Files.isRegularFile(inventory)) result.put("inventory", Json.read(inventory));
         Json.save(output.resolve("report.json"), result);
         Json.save(output.resolve("stacks.speedscope.json"), report.speedscope());
+        report.functions.trace(output, report.start);
         String data = Json.write(result).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029");
         Files.writeString(output.resolve("report.html"), HTML.replace("__DATA__", data));
         return Json.map("ok", true, "html", output.resolve("report.html").toString(),
@@ -62,6 +64,7 @@ final class PerfReport {
     }
 
     void accept(RecordedEvent event) {
+        functions.context(event);
         String name = event.getEventType().getName();
         events.merge(name, 1L, Long::sum);
         Instant time = event.getStartTime();
@@ -71,6 +74,7 @@ final class PerfReport {
         long bucket = time.getEpochSecond();
         Map<String, Object> point = timeline.computeIfAbsent(bucket, key -> Json.map("epochSecond", key));
         switch (name) {
+            case "modaccel.MethodTiming" -> functions.accept(event);
             case "modaccel.ProbeCalls" -> probeCalls.merge(event.getString("label"), event.getLong("calls"), Long::sum);
             case "modaccel.Pulse" -> {
                 String kind = event.getString("kind");
@@ -241,6 +245,18 @@ final class PerfReport {
         }
         result.put("unavailable", unavailable);
         result.put("warnings", warnings);
+        result.put("functionTiming", functions.finish(status));
+        if (Boolean.TRUE.equals(Json.object(result.get("functionTiming")).get("partial"))) {
+            warnings.add("Function timing history is incomplete. Totals and percentiles describe retained calls only; inspect functionTiming coverage counters.");
+        }
+        for (String selector : status.getProperty("timingProbes", "").split("\n")) {
+            if (!selector.isBlank()) {
+                String label = selector.substring(0, selector.indexOf('='));
+                if (functions.calls.stream().noneMatch(c -> c.get("label").equals(label))) {
+                    unavailable.add("Function duration " + label + ": no complete retained timed call; entry counts do not establish duration");
+                }
+            }
+        }
         PerfAdvice.enrich(result);
         return result;
     }
@@ -312,6 +328,7 @@ height:220px;
 background:#152328;
 border-radius:10px}a{color:#80e4b3}details{margin:20px 0}li{margin:8px 0}.scroll{overflow:auto}.bar{height:4px;
 background:#80e4b3}
+#tree-root{max-width:100%}summary{overflow-wrap:anywhere}
 </style>
 <header>
 <div class="muted">MOD ACCEL / LOCAL PERFORMANCE REPORT</div>
@@ -387,6 +404,23 @@ background:#80e4b3}
 </div>
 <h2>Explicit method probes</h2>
 <ul id="probes"></ul>
+<h2>Measured function time</h2>
+<p id="function-basis" class="muted"></p>
+<p id="function-coverage"></p>
+<p id="function-accounting" class="muted"></p>
+<h3>Drill into a slow call</h3>
+<p id="tree-coverage" class="muted"></p>
+<label>Invocation <select id="tree-root" aria-label="Choose a timed root call"></select></label>
+<div id="call-tree" class="scroll"></div>
+<a href="functions.trace.json">Download function call timeline</a>
+<p class="muted">Open the trace in a Chrome Trace-compatible viewer such as Perfetto to inspect nested calls by thread.
+Call and parent IDs connect retained invocations. Recorded sleep, park, monitor, I/O and GC events provide timeline context;
+they can be thresholded or missing. The table below shows the slowest 200 completed calls.</p>
+<label>Group <select id="function-group"><option value="methods">Function</option><option value="edges">Nearest timed caller → function</option></select></label>
+<div class="scroll"><table id="functions"><thead><tr><th>Name</th><th>Calls</th><th>Total ms</th><th>Self ms</th>
+<th>Mean ms</th><th>p99 ms</th><th>Max ms</th><th>Thrown</th></tr></thead><tbody></tbody></table></div>
+<div class="scroll"><table id="invocations"><thead><tr><th>Started / thread</th><th>Function / caller</th><th>Call / parent ID</th>
+<th>Total ms</th><th>Self ms</th><th>Thrown</th></tr></thead><tbody></tbody></table></div>
 <h2>Coverage</h2>
 <ul id="missing">
 </ul>
@@ -425,6 +459,33 @@ const catalog=d.metricCatalog||[];
 el('metric-count').textContent=catalog.filter(m=>m.availability==='recorded').length+' of '+catalog.length+' metrics available in this capture.';
 for(const m of catalog)row(el('catalog').tBodies[0],[m.name,fmt(m.value),m.unit,m.basis+(m.availability==='unavailable'?' · No usable measurement':'')]);
 for(const [name,s] of Object.entries(d.metrics))row(el('metrics').tBodies[0],[name,s.n,fmt(s.mean),fmt(s.p95),fmt(s.p99),fmt(s.max)]);
+const ft=d.functionTiming||{},ms=v=>typeof v==='number'?v.toFixed(6):'Unavailable';
+el('function-basis').textContent=(ft.basis||'')+' '+(ft.selfMeaning||'');
+el('function-accounting').textContent=(ft.accounting||'')+' '+(ft.precision||'');
+el('function-coverage').textContent=(ft.partial?'PARTIAL: ':'')+(ft.retainedCalls||0)+' completed calls retained; '+(ft.agentDroppedCalls||0)+
+' dropped at event limit; '+(ft.depthDroppedCalls||0)+' skipped at depth limit; '+(ft.reportOmittedCalls||0)+' omitted by reader. '+
+(ft.contextEvents||0)+' context events; '+(ft.contextOmittedEvents||0)+' context events omitted. '+
+(!ft.retainedCalls?'Enable mode: timing in your probe selectors and capture the action to measure durations.':'');
+function functionRows(){const body=el('functions').tBodies[0];body.replaceChildren();
+for(const r of [...(ft[el('function-group').value]||[])].sort((a,b)=>b.selfTotalMs-a.selfTotalMs))row(body,[r.name,r.calls,ms(r.inclusiveTotalMs),ms(r.selfTotalMs),
+ms(r.inclusive.mean),ms(r.inclusive.p99),ms(r.inclusive.max),r.exceptionalCalls])}
+el('function-group').onchange=functionRows;functionRows();
+const trees=ft.callTrees?.roots||[];
+el('tree-coverage').textContent=(ft.callTrees?.meaning||'No timed calls.')+' '+(ft.callTrees?.displayedNodes||0)+
+' nodes shown; '+(ft.callTrees?.otherRetainedNodes||0)+' other retained nodes in the trace.';
+trees.forEach((r,i)=>{const option=document.createElement('option');option.value=i;
+option.textContent=r.label+' · '+ms(r.inclusiveMs)+' ms · '+r.thread+' · call '+r.callId;el('tree-root').append(option)});
+function callNode(r){const box=document.createElement('details');box.style.marginLeft='12px';
+const title=document.createElement('summary');title.textContent=r.label+' · total '+ms(r.inclusiveMs)+' ms · self '+ms(r.selfMs)+
+' ms · call '+r.callId+(r.exceptional?' · threw':'');box.append(title);
+for(const child of r.children||[])box.append(callNode(child));
+if(r.undisplayedChildren){const p=document.createElement('p');p.textContent=r.undisplayedChildren+' children omitted from this preview; use the trace.';box.append(p)}
+return box}
+function callTree(){el('call-tree').replaceChildren();const root=trees[Number(el('tree-root').value)];
+if(root){const node=callNode(root);node.open=true;el('call-tree').append(node)}}
+el('tree-root').onchange=callTree;callTree();
+for(const r of ft.slowCalls||[])row(el('invocations').tBodies[0],[r.started+' / '+r.thread,r.label+' / '+r.caller,
+r.callId+' / '+r.parentId,ms(r.inclusiveMs),ms(r.selfMs),r.exceptional?'yes':'no']);
 
 for(const [id,values] of [['missing',d.unavailable],['warnings',d.warnings]])for(const text of values){const li=document.createElement('li');
 li.textContent=text;

@@ -45,6 +45,22 @@ Same-JVM timings are descriptive, not independent-trial regression evidence.
 CPU collection/layout excludes icon drawing, entity ticking, and networking.
 Software-rendered frames cannot establish hardware GPU performance.
 
+For per-function wall time during ordinary play, use `timing.json` with the same
+pinned development source. It selects the full tile bake, pixel bake, mipmap build,
+radar collection and waypoint layout. These are coarse scopes; ray-by-ray timing
+would add substantial overhead to the hottest inner loop.
+
+```sh
+./modaccel perf --root DIORAMA_SOURCE --project :1.21.1 --probes bench/diorama/timing.json --duration 15
+```
+
+The report includes inclusive/self milliseconds, completed call counts, exceptional
+exits, nearest timed callers and a downloadable nested-call timeline. Allow the
+world to load before capturing; move into unmapped terrain to exercise baking.
+Compare an equivalent capture without probes to assess overhead. These selectors
+use development names; an installed remapped mod may require different descriptors.
+See [function timing semantics](../../PERFORMANCE.md#custom-mechanics-and-deeper-probes).
+
 Diorama's prescribed visual regression workflow is separate. These experiments
 do not replace it or claim exhaustive coverage of caves, dimensions, terrain,
 mod compatibility, GPU baking, web maps, or saved-map behavior.

@@ -200,6 +200,7 @@ final class Performance {
         if (probes.size() > 32) throw new IllegalArgumentException("At most 32 explicit method probes per capture");
         Properties properties = properties(request);
         Set<String> labels = new HashSet<>();
+        Set<String> timed = new HashSet<>();
         int index = 0;
         for (Object item : probes) {
             Map<String, Object> probe = Json.object(item);
@@ -207,12 +208,17 @@ final class Performance {
             String method = Json.text(probe, "method", "");
             String descriptor = Json.text(probe, "descriptor", "");
             String label = Json.text(probe, "label", "");
+            String mode = Json.text(probe, "mode", "count");
+            if (!Set.of("count", "timing").contains(mode)) throw new IllegalArgumentException("Probe mode must be count or timing");
+            if (mode.equals("timing") && !timed.add(owner + "." + method + descriptor)) {
+                throw new IllegalArgumentException("Only one timing label per method");
+            }
             if (!owner.matches("[A-Za-z0-9_$/]+") || owner.startsWith("java/") || owner.startsWith("jdk/") ||
                 owner.startsWith("dev/modaccel/") || owner.startsWith("sun/") || owner.startsWith("com/sun/") || !method.matches("[A-Za-z0-9_$]+") ||
                 !descriptor.startsWith("(") || descriptor.contains("|") || !label.matches("[A-Za-z0-9_.-]+") || !labels.add(label)) {
                 throw new IllegalArgumentException("Invalid probe; use exact class, method, JVM descriptor and unique plain label");
             }
-            properties.setProperty("probe." + index++, owner + "|" + method + "|" + descriptor + "|" + label);
+            properties.setProperty("probe." + index++, owner + "|" + method + "|" + descriptor + "|" + label + "|" + mode);
         }
         try (Writer writer = Files.newBufferedWriter(request)) { properties.store(writer, "Mod Accel capture request"); }
     }

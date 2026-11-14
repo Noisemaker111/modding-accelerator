@@ -197,6 +197,45 @@ allowed. Matched but uncalled methods have zero counts; unmatched selectors are
 listed as unavailable. Counters measure entries, including simulations/failures,
 not successful transfers or CPU duration. Probes can be expensive in hot loops.
 
+Add `"mode":"timing"` to a selector to measure each completed invocation instead
+of only counting entries. The default remains `"count"`. Timing probes provide:
+
+- Inclusive wall time, self wall time, call count, mean/p50/p95/p99/max and exceptional exits.
+- Nearest timed caller relationships, invocation/parent IDs and per-thread start times.
+- Automatic frame/tick method scopes and the slowest 200 retained invocations.
+- An expandable call-tree preview for the 20 slowest retained roots, bounded to
+  2,000 displayed nodes; the downloadable timeline contains all retained calls.
+- `functions.trace.json`, a Chrome Trace-compatible timeline for nested-call inspection
+  in a viewer such as Perfetto, with recorded sleep, park, monitor, I/O and GC context.
+  Context events are thresholded and capped at 100,000; omissions are reported.
+  Raw timing events also remain in the JFR.
+
+```json
+{"probes":[
+  {"class":"com.example.Transport","method":"tick","descriptor":"()V","label":"transportTick","mode":"timing"},
+  {"class":"com.example.Transport","method":"rebuildRoutes","descriptor":"()V","label":"routeRebuild","mode":"timing"}
+]}
+```
+
+Begin with a few coarse methods found by sampling, then add their expensive callees.
+Self time subtracts immediate **timed** children on the same thread; it still includes
+untimed callees, waiting and instrumentation overhead. The caller is the nearest timed
+ancestor, not necessarily the direct Java caller. Async work runs on its own thread.
+Do not sum nested inclusive time or treat summed thread-ms as elapsed capture time.
+Frame method duration differs from frame interval, displayed presentation and GPU time.
+Nanosecond clock storage does not guarantee nanosecond measurement accuracy.
+
+Only invocations entered and completed during measurement are retained. Propagated
+exceptions close scopes; internally caught exceptions do not mark the method failed.
+At most 100,000 completed timing events and nesting depth 128 are recorded per capture.
+The report flags dropped/evicted history and uses retained calls for totals/percentiles.
+Entry counters can exceed timed completions. A missing duration is unavailable, not zero.
+Use shorter captures or fewer probes if limits are reached. Compare against a capture
+without timing probes: deeply instrumenting a hot loop can substantially distort it.
+Exact runtime names/descriptors are required; constructors, native and abstract methods
+are not supported. GPU execution, native internals and cross-thread causal ownership
+require additional tools or domain-specific probes.
+
 ## Files and troubleshooting
 
 Reports stay local. Raw JFR/class-origin files can contain machine paths, launch
