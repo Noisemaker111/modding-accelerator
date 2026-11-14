@@ -90,7 +90,10 @@ public final class Modaccel {
             "save-roundtrip",
             "jbr",
             "fresh-server",
-            "once"
+            "once",
+            "list",
+            "prepare",
+            "no-hooks"
         );
         static final Set<String> VALUES = Set.of(
             "command",
@@ -137,7 +140,9 @@ public final class Modaccel {
             "pack",
             "minecraft",
             "loader",
-            "memory"
+            "memory",
+            "attach", "instance", "launch", "duration", "warmup", "out", "scenario",
+            "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block"
         );
         final Map<String, String> values = new LinkedHashMap<>();
         final Set<String> flags = new HashSet<>();
@@ -199,6 +204,7 @@ public final class Modaccel {
     }
 
     static final Set<String> COMMANDS = Set.of(
+        "perf", "perf-report", "perf-diff", "perf-template",
         "support",
         "discover",
         "doctor",
@@ -256,6 +262,15 @@ public final class Modaccel {
                 return;
             }
             Path home = Installation.home();
+            if (Set.of("perf", "perf-report", "perf-diff", "perf-template").contains(options.command)) {
+                report = new Report(Path.of(options.get("root", ".")).toAbsolutePath(), options.command);
+                Map<String, Object> result = Performance.run(home, options, report);
+                exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
+                Map<String, Object> output = report.finish(exit, result);
+                if (options.has("json")) System.out.println(Json.write(output));
+                else System.out.println(Performance.text(result));
+                System.exit(exit);
+            }
             if (options.command.equals("pack-check")) {
                 // A modpack, not a mod's source: no Gradle build and no project lock. Receipts go with the pack cache.
                 report = new Report(PackCheck.receipts(), options.command);
@@ -736,6 +751,15 @@ public final class Modaccel {
 
     static String help(String command) {
         return switch (command) {
+            case "perf" -> "Profile a running local Java 17+ game/server: modaccel perf [--attach PID | --instance FOLDER | --root SOURCE] [--duration 30] [--warmup 5] [--out FOLDER] [--json]\n" +
+                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root can launch a visible client.\n" +
+                "Open report.html in the output folder. Frame/tick hooks depend on game mappings; missing metrics are explicit. GPU timing is not collected.\n" +
+                "--no-hooks records JFR only. --prepare prints a startup -javaagent argument when dynamic attach is disabled. Requires JDK 17+ and same OS user.\n" +
+                "--scenario FILE --rcon-port 25575 [--rcon-password-env MODACCEL_RCON_PASSWORD] [--repeat 1] [--seed 0] drives explicit test-world commands.\n" +
+                "Scenarios edit the selected local server world: use a disposable world. Each command requires an expected response. Repeats share one JVM.";
+            case "perf-template" -> "Generate editable scenario files: modaccel perf-template --family transport|block-scene [--block MOD:BLOCK] [--out FOLDER]\nGeneration does not edit a world. Running the generated scenario requires a disposable local server with RCON. Transport uses vanilla hoppers; block-scene requires a connected client.";
+            case "perf-diff" -> "Compare observed captures: modaccel perf-diff --baseline FOLDER_OR_REPORT --candidate FOLDER_OR_REPORT [--out FOLDER]\nDescriptive differences only; this does not establish equal workload, causality or statistical significance.";
+            case "perf-report" -> "Render an existing capture/JFR locally: modaccel perf-report --file FOLDER_OR_JFR [--out FOLDER]\nNo game or network is required. External JFR files may lack frame/tick events or code-origin metadata.";
             case "self-test" -> "Test modaccel itself, with no game and no network: modaccel self-test [--only SUITE,SUITE] [--json]\n" +
             "Suites: " +
             String.join(", ", Installation.SUITES.stream().map(Installation.Suite::name).toList()) +
@@ -847,6 +871,7 @@ public final class Modaccel {
             "  server-check           plugin on a real Paper server with a bot player and a scenario\n" +
             "  pack-check             a modpack on its real loader server: conflicts, block swaps, worlds that will not reopen\n" +
             "  preferences            show or change your game window and sound choices\n" +
+            "  perf, perf-report      record and inspect local game performance\n" +
             "  package, self-test     build or test modaccel itself\n" +
             "Run modaccel help COMMAND for one command (port, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +
             "--root is the mod's Gradle source checkout (the folder with gradlew); a multi-version build needs --project, e.g. --project :1.21.6.";

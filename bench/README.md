@@ -33,3 +33,7 @@ What a game session costs:
 `bench/viz.py` holds the chart components (sparkline card, Gantt timeline, burn-up, columns, status chip). Draw any new number with one of them, or add a component there.
 
 `bench/data.json`, `port/results.json` and `mods/results.json` are retained machine-readable measurements; cloned mods and logs are ignored. Compare runs only when commands, assertions, server builds and cache conditions match; historical AgentCraft runs used different setups and do not establish a speedup.
+
+Performance evidence: [performance.md](performance.md) documents capture validation, per-run distributions and paired comparisons with uncertainty. Run `python3 bench/performance.py --help`. This analyzes supplied captures; it does not collect game telemetry.
+
+Live JVM/game captures and local scenario reports: [PERFORMANCE.md](../PERFORMANCE.md).
