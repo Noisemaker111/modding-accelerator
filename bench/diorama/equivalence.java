@@ -34,7 +34,8 @@ class Frozen implements ChunkSource {
 class Equal {
     static long checked;
     static void arrays(TileImage a, TileImage b) {
-        if (!Arrays.deepEquals(a.mips(), b.mips()) || !Arrays.equals(a.coverage(), b.coverage())
+        if (!Objects.equals(a.key(), b.key()) || a.generation() != b.generation()
+            || !Arrays.deepEquals(a.mips(), b.mips()) || !Arrays.equals(a.coverage(), b.coverage())
             || !Arrays.equals(a.info(), b.info()) || !Arrays.equals(a.blockLight(), b.blockLight())
             || !Arrays.equals(a.spots(), b.spots())) throw new AssertionError("Output differs: " + a.key());
         if (a.mips() != null) for (int[] level : a.mips()) checked += level.length;
@@ -42,7 +43,8 @@ class Equal {
         for (int i = 0; i < a.patches().size(); i++) {
             var x = a.patches().get(i);
             var y = b.patches().get(i);
-            if (!Arrays.deepEquals(x.mips(), y.mips()) || !Arrays.equals(x.coverage(), y.coverage())
+            if (x.blockX() != y.blockX() || x.blockY() != y.blockY()
+                || !Arrays.deepEquals(x.mips(), y.mips()) || !Arrays.equals(x.coverage(), y.coverage())
                 || !Arrays.equals(x.info(), y.info()) || !Arrays.equals(x.blockLight(), y.blockLight())) {
                 throw new AssertionError("Patch differs");
             }

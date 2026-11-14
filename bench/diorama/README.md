@@ -97,9 +97,9 @@ and full surface tiles, partial updates, a cave slice, or an artificial roof/fog
 policy over the captured Overworld chunks. Overlay and light arrays are compared
 alongside pixels. This is not a real Nether fixture or exhaustive modded-block test.
 
-The reference and candidate share supporting classes, including mip generation;
-this comparison is suitable for the supplied TileBaker/VoxelReader patch, not for
-arbitrary changes to shared helpers. Same-JVM timings do not establish hardware FPS
+The reference has independent copies of TileBaker, VoxelReader and CaveCut from
+the pinned commit. Other supporting classes, including mip generation, are shared;
+this comparison does not isolate arbitrary changes to those helpers. Same-JVM timings do not establish hardware FPS
 gains, universal speedups, or independent-process confidence. Repeat fresh launches
 and test representative terrain and modded content before distributing a build.
 
@@ -112,3 +112,65 @@ python3 bench/diorama/prepare_comparison.py --root DIORAMA_SOURCE --remove-refer
 
 The cleanup refuses to delete an edited reference and leaves the candidate changes
 in place. Keep any distributed build clearly labeled as modified and experimental.
+
+## Compare coherent ray and shading work
+
+`coherent-bake.patch` is an alternative complete patch for the same clean pinned
+checkout. It includes the air-run changes above, reuses exact camera-ray state for
+adjacent samples with the same initial air path, retains section masks for shadow
+rays, and caches repeated face shading and completed height-bound scans. A bounded
+per-baker saved-spot cache avoids repeating the same missing-chunk lookup; projection
+angle changes invalidate that cache. It does not reduce sample count or image size.
+Do not stack this patch on top of `air-runs.patch`.
+
+Use the preparation/build commands above with `--patch bench/diorama/coherent-bake.patch`.
+Run `compare.java` for mapped terrain and `compare-saved.java` for saved terrain with
+an artificial missing-chunk policy. The latter deliberately hides captured chunks;
+its result is a separate workload, not a universal speedup. Both retain raw timing
+samples and compare original and candidate output. Run `compare-saved.java` with
+`fast = false` and `fast = true` as separate evals. Repeat in fresh JVM launches.
+
+Additional differential checks:
+
+```sh
+./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/equivalence-boundaries.java
+./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/equivalence-fixture.java
+```
+
+Run `equivalence-boundaries.java` with each `facingIndex` from 0 through 3. It checks
+partial updates, saved pixels/light/spots, missing chunks, fog and a depth cave.
+Its output reports which inputs were actually exercised, including negative chunk
+coordinates and nonzero light. It changes policies between bakes of frozen snapshots;
+it does not simulate live block mutation.
+
+Run `equivalence-fixture.java` with each `scenario` from 0 through 5. It creates private
+snapshots containing water, glass, slabs and glowstone, checks full and partial images,
+and requires each material to affect the image when replaced by stone. It never writes
+to the game world. Also repeat surface scenario 0 with `styleIndex` 1 through 3 for
+low/high camera pitch and alternate shading. Synthetic cave/roof cases use fixed lighting and biome tints; they
+do not substitute for representative dimensions, modded content or moving-camera tests.
+
+Equality means zero differences in the compared arrays, including every mip level,
+coverage, light, overlay metadata and patch coordinates. Passing finite cases cannot
+prove all-world equivalence. Caches rely on the existing per-bake immutable snapshot,
+looks and saved-data model; these are not cross-bake caches.
+
+## Check GPU identity and the remaining budget
+
+`gpu_exact.java` queues a GPU bake and polls it on a later invocation. Leave frames
+running between calls. It reports exact pixel/channel and auxiliary-array mismatch
+counts, rather than the upstream GPU check's tolerance. A disabled or stalled GPU is
+reported as unavailable. Run with GPU baking enabled on the target hardware. This
+checks one surface tile without fog or saved data and makes no speed claim.
+
+```sh
+./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/gpu_exact.java
+# Allow frames to run; then repeat the same command to retrieve the result.
+python3 bench/diorama/budget.py CAPTURE/report.json --study PAIRED_SAMPLES.json --target 100
+```
+
+The budget calculator accepts the decoded JSON `value` from `compare.java` or the
+older study's `bake` samples. It reports the per-case time budget and a clearly labeled
+sample-based Amdahl illustration. CPU samples do not measure GPU time or establish an
+FPS ceiling. A 100× full-workload claim requires the same work and output in 1% of the
+baseline time; cached reuse, smaller updates and lower quality are different comparisons.

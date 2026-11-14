@@ -68,6 +68,12 @@ jobs:
       - name: Performance evidence rejects incomparable runs
         working-directory: portable workspace
         run: python bench/test_performance.py
+      - name: Diorama budgets reject unsupported conclusions
+        working-directory: portable workspace
+        run: python bench/diorama/test_budget.py
+      - name: Diorama comparison isolates the original reader
+        working-directory: portable workspace
+        run: python bench/diorama/test_prepare_comparison.py
       - name: Session cost meter reads processes on this system
         working-directory: portable workspace
         run: python bench/test_session_cost.py
