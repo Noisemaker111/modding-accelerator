@@ -60,9 +60,17 @@ class PerformanceTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 P.compare(capture(), b, 'tick_ms')
 
+    def test_missing_null_condition_is_not_equal(self):
+        a, b = capture(), capture('b')
+        b['conditions']['extension'] = None
+        with self.assertRaisesRegex(ValueError, 'incomparable'):
+            P.compare(a, b, 'tick_ms')
+
     def test_bad_evidence(self):
         mutations = [
             lambda x: x.update(schema=2),
+            lambda x: x.update(schema=True),
+            lambda x: x.update(schema=1.0),
             lambda x: x.update(runs=[]),
             lambda x: x['subject'].update(artifact_sha256='bad'),
             lambda x: x['runs'][0].update(correctness_passed=False),

@@ -8,6 +8,11 @@ final class Installation {
 
     static final List<String> RESOURCES = List.of(
         "tools/cli/gradle.init.gradle",
+        "PERFORMANCE.md",
+        "tools/perf/PerfAgent.java",
+        "tools/perf/suite.html",
+        "tools/perf/lib/asm-9.9.jar",
+        "tools/perf/lib/ASM-LICENSE.txt",
         "tools/cli/Json.java",
         "tools/cli/Relocate.java",
         "tools/cli/QuietOptions.java",
@@ -44,6 +49,7 @@ final class Installation {
         "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinConfig.java",
         "tools/GamePrep.java",
         "tools/tests/PortableTests.java",
+        "tools/tests/PerfTest.java",
         "tools/tests/JdkDownloadsTest.java",
         "tools/tests/DependenciesTest.java",
         "tools/tests/FabricMetadataTest.java",
@@ -165,7 +171,7 @@ final class Installation {
         Map<String, byte[]> contents = new LinkedHashMap<>();
         contents.put("modaccel.jar", Files.readAllBytes(target));
         contents.put("modaccel.jar.sha256", Files.readAllBytes(directory.resolve("modaccel.jar.sha256")));
-        for (String file : List.of("modaccel", "modaccel.cmd", "LICENSE", "NOTICE")) contents.put(
+        for (String file : List.of("modaccel", "modaccel.cmd", "LICENSE", "NOTICE", "PERFORMANCE.md")) contents.put(
             file,
             Files.readAllBytes(harness.resolve(file))
         );
@@ -263,6 +269,7 @@ final class Installation {
 
     static final List<Suite> SUITES = List.of(
         new Suite("portable", "PortableTests", true, true),
+        new Suite("perf", "PerfTest", true, true),
         new Suite("jdk", "JdkDownloadsTest", false, false),
         new Suite("dependency", "DependenciesTest", false, false),
         new Suite("manifest", "FabricMetadataTest", false, false),

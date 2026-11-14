@@ -75,7 +75,9 @@ On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.ja
 
 ### Performance evidence for mods and packs
 
-`python3 bench/performance.py` validates supplied measurement captures, reports latency distributions and missing metrics, and compares repeated paired runs with uncertainty and regression budgets. See [the capture contract](bench/performance.md). This is an offline analysis tool: game telemetry collection and per-mod cost attribution are not implemented.
+Run `modaccel perf` while your game is running to capture frame/tick timing, JVM memory, GC, allocation and sampled execution hotspots. Open the local HTML report; use `perf --list` / `--attach PID` to choose a process, `perf-diff` for observed differences, and `perf-template` for editable transport and block-scene scenarios. Requires Java 17+; missing timing hooks and unsupported metrics are explicit. See [local profiling instructions](PERFORMANCE.md).
+
+`python3 bench/performance.py` separately validates supplied independent-run evidence and compares paired runs with uncertainty and regression budgets. See [the capture contract](bench/performance.md). Sampled code origins are not exact per-mod causal costs; observation captures are not automatically controlled benchmarks.
 
 ### 4 · Change loader or platform
 

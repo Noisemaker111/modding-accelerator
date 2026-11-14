@@ -47,7 +47,7 @@ def number(value):
 
 
 def validate(data):
-    require(isinstance(data, dict) and data.get('schema') == 1, 'expected schema 1')
+    require(isinstance(data, dict) and type(data.get('schema')) is int and data['schema'] == 1, 'expected schema 1')
     require(isinstance(data.get('subject'), dict), 'subject must identify the mod/pack artifact')
     for key in ('name', 'artifact_sha256'):
         require(isinstance(data['subject'].get(key), str) and data['subject'][key].strip(),
@@ -124,7 +124,8 @@ def compare(before, after, metric, statistic='mean', threshold_percent=5.0):
     require(number(threshold_percent) and threshold_percent >= 0, 'invalid threshold')
     # Compare every supplied condition, including extension fields, not just required ones.
     mismatches = sorted(k for k in before['conditions'].keys() | after['conditions'].keys()
-                        if before['conditions'].get(k) != after['conditions'].get(k))
+                        if k not in before['conditions'] or k not in after['conditions']
+                        or before['conditions'][k] != after['conditions'][k])
     require(not mismatches, 'incomparable conditions: ' + ', '.join(mismatches))
     a = {r['pair']: r for r in before['runs']}
     b = {r['pair']: r for r in after['runs']}

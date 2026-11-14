@@ -1010,7 +1010,7 @@ final class Game {
         Path agent = agent();
         String token = UUID.randomUUID().toString();
         Map<String, Object> preferences = Preferences.read(Preferences.file());
-        String background = "-Dmodaccel.background=" + preferences.get("background"), quiet =
+        String background = "-Dmodaccel.background=" + (options.command.equals("perf") ? false : preferences.get("background")), quiet =
             "-Dmodaccel.quiet=" + preferences.get("quiet");
         String task = clientTask(options);
         String missing = missingRuntime(model, LoadedMods.owner(task));
@@ -1069,7 +1069,8 @@ final class Game {
             command.add(java != null ? java.toString() : launch.get(jbr ? "jbrExecutable" : "executable").toString());
             if (jbr) command.addAll(List.of("-XX:+AllowEnhancedClassRedefinition", "-XX:TieredStopAtLevel=1"));
             for (String argument : ProjectModel.strings(launch.get("arguments"))) command.add(
-                argument.startsWith("-Dmodaccel.token=") ? "-Dmodaccel.token=" + token : argument
+                argument.startsWith("-Dmodaccel.token=") ? "-Dmodaccel.token=" + token
+                    : options.command.equals("perf") && argument.startsWith("-Dmodaccel.background=") ? background : argument
             );
             Json.object(launch.get("environment")).forEach((key, value) -> {
                 if (value != null) environment.put(key, value.toString());

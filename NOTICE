@@ -18,3 +18,7 @@ this repository is our own implementation.
 
 Minecraft is a trademark of Mojang Synergies AB. This project is not affiliated
 with or endorsed by Mojang or Microsoft.
+
+The performance agent bundles ASM 9.9 (OW2), licensed under BSD-3-Clause.
+See tools/perf/lib/ASM-LICENSE.txt. SHA-256 of the unmodified Maven artifact:
+03d99a74ad1ee5c71334ef67437f4ef4fe3488caa7c96d8645abc73c8e2017d4
