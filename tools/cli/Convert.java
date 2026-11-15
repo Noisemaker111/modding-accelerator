@@ -3269,7 +3269,8 @@ final class Convert {
                 String body = gradle.substring(b[2] + 1, b[3] - 1);
                 if (name.equals("subsystems")) parchment = children(body).get("parchment");
                 else if (name.equals("runs")) notes.add("NeoGradle's runs block is replaced by Loom's own client and server runs.");
-                else if (name.equals("minecraft") && body.contains("accessTransformers")) leave(
+                // The usual file (META-INF/accesstransformer.cfg) becomes the access widener; another file is named.
+                else if (name.equals("minecraft") && body.contains("accessTransformers") && !body.contains(AT_FILE)) leave(
                     "build.gradle",
                     0,
                     "minecraft accessTransformers",
@@ -3350,7 +3351,29 @@ final class Convert {
                     Set.of("client", "server").contains(run.getKey()) &&
                     run.getValue().strip().matches("client\\(\\)|server\\(\\)")
                 ) continue;
-                // A Loom run needs an environment (client() or server()); a game test or data run has none on Fabric.
+                String body = run.getValue();
+                // NeoForge's game test server is Fabric API's: a server run with -Dfabric-api.gametest, which runs the
+                // game tests the mod registers with Fabric API (tests registered through NeoForge's events are named apart).
+                if (body.matches("(?s).*\\btype\\s*=\\s*[\"']gameTestServer[\"'].*") || body.matches("(?s).*\\bgameTestServer\\(\\).*")) {
+                    String rest = body.replaceAll("(?m)^\\s*(?:type\\s*=\\s*[\"']gameTestServer[\"']|gameTestServer\\(\\))\\s*$", "");
+                    runs.append(unit).append(unit).append(run.getKey()).append(" {\n")
+                        .append(unit).append(unit).append(unit).append("server()\n")
+                        .append(unit).append(unit).append(unit).append("vmArg \"-Dfabric-api.gametest\"\n")
+                        .append(runToLoom(run.getKey(), rest))
+                        .append(unit).append(unit).append("}\n");
+                    notes.add("Build: NeoForge's game test server run is a Loom server run with Fabric API's -Dfabric-api.gametest.");
+                    continue;
+                }
+                // A data run with nothing to generate: the mod adds no data providers (no GatherDataEvent), so it goes.
+                if (body.matches("(?s).*\\b(?:clientData|serverData|data)\\(\\).*|(?s).*\\btype\\s*=\\s*[\"']data[\"'].*")) {
+                    boolean providers = false;
+                    for (String file : javaFiles()) if (read(file).contains("GatherDataEvent")) providers = true;
+                    if (!providers) {
+                        notes.add("Build: the " + run.getKey() + " run is removed; the mod adds no data providers (GatherDataEvent), so it generated nothing.");
+                        continue;
+                    }
+                }
+                // A Loom run needs an environment (client() or server()); a data run has none on Fabric.
                 if (
                     !run.getKey().equals("configureEach") &&
                     !run.getValue().matches("(?s).*\\b(?:client|server)\\(\\).*")
@@ -3605,6 +3628,16 @@ final class Convert {
                 "^gameDirectory\\s*=\\s*project\\.file\\(\\s*['\"]([^'\"]+)['\"]\\s*\\)$"
             ).matcher(line);
             Matcher program = Pattern.compile("^programArgument\\s*\\(?\\s*['\"](.*)['\"]\\s*\\)?$").matcher(line);
+            // NeoForge-only run switches with no effect on Fabric: which game test namespaces NeoForge enables (Fabric API
+            // runs every test a mod registers), and ModDevGradle's console log level for its runs.
+            if (line.matches("systemProperty\\s*\\(?\\s*['\"]neoforge\\.enabledGameTestNamespaces['\"].*")) {
+                notes.add("Build: run " + name + ": NeoForge's neoforge.enabledGameTestNamespaces is removed; Fabric API runs every game test a mod registers.");
+                continue;
+            }
+            if (line.matches("logLevel\\s*=.*")) {
+                notes.add("Build: run " + name + ": ModDevGradle's run log level (" + line + ") is removed; Loom's runs log at Minecraft's own levels.");
+                continue;
+            }
             if (line.matches("client\\(\\)|server\\(\\)")) out.append(in).append(line).append('\n');
             else if (line.startsWith("ideName")) out
                 .append(in)
