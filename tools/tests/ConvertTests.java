@@ -440,39 +440,84 @@ public final class ConvertTests {
             Convert.text(dry).contains("  remove src/main/resources/fabric.mod.json"),
             "convert --dry-run reports exactly what the conversion then changes: " + Convert.text(dry)
         );
-        String demo = Files.readString(root.resolve("src/main/java/demo/Demo.java")), client = Files.readString(
-            root.resolve("src/main/java/demo/DemoClient.java")
-        );
         String gradle = Files.readString(root.resolve("build.gradle")), toml = Files.readString(
             root.resolve("src/main/resources/META-INF/neoforge.mods.toml")
         );
+        // The whole converted project, exactly: every file it has, and every Java file's text.
+        try (var all = Files.walk(root)) {
+            List<String> converted = all
+                .filter(Files::isRegularFile)
+                .map(p -> root.relativize(p).toString().replace(File.separatorChar, '/'))
+                .filter(p -> !p.startsWith(".modaccel/") && !p.startsWith(".runs/"))
+                .sorted()
+                .toList();
+            check(
+                converted.equals(
+                    List.of(
+                        "build.gradle",
+                        "gradle.properties",
+                        "gradle/wrapper/gradle-wrapper.properties",
+                        "settings.gradle",
+                        "src/main/java/demo/Config.java",
+                        "src/main/java/demo/Demo.java",
+                        "src/main/java/demo/DemoClient.java",
+                        "src/main/java/demo/Menu.java",
+                        "src/main/resources/META-INF/accesstransformer.cfg",
+                        "src/main/resources/META-INF/neoforge.mods.toml"
+                    )
+                ),
+                "the converted project has exactly these files: " + converted
+            );
+        }
+        Map<String, String> expected = new LinkedHashMap<>();
+        expected.put(
+            "src/main/java/demo/Demo.java",
+            "package demo;\n\nimport net.minecraft.core.registries.Registries;\nimport net.minecraft.world.level.block.Blocks;\n" +
+            "import net.minecraft.world.level.block.FireBlock;\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.common.Mod;\n" +
+            "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.tick.ServerTickEvent;\n" +
+            "import net.neoforged.neoforge.registries.RegisterEvent;\n\n@Mod(\"demo\")\npublic class Demo {\n\tpublic static int ticks;\n\n" +
+            "\t/** Runs the Fabric entrypoint where NeoForge lets a mod register: inside its first registry event. */\n" +
+            "\tpublic Demo(IEventBus modBus) {\n\t\tmodBus.addListener(RegisterEvent.class, event -> {\n" +
+            "\t\t\tif (event.getRegistryKey().equals(Registries.ATTRIBUTE)) onInitialize();\n\t\t});\n\t}\n\n" +
+            "\tpublic void onInitialize() {\n\t\tNeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, event -> {\n\t\t\tticks++;\n\t\t});\n" +
+            "\t\t((FireBlock) Blocks.FIRE).setFlammable(Blocks.WHITE_WOOL, 30, 60);\n\t}\n}\n"
+        );
+        expected.put(
+            "src/main/java/demo/DemoClient.java",
+            "package demo;\n\nimport net.minecraft.client.KeyMapping;\nimport net.minecraft.client.Minecraft;\n" +
+            "import net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.EventPriority;\nimport net.neoforged.bus.api.IEventBus;\n" +
+            "import net.neoforged.fml.ModContainer;\nimport net.neoforged.fml.ModList;\nimport net.neoforged.fml.common.Mod;\n" +
+            "import net.neoforged.neoforge.client.event.ClientTickEvent;\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\n" +
+            "import net.neoforged.neoforge.client.gui.IConfigScreenFactory;\nimport net.neoforged.neoforge.common.NeoForge;\n\n" +
+            "@Mod(value = \"demo\", dist = Dist.CLIENT)\npublic class DemoClient {\n\tstatic KeyMapping key;\n\n" +
+            "\t/** Runs the Fabric client entrypoint at NeoForge's first client event, once Minecraft exists and before its options load. */\n" +
+            "\tpublic DemoClient(IEventBus modBus, ModContainer container) {\n" +
+            "\t\tcontainer.registerExtensionPoint(IConfigScreenFactory.class, (modContainer, parent) -> new demo.Menu().getModConfigScreenFactory().apply(parent));\n" +
+            "\t\tmodBus.addListener(EventPriority.HIGHEST, RegisterKeyMappingsEvent.class, event -> onInitializeClient());\n\t}\n\n" +
+            "\tpublic void onInitializeClient() {\n\t\tkey = new KeyMapping(\"key.demo\", 0, KeyMapping.Category.MISC);\n" +
+            "\t\tModList.get().getModContainerById(\"demo\").orElseThrow().getEventBus().addListener(RegisterKeyMappingsEvent.class, event -> event.register(key));\n" +
+            "\t\tNeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, neoEvent -> {\n\t\t\twhile (key.consumeClick()) Config.toggle();\n\t\t});\n\t}\n}\n"
+        );
+        expected.put(
+            "src/main/java/demo/Config.java",
+            "package demo;\n\nimport java.nio.file.Path;\nimport net.neoforged.fml.loading.FMLPaths;\n\nclass Config {\n" +
+            "\tstatic Path path() {\n\t\treturn FMLPaths.CONFIGDIR.get().resolve(\"demo.json\");\n\t}\n\n\tstatic void toggle() {}\n}\n"
+        );
+        expected.put(
+            "src/main/java/demo/Menu.java",
+            "package demo;\n\npublic class Menu {\n" +
+            "\tpublic java.util.function.Function<net.minecraft.client.gui.screens.Screen, net.minecraft.client.gui.screens.Screen> getModConfigScreenFactory() {\n" +
+            "\t\treturn Settings::new;\n\t}\n}\n"
+        );
+        for (var file : expected.entrySet()) {
+            String got = Files.readString(root.resolve(file.getKey()));
+            check(file.getValue().equals(got), "converted " + file.getKey() + " is exactly the expected NeoForge source; got:\n" + got);
+        }
         check(
             Boolean.TRUE.equals(toNeo.get("ok")) &&
             Json.array(toNeo.get("left")).isEmpty() &&
             !Files.exists(root.resolve("src/main/resources/fabric.mod.json")),
             "a Fabric mod whose every loader call has a rule converts with nothing left: " + toNeo.get("details")
-        );
-        check(
-            demo.contains("@Mod(\"demo\")\npublic class Demo {") &&
-            demo.contains("if (event.getRegistryKey().equals(Registries.ATTRIBUTE)) onInitialize();") &&
-            demo.contains("NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, event -> {") &&
-            demo.contains("((FireBlock) Blocks.FIRE).setFlammable(Blocks.WHITE_WOOL, 30, 60);") &&
-            !demo.contains("@Override") &&
-            !demo.contains("fabricmc"),
-            "the main entrypoint becomes a @Mod class that runs it in the first registry event, with its events and flammability converted:\n" +
-            demo
-        );
-        check(
-            client.contains("@Mod(value = \"demo\", dist = Dist.CLIENT)") &&
-            client.contains(
-                "modBus.addListener(EventPriority.HIGHEST, RegisterKeyMappingsEvent.class, event -> onInitializeClient());"
-            ) &&
-            client.contains(
-                "container.registerExtensionPoint(IConfigScreenFactory.class, (modContainer, parent) -> new demo.Menu().getModConfigScreenFactory().apply(parent));"
-            ) &&
-            client.contains("event.register(key)"),
-            "the client entrypoint runs at NeoForge's first client event, registers its key mapping and Mod Menu's config screen:\n" +
-            client
         );
         check(
             gradle.contains("id 'net.neoforged.moddev' version '2.0.148'") &&
