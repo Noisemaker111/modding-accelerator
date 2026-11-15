@@ -225,14 +225,12 @@ final class PerfAttribution {
             kind = "event handler";
             label = handler(frames, entry, top);
         } else {
-            for (int i = entry; i >= top && kind == null; i--) {
-                String type = typeName(frames.get(i));
-                String outer = type.contains("$") ? type.substring(0, type.indexOf('$')) : type;
-                String found = features.getProperty(type, features.getProperty(outer));
-                if (found != null) {
-                    kind = found;
-                    label = simple(type);
-                }
+            List<String> types = new ArrayList<>();
+            for (RecordedFrame frame : frames) types.add(typeName(frame));
+            String[] found = typed(types, entry, top, features);
+            if (found != null) {
+                kind = found[0];
+                label = found[1];
             }
         }
         if (kind == null) {
@@ -240,6 +238,22 @@ final class PerfAttribution {
             label = simple(entered.getType().getName()) + "." + entered.getName();
         }
         return new Hit(unit, kind + " · " + label, kind, methodName(frames.get(top)));
+    }
+
+    /**
+     * The kind and name of the outermost frame, from entry in to top, whose class (or its outer class) has a known
+     * feature kind. Lambdas and method handles are skipped: a block's ticker lambda (BlockMain$$Lambda.0x1a8a9314fd0)
+     * would otherwise name the feature by its hidden class's address, where the block entity method it calls names it.
+     */
+    static String[] typed(List<String> types, int entry, int top, Properties features) {
+        for (int i = entry; i >= top; i--) {
+            String type = types.get(i);
+            if (plumbing(type)) continue;
+            String outer = type.contains("$") ? type.substring(0, type.indexOf('$')) : type;
+            String found = features.getProperty(type, features.getProperty(outer));
+            if (found != null) return new String[] {found, simple(type)};
+        }
+        return null;
     }
 
     static boolean plumbing(String type) {

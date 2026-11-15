@@ -17,6 +17,12 @@ public final class PerfTest {
         experimentCheck();
         modTemplates();
         check(Run.running(ProcessHandle.current()), "current process is running");
+        Properties kinds = new Properties();
+        kinds.setProperty("m.BlockMain", "block");
+        kinds.setProperty("m.TileMain", "block entity");
+        String[] ticker = PerfAttribution.typed(List.of("m.Net.scan", "m.TileMain", "m.BlockMain$$Lambda.0x000001a8a9314fd0"), 2, 0, kinds);
+        check(ticker != null && "block entity".equals(ticker[0]) && "TileMain".equals(ticker[1]),
+            "a block's ticker lambda does not name the feature by its hidden class's address: " + (ticker == null ? null : String.join(" · ", ticker)));
         Path modRoot = Path.of("/work/mymod").toAbsolutePath();
         check(PerfAttribution.underRoot(modRoot.resolve("versions/1.21.1/build/classes/java/main"), modRoot), "the mod's own build output is the mod");
         check(!PerfAttribution.underRoot(modRoot.resolve(".gradle/loom-cache/remapped_mods/fabric-api.jar"), modRoot),
@@ -33,6 +39,7 @@ public final class PerfTest {
         Path home = Path.of(args[0]);
         runRecords(home);
         patternLibrary(home);
+        committedExperiments(home);
         Path scratch = Files.createTempDirectory(Path.of(args[1]).toAbsolutePath().getParent(), "perf-fixture-");
         Modaccel.Report receipt = new Modaccel.Report(scratch, "perf-test");
         Path agent = Performance.agent(home, receipt);
@@ -329,6 +336,25 @@ public final class PerfTest {
      * knowledge/perf-patterns.json: each pattern is complete, cites an accepted kept run, and its symptom
      * fires on its own test row and stays quiet on the other, as each port rule carries a test.
      */
+    /**
+     * Every experiment under bench/ names only files the checkout has; only its save is made once per machine. A file the
+     * repository ignores (Pipez's options.txt was) passes on the machine that made it and fails on every other.
+     */
+    static void committedExperiments(Path home) throws Exception {
+        int checked = 0;
+        try (var dirs = Files.list(home.resolve("bench"))) {
+            for (Path dir : dirs.sorted().toList()) {
+                Path file = dir.resolve("experiment.json");
+                if (!Files.isRegularFile(file)) continue;
+                Map<String, Object> result = PerfCheck.check(file, Json.read(file), null, null, null);
+                List<String> problems = Json.array(result.get("problems")).stream().map(Object::toString).filter(p -> !p.startsWith("worldSource ")).toList();
+                check(problems.isEmpty(), home.relativize(file) + " names files the checkout lacks: " + problems);
+                checked++;
+            }
+        }
+        check(checked >= 3, "bench experiments are checked: " + checked);
+    }
+
     static void patternLibrary(Path home) throws Exception {
         Map<String, Object> mod = Json.map("id", "m", "samples", 100, "methods", List.of(Json.map("name", "a.Tints.blend(La/Snap;)V", "samples", 30),
             Json.map("name", "a.Other.run()V", "samples", 70)), "threads", List.of(Json.map("name", "worker-1", "samples", 90)));
@@ -414,6 +440,7 @@ public final class PerfTest {
             "one pair cannot tell a candidate's difference from a gate that differs between launches");
         measured.addAll(pair(1, 2.0, 1.0, "a", "b"));
         Map<String, Object> stop = PerfStopping.decide(experiment, measured, 3, 10, 1);
+        check(PerfStopping.progress(experiment, measured, 60).endsWith("gates digest FAILED"), "a failed gate shows in the pair's line");
         check(stop != null && "rejected".equals(stop.get("decided")) && stop.get("reason").toString().contains("gate digest"),
             "an exact gate that fails with two baseline launches ends the run: " + stop);
         Map<String, Object> asserted = Json.map("gates", List.of(Json.map("name", "digest", "compare", "expect", "expect", "a")));
@@ -424,6 +451,9 @@ public final class PerfTest {
         for (int i = 0; i < fast.length; i++) {
             measured.addAll(pair(i, fast[i][0], fast[i][1], "a", "a"));
             Map<String, Object> early = PerfStopping.decide(experiment, measured, 3, 10, 1);
+            String line = PerfStopping.progress(experiment, measured, 90);
+            check(line.startsWith("pair " + (i + 1) + " (1.5 min): cold ") && line.contains("digest " + (i == 0 ? "pending" : "ok"))
+                && (i == 0) != line.contains("so far 2.0"), "each pair prints its speedups, the running mean and each gate: " + line);
             if (i < 2) check(early == null, "speed is not decided before --min-runs pairs");
             else check(early != null && "faster".equals(early.get("decided")), "a large, consistent speedup is decided at --min-runs: " + early);
         }
@@ -448,6 +478,24 @@ public final class PerfTest {
         record.step("setup", "worktrees", 2);
         check(((Number) record.phases.get("measure")).doubleValue() == 30 && Json.object(record.steps.get(0)).get("seconds").equals(60.0),
             "parallel arms count half of each step in the phases, and keep its elapsed seconds");
+        Path experimentDir = Files.createTempDirectory("perf-snapshot-");
+        Files.writeString(experimentDir.resolve("trace.java"), "return \"one\";");
+        Files.writeString(experimentDir.resolve("options.txt"), "pauseOnLostFocus:false");
+        Map<String, Object> snapshotted = Json.map("measure", Json.map("metric", Json.map("probe", "p")),
+            "gates", List.of(Json.map("name", "transfers", "file", "trace.java")), "files", Json.map("run/options.txt", "options.txt"));
+        Map<String, Path> copies = PerfOptimize.snapshot(snapshotted, experimentDir, experimentDir.resolve("out/experiment"));
+        Files.writeString(experimentDir.resolve("trace.java"), "return \"two\";");
+        check(copies.size() == 2 && Files.readString(copies.get("trace.java")).contains("one") && copies.get("options.txt").startsWith(experimentDir.resolve("out")),
+            "a run reads the gate snippets and files as they were when it started: " + copies);
+        check(PerfOptimize.asked(experimentDir, 2) == null, "a run goes on unless asked to stop");
+        Files.writeString(experimentDir.resolve("stop"), "");
+        Map<String, Object> asked = PerfOptimize.asked(experimentDir, 2);
+        check(asked != null && "asked".equals(asked.get("decided")) && asked.get("afterPairs").equals(2), "OUT/stop ends a run after the pair in progress: " + asked);
+        Path cp1252 = Files.createTempFile("perf-child-", ".json");
+        Files.write(cp1252, new byte[] {'{', '"', 'a', '"', ':', '"', (byte) 0xb7, '"', '}'});
+        check(PerfOptimize.childOutput(cp1252).contains("�") && PerfOptimize.childJava(Path.of(".")).contains("-Dstdout.encoding=UTF-8"),
+            "a child's answer is read as UTF-8 without failing on a stray byte, and the child is told to write UTF-8");
+        Files.delete(cp1252);
         boolean refused = false;
         try { PerfOptimize.parallel("both"); } catch (IllegalArgumentException expected) { refused = true; }
         check(refused && PerfOptimize.parallel("parallel") && !PerfOptimize.parallel("sequential"), "--arms is auto, parallel or sequential");

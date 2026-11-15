@@ -20,6 +20,7 @@ final class PerfOptimize {
     static final List<String> ARMS = List.of("baseline", "candidate");
 
     final Path home, root, out, experimentFile, patch;
+    Map<String, Path> snapshot = Map.of();
     final Map<String, Object> experiment;
     final Modaccel.Options options;
     final int runs, minRuns;
@@ -160,6 +161,8 @@ final class PerfOptimize {
         Map<String, Object> checked = PerfCheck.check(experimentFile, experiment, root, patch, Preferences.read(Preferences.file()));
         result.put("check", checked);
         if (!Boolean.TRUE.equals(checked.get("ok"))) throw new IllegalArgumentException(PerfCheck.text(checked));
+        snapshot = snapshot(experiment, experimentDir, out.resolve("experiment"));
+        System.err.println("perf-optimize: to end after the pair in progress and keep the run's record, create " + out.resolve("stop"));
         try {
             for (String arm : ARMS) {
                 Path tree = out.resolve(arm);
@@ -173,7 +176,7 @@ final class PerfOptimize {
                     Path target = tree.resolve(entry.getKey()).normalize();
                     if (!target.startsWith(tree)) throw new IllegalArgumentException("files may only write inside the mod checkout: " + entry.getKey());
                     Files.createDirectories(target.getParent());
-                    Files.copy(experimentDir.resolve(entry.getValue().toString()), target, StandardCopyOption.REPLACE_EXISTING);
+                    Files.copy(file(experimentDir, entry.getValue().toString()), target, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
             result.put("changedFiles", Arrays.stream(git(arms.get("candidate"), "diff", "--name-only").split("\n")).filter(s -> !s.isBlank()).toList());
@@ -196,7 +199,13 @@ final class PerfOptimize {
                     for (String arm : order) measured.add(measure(arm, arms.get(arm), run, experimentDir));
                 }
                 Json.save(out.resolve("optimize.json"), result);
+                String progress = PerfStopping.progress(experiment, measured, (System.nanoTime() - wallStart) / 1e9);
+                if (progress != null) {
+                    System.err.println("perf-optimize: " + progress);
+                    System.err.flush();
+                }
                 Map<String, Object> stop = PerfStopping.decide(experiment, measured, minRuns, runs, minSpeedup);
+                if (stop == null) stop = asked(out, PerfStopping.pairs(measured).size());
                 if (stop != null) {
                     result.put("stopped", stop);
                     record.record.put("stopped", stop);
@@ -265,6 +274,51 @@ final class PerfOptimize {
         }
     }
 
+    /**
+     * A stop someone asked for by creating OUT/stop while the run went on (a candidate already shown not to matter, the
+     * machine needed back): the run ends after the pair in progress and is decided, recorded and kept like any other.
+     */
+    static Map<String, Object> asked(Path out, int pairs) {
+        if (!Files.exists(out.resolve("stop"))) return null;
+        return Json.map("afterPairs", pairs, "decided", "asked", "reason", "asked to stop after " + pairs + " pair(s): " + out.resolve("stop") + " exists");
+    }
+
+    /** The run's copy of a file the experiment names (snapshot), or the file itself when it has none. */
+    Path file(Path experimentDir, String name) {
+        return snapshot.getOrDefault(name, experimentDir.resolve(name));
+    }
+
+    /**
+     * Copies of every file the experiment names (snippets, probes, the files each launch copies), taken when the run
+     * starts and keyed by the name the experiment uses. A run reads only these, so editing the experiment while it runs
+     * cannot give its later launches other gates: Storage Network's third run compared a one-network trace in its first
+     * pair with a two-network trace in its second, and failed its own gate. The world source is still read where it is.
+     */
+    static Map<String, Path> snapshot(Map<String, Object> experiment, Path experimentDir, Path into) throws IOException {
+        Set<String> names = new LinkedHashSet<>();
+        for (Object step : Json.array(experiment.getOrDefault("setup", List.of()))) names.add(Json.text(Json.object(step), "file", ""));
+        Map<String, Object> measure = Json.object(experiment.getOrDefault("measure", Map.of()));
+        for (var phase : Json.object(measure.getOrDefault("before", Map.of())).entrySet()) {
+            List<Object> steps = phase.getValue() instanceof List<?> list ? Json.array(list) : List.of(phase.getValue());
+            for (Object step : steps) names.add(Json.text(Json.object(step), "file", ""));
+        }
+        if (measure.containsKey("probes")) names.add(measure.get("probes").toString());
+        for (Object gate : Json.array(experiment.getOrDefault("gates", List.of()))) names.add(Json.text(Json.object(gate), "file", ""));
+        for (Object source : Json.object(experiment.getOrDefault("files", Map.of())).values()) names.add(source.toString());
+        names.remove("");
+        Map<String, Path> copies = new LinkedHashMap<>();
+        int number = 0;
+        for (String name : names) {
+            Path source = experimentDir.resolve(name);
+            if (!Files.isRegularFile(source)) continue;
+            Files.createDirectories(into);
+            Path copy = into.resolve(String.format(Locale.ROOT, "%02d-%s", number++, source.getFileName()));
+            Files.copy(source, copy, StandardCopyOption.REPLACE_EXISTING);
+            copies.put(name, copy);
+        }
+        return copies;
+    }
+
     Map<String, Object> measure(String arm, Path tree, int run, Path experimentDir) throws Exception {
         Map<String, Object> row = Json.map("arm", arm, "run", run, "started", Instant.now().toString());
         Path dir = out.resolve(String.format(Locale.ROOT, "runs/%02d-%s", run, arm));
@@ -292,7 +346,7 @@ final class PerfOptimize {
         try {
             for (Object step : Json.array(experiment.getOrDefault("setup", List.of()))) {
                 Map<String, Object> setup = Json.object(step);
-                Map<String, Object> answer = eval(tree, arm + "-setup", experimentDir.resolve(Json.text(setup, "file", "")), Json.text(setup, "thread", "game"));
+                Map<String, Object> answer = eval(tree, arm + "-setup", file(experimentDir, Json.text(setup, "file", "")), Json.text(setup, "thread", "game"));
                 if (setup.containsKey("expect") && !String.valueOf(answer.get("value")).equals(String.valueOf(setup.get("expect")))) {
                     throw new IOException("Setup " + setup.get("file") + " returned " + answer.get("value") + ", expected " + setup.get("expect"));
                 }
@@ -309,7 +363,7 @@ final class PerfOptimize {
                 Object before = Json.object(measure.getOrDefault("before", Map.of())).get(phase);
                 for (Object item : before == null ? List.of() : before instanceof List<?> list ? Json.array(list) : List.of(before)) {
                     Map<String, Object> step = Json.object(item);
-                    Map<String, Object> answer = eval(tree, arm + "-before-" + phase, experimentDir.resolve(Json.text(step, "file", "")), Json.text(step, "thread", "game"));
+                    Map<String, Object> answer = eval(tree, arm + "-before-" + phase, file(experimentDir, Json.text(step, "file", "")), Json.text(step, "thread", "game"));
                     if (step.containsKey("expect") && !String.valueOf(answer.get("value")).equals(String.valueOf(step.get("expect")))) {
                         throw new IOException("Before " + phase + " " + step.get("file") + " returned " + answer.get("value") + ", expected " + step.get("expect"));
                     }
@@ -324,7 +378,7 @@ final class PerfOptimize {
                 }
                 if (measure.containsKey("probes")) {
                     args.add("--probes");
-                    args.add(experimentDir.resolve(measure.get("probes").toString()).toString());
+                    args.add(file(experimentDir, measure.get("probes").toString()).toString());
                 }
                 Map<String, Object> captured = modaccel(tree, arm + "-" + phase, args, 900);
                 if (!Boolean.TRUE.equals(captured.get("ok")) && Files.isRegularFile(capture.resolve("capture.jfr"))
@@ -354,7 +408,7 @@ final class PerfOptimize {
                 Map<String, Object> gate = Json.object(item);
                 String name = gate.get("name").toString();
                 if (Boolean.TRUE.equals(gate.get("frame"))) {
-                    if (gate.containsKey("file")) eval(tree, arm + "-frame-setup", experimentDir.resolve(gate.get("file").toString()), Json.text(gate, "thread", "game"));
+                    if (gate.containsKey("file")) eval(tree, arm + "-frame-setup", file(experimentDir, gate.get("file").toString()), Json.text(gate, "thread", "game"));
                     Map<String, Object> shot = modaccel(tree, arm + "-frame", List.of("ui-check"), 600);
                     if (!Boolean.TRUE.equals(shot.get("ok"))) throw new IOException("Frame capture failed: " + shot.get("error"));
                     Path png = Path.of(Json.text(Json.object(Json.object(shot.get("result")).get("capture")), "path", ""));
@@ -362,7 +416,7 @@ final class PerfOptimize {
                     Files.copy(png, kept, StandardCopyOption.REPLACE_EXISTING);
                     gates.put(name, kept.toString());
                 } else {
-                    Map<String, Object> answer = eval(tree, arm + "-gate-" + name, experimentDir.resolve(gate.get("file").toString()), Json.text(gate, "thread", "game"));
+                    Map<String, Object> answer = eval(tree, arm + "-gate-" + name, file(experimentDir, gate.get("file").toString()), Json.text(gate, "thread", "game"));
                     gates.put(name, String.valueOf(answer.get("value")));
                 }
             }
@@ -652,9 +706,24 @@ final class PerfOptimize {
     }
 
     /** Runs a modaccel command as a child process, so each step keeps its own receipt and lock. */
+    /**
+     * A child modaccel JVM that writes its answer in UTF-8, as childOutput reads it. Redirected to a file, Java's stdout
+     * otherwise uses the platform charset (windows-1252): Storage Network's second candidate died when a capture matched
+     * a known pattern whose text holds a middle dot.
+     */
+    static List<String> childJava(Path home) throws Exception {
+        return new ArrayList<>(List.of(ProcessHandle.current().info().command().orElse("java"),
+            "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-Dmodaccel.home=" + home,
+            "-cp", Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(), "Modaccel"));
+    }
+
+    /** A child's output as UTF-8; a byte that is not UTF-8 becomes U+FFFD rather than ending the run. */
+    static String childOutput(Path file) throws IOException {
+        return new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+    }
+
     Map<String, Object> modaccel(Path tree, String name, List<String> args, int timeout) throws Exception {
-        List<String> command = new ArrayList<>(List.of(ProcessHandle.current().info().command().orElse("java"),
-            "-Dmodaccel.home=" + home, "-cp", Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(), "Modaccel"));
+        List<String> command = childJava(home);
         command.add(args.get(0));
         // perf selects its game by --attach; every other step works on the arm's checkout.
         if (!args.contains("--attach")) {
@@ -675,7 +744,7 @@ final class PerfOptimize {
             throw new IOException(name + " timed out after " + timeout + " s; see " + stderr);
         }
         Map<String, Object> answer;
-        String text = Files.readString(stdout, StandardCharsets.UTF_8).strip();
+        String text = childOutput(stdout).strip();
         try {
             answer = Json.object(Json.parse(text.substring(Math.max(0, text.lastIndexOf("\n{") + 1))));
         } catch (Exception unreadable) {

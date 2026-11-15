@@ -95,6 +95,39 @@ final class PerfStopping {
     }
 
     /**
+     * One line after each completed pair, for whoever is waiting on a run: that pair's cold and warm speedups, the
+     * geometric mean so far (with its 99% t interval from two pairs), and each gate: passed, failed, or waiting for a
+     * second baseline launch.
+     */
+    static String progress(Map<String, Object> experiment, List<Object> measured, double elapsedSeconds) throws Exception {
+        Map<Integer, Map<String, Map<String, Object>>> pairs = pairs(measured);
+        int n = pairs.size();
+        if (n == 0) return null;
+        Map<String, Map<String, Object>> last = pairs.get(((TreeMap<Integer, Map<String, Map<String, Object>>>) pairs).lastKey());
+        StringBuilder line = new StringBuilder(String.format(Locale.ROOT, "pair %d (%.1f min):", n, elapsedSeconds / 60));
+        for (String phase : List.of("cold", "warm")) {
+            List<Double> ratios = new ArrayList<>();
+            for (var pair : pairs.values()) {
+                ratios.add(PerfOptimize.capture(pair.get("baseline"), phase) / Math.max(PerfOptimize.capture(pair.get("candidate"), phase), 1e-12));
+            }
+            double ratio = PerfOptimize.capture(last.get("baseline"), phase) / Math.max(PerfOptimize.capture(last.get("candidate"), phase), 1e-12);
+            Map<String, Object> so = interval(ratios);
+            line.append(String.format(Locale.ROOT, " %s %.2fx", phase, ratio));
+            if (n > 1) line.append(String.format(Locale.ROOT, " (so far %.2fx, 99%% %.2f-%.2f)", so.get("geometricMean"), so.get("low"), so.get("high")));
+            line.append(phase.equals("cold") ? ";" : "");
+        }
+        line.append("; gates");
+        for (Object item : Json.array(experiment.get("gates"))) {
+            Map<String, Object> gate = Json.object(item);
+            boolean relative = !"expect".equals(Json.text(gate, "compare", Boolean.TRUE.equals(gate.get("frame")) ? "pixels" : "exact"));
+            Map<String, Object> verdict = PerfOptimize.gate(gate, pairs);
+            String state = relative && n < 2 ? "pending" : Boolean.TRUE.equals(verdict.get("passed")) ? "ok" : "FAILED";
+            line.append(' ').append(verdict.get("name")).append(' ').append(state);
+        }
+        return line.toString();
+    }
+
+    /**
      * A finished perf-optimize run decided again with this stopping rule, from its optimize.json: where it would
      * have stopped, its verdict then, and the wall time of the pairs it would have launched (sequential, as measured,
      * and with the two arms of each pair started together, estimated as the slower arm's time).
