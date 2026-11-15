@@ -219,6 +219,38 @@ final class Dependencies {
             setup.pins.get(key) != null
         ) from = setup.pins.get(key);
         if (from == null || from.equals(setup.to)) return false;
+        // The game in the artifact's name (JEI: jei-${minecraft_version}-neoforge-api): the build renames it with the
+        // Minecraft property, and the version is the newest of the same shape that artifact publishes for the target.
+        Matcher named = Pattern.compile("(?<![0-9.])" + Pattern.quote(from) + "(?![0-9])(?!\\.[0-9])").matcher(name);
+        if (named.find()) {
+            String renamed = name.substring(0, named.start()) + setup.to + name.substring(named.end());
+            Set<String> versions = new TreeSet<>();
+            for (String repository : ProjectModel.strings(setup.project.get("repositories"))) {
+                if (!repository.startsWith("https://")) continue;
+                try {
+                    Matcher version = Pattern.compile("<version>([^<]+)</version>").matcher(
+                        Target.fetch(setup.build, repository.replaceFirst("/$", "") + "/" + group.replace('.', '/') + "/" + renamed + "/maven-metadata.xml")
+                    );
+                    while (version.find()) versions.add(version.group(1).strip());
+                } catch (IOException notHere) {}
+            }
+            String shape = old.replaceAll("[0-9]+", "0"), chosen = null;
+            for (String v : versions) if (v.replaceAll("[0-9]+", "0").equals(shape) && (chosen == null || numbers(v).compareTo(numbers(chosen)) > 0)) chosen = v;
+            Set<String> owners = propertyKeys(setup.build.project, old);
+            if (chosen == null) {
+                setup.blockers.add(
+                    blocker(group, name, old, binary, "its artifact name carries the Minecraft version, and " + renamed + " publishes no release in the project's repositories", configuration, setup.to)
+                );
+                return true;
+            }
+            if (owners.size() != 1) return false;
+            setup.replacements.put(owners.iterator().next(), chosen);
+            setup.pins.putIfAbsent(owners.iterator().next(), old);
+            setup.applied.add(
+                Json.map("artifact", group + ":" + renamed, "from", old, "to", chosen, "configuration", configuration, "evidence", "the newest " + renamed + " release in the project's repositories")
+            );
+            return true;
+        }
         Matcher at = Pattern.compile("(?<![0-9.])" + Pattern.quote(from) + "(?![0-9])(?!\\.[0-9])").matcher(old);
         if (!at.find()) return false;
         String prefix = old.substring(0, at.start()), suffix = old.substring(at.end());

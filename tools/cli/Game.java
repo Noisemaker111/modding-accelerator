@@ -290,7 +290,25 @@ final class Game {
         );
     }
 
+    /**
+     * One request to the running game. A capture that finds the framebuffer not yet at the asked size asks for the size
+     * again and tries again for up to 5 s: on 26.1.1 the window applies a resize a few frames later (Window.isResized), so
+     * the first capture after start still saw 854x480.
+     */
     static Map<String, Object> request(Map<String, Object> session, Map<String, Object> request) throws Exception {
+        if (!"capture".equals(request.get("command"))) return requestOnce(session, request);
+        for (int attempt = 0; ; attempt++) {
+            try {
+                return requestOnce(session, new LinkedHashMap<>(request));
+            } catch (IOException failure) {
+                if (attempt >= 20 || failure.getMessage() == null || !failure.getMessage().contains("Framebuffer was")) throw failure;
+                requestOnce(session, Json.map("command", "resize", "width", request.get("width"), "height", request.get("height")));
+                Thread.sleep(250);
+            }
+        }
+    }
+
+    static Map<String, Object> requestOnce(Map<String, Object> session, Map<String, Object> request) throws Exception {
         request.put("token", session.get("token"));
         Map<String, Object> result;
         try (Socket socket = new Socket()) {
