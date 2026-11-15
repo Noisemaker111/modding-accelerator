@@ -1375,7 +1375,7 @@
  "bridges": [
   {
    "id": "neoforge-on-fabric",
-   "about": "For mods written for NeoForge first. NeoForge's registration (DeferredRegister and its holders), event bus (IEventBus, @SubscribeEvent, @EventBusSubscriber, NeoForge.EVENT_BUS), mod container, config (ModConfigSpec, read and written as the same TOML file) and the commonest lifecycle events, written for this project on Fabric's API in knowledge/bridges/neoforge-on-fabric and copied into the converted mod beside its first @Mod class. Each class mirrors the NeoForge class named in classes (the members its symbols list), and each event is posted from the Fabric callback that fires at the same moment. @Mod constructors become Fabric entrypoints that receive their IEventBus and ModContainer from the bridge; registration runs at the end of the main entrypoint in the game's registry order, as NeoForge's RegisterEvent does.",
+   "about": "For mods written for NeoForge first. NeoForge's registration (DeferredRegister and its holders), event bus (IEventBus, @SubscribeEvent, @EventBusSubscriber, NeoForge.EVENT_BUS), mod container, config (ModConfigSpec, read and written as the same TOML file), play payloads (PayloadRegistrar, PacketDistributor, IPayloadContext) and the commonest lifecycle events, written for this project on Fabric's API in knowledge/bridges/neoforge-on-fabric and copied into the converted mod beside its first @Mod class. Each class mirrors the NeoForge class named in classes (the members its symbols list), and each event is posted from the Fabric callback that fires at the same moment. @Mod constructors become Fabric entrypoints that receive their IEventBus and ModContainer from the bridge; registration runs at the end of the main entrypoint in the game's registry order, as NeoForge's RegisterEvent does.",
    "from": "neoforge",
    "to": "fabric",
    "minecraft": "26.1",
@@ -1408,7 +1408,15 @@
     "net.neoforged.neoforge.event.RegisterCommandsEvent": "RegisterCommandsEvent",
     "net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent": "BuildCreativeModeTabContentsEvent",
     "net.neoforged.neoforge.client.gui.IConfigScreenFactory": "IConfigScreenFactory",
-    "net.neoforged.neoforge.client.gui.ConfigurationScreen": "ConfigurationScreen"
+    "net.neoforged.neoforge.client.gui.ConfigurationScreen": "ConfigurationScreen",
+    "net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent": "RegisterPayloadHandlersEvent",
+    "net.neoforged.neoforge.network.registration.PayloadRegistrar": "PayloadRegistrar",
+    "net.neoforged.neoforge.network.handling.IPayloadHandler": "IPayloadHandler",
+    "net.neoforged.neoforge.network.handling.IPayloadContext": "IPayloadContext",
+    "net.neoforged.neoforge.network.handling.HandlerThread": "HandlerThread",
+    "net.neoforged.neoforge.network.PacketDistributor": "PacketDistributor",
+    "net.neoforged.neoforge.client.network.ClientPacketDistributor": "ClientPacketDistributor",
+    "net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent": "RegisterClientPayloadHandlersEvent"
    },
    "symbols": {
     "neoforge": [
@@ -1447,7 +1455,17 @@
      "bus|net.neoforged.bus.api.IEventBus#addListener",
      "bus|net.neoforged.bus.api.IEventBus#register",
      "bus|net.neoforged.bus.api.SubscribeEvent#priority",
-     "bus|net.neoforged.bus.api.ICancellableEvent#setCanceled"
+     "bus|net.neoforged.bus.api.ICancellableEvent#setCanceled",
+     "neoforge|net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent#registrar",
+     "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playToClient",
+     "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playToServer",
+     "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playBidirectional",
+     "neoforge|net.neoforged.neoforge.network.handling.IPayloadContext#player",
+     "neoforge|net.neoforged.neoforge.network.handling.IPayloadContext#enqueueWork",
+     "neoforge|net.neoforged.neoforge.network.PacketDistributor#sendToPlayer",
+     "neoforge|net.neoforged.neoforge.network.PacketDistributor#sendToPlayersTrackingEntityAndSelf",
+     "neoforge|net.neoforged.neoforge.client.network.ClientPacketDistributor#sendToServer",
+     "neoforge|net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent#register"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -1461,7 +1479,14 @@
      "minecraft|net.minecraft.core.Holder$Reference#isBound",
      "minecraft|net.minecraft.core.Registry#register",
      "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$Properties#setId",
-     "minecraft|net.minecraft.world.item.Item$Properties#useBlockDescriptionPrefix"
+     "minecraft|net.minecraft.world.item.Item$Properties#useBlockDescriptionPrefix",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#clientboundPlay",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#serverboundPlay",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#registerGlobalReceiver",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#send",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PlayerLookup#tracking",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#registerGlobalReceiver",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#send"
     ]
    },
    "test": {

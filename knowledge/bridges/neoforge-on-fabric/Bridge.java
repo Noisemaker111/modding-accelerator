@@ -18,6 +18,8 @@ public final class Bridge {
 
     static final Map<String, ModContainer> CONTAINERS = new ConcurrentHashMap<>();
     static boolean hooked;
+    /** The running server, for PacketDistributor.sendToAllPlayers. */
+    static net.minecraft.server.MinecraftServer server;
 
     private Bridge() {}
 
@@ -38,12 +40,15 @@ public final class Bridge {
     public static void common(String modid) {
         DeferredRegister.registerPending();
         hook();
+        Bus.INSTANCE.post(new RegisterPayloadHandlersEvent());
         Bus.INSTANCE.post(new FMLCommonSetupEvent(container(modid)));
     }
 
     static synchronized void hook() {
         if (hooked) return;
         hooked = true;
+        ServerLifecycleEvents.SERVER_STARTING.register(started -> server = started);
+        ServerLifecycleEvents.SERVER_STOPPED.register(stopped -> server = null);
         ServerLifecycleEvents.SERVER_STARTING.register(server -> Bus.INSTANCE.post(new ServerStartingEvent(server)));
         ServerLifecycleEvents.SERVER_STARTED.register(server -> Bus.INSTANCE.post(new ServerStartedEvent(server)));
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> Bus.INSTANCE.post(new ServerStoppingEvent(server)));
