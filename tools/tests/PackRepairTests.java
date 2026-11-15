@@ -39,6 +39,22 @@ public final class PackRepairTests extends PackCheckFixtures {
      * run time cannot stand in when it is for another loader or game version, or provides another mod (round 2 of the
      * sweep put LionfishAPI for NeoForge 1.21.1 into All the Mods 9, a Forge 1.20.1 pack).
      */
+    /**
+     * A fixed repair (one file, by URL and SHA-512), as the shipped rules no longer have one: knowledge/pack-fixes.json
+     * names kinds of fault only. The case is the one pinned-library-version was proven on.
+     */
+    static final String FIXED_REPAIR = """
+        {"id": "fixed-repair-example", "loader": "forge", "minecraft": ["1.20.1"],
+         "match": {"type": "dependency-unmet", "mod": "soulsweapons", "dependency": "projectile_damage"}, "check": "server-start",
+         "action": {"type": "replace-mod", "mod": "projectile_damage", "file": "projectile_damage-forge-3.2.2+1.20.1.jar",
+           "url": "https://cdn.modrinth.com/data/AOyJhFvl/versions/KgTLAkfq/projectile_damage-forge-3.2.2%2B1.20.1.jar",
+           "sha512": "a6576a0b971f38f95ac1ff587d12d7f26fcbc1f64bf216f5bae873eb069c97e7b350ad76605aa6a9df5a6ad6821edc9a17672a5f93767e624669f25be4cc9536"},
+         "test": {"jars": [
+           {"file": "soulslike-weaponry-1.2.4-1.20.1-forge.jar", "mods": [{"id": "soulsweapons", "version": "1.2.4-1.20.1-forge", "depends": {"projectile_damage": "[3.2.2+1.20.1]"}}]},
+           {"file": "projectile_damage-forge-3.2.3+1.20.1.jar", "mods": [{"id": "projectile_damage", "version": "3.2.3+1.20.1"}]}],
+           "added": {"mods": [{"id": "projectile_damage", "version": "3.2.2+1.20.1"}]}}}
+        """;
+
     static void wrongRepairs(Path harness, Path scratch) throws Exception {
         var fixes = PackRepairs.all(harness);
         Map<String, java.util.function.Consumer<Map<String, Object>>> wrong = new LinkedHashMap<>();
@@ -49,7 +65,7 @@ public final class PackRepairTests extends PackCheckFixtures {
             Path fake = scratch.resolve(entry.getKey().replace(' ', '-'));
             Files.createDirectories(fake.resolve("knowledge"));
             Files.copy(harness.resolve("knowledge/pack-loaders.json"), fake.resolve("knowledge/pack-loaders.json"));
-            var broken = Json.object(Json.parse(Json.write(fixes.stream().filter(f -> f.get("id").equals("soulsweapons-pinned-projectile-damage")).findFirst().orElseThrow())));
+            var broken = Json.object(Json.parse(FIXED_REPAIR));
             entry.getValue().accept(broken);
             Files.writeString(fake.resolve("knowledge/pack-fixes.json"), Json.write(Json.map("schema", 2, "fixes", List.of(broken))));
             String message;

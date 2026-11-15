@@ -13,6 +13,22 @@ public final class ConvertTests {
         System.out.println("PASS " + message);
     }
 
+    /** A project of these files, with convert's release lookups answered from Target.fetch's cache (no network). */
+    static ProjectModel fixture(Path root, Map<String, String> files, Map<String, String> answers) throws Exception {
+        for (var file : files.entrySet()) {
+            Path path = root.resolve(file.getKey());
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, file.getValue());
+        }
+        ProjectModel project = new ProjectModel(root);
+        for (var answer : answers.entrySet()) {
+            Path cache = project.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+            Files.createDirectories(cache.getParent());
+            Files.writeString(cache, answer.getValue());
+        }
+        return project;
+    }
+
     /**
      * convert: every rule in knowledge/loaders.json against its own before/after test, both ways; then a small Fabric
      * mod moved to NeoForge and back with --no-compile (the release lookups come from a seeded cache, so no network),
@@ -21,32 +37,19 @@ public final class ConvertTests {
     static void convertChecks(Path home, Path scratch) throws Exception {
         Map<String, Object> rules = Json.read(home.resolve("knowledge/loaders.json"));
         int tested = 0;
-        for (String kind : List.of("types", "expressions", "statements", "events")) for (Object item : Json.array(
-            rules.get(kind)
-        )) {
+        for (String kind : List.of("types", "expressions", "statements", "events")) for (Object item : Json.array(rules.get(kind))) {
             var rule = Json.object(item);
             var test = Json.object(rule.get("test"));
-            String fabric = Json.text(test, "fabric", ""), neo = Json.text(test, "neoforge", ""), back = Json.text(
-                test,
-                "back",
-                fabric
-            );
+            String fabric = Json.text(test, "fabric", ""), neo = Json.text(test, "neoforge", ""), back = Json.text(test, "back", fabric);
             // A rule written for a Minecraft range is tested at the version its test names (the newest release otherwise).
             String game = Json.text(test, "minecraft", "26.3");
             String forward = new LoaderRules(rules, "fabric", "neoforge", "demo", game).apply(fabric).text;
             String reverse = new LoaderRules(rules, "neoforge", "fabric", "demo", game).apply(neo).text;
-            if (!forward.equals(neo)) throw new AssertionError(
-                "rule " + rule.get("id") + " to NeoForge gave:\n" + forward
-            );
-            if (!reverse.equals(back)) throw new AssertionError(
-                "rule " + rule.get("id") + " back to Fabric gave:\n" + reverse
-            );
+            if (!forward.equals(neo)) throw new AssertionError("rule " + rule.get("id") + " to NeoForge gave:\n" + forward);
+            if (!reverse.equals(back)) throw new AssertionError("rule " + rule.get("id") + " back to Fabric gave:\n" + reverse);
             tested++;
         }
-        check(
-            tested >= 19,
-            "every loader rule turns its Fabric test into its NeoForge test and back (" + tested + " rules)"
-        );
+        check(tested >= 19, "every loader rule turns its Fabric test into its NeoForge test and back (" + tested + " rules)");
         check(
             LoaderRules.find(
                 "String s = \"FabricLoader.getInstance().getGameDir()\"; // FabricLoader.getInstance().getGameDir()",
@@ -151,6 +154,37 @@ public final class ConvertTests {
             Convert.widenerToTransformer("accessWidener v2 named\naccessible class net/minecraft/a\n", false, yarnLeft).isEmpty() &&
             yarnLeft.size() == 1,
             "an access widener in yarn's names is named, not converted"
+        );
+        // Found in real mods: Jade (an opened member's owner), The One Probe back from Fabric (never an anonymous class).
+        List<String> owned = Convert.withOwners(List.of("public-f net.minecraft.E size", "public net.minecraft.core.HolderSet$1 contents()Ljava/util/List;", "public net.minecraft.F", "public net.minecraft.F <init>()V"));
+        check(
+            owned.equals(List.of("public-f net.minecraft.E size", "public net.minecraft.core.HolderSet$1 contents()Ljava/util/List;", "public net.minecraft.F", "public net.minecraft.F <init>()V", "public net.minecraft.E")),
+            "an opened member's owner gets its own transformer line, once, and an anonymous class none: " + owned
+        );
+        // Jade: Fabric API widens ItemDisplay.getItemStack for every mod; NeoForge's transformer opens what the code names.
+        String transitive = Convert.transitiveEntries(
+            "classTweaker v1 official\ntransitive-accessible method net/minecraft/world/entity/Display$ItemDisplay getItemStack ()V\ntransitive-accessible method net/minecraft/world/entity/Display$ItemDisplay setItemStack ()V\ntransitive-accessible method net/minecraft/Other getItemStack ()V\n",
+            Set.of("ItemDisplay", "getItemStack")
+        );
+        check(
+            transitive.equals("classTweaker v1 official\ntransitive-accessible method net/minecraft/world/entity/Display$ItemDisplay getItemStack ()V\n"),
+            "Fabric API's transitive wideners are kept for members the code names on owners it names: " + transitive
+        );
+        // SeedMapper: a removed Fabric property left in processResources' map; Zombie Apocalypse: the NeoForge exclusion
+        // the way to Fabric adds removed NeoForge (and the game) from the ModDevGradle build on the way back.
+        List<String> dropped = new ArrayList<>();
+        String expand = Convert.dropPropertyEntries("def p = [version: project.mod_version, loader_version: project.fabric_loader_version]\n", Convert.FABRIC_PROPERTIES, dropped);
+        String excluded = "dependencies {\n}\n" + Convert.NEOFORGE_EXCLUSION + "\texclude group: 'net.neoforged', module: 'neoforge'\n}\n";
+        check(
+            expand.equals("def p = [version: project.mod_version]\n") && dropped.size() == 1 && Convert.dropNeoForgeExclusion(excluded).equals("dependencies {\n}\n"),
+            "build fixes found on real mods: " + expand + Convert.dropNeoForgeExclusion(excluded)
+        );
+        // The NeoForge MDK on Fabric registered an attachment type its NeoForge build does not: feature lines are kept only
+        // for mods that use the feature.
+        String marked = "\tA.register(); // bridge: when IEntityExtension\n\tB.hook();\n";
+        check(
+            Convert.whenUsed(marked, "class X {}").equals("\tB.hook();\n") && Convert.whenUsed(marked, "IEntityExtension.getPersistentData(e)").equals("\tA.register();\n\tB.hook();\n"),
+            "a bridge's feature lines are kept only for mods that use the feature: " + Convert.whenUsed(marked, "class X {}")
         );
         List<String> widenerLeft = new ArrayList<>();
         String widener = Convert.transformerToWidener(
@@ -320,12 +354,6 @@ public final class ConvertTests {
             "src/main/java/demo/Menu.java",
             "package demo;\n\nimport com.terraformersmc.modmenu.api.ConfigScreenFactory;\nimport com.terraformersmc.modmenu.api.ModMenuApi;\n\npublic class Menu implements ModMenuApi {\n\t@Override\n\tpublic ConfigScreenFactory<?> getModConfigScreenFactory() {\n\t\treturn Settings::new;\n\t}\n}\n"
         );
-        for (var file : files.entrySet()) {
-            Path path = root.resolve(file.getKey());
-            Files.createDirectories(path.getParent());
-            Files.writeString(path, file.getValue());
-        }
-        ProjectModel project = new ProjectModel(root);
         // The release lookups convert makes, answered from Target.fetch's cache as the loaders' own Maven repositories would.
         Map<String, String> answers = Map.of(
             "https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml",
@@ -345,17 +373,7 @@ public final class ConvertTests {
             "https://api.modrinth.com/v2/project/modmenu/version?game_versions=%5B%2226.3%22%5D&loaders=%5B%22fabric%22%5D",
             "[{\"version_number\": \"21.0.1\"}, {\"version_number\": \"21.0.0\"}, {\"version_number\": \"21.1.0-beta.1\"}]"
         );
-        for (var answer : answers.entrySet()) {
-            Path cache = project
-                .state()
-                .resolve(
-                    "metadata/" +
-                    Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) +
-                    ".json"
-                );
-            Files.createDirectories(cache.getParent());
-            Files.writeString(cache, answer.getValue());
-        }
+        ProjectModel project = fixture(root, files, answers);
         Map<String, byte[]> original = new LinkedHashMap<>();
         for (String name : files.keySet()) original.put(name, Files.readAllBytes(root.resolve(name)));
 
@@ -598,22 +616,12 @@ public final class ConvertTests {
             "src/main/java/quit/Quit.java",
             "package quit;\n\nimport net.fabricmc.api.ModInitializer;\n\npublic class Quit implements ModInitializer {\n\t@Override\n\tpublic void onInitialize() {\n\t}\n}\n"
         );
-        for (var file : quitFiles.entrySet()) {
-            Path path = quit.resolve(file.getKey());
-            Files.createDirectories(path.getParent());
-            Files.writeString(path, file.getValue());
-        }
-        ProjectModel quitProject = new ProjectModel(quit);
         Map<String, String> quitAnswers = new LinkedHashMap<>(answers);
         quitAnswers.put(
             "https://maven.shedaniel.me/me/shedaniel/cloth/cloth-config-neoforge/maven-metadata.xml",
             "<metadata><versioning><versions><version>26.3.1</version></versions></versioning></metadata>"
         );
-        for (var answer : quitAnswers.entrySet()) {
-            Path cache = quitProject.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
-            Files.createDirectories(cache.getParent());
-            Files.writeString(cache, answer.getValue());
-        }
+        ProjectModel quitProject = fixture(quit, quitFiles, quitAnswers);
         Convert quitConvert = new Convert(new Build(quitProject, home, "", new Mmt.Report(quit, "convert")));
         quitConvert.run(new Mmt.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" }));
         // A dry run writes nothing; the converted text is what it staged.
@@ -646,17 +654,7 @@ public final class ConvertTests {
             "modLoader=\"javafml\"\nloaderVersion=\"[1,)\"\nlicense=\"MIT\"\n\n[[mods]]\nmodId=\"${mod_id}\"\nversion=\"1.0.0\"\ndisplayName=\"Demo\"\n"
         );
         neoFiles.put("src/main/java/demo/Demo.java", Json.text(bridgeTest, "neoforge", ""));
-        for (var file : neoFiles.entrySet()) {
-            Path path = neo.resolve(file.getKey());
-            Files.createDirectories(path.getParent());
-            Files.writeString(path, file.getValue());
-        }
-        ProjectModel neoProject = new ProjectModel(neo);
-        for (var answer : answers.entrySet()) {
-            Path cache = neoProject.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
-            Files.createDirectories(cache.getParent());
-            Files.writeString(cache, answer.getValue());
-        }
+        ProjectModel neoProject = fixture(neo, neoFiles, answers);
         Convert neoConvert = new Convert(new Build(neoProject, home, "", new Mmt.Report(neo, "convert")));
         // Written, not a dry run: the way back and undo below start from the converted mod.
         Map<String, Object> bridged = neoConvert.run(new Mmt.Options(new String[] { "convert", "--to", "fabric" }), false);
@@ -712,6 +710,82 @@ public final class ConvertTests {
             Files.readString(neo.resolve("src/main/java/demo/Demo.java")).equals(Json.text(bridgeTest, "neoforge", "")),
             "undoing both conversions restores the NeoForge mod and leaves no folder the bridge emptied"
         );
+        bridgeTests(home, scratch, rules, answers);
+    }
+
+    /**
+     * Each bridge's before/after tests (bridges[].tests): the tests for one Minecraft version are files of one small mod of
+     * the bridge's from-loader (a test marked alone gets its own), converted (no compile): each file must read as its "to",
+     * listing its "mixins" and injecting its "injects"; converted back, as its "from" (or "back"). A Fabric mod's
+     * fabric.mod.json keeps, through NeoForge and back, the entrypoints and custom values other mods read.
+     */
+    static void bridgeTests(Path home, Path scratch, Map<String, Object> rules, Map<String, String> answers) throws Exception {
+        Map<String, String> seeded = new LinkedHashMap<>(answers);
+        seeded.put("https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml", "<metadata><versioning><versions><version>0.116.18+1.21.1</version><version>0.161.0+26.3</version><version>0.166.2+26.3</version><version>0.150.0+26.1.2</version></versions></versioning></metadata>");
+        seeded.put("https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml", "<metadata><versioning><versions><version>21.1.250</version><version>26.3.0.90</version><version>26.3.0.103</version><version>26.1.2.126</version></versions></versioning></metadata>");
+        String fabricMeta = "{\n\t\"schemaVersion\": 1,\n\t\"id\": \"demo\",\n\t\"version\": \"1.0.0\",\n\t\"entrypoints\": {\n\t\t\"main\": [\"demo.Demo\"],\n\t\t\"demo\": [\"demo.Demo\"]\n\t},\n\t\"custom\": {\n\t\t\"demo\": {\n\t\t\t\"badge\": true\n\t\t}\n\t}\n}\n";
+        int tested = 0;
+        for (Object item : LoaderRules.list(rules.get("bridges"))) {
+            var b = Json.object(item);
+            boolean fromNeo = "neoforge".equals(b.get("from"));
+            Map<String, List<Map<String, Object>>> groups = new LinkedHashMap<>();
+            for (Object t : LoaderRules.list(b.get("tests"))) {
+                var test = Json.object(t);
+                String key = Json.text(test, "minecraft", "26.3") + (Boolean.TRUE.equals(test.get("alone")) ? "-" + Json.text(test, "name", "") : "");
+                groups.computeIfAbsent(key, k -> new ArrayList<>()).add(test);
+            }
+            for (var group : groups.entrySet()) {
+                String game = group.getKey().replaceAll("-.*$", "");
+                Path dir = scratch.resolve("bridge-" + b.get("id") + "-" + group.getKey());
+                Map<String, String> mod = new LinkedHashMap<>();
+                mod.put("gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+                mod.put("settings.gradle", "rootProject.name = 'demo'\n");
+                if (fromNeo) {
+                    mod.put("gradle.properties", "minecraft_version=" + game + "\nneo_version=" + ("1.21.1".equals(game) ? "21.1.250" : "26.3.0.103") + "\nmod_id=demo\n");
+                    mod.put("build.gradle", "plugins {\n\tid 'net.neoforged.moddev' version '2.0.148'\n}\n\nneoForge {\n\tversion = project.neo_version\n}\n\ndependencies {\n}\n");
+                    mod.put("src/main/resources/META-INF/neoforge.mods.toml", "modLoader=\"javafml\"\nloaderVersion=\"[1,)\"\nlicense=\"MIT\"\n\n[[mods]]\nmodId=\"demo\"\nversion=\"1.0.0\"\n");
+                    mod.put("src/main/java/demo/Demo.java", "package demo;\n\nimport net.neoforged.fml.common.Mod;\n\n@Mod(\"demo\")\npublic class Demo {\n}\n");
+                } else {
+                    mod.put("gradle.properties", "minecraft_version=" + game + "\nloader_version=0.19.5\nfabric_api_version=0.161.0+26.3\n");
+                    mod.put("build.gradle", "plugins {\n\tid 'net.fabricmc.fabric-loom' version '1.18.2'\n}\n\ndependencies {\n\tminecraft \"com.mojang:minecraft:${project.minecraft_version}\"\n\timplementation \"net.fabricmc:fabric-loader:${project.loader_version}\"\n\timplementation \"net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}\"\n}\n");
+                    mod.put("src/main/resources/fabric.mod.json", fabricMeta);
+                    mod.put("src/main/java/demo/Demo.java", "package demo;\n\nimport net.fabricmc.api.ModInitializer;\n\npublic class Demo implements ModInitializer {\n\t@Override\n\tpublic void onInitialize() {\n\t}\n}\n");
+                }
+                for (var test : group.getValue()) mod.put("src/main/java/demo/" + Json.text(test, "name", "") + ".java", Json.text(test, "from", ""));
+                ProjectModel model = fixture(dir, mod, seeded);
+                String to = fromNeo ? "fabric" : "neoforge", origin = fromNeo ? "neoforge" : "fabric";
+                String forward = String.valueOf(new Convert(new Build(model, home, "", new Mmt.Report(dir, "convert"))).run(new Mmt.Options(new String[] { "convert", "--to", to }), false).get("details"));
+                for (var test : group.getValue()) {
+                    String name = Json.text(test, "name", ""), converted = Files.readString(dir.resolve("src/main/java/demo/" + name + ".java"));
+                    String meta = fromNeo ? Files.readString(dir.resolve("src/main/resources/fabric.mod.json")) : "";
+                    // The @Mod constructor starts the Fabric bridge; Demo, also the "demo" entrypoint, keeps a no-argument one.
+                    String demo = Files.readString(dir.resolve("src/main/java/demo/Demo.java"));
+                    boolean started = fromNeo || demo.contains("FabricBridge.init(modBus);") && demo.contains(Convert.KEPT_CONSTRUCTOR + "\n\tDemo() {\n\t}\n");
+                    check(
+                        started && converted.equals(Json.text(test, "to", "")) &&
+                        LoaderRules.strings(test.get("mixins")).stream().allMatch(forward::contains) &&
+                        LoaderRules.strings(test.get("injects")).stream().allMatch(t -> meta.contains("\"loom:injected_interfaces\"") && meta.contains("\"" + t + "\"")),
+                        "bridge " + b.get("id") + " test " + name + " to " + to + ":\n" + converted + forward
+                    );
+                }
+                String back = String.valueOf(new Convert(new Build(model, home, "", new Mmt.Report(dir, "convert"))).run(new Mmt.Options(new String[] { "convert", "--to", origin }), false).get("details"));
+                for (var test : group.getValue()) {
+                    String name = Json.text(test, "name", ""), again = Files.readString(dir.resolve("src/main/java/demo/" + name + ".java"));
+                    check(again.equals(Json.text(test, "back", Json.text(test, "from", ""))), "bridge " + b.get("id") + " test " + name + " back to " + origin + ":\n" + again + back);
+                    tested++;
+                }
+                if (!fromNeo) {
+                    var meta = Json.object(Json.parse(Files.readString(dir.resolve("src/main/resources/fabric.mod.json"))));
+                    check(
+                        Json.write(meta.get("custom")).equals(Json.write(Json.object(Json.parse(fabricMeta)).get("custom"))) &&
+                        Json.write(Json.object(meta.get("entrypoints")).get("demo")).equals("[\"demo.Demo\"]") &&
+                        Files.readString(dir.resolve("src/main/java/demo/Demo.java")).equals(mod.get("src/main/java/demo/Demo.java")) && !Files.exists(dir.resolve("src/main/java/demo/fabricbridge")),
+                        "back to Fabric, the entrypoints and custom values other mods read are fabric.mod.json's again and the bridge is gone: " + Json.write(meta)
+                    );
+                }
+            }
+        }
+        check(tested >= 20, "every bridge test converts its source both ways (" + tested + " tests)");
     }
 
     public static void main(String[] args) throws Exception {

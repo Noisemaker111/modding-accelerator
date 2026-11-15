@@ -1,0 +1,462 @@
+{
+ "schema": 1,
+ "mode": "world",
+ "frozenAtStart": true,
+ "freezes": true,
+ "seeded": 8,
+ "ticksRun": 200,
+ "ticketsDuringRun": {
+  "minecraft:overworld": {
+   "-1,-1": "forced 31 player 31 unknown 33",
+   "-1,-2": "player 31",
+   "-1,-3": "player 31",
+   "-1,-4": "player 31",
+   "-1,-5": "player 31",
+   "-1,-6": "player 31",
+   "-1,0": "forced 31 player 31 unknown 33",
+   "-1,1": "forced 31 player 31 unknown 33",
+   "0,-1": "forced 31 player 31 unknown 33 unknown 36",
+   "0,0": "forced 31 player 31 start 30 unknown 33",
+   "0,1": "forced 31 player 31 unknown 33",
+   "1,-1": "forced 31 player 31 unknown 33",
+   "1,0": "forced 31 player 31 unknown 33",
+   "1,1": "forced 31 player 31 unknown 33",
+   "2,0": "forced 31 player 31 unknown 33",
+   "2,1": "forced 31 player 31 unknown 33"
+  }
+ },
+ "checkpoints": [
+  {
+   "tick": 0,
+   "levels": {
+    "minecraft:overworld": {
+     "gameTime": 514,
+     "chunks": {
+      "inArea": 16
+     },
+     "tickets": {
+      "-1,-6": "player 31",
+      "-1,-5": "player 31",
+      "-1,-4": "player 31",
+      "-1,-3": "player 31",
+      "-1,-2": "player 31",
+      "0,-1": "forced 31 player 31 unknown 33 unknown 36",
+      "1,-1": "forced 31 player 31",
+      "-1,-1": "forced 31 player 31 unknown 33",
+      "0,0": "forced 31 player 31 start 30 unknown 33",
+      "1,0": "forced 31 player 31 unknown 33",
+      "2,0": "forced 31 player 31",
+      "-1,0": "forced 31 player 31 unknown 33",
+      "0,1": "forced 31 player 31 unknown 33",
+      "1,1": "forced 31 player 31 unknown 33",
+      "2,1": "forced 31 player 31",
+      "-1,1": "forced 31 player 31 unknown 33"
+     },
+     "blocks": {
+      "-1,-6": "1a542985711b6d84",
+      "-1,-5": "1a542985711b6d84",
+      "-1,-4": "1a542985711b6d84",
+      "-1,-3": "1a542985711b6d84",
+      "-1,-2": "1a542985711b6d84",
+      "0,-1": "5b15100daed3afa0",
+      "1,-1": "1a542985711b6d84",
+      "-1,-1": "1d56484504ff92e8",
+      "0,0": "d6b34aafdc26c288",
+      "1,0": "336edb0edf479850",
+      "2,0": "1a542985711b6d84",
+      "-1,0": "de6cde4995043603",
+      "0,1": "45d72c397b60315c",
+      "1,1": "7c10cbde3d5895f4",
+      "2,1": "1a542985711b6d84",
+      "-1,1": "22486e955d8f8758"
+     },
+     "blockEntities": {
+      "0,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:0,y:-60,z:-4}",
+      "0,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:stone\"}],id:\"minecraft:barrel\",x:0,y:-60,z:-3}",
+      "0,-60,-2": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-2,dimension:\"minecraft:overworld\"}},direction:2,facade:{},id:\"storagenetwork:export_kabel\",ioStorage:{filters:{Items:[{Slot:0,count:1,id:\"minecraft:stone\"}],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},inventoryFace:\"north\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4},x:0,y:-60,z:-2}",
+      "1,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:1,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:1,y:-60,z:-4}",
+      "1,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:dirt\"}],id:\"minecraft:barrel\",x:1,y:-60,z:-3}",
+      "1,-60,-2": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:1,Y:-60,Z:-2,dimension:\"minecraft:overworld\"}},direction:2,facade:{},id:\"storagenetwork:export_kabel\",ioStorage:{filters:{Items:[{Slot:0,count:1,id:\"minecraft:dirt\"}],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},inventoryFace:\"north\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4},x:1,y:-60,z:-2}",
+      "2,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:2,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:2,y:-60,z:-4}",
+      "2,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:birch_log\"}],id:\"minecraft:barrel\",x:2,y:-60,z:-3}"
+     },
+     "inventories": {
+      "0,-60,-3": "0:minecraft:stone*64",
+      "1,-60,-3": "0:minecraft:dirt*64",
+      "2,-60,-3": "0:minecraft:birch_log*64",
+      "3,-60,-3": "0:minecraft:oak_planks*64",
+      "4,-60,-3": "0:minecraft:gravel*62",
+      "5,-60,-3": "0:minecraft:gold_ingot*64",
+      "6,-60,-3": "0:minecraft:coal*64",
+      "7,-60,-3": "0:minecraft:lapis_lazuli*7"
+     },
+     "items": {
+      "minecraft:andesite": 6731,
+      "minecraft:arrow": 6813,
+      "minecraft:beef": 6493,
+      "minecraft:birch_log": 6220,
+      "minecraft:bone": 6324,
+      "minecraft:carrot": 6575,
+      "minecraft:clay_ball": 6731,
+      "minecraft:coal": 6423,
+      "minecraft:cobblestone": 6803,
+      "minecraft:copper_ingot": 6291,
+      "minecraft:deepslate": 6553,
+      "minecraft:diamond": 6523
+     },
+     "entityCounts": {},
+     "scheduledTicks": {},
+     "randomState": "798f5f2daf76222c"
+    }
+   },
+   "rng": "f67b6fd400f98c9c"
+  },
+  {
+   "tick": 50,
+   "levels": {
+    "minecraft:overworld": {
+     "gameTime": 564,
+     "chunks": {
+      "inArea": 16
+     },
+     "tickets": {
+      "-1,-6": "player 31",
+      "-1,-5": "player 31",
+      "-1,-4": "player 31",
+      "-1,-3": "player 31",
+      "-1,-2": "player 31",
+      "0,-1": "forced 31 player 31 unknown 33 unknown 36",
+      "1,-1": "forced 31 player 31",
+      "-1,-1": "forced 31 player 31 unknown 33",
+      "0,0": "forced 31 player 31 start 30 unknown 33",
+      "1,0": "forced 31 player 31 unknown 33",
+      "2,0": "forced 31 player 31",
+      "-1,0": "forced 31 player 31 unknown 33",
+      "0,1": "forced 31 player 31 unknown 33",
+      "1,1": "forced 31 player 31 unknown 33",
+      "2,1": "forced 31 player 31",
+      "-1,1": "forced 31 player 31 unknown 33"
+     },
+     "blocks": {
+      "-1,-6": "1a542985711b6d84",
+      "-1,-5": "1a542985711b6d84",
+      "-1,-4": "1a542985711b6d84",
+      "-1,-3": "1a542985711b6d84",
+      "-1,-2": "1a542985711b6d84",
+      "0,-1": "5b15100daed3afa0",
+      "1,-1": "1a542985711b6d84",
+      "-1,-1": "1d56484504ff92e8",
+      "0,0": "d6b34aafdc26c288",
+      "1,0": "336edb0edf479850",
+      "2,0": "1a542985711b6d84",
+      "-1,0": "de6cde4995043603",
+      "0,1": "45d72c397b60315c",
+      "1,1": "7c10cbde3d5895f4",
+      "2,1": "1a542985711b6d84",
+      "-1,1": "22486e955d8f8758"
+     },
+     "blockEntities": {
+      "0,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:0,y:-60,z:-4}",
+      "0,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:stone\"}],id:\"minecraft:barrel\",x:0,y:-60,z:-3}",
+      "0,-60,-2": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-2,dimension:\"minecraft:overworld\"}},direction:2,facade:{},id:\"storagenetwork:export_kabel\",ioStorage:{filters:{Items:[{Slot:0,count:1,id:\"minecraft:stone\"}],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},inventoryFace:\"north\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4},x:0,y:-60,z:-2}",
+      "1,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:1,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:1,y:-60,z:-4}",
+      "1,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:dirt\"}],id:\"minecraft:barrel\",x:1,y:-60,z:-3}",
+      "1,-60,-2": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:1,Y:-60,Z:-2,dimension:\"minecraft:overworld\"}},direction:2,facade:{},id:\"storagenetwork:export_kabel\",ioStorage:{filters:{Items:[{Slot:0,count:1,id:\"minecraft:dirt\"}],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},inventoryFace:\"north\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4},x:1,y:-60,z:-2}",
+      "2,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:2,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:2,y:-60,z:-4}",
+      "2,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:birch_log\"}],id:\"minecraft:barrel\",x:2,y:-60,z:-3}"
+     },
+     "inventories": {
+      "0,-60,-3": "0:minecraft:stone*64",
+      "1,-60,-3": "0:minecraft:dirt*64",
+      "2,-60,-3": "0:minecraft:birch_log*64",
+      "3,-60,-3": "0:minecraft:oak_planks*64",
+      "4,-60,-3": "0:minecraft:gravel*62",
+      "5,-60,-3": "0:minecraft:gold_ingot*64",
+      "6,-60,-3": "0:minecraft:coal*64",
+      "7,-60,-3": "0:minecraft:lapis_lazuli*7"
+     },
+     "items": {
+      "minecraft:andesite": 6731,
+      "minecraft:arrow": 6813,
+      "minecraft:beef": 6493,
+      "minecraft:birch_log": 6220,
+      "minecraft:bone": 6324,
+      "minecraft:carrot": 6575,
+      "minecraft:clay_ball": 6731,
+      "minecraft:coal": 6423,
+      "minecraft:cobblestone": 6803,
+      "minecraft:copper_ingot": 6291,
+      "minecraft:deepslate": 6553,
+      "minecraft:diamond": 6523
+     },
+     "entityCounts": {},
+     "scheduledTicks": {},
+     "randomState": "9bca6a528eb86fb7"
+    }
+   },
+   "rng": "f67b6fd400f98c9c"
+  },
+  {
+   "tick": 100,
+   "levels": {
+    "minecraft:overworld": {
+     "gameTime": 614,
+     "chunks": {
+      "inArea": 16
+     },
+     "tickets": {
+      "-1,-6": "player 31",
+      "-1,-5": "player 31",
+      "-1,-4": "player 31",
+      "-1,-3": "player 31",
+      "-1,-2": "player 31",
+      "0,-1": "forced 31 player 31 unknown 33",
+      "1,-1": "forced 31 player 31",
+      "-1,-1": "forced 31 player 31 unknown 33",
+      "0,0": "forced 31 player 31 start 30 unknown 33",
+      "1,0": "forced 31 player 31 unknown 33",
+      "2,0": "forced 31 player 31",
+      "-1,0": "forced 31 player 31 unknown 33",
+      "0,1": "forced 31 player 31 unknown 33",
+      "1,1": "forced 31 player 31 unknown 33",
+      "2,1": "forced 31 player 31",
+      "-1,1": "forced 31 player 31 unknown 33"
+     },
+     "blocks": {
+      "-1,-6": "1a542985711b6d84",
+      "-1,-5": "1a542985711b6d84",
+      "-1,-4": "1a542985711b6d84",
+      "-1,-3": "1a542985711b6d84",
+      "-1,-2": "1a542985711b6d84",
+      "0,-1": "5b15100daed3afa0",
+      "1,-1": "1a542985711b6d84",
+      "-1,-1": "1d56484504ff92e8",
+      "0,0": "d6b34aafdc26c288",
+      "1,0": "336edb0edf479850",
+      "2,0": "1a542985711b6d84",
+      "-1,0": "de6cde4995043603",
+      "0,1": "45d72c397b60315c",
+      "1,1": "7c10cbde3d5895f4",
+      "2,1": "1a542985711b6d84",
+      "-1,1": "22486e955d8f8758"
+     },
+     "blockEntities": {
+      "0,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:0,y:-60,z:-4}",
+      "0,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:stone\"}],id:\"minecraft:barrel\",x:0,y:-60,z:-3}",
+      "0,-60,-2": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-2,dimension:\"minecraft:overworld\"}},direction:2,facade:{},id:\"storagenetwork:export_kabel\",ioStorage:{filters:{Items:[{Slot:0,count:1,id:\"minecraft:stone\"}],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},inventoryFace:\"north\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4},x:0,y:-60,z:-2}",
+      "1,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:1,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:1,y:-60,z:-4}",
+      "1,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:dirt\"}],id:\"minecraft:barrel\",x:1,y:-60,z:-3}",
+      "1,-60,-2": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:1,Y:-60,Z:-2,dimension:\"minecraft:overworld\"}},direction:2,facade:{},id:\"storagenetwork:export_kabel\",ioStorage:{filters:{Items:[{Slot:0,count:1,id:\"minecraft:dirt\"}],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},inventoryFace:\"north\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4},x:1,y:-60,z:-2}",
+      "2,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:2,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:2,y:-60,z:-4}",
+      "2,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:birch_log\"}],id:\"minecraft:barrel\",x:2,y:-60,z:-3}"
+     },
+     "inventories": {
+      "0,-60,-3": "0:minecraft:stone*64",
+      "1,-60,-3": "0:minecraft:dirt*64",
+      "2,-60,-3": "0:minecraft:birch_log*64",
+      "3,-60,-3": "0:minecraft:oak_planks*64",
+      "4,-60,-3": "0:minecraft:gravel*62",
+      "5,-60,-3": "0:minecraft:gold_ingot*64",
+      "6,-60,-3": "0:minecraft:coal*64",
+      "7,-60,-3": "0:minecraft:lapis_lazuli*7"
+     },
+     "items": {
+      "minecraft:andesite": 6731,
+      "minecraft:arrow": 6813,
+      "minecraft:beef": 6493,
+      "minecraft:birch_log": 6220,
+      "minecraft:bone": 6324,
+      "minecraft:carrot": 6575,
+      "minecraft:clay_ball": 6731,
+      "minecraft:coal": 6423,
+      "minecraft:cobblestone": 6803,
+      "minecraft:copper_ingot": 6291,
+      "minecraft:deepslate": 6553,
+      "minecraft:diamond": 6523
+     },
+     "entityCounts": {},
+     "scheduledTicks": {},
+     "randomState": "34ef5244d15c9407"
+    }
+   },
+   "rng": "f67b6fd400f98c9c"
+  },
+  {
+   "tick": 150,
+   "levels": {
+    "minecraft:overworld": {
+     "gameTime": 664,
+     "chunks": {
+      "inArea": 16
+     },
+     "tickets": {
+      "-1,-6": "player 31",
+      "-1,-5": "player 31",
+      "-1,-4": "player 31",
+      "-1,-3": "player 31",
+      "-1,-2": "player 31",
+      "0,-1": "forced 31 player 31 unknown 33 unknown 36",
+      "1,-1": "forced 31 player 31",
+      "-1,-1": "forced 31 player 31 unknown 33",
+      "0,0": "forced 31 player 31 start 30 unknown 33",
+      "1,0": "forced 31 player 31 unknown 33",
+      "2,0": "forced 31 player 31",
+      "-1,0": "forced 31 player 31 unknown 33",
+      "0,1": "forced 31 player 31 unknown 33",
+      "1,1": "forced 31 player 31 unknown 33",
+      "2,1": "forced 31 player 31",
+      "-1,1": "forced 31 player 31 unknown 33"
+     },
+     "blocks": {
+      "-1,-6": "1a542985711b6d84",
+      "-1,-5": "1a542985711b6d84",
+      "-1,-4": "1a542985711b6d84",
+      "-1,-3": "1a542985711b6d84",
+      "-1,-2": "1a542985711b6d84",
+      "0,-1": "5b15100daed3afa0",
+      "1,-1": "1a542985711b6d84",
+      "-1,-1": "1d56484504ff92e8",
+      "0,0": "d6b34aafdc26c288",
+      "1,0": "336edb0edf479850",
+      "2,0": "1a542985711b6d84",
+      "-1,0": "de6cde4995043603",
+      "0,1": "45d72c397b60315c",
+      "1,1": "7c10cbde3d5895f4",
+      "2,1": "1a542985711b6d84",
+      "-1,1": "22486e955d8f8758"
+     },
+     "blockEntities": {
+      "0,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:0,y:-60,z:-4}",
+      "0,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:stone\"}],id:\"minecraft:barrel\",x:0,y:-60,z:-3}",
+      "0,-60,-2": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-2,dimension:\"minecraft:overworld\"}},direction:2,facade:{},id:\"storagenetwork:export_kabel\",ioStorage:{filters:{Items:[{Slot:0,count:1,id:\"minecraft:stone\"}],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},inventoryFace:\"north\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4},x:0,y:-60,z:-2}",
+      "1,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:1,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:1,y:-60,z:-4}",
+      "1,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:dirt\"}],id:\"minecraft:barrel\",x:1,y:-60,z:-3}",
+      "1,-60,-2": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:1,Y:-60,Z:-2,dimension:\"minecraft:overworld\"}},direction:2,facade:{},id:\"storagenetwork:export_kabel\",ioStorage:{filters:{Items:[{Slot:0,count:1,id:\"minecraft:dirt\"}],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},inventoryFace:\"north\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4},x:1,y:-60,z:-2}",
+      "2,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:2,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:2,y:-60,z:-4}",
+      "2,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:birch_log\"}],id:\"minecraft:barrel\",x:2,y:-60,z:-3}"
+     },
+     "inventories": {
+      "0,-60,-3": "0:minecraft:stone*64",
+      "1,-60,-3": "0:minecraft:dirt*64",
+      "2,-60,-3": "0:minecraft:birch_log*64",
+      "3,-60,-3": "0:minecraft:oak_planks*64",
+      "4,-60,-3": "0:minecraft:gravel*62",
+      "5,-60,-3": "0:minecraft:gold_ingot*64",
+      "6,-60,-3": "0:minecraft:coal*64",
+      "7,-60,-3": "0:minecraft:lapis_lazuli*7"
+     },
+     "items": {
+      "minecraft:andesite": 6731,
+      "minecraft:arrow": 6813,
+      "minecraft:beef": 6493,
+      "minecraft:birch_log": 6220,
+      "minecraft:bone": 6324,
+      "minecraft:carrot": 6575,
+      "minecraft:clay_ball": 6731,
+      "minecraft:coal": 6423,
+      "minecraft:cobblestone": 6803,
+      "minecraft:copper_ingot": 6291,
+      "minecraft:deepslate": 6553,
+      "minecraft:diamond": 6523
+     },
+     "entityCounts": {},
+     "scheduledTicks": {},
+     "randomState": "06696edf9892afa0"
+    }
+   },
+   "rng": "f67b6fd400f98c9c"
+  },
+  {
+   "tick": 200,
+   "levels": {
+    "minecraft:overworld": {
+     "gameTime": 714,
+     "chunks": {
+      "inArea": 16
+     },
+     "tickets": {
+      "-1,-6": "player 31",
+      "-1,-5": "player 31",
+      "-1,-4": "player 31",
+      "-1,-3": "player 31",
+      "-1,-2": "player 31",
+      "0,-1": "forced 31 player 31 unknown 33",
+      "1,-1": "forced 31 player 31 unknown 33",
+      "-1,-1": "forced 31 player 31 unknown 33",
+      "0,0": "forced 31 player 31 start 30 unknown 33",
+      "1,0": "forced 31 player 31 unknown 33",
+      "2,0": "forced 31 player 31",
+      "-1,0": "forced 31 player 31 unknown 33",
+      "0,1": "forced 31 player 31 unknown 33",
+      "1,1": "forced 31 player 31 unknown 33",
+      "2,1": "forced 31 player 31",
+      "-1,1": "forced 31 player 31 unknown 33"
+     },
+     "blocks": {
+      "-1,-6": "1a542985711b6d84",
+      "-1,-5": "1a542985711b6d84",
+      "-1,-4": "1a542985711b6d84",
+      "-1,-3": "1a542985711b6d84",
+      "-1,-2": "1a542985711b6d84",
+      "0,-1": "5b15100daed3afa0",
+      "1,-1": "1a542985711b6d84",
+      "-1,-1": "1d56484504ff92e8",
+      "0,0": "d6b34aafdc26c288",
+      "1,0": "336edb0edf479850",
+      "2,0": "1a542985711b6d84",
+      "-1,0": "de6cde4995043603",
+      "0,1": "45d72c397b60315c",
+      "1,1": "7c10cbde3d5895f4",
+      "2,1": "1a542985711b6d84",
+      "-1,1": "22486e955d8f8758"
+     },
+     "blockEntities": {
+      "0,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:0,y:-60,z:-4}",
+      "0,-60,-3": "{Items:[{Slot:0b,count:48,id:\"minecraft:stone\"}],id:\"minecraft:barrel\",x:0,y:-60,z:-3}",
+      "0,-60,-2": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-2,dimension:\"minecraft:overworld\"}},direction:2,facade:{},id:\"storagenetwork:export_kabel\",ioStorage:{filters:{Items:[{Slot:0,count:1,id:\"minecraft:stone\"}],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},inventoryFace:\"north\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4},x:0,y:-60,z:-2}",
+      "1,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:1,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:1,y:-60,z:-4}",
+      "1,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:dirt\"}],id:\"minecraft:barrel\",x:1,y:-60,z:-3}",
+      "1,-60,-2": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:1,Y:-60,Z:-2,dimension:\"minecraft:overworld\"}},direction:2,facade:{},id:\"storagenetwork:export_kabel\",ioStorage:{filters:{Items:[{Slot:0,count:1,id:\"minecraft:dirt\"}],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},inventoryFace:\"north\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4},x:1,y:-60,z:-2}",
+      "2,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:2,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:2,y:-60,z:-4}",
+      "2,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:birch_log\"}],id:\"minecraft:barrel\",x:2,y:-60,z:-3}"
+     },
+     "inventories": {
+      "0,-60,-3": "0:minecraft:stone*48",
+      "1,-60,-3": "0:minecraft:dirt*64",
+      "2,-60,-3": "0:minecraft:birch_log*64",
+      "3,-60,-3": "0:minecraft:oak_planks*64",
+      "4,-60,-3": "0:minecraft:gravel*62",
+      "5,-60,-3": "0:minecraft:gold_ingot*64",
+      "6,-60,-3": "0:minecraft:coal*64",
+      "7,-60,-3": "0:minecraft:lapis_lazuli*7"
+     },
+     "items": {
+      "minecraft:andesite": 6731,
+      "minecraft:arrow": 6813,
+      "minecraft:beef": 6493,
+      "minecraft:birch_log": 6220,
+      "minecraft:bone": 6324,
+      "minecraft:carrot": 6575,
+      "minecraft:clay_ball": 6731,
+      "minecraft:coal": 6423,
+      "minecraft:cobblestone": 6803,
+      "minecraft:copper_ingot": 6291,
+      "minecraft:deepslate": 6553,
+      "minecraft:diamond": 6523
+     },
+     "entityCounts": {},
+     "scheduledTicks": {},
+     "randomState": "b01615424ffd058e"
+    }
+   },
+   "rng": "f67b6fd400f98c9c"
+  }
+ ],
+ "target": {
+  "minecraft": "1.21.1",
+  "namespaces": [
+   "storagenetwork"
+  ]
+ },
+ "about": "Trimmed from a recorded perf-optimize baseline launch of the Storage Network experiment (frozen world, 200 seeded ticks). Synthetic edit: one inventory differs, as a second baseline launch does when a mod orders equal things by identity."
+}

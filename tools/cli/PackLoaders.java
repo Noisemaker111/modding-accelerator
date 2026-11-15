@@ -216,9 +216,12 @@ final class PackLoaders {
         public String newest(Context context, String minecraft) throws Exception {
             String prefix = fill(setting(minecraft, "versionPrefix"), minecraft, "", null);
             String xml = new String(PackCheck.get(fill(setting(minecraft, "versions"), minecraft, "", null)), StandardCharsets.UTF_8);
+            // The prefix picks this game version's releases. It is taken off only where the installer's address puts it back
+            // (Forge's "{mc}-{version}"); NeoForge's address takes the whole version ("21.1.266"), not "266".
+            boolean restored = fill(setting(minecraft, "installer"), minecraft, "{version}", null).contains(prefix + "{version}");
             List<String> found = new ArrayList<>();
             Matcher m = Pattern.compile("<version>([^<]+)</version>").matcher(xml);
-            while (m.find()) if (m.group(1).startsWith(prefix)) found.add(m.group(1).substring(prefix.length()));
+            while (m.find()) if (m.group(1).startsWith(prefix)) found.add(restored ? m.group(1).substring(prefix.length()) : m.group(1));
             if (found.isEmpty()) throw new IOException(id + " publishes no server for Minecraft " + minecraft + ".");
             List<String> stable = found.stream().filter(v -> !v.contains("beta") && !v.contains("alpha")).toList();
             return (stable.isEmpty() ? found : stable).stream().max(Versions::compare).get();
@@ -633,6 +636,15 @@ final class PackLoaders {
         for (String source : PROBE) hash.update(Files.readAllBytes(context.harness().resolve(source)));
         Path layer = gameLayer(context.harness(), minecraft);
         hash.update(Files.readAllBytes(layer));
+        // The behaviour fingerprint (MmtFingerprint) goes in the same jar when it has a layer for this version.
+        List<String> fingerprint = new ArrayList<>();
+        try {
+            fingerprint.add(context.harness().resolve("tools/packcheck/MmtFingerprint.java").toString());
+            fingerprint.add(Fingerprint.fingerprintLayer(context.harness(), minecraft).toString());
+            for (String source : fingerprint) hash.update(Files.readAllBytes(Path.of(source)));
+        } catch (IOException noLayer) {
+            fingerprint.clear();
+        }
         Names names = loader.names(context, install, minecraft);
         hash.update((loader.id() + " " + minecraft + " " + names.kind()).getBytes(StandardCharsets.UTF_8));
         Path dir = context.cache().resolve("probes").resolve(HexFormat.of().formatHex(hash.digest()).substring(0, 16));
@@ -670,7 +682,19 @@ final class PackLoaders {
                 layer.toString()
             )
         );
-        step(context, "probe-compile", compileProbe, dir);
+        List<String> withFingerprint = new ArrayList<>(compileProbe);
+        withFingerprint.addAll(fingerprint);
+        if (fingerprint.isEmpty()) step(context, "probe-compile", compileProbe, dir);
+        else {
+            var result = Run.command(withFingerprint, dir, Map.of(), context.report().log("probe-compile"), 600);
+            context.report().stage("probe-compile", result, Map.of("fingerprint", result.exit() == 0));
+            // A fingerprint layer that does not compile for this exact version leaves pack-check's own probe as it was.
+            if (result.exit() != 0) {
+                PackCheck.deleteTree(classes);
+                Files.createDirectories(classes);
+                step(context, "probe-compile-without-fingerprint", compileProbe, dir);
+            }
+        }
         // Only the metadata this loader reads goes in, so no loader sees a file meant for another and warns about it.
         // Quilt reads fabric.mod.json too, so a loader is served by the first of its files the probe has.
         int given = 0;

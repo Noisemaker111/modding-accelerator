@@ -153,7 +153,7 @@ public final class LabDaemon {
 		if (sources.isEmpty()) {
 			return List.of("No sources under " + sourceRoots);
 		}
-		// Incremental: a big repo (MineColonies: 2102 files, 22s) should not pay for a full compile
+		// Incremental: a big repo (2102 files, 22s) should not pay for a full compile
 		// on every save. Compile only sources modified since the last successful run; javac pulls the
 		// rest from the class output directory through -cp and -sourcepath.
 		Path stampFile = root.resolve(".lab/last-compile.txt");

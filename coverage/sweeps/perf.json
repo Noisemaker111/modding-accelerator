@@ -1,0 +1,145 @@
+{
+  "about": "perf-optimize's built-in fingerprint gate alone on the perf corpus (bench/perf-corpus.json), by python bench/perf_sweep.py: shipped diffs must pass it and known-wrong diffs must fail it.",
+  "corpus": 5,
+  "latest": {
+    "date": "2026-11-15",
+    "mods": 3,
+    "diffs run": 5,
+    "decided as the hand gates did": 4,
+    "decided otherwise": 1,
+    "undecided": 0,
+    "headline": {
+      "name": "perf diffs the generic fingerprint gate decides as the hand gates did",
+      "value": 4,
+      "of": 6
+    }
+  },
+  "runs": [
+    {
+      "id": "cyclic",
+      "name": "Cyclic",
+      "experiment": "bench/cyclic/experiment.json",
+      "date": "2026-11-15",
+      "diffs": [
+        {
+          "diff": "bench/cyclic/cumulative.diff",
+          "expect": "pass",
+          "decidedRight": true,
+          "gatePassed": true,
+          "failures": [],
+          "unstable": 5,
+          "compared": 12012,
+          "differingSections": {},
+          "error": null,
+          "seconds": 1048.8,
+          "out": "C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d64b52ee-e63c2e4173fcc7f8\\.runs\\perf-sweep\\cyclic\\cumulative-1794774265",
+          "unstableFamilies": [
+            "checkpoints/*/levels/minecraft:overworld/tickets/*",
+            "ticketsDuringRun/minecraft:overworld/*"
+          ],
+          "pairs": 2,
+          "decidedFrom": "recorded launches"
+        }
+      ]
+    },
+    {
+      "id": "pipez",
+      "name": "Pipez",
+      "experiment": "bench/pipez/experiment.json",
+      "date": "2026-11-15",
+      "diffs": [
+        {
+          "diff": "bench/pipez/sorted-connections.diff",
+          "expect": "pass",
+          "decidedRight": true,
+          "gatePassed": true,
+          "failures": [],
+          "unstable": 397,
+          "compared": 2373,
+          "differingSections": {},
+          "error": null,
+          "seconds": 852.0,
+          "out": "C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d64b52ee-e63c2e4173fcc7f8\\.runs\\perf-sweep\\pipez\\sorted-connections-1794775314",
+          "unstableFamilies": [
+            "checkpoints/*/levels/minecraft:overworld/blockEntities/*#minecraft:barrel",
+            "checkpoints/*/levels/minecraft:overworld/inventories/*",
+            "checkpoints/*/levels/minecraft:overworld/tickets/*"
+          ],
+          "pairs": 2,
+          "decidedFrom": "recorded launches"
+        },
+        {
+          "diff": "bench/pipez/sabotage-stale-cache.diff",
+          "expect": "fail",
+          "decidedRight": false,
+          "gatePassed": true,
+          "failures": [],
+          "unstable": 362,
+          "compared": 2373,
+          "differingSections": {},
+          "error": null,
+          "seconds": 716.1,
+          "out": "C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d64b52ee-e63c2e4173fcc7f8\\.runs\\perf-sweep\\pipez\\sabotage-stale-cache-1794776166",
+          "unstableFamilies": [
+            "checkpoints/*/levels/minecraft:overworld/blockEntities/*#minecraft:barrel",
+            "checkpoints/*/levels/minecraft:overworld/inventories/*",
+            "checkpoints/*/levels/minecraft:overworld/tickets/*"
+          ],
+          "pairs": 2,
+          "decidedFrom": "recorded launches"
+        }
+      ]
+    },
+    {
+      "id": "storagenetwork",
+      "name": "Simple Storage Network",
+      "experiment": "bench/storagenetwork/experiment.json",
+      "date": "2026-11-15",
+      "diffs": [
+        {
+          "diff": "bench/storagenetwork/cumulative.diff",
+          "expect": "pass",
+          "decidedRight": true,
+          "gatePassed": true,
+          "failures": [],
+          "unstable": 73,
+          "compared": 4947,
+          "differingSections": {},
+          "error": null,
+          "seconds": 765.8,
+          "out": "C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d64b52ee-e63c2e4173fcc7f8\\.runs\\perf-sweep\\storagenetwork\\cumulative-1794774264",
+          "unstableFamilies": [
+            "checkpoints/*/levels/minecraft:overworld/blockEntities/*#minecraft:barrel",
+            "checkpoints/*/levels/minecraft:overworld/inventories/*"
+          ],
+          "pairs": 2,
+          "decidedFrom": "recorded launches"
+        },
+        {
+          "diff": "git:d9e538e~1:bench/storagenetwork/cumulative.diff",
+          "expect": "fail",
+          "decidedRight": true,
+          "gatePassed": false,
+          "failures": [
+            "run 0: 28 leaves differ from the paired baseline ({checkpoints/tickets=28})",
+            "run 1: 30 leaves differ from the paired baseline ({checkpoints/tickets=30})"
+          ],
+          "unstable": 112,
+          "compared": 4947,
+          "differingSections": {
+            "checkpoints/tickets": 58
+          },
+          "error": null,
+          "seconds": 879.6,
+          "out": "C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d64b52ee-e63c2e4173fcc7f8\\.runs\\perf-sweep\\storagenetwork\\cumulative-d9e538e_1-1794775030",
+          "unstableFamilies": [
+            "checkpoints/*/levels/minecraft:overworld/blockEntities/*#minecraft:barrel",
+            "checkpoints/*/levels/minecraft:overworld/inventories/*"
+          ],
+          "pairs": 2,
+          "decidedFrom": "recorded launches"
+        }
+      ]
+    }
+  ]
+}

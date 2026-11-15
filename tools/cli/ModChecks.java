@@ -467,7 +467,7 @@ final class ModChecks {
                 }
             }
             // Another project's classes folder on the classpath: its resources and sources sit beside it by
-            // Gradle's layout, and are bundled into the jar with it (Sodium's common and frapi, unbuilt at compile time).
+            // Gradle's layout, and are bundled into the jar with it (a multi-project mod's common and API projects, unbuilt at compile time).
             Matcher layout = CLASSES.matcher(path.toString().replace('\\', '/'));
             if (!layout.matches()) continue;
             Path project = Path.of(layout.group(1));
@@ -494,7 +494,7 @@ final class ModChecks {
 
     /**
      * Something the loader needs and cannot find. Jar assembly can pull files from other projects in ways
-     * the model does not show (shadow, jar-in-jar, custom configurations: Sodium's frapi), so it is a
+     * the model does not show (shadow, jar-in-jar, custom configurations pulling in another project's API), so it is a
      * problem only when nothing in the checkout could supply it; otherwise a warning saying why.
      */
     void missing(Set_ set, String problem, String entry) throws IOException {

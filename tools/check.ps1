@@ -877,7 +877,7 @@ function Invoke-ToolchainCheck {
 	if (-not $jdk) { $blockers.Add("needs JDK $needJdk and none is installed (checked .tools, %USERPROFILE%\tools, bench\mods)") }
 
 	# A NeoGradle that declares a newer Gradle API than the wrapper provides fails at configuration
-	# time, before any mod code is considered. Measured on MineColonies: userdev 7.0.192 needs 8.13.
+	# time, before any mod code is considered. Measured on a NeoGradle mod: userdev 7.0.192 needs 8.13.
 	$neoGradle = [regex]::Match($buildText, 'net\.neoforged\.gradle:userdev[:"'']?\s*([\d.]+)').Groups[1].Value
 	if ($neoGradle -and $wrapper -and $wrapper.Major -eq 8 -and $wrapper.Minor -lt 13 -and ([version]$neoGradle -ge [version]'7.0.192')) {
 		$blockers.Add("NeoGradle $neoGradle requires Gradle 8.13+, wrapper is $($wrapper.Text)")

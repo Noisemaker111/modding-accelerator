@@ -1,0 +1,28 @@
+{
+  "about": "How fingerprint-diff compares two behaviour fingerprints of one mod on different Minecraft versions (a port, port --check fingerprint). The game itself changes between versions: its own registries, block state ids, saved-data formats (1.20.5 moved item data from NBT tags to components, 1.21.6 saves through ValueOutput), ticket types (1.21.5) and log lines. So only what the mod owns is compared, after the game's own renames: each pattern below keeps the flattened leaves it matches, {ns} standing for the mod's namespaces. Block-entity and entity data are compared by type and count across versions, and leaf by leaf within one version.",
+  "acrossVersions": {
+    "keep": [
+      {"pattern": "registries/(?!tags/|recipes/|loot_tables/|advancements/)[^/]+/{ns}:.*", "what": "every registry entry in the mod's namespaces (blocks, items, entities, block entities, menus, ...)"},
+      {"pattern": "registries/tags/[^/]+/{ns}:[^=]*=.*", "what": "the mod's own tags with their members, after renames"},
+      {"pattern": "registries/recipes/{ns}:.*", "what": "the mod's recipes and their types"},
+      {"pattern": "registries/loot_tables/{ns}:.*", "what": "the mod's loot tables"},
+      {"pattern": "registries/advancements/{ns}:.*", "what": "the mod's advancements"},
+      {"pattern": "placement/(blockItems|placed|unplaced|failed|different)", "what": "how many of the mod's block items placed"},
+      {"pattern": "placement/byItem/{ns}:.*", "what": "the block state each of the mod's items placed"},
+      {"pattern": "spawned/{ns}:.*", "what": "which of the mod's entity types could be made and added"},
+      {"pattern": "checkpoints/\\d+/levels/[^/]+/(blockCounts|entityCounts|items)/{ns}:.*", "what": "the mod's blocks, entities and items counted at each checkpoint"},
+      {"pattern": "roundTrip/same", "what": "whether a save and a reload kept everything"},
+      {"pattern": "log/errors/.*{ns}.*", "what": "errors the log names the mod in"}
+    ],
+    "renames": {
+      "minecraft:grass": "minecraft:short_grass",
+      "minecraft:scute": "minecraft:turtle_scute",
+      "minecraft:chain": "minecraft:iron_chain"
+    },
+    "renameSources": {
+      "minecraft:grass": "1.20.3: the plant grass became short_grass (the block and item registries of both versions)",
+      "minecraft:scute": "1.20.5: scute became turtle_scute when armadillo_scute was added",
+      "minecraft:chain": "1.21.9: chain became iron_chain when copper chains were added"
+    }
+  }
+}

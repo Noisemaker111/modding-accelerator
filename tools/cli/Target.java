@@ -400,7 +400,7 @@ final class Target {
 
     /**
      * ModDevGradle follows a forward port to the newest release of its line on maven.neoforged.net. An old release cannot set
-     * up a newer game: Farmer's Delight's moddev 1.0.0 moved to 1.21.4 failed every build on com.mojang:jtracy, a library
+     * up a newer game: a mod's moddev 1.0.0 moved to 1.21.4 failed every build on com.mojang:jtracy, a library
      * 1.21.4 added. The line is kept, so the build script's DSL stays the one it was written for; Gradle rises to what the
      * plugin's own module metadata asks. A backport keeps its build tools.
      */
@@ -430,7 +430,7 @@ final class Target {
                 ).matcher(setup.text(file))
                 : pluginLine.matcher(setup.text(file));
             if (!pin.find() || !pin.group(2).matches("\\d+\\.\\d+\\.\\d+(?:-beta)?")) continue;
-            // The unobfuscated game (26.1+) needs ModDevGradle 2: 1.x cannot set up its game artifacts (Iron Chests 1.21.3 -> 26.3).
+            // The unobfuscated game (26.1+) needs ModDevGradle 2: 1.x cannot set up its game artifacts (a NeoForge port 1.21.3 -> 26.3).
             String current = pin.group(2), line = current.substring(0, current.indexOf('.'));
             if (Versions.compare(to, "26.1") >= 0 && Integer.parseInt(line) < 2) line = "2";
             String newest = newestInLine(
@@ -644,7 +644,7 @@ final class Target {
 
     /**
      * Also, for Gradle 9: project-level sourceCompatibility and targetCompatibility belong to the java extension
-     * (AppleSkin 1.20.1 -> 1.21.1 moves to Gradle 9 with Loom 1.18 and stopped on them).
+     * (a Fabric port 1.20.1 -> 1.21.1 moves to Gradle 9 with Loom 1.18 and stopped on them).
      */
     static String removedDsl(String text, boolean gradle8, boolean gradle9) {
         if (gradle9) {
@@ -1061,7 +1061,7 @@ final class Target {
             if (Versions.compare(newest, current) <= 0) return;
             setup.replace(file, pin.group(0), pin.group(1) + newest + pin.group(3));
             // NeoGradle's other plugins (mixin, vanilla, ...) are published with userdev and only work at its version:
-            // Jade's mixin plugin left on 7.0.145 beside userdev 7.1 failed to apply (net/minecraftforge/gdi/BaseDSLElement).
+            // a mixin plugin left on 7.0.145 beside userdev 7.1 failed to apply (net/minecraftforge/gdi/BaseDSLElement).
             if (!file.equals(properties) && Versions.compare(newest, "7.1") >= 0) dropMixinPlugin(setup, build, file);
             if (!file.equals(properties)) {
                 Matcher sibling = Pattern.compile(
@@ -1131,7 +1131,7 @@ final class Target {
             out = withoutPlugin.substring(0, at) + withoutPlugin.substring(at + body.length()).replaceFirst("^\\r?\\n", "");
         }
         Path toml = null;
-        // NeoForge before 20.5 read META-INF/mods.toml (Farmer's Delight 1.20.4); later releases neoforge.mods.toml.
+        // NeoForge before 20.5 read META-INF/mods.toml (a 1.20.4 mod); later releases neoforge.mods.toml.
         for (String name : List.of("mods.toml", "neoforge.mods.toml")) for (String dir : List.of("src/main/resources/META-INF/", "src/main/templates/META-INF/")) {
             Path candidate = build.project.root.resolve(dir + name);
             if (Files.isRegularFile(candidate)) toml = candidate;
@@ -1360,7 +1360,7 @@ final class Target {
      * bootstrapped"; and on NeoForge 26.x the game can only be bootstrapped inside FancyModLoader (SharedConstants asks
      * FML whether it runs in production). NeoForge's userdev ships a junit run type for exactly this: the test task runs
      * on junit-fml, which starts FML, puts the mod and its tests in FML's class loader (MOD_CLASSES) and bootstraps the
-     * game. Zombie Apocalypse Addon 1.21.1 -> 26.3: 7 of 128 tests failed plain, all 128 pass this way. NeoGradle
+     * game. A NeoForge mod ported 1.21.1 -> 26.3: 7 of 128 tests failed plain, all 128 pass this way. NeoGradle
      * projects only (ModDevGradle has its own unitTest block), forward ports onto 26.1+, and only when there are tests.
      */
     static void unitTestsInFml(Setup setup, Build build, String to, String neoForge) throws Exception {

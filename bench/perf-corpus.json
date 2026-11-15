@@ -1,0 +1,64 @@
+{
+  "about": "The perf corpus: mods already measured under bench/, each pinned by commit with the experiment perf-optimize runs on it and the diffs it decided. python bench/perf_sweep.py runs perf-optimize's built-in fingerprint gate on each (--only ID for some) and writes coverage/sweeps/perf.json; its headline is how many shipped diffs the generic gate passes while it rejects each known-wrong one. These mods are test inputs only: no rule names them.",
+  "mods": [
+    {
+      "id": "storagenetwork",
+      "name": "Simple Storage Network",
+      "repo": "https://github.com/Lothrazar/Storage-Network",
+      "branch": "trunk/1.21.1",
+      "commit": "3deabb24f282260cda30bc0d95b22a38cfd5a2ff",
+      "loader": "neoforge",
+      "minecraft": "1.21.1",
+      "experiment": "bench/storagenetwork/experiment.json",
+      "shipped": ["bench/storagenetwork/cumulative.diff"],
+      "wrong": [{"diff": "git:d9e538e~1:bench/storagenetwork/cumulative.diff", "why": "the #75 cumulative diff: cached lookups skipped the chunk reads that kept a network's chunks loaded"}]
+    },
+    {
+      "id": "cyclic",
+      "name": "Cyclic",
+      "repo": "https://github.com/Lothrazar/Cyclic",
+      "branch": "trunk/1.21.1",
+      "commit": "b2213600474fa088702dec68a783549e44dfa6ae",
+      "loader": "neoforge",
+      "minecraft": "1.21.1",
+      "experiment": "bench/cyclic/experiment.json",
+      "shipped": ["bench/cyclic/cumulative.diff"],
+      "wrong": []
+    },
+    {
+      "id": "pipez",
+      "name": "Pipez",
+      "repo": "https://github.com/henkelmax/pipez",
+      "branch": "1.21.1",
+      "commit": "91a01deda19e5beb19fe7840aa14daaa312aa212",
+      "loader": "neoforge",
+      "minecraft": "1.21.1",
+      "experiment": "bench/pipez/experiment.json",
+      "shipped": ["bench/pipez/sorted-connections.diff"],
+      "wrong": [{"diff": "bench/pipez/sabotage-stale-cache.diff", "why": "a cache that is never invalidated: a rewired pipe keeps its old targets"}]
+    },
+    {
+      "id": "zombieapocalypse",
+      "name": "Zombie Apocalypse Addon",
+      "repo": "https://github.com/Riqqqque/ZombieApocalypseAddon",
+      "commit": "1bb67d4a487f57c3f005c73f35ebf60b1370c684",
+      "loader": "neoforge",
+      "minecraft": "1.21.1",
+      "experiment": "bench/zombie-siege/experiment.json",
+      "shipped": ["bench/zombie-siege/gating.diff"],
+      "wrong": []
+    },
+    {
+      "id": "diorama",
+      "name": "Diorama",
+      "repo": "https://github.com/SunkenInTime/diorama",
+      "commit": "7aa1484cd5dfe4ec19d246a58fb23bbc48a8bc6e",
+      "loader": "fabric",
+      "minecraft": "1.21.1",
+      "experiment": "bench/diorama/play/experiment.json",
+      "shipped": [],
+      "wrong": [],
+      "note": "A client-side renderer: its behaviour is frames and baked map tiles, not world state, so its own pixel gates decide it; the fingerprint gate records the world it runs in."
+    }
+  ]
+}

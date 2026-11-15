@@ -102,7 +102,10 @@ public final class Mmt {
             "no-heap",
             "allow-hidden",
             "keep",
-            "check-only"
+            "check-only",
+            "freeze",
+            "fingerprint",
+            "across-versions"
         );
         static final Set<String> VALUES = Set.of(
             "command",
@@ -159,7 +162,8 @@ public final class Mmt {
             "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block",
             "check",
             "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch",
-            "min-runs", "min-speedup", "arms", "replay", "max-calls-per-tick"
+            "min-runs", "min-speedup", "arms", "replay", "max-calls-per-tick",
+            "jar", "ticks", "every", "namespaces", "radius", "a", "b"
         );
         final Map<String, String> values = new LinkedHashMap<>();
         final Set<String> flags = new HashSet<>();
@@ -171,6 +175,11 @@ public final class Mmt {
             if (command.equals("help") && i < args.length && !args[i].startsWith("-")) values.put("command", args[i++]);
             for (; i < args.length; i++) {
                 String key = args[i];
+                // fingerprint-diff A B: the two fingerprints by position.
+                if (command.equals("fingerprint-diff") && !key.startsWith("--") && !values.containsKey("b")) {
+                    values.put(values.containsKey("a") ? "b" : "a", key);
+                    continue;
+                }
                 if (!key.startsWith("--")) throw new IllegalArgumentException("Expected --option; got " + key);
                 key = key.substring(2);
                 if (SWITCHES.contains(key)) flags.add(key);
@@ -252,6 +261,8 @@ public final class Mmt {
         "preferences",
         "legacy-agent",
         "pack-check",
+        "fingerprint",
+        "fingerprint-diff",
         "help"
     );
 
@@ -317,6 +328,18 @@ public final class Mmt {
                 Map<String, Object> output = report.finish(exit, result);
                 if (options.has("json")) System.out.println(Json.write(output));
                 else System.out.println(Performance.text(result));
+                System.exit(exit);
+            }
+            if (options.command.equals("fingerprint") || options.command.equals("fingerprint-diff")) {
+                // Runs the game through child commands (each with its own receipt and lock), or reads two files: no lock here.
+                boolean source = options.command.equals("fingerprint") && !options.values.containsKey("jar");
+                report = new Report(source ? Path.of(options.get("root", ".")).toAbsolutePath().normalize() : PackCheck.receipts(), options.command);
+                Map<String, Object> result = options.command.equals("fingerprint") ? Fingerprint.run(home, options, report) : FingerprintDiff.run(home, options);
+                boolean ok = options.command.equals("fingerprint") ? Boolean.TRUE.equals(result.get("ok")) : Boolean.TRUE.equals(result.get("same"));
+                exit = ok ? 0 : 1;
+                Map<String, Object> output = report.finish(exit, result);
+                if (options.has("json")) System.out.println(Json.write(output));
+                else System.out.println(String.valueOf(result.getOrDefault("details", "")).strip() + "\nReceipt: " + output.get("receipt"));
                 System.exit(exit);
             }
             if (options.command.equals("pack-check")) {
@@ -888,7 +911,8 @@ public final class Mmt {
             "  mmt port --root SOURCE --from 1.21.5 --to 1.21.6 --fix --json\n" +
             "  mmt port --root SOURCE --undo TRANSACTION\n" +
             "  mmt port --root SOURCE --from 1.21.1 --to 26.3 --fix --check \"java tools/tests/ZombieAiCheck.java ...\" --json\n" +
-            "--check COMMAND runs the mod's own real-game check on the ported project (MMT_PORTED_ROOT is set); the port is ok only when it passes. --learn-from-mods also runs the rule book's older rules mined from other mods (provenance third-party-mods) and learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and our own rules.\n" +
+            "--check COMMAND runs the mod's own real-game check on the ported project (MMT_PORTED_ROOT is set); the port is ok only when it passes.\n" +
+            "--check fingerprint is the built-in behaviour check for any mod: its fingerprint on --from before any change and on --to after the port must match, comparing only what the mod owns after the game's renames (FINGERPRINT.md). --learn-from-mods also runs the rule book's older rules mined from other mods (provenance third-party-mods) and learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and our own rules.\n" +
             "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n" +
             "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .mmt/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
             case "convert" -> "Move a mod's source to another loader on the same Minecraft version: mmt convert --root SOURCE --to neoforge|fabric [--dry-run | --no-compile] [--json]\n" +
@@ -945,7 +969,7 @@ public final class Mmt {
             "An expression is returned; statements return what they return. 'mc' is the Minecraft instance, print(x) adds output,\n" +
             "vars is a map kept between snippets; call(objectOrClass, \"name\", args...) and field(objectOrClass, \"name\") reach private\n" +
             "members. Leading import lines are allowed. Start the game first with ui-check or world-check.";
-            case "world-check" -> "Check a loaded save: mmt world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.";
+            case "world-check" -> "Check a loaded save: mmt world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.\n--freeze opens the save with the game's tick freeze on from its first tick (Minecraft 1.20.3 and later): chunks load, nothing else moves.";
             case "fast",
                 "test" -> "Run the mod's logic tests without the game: mmt fast --root SOURCE [--project :module]\n" +
             "fast runs JUnit 5 tests, reusing compiled code when nothing changed. With no Minecraft or loader on the test classpath\n" +
@@ -976,6 +1000,19 @@ public final class Mmt {
             "and items made by a recipe without a translation or model are warnings.\n" +
             "Build a jar with the project's own task: mmt compile --root SOURCE --task :jar. That is the build path for\n" +
             "Paper/Bukkit plugins (the jar lands in build/libs); then mmt plugin-check loads it.";
+            case "fingerprint" -> "Record what a mod does, the same way for every mod: mmt fingerprint --root SOURCE [--project :module] [--ticks 100] [--every 20] [--seed N] [--namespaces ID,ID] [--out FILE.json] --json\n" +
+            "   or on its loader's real server: mmt fingerprint --jar MOD.jar[,DEPENDENCY.jar] --minecraft VERSION --loader neoforge|forge|fabric|quilt [--out FILE.json]\n" +
+            "A flat world (fixed seed, time and weather, made by the vanilla server of the mod's version) is opened frozen in the mod's hidden\n" +
+            "development client; one probe places every block item and spawns every entity type of the mod's namespaces, gives containers a\n" +
+            "stack, seeds every random source it can reach, runs --ticks ticks with a checkpoint every --every, saves, and reads the save back.\n" +
+            "The record holds every registry (and tags, recipes, loot tables, advancements), placed block states, block-entity and entity data,\n" +
+            "inventories, chunk tickets and loaded chunks, scheduled ticks, the save round trip and the log's warnings and errors.\n" +
+            "What cannot be frozen is in FINGERPRINT.md. Compare two with fingerprint-diff.";
+            case "fingerprint-diff" -> "Compare two behaviour fingerprints: mmt fingerprint-diff A.json B.json [--across-versions] [--map NORMALISE.json] [--namespaces ID,ID] [--out DIFF.json] --json\n" +
+            "Exits 0 when they match. Records of the same game version compare leaf by leaf; across versions (a port) only what the mod owns is\n" +
+            "compared, after the game's renames (knowledge/fingerprint-normalise.json, or --map). Prints each differing section and the first leaves.\n" +
+            "--baseline B1.json,B2.json --candidate C1.json,C2.json decides perf-optimize's fingerprint gate on recorded launches: leaves the baselines\n" +
+            "disagree on are left out and named, and every other leaf of each candidate must equal its paired baseline's.";
             case "pack-check" -> "Check a modpack the way its players run it: mmt pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--focus MODID,MODID] [--fix] [--json]\n" +
             "--pack is a CurseForge export (.zip or folder), a Modrinth .mrpack (or folder), a CurseForge app, Prism/MultiMC or vanilla launcher\n" +
             "instance, or any folder with mods/. --minecraft 1.21.1 and --loader neoforge[-21.1.77] override what the pack says; with no loader\n" +
@@ -1013,6 +1050,8 @@ public final class Mmt {
             "  perf, perf-report      where a mod's CPU, memory, I/O and frame/tick time go\n" +
             "  perf-diff              compare two captures    perf-template      scenario files for perf --scenario\n" +
             "  perf-optimize          accept or reject a candidate change with equivalence gates and measured speedup\n" +
+            "  fingerprint            what a mod does in a seeded frozen world, recorded the same way for every mod\n" +
+            "  fingerprint-diff       compare two fingerprints, or decide the generic gate on recorded launches\n" +
             "  package, self-test     build or test mmt itself\n" +
             "Run mmt help COMMAND for one command (port, convert, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +
             "--root is the mod's Gradle source checkout (the folder with gradlew); a multi-version build needs --project, e.g. --project :1.21.6.";

@@ -80,7 +80,7 @@ def leftover_servers(instance):
 
 
 def pack_check(path, args):
-    command = MMT + ["pack-check", "--pack", str(path), "--json"] + (["--fix"] if args.fix else []) + (["--focus", args.focus] if args.focus else [])
+    command = MMT + ["pack-check", "--pack", str(path), "--json"] + (["--fix"] if args.fix else []) + (["--focus", args.focus] if args.focus else []) + ([] if getattr(args, "no_fingerprint", False) else ["--fingerprint"])
     started = time.monotonic()
     # MMT_TRACE: a pack-check that stops with an error prints its stack into the pack's log.
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
@@ -186,6 +186,9 @@ def analyse(pack, code, result, seconds):
         record["outcome"] = "world made and reopened"
     if record["outcome"] != "world made and reopened" and record["fix"] and record["fix"].get("proven"):
         record["outcome"] = "repaired: world made and reopened"
+    record["fingerprint"] = fingerprint_record(game.get("fingerprint"))
+    if record["outcome"] == "world made and reopened" and record["fingerprint"].get("same") is False:
+        record["gaps"].append("fingerprint world changed across its save and reload")
     if refuted:
         record["gaps"].append("false positive: warnings the game refuted")
     if record["problems"] and not (record["fix"] and record["fix"].get("proven")):
@@ -194,6 +197,20 @@ def analyse(pack, code, result, seconds):
     if record["clientOnlyLeftOut"]:
         record["gaps"].append("client-only mods not marked on CurseForge/Modrinth (left out of the server)")
     return record
+
+
+def fingerprint_record(answer):
+    """The pack's behaviour fingerprint (pack-check --fingerprint): taken, and whether its world reopened unchanged."""
+    if not isinstance(answer, dict) or not answer.get("out"):
+        return {"taken": False, "same": None, "error": (answer or {}).get("error") if isinstance(answer, dict) else None}
+    out = Path(answer["out"])
+    if not out.is_file():
+        return {"taken": False, "same": None, "error": "no record at " + str(out)}
+    data = json.loads(out.read_text(encoding="utf-8"))
+    trip = data.get("roundTrip") or {}
+    return {"taken": True, "same": bool(trip.get("same")) and "error" not in data and "reloadError" not in data,
+            "differences": trip.get("differences"), "hash": answer.get("hash"), "out": str(out),
+            "errors": len((data.get("log") or {}).get("errors") or {})}
 
 
 def summarize(records, label):
@@ -216,7 +233,10 @@ def summarize(records, label):
              "passing with repairs": sum(r["outcome"] in ("world made and reopened", "repaired: world made and reopened") for r in records),
              "repairs proven": sum(bool((r.get("fix") or {}).get("proven")) for r in records),
              "failed start with a named culprit": sum(r["outcome"] == "start failed" and bool((r.get("start") or {}).get("suspects")) for r in records),
+             "fingerprinted": sum(bool((r.get("fingerprint") or {}).get("taken")) for r in records),
+             "fingerprint world reopened unchanged": sum(bool((r.get("fingerprint") or {}).get("same")) for r in records),
              "outcomes": outcomes}
+    rates["headline"] = {"name": "packs whose fingerprint world opens again unchanged", "value": rates["fingerprint world reopened unchanged"], "of": len(records)}
     return ranked, rates
 
 
@@ -285,6 +305,7 @@ def main():
     run.add_argument("--corpus", type=Path, default=CORPUS, help="the pinned packs (default bench/pack-sweep/corpus.json)")
     # pack-check judges each start by its log (a stuck start stops itself), so this only bounds a whole --fix run of the biggest packs.
     run.add_argument("--timeout", type=int, default=4 * 3600)
+    run.add_argument("--no-fingerprint", action="store_true", help="skip pack-check --fingerprint (two more server starts)")
     run.add_argument("--label", default="latest")
     run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
     run.add_argument("--mmt", default="")
