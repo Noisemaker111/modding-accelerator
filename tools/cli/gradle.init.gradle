@@ -147,7 +147,11 @@ gradle.afterProject { p ->
         // Force the project's own compilers to rerun, never a loader plugin's Minecraft
         // recompile (NeoGradle's neoFormRecompile is a JavaCompile task too and costs a minute).
         p.tasks.withType(JavaCompile).configureEach { t ->
-            if (!t.name.toLowerCase(Locale.ROOT).contains('neoform')) t.outputs.upToDateWhen { false }
+            if (!t.name.toLowerCase(Locale.ROOT).contains('neoform')) {
+                t.outputs.upToDateWhen { false }
+                // javac stops at 100 errors per task by default; a port reads every error, so each repair round sees them all.
+                if (!t.options.compilerArgs.contains('-Xmaxerrs')) t.options.compilerArgs.addAll(['-Xmaxerrs', '100000'])
+            }
         }
         p.tasks.withType(org.gradle.language.jvm.tasks.ProcessResources).configureEach { outputs.upToDateWhen { false } }
     }

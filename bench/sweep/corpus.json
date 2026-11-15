@@ -1,0 +1,798 @@
+{
+ "note": "The port sweep's corpus (python bench/sweep.py): open-source mods with public Gradle source, each pinned to a commit on the branch named, used only as test subjects. Nothing in the rule book is taken from their code. from is the Minecraft version the pinned source builds; loader and project say which loader's build is ported and started (multi-loader and Stonecutter builds); names is the mapping namespace of the source. jumps, when set, replaces the default jumps (sweep.py plan). Pinned on 2026-11-14 from each branch head.",
+ "mods": [
+  {
+   "id": "modmenu-1.16.5",
+   "mod": "Mod Menu",
+   "repo": "https://github.com/TerraformersMC/ModMenu",
+   "branch": "1.16.5",
+   "commit": "e2d92815414e812b1d730a5e0ef366c04ad10c39",
+   "from": "1.16.5",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "client-ui",
+    "config"
+   ]
+  },
+  {
+   "id": "modmenu-1.20.1",
+   "mod": "Mod Menu",
+   "repo": "https://github.com/TerraformersMC/ModMenu",
+   "branch": "1.20.1",
+   "commit": "7bef7cdfc62a44e451a053fd962ac73c2e8a5dfa",
+   "from": "1.20.1",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "client-ui",
+    "config"
+   ]
+  },
+  {
+   "id": "example-mod-1.17.1",
+   "mod": "Fabric Example Mod",
+   "repo": "https://github.com/FabricMC/fabric-example-mod",
+   "branch": "1.17.1",
+   "commit": "0eaf29dd69756b9306d4cc0d40c9f5d1765f9b81",
+   "from": "1.17.1",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "tiny",
+    "mixin"
+   ]
+  },
+  {
+   "id": "lithium-1.20.1",
+   "mod": "Lithium",
+   "repo": "https://github.com/CaffeineMC/lithium",
+   "branch": "1.20.1",
+   "commit": "1316ab1aafd888bf9881e924f29928f653ad2308",
+   "from": "1.20.1",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "mixin-heavy",
+    "performance"
+   ]
+  },
+  {
+   "id": "owo-1.18.2",
+   "mod": "owo-lib",
+   "repo": "https://github.com/wisp-forest/owo-lib",
+   "branch": "1.18.2",
+   "commit": "b0f869570f1cf7bcfa481241c5c20c9e22bb0608",
+   "from": "1.18.2",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "config",
+    "networking",
+    "client-ui",
+    "library"
+   ]
+  },
+  {
+   "id": "polymer-1.17.1",
+   "mod": "Polymer",
+   "repo": "https://github.com/Patbox/polymer",
+   "branch": "1.17.1",
+   "commit": "4e98d381b72979a6a50464ce06b77f6acb34693b",
+   "from": "1.17.1",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "networking",
+    "multi-module",
+    "library"
+   ]
+  },
+  {
+   "id": "carpet-1.16.5",
+   "mod": "Carpet",
+   "repo": "https://github.com/gnembon/fabric-carpet",
+   "branch": "1.16.5",
+   "commit": "eaad77fcef460c95054a593d83b8906ff0541e84",
+   "from": "1.16.5",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "mixin-heavy",
+    "server",
+    "commands"
+   ]
+  },
+  {
+   "id": "continuity-1.20.1",
+   "mod": "Continuity",
+   "repo": "https://github.com/PepperCode1/Continuity",
+   "branch": "1.20.1/dev",
+   "commit": "e283f6e5ba2972d943be28809d80061974f0a6c4",
+   "from": "1.20.1",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "rendering"
+   ]
+  },
+  {
+   "id": "continuity-26.1",
+   "mod": "Continuity",
+   "repo": "https://github.com/PepperCode1/Continuity",
+   "branch": "26.1/dev",
+   "commit": "7fe8c46eb9f2059eccb901599aa4233541857d61",
+   "from": "26.1",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "rendering"
+   ]
+  },
+  {
+   "id": "satin-1.19.2",
+   "mod": "Satin",
+   "repo": "https://github.com/Ladysnake/Satin",
+   "branch": "1.19.2",
+   "commit": "6f82f26426f8a925e57d21e5799a9e340957344e",
+   "from": "1.19.2",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "rendering",
+    "library"
+   ]
+  },
+  {
+   "id": "trinkets-1.20.1",
+   "mod": "Trinkets",
+   "repo": "https://github.com/emilyploszaj/trinkets",
+   "branch": "1.20.1",
+   "commit": "7cb63ce066f7f56e12c5e83bba4914a6054e8dee",
+   "from": "1.20.1",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "library",
+    "items",
+    "client-ui"
+   ]
+  },
+  {
+   "id": "cca-1.20.1",
+   "mod": "Cardinal Components API",
+   "repo": "https://github.com/OnyxStudios/Cardinal-Components-API",
+   "branch": "1.20.1",
+   "commit": "f7166720d9bc41ed8f26929c90a3301d4de065d3",
+   "from": "1.20",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "library",
+    "multi-module",
+    "networking"
+   ]
+  },
+  {
+   "id": "origins-1.21.1",
+   "mod": "Origins",
+   "repo": "https://github.com/apace100/origins-fabric",
+   "branch": "1.21.x/dev",
+   "commit": "6e4e9066f19f2b8ea30cd78a2aa8914705feb74f",
+   "from": "1.21.1",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "library-dependent",
+    "entities",
+    "networking"
+   ]
+  },
+  {
+   "id": "naturescompass-1.19.4",
+   "mod": "Nature's Compass",
+   "repo": "https://github.com/MattCzyr/NaturesCompass",
+   "branch": "fabric-1.19.4",
+   "commit": "0bfcedef7adb4fbdaffbb1291b8e665cd4ee2752",
+   "from": "1.19.4",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "worldgen",
+    "items",
+    "client-ui"
+   ]
+  },
+  {
+   "id": "effective-1.20.1",
+   "mod": "Effective",
+   "repo": "https://github.com/Ladysnake/Effective",
+   "branch": "1.20.1",
+   "commit": "74f0743005dc76f68c3a569b2d6aed6049a0a1e7",
+   "from": "1.20.1",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "rendering",
+    "library-dependent"
+   ]
+  },
+  {
+   "id": "snowrealmagic-1.19.2",
+   "mod": "Snow! Real Magic!",
+   "repo": "https://github.com/Snownee/SnowRealMagic",
+   "branch": "1.19.2-fabric",
+   "commit": "8c0a6c19c03c3cb4ca72dcbd7059955cf4a04f9e",
+   "from": "1.19.2",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "blocks",
+    "library-dependent"
+   ]
+  },
+  {
+   "id": "ncr-1.20.1",
+   "mod": "No Chat Reports",
+   "repo": "https://github.com/Aizistral-Studios/No-Chat-Reports",
+   "branch": "1.20.1-Unified-LTS",
+   "commit": "a620cb108216cfa49838b4bb94bda309ebe472d9",
+   "from": "1.20.1",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "networking",
+    "multi-module"
+   ]
+  },
+  {
+   "id": "immediatelyfast-1.21.1",
+   "mod": "ImmediatelyFast",
+   "repo": "https://github.com/RaphiMC/ImmediatelyFast",
+   "branch": "1.21",
+   "commit": "001099204f9c1602b5d63ed245574d13fde9a461",
+   "from": "1.21.1",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": ":fabric",
+   "kinds": [
+    "rendering",
+    "mixin-heavy",
+    "multi-module"
+   ]
+  },
+  {
+   "id": "midnightlib-1.21.1",
+   "mod": "MidnightLib",
+   "repo": "https://github.com/TeamMidnightDust/MidnightLib",
+   "branch": "architectury-1.21.1",
+   "commit": "0ba128f3228a07dd0304dffa4b234c268abfab2a",
+   "from": "1.21.1",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": ":fabric",
+   "kinds": [
+    "config",
+    "library",
+    "multi-module"
+   ]
+  },
+  {
+   "id": "betterf3-1.20.4",
+   "mod": "BetterF3",
+   "repo": "https://github.com/TreyRuffy/BetterF3",
+   "branch": "architectury/1.20.4",
+   "commit": "b66b7ca80a9b9e3eba99784c9d9170711136be70",
+   "from": "1.20.4",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": ":fabric",
+   "kinds": [
+    "client-hud",
+    "multi-module"
+   ]
+  },
+  {
+   "id": "krypton-26.3",
+   "mod": "Krypton",
+   "repo": "https://github.com/astei/krypton",
+   "branch": "master",
+   "commit": "bc08466ff900d97b27bfabcde92005b4774717e8",
+   "from": "26.3",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "networking",
+    "mixin-heavy"
+   ]
+  },
+  {
+   "id": "trashcans-1.21.4",
+   "mod": "Trash Cans",
+   "repo": "https://github.com/SuperMartijn642/TrashCans",
+   "branch": "fabric-1.21.4",
+   "commit": "2e18da56a541b922c7273e4bb2d2b68003ab6d79",
+   "from": "1.21.4",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "blocks",
+    "library-dependent",
+    "small"
+   ]
+  },
+  {
+   "id": "waystones-1.21.1",
+   "mod": "Waystones",
+   "repo": "https://github.com/TwelveIterationMods/Waystones",
+   "branch": "1.21.1",
+   "commit": "9301b2dff00c264c88b4fb26a40d4af487920c2f",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": ":neoforge",
+   "kinds": [
+    "blocks",
+    "library-dependent",
+    "multi-module",
+    "networking"
+   ]
+  },
+  {
+   "id": "ferritecore-1.21.1",
+   "mod": "FerriteCore",
+   "repo": "https://github.com/malte0811/FerriteCore",
+   "branch": "1.21.1",
+   "commit": "fa7e105e8f21578765c94d9a07e45ddbc606b0db",
+   "from": "1.21.1",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": ":Fabric",
+   "kinds": [
+    "mixin-heavy",
+    "multi-module",
+    "performance"
+   ]
+  },
+  {
+   "id": "soundphysics-1.21.1",
+   "mod": "Sound Physics Remastered",
+   "repo": "https://github.com/henkelmax/sound-physics-remastered",
+   "branch": "1.21.1",
+   "commit": "904527a720858a8a79f59b6a6bab2ebfafab0538",
+   "from": "1.21.1",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": ":fabric",
+   "kinds": [
+    "mixin-heavy",
+    "audio"
+   ]
+  },
+  {
+   "id": "chatheads-1.21.4",
+   "mod": "Chat Heads",
+   "repo": "https://github.com/dzwdz/chat_heads",
+   "branch": "architectury-1.21.4",
+   "commit": "205202e5936ca8620a8a913bca934fcbb03f3f30",
+   "from": "1.21.4",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": ":fabric",
+   "kinds": [
+    "client-hud",
+    "multi-module"
+   ]
+  },
+  {
+   "id": "farmersdelight-1.21.1",
+   "mod": "Farmer's Delight",
+   "repo": "https://github.com/vectorwing/FarmersDelight",
+   "branch": "1.21",
+   "commit": "dd8b9b0bfec916a2da88a6d64e3a37f4a02c3259",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "blocks",
+    "items",
+    "datagen"
+   ]
+  },
+  {
+   "id": "farmersdelight-1.20.4",
+   "mod": "Farmer's Delight",
+   "repo": "https://github.com/vectorwing/FarmersDelight",
+   "branch": "1.20.4",
+   "commit": "0848f7d3150456dba69a8d6f70606a085b7ad33e",
+   "from": "1.20.4",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "blocks",
+    "items",
+    "datagen"
+   ]
+  },
+  {
+   "id": "ironchest-1.21.3",
+   "mod": "Iron Chests",
+   "repo": "https://github.com/progwml6/ironchest",
+   "branch": "1.21.x-neoforge",
+   "commit": "247c7bfb933ea9c83adb2998b349534d5946d223",
+   "from": "1.21.3",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ]
+  },
+  {
+   "id": "ironchest-26.1.2",
+   "mod": "Iron Chests",
+   "repo": "https://github.com/progwml6/ironchest",
+   "branch": "26.1.2-neoforge",
+   "commit": "e6d326fb1c1ab603f9f79fe586024103825eaf10",
+   "from": "26.1.2",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ]
+  },
+  {
+   "id": "curios-1.21.1",
+   "mod": "Curios API",
+   "repo": "https://github.com/TheIllusiveC4/Curios",
+   "branch": "1.21.1",
+   "commit": "dc108c35c4ad7248ebb98dc9096d9cd3765171b7",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": ":neoforge",
+   "kinds": [
+    "library",
+    "networking",
+    "client-ui"
+   ]
+  },
+  {
+   "id": "curios-26.2",
+   "mod": "Curios API",
+   "repo": "https://github.com/TheIllusiveC4/Curios",
+   "branch": "26.2",
+   "commit": "8c2110ce57619887342e0a2c6bb99013945ee8d4",
+   "from": "26.2",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "library",
+    "networking",
+    "client-ui"
+   ]
+  },
+  {
+   "id": "jei-1.21.1",
+   "mod": "Just Enough Items",
+   "repo": "https://github.com/mezz/JustEnoughItems",
+   "branch": "1.21.1",
+   "commit": "830dd298712cbf8c567baf08ecd8c242874708df",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": ":NeoForge",
+   "kinds": [
+    "client-ui",
+    "multi-module",
+    "library"
+   ]
+  },
+  {
+   "id": "torchmaster-1.21.1",
+   "mod": "Torchmaster",
+   "repo": "https://github.com/Xalcon/TorchMaster",
+   "branch": "mc/1.21.1",
+   "commit": "a11226c866bf4e9f0695621db5971418dffe3014",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": ":neoforge",
+   "kinds": [
+    "blocks",
+    "small"
+   ]
+  },
+  {
+   "id": "carryon-1.21.1",
+   "mod": "Carry On",
+   "repo": "https://github.com/Tschipp/CarryOn",
+   "branch": "1.21.1",
+   "commit": "9f1cf66c8fe4c4192f62b0b15da30b5f6e845f9a",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": ":NeoForge",
+   "kinds": [
+    "entities",
+    "networking",
+    "multi-module"
+   ]
+  },
+  {
+   "id": "arsnouveau-1.21.1",
+   "mod": "Ars Nouveau",
+   "repo": "https://github.com/baileyholl/Ars-Nouveau",
+   "branch": "main",
+   "commit": "4d323fba9200c3293a4f4848cf1e0fe70beb7098",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "library-dependent",
+    "entities",
+    "blocks",
+    "large"
+   ]
+  },
+  {
+   "id": "corpse-1.21.1",
+   "mod": "Corpse",
+   "repo": "https://github.com/henkelmax/corpse",
+   "branch": "1.21.1",
+   "commit": "ba5b53f1d3a81e2240a8b4b28a0f6ee7492ae75a",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "entities",
+    "client-ui"
+   ]
+  },
+  {
+   "id": "gravestone-1.21.1",
+   "mod": "Gravestone",
+   "repo": "https://github.com/henkelmax/gravestone",
+   "branch": "1.21.1",
+   "commit": "0df93df4e7cae9d4829d8eda8f1c692c61e4d8f4",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ]
+  },
+  {
+   "id": "enchdesc-1.21.1",
+   "mod": "Enchantment Descriptions",
+   "repo": "https://github.com/Darkhax-Minecraft/Enchantment-Descriptions",
+   "branch": "1.21.1",
+   "commit": "e98bfb987c0be5aa5697cd522e9390892b349ea1",
+   "from": "1.21.1",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": ":fabric",
+   "kinds": [
+    "client-hud",
+    "library-dependent",
+    "multi-module"
+   ]
+  },
+  {
+   "id": "cyclic-1.21.1",
+   "mod": "Cyclic",
+   "repo": "https://github.com/Lothrazar/Cyclic",
+   "branch": "trunk/1.21.1",
+   "commit": "b2213600474fa088702dec68a783549e44dfa6ae",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "blocks",
+    "items",
+    "large"
+   ]
+  },
+  {
+   "id": "modernfix-1.21.1",
+   "mod": "ModernFix",
+   "repo": "https://github.com/embeddedt/ModernFix",
+   "branch": "1.21.1",
+   "commit": "a5882ba3c779e185115ac37e95c81dd8beb7e44b",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": ":neoforge",
+   "kinds": [
+    "mixin-heavy",
+    "multi-module",
+    "performance"
+   ]
+  },
+  {
+   "id": "twilightforest-1.21.1",
+   "mod": "The Twilight Forest",
+   "repo": "https://github.com/TeamTwilight/twilightforest",
+   "branch": "1.21.1",
+   "commit": "98924520632df2033ba7682b8f0d833bd47283d1",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "worldgen",
+    "entities",
+    "large",
+    "datagen"
+   ]
+  },
+  {
+   "id": "bop-1.21.1",
+   "mod": "Biomes O' Plenty",
+   "repo": "https://github.com/Glitchfiend/BiomesOPlenty",
+   "branch": "1.21.1",
+   "commit": "32ec5f0a17c2101802fc0458f3c6ea85052f70fb",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": ":neoforge",
+   "kinds": [
+    "worldgen",
+    "blocks",
+    "multi-module",
+    "datagen"
+   ]
+  },
+  {
+   "id": "repurposed-1.21.5",
+   "mod": "Repurposed Structures",
+   "repo": "https://github.com/TelepathicGrunt/RepurposedStructures",
+   "branch": "1.21.5-MDG",
+   "commit": "60d38228b0e8c15b1adfb45ec88923a0c1a4fb0a",
+   "from": "1.21.5",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": ":fabric",
+   "kinds": [
+    "worldgen"
+   ]
+  },
+  {
+   "id": "sophbackpacks-1.21.1",
+   "mod": "Sophisticated Backpacks",
+   "repo": "https://github.com/P3pp3rF1y/SophisticatedBackpacks",
+   "branch": "1.21.x",
+   "commit": "36d7810bdf39d4017a7247c6a2edce15df35de5d",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "items",
+    "library-dependent",
+    "client-ui"
+   ]
+  },
+  {
+   "id": "storagedrawers-1.20.6",
+   "mod": "Storage Drawers",
+   "repo": "https://github.com/jaquadro/StorageDrawers",
+   "branch": "1.20.6",
+   "commit": "9d9c87a8ca20cf665c438b41fbc79c6a2af95551",
+   "from": "1.20.6",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ]
+  },
+  {
+   "id": "appleskin-1.20.1",
+   "mod": "AppleSkin",
+   "repo": "https://github.com/squeek502/AppleSkin",
+   "branch": "1.20.1-fabric",
+   "commit": "c6751d6d842d6fb9691b3e1be128c205134de8cd",
+   "from": "1.20.1",
+   "loader": "fabric",
+   "names": "yarn",
+   "project": "",
+   "kinds": [
+    "client-hud"
+   ]
+  },
+  {
+   "id": "jade-1.21.1",
+   "mod": "Jade",
+   "repo": "https://github.com/Snownee/Jade",
+   "branch": "1.21-neoforge",
+   "commit": "6701b1eea41143b2e4713ed9c6e7d57e2595a820",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "client-hud",
+    "rendering",
+    "library"
+   ]
+  },
+  {
+   "id": "zaa-1.21.1",
+   "mod": "ZombieApocalypseAddon",
+   "repo": "https://github.com/Riqqqque/ZombieApocalypseAddon",
+   "branch": "main",
+   "commit": "1bb67d4a487f57c3f005c73f35ebf60b1370c684",
+   "from": "1.21.1",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "project": "",
+   "kinds": [
+    "entities"
+   ]
+  },
+  {
+   "id": "diorama-1.21.1",
+   "mod": "Diorama",
+   "repo": "https://github.com/SunkenInTime/diorama",
+   "branch": "master",
+   "commit": "2a226da63ece0933e27edb8332e672d45bd468a6",
+   "from": "1.21.1",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": ":1.21.1",
+   "kinds": [
+    "stonecutter",
+    "blocks",
+    "rendering"
+   ]
+  },
+  {
+   "id": "ias-26.3",
+   "mod": "In-Game Account Switcher",
+   "repo": "https://github.com/The-Fireplace-Minecraft-Mods/In-Game-Account-Switcher",
+   "branch": "main",
+   "commit": "e2716598866b0aba93a595517b5225e88a9674b2",
+   "from": "26.3",
+   "loader": "fabric",
+   "names": "mojmap",
+   "project": ":26.3-fabric",
+   "kinds": [
+    "stonecutter",
+    "client-ui",
+    "networking"
+   ]
+  }
+ ]
+}

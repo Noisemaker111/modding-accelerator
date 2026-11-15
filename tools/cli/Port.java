@@ -476,6 +476,8 @@ final class Port {
             var initial = build.gradle(tasks, explicitTask ? "port-initial-compile" : "port-initial-build");
             log = initial.log();
             compiled = initial.exit() == 0;
+            // The errors the port started from (every one: port builds lift javac's 100-error cap), before any repair.
+            int errorsBefore = compiled ? 0 : errors(log).size();
             Set<String> seen = new HashSet<>();
             int roundsTried = 0;
             for (int round = 0; !compiled && round < rounds; round++) {
@@ -541,6 +543,8 @@ final class Port {
                 built ? "build-and-mixin-applied" : "compile-and-mixin-applied",
                 "compiled",
                 compiled,
+                "errorsBefore",
+                errorsBefore,
                 "built",
                 built,
                 "mixinTargetsVerified",
