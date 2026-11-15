@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "storagenetwork-base",
+  "gameDirectory": "run",
+  "world": "ssn-base",
+  "worldSource": "../../.runs/storagenetwork-world/ssn-base",
+  "files": {"run/options.txt": "options.txt"},
+  "measure": {
+    "seconds": 30,
+    "warmup": 20,
+    "probes": "probes.json",
+    "metric": {"probe": "masterTick", "statistic": "inclusiveMsPerTick"},
+    "scopes": [
+      {"name": "ssnCpu", "mod": "storagenetwork"},
+      {"name": "exportBatchMs", "probe": "exportBatch", "statistic": "inclusiveMsPerTick"},
+      {"name": "connectablesMs", "probe": "connectables", "statistic": "inclusiveMsPerTick"},
+      {"name": "sortedStorageMs", "probe": "sortedStorage", "statistic": "inclusiveMsPerTick"},
+      {"name": "comparatorMs", "probe": "comparator", "statistic": "inclusiveMsPerTick"},
+      {"name": "refreshMs", "probe": "refresh", "statistic": "inclusiveMsPerTick"},
+      {"name": "insertMs", "probe": "insert", "statistic": "inclusiveMsPerTick"}
+    ]
+  },
+  "gates": [
+    {"name": "moving", "file": "count.java", "thread": "control", "compare": "expect", "expect": "true"},
+    {"name": "transfers", "file": "trace.java", "thread": "control", "compare": "exact"}
+  ],
+  "jit": "full"
+}

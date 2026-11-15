@@ -1,0 +1,41 @@
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/FilterItemStackHandler.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/FilterItemStackHandler.java
+index 34c9a5db..ae617dc9 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/FilterItemStackHandler.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/FilterItemStackHandler.java
+@@ -65,10 +65,15 @@ public class FilterItemStackHandler extends ItemStackHandlerEx {
+   }
+ 
+   public boolean isStackFiltered(ItemStack stack) {
+-    if (isAllowList) {
+-      return getStackMatchers().stream().noneMatch(matcher -> matcher.match(stack));
++    // The matchers getStackMatchers() would make, one per slot in slot order, asked directly.
++    boolean matched = false;
++    for (int slot = 0; slot < getSlots(); slot++) {
++      if (ItemStackMatcherDefault.matches(getStackInSlot(slot), nbt, stack)) {
++        matched = true;
++        break;
++      }
+     }
+-    return getStackMatchers().stream().anyMatch(matcher -> matcher.match(stack));
++    return isAllowList ? !matched : matched;
+   }
+ 
+   public boolean allAreEmpty() {
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/ItemStackMatcherDefault.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/ItemStackMatcherDefault.java
+index 909a4335..cf5f8ec7 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/ItemStackMatcherDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/ItemStackMatcherDefault.java
+@@ -76,6 +76,13 @@ public class ItemStackMatcherDefault implements ItemStackMatcher {
+ 
+   @Override
+   public boolean match(ItemStack stackIn) {
++    return matches(stack, nbt, stackIn);
++  }
++
++  /**
++   * What a matcher of this filter stack and nbt flag answers for stackIn, without making the matcher.
++   */
++  public static boolean matches(ItemStack stack, boolean nbt, ItemStack stackIn) {
+     if (stackIn.isEmpty()) {
+       return false;
+     }

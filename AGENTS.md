@@ -27,8 +27,7 @@ python3 bench/test_java_lines.py &&
 python3 bench/test_loader_api.py &&
 python3 bench/test_sweeps.py &&
 python3 bench/test_session_cost.py &&
-python3 bench/test_perf_sessions.py &&
-python3 bench/test_experiments.py
+python3 bench/test_perf_sessions.py
 ```
 
 Commit and push your branch. Use `.github/pull_request_template.md`; land on `main`:

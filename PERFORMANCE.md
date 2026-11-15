@@ -380,9 +380,17 @@ Pairs stop as soon as the outcome is decided:
   computed for cold and warm after each pair: both entirely above 1, or either entirely
   below `--min-speedup` (default 1), end the run.
 
-Otherwise it continues to `--runs` (default 5). The verdict always comes from the rule
-below over the pairs measured; `optimize.json` and the record name where and why a run
-stopped. The 99% interval is wider than the 95% bootstrap at every pair count, so stopping
+Otherwise it continues to `--runs` (default 5). Creating the file `OUT/stop` ends the run
+after the pair in progress, for a candidate already shown not to matter or a machine that is
+needed back. The verdict always comes from the rule below over the pairs measured;
+`optimize.json` and the record name where and why a run stopped.
+
+After each pair it prints one line to stderr: that pair's cold and warm speedups, the
+geometric means so far with their 99% t intervals, and each gate (`ok`, `FAILED`, or
+`pending` until a second baseline launch shows whether the gate is reproducible). At the
+start it copies every file the experiment names (snippets, probes, the files each launch
+copies) into `OUT/experiment/` and reads only those copies, so editing the experiment while
+a run is going changes the next run, not this one. The 99% interval is wider than the 95% bootstrap at every pair count, so stopping
 for speed is rare unless a change is large and consistent; it adds at most 0.5% one-sided
 error per look.
 
@@ -432,8 +440,10 @@ world and machine; other load on the machine widens the intervals, and a change 
 small to separate from that noise is rejected. If a run is interrupted, stop its
 games with `game-stop --root OUT/baseline` (and `candidate`) and run
 `git worktree prune` in the mod. Each arm builds in its own worktree, so the first run of an
-experiment includes two cold builds. [`bench/zombie-siege`](bench/zombie-siege/README.md)
-and [`bench/pipez`](bench/pipez/README.md) are complete experiments for real NeoForge mods.
+experiment includes two cold builds. [`bench/zombie-siege`](bench/zombie-siege/README.md),
+[`bench/pipez`](bench/pipez/README.md) and [`bench/storagenetwork`](bench/storagenetwork/README.md)
+are complete experiments for real NeoForge mods. `self-test` checks that every
+`bench/*/experiment.json` names only files the checkout has.
 
 More experiment fields, for a mod whose cost is spread over threads:
 

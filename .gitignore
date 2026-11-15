@@ -47,7 +47,7 @@ saves/
 world/
 screenshots/
 options.txt
-# ...except the client options an experiment copies into each launch (bench/**/experiment.json "files").
+# ...except the options a perf-optimize experiment copies into each launch
 !bench/**/options.txt
 server.properties
 usercache.json
