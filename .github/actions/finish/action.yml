@@ -38,10 +38,11 @@ runs:
       if: ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.head_ref == 'ci/fast-ci')
       shell: bash
       run: |
+        # Exit 128 (Windows) and 1 (POSIX) mean no java was running, which is fine; anything else is not.
         if [ "$RUNNER_OS" = Windows ]; then
-          powershell -NoProfile -Command "Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force"
+          taskkill //F //T //IM java.exe || [ $? -eq 128 ]
         else
-          pkill -f java || true
+          pkill -9 -f java || [ $? -eq 1 ]
         fi
     - name: Anything downloaded worth caching
       id: worth
