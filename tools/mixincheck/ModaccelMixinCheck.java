@@ -72,11 +72,34 @@ public final class ModaccelMixinCheck {
 
     /** junit-fml's LaunchWrapper: the launcher returns once the game layer is built, with its loader as the context loader. */
     static ClassLoader neoForge(String[] args) throws Throwable {
+        if ("startup".equals(System.getProperty("modaccel.mixincheck.fml"))) return fmlStartup(args);
         Class<?> launcher = Class.forName("cpw.mods.bootstraplauncher.BootstrapLauncher");
         launcher.getMethod("unitTestingMain", String[].class).invoke(null, (Object) args);
         ClassLoader game = Thread.currentThread().getContextClassLoader();
         if (game == null || game == ClassLoader.getSystemClassLoader()) throw new IllegalStateException(
             "NeoForge's unit-test launch returned without a game class loader"
+        );
+        return game;
+    }
+
+    /**
+     * FancyModLoader 12 (NeoForge 26.x) has no ModLauncher: its Client and Server mains call Entrypoint.startup, which
+     * discovers the mods, sets up Mixin and the access transformers, and returns the loader whose class loader is the
+     * game's. That is what this calls, headless and for the side being checked; the game's main is never started.
+     */
+    static ClassLoader fmlStartup(String[] args) throws Throwable {
+        Class<?> entrypoint = Class.forName("net.neoforged.fml.startup.Entrypoint");
+        Class<?> dist = Class.forName("net.neoforged.api.distmarker.Dist");
+        boolean client = !"server".equals(System.getProperty("modaccel.mixincheck.side", "client"));
+        @SuppressWarnings({ "unchecked", "rawtypes" })
+        Object side = Enum.valueOf((Class) dist, client ? "CLIENT" : "DEDICATED_SERVER");
+        Method startup = entrypoint.getDeclaredMethod("startup", String[].class, boolean.class, dist, boolean.class);
+        startup.setAccessible(true);
+        Object result = startup.invoke(null, args, Boolean.TRUE, side, Boolean.TRUE);
+        Object loader = result.getClass().getMethod("loader").invoke(result);
+        ClassLoader game = (ClassLoader) loader.getClass().getMethod("getCurrentClassLoader").invoke(loader);
+        if (game == null || game == ClassLoader.getSystemClassLoader()) throw new IllegalStateException(
+            "FancyModLoader's startup returned without a game class loader"
         );
         return game;
     }

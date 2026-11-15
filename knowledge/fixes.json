@@ -1,9 +1,10 @@
 {
   "version": 1,
-  "note": "Ordered fix rules for `modaccel port -Fix`. `match` is a regex tested against each javac error's message + symbol + file. `apply.find` / `apply.replace` is a .NET regex replace in the affected source (named groups survive as ${name}); `apply.literal` is a plain string replace; `apply.ensureImports` adds an import only when the file lacks it. `scope` is `log` (only the files that error was reported in) or `repo` (every .java in the repo, for a family whose remaining call sites javac has not reached yet). `when` is an optional regex the candidate file's own text must match. `verified` names the repo, the count and the log a build actually proved it on; null means reasoned, not measured.",
+  "note": "Ordered fix rules for `modaccel port -Fix`. `match` is a regex tested against each javac error's message + symbol + file. `apply.find` / `apply.replace` is a .NET regex replace in the affected source (named groups survive as ${name}); `apply.literal` is a plain string replace; `apply.ensureImports` adds an import only when the file lacks it. `scope` is `log` (only the files that error was reported in) or `repo` (every .java in the repo, for a family whose remaining call sites javac has not reached yet). `when` is an optional regex the candidate file's own text must match. `verified` names the repo, the count and the log a build actually proved it on; null means reasoned, not measured. `provenance` says where a rule came from: `hand` = written for a fixture port from its compiler errors and the game's own classes; `game-diff` = generated from the game's own jars; `third-party-mods` = learned from other people's mods (the Stonecutter switches, `source: stonecutter`). New rules come from the game and the compiler, never from other mods' code.",
   "rules": [
     {
       "id": "neo263-drop-glfw-import",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "package org\\.lwjgl\\.glfw does not exist",
       "apply": {
@@ -23,6 +24,7 @@
     },
     {
       "id": "neo263-key-left-control",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable GLFW",
       "apply": {
@@ -42,6 +44,7 @@
     },
     {
       "id": "neo263-key-right-control",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable GLFW",
       "apply": {
@@ -61,6 +64,7 @@
     },
     {
       "id": "neo263-key-left-shift",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable GLFW",
       "apply": {
@@ -80,6 +84,7 @@
     },
     {
       "id": "neo263-key-right-shift",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable GLFW",
       "apply": {
@@ -99,6 +104,7 @@
     },
     {
       "id": "neo263-key-left-super",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable GLFW",
       "apply": {
@@ -118,6 +124,7 @@
     },
     {
       "id": "neo263-key-right-super",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable GLFW",
       "apply": {
@@ -137,6 +144,7 @@
     },
     {
       "id": "neo263-iskeydown-window-argument",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+method getWindow\\(\\)|symbol:\\s+method isKeyDown\\(",
       "apply": {
@@ -156,6 +164,7 @@
     },
     {
       "id": "neo263-drop-window-handle",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+method getWindow\\(\\)",
       "apply": {
@@ -175,6 +184,7 @@
     },
     {
       "id": "neo263-platform-check",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable ON_OSX",
       "apply": {
@@ -197,6 +207,7 @@
     },
     {
       "id": "neo263-hud-fields",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable (leftHeight|rightHeight)",
       "apply": {
@@ -216,6 +227,7 @@
     },
     {
       "id": "neo263-hud-ticks",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+method getGuiTicks\\(\\)",
       "apply": {
@@ -235,6 +247,7 @@
     },
     {
       "id": "neo263-hud-hidden",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable hideGui",
       "apply": {
@@ -254,6 +267,7 @@
     },
     {
       "id": "neo263-current-screen",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable screen",
       "apply": {
@@ -273,6 +287,7 @@
     },
     {
       "id": "neo263-tooltip-extract-image",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "method does not override or implement a method from a supertype",
       "apply": {
@@ -292,6 +307,7 @@
     },
     {
       "id": "neo263-tooltip-extract-text",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "method does not override or implement a method from a supertype",
       "apply": {
@@ -311,6 +327,7 @@
     },
     {
       "id": "neo263-extractor-text",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+method drawString\\(Font",
       "apply": {
@@ -330,6 +347,7 @@
     },
     {
       "id": "neo263-dist-getter",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable dist",
       "apply": {
@@ -349,6 +367,7 @@
     },
     {
       "id": "neo263-gamerule-name",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+variable (GameRules|RULE_NATURAL_REGENERATION)",
       "apply": {
@@ -368,6 +387,7 @@
     },
     {
       "id": "neo263-gamerule-get",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+method getBoolean",
       "apply": {
@@ -387,6 +407,7 @@
     },
     {
       "id": "neo-debug-text-entry",
+      "provenance": "hand",
       "jump": "1.21.8 -> 1.21.9 (official names)",
       "match": "symbol:\\s+class DebugText\\b",
       "apply": {
@@ -405,6 +426,7 @@
     },
     {
       "id": "neo-debug-text-lines",
+      "provenance": "hand",
       "jump": "1.21.8 -> 1.21.9 (official names)",
       "match": "symbol:\\s+class DebugText\\b",
       "apply": {
@@ -423,6 +445,7 @@
     },
     {
       "id": "neo-debug-text-subscriber",
+      "provenance": "hand",
       "jump": "1.21.8 -> 1.21.9 (official names)",
       "match": "symbol:\\s+class DebugText\\b",
       "apply": {
@@ -441,6 +464,7 @@
     },
     {
       "id": "resources-resourcelocation-identifier",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+class ResourceLocation",
       "apply": {
@@ -463,6 +487,7 @@
     },
     {
       "id": "gui-graphics-extractor",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+class GuiGraphics(?!Extractor)",
       "apply": {
@@ -485,6 +510,7 @@
     },
     {
       "id": "gamerules-package-move",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+class GameRules",
       "apply": {
@@ -504,6 +530,7 @@
     },
     {
       "id": "rendertype-package-move",
+      "provenance": "hand",
       "jump": "1.21.6 -> 26.3 (official names)",
       "match": "symbol:\\s+class RenderType",
       "apply": {
@@ -523,6 +550,7 @@
     },
     {
       "id": "identifier-constructor-two-arg",
+      "provenance": "hand",
       "jump": "1.20.1 -> 1.21.6 (yarn)",
       "match": "Identifier\\(String,String\\) has private access",
       "apply": {
@@ -542,6 +570,7 @@
     },
     {
       "id": "identifier-constructor-one-arg",
+      "provenance": "hand",
       "jump": "1.20.1 -> 1.21.6 (yarn)",
       "match": "constructor Identifier in class Identifier cannot be applied",
       "apply": {
@@ -561,6 +590,7 @@
     },
     {
       "id": "item-is-food-component",
+      "provenance": "hand",
       "jump": "1.20.1 -> 1.21.6 (yarn)",
       "match": "symbol:\\s+method isFood\\(\\)",
       "apply": {
@@ -583,6 +613,7 @@
     },
     {
       "id": "item-get-food-component",
+      "provenance": "hand",
       "jump": "1.20.1 -> 1.21.6 (yarn)",
       "match": "symbol:\\s+method getFoodComponent\\(\\)",
       "apply": {
@@ -605,6 +636,7 @@
     },
     {
       "id": "food-component-nutrition",
+      "provenance": "hand",
       "jump": "1.20.1 -> 1.21.6 (yarn)",
       "match": "symbol:\\s+method getHunger\\(\\)",
       "apply": {
@@ -624,6 +656,7 @@
     },
     {
       "id": "food-component-saturation",
+      "provenance": "hand",
       "jump": "1.20.4 -> 1.20.5 (yarn)",
       "match": "symbol:\\s+method getSaturationModifier\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) FoodComponent\\b",
       "apply": {
@@ -644,6 +677,7 @@
     },
     {
       "id": "debug-hud-visible",
+      "provenance": "hand",
       "jump": "1.20.1 -> 1.21.6 (yarn)",
       "match": "symbol:\\s+variable debugEnabled",
       "apply": {
@@ -663,6 +697,7 @@
     },
     {
       "id": "nbt-getboolean-optional",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
       "apply": {
@@ -682,6 +717,7 @@
     },
     {
       "id": "nbt-getint-optional",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
       "apply": {
@@ -701,6 +737,7 @@
     },
     {
       "id": "nbt-getlong-optional",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
       "apply": {
@@ -720,6 +757,7 @@
     },
     {
       "id": "nbt-getfloat-optional",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
       "apply": {
@@ -739,6 +777,7 @@
     },
     {
       "id": "nbt-getdouble-optional",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
       "apply": {
@@ -758,6 +797,7 @@
     },
     {
       "id": "nbt-getstring-optional",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
       "apply": {
@@ -777,6 +817,7 @@
     },
     {
       "id": "nbt-getcompound-optional",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
       "apply": {
@@ -796,6 +837,7 @@
     },
     {
       "id": "nbt-getlist-optional",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "incompatible types: Optional<(Boolean|Integer|Long|Float|Double|String|CompoundTag|ListTag)> cannot be converted|getList in class CompoundTag cannot be applied|no suitable method found for getList",
       "apply": {
@@ -815,6 +857,7 @@
     },
     {
       "id": "fabrictag-provider-valuelookup",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn, fabric-data-generation 23.2.3)",
       "match": "getOrCreateTagBuilder",
       "apply": {
@@ -834,6 +877,7 @@
     },
     {
       "id": "fabrictag-provider-plain",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn, fabric-data-generation 23.2.3)",
       "match": "getOrCreateTagBuilder",
       "apply": {
@@ -853,6 +897,7 @@
     },
     {
       "id": "fabrictag-entitytype-add-key",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn, fabric-data-generation 23.2.3)",
       "match": "symbol:   method add\\(Identifier\\)|no suitable method found for add\\(Identifier\\)",
       "apply": {
@@ -876,6 +921,7 @@
     },
     {
       "id": "inventory-items-get",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "items has private access in Inventory|selected has private access in Inventory",
       "apply": {
@@ -895,6 +941,7 @@
     },
     {
       "id": "inventory-items-set",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "items has private access in Inventory|selected has private access in Inventory",
       "apply": {
@@ -914,6 +961,7 @@
     },
     {
       "id": "inventory-items-size",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "items has private access in Inventory|selected has private access in Inventory",
       "apply": {
@@ -933,6 +981,7 @@
     },
     {
       "id": "inventory-selected-slot",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "items has private access in Inventory|selected has private access in Inventory",
       "apply": {
@@ -952,6 +1001,7 @@
     },
     {
       "id": "itemstack-parseoptional",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "method parseOptional\\(",
       "apply": {
@@ -971,6 +1021,7 @@
     },
     {
       "id": "item-appendhovertext-signature",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "method appendHoverText in class \\w+ cannot be applied",
       "apply": {
@@ -994,6 +1045,7 @@
     },
     {
       "id": "item-appendhovertext-super-call",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "method appendHoverText in class \\w+ cannot be applied",
       "apply": {
@@ -1013,6 +1065,7 @@
     },
     {
       "id": "item-appendhovertext-consumer",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "method add\\((Mutable)?Component\\)",
       "apply": {
@@ -1032,6 +1085,7 @@
     },
     {
       "id": "serverplayer-setrespawnposition",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "method setRespawnPosition in class ServerPlayer cannot be applied to given types",
       "apply": {
@@ -1054,6 +1108,7 @@
     },
     {
       "id": "level-blockupdated-neighbors",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (mojmap)",
       "match": "method blockUpdated\\(",
       "apply": {
@@ -1073,6 +1128,7 @@
     },
     {
       "id": "drawcontext-matrix-push",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn)",
       "match": "location: class (org\\.joml\\.)?Matrix3x2fStack",
       "apply": {
@@ -1092,6 +1148,7 @@
     },
     {
       "id": "drawcontext-matrix-pop",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn)",
       "match": "location: class (org\\.joml\\.)?Matrix3x2fStack",
       "apply": {
@@ -1111,6 +1168,7 @@
     },
     {
       "id": "drawcontext-matrix-translate-2d",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn)",
       "match": "int cannot be converted to Matrix3x2f",
       "apply": {
@@ -1130,6 +1188,7 @@
     },
     {
       "id": "level-getminy",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "symbol:\\s+(method )?getMinBuildHeight",
       "apply": {
@@ -1149,6 +1208,7 @@
     },
     {
       "id": "level-getmaxy",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "symbol:\\s+(method )?getMaxBuildHeight",
       "apply": {
@@ -1168,6 +1228,7 @@
     },
     {
       "id": "loottable-get-optional",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "Optional<ResourceKey<LootTable>> cannot be converted",
       "apply": {
@@ -1187,6 +1248,7 @@
     },
     {
       "id": "equipable-to-component",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "symbol:\\s+(class|variable) Equipable",
       "apply": {
@@ -1210,6 +1272,7 @@
     },
     {
       "id": "equipable-import",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "symbol:\\s+(class|variable) Equipable",
       "apply": {
@@ -1229,6 +1292,7 @@
     },
     {
       "id": "equippable-slot",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "symbol:\\s+(class|variable) Equipable",
       "apply": {
@@ -1248,6 +1312,7 @@
     },
     {
       "id": "equippable-type-name",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "symbol:\\s+(class|variable) Equipable",
       "apply": {
@@ -1267,6 +1332,7 @@
     },
     {
       "id": "level-getgamerules-serverlevel",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "symbol:\\s+(method )?getGameRules",
       "apply": {
@@ -1286,10 +1352,11 @@
     },
     {
       "id": "entitytype-create-spawn-reason-command",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "no suitable method found for create\\(ServerLevel\\)",
       "apply": {
-        "find": "(EntityType\\.[A-Z_]+)\\.create\\((\\w+)\\)",
+        "find": "(EntityTypes?\\.[A-Z_]+)\\.create\\((\\w+)\\)",
         "replace": "$1.create($2, EntitySpawnReason.COMMAND)",
         "ensureImports": [
           "net.minecraft.world.entity.EntitySpawnReason"
@@ -1297,7 +1364,7 @@
       },
       "scope": "log",
       "when": "CommandSourceStack",
-      "note": "EntityType.create(Level) became create(Level, EntitySpawnReason). A file that builds its level from a command source gets COMMAND, which keeps command-spawned mobs out of natural-spawn bonuses.",
+      "note": "EntityType.create(Level) became create(Level, EntitySpawnReason). A file that builds its level from a command source gets COMMAND, which keeps command-spawned mobs out of natural-spawn bonuses. The constants may already sit on 26.2's EntityTypes holder when a long route renamed them first, so both owners match.",
       "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
       "test": {
         "error": "GearCommands.java:295: error: no suitable method found for create(ServerLevel)\n",
@@ -1308,10 +1375,11 @@
     },
     {
       "id": "entitytype-create-spawn-reason-natural",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "no suitable method found for create\\(ServerLevel\\)",
       "apply": {
-        "find": "(EntityType\\.[A-Z_]+)\\.create\\((\\w+)\\)",
+        "find": "(EntityTypes?\\.[A-Z_]+)\\.create\\((\\w+)\\)",
         "replace": "$1.create($2, EntitySpawnReason.NATURAL)",
         "ensureImports": [
           "net.minecraft.world.entity.EntitySpawnReason"
@@ -1319,7 +1387,7 @@
       },
       "scope": "log",
       "when": "",
-      "note": "The remaining create(Level) sites are gameplay spawns, so NATURAL is the closest match to the old no-reason call. Runs after the COMMAND variant because that one is restricted to command files.",
+      "note": "The remaining create(Level) sites are gameplay spawns, so NATURAL is the closest match to the old no-reason call. Runs after the COMMAND variant because that one is restricted to command files. The constants may already sit on 26.2's EntityTypes holder when a long route renamed them first, so both owners match.",
       "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
       "test": {
         "error": "EventHandler.java:816: error: no suitable method found for create(ServerLevel)\n",
@@ -1330,6 +1398,7 @@
     },
     {
       "id": "registry-get-item-optional",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "incompatible types: Optional<Reference<Item>> cannot be converted",
       "apply": {
@@ -1349,6 +1418,7 @@
     },
     {
       "id": "registry-get-block-optional",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "incompatible types: Optional<Reference<Block>> cannot be converted",
       "apply": {
@@ -1368,6 +1438,7 @@
     },
     {
       "id": "targeting-selector-lambda",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "incompatible parameter types in lambda expression",
       "apply": {
@@ -1387,29 +1458,30 @@
     },
     {
       "id": "mob-convert-to-conversion-params",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "no suitable method found for convertTo",
       "apply": {
-        "find": "(\\w+)\\.convertTo\\((EntityType\\.[A-Z_]+),\\s*(true|false)\\)",
-        "replace": "$1.convertTo($2, ConversionParams.single($1, $3, false), EntitySpawnReason.TRIGGERED, null)",
+        "find": "(\\w+)\\.convertTo\\((EntityTypes?\\.[A-Z_]+),\\s*(true|false)\\)",
+        "replace": "$1.convertTo($2, ConversionParams.single($1, $3, false), converted -> {})",
         "ensureImports": [
-          "net.minecraft.world.entity.ConversionParams",
-          "net.minecraft.world.entity.EntitySpawnReason"
+          "net.minecraft.world.entity.ConversionParams"
         ]
       },
       "scope": "log",
       "when": "",
-      "note": "Mob.convertTo(EntityType, boolean) became convertTo(EntityType, ConversionParams, EntitySpawnReason, AfterConversion). The old boolean was keepEquipment, so it maps to ConversionParams.single(mob, keepEquipment, false); no after-conversion hook is needed because the caller continues with the returned mob.",
+      "note": "Mob.convertTo(EntityType, boolean) became convertTo(EntityType, ConversionParams, AfterConversion) in 1.21.2. The old boolean was keepEquipment, so it maps to ConversionParams.single(mob, keepEquipment, false). The game calls the after-conversion hook unconditionally, so it gets an empty one, never null (null was a NullPointerException at the conversion); the three-argument overload keeps the conversion's own spawn reason, CONVERSION. The constants may already sit on 26.2's EntityTypes holder.",
       "verified": "ZombieApocalypseAddon (71 files, NeoForge 1.21.1->1.21.4, mojmap) fresh copy: 19 reported errors -> 1 after these rules, 3 repair rounds, build 212s (.runs/beta-trials/zombie-rules5-port.json)",
       "test": {
         "error": "ZombieHunt.java:431: error: no suitable method found for convertTo\n",
         "before": "package com.rique.zombieapocalypse;\n\n\n        ZombieHorse zombieHorse = horse.convertTo(EntityType.ZOMBIE_HORSE, false);\n        if (zombieHorse == null) {\n",
-        "after": "package com.rique.zombieapocalypse;\nimport net.minecraft.world.entity.EntitySpawnReason;\nimport net.minecraft.world.entity.ConversionParams;\n\n\n        ZombieHorse zombieHorse = horse.convertTo(EntityType.ZOMBIE_HORSE, ConversionParams.single(horse, false, false), EntitySpawnReason.TRIGGERED, null);\n        if (zombieHorse == null) {\n",
+        "after": "package com.rique.zombieapocalypse;\nimport net.minecraft.world.entity.ConversionParams;\n\n\n        ZombieHorse zombieHorse = horse.convertTo(EntityType.ZOMBIE_HORSE, ConversionParams.single(horse, false, false), converted -> {});\n        if (zombieHorse == null) {\n",
         "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieHunt.java:431"
       }
     },
     {
       "id": "spawn-at-location-serverlevel",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.4 (mojmap)",
       "match": "no suitable method found for spawnAtLocation",
       "apply": {
@@ -1429,6 +1501,7 @@
     },
     {
       "id": "nbt-contains-typed",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.6 (mojmap)",
       "match": "method contains in class CompoundTag cannot be applied",
       "apply": {
@@ -1448,6 +1521,7 @@
     },
     {
       "id": "nbt-uuid-has",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.6 (mojmap)",
       "match": "symbol:\\s+method hasUUID",
       "apply": {
@@ -1470,6 +1544,7 @@
     },
     {
       "id": "nbt-uuid-get",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.6 (mojmap)",
       "match": "symbol:\\s+method getUUID",
       "apply": {
@@ -1492,6 +1567,7 @@
     },
     {
       "id": "nbt-uuid-put",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.6 (mojmap)",
       "match": "symbol:\\s+method putUUID",
       "apply": {
@@ -1514,6 +1590,7 @@
     },
     {
       "id": "level-day-rename",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.6 (mojmap)",
       "match": "symbol:\\s+method isDay",
       "apply": {
@@ -1533,6 +1610,7 @@
     },
     {
       "id": "level-night-rename",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.6 (mojmap)",
       "match": "symbol:\\s+method isNight",
       "apply": {
@@ -1552,25 +1630,27 @@
     },
     {
       "id": "entity-snapto",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.6 (mojmap)",
       "match": "symbol:\\s+method moveTo",
       "apply": {
         "find": "\\.moveTo\\(",
         "replace": ".snapTo("
       },
-      "scope": "log",
+      "scope": "line",
       "when": "",
-      "note": "Entity.moveTo became snapTo in 1.21.6; the overloads (x,y,z and x,y,z,yaw,pitch) are identical.",
+      "note": "Entity.moveTo became snapTo in 1.21.6; the overloads (x,y,z and x,y,z,yaw,pitch) are identical. Only the lines javac reported change: PathNavigation.moveTo(entity, speed) on the same file is still moveTo.",
       "verified": "ZombieApocalypseAddon 1.21.1->1.21.6 fresh copy: 38 reported errors -> 9 after these rules, 3 repair rounds, 331s including the build (.runs/beta-trials/zombie-1216b-port.json)",
       "test": {
-        "error": "EventHandler.java:527: error: cannot find symbol\n  symbol: method moveTo\n",
-        "before": "package com.rique.zombieapocalypse;\n\n\n            zombie.moveTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D,\n                    random.nextFloat() * 360.0F, 0.0F);\n",
-        "after": "package com.rique.zombieapocalypse;\n\n\n            zombie.snapTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D,\n                    random.nextFloat() * 360.0F, 0.0F);\n",
-        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/EventHandler.java:527"
+        "error": "GearCommands.java:4: error: cannot find symbol\n  symbol: method moveTo\n",
+        "before": "package com.rique.zombieapocalypse.commands;\n\n        double radians = Math.toRadians(yaw);\n        zombie.moveTo(origin.x - Math.sin(radians) * 2.0, origin.y, origin.z + Math.cos(radians) * 2.0,\n                yaw + 180.0F, 0.0F);\n",
+        "after": "package com.rique.zombieapocalypse.commands;\n\n        double radians = Math.toRadians(yaw);\n        zombie.snapTo(origin.x - Math.sin(radians) * 2.0, origin.y, origin.z + Math.cos(radians) * 2.0,\n                yaw + 180.0F, 0.0F);\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/commands/GearCommands.java:304"
       }
     },
     {
       "id": "entity-water-rain",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.6 (mojmap)",
       "match": "symbol:\\s+method isInWaterRainOrBubble",
       "apply": {
@@ -1590,6 +1670,7 @@
     },
     {
       "id": "soundevents-holder-argument",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.6 (mojmap)",
       "match": "Reference<SoundEvent>",
       "apply": {
@@ -1609,6 +1690,7 @@
     },
     {
       "id": "glstatemanager-opengl",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5",
       "match": "symbol:\\s+class GlStateManager\\s+location: package com\\.mojang\\.blaze3d\\.platform",
       "apply": {
@@ -1628,6 +1710,7 @@
     },
     {
       "id": "gui-blit-render-type-7",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "no suitable method found for drawTexture\\(",
       "apply": {
@@ -1646,6 +1729,7 @@
     },
     {
       "id": "gui-blit-render-type-9",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "no suitable method found for drawTexture\\(",
       "apply": {
@@ -1664,6 +1748,7 @@
     },
     {
       "id": "gui-blit-render-type-10",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "no suitable method found for drawTexture\\(",
       "apply": {
@@ -1682,6 +1767,7 @@
     },
     {
       "id": "gui-blit-render-type-11",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "no suitable method found for drawTexture\\(",
       "apply": {
@@ -1700,6 +1786,7 @@
     },
     {
       "id": "gui-blit-render-pipeline",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn)",
       "match": "no suitable method found for drawTexture\\(|symbol:\\s+method getGuiTextured\\b",
       "apply": {
@@ -1721,6 +1808,7 @@
     },
     {
       "id": "shader-color-field",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn)",
       "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
       "apply": {
@@ -1739,6 +1827,7 @@
     },
     {
       "id": "shader-color-declare",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn)",
       "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
       "apply": {
@@ -1757,6 +1846,7 @@
     },
     {
       "id": "shader-color-draws",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn)",
       "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
       "apply": {
@@ -1775,6 +1865,7 @@
     },
     {
       "id": "gui-blit-render-type-7-official",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "match": "no suitable method found for blit\\(",
       "apply": {
@@ -1793,6 +1884,7 @@
     },
     {
       "id": "gui-blit-render-type-9-official",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "match": "no suitable method found for blit\\(",
       "apply": {
@@ -1811,6 +1903,7 @@
     },
     {
       "id": "gui-blit-render-type-10-official",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "match": "no suitable method found for blit\\(",
       "apply": {
@@ -1829,6 +1922,7 @@
     },
     {
       "id": "gui-blit-render-type-11-official",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "match": "no suitable method found for blit\\(",
       "apply": {
@@ -1847,6 +1941,7 @@
     },
     {
       "id": "gui-blit-render-pipeline-official",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",
       "match": "no suitable method found for blit\\(|symbol:\\s+method guiTextured\\b",
       "apply": {
@@ -1868,6 +1963,7 @@
     },
     {
       "id": "shader-color-field-official",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",
       "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
       "apply": {
@@ -1886,6 +1982,7 @@
     },
     {
       "id": "shader-color-declare-official",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",
       "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
       "apply": {
@@ -1904,6 +2001,7 @@
     },
     {
       "id": "shader-color-draws-official",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",
       "match": "symbol:\\s+method setShaderColor\\(float,float,float,float\\)",
       "apply": {
@@ -1922,6 +2020,7 @@
     },
     {
       "id": "render-state-in-pipeline-guarded",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5",
       "match": "symbol:\\s+method (?:enableBlend|disableBlend|defaultBlendFunc|blendFunc|blendFuncSeparate|enableDepthTest|disableDepthTest|depthMask|enableCull|disableCull)\\(",
       "apply": {
@@ -1940,6 +2039,7 @@
     },
     {
       "id": "render-state-in-pipeline",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5",
       "match": "symbol:\\s+method (?:enableBlend|disableBlend|defaultBlendFunc|blendFunc|blendFuncSeparate|enableDepthTest|disableDepthTest|depthMask|enableCull|disableCull)\\(",
       "apply": {
@@ -1958,6 +2058,7 @@
     },
     {
       "id": "shader-texture-id-binding",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5",
       "match": "(?:Identifier|ResourceLocation) cannot be converted to GpuTexture",
       "apply": {
@@ -1976,6 +2077,7 @@
     },
     {
       "id": "shader-texture-view",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn)",
       "match": "GpuTexture cannot be converted to GpuTextureView",
       "apply": {
@@ -1994,6 +2096,7 @@
     },
     {
       "id": "shader-texture-view-official",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",
       "match": "GpuTexture cannot be converted to GpuTextureView",
       "apply": {
@@ -2012,6 +2115,7 @@
     },
     {
       "id": "text-content-empty",
+      "provenance": "hand",
       "jump": "1.20.2 -> 1.20.3 (yarn)",
       "match": "symbol:\\s+variable EMPTY\\s+location: (?:class|interface) TextContent\\b",
       "apply": {
@@ -2033,6 +2137,7 @@
     },
     {
       "id": "tooltip-component-height-font",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "does not override abstract method getHeight\\(TextRenderer\\) in TooltipComponent",
       "apply": {
@@ -2051,6 +2156,7 @@
     },
     {
       "id": "tooltip-component-image-size",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "does not override abstract method getHeight\\(TextRenderer\\) in TooltipComponent|method does not override or implement a method from a supertype",
       "apply": {
@@ -2069,6 +2175,7 @@
     },
     {
       "id": "texture-bind-in-draw",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "symbol:\\s+method bindTexture\\(Identifier\\)",
       "apply": {
@@ -2087,6 +2194,7 @@
     },
     {
       "id": "text-content-empty-official",
+      "provenance": "hand",
       "jump": "1.20.2 -> 1.20.3 (official names)",
       "match": "symbol:\\s+variable EMPTY\\s+location: (?:class|interface) ComponentContents\\b",
       "apply": {
@@ -2108,6 +2216,7 @@
     },
     {
       "id": "tooltip-component-height-font-official",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "match": "does not override abstract method getHeight\\(Font\\) in ClientTooltipComponent",
       "apply": {
@@ -2126,6 +2235,7 @@
     },
     {
       "id": "tooltip-component-image-size-official",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "match": "does not override abstract method getHeight\\(Font\\) in ClientTooltipComponent|method does not override or implement a method from a supertype",
       "apply": {
@@ -2144,6 +2254,7 @@
     },
     {
       "id": "texture-bind-in-draw-official",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "match": "symbol:\\s+method bindForSetup\\(ResourceLocation\\)",
       "apply": {
@@ -2162,6 +2273,7 @@
     },
     {
       "id": "food-component-always-eat",
+      "provenance": "hand",
       "jump": "1.20.4 -> 1.20.5 (yarn)",
       "match": "symbol:\\s+method isAlwaysEdible\\(\\)",
       "apply": {
@@ -2180,6 +2292,7 @@
     },
     {
       "id": "glstatemanager-opengl-back",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.4",
       "match": "symbol:\\s+class GlStateManager\\s+location: package com\\.mojang\\.blaze3d\\.opengl|package com\\.mojang\\.blaze3d\\.opengl does not exist",
       "apply": {
@@ -2199,6 +2312,7 @@
     },
     {
       "id": "sc-permissions-source-level",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.10 -> 1.21.11 (mojmap)",
       "match": "symbol:\\s+method hasPermission\\(int\\)",
@@ -2251,6 +2365,7 @@
     },
     {
       "id": "sc-permissions-player-level",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.10 -> 1.21.11 (mojmap)",
       "match": "symbol:\\s+method hasPermissions\\(int\\)",
@@ -2294,6 +2409,7 @@
     },
     {
       "id": "sc-gameprofile-name",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.8 -> 1.21.9 (mojmap)",
       "match": "symbol:\\s+method getName\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:com\\.mojang\\.authlib\\.)?GameProfile\\b",
@@ -2342,6 +2458,7 @@
     },
     {
       "id": "sc-gameprofile-id",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.8 -> 1.21.9 (mojmap)",
       "match": "symbol:\\s+method getId\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:com\\.mojang\\.authlib\\.)?GameProfile\\b",
@@ -2390,6 +2507,7 @@
     },
     {
       "id": "sc-gameprofile-name-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.9 -> 1.21.8 (mojmap)",
       "match": "symbol:\\s+method name\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:com\\.mojang\\.authlib\\.)?GameProfile\\b",
@@ -2429,6 +2547,7 @@
     },
     {
       "id": "sc-gameprofile-id-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.9 -> 1.21.8 (mojmap)",
       "match": "symbol:\\s+method id\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:com\\.mojang\\.authlib\\.)?GameProfile\\b",
@@ -2468,6 +2587,7 @@
     },
     {
       "id": "sc-gui-set-screen",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.1.2 -> 26.2 (mojmap)",
       "match": "symbol:\\s+method setScreen\\([^)]*\\)\\s+location: (?:variable \\w+ of type|class) (?:net\\.minecraft\\.client\\.)?Minecraft\\b",
@@ -2525,6 +2645,7 @@
     },
     {
       "id": "sc-gui-screen",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.1.2 -> 26.2 (mojmap)",
       "match": "symbol:\\s+variable screen\\s+location: (?:variable \\w+ of type|class) (?:net\\.minecraft\\.client\\.)?Minecraft\\b",
@@ -2582,6 +2703,7 @@
     },
     {
       "id": "sc-gui-overlay",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.1.2 -> 26.2 (mojmap)",
       "match": "symbol:\\s+method getOverlay\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:net\\.minecraft\\.client\\.)?Minecraft\\b",
@@ -2630,6 +2752,7 @@
     },
     {
       "id": "sc-gui-toast-manager",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.1.2 -> 26.2 (mojmap)",
       "match": "symbol:\\s+method getToastManager\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:net\\.minecraft\\.client\\.)?Minecraft\\b",
@@ -2678,6 +2801,7 @@
     },
     {
       "id": "sc-main-render-target",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.1.2 -> 26.2 (mojmap)",
       "match": "symbol:\\s+method getMainRenderTarget\\(\\)\\s+location: (?:variable \\w+ of type|class) (?:net\\.minecraft\\.client\\.)?Minecraft\\b",
@@ -2726,6 +2850,7 @@
     },
     {
       "id": "sc-gui-set-screen-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.2 -> 26.1.2 (mojmap)",
       "match": "symbol:\\s+method setScreen\\([^)]*\\)\\s+location: variable gui of type Gui\\b",
@@ -2765,6 +2890,7 @@
     },
     {
       "id": "sc-gui-screen-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.2 -> 26.1.2 (mojmap)",
       "match": "symbol:\\s+method screen\\(\\)\\s+location: variable gui of type Gui\\b",
@@ -2804,6 +2930,7 @@
     },
     {
       "id": "sc-gui-overlay-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.2 -> 26.1.2 (mojmap)",
       "match": "symbol:\\s+method overlay\\(\\)\\s+location: variable gui of type Gui\\b",
@@ -2843,6 +2970,7 @@
     },
     {
       "id": "sc-gui-toast-manager-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.2 -> 26.1.2 (mojmap)",
       "match": "symbol:\\s+method toastManager\\(\\)\\s+location: variable gui of type Gui\\b",
@@ -2882,6 +3010,7 @@
     },
     {
       "id": "sc-main-render-target-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.2 -> 26.1.2 (mojmap)",
       "match": "symbol:\\s+method mainRenderTarget\\(\\)\\s+location: variable gameRenderer of type GameRenderer\\b",
@@ -2921,6 +3050,7 @@
     },
     {
       "id": "sc-entity-types-holder",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.1.2 -> 26.2 (mojmap)",
       "match": "symbol:\\s+variable [A-Z][A-Z0-9_]*\\s+location: (?:class|interface) (?:net\\.minecraft\\.world\\.entity\\.)?EntityType\\b",
@@ -2963,6 +3093,7 @@
     },
     {
       "id": "sc-entity-types-holder-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.2 -> 26.1.2 (mojmap)",
       "match": "symbol:\\s+class EntityTypes\\b|cannot find symbol\\s+import net\\.minecraft\\.world\\.entity\\.EntityTypes;",
@@ -3002,6 +3133,7 @@
     },
     {
       "id": "sc-chat-client-system-message",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.11 -> 26.1 (mojmap)",
       "match": "symbol:\\s+method addMessage\\(Component\\)",
@@ -3041,6 +3173,7 @@
     },
     {
       "id": "sc-chat-client-system-message-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.1 -> 1.21.11 (mojmap)",
       "match": "symbol:\\s+method addClientSystemMessage\\(Component\\)",
@@ -3080,6 +3213,7 @@
     },
     {
       "id": "sc-player-system-message",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.11 -> 26.1 (mojmap)",
       "match": "symbol:\\s+method displayClientMessage\\(Component,boolean\\)",
@@ -3119,6 +3253,7 @@
     },
     {
       "id": "sc-graphics-draw-string-text",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.11 -> 26.1 (mojmap)",
       "match": "symbol:\\s+method drawString\\(Font,",
@@ -3176,6 +3311,7 @@
     },
     {
       "id": "sc-widget-extract-render-state",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.11 -> 26.1 (mojmap)",
       "match": "method does not override or implement a method from a supertype|symbol:\\s+method render\\(GuiGraphics(?:Extractor)?,int,int,float\\)",
@@ -3227,6 +3363,7 @@
     },
     {
       "id": "sc-widget-super-extract-render-state",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.11 -> 26.1 (mojmap)",
       "match": "symbol:\\s+method render\\(GuiGraphics(?:Extractor)?,int,int,float\\)",
@@ -3275,6 +3412,7 @@
     },
     {
       "id": "sc-fabric-key-mapping-helper",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.11 -> 26.1 (fabric-api)",
       "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keybinding\\.v1 does not exist|symbol:\\s+variable KeyBindingHelper",
@@ -3326,6 +3464,7 @@
     },
     {
       "id": "sc-fabric-key-mapping-import",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.11 -> 26.1 (fabric-api)",
       "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keybinding\\.v1 does not exist",
@@ -3365,6 +3504,7 @@
     },
     {
       "id": "sc-fabric-key-mapping-helper-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.1 -> 1.21.11 (fabric-api)",
       "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keymapping\\.v1 does not exist|symbol:\\s+variable KeyMappingHelper",
@@ -3407,6 +3547,7 @@
     },
     {
       "id": "sc-fabric-key-mapping-import-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.1 -> 1.21.11 (fabric-api)",
       "match": "package net\\.fabricmc\\.fabric\\.api\\.client\\.keymapping\\.v1 does not exist",
@@ -3446,6 +3587,7 @@
     },
     {
       "id": "sc-posestack-rotate-degrees",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.2 -> 26.3 (mojmap)",
       "match": "symbol:\\s+method mulPose\\(",
@@ -3485,6 +3627,7 @@
     },
     {
       "id": "sc-posestack-rotate-degrees-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "26.3 -> 26.2 (mojmap)",
       "match": "symbol:\\s+method rotateDegrees\\(",
@@ -3524,6 +3667,7 @@
     },
     {
       "id": "sc-blit-render-type",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "match": "no suitable method found for blit\\((?:ResourceLocation|Identifier),int,int,(?:int|float),(?:int|float),int,int,int,int\\)",
@@ -3575,6 +3719,7 @@
     },
     {
       "id": "sc-blit-render-type-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.2 -> 1.21.1 (mojmap)",
       "match": "guiTextured",
@@ -3614,6 +3759,7 @@
     },
     {
       "id": "sc-gui-textured-pipeline",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.5 -> 1.21.6 (mojmap)",
       "match": "guiTextured",
@@ -3674,6 +3820,7 @@
     },
     {
       "id": "sc-gui-textured-pipeline-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.6 -> 1.21.5 (mojmap)",
       "match": "no suitable method found for blit(?:Sprite)?\\(RenderPipeline,",
@@ -3716,6 +3863,7 @@
     },
     {
       "id": "sc-registry-lookup-or-throw",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.1 -> 1.21.2 (mojmap)",
       "match": "symbol:\\s+method registryOrThrow\\(",
@@ -3755,6 +3903,7 @@
     },
     {
       "id": "sc-registry-lookup-or-throw-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.2 -> 1.21.1 (mojmap)",
       "match": "symbol:\\s+method lookupOrThrow\\(",
@@ -3794,6 +3943,7 @@
     },
     {
       "id": "sc-scroll-amount",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.3 -> 1.21.4 (mojmap)",
       "match": "symbol:\\s+method getScrollAmount\\(\\)",
@@ -3833,6 +3983,7 @@
     },
     {
       "id": "sc-scroll-amount-back",
+      "provenance": "third-party-mods",
       "source": "stonecutter",
       "jump": "1.21.4 -> 1.21.3 (mojmap)",
       "match": "symbol:\\s+method scrollAmount\\(\\)",
@@ -3872,6 +4023,7 @@
     },
     {
       "id": "gui-colors-opaque-official",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",
       "silent": "1.21.6 draws GUI colours as ARGB. A colour with no alpha byte (0xffffff, 14737632) still compiles but draws nothing: text and fills vanish from the screen.",
       "apply": {
@@ -3888,6 +4040,7 @@
     },
     {
       "id": "gui-colors-opaque",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn)",
       "silent": "1.21.6 draws GUI colours as ARGB. A colour with no alpha byte (0xffffff, 14737632) still compiles but draws nothing: text and fills vanish from the screen.",
       "apply": {
@@ -3904,6 +4057,7 @@
     },
     {
       "id": "registry-entry-value",
+      "provenance": "hand",
       "jump": "1.19.2 -> 1.21.11 (yarn)",
       "match": "symbol:\\s+method \\w+\\([^\\n]*\\n\\s*location: interface RegistryEntry<",
       "apply": {
@@ -3922,6 +4076,7 @@
     },
     {
       "id": "holder-value-official",
+      "provenance": "hand",
       "jump": "1.19.2 -> 26.3 (official names)",
       "match": "symbol:\\s+method \\w+\\([^\\n]*\\n\\s*location: interface Holder<",
       "apply": {
@@ -3940,6 +4095,7 @@
     },
     {
       "id": "client-game-rules-default",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "symbol:\\s+method getGameRules\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) World\\b",
       "apply": {
@@ -3960,6 +4116,7 @@
     },
     {
       "id": "client-game-rules-default-official",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "match": "symbol:\\s+method getGameRules\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) Level\\b",
       "apply": {
@@ -3980,6 +4137,7 @@
     },
     {
       "id": "food-effects-from-consumable",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "symbol:\\s+method getStatusEffects\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) FoodComponent\\b",
       "apply": {
@@ -4002,6 +4160,7 @@
     },
     {
       "id": "fabric-payload-bytes",
+      "provenance": "hand",
       "jump": "1.20.4 -> 1.20.5 (yarn)",
       "match": "method registerGlobalReceiver in class (?:Client|Server)PlayNetworking cannot be applied|constructor CustomPayload(?:S2C|C2S)Packet in (?:record|class) CustomPayload(?:S2C|C2S)Packet cannot be applied|method send in class (?:Client|Server)PlayNetworking cannot be applied|no suitable method found for send\\(",
       "apply": {
@@ -4021,6 +4180,7 @@
     },
     {
       "id": "hunger-exhaustion-accessor",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (yarn)",
       "match": "symbol:\\s+method (?:getExhaustion|setExhaustion)\\(",
       "apply": {
@@ -4044,6 +4204,7 @@
     },
     {
       "id": "hunger-exhaustion-accessor-official",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "match": "symbol:\\s+method (?:getExhaustionLevel|setExhaustion)\\(",
       "apply": {
@@ -4067,6 +4228,7 @@
     },
     {
       "id": "layered-draw-import-neoforge",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",
       "loader": "neoforge",
       "match": "symbol:\\s+class LayeredDraw\\b",
@@ -4086,6 +4248,7 @@
     },
     {
       "id": "layered-draw-layer-neoforge",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",
       "loader": "neoforge",
       "match": "package LayeredDraw does not exist",
@@ -4108,6 +4271,7 @@
     },
     {
       "id": "selection-list-scrollbar-x-official",
+      "provenance": "hand",
       "jump": "1.21.3 -> 1.21.4 (official names)",
       "match": "symbol:\\s+method getScrollbarPosition\\(\\)",
       "apply": {
@@ -4126,6 +4290,7 @@
     },
     {
       "id": "override-weaker-access-public",
+      "provenance": "hand",
       "jump": "1.14.4 -> 26.3",
       "match": "cannot override \\w+\\([^)\\n]*\\) in [\\w.$]+\\n[^\\n]*\\n[^\\n]*\\n\\s*attempting to assign weaker access privileges; was public",
       "apply": {
@@ -4144,6 +4309,7 @@
     },
     {
       "id": "gui-text-highlight-pipeline-official",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",
       "match": "symbol:\\s+method guiTextHighlight\\(\\)\\n\\s*location: class RenderType",
       "apply": {
@@ -4165,6 +4331,7 @@
     },
     {
       "id": "gui-text-highlight-pipeline",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (yarn)",
       "match": "symbol:\\s+method getGuiTextHighlight\\(\\)\\n\\s*location: class RenderLayer",
       "apply": {
@@ -4186,6 +4353,7 @@
     },
     {
       "id": "registry-access-lookup-official",
+      "provenance": "hand",
       "jump": "1.21.1 -> 1.21.2 (official names)",
       "match": "symbol:\\s+method registry\\(ResourceKey<[^\\n]*\\n\\s*location: (?:interface RegistryAccess|variable \\w+ of type RegistryAccess)",
       "apply": {
@@ -4204,6 +4372,7 @@
     },
     {
       "id": "drawstring-float-helper-neoforge",
+      "provenance": "hand",
       "jump": "1.21.5 -> 1.21.6 (official names)",
       "loader": "neoforge",
       "match": "no suitable method found for drawString\\(Font,String,float,float,int,boolean\\)",
@@ -4230,6 +4399,7 @@
     },
     {
       "id": "saved-data-type-codec-official",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (official names)",
       "match": "symbol:\\s+class Factory\\b",
       "apply": {
@@ -4252,6 +4422,7 @@
     },
     {
       "id": "saved-data-save-override-official",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (official names)",
       "match": "method does not override or implement a method from a supertype",
       "apply": {
@@ -4270,6 +4441,7 @@
     },
     {
       "id": "entity-in-water-or-bubble-official",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (official names)",
       "match": "symbol:\\s+method isInWaterOrBubble\\(\\)",
       "apply": {
@@ -4288,6 +4460,7 @@
     },
     {
       "id": "entity-in-water-or-bubble",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (yarn)",
       "match": "symbol:\\s+method isInsideWaterOrBubbleColumn\\(\\)",
       "apply": {
@@ -4306,6 +4479,7 @@
     },
     {
       "id": "equip-saddle-slot-helper-official",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (official names)",
       "match": "symbol:\\s+method equipSaddle\\(ItemStack,SoundSource\\)",
       "apply": {
@@ -4325,6 +4499,7 @@
     },
     {
       "id": "owner-uuid-reference-helper-official",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (official names)",
       "match": "symbol:\\s+method getOwnerUUID\\(\\)",
       "apply": {
@@ -4344,6 +4519,7 @@
     },
     {
       "id": "horse-owner-accessor-official",
+      "provenance": "hand",
       "jump": "1.21.4 -> 1.21.5 (official names)",
       "match": "symbol:\\s+method setOwnerUUID\\(UUID\\)\\n\\s*location: (?:variable \\w+ of type|class) (?:AbstractHorse|AbstractChestedHorse|Horse|ZombieHorse|SkeletonHorse|Donkey|Mule|Llama|TraderLlama|Camel)\\b",
       "apply": {
@@ -4364,6 +4540,275 @@
         "error": "ZombieHunt.java:3: error: cannot find symbol\n            zombieHorse.setOwnerUUID(owner);\n                       ^\n  symbol:   method setOwnerUUID(UUID)\n  location: variable zombieHorse of type ZombieHorse\n",
         "before": "package mod;\n\nclass ZombieHunt {\n    void f(ZombieHorse zombieHorse, UUID owner) {\n            zombieHorse.setOwnerUUID(owner);\n    }\n}\n",
         "after": "package mod;\nimport mod.mixin.AbstractHorseAccessor;\n\nclass ZombieHunt {\n    void f(ZombieHorse zombieHorse, UUID owner) {\n            ((AbstractHorseAccessor) zombieHorse).modaccel$setOwner(java.util.Optional.ofNullable(owner).map(modaccel$uuid -> new net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>(modaccel$uuid)).orElse(null));\n    }\n}\n"
+      }
+    },
+    {
+      "id": "savedatatype-identifier-id",
+      "provenance": "hand",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "no suitable constructor found for SavedDataType\\(String,",
+      "apply": {
+        "find": "new SavedDataType<([\\w.]+)>\\((\\w+(?:\\.\\w+)*),",
+        "replace": "new SavedDataType<$1>(Identifier.parse($2),",
+        "ensureImports": [
+          "net.minecraft.resources.Identifier"
+        ]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.1 keys saved data by Identifier instead of a file-name String. Identifier.parse keeps a plain name in the minecraft namespace (data/minecraft/NAME.dat) and reads a namespaced one as written. The file moves with the game's own data layout, so data saved by the old version is not read back.",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "ApocalypseWorldData.java:4: error: no suitable constructor found for SavedDataType(String,(context)-[...]ata(),(context)-[...]s())))\n        constructor SavedDataType.SavedDataType(Identifier,Supplier<ApocalypseWorldData>,Codec<ApocalypseWorldData>) is not applicable\n          (argument mismatch; String cannot be converted to Identifier)\n",
+        "before": "package com.rique.zombieapocalypse;\n\n    public static ApocalypseWorldData get(MinecraftServer server) {\n        return server.overworld().getDataStorage().computeIfAbsent(new SavedDataType<ApocalypseWorldData>(DATA_NAME, context -> new ApocalypseWorldData(), context -> CompoundTag.CODEC.xmap(tag -> ApocalypseWorldData.load(tag, context.levelOrThrow().registryAccess()), data -> data.save(new CompoundTag(), context.levelOrThrow().registryAccess()))));\n    }\n",
+        "after": "package com.rique.zombieapocalypse;\nimport net.minecraft.resources.Identifier;\n\n    public static ApocalypseWorldData get(MinecraftServer server) {\n        return server.overworld().getDataStorage().computeIfAbsent(new SavedDataType<ApocalypseWorldData>(Identifier.parse(DATA_NAME), context -> new ApocalypseWorldData(), context -> CompoundTag.CODEC.xmap(tag -> ApocalypseWorldData.load(tag, context.levelOrThrow().registryAccess()), data -> data.save(new CompoundTag(), context.levelOrThrow().registryAccess()))));\n    }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ApocalypseWorldData.java:24, as saved-data-type-codec-official left it"
+      }
+    },
+    {
+      "id": "savedata-factory-level-neoforge",
+      "provenance": "hand",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "loader": "neoforge",
+      "match": "symbol:\\s+method levelOrThrow\\(\\)\\n\\s*location: variable \\w+ of type ServerLevel",
+      "apply": {
+        "find": "\\b(\\w+)\\.levelOrThrow\\(\\)",
+        "replace": "$1"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Vanilla dropped SavedData.Context; NeoForge 26.x gives SavedDataType's factories the ServerLevel that stores the data instead (SavedDataType.Factory), so the lambda parameter that was a context is the level itself.",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "ApocalypseWorldData.java:4: error: cannot find symbol\n  symbol:   method levelOrThrow()\n  location: variable context of type ServerLevel\n",
+        "before": "package com.rique.zombieapocalypse;\n\n    public static ApocalypseWorldData get(MinecraftServer server) {\n        return server.overworld().getDataStorage().computeIfAbsent(new SavedDataType<ApocalypseWorldData>(Identifier.parse(DATA_NAME), context -> new ApocalypseWorldData(), context -> CompoundTag.CODEC.xmap(tag -> ApocalypseWorldData.load(tag, context.levelOrThrow().registryAccess()), data -> data.save(new CompoundTag(), context.levelOrThrow().registryAccess()))));\n    }\n",
+        "after": "package com.rique.zombieapocalypse;\n\n    public static ApocalypseWorldData get(MinecraftServer server) {\n        return server.overworld().getDataStorage().computeIfAbsent(new SavedDataType<ApocalypseWorldData>(Identifier.parse(DATA_NAME), context -> new ApocalypseWorldData(), context -> CompoundTag.CODEC.xmap(tag -> ApocalypseWorldData.load(tag, context.registryAccess()), data -> data.save(new CompoundTag(), context.registryAccess()))));\n    }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ApocalypseWorldData.java:24, as saved-data-type-codec-official and savedatatype-identifier-id left it"
+      }
+    },
+    {
+      "id": "level-day-time-overworld-clock",
+      "provenance": "hand",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "symbol:\\s+method getDayTime\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )(?:Server|Client)?Level\\b",
+      "apply": {
+        "find": "\\.getDayTime\\(\\)",
+        "replace": ".getOverworldClockTime()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.1 replaced the level's day time with world clocks. getDayTime() read the overworld's day time in every dimension (other dimensions shared its level data); Level.getOverworldClockTime() reads the overworld clock's total ticks, the same number.",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "WorldCommands.java:4: error: cannot find symbol\n  symbol: method getDayTime()\nlocation: variable x of type ServerLevel\n",
+        "before": "package com.rique.zombieapocalypse.commands;\n\n        ServerLevel overworld = server.overworld();\n        long dayCounter = overworld.getDayTime() / 24000L;\n        long timeOfDay = floorDayTime(overworld.getDayTime());\n",
+        "after": "package com.rique.zombieapocalypse.commands;\n\n        ServerLevel overworld = server.overworld();\n        long dayCounter = overworld.getOverworldClockTime() / 24000L;\n        long timeOfDay = floorDayTime(overworld.getDayTime());\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/commands/WorldCommands.java:49"
+      }
+    },
+    {
+      "id": "level-set-day-time-clock",
+      "provenance": "hand",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "symbol:\\s+method setDayTime\\(long\\)\\n\\s*location: (?:variable \\w+ of type |class )ServerLevel\\b",
+      "apply": {
+        "find": "\\b(\\w+)\\.setDayTime\\(",
+        "replace": "$1.clockManager().setTotalTicks($1.registryAccess().getOrThrow(WorldClocks.OVERWORLD), ",
+        "ensureImports": [
+          "net.minecraft.world.clock.WorldClocks"
+        ]
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.1 replaced ServerLevel.setDayTime(long) with world clocks: the server's clock manager sets the overworld clock's total ticks, which is the day time getOverworldClockTime() reads back.",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "WorldCommands.java:4: error: cannot find symbol\n  symbol: method setDayTime(long)\nlocation: variable x of type ServerLevel\n",
+        "before": "package com.rique.zombieapocalypse.commands;\n\n        for (ServerLevel level : server.getAllLevels()) {\n            level.setDayTime(absoluteDayTime);\n        }\n",
+        "after": "package com.rique.zombieapocalypse.commands;\nimport net.minecraft.world.clock.WorldClocks;\n\n        for (ServerLevel level : server.getAllLevels()) {\n            level.clockManager().setTotalTicks(level.registryAccess().getOrThrow(WorldClocks.OVERWORLD), absoluteDayTime);\n        }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/commands/WorldCommands.java:71"
+      }
+    },
+    {
+      "id": "entity-tags-rename",
+      "provenance": "hand",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "symbol:\\s+method getTags\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )\\w+",
+      "apply": {
+        "find": "\\.getTags\\(\\)",
+        "replace": ".entityTags()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.1 renamed Entity.getTags() (the entity's /tag strings) to entityTags(); same set.",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "DifficultyManager.java:4: error: cannot find symbol\n  symbol: method getTags()\nlocation: variable x of type x\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        return shouldApplyScaling(\n                zombie.getTags().contains(SCALING_APPLIED_TAG),\n                Config.COMMON.enableAttributeModifiers.get(),\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        return shouldApplyScaling(\n                zombie.entityTags().contains(SCALING_APPLIED_TAG),\n                Config.COMMON.enableAttributeModifiers.get(),\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/DifficultyManager.java:98"
+      }
+    },
+    {
+      "id": "entitytype-is-tag-holder",
+      "provenance": "hand",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "symbol:\\s+method is\\(TagKey<EntityType<\\?>>\\)",
+      "apply": {
+        "find": "\\b(\\w+)\\.is\\(",
+        "replace": "$1.builtInRegistryHolder().is("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.1 removed EntityType.is(TagKey); the type's registry holder answers the same tag question.",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "ZombieHunt.java:4: error: cannot find symbol\n        if (type.is(HUNT_TARGETS) || isIncludedTarget(type)) {\n                ^\n  symbol:   method is(TagKey<EntityType<?>>)\n  location: variable type of type EntityType<?>\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        }\n        if (type.is(HUNT_TARGETS) || isIncludedTarget(type)) {\n            return true;\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        }\n        if (type.builtInRegistryHolder().is(HUNT_TARGETS) || isIncludedTarget(type)) {\n            return true;\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieHunt.java:125"
+      }
+    },
+    {
+      "id": "neoforge-config-type-common-local",
+      "provenance": "hand",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "loader": "neoforge",
+      "match": "symbol:\\s+variable COMMON\\n\\s*location: class Type",
+      "apply": {
+        "find": "ModConfig\\.Type\\.COMMON\\b",
+        "replace": "ModConfig.Type.LOCAL"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "FancyModLoader 12 (NeoForge 26.x) renamed the config types: COMMON, loaded on both sides from the config folder and never synced, is LOCAL.",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "ZombieApocalypseAddon.java:16: error: cannot find symbol\n  symbol: variable COMMON\nlocation: class Type\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        modEventBus.addListener(this::onConfigReloading);\n        modContainer.registerConfig(ModConfig.Type.COMMON, Config.COMMON_SPEC);\n    }\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        modEventBus.addListener(this::onConfigReloading);\n        modContainer.registerConfig(ModConfig.Type.LOCAL, Config.COMMON_SPEC);\n    }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieApocalypseAddon.java:16"
+      }
+    },
+    {
+      "id": "neoforge-config-type-server-synced",
+      "provenance": "hand",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "loader": "neoforge",
+      "match": "symbol:\\s+variable SERVER\\n\\s*location: class Type",
+      "apply": {
+        "find": "ModConfig\\.Type\\.SERVER\\b",
+        "replace": "ModConfig.Type.SYNCED"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "FancyModLoader 12 (NeoForge 26.x) renamed the config types: SERVER, the server's values sent to every client, is SYNCED.",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "ExampleMod.java:5: error: cannot find symbol\n        modContainer.registerConfig(ModConfig.Type.SERVER, Config.SERVER_SPEC);\n                                                  ^\n  symbol:   variable SERVER\n  location: class Type\n",
+        "before": "package mod;\n\n    public ExampleMod(IEventBus modEventBus, ModContainer modContainer) {\n        modContainer.registerConfig(ModConfig.Type.COMMON, Config.COMMON_SPEC);\n        modContainer.registerConfig(ModConfig.Type.SERVER, Config.SERVER_SPEC);\n    }\n",
+        "after": "package mod;\n\n    public ExampleMod(IEventBus modEventBus, ModContainer modContainer) {\n        modContainer.registerConfig(ModConfig.Type.COMMON, Config.COMMON_SPEC);\n        modContainer.registerConfig(ModConfig.Type.SYNCED, Config.SERVER_SPEC);\n    }\n",
+        "from": "written for the rule: NeoForge's MDK example mod registers a COMMON and a SERVER config this way"
+      }
+    },
+    {
+      "id": "level-is-client-side-method",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 26.1 (mojmap)",
+      "match": "isClientSide has private access in (?:Server|Client)?Level\\b",
+      "apply": {
+        "find": "\\.isClientSide\\b(?!\\s*\\()",
+        "replace": ".isClientSide()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "Level.isClientSide became a private field; the isClientSide() method every version has returns it.",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "EventHandler.java:4: error: isClientSide has private access in ServerLevel\n",
+        "before": "package com.rique.zombieapocalypse;\n\n    public static void onEntityTick(EntityTickEvent.Pre event) {\n        if (!(event.getEntity() instanceof Zombie zombie) || zombie.level().isClientSide) {\n            return;\n",
+        "after": "package com.rique.zombieapocalypse;\n\n    public static void onEntityTick(EntityTickEvent.Pre event) {\n        if (!(event.getEntity() instanceof Zombie zombie) || zombie.level().isClientSide()) {\n            return;\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/EventHandler.java:186"
+      }
+    },
+    {
+      "id": "entity-has-impulse-needs-sync",
+      "provenance": "hand",
+      "jump": "1.21.10 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+variable hasImpulse",
+      "apply": {
+        "find": "\\.hasImpulse\\b",
+        "replace": ".needsSync"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.11 renamed Entity.hasImpulse to needsSync: push() and loading set it, and the server entity tracker sends the motion and clears it, exactly as before.",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "ZombieTowering.java:567: error: cannot find symbol\n  symbol: variable hasImpulse\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        top.setOnGround(false);\n        top.hasImpulse = true;\n        if (towerSize(root) <= 1) {\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        top.setOnGround(false);\n        top.needsSync = true;\n        if (towerSize(root) <= 1) {\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieTowering.java:567"
+      }
+    },
+    {
+      "id": "entity-reference-of-uuid",
+      "provenance": "hand",
+      "jump": "1.21.8 -> 1.21.9 (mojmap)",
+      "match": "EntityReference\\(UUID\\) has private access in EntityReference",
+      "apply": {
+        "find": "new (net\\.minecraft\\.world\\.entity\\.)?EntityReference<([\\w.]+)>\\(([\\w$]+)\\)",
+        "replace": "$1EntityReference.<$2>of($3)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.9 made EntityReference's constructors private; EntityReference.of(UUID) builds the same reference.",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "ZombieHunt.java:4: error: no suitable constructor found for EntityReference(UUID)\n        constructor EntityReference.EntityReference(UUID) is not applicable\n          (EntityReference(UUID) has private access in EntityReference)\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        if (tamed) {\n            ((AbstractHorseAccessor) zombieHorse).modaccel$setOwner(java.util.Optional.ofNullable(owner).map(modaccel$uuid -> new net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>(modaccel$uuid)).orElse(null));\n        }\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        if (tamed) {\n            ((AbstractHorseAccessor) zombieHorse).modaccel$setOwner(java.util.Optional.ofNullable(owner).map(modaccel$uuid -> net.minecraft.world.entity.EntityReference.<net.minecraft.world.entity.LivingEntity>of(modaccel$uuid)).orElse(null));\n        }\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieHunt.java:447, as horse-owner-accessor-official left it"
+      }
+    },
+    {
+      "id": "entity-get-server-level",
+      "provenance": "hand",
+      "jump": "1.21.8 -> 1.21.9 (mojmap)",
+      "match": "symbol:\\s+method getServer\\(\\)\\n\\s*location: (?:variable \\w+ of type |class )(?!(?:Server|Client)?Level\\b|MinecraftServer\\b)\\w+",
+      "apply": {
+        "find": "(?<![Ll]evel|level\\(\\))\\.getServer\\(\\)",
+        "replace": ".level().getServer()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.9 removed Entity.getServer(); the entity's level has the server (null on a client, as before).",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "ZombieKillAdvancements.java:4: error: cannot find symbol\n        if (player.getServer() == null) {\n                  ^\n  symbol:   method getServer()\n  location: variable player of type ServerPlayer\n",
+        "before": "package com.rique.zombieapocalypse;\n\n    public static void onFirstKill(ServerPlayer player) {\n        if (player.getServer() == null) {\n            return;\n",
+        "after": "package com.rique.zombieapocalypse;\n\n    public static void onFirstKill(ServerPlayer player) {\n        if (player.level().getServer() == null) {\n            return;\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieKillAdvancements.java:28"
+      }
+    },
+    {
+      "id": "entity-start-riding-events",
+      "provenance": "hand",
+      "jump": "1.21.8 -> 1.21.9 (mojmap)",
+      "match": "no suitable method found for startRiding\\(\\w+,boolean\\)",
+      "apply": {
+        "find": "\\.startRiding\\(([^;]*?),\\s*(true|false)\\)",
+        "replace": ".startRiding($1, $2, true)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.21.9 gave startRiding(Entity, boolean force) a third argument, sendEventAndTriggers; the old call always sent the mount event and advancement triggers, so it is true (startRiding(Entity) passes true too).",
+      "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
+      "test": {
+        "error": "ZombieMountZombieHorseGoal.java:4: error: no suitable method found for startRiding(x,boolean)\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        if (zombie.distanceToSqr(targetHorse) <= mountDistanceSqr) {\n            zombie.startRiding(targetHorse, true);\n            zombie.getNavigation().stop();\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        if (zombie.distanceToSqr(targetHorse) <= mountDistanceSqr) {\n            zombie.startRiding(targetHorse, true, true);\n            zombie.getNavigation().stop();\n",
+        "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieMountZombieHorseGoal.java:91"
       }
     }
   ]

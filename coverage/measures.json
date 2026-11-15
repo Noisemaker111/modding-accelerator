@@ -116,7 +116,8 @@
    "target": {"value": 0, "by": "2027-01-15", "step": "17"},
    "points": [
     {"date": "2026-10-25", "value": 69, "note": "hub router across nine hops", "source": "coverage/ledger.json"},
-    {"date": "2026-10-25", "value": 50, "note": "plus 38 rules learned from Stonecutter mods", "source": "coverage/ledger.json"}
+    {"date": "2026-10-25", "value": 50, "note": "plus 38 rules learned from Stonecutter mods", "source": "coverage/ledger.json"},
+    {"date": "2026-11-14", "value": 0, "note": "nothing by hand: a rename map from the game itself, 13 new rules, tests on junit-fml; behaviour checked in the 26.3 client", "source": "coverage/ledger.json"}
    ]
   },
   {

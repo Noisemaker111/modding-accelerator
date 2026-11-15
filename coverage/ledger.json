@@ -266,6 +266,15 @@
       "detail": "Fresh copy of upstream 1bb67d4 ported by modaccel port --fix with nothing written by hand (30s; the game's NeoForm setup came from Notes' port, 0 steps run): the last 9 errors, all on update 1.21.4 -> 1.21.5, became rules and port features: SavedData.Factory to a SavedDataType whose codec wraps the mod's own NBT load and save, isInWaterOrBubble to isInWater, a helper that puts the saddle in its equipment slot with its equip sound, a helper for the owner's UUID from getOwnerReference, and an accessor mixin for the horse owner field that only setOwner(LivingEntity) sets. ZAA has no mixins, so the port adds zombieapocalypseaddon.modaccel.mixins.json and its [[mixins]] entry (undo removes both); Mixin applied the accessor against 1.21.6 (1 of 1) once its check reached NeoForge 21.6's renamed unit-test launch target. Behaviour asserted on 2026-11-08 by tools/tests/ZombieAiCheck.java in the real 1.21.6 client (hidden on Xvfb): a summoned zombie got the mod's goals (ZombieEatFoodGoal, ZombieMountZombieHorseGoal, ZombieHuntGoal) and scaling tag and targeted a pig; with EventHandler's goal injection removed on purpose the same check failed.",
       "date": "2026-11-08",
       "test": "tools/tests/ZombieAiCheck.java"
+    },
+    {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "26.3",
+      "status": "behaviour",
+      "detail": "Upstream 1bb67d4 ported by modaccel port --fix with nothing written by hand (243 s warm; the game's 26.3 NeoForm setup was cold on the first run, 20.7 min). The route 1.21.1 -> 26.3 crosses 15 updates; its rename map is generated from the game itself by tools/GameDiff.java (Mojang's client jars and mappings for every release, linked release to release by their own bytecode, the game's data-fixer id renames for GameRules, NeoForge's own published classes), with no intermediary. 45 errors left on the first run of 2026-11-14 became 13 new rules and 4 corrected ones (26.1 world clocks for day time, SavedDataType keyed by Identifier with NeoForge's level factories, EntityType.is through its registry holder, entityTags, FancyModLoader 12 config types, EntityReference.of, Entity.getServer through its level, startRiding's third argument, needsSync; entity-snapto limited to reported lines, create/convertTo widened to 26.2's EntityTypes, convertTo given an empty after-conversion hook instead of null). Two port features: Mixin's check runs on FancyModLoader 12's new startup, and the mod's JUnit tests run on junit-fml (26.x's Commands needs the game bootstrapped): all 128 pass. Behaviour asserted on 2026-11-14 by tools/tests/ZombieAiCheck.java in the real 26.3 client (hidden, muted): a summoned zombie got ZombieEatFoodGoal, ZombieMountZombieHorseGoal and ZombieHuntGoal and the scaling tag, and targeted the pig; with EventHandler's goal injection removed on purpose the same check failed.",
+      "date": "2026-11-14"
     }
   ],
   "loader_pairs": [

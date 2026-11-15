@@ -231,10 +231,29 @@ final class Port {
         // names and each removal keeps the update that removed it. Only releases before 26.1 share
         // intermediary ids; the rest of a route into 26.x is left to the compiler and the rules. Yarn has no
         // names past 1.21.11, so a yarn source bound for 26.x keeps the identity map (a name bridge is step 14).
-        List<String> chain = route == null ? List.of() : route.mappedChain();
+        // A Mojang-named source gets a map derived from the game itself (tools/GameDiff.java): Mojang's client jars and
+        // mappings for every release on the route, 26.x included, linked release to release from their own bytecode, plus
+        // NeoForge's own published classes; no intermediary. A yarn source's names are Fabric's, keyed by intermediary,
+        // so it keeps the intermediary map; so does --intermediary.
+        Set<String> sourceLoaders = new TreeSet<>();
+        for (Object p : Json.array(model.get("projects"))) sourceLoaders.addAll(Support.loaders(Json.object(p)));
+        boolean own = names.equals("mojmap") && route != null && !options.has("intermediary");
+        List<String> chain = route == null ? List.of() : own ? route.versions : route.mappedChain();
         boolean routed =
             chain.size() >= 2 && !(names.equals("yarn") && Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0);
-        if (routed) map = build.project.state().resolve("maps/route-" + names + "-" + from + "-" + to + ".json");
+        // A generated map is named after the tools that made it, so a changed generator makes a new one.
+        String generator = own ? tools.classes.getFileName().toString() : "";
+        if (routed) map = build.project.state().resolve(
+            "maps/" +
+            (own ? "game-" + generator.substring(0, Math.min(12, generator.length())) + "-" : "route-") +
+            names +
+            "-" +
+            from +
+            "-" +
+            to +
+            ".json"
+        );
+        String loaderDiff = own && sourceLoaders.contains("neoforge") ? "neoforge" : "";
         // 26.1 and newer ship with the game's own names and publish no intermediary, so there is nothing to
         // generate: a source already in that namespace compiles, and every difference left is an API change
         // the compiler names. The identity map keeps the repair rounds working on such a target.
@@ -243,15 +262,21 @@ final class Port {
             boolean current = false;
             if (Files.isRegularFile(map)) {
                 var cached = Json.read(map);
-                current = chain.equals(ProjectModel.strings(cached.get("chain"))) && names.equals(cached.get("names"));
+                String cachedLoader = cached.get("loader") instanceof Map<?, ?> loader
+                    ? String.valueOf(loader.get("name"))
+                    : "";
+                current =
+                    chain.equals(ProjectModel.strings(cached.get("chain"))) &&
+                    names.equals(cached.get("names")) &&
+                    own == "game-bytecode".equals(cached.get("linked")) &&
+                    (!own || loaderDiff.equals(cachedLoader));
             }
             if (!current) {
                 Files.createDirectories(map.getParent());
-                var mapped = tools.run(
-                    "VersionMap",
-                    List.of("--chain", String.join(",", chain), "--names", names, "--out", map.toString()),
-                    "mapping-route"
-                );
+                List<String> arguments = new ArrayList<>(List.of("--chain", String.join(",", chain), "--out", map.toString()));
+                if (own && !loaderDiff.isEmpty()) arguments.addAll(List.of("--loader", loaderDiff));
+                if (!own) arguments.addAll(List.of("--names", names));
+                var mapped = tools.run(own ? "GameDiff" : "VersionMap", arguments, "mapping-route");
                 if (mapped.exit() != 0) throw new IOException(
                     "No verified mapping along the route " + String.join(" -> ", chain) + ". " + Run.tail(mapped.log())
                 );
@@ -296,7 +321,12 @@ final class Port {
         Map<String, Object> routeRecord = route == null ? null : route.record();
         if (routeRecord != null) routeRecord.put(
             "mapping",
-            routed
+            routed && own
+                ? "one map joined across " +
+                String.join(" -> ", chain) +
+                " from the game itself: Mojang's jars and mappings linked release to release by their own bytecode" +
+                (loaderDiff.isEmpty() ? "" : ", with " + loaderDiff + "'s own published classes")
+                : routed
                 ? "one map joined across " +
                 String.join(" -> ", chain) +
                 " by Fabric intermediary ids" +
@@ -453,7 +483,8 @@ final class Port {
                 if (!seen.add(state)) break;
                 roundsTried = round + 1;
                 applyRules(log);
-                if (!corpusLoaded) {
+                // Rules are not learned from other people's mods unless asked: the map comes from the game itself.
+                if (!corpusLoaded && options.has("learn-from-mods")) {
                     learned = Corpus.rules(build, model, tools, map, from, to, names);
                     corpusLoaded = true;
                 }
@@ -548,6 +579,25 @@ final class Port {
                         : Run.tail(log)
             );
             if (!unchecked.isEmpty()) result.put("uncheckedDependencies", unchecked);
+            // A port is done when the mod works in the real game: --check runs the mod's own game check on the result.
+            boolean checkFailed = false;
+            if (passed && options.values.containsKey("check")) {
+                Map<String, Object> check = gameCheck(options.get("check", ""));
+                boolean works = Boolean.TRUE.equals(check.get("ok"));
+                checkFailed = !works;
+                result.put("gameCheck", check);
+                result.put("gameVerified", works);
+                result.put("behaviorVerified", works);
+                result.put("ok", works);
+                if (works) result.put("tier", "behaviour");
+                else result.put("reason", "The port built, but the game check failed; see gameCheck.");
+                result.put(
+                    "details",
+                    works
+                        ? "Built, " + mixinSummary(mixins) + ", and the game check passed: " + check.get("command")
+                        : "Built and " + mixinSummary(mixins) + ", but the game check failed: " + check.get("tail")
+                );
+            }
             if (audit != null) result.put(
                 "mixinHint",
                 Json.map(
@@ -638,6 +688,7 @@ final class Port {
                 );
             }
             if (route != null) result.put("rulesApplied", rulesApplied);
+            result.put("rulesByProvenance", provenance(rulesApplied.keySet()));
             return result;
         } catch (Exception failure) {
             throw new IOException(
@@ -1157,6 +1208,49 @@ final class Port {
             if (pins.containsKey("yarn_mappings") || pins.containsKey("yarn_version")) return "yarn";
         }
         return "mojmap";
+    }
+
+    /**
+     * The mod's own game check, run on the ported project: a command (a modaccel eval/ui-check script, or a test program)
+     * started in the project with MODACCEL_PORTED_ROOT set to it. Its exit code is the verdict.
+     */
+    Map<String, Object> gameCheck(String command) throws Exception {
+        long start = System.nanoTime();
+        List<String> shell = Runtimes.WINDOWS ? List.of("cmd.exe", "/d", "/s", "/c", command) : List.of("sh", "-c", command);
+        Run.Result run = Run.command(
+            shell,
+            build.project.root,
+            Map.of("MODACCEL_PORTED_ROOT", build.project.root.toString()),
+            build.report.log("port-game-check"),
+            3600
+        );
+        build.report.stage("port-game-check", run, Map.of());
+        return Json.map(
+            "ok",
+            run.exit() == 0,
+            "command",
+            command,
+            "exit",
+            run.exit(),
+            "seconds",
+            (System.nanoTime() - start) / 1e9,
+            "log",
+            run.log().toString(),
+            "tail",
+            Run.tail(run.log())
+        );
+    }
+
+    /** How many of the rules a port applied came from each source (knowledge/fixes.json "provenance"). */
+    Map<String, Object> provenance(Set<String> ids) throws IOException {
+        Map<String, Object> counts = new TreeMap<>();
+        if (ids.isEmpty()) return counts;
+        for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
+            var rule = Json.object(item);
+            if (!ids.contains(Json.text(rule, "id", ""))) continue;
+            counts.merge(Json.text(rule, "provenance", "unrecorded"), 1, (a, b) -> (Integer) a + (Integer) b);
+        }
+        return counts;
     }
 
     /**

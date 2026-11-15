@@ -34,6 +34,7 @@ final class Installation {
         "tools/packcheck/ProbeNames.java",
         "knowledge/pack-fixes.json",
         "tools/VersionMap.java",
+        "tools/GameDiff.java",
         "tools/MixinAudit.java",
         "tools/mixincheck/ModaccelMixinCheck.java",
         "tools/mixincheck/ModaccelMixinErrors.java",

@@ -678,6 +678,7 @@ public final class PortableTests {
             "a build without Parchment is left alone and nothing is looked up"
         );
         neoGradleChecks(home, scratch);
+        unitTestsInFmlChecks(home, scratch);
     }
 
     /** NeoGradle follows a forward port (Notes 1.21 -> 1.21.6 stopped at launch on NeoGradle 7.0.145's ASM 9.5) to one version for every mod, and Gradle follows NeoGradle. */
@@ -691,9 +692,14 @@ public final class PortableTests {
             );
             Files.writeString(
                 root.resolve("build.gradle"),
-                "plugins {\n    id 'net.neoforged.gradle.userdev' version '7.0.145'\n}\n"
+                "plugins {\n    id 'net.neoforged.gradle.userdev' version '7.0.145'\n    id 'net.neoforged.gradle.mixin' version '7.0.145'\n}\n\nmixin {\n    config \"${mod_id}.mixins.json\"\n}\n"
             );
-            Files.writeString(root.resolve("gradle.properties"), "minecraft_version=1.21\n");
+            Files.writeString(root.resolve("gradle.properties"), "minecraft_version=1.21\nmod_id=demo\n");
+            Files.createDirectories(root.resolve("src/main/resources/META-INF"));
+            Files.writeString(
+                root.resolve("src/main/resources/META-INF/neoforge.mods.toml"),
+                "[[mods]]\nmodId=\"${mod_id}\"\n"
+            );
             Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
             // The two lookups NeoGradle's planning makes, answered from the metadata cache Target.fetch reads first.
             Map<String, String> answers = Map.of(
@@ -720,13 +726,66 @@ public final class PortableTests {
                 root.resolve("gradle/wrapper/gradle-wrapper.properties")
             );
             if (to.equals("1.21.6")) check(
-                plugin.contains("version '7.1.38'") && wrapper.contains("gradle-8.14-bin.zip"),
-                "a forward port moves NeoGradle to the newest 7.x, the same for every mod so they share one game setup (7.0.145 -> 7.1.38), and Gradle to what it requires (8.9 -> 8.14): " +
+                plugin.contains("userdev' version '7.1.38'") &&
+                !plugin.contains("gradle.mixin") &&
+                !plugin.contains("mixin {") &&
+                setup
+                    .text(root.resolve("src/main/resources/META-INF/neoforge.mods.toml"))
+                    .contains("[[mixins]]\nconfig = \"${mod_id}.mixins.json\"") &&
+                wrapper.contains("gradle-8.14-bin.zip"),
+                "a forward port moves NeoGradle to the newest 7.x, the same for every mod so they share one game setup (7.0.145 -> 7.1.38), drops the mixin plugin 7.1 no longer has (Jade's failed to apply) with its config declared in the mods.toml instead, and moves Gradle to what it requires (8.9 -> 8.14): " +
                 plugin.strip() +
                 " / " +
                 wrapper.strip()
             );
             else check(setup.edits().isEmpty(), "a backport keeps its NeoGradle and Gradle");
+        }
+    }
+
+    /**
+     * A NeoGradle mod's JUnit tests move onto junit-fml on a port into 26.x (its Commands class needs the game
+     * bootstrapped, which only FancyModLoader can do there), with FML's version read from NeoForge's published pom.
+     */
+    static void unitTestsInFmlChecks(Path home, Path scratch) throws Exception {
+        for (String to : List.of("26.3", "1.21.6")) {
+            Path root = scratch.resolve("junit-fml-" + to);
+            Files.createDirectories(root.resolve("gradle/wrapper"));
+            Files.writeString(
+                root.resolve("gradle/wrapper/gradle-wrapper.properties"),
+                "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.6.1-bin.zip\n"
+            );
+            Files.writeString(root.resolve("build.gradle"), "plugins {\n    id 'net.neoforged.gradle.userdev' version '7.1.39'\n}\n");
+            Files.writeString(root.resolve("gradle.properties"), "minecraft_version=1.21.1\nmod_id=demo\n");
+            Files.createDirectories(root.resolve("src/main/resources/META-INF"));
+            Files.writeString(root.resolve("src/main/resources/META-INF/neoforge.mods.toml"), "[[mods]]\nmodId=\"${mod_id}\"\n");
+            Files.createDirectories(root.resolve("src/test/java/demo"));
+            Files.writeString(
+                root.resolve("src/test/java/demo/CommandsTest.java"),
+                "package demo;\n\nimport org.junit.jupiter.api.Test;\n\nclass CommandsTest {\n    @Test\n    void tree() {}\n}\n"
+            );
+            Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
+            String pom = "https://maven.neoforged.net/releases/net/neoforged/neoforge/26.3.0.103/neoforge-26.3.0.103.pom";
+            Path cached = build.project
+                .state()
+                .resolve("metadata/" + Fingerprints.bytes(pom.getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+            Files.createDirectories(cached.getParent());
+            Files.writeString(
+                cached,
+                "<project><dependencies><dependency><groupId>net.neoforged.fancymodloader</groupId><artifactId>loader</artifactId><version>12.0.12</version></dependency></dependencies></project>"
+            );
+            Target.Setup setup = new Target.Setup(build, Json.map(), to, List.of());
+            setup.pins.put("minecraft_version", "1.21.1");
+            Target.unitTestsInFml(setup, build, to, "26.3.0.103");
+            String script = setup.text(root.resolve("build.gradle"));
+            if (to.equals("26.3")) check(
+                script.contains("testRuntimeOnly 'net.neoforged.fancymodloader:junit-fml:12.0.12'") &&
+                script.contains("unitTestSource sourceSets.test") &&
+                script.contains("demo%%${it}") &&
+                script.contains("java.base/java.lang.invoke=ALL-UNNAMED"),
+                "a port into 26.x runs a NeoGradle mod's JUnit tests on junit-fml (FML 12.0.12 from NeoForge's pom), the mod and its tests in FML's class loader: " +
+                script
+            );
+            else check(setup.edits().isEmpty(), "a port that stays before 26.1 leaves the tests where they run");
         }
     }
 
