@@ -40,6 +40,7 @@ final class JdkDownloads {
             Path archive = Files.createTempFile(cache, "jdk-", asset.zip ? ".zip" : ".tar.gz");
             Path staging = Files.createTempDirectory(cache, "jdk-extract-");
             try {
+                Run.progress("download Java " + feature, null);
                 download(asset.url, archive);
                 verifyHash(archive, asset.sha256);
                 extract(archive, staging, asset.zip);
@@ -69,7 +70,85 @@ final class JdkDownloads {
         }
     }
 
-    private record Asset(URI url, String sha256, boolean zip) {}
+    /**
+     * One exact Temurin release (such as jdk8u312-b07), for a program a later build of the same Java breaks. Kept apart
+     * from the per-feature JDKs (in releases/), so nothing that asks for "Java 8" picks it by its version. The archive
+     * must match both the SHA-256 the vendor's API gives and the checksum file the vendor publishes beside the download.
+     */
+    static Path installRelease(int feature, String release) throws IOException {
+        if (!release.matches("jdk[0-9][0-9A-Za-z.+_\\-]*")) throw new IllegalArgumentException("Bad Temurin release " + release);
+        Path releases = cache().resolve("releases");
+        Files.createDirectories(releases);
+        String platform = platform();
+        String name = "temurin-" + release + "-" + platform.replace('/', '-');
+        Path target = releases.resolve(name);
+        try (
+            FileChannel channel = FileChannel.open(releases.resolve(name + ".lock"), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            FileLock ignored = channel.lock()
+        ) {
+            if (valid(target, feature)) return target;
+            if (Files.exists(target)) throw new IOException("Invalid JDK cache at " + target + "; remove that directory and retry");
+            String[] parts = platform.split("/");
+            URI uri = URI.create(
+                "https://api.adoptium.net/v3/assets/release_name/eclipse/" + release +
+                "?architecture=" + parts[1] + "&heap_size=normal&image_type=jdk&jvm_impl=hotspot&os=" + parts[0] + "&project=jdk"
+            );
+            Asset asset = releaseAsset(new String(readUrl(uri, 4 * 1024 * 1024), java.nio.charset.StandardCharsets.UTF_8), release, platform);
+            String published = new String(readUrl(asset.checksumFile, 4096), java.nio.charset.StandardCharsets.US_ASCII).strip().split("\\s+")[0];
+            if (!published.equalsIgnoreCase(asset.sha256)) throw new IOException(
+                "Temurin " + release + ": the API's SHA-256 " + asset.sha256 + " differs from the published checksum file " + asset.checksumFile
+            );
+            Path archive = Files.createTempFile(releases, "jdk-", asset.zip ? ".zip" : ".tar.gz");
+            Path staging = Files.createTempDirectory(releases, "jdk-extract-");
+            try {
+                Run.progress("download Java " + release, null);
+                download(asset.url, archive);
+                verifyHash(archive, asset.sha256);
+                extract(archive, staging, asset.zip);
+                Path home = findHome(staging);
+                if (!valid(home, feature)) throw new IOException("Downloaded JDK failed java/javac validation");
+                Files.move(home, target, StandardCopyOption.ATOMIC_MOVE);
+                Json.save(
+                    releases.resolve(name + ".json"),
+                    Json.map("release", release, "platform", platform, "url", asset.url.toString(), "sha256", asset.sha256,
+                        "checksumFile", asset.checksumFile.toString(), "home", target.toString())
+                );
+                return target;
+            } finally {
+                Files.deleteIfExists(archive);
+                deleteTree(staging);
+            }
+        }
+    }
+
+    /** The JDK download in a release_name answer of Adoptium's API: an https link on Adoptium or GitHub, with its checksum file. */
+    static Asset releaseAsset(String json, String release, String platform) throws IOException {
+        try {
+            Map<String, Object> root = Json.object(Json.parse(json));
+            if (!release.equals(root.get("release_name"))) throw new IOException("Adoptium answered for " + root.get("release_name") + ", not " + release);
+            for (Object entry : Json.array(root.get("binaries"))) {
+                Map<String, Object> pkg = Json.object(Json.object(entry).get("package"));
+                String url = Json.text(pkg, "link", ""), hash = Json.text(pkg, "checksum", ""), sums = Json.text(pkg, "checksum_link", "");
+                if (!hash.matches("[0-9a-fA-F]{64}") || !trusted(url) || !trusted(sums)) continue;
+                if (!url.endsWith(".zip") && !url.endsWith(".tar.gz")) continue;
+                return new Asset(URI.create(url), hash, url.endsWith(".zip"), URI.create(sums));
+            }
+        } catch (RuntimeException malformed) {
+            throw new IOException("Invalid Adoptium release metadata", malformed);
+        }
+        throw new IOException("No published Temurin " + release + " for " + platform);
+    }
+
+    static boolean trusted(String url) {
+        URI uri = URI.create(url);
+        return "https".equals(uri.getScheme()) && uri.getHost() != null && (uri.getHost().endsWith("adoptium.net") || uri.getHost().equals("github.com"));
+    }
+
+    record Asset(URI url, String sha256, boolean zip, URI checksumFile) {
+        Asset(URI url, String sha256, boolean zip) {
+            this(url, sha256, zip, null);
+        }
+    }
 
     private static String platform() throws IOException {
         String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);

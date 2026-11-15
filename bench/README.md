@@ -9,6 +9,8 @@ Plans, dated status and findings belong in PRs/issues. Documentation describes c
 Recording, so no one edits those files by hand:
 
 - `python bench/record.py port RECEIPT --mod NAME [--status S --detail TEXT] [--measure ID]` turns a port run into a ledger row, read from the receipt `modaccel port` printed.
+- `python bench/record.py perf RECORD [RECORD ...]` keeps optimization-session runs (the record.json that `modaccel perf`, `perf-optimize` and comparison scripts write) in `coverage/perf-runs.json`, checked first. `knowledge/perf-patterns.json` cites accepted runs there as proof.
+- `python bench/perf_sessions.py [--session NAME] [--local] [PATH ...]` sums those runs: wall time per phase, accepted and rejected candidates with the reasons, and the slowest steps. `python bench/test_perf_sessions.py` checks it.
 - `python bench/measures.py add ID VALUE --source WHERE [--n N] [--note TEXT]` records a point.
 - `python bench/measures.py table [IDS] [--area AREA] [--step N]` prints the standard Markdown table for a PR body or report.
 - `python bench/measures.py check` validates the roadmap and the measures.

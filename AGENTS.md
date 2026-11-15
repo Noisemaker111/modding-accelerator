@@ -25,7 +25,11 @@ python3 bench/test_record.py &&
 python3 bench/test_ledger_rule.py &&
 python3 bench/test_java_lines.py &&
 python3 bench/test_loader_api.py &&
-python3 bench/test_session_cost.py
+python3 bench/test_sweeps.py &&
+python3 bench/test_session_cost.py &&
+python3 bench/test_perf_sessions.py &&
+python3 bench/test_utf8_output.py &&
+python3 bench/diorama/test_prepare_world.py
 ```
 
 Commit and push your branch. Use `.github/pull_request_template.md`; land on `main`:
@@ -41,7 +45,9 @@ gh pr merge --squash
 - Game probes: `tools/{agent,datacheck,mixincheck,packcheck,plugincheck,servercheck}/`.
 - Modpacks: `tools/cli/PackCheck.java` runs the registries `PackInputs` (pack shapes), `PackLoaders` with `knowledge/pack-loaders.json` (loader servers), `PackMods` (jar metadata), `PackChecks` and `PackRepairs` with `knowledge/pack-fixes.json`; the loader-neutral probe is `tools/packcheck/`. Extending them: `tools/packcheck/CONTRIBUTING.md`.
 - Porter/rules: `tools/cli/Port.java`, `knowledge/fixes.json`, `coverage/changes/`. Run `python3 bench/port_board.py` when changing them; each rule needs a `test {error,before,after}`. Writer: `python3 bench/rule_test.py --help`.
+- Optimizing a mod: `perf` then `perf-optimize` (PERFORMANCE.md); each run writes record.json. Keep runs with `python3 bench/record.py perf`, summarise with `python3 bench/perf_sessions.py`; accepted changes become `knowledge/perf-patterns.json` entries, each citing its kept run.
 - Port receipts and measures: `coverage/{ledger,measures}.json`; recording commands in `bench/README.md`. Plans, dated status and findings belong in PRs/issues, never docs or memory notes.
+- Desktop app: `app/` (Rust, Rune pinned in `app/Cargo.toml`) runs the CLI with `--json` and `MODACCEL_PROGRESS=1`; headless UI scripts are in `app/ui-tests/`.
 - Website: `bench/bench_page.py`, `bench/page_style.py`; map uses `bench/porting_map.py`. `docs/` is generated on main; change its generators. Keep docs about current use, not history or plans.
 
 ## Gotchas

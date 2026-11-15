@@ -1,0 +1,2 @@
+pauseOnLostFocus:false
+tutorialStep:none

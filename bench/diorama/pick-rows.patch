@@ -1,0 +1,164 @@
+diff --git a/src/main/java/dev/diorama/bake/MapPick.java b/src/main/java/dev/diorama/bake/MapPick.java
+index f3ad98f5..48f54e7e 100644
+--- a/src/main/java/dev/diorama/bake/MapPick.java
++++ b/src/main/java/dev/diorama/bake/MapPick.java
+@@ -118,9 +118,75 @@ public final class MapPick {
+ 	 */
+ 	public MapPick passWhereSaved(int @Nullable [] spots) {
+ 		this.savedSpots = this.cave || this.roofless || this.tile.lod() != 0 ? null : spots;
++		this.passed.clear();
+ 		return this;
+ 	}
+ 
++	/**
++	 * The cells a ray steps through, in order, and the stepping's state after the last of them. A
++	 * ray's steps depend only on its height to start from and its map v, never on its x, so with
++	 * one start height every ray of a pixel row steps through the same cells: they are worked out
++	 * once per row, with the same arithmetic as a lone ray's, and each ray reads them.
++	 */
++	private static final class Steps {
++		int[] y = new int[64];
++		int[] z = new int[64];
++		int length;
++		int by;
++		int bz;
++		double tMaxY;
++		double tMaxZ;
++
++		Steps(int top, double v, double sin, double cos) {
++			double z0 = (v + top * cos) / sin;
++			this.by = top - 1;
++			this.bz = (int) Math.floor(z0);
++			this.tMaxY = 1 / sin;
++			this.tMaxZ = (z0 - this.bz) / cos;
++			this.y[0] = this.by;
++			this.z[0] = this.bz;
++			this.length = 1;
++		}
++
++		/** Works out the next 64 cells. */
++		void extend(double sin, double cos) {
++			int need = this.length + 64;
++			if (need > this.y.length) {
++				this.y = java.util.Arrays.copyOf(this.y, Math.max(need, this.y.length * 2));
++				this.z = java.util.Arrays.copyOf(this.z, this.y.length);
++			}
++			while (this.length < need) {
++				if (this.tMaxY < this.tMaxZ) {
++					this.by--;
++					this.tMaxY += 1 / sin;
++				} else {
++					this.bz--;
++					this.tMaxZ += 1 / cos;
++				}
++				this.y[this.length] = this.by;
++				this.z[this.length] = this.bz;
++				this.length++;
++			}
++		}
++	}
++
++	/** Each row's {@link Steps}, by its v's bits, for rays from {@link #startY} under {@link #stepsSin} and {@link #stepsCos}. */
++	private final java.util.HashMap<Long, Steps> steps = new java.util.HashMap<>();
++	private double stepsSin = Double.NaN;
++	private double stepsCos = Double.NaN;
++
++	/**
++	 * What {@link TileSpots#passedWhenSaved} said of cells this pick's rays met in chunks the map has
++	 * no data for, under the saved spots and projection it asked with: rays of neighbouring rows
++	 * cross the same cells. Keys pack the x within the tile, y and z ({@link #cell}); 1 for passed,
++	 * 2 for not.
++	 */
++	private final java.util.HashMap<Long, Byte> passed = new java.util.HashMap<>();
++
++	private static long cell(int x, int y, int z) {
++		return (long) (x & 0xFFFF) << 48 | (long) (y & 0xFFFF) << 32 | (z & 0xFFFFFFFFL);
++	}
++
+ 	/**
+ 	 * The position just above the first solid block or water surface the ray through map point
+ 	 * {@code (u, v)} reaches, or null where the map has no data.
+@@ -136,6 +202,21 @@ public final class MapPick {
+ 	 * the first solid block or water surface. Returns {@link #FOUND}, {@link #NOTHING} or
+ 	 * {@link #UNKNOWN}.
+ 	 */
++	/** {@link TileSpots#passedWhenSaved} for a cell, remembered while {@code remember} (see {@link #passed}). */
++	private boolean passedWhenSaved(int x, int y, int z, boolean remember) {
++		if (!remember || this.savedSpots == null) {
++			return TileSpots.passedWhenSaved(this.tile, this.savedSpots, x, y, z);
++		}
++		long key = cell(x - (int) Math.floor(this.tile.minU()), y, z);
++		Byte known = this.passed.get(key);
++		if (known != null) {
++			return known == 1;
++		}
++		boolean passed = TileSpots.passedWhenSaved(this.tile, this.savedSpots, x, y, z);
++		this.passed.put(key, passed ? (byte) 1 : (byte) 2);
++		return passed;
++	}
++
+ 	public int pick(double u, double v) {
+ 		double sin = Projection.sin();
+ 		double cos = Projection.cos();
+@@ -146,6 +227,22 @@ public final class MapPick {
+ 		int bz = (int) Math.floor(z0);
+ 		double tMaxY = 1 / sin;
+ 		double tMaxZ = (z0 - bz) / cos;
++		// Every ray from the same height steps through its row's cells: read them, not work them out.
++		Steps row = null;
++		int step = 0;
++		if (GpuMesher.REUSE && this.tall == null) {
++			if (sin != this.stepsSin || cos != this.stepsCos) {
++				this.steps.clear();
++				this.passed.clear();
++				this.stepsSin = sin;
++				this.stepsCos = cos;
++			}
++			row = this.steps.get(Double.doubleToRawLongBits(v));
++			if (row == null) {
++				row = new Steps(top, v, sin, cos);
++				this.steps.put(Double.doubleToRawLongBits(v), row);
++			}
++		}
+ 		this.firstZ = bz;
+ 		this.lastZ = bz;
+ 		this.readUnknown = false;
+@@ -155,7 +252,13 @@ public final class MapPick {
+ 			if (cut != null && by >= cut.at(x, bz)) {
+ 				// Cut away: rock, as the baker has it.
+ 				skippingRock = true;
+-				if (tMaxY < tMaxZ) {
++				if (row != null) {
++					if (++step == row.length) {
++						row.extend(sin, cos);
++					}
++					by = row.y[step];
++					bz = row.z[step];
++				} else if (tMaxY < tMaxZ) {
+ 					by--;
+ 					tMaxY += 1 / sin;
+ 				} else {
+@@ -168,7 +271,7 @@ public final class MapPick {
+ 			this.lastZ = bz;
+ 			if (id == VoxelReader.UNKNOWN) {
+ 				this.readUnknown = true;
+-				if ((this.tall == null || by < this.tall.missingTop) && !TileSpots.passedWhenSaved(this.tile, this.savedSpots, x, by, bz)) {
++				if ((this.tall == null || by < this.tall.missingTop) && !this.passedWhenSaved(x, by, bz, row != null)) {
+ 					return UNKNOWN;
+ 				}
+ 				id = VoxelReader.AIR_ID;
+@@ -189,7 +292,13 @@ public final class MapPick {
+ 				this.z = bz;
+ 				return FOUND;
+ 			}
+-			if (tMaxY < tMaxZ) {
++			if (row != null) {
++				if (++step == row.length) {
++					row.extend(sin, cos);
++				}
++				by = row.y[step];
++				bz = row.z[step];
++			} else if (tMaxY < tMaxZ) {
+ 				by--;
+ 				tMaxY += 1 / sin;
+ 			} else {

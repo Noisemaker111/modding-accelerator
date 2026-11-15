@@ -33,8 +33,8 @@ final class PerfAttribution {
     final Map<String, Unit> units = new TreeMap<>();
     final Map<String, Long> threadSamples = new HashMap<>();
     final Map<String, double[]> threadCpu = new TreeMap<>();
-    long samples, attributedSamples;
-    double allocationTotal, blockedTotal;
+    long samples, attributedSamples, profilerSamples;
+    double allocationTotal, blockedTotal, profilerAllocation;
 
     record Origin(String key, String name, boolean mod, String location) { }
 
@@ -50,6 +50,8 @@ final class PerfAttribution {
         final Map<String, Tally> features = new HashMap<>();
         final Map<String, String> featureKinds = new HashMap<>();
         final Map<String, Long> heapBytes = new HashMap<>(), heapInstances = new HashMap<>();
+        /** Samples with each of this mod's methods anywhere on the stack: CPU spent in it and what it called. */
+        final Map<String, Long> inclusiveMethods = new HashMap<>();
         long inclusive;
         Unit(Origin origin) { this.origin = origin; }
     }
@@ -96,12 +98,22 @@ final class PerfAttribution {
         return resolved;
     }
 
+    /**
+     * Whether a class location is the mod's own build output. Gradle's caches inside the checkout are
+     * not: Loom keeps the dependencies it remaps (Fabric API and every other mod) under .gradle.
+     */
+    static boolean underRoot(Path path, Path root) {
+        if (path == null || root == null) return false;
+        Path normalized = path.toAbsolutePath().normalize();
+        return normalized.startsWith(root) && !normalized.startsWith(root.resolve(".gradle"));
+    }
+
     Origin resolve(String location, boolean own) {
         // Mod Accel's own control and profiling agents are never the mod being measured.
         if (location.contains("/.modaccel/") || location.contains("modaccel-agent") || location.contains("modaccel-perf-agent")) return null;
         Path path = path(location);
         String[] metadata = path == null ? null : metadata(path);
-        boolean underRoot = path != null && root != null && path.toAbsolutePath().normalize().startsWith(root);
+        boolean underRoot = underRoot(path, root);
         if (metadata != null && PLATFORM.contains(metadata[0])) return null;
         if (metadata != null) return new Origin(metadata[0], metadata[1] + " (" + metadata[0] + ")" + (underRoot ? " · your mod" : ""), true, location);
         if (own || underRoot) return new Origin("[your mod]", "Your mod (" + (root == null ? location : root.getFileName()) + ")", true, location);
@@ -213,14 +225,12 @@ final class PerfAttribution {
             kind = "event handler";
             label = handler(frames, entry, top);
         } else {
-            for (int i = entry; i >= top && kind == null; i--) {
-                String type = typeName(frames.get(i));
-                String outer = type.contains("$") ? type.substring(0, type.indexOf('$')) : type;
-                String found = features.getProperty(type, features.getProperty(outer));
-                if (found != null) {
-                    kind = found;
-                    label = simple(type);
-                }
+            List<String> types = new ArrayList<>();
+            for (RecordedFrame frame : frames) types.add(typeName(frame));
+            String[] found = typed(types, entry, top, features);
+            if (found != null) {
+                kind = found[0];
+                label = found[1];
             }
         }
         if (kind == null) {
@@ -228,6 +238,22 @@ final class PerfAttribution {
             label = simple(entered.getType().getName()) + "." + entered.getName();
         }
         return new Hit(unit, kind + " · " + label, kind, methodName(frames.get(top)));
+    }
+
+    /**
+     * The kind and name of the outermost frame, from entry in to top, whose class (or its outer class) has a known
+     * feature kind. Lambdas and method handles are skipped: a block's ticker lambda (BlockMain$$Lambda.0x1a8a9314fd0)
+     * would otherwise name the feature by its hidden class's address, where the block entity method it calls names it.
+     */
+    static String[] typed(List<String> types, int entry, int top, Properties features) {
+        for (int i = entry; i >= top; i--) {
+            String type = types.get(i);
+            if (plumbing(type)) continue;
+            String outer = type.contains("$") ? type.substring(0, type.indexOf('$')) : type;
+            String found = features.getProperty(type, features.getProperty(outer));
+            if (found != null) return new String[] {found, simple(type)};
+        }
+        return null;
     }
 
     static boolean plumbing(String type) {
@@ -250,14 +276,31 @@ final class PerfAttribution {
         return type.substring(type.lastIndexOf('.') + 1).replace('$', '.');
     }
 
+    /** Work the profiler's own hooks and timing probes did, often inside a mod's method: never the mod's cost. */
+    static boolean profiler(List<RecordedFrame> frames) {
+        for (RecordedFrame frame : frames) if (typeName(frame).startsWith("dev.modaccel.")) return true;
+        return false;
+    }
+
     void sample(List<RecordedFrame> frames, String thread) {
         samples++;
         threadSamples.merge(thread, 1L, Long::sum);
+        if (profiler(frames)) {
+            profilerSamples++;
+            return;
+        }
         Hit hit = hit(frames);
         Set<String> present = new HashSet<>();
+        Map<String, Set<String>> methodsPresent = new HashMap<>();
         for (RecordedFrame frame : frames) {
             Origin origin = owner(frame.getMethod().getType().getName(), frame.getMethod().getName());
-            if (origin != null) present.add(origin.key);
+            if (origin == null) continue;
+            present.add(origin.key);
+            methodsPresent.computeIfAbsent(origin.key, k -> new HashSet<>()).add(methodName(frame));
+        }
+        for (var entry : methodsPresent.entrySet()) {
+            Unit unit = units.get(entry.getKey());
+            if (unit != null) for (String method : entry.getValue()) unit.inclusiveMethods.merge(method, 1L, Long::sum);
         }
         for (String key : present) {
             Unit unit = units.get(key);
@@ -281,6 +324,10 @@ final class PerfAttribution {
 
     void allocation(RecordedEvent event, long weight) {
         allocationTotal += weight;
+        if (profiler(PerfReport.frames(event.getStackTrace()))) {
+            profilerAllocation += weight;
+            return;
+        }
         Hit hit = stack(event);
         if (hit == null) return;
         hit.unit.total.allocation += weight;
@@ -362,6 +409,14 @@ final class PerfAttribution {
             sum[2] += ((Number) call.get("selfMs")).doubleValue();
         }
         long tickCount = ticks == null ? 0 : ((Number) ticks.get("n")).longValue();
+        // Per-thread totals arrive as label@server, label@render and label@other (labels never contain @).
+        Map<String, Map<String, double[]>> byThread = new HashMap<>();
+        for (var entry : List.copyOf(exactTotals.entrySet())) {
+            int at = entry.getKey().indexOf('@');
+            if (at <= 0) continue;
+            byThread.computeIfAbsent(entry.getKey().substring(0, at), k -> new TreeMap<>()).put(entry.getKey().substring(at + 1), entry.getValue());
+            exactTotals.remove(entry.getKey());
+        }
         for (var entry : exactTotals.entrySet()) {
             String type = selectorClass.get(entry.getKey());
             Origin origin = type == null ? null : owner(type, "");
@@ -376,6 +431,17 @@ final class PerfAttribution {
                 row.put("inclusiveMsPerTick", v[1] / tickCount);
             }
             row.put("inclusiveMsPerSecond", v[1] / seconds);
+            // A block entity can tick on the server and on the client: a metric names the thread it means.
+            for (var thread : byThread.getOrDefault(entry.getKey(), Map.of()).entrySet()) {
+                double[] t = thread.getValue();
+                row.put(thread.getKey() + "Calls", (long) t[0]);
+                row.put(thread.getKey() + "InclusiveTotalMs", t[1]);
+                if (tickCount > 0) {
+                    row.put(thread.getKey() + "CallsPerTick", t[0] / tickCount);
+                    row.put(thread.getKey() + "InclusiveMsPerTick", t[1] / tickCount);
+                }
+            }
+            if (!byThread.isEmpty()) row.put("threads", List.copyOf(byThread.getOrDefault(entry.getKey(), Map.of()).keySet()));
             exact.computeIfAbsent(key, k -> new ArrayList<>()).add(row);
         }
         long serverSamples = threadSamples.getOrDefault("Server thread", 0L);
@@ -402,6 +468,15 @@ final class PerfAttribution {
             }
             row.put("threads", top(unit.total.threads, 20, "samples"));
             row.put("methods", top(unit.total.methods, 30, "samples"));
+            // Inclusive CPU per method, for timing a scope by samples rather than wall time, which
+            // load on the machine stretches (perf-optimize scopes with "method").
+            List<Object> inclusiveMethods = new ArrayList<>();
+            for (Object item : top(unit.inclusiveMethods, 60, "samples")) {
+                Map<String, Object> method = Json.object(item);
+                if (period > 0) method.put("cpuMsPerSecond", ((Number) method.get("samples")).doubleValue() * period / seconds);
+                inclusiveMethods.add(method);
+            }
+            row.put("inclusiveMethods", inclusiveMethods);
             List<Object> features = new ArrayList<>();
             unit.features.entrySet().stream()
                 .sorted(Comparator.comparingDouble((Map.Entry<String, Tally> e) -> -(e.getValue().samples + e.getValue().allocation / 1e9)))
@@ -428,6 +503,8 @@ final class PerfAttribution {
         threads.sort(Comparator.comparingDouble((Object r) -> -((Number) Json.object(r).get("meanCpuPercentOfMachine")).doubleValue()));
         return Json.map("mods", rows, "threads", threads.stream().limit(40).toList(),
             "executionSamples", samples, "attributedSamples", attributedSamples, "samplePeriodMs", period,
+            "profilerOverhead", Json.map("samples", profilerSamples, "allocationBytesPerSecond", profilerAllocation / seconds,
+                "meaning", "Samples and allocation inside modaccel's own frame/tick hooks and timing probes; charged to no mod."),
             "unattributed", exact.getOrDefault("[unattributed]", List.of()),
             "basis", Json.map(
                 "sampled", "Execution samples, allocation samples, lock and I/O events are charged to the innermost mod frame on their stack; "
@@ -468,13 +545,16 @@ final class PerfAttribution {
             Map<String, Object> mod = Json.object(item);
             if (selectors.size() >= 16) break;
             if (((Number) mod.get("samples")).longValue() == 0) continue;
-            for (Object m : Json.array(mod.get("methods"))) {
+            // Coarse methods first (most samples with them anywhere on the stack): timing a caller costs
+            // a few calls, timing a per-block leaf costs millions and distorts the capture.
+            List<Object> ranked = Json.array(mod.getOrDefault("inclusiveMethods", List.of()));
+            for (Object m : ranked.isEmpty() ? Json.array(mod.get("methods")) : ranked) {
                 if (selectors.size() >= 16) break;
                 String name = Json.object(m).get("name").toString();
                 int paren = name.indexOf('(');
                 int dot = name.lastIndexOf('.', paren);
                 String type = name.substring(0, dot), method = name.substring(dot + 1, paren), descriptor = name.substring(paren);
-                if (method.startsWith("<") || type.startsWith("net.minecraft.") || type.contains("$$")) continue;
+                if (method.startsWith("<") || method.startsWith("lambda$") || type.startsWith("net.minecraft.") || type.contains("$$")) continue;
                 String label = (simple(type) + "." + method).replaceAll("[^A-Za-z0-9_.-]", "_");
                 if (!labels.add(label)) continue;
                 selectors.add(Json.map("class", type, "method", method, "descriptor", descriptor, "label", label, "mode", "timing",
@@ -482,7 +562,7 @@ final class PerfAttribution {
             }
         }
         return Json.map("probes", selectors,
-            "meaning", "Timing selectors for the most-sampled methods of each mod. Run perf again with --probes this file for exact call counts and wall time; "
+            "meaning", "Timing selectors for each mod's methods with the most samples on the stack, coarse callers first. Run perf again with --probes this file for exact call counts and wall time; "
                 + "remove selectors for very hot tiny methods if overhead distorts the capture.");
     }
 }

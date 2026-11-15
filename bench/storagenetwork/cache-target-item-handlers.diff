@@ -1,0 +1,261 @@
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java
+index 42a8060a..6d958bf9 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java
+@@ -33,6 +33,8 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+   private EnumStorageDirection filterDirection = EnumStorageDirection.BOTH;
+   private Direction inventoryFace;
+   private int priority;
++  // The target inventory's item handler, from a NeoForge capability cache while the target is loaded.
++  private final TargetItemHandler targetHandler = new TargetItemHandler();
+ 
+ //  CapabilityConnectableLink() {
+ //    connectable = new CapabilityConnectable();
+@@ -72,7 +74,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return Collections.emptyList();
+     }
+@@ -107,7 +109,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     try {
+       // Test whether the connected block has the IItemHandler capability
+-      IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++      IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+       if (itemHandler == null) {
+         return stack;
+       }
+@@ -139,7 +141,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return ItemStack.EMPTY;
+     }
+@@ -197,7 +199,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return 0;
+     }
+@@ -218,7 +220,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+       return 0;
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return 0;
+     }
+@@ -238,7 +240,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+       return 0;
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return 0;
+     }
+@@ -316,8 +318,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+   public ItemStack extractFromSlot(int slot, int amount, boolean simulate) {
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getCapability(Capabilities.ItemHandler.BLOCK,
+-        inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return ItemStack.EMPTY;
+     }
+@@ -340,8 +341,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+     }
+     DimPos inventoryPos = connectablePos.offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getCapability(Capabilities.ItemHandler.BLOCK,
+-        inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return;
+     }
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
+index 34722770..1ecd33d8 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
+@@ -47,6 +47,8 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+   private final FilterItemStackHandler filters = new FilterItemStackHandler();
+   private int priority = 0;
+   private Direction inventoryFace;
++  // The target inventory's item handler, from a NeoForge capability cache while the target is loaded.
++  private final TargetItemHandler targetHandler = new TargetItemHandler();
+   public ItemStack operationStack = ItemStack.EMPTY;
+   public int operationLimit = 0;
+   public int operationType = OpCompareType.LESS.ordinal();
+@@ -86,7 +88,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return Collections.emptyList();
+     }
+@@ -201,7 +203,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return stack;
+     }
+@@ -214,7 +216,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return Collections.emptyList();
+     }
+@@ -248,7 +250,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+       return null;
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+-    return inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    return targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+   }
+ 
+   @Override
+@@ -351,7 +353,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+         // STOCK upgrade means
+         try {
+           DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+-          IItemHandler targetInventory = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++          IItemHandler targetInventory = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+           // request with false to see how many even exist in there.
+           int stillNeeds = UtilInventory.containsAtLeastHowManyNeeded(targetInventory, matcher.getStack(),
+               matcher.getStack().getCount());
+@@ -394,7 +396,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+         if (this.isStockMode()) {
+           int filterSize = this.getFilters().getStackCount(stackCurrent);
+           DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+-          IItemHandler targetInventory = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++          IItemHandler targetInventory = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+           //request with false to see how many even exist in there.
+           int chestHowMany = UtilInventory.countHowMany(targetInventory, stackCurrent);
+           //so if chest=37 items of that kind
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
+new file mode 100644
+index 00000000..c7b5e4ab
+--- /dev/null
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
+@@ -0,0 +1,101 @@
++package com.lothrazar.storagenetwork.api.capabilities;
++
++import com.lothrazar.storagenetwork.api.DimPos;
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.Direction;
++import net.minecraft.core.SectionPos;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.CompoundContainer;
++import net.minecraft.world.Container;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.ChestBlock;
++import net.minecraft.world.level.block.entity.BarrelBlockEntity;
++import net.minecraft.world.level.block.entity.ChestBlockEntity;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.block.state.properties.ChestType;
++import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
++import net.neoforged.neoforge.capabilities.Capabilities;
++import net.neoforged.neoforge.items.IItemHandler;
++import net.neoforged.neoforge.items.wrapper.InvWrapper;
++
++/**
++ * The item handler a cable reads and writes, from a NeoForge capability cache of its target.
++ *
++ * get(inventoryPos, side) returns what inventoryPos.getItemHandler(side) returns, and makes the chunk accesses that
++ * lookup makes. NeoForge invalidates the cache when a block entity is placed or removed there, when its chunk loads or
++ * unloads, and whenever a provider's answer changes otherwise (its contract for providers; vanilla chests invalidate
++ * when they join or leave a double chest). A lookup also reads chunks through ServerChunkCache.getChunk(x, z, FULL,
++ * true), which renews a one-tick "unknown" ticket on each: the target's chunk, and for a double chest the chunk of its
++ * other half. Those tickets keep chunks loaded, so a cached answer makes the same calls. Only the answers of NeoForge's
++ * vanilla barrel and chest providers are cached, because their chunk accesses are known; any other target is looked up
++ * every time, as the unmodified mod does. The cache is used only while the target is loaded, as a fresh lookup would
++ * load the chunk.
++ */
++public final class TargetItemHandler {
++
++  private BlockCapabilityCache<IItemHandler, Direction> cache;
++  private ServerLevel level;
++  private BlockPos pos;
++  private Direction side;
++  // False after a lookup found a target whose chunk accesses are not known: then look up until it is a barrel or chest.
++  private boolean replayable = true;
++
++  public IItemHandler get(DimPos inventoryPos, Direction side) {
++    Level resolved = inventoryPos.resolveLevel();
++    BlockPos blockPos = inventoryPos.getBlockPos();
++    if (!(resolved instanceof ServerLevel serverLevel) || blockPos == null || !serverLevel.isLoaded(blockPos)) {
++      return inventoryPos.getItemHandler(side);
++    }
++    if (cache == null || level != serverLevel || this.side != side || !blockPos.equals(pos)) {
++      cache = BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, serverLevel, blockPos, side);
++      level = serverLevel;
++      pos = blockPos;
++      this.side = side;
++      replayable = true;
++    }
++    if (!replayable) {
++      IItemHandler fresh = inventoryPos.getItemHandler(side);
++      if (vanilla(fresh)) {
++        // Start from a new cache, so its first answer is a lookup made now.
++        cache = BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, serverLevel, blockPos, side);
++        replayable = true;
++      }
++      return fresh;
++    }
++    // A lookup reads the target's chunk first (Level.getBlockState).
++    touchChunk(serverLevel, blockPos);
++    // A valid cache answers what a lookup would; an invalidated one makes the lookup now.
++    IItemHandler handler = cache.getCapability();
++    if (!vanilla(handler)) {
++      // Only an invalidated cache can answer something else, and that answer came from a lookup just made.
++      replayable = false;
++      return handler;
++    }
++    Container inventory = ((InvWrapper) handler).getInv();
++    if (inventory.getClass() != BarrelBlockEntity.class) {
++      // ChestBlock.getContainer reads the neighbour its type points at unless the chest is single.
++      BlockState state = serverLevel.getBlockState(blockPos);
++      if (state.getBlock() instanceof ChestBlock && state.getValue(ChestBlock.TYPE) != ChestType.SINGLE) {
++        touchChunk(serverLevel, blockPos.relative(ChestBlock.getConnectedDirection(state)));
++      }
++    }
++    return handler;
++  }
++
++  /** NeoForge's answer for a vanilla barrel, chest or double chest. */
++  private static boolean vanilla(IItemHandler handler) {
++    if (handler == null || handler.getClass() != InvWrapper.class) {
++      return false;
++    }
++    Container inventory = ((InvWrapper) handler).getInv();
++    if (inventory == null) {
++      return false;
++    }
++    Class<?> type = inventory.getClass();
++    return type == BarrelBlockEntity.class || type == ChestBlockEntity.class || type == CompoundContainer.class;
++  }
++
++  private static void touchChunk(ServerLevel level, BlockPos pos) {
++    level.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
++  }
++}

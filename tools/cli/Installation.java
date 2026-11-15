@@ -37,6 +37,13 @@ final class Installation {
         "tools/packcheck/neoforge.mods.toml",
         "tools/packcheck/fabric.mod.json",
         "tools/packcheck/pack.mcmeta",
+        "tools/packcheck/game/1.16/ModaccelPackGame.java",
+        "tools/packcheck/game/1.18/ModaccelPackGame.java",
+        "tools/packcheck/game/1.19.3/ModaccelPackGame.java",
+        "tools/packcheck/game/1.21.2/ModaccelPackGame.java",
+        "tools/packcheck/game/1.21.5/ModaccelPackGame.java",
+        "tools/packcheck/game/1.21.11/ModaccelPackGame.java",
+        "tools/packcheck/game/26.1/ModaccelPackGame.java",
         "knowledge/pack-fixes.json",
         "knowledge/pack-loaders.json",
         "tools/VersionMap.java",
@@ -68,6 +75,47 @@ final class Installation {
         "tools/tests/RulesTest.java",
         "knowledge/fixes.json",
         "knowledge/loaders.json",
+        "knowledge/bridges/neoforge-on-fabric/Bridge.java",
+        "knowledge/bridges/neoforge-on-fabric/BuildCreativeModeTabContentsEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/Bus.java",
+        "knowledge/bridges/neoforge-on-fabric/ClientBridge.java",
+        "knowledge/bridges/neoforge-on-fabric/ClientTickEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/ConfigurationScreen.java",
+        "knowledge/bridges/neoforge-on-fabric/DeferredBlock.java",
+        "knowledge/bridges/neoforge-on-fabric/DeferredHolder.java",
+        "knowledge/bridges/neoforge-on-fabric/DeferredItem.java",
+        "knowledge/bridges/neoforge-on-fabric/DeferredRegister.java",
+        "knowledge/bridges/neoforge-on-fabric/Event.java",
+        "knowledge/bridges/neoforge-on-fabric/EventBusSubscriber.java",
+        "knowledge/bridges/neoforge-on-fabric/EventPriority.java",
+        "knowledge/bridges/neoforge-on-fabric/FMLClientSetupEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/FMLCommonSetupEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/ICancellableEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/IConfigScreenFactory.java",
+        "knowledge/bridges/neoforge-on-fabric/IEventBus.java",
+        "knowledge/bridges/neoforge-on-fabric/ModConfig.java",
+        "knowledge/bridges/neoforge-on-fabric/ModConfigEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/ModConfigSpec.java",
+        "knowledge/bridges/neoforge-on-fabric/ModContainer.java",
+        "knowledge/bridges/neoforge-on-fabric/NeoForge.java",
+        "knowledge/bridges/neoforge-on-fabric/RegisterCommandsEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/ServerLifecycleEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/ServerStartedEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/ServerStartingEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/ServerStoppedEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/ServerStoppingEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/ServerTickEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/SubscribeEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/ClientPacketDistributor.java",
+        "knowledge/bridges/neoforge-on-fabric/ClientPayloadContext.java",
+        "knowledge/bridges/neoforge-on-fabric/HandlerThread.java",
+        "knowledge/bridges/neoforge-on-fabric/IPayloadContext.java",
+        "knowledge/bridges/neoforge-on-fabric/IPayloadHandler.java",
+        "knowledge/bridges/neoforge-on-fabric/PacketDistributor.java",
+        "knowledge/bridges/neoforge-on-fabric/PayloadRegistrar.java",
+        "knowledge/bridges/neoforge-on-fabric/RegisterClientPayloadHandlersEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/RegisterPayloadHandlersEvent.java",
+        "knowledge/bridges/neoforge-on-fabric/ServerPayloadContext.java",
         "knowledge/structural.json",
         "knowledge/port-corpus.json",
         "coverage/changes/index.json"
@@ -184,6 +232,12 @@ final class Installation {
             Files.readAllBytes(harness.resolve(file))
         );
         contents.put("bootstrap-jre.ps1", Files.readAllBytes(harness.resolve("tools/bootstrap-jre.ps1")));
+        List<String> desktop = desktopApps(harness, contents);
+        String desktopText = desktop.isEmpty()
+            ? ""
+            : "\nDesktop app (Minecraft Modding Tools), for working without a command line: open " +
+            String.join(" or ", desktop) +
+            " in this folder.\n";
         contents.put(
             "GETTING_STARTED.txt",
             ("Modding Accelerator portable beta\n\n" +
@@ -196,7 +250,8 @@ final class Installation {
                 "Run help for commands and support --json for current compatibility evidence. No Minecraft code or game assets are included.\n\n" +
                 "Support: Include the command, its receipt path under your mod's .runs/portable folder, and the failing log.\n" +
                 "Gameplay and behavior need an actual game check. Linux rendering and macOS execution remain unverified.\n" +
-                "See LICENSE and NOTICE for terms and attribution.\n").getBytes(java.nio.charset.StandardCharsets.UTF_8)
+                "See LICENSE and NOTICE for terms and attribution.\n" +
+                desktopText).getBytes(java.nio.charset.StandardCharsets.UTF_8)
         );
         try (var output = new ZipOutputStream(Files.newOutputStream(zipTemporary))) {
             for (var item : contents.entrySet()) {
@@ -231,7 +286,7 @@ final class Installation {
                 p + 46 + nameLength + u16(archive, p + 30) + u16(archive, p + 32);
             if (next > limit) throw new IOException("Invalid ZIP central directory entry length");
             String name = new String(archive, p + 46, nameLength, java.nio.charset.StandardCharsets.UTF_8);
-            if (name.equals("modaccel")) {
+            if (name.equals("modaccel") || name.equals(DESKTOP_LINUX)) {
                 archive[p + 5] = 3; // made by Unix
                 int mode = 0100755 << 16;
                 for (int i = 0; i < 4; i++) archive[p + 38 + i] = (byte) (mode >>> (i * 8));
@@ -257,11 +312,81 @@ final class Installation {
             Files.size(zip),
             "zipSha256",
             zipSha,
+            "desktopApp",
+            desktop,
             "requires",
             "Java 17 or newer; project builds may require other JDKs",
             "published",
             false
         );
+    }
+
+    static final String DESKTOP_WINDOWS = "modaccel-desktop.exe", DESKTOP_LINUX = "modaccel-desktop-linux";
+
+    /**
+     * The desktop app (app/, built with cargo build --release) goes into the ZIP once it is built: the Windows exe,
+     * and an ELF binary as the Linux one. Without a build the package is the command line alone.
+     */
+    static List<String> desktopApps(Path harness, Map<String, byte[]> contents) throws Exception {
+        List<String> added = new ArrayList<>();
+        Path app = harness.resolve("app"), release = app.resolve("target/release");
+        Path exe = release.resolve(DESKTOP_WINDOWS);
+        // A built app older than its sources is not the app: rebuild it with cargo, or refuse to package it.
+        for (Path binary : List.of(exe, release.resolve("modaccel-desktop"))) {
+            if (!Files.isRegularFile(binary) || newerSource(app, binary) == null) continue;
+            Path cargo = onPath("cargo");
+            if (cargo != null) {
+                Process build = new ProcessBuilder(cargo.toString(), "build", "--release").directory(app.toFile()).inheritIO().start();
+                if (build.waitFor() != 0) throw new IOException("cargo build --release failed in " + app + "; the desktop app was not packaged.");
+            }
+            Path newer = newerSource(app, binary);
+            if (newer != null) throw new IOException(
+                binary + " is older than " + newer + ", so it is not the app in this checkout. Run cargo build --release in " + app +
+                " (cargo was " + (cargo == null ? "not found" : "run, and did not rebuild it") + ") or delete the stale build, then package again."
+            );
+        }
+        if (Files.isRegularFile(exe)) {
+            contents.put(DESKTOP_WINDOWS, Files.readAllBytes(exe));
+            added.add(DESKTOP_WINDOWS);
+        }
+        Path unix = release.resolve("modaccel-desktop");
+        byte[] bytes = Files.isRegularFile(unix) ? Files.readAllBytes(unix) : new byte[0];
+        boolean elf = bytes.length > 4 && bytes[0] == 0x7f && bytes[1] == 'E' && bytes[2] == 'L' && bytes[3] == 'F';
+        if (elf) {
+            contents.put(DESKTOP_LINUX, bytes);
+            added.add(DESKTOP_LINUX);
+        }
+        return added;
+    }
+
+    /** A file of the app's sources (anything in app/ but its build output and hidden folders) changed after a built binary; null when none. */
+    static Path newerSource(Path app, Path binary) throws IOException {
+        if (!Files.isDirectory(app)) return null;
+        var built = Files.getLastModifiedTime(binary);
+        try (var walk = Files.walk(app)) {
+            for (Path p : walk.filter(Files::isRegularFile).toList()) {
+                Path rel = app.relativize(p);
+                String first = rel.getName(0).toString();
+                if (first.equals("target") || first.startsWith(".")) continue;
+                if (Files.getLastModifiedTime(p).compareTo(built) > 0) return p;
+            }
+        }
+        return null;
+    }
+
+    /** An executable on PATH (with Windows' extensions), or null. */
+    static Path onPath(String name) {
+        for (String dir : System.getenv().getOrDefault("PATH", "").split(java.io.File.pathSeparator)) {
+            for (String ext : List.of("", ".exe", ".cmd", ".bat")) {
+                try {
+                    Path candidate = Path.of(dir).resolve(name + ext);
+                    if (!dir.isBlank() && Files.isRegularFile(candidate)) return candidate;
+                } catch (java.nio.file.InvalidPathException unusable) {
+                    break;
+                }
+            }
+        }
+        return null;
     }
 
     private static int u16(byte[] bytes, int offset) {

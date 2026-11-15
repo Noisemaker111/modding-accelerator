@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 RULES = ROOT / "knowledge" / "loaders.json"
 OUT = ROOT / "coverage" / "loader"
 CACHE = ROOT / ".runs" / "loader-api"
-KINDS = ("entrypoints", "expressions", "types", "events", "statements", "integrations")
+KINDS = ("entrypoints", "expressions", "types", "events", "statements", "integrations", "bridges")
 MANIFEST = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 
 
@@ -40,7 +40,13 @@ def rules_of(data):
 
 def symbols(data):
     """{rule id: [artifact|class#member, ...]} for every rule."""
-    return {rule["id"]: [s for side in ("fabric", "neoforge") for s in rule.get("symbols", {}).get(side, [])] for _, rule in rules_of(data)}
+    out = {}
+    for _, rule in rules_of(data):
+        out[rule["id"]] = [s for side in ("fabric", "neoforge") for s in rule.get("symbols", {}).get(side, [])]
+        # A bridge's version layers name the symbols of the older loader and game releases they are written for.
+        for layer in rule.get("layers", []):
+            out[rule["id"] + "@" + layer["minecraft"]] = [s for side in ("fabric", "neoforge") for s in layer.get("symbols", {}).get(side, [])]
+    return out
 
 
 def split(symbol):
@@ -94,6 +100,24 @@ def class_members(data):
     return name, members
 
 
+def index_mappings(data, into):
+    """Every class and member Mojang's ProGuard mappings name (an obfuscated release's names, as Loom's Mojang mappings give them)."""
+    current = None
+    for line in data.decode("utf-8").splitlines():
+        if not line or line.startswith("#"):
+            continue
+        if not line.startswith(" "):
+            current = line.split(" -> ")[0].strip()
+            into.setdefault(current, set())
+            continue
+        if current is None or line.strip().startswith("#"):
+            continue
+        named = line.strip().split(" -> ")[0].split(":")[-1].strip()
+        member = named.split("(")[0].split()[-1]
+        into[current].add(member)
+    return into
+
+
 def index_jar(data, into, depth=0):
     """Adds every class in a jar (and the jars nested in META-INF/jars, as Fabric API ships its modules) to into."""
     with zipfile.ZipFile(io.BytesIO(data)) as jar:
@@ -118,11 +142,12 @@ def get(url):
 
 
 def jar_url(entry):
-    """Where one "published" entry's jar lives: Maven coordinates, or Mojang's manifest for minecraft."""
+    """Where one "published" entry's jar lives: Maven coordinates, or Mojang's manifest for minecraft (for an obfuscated
+    release, mojangMappings: its client mappings, which carry Mojang's names)."""
     if entry.get("manifest"):
         versions = json.loads(get(MANIFEST))["versions"]
         meta = json.loads(get(next(v["url"] for v in versions if v["id"] == entry["version"])))
-        return meta["downloads"]["client"]["url"]
+        return meta["downloads"]["client_mappings" if entry.get("mojangMappings") else "client"]["url"]
     group, artifact, version, *classifier = entry["coordinate"].split(":")
     name = f"{artifact}-{version}" + (f"-{classifier[0]}" if classifier else "") + ".jar"
     return f"{entry['maven']}/{group.replace('.', '/')}/{artifact}/{version.replace('+', '%2B')}/{name}"
@@ -149,7 +174,7 @@ def verify():
     for key in sorted(wanted):
         url, sha, jar = fetch(key, published[key])
         artifacts[key] = {"coordinate": published[key].get("coordinate", "minecraft:client:" + published[key].get("version", "")), "url": url, "sha256": sha}
-        indexes[key] = index_jar(jar, {})
+        indexes[key] = index_mappings(jar, {}) if published[key].get("mojangMappings") else index_jar(jar, {})
         print(f"{key}: {url} ({len(indexes[key])} classes)")
     found, missing = {}, []
     for rule, names in symbols(data).items():
@@ -196,4 +221,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    for stream in (sys.stdout, sys.stderr):  # UTF-8 whatever the console or PYTHONIOENCODING says
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     sys.exit(main())

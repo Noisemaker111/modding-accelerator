@@ -36,7 +36,7 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 | 3 Run check | Loads in the real game/server, screenshot or command proof | yes | yes | partial | yes (26.3 node) | yes, on MockBukkit (a fake Paper server, no real server): `plugin-check` |
 | 4 Multiplayer check | Dedicated server plus client, or server plus bot | partial | partial | no | no | yes, real Paper server plus a bot player: `server-check` (MCProtocolLib, with ViaProxy for other versions) |
 | 5 Version port | `port --from --to`, routed through hubs | yes (1.14.4+) | yes (1.14.4+) | no | via its nodes | no: config only, done by hand (AgentCraft 26.3 to 1.21.10 passes `plugin-check`); `port` refuses plugins and names the edits |
-| 6 Platform change | e.g. Fabric → NeoForge, Forge → Paper | yes, to NeoForge: `convert` (Auto Omen 26.3, Pride Flags 26.1.2, in the game) | yes, to Fabric on 26.1+: `convert` (a converted mod back to Fabric) | no | n/a | no |
+| 6 Platform change | e.g. Fabric → NeoForge, Forge → Paper | yes, to NeoForge: `convert` (Auto Omen 26.3, Pride Flags 26.1.2, in the game) | yes, to Fabric on 26.1+ and 1.21.1: `convert` (a converted mod back to Fabric; the NeoForge 26.3 and 1.21.1 MDKs through the NeoForge bridge, in the game, and back to NeoForge) | no | n/a | no |
 
 ## 3. Policy
 

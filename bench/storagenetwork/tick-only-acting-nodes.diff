@@ -1,0 +1,269 @@
+diff --git a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
+index 9107b0c3..22cd4153 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
+@@ -55,6 +55,209 @@ public class NetworkModuleDefault implements NetworkModule {
+   NetworkCache ch = new NetworkCache();
+   private Set<DimPos> connectables = new HashSet<>();
+   private boolean shouldRefresh = true;
++  // NeoForge capability caches for this network's nodes, by node position. NeoForge invalidates them when a
++  // block entity is placed or removed and when a chunk loads or unloads; the mod's node capabilities are
++  // fields of their block entity, so a cached answer is the one a fresh lookup would give. A fresh lookup also
++  // reads the node's chunk through ServerChunkCache.getChunk(x, z, FULL, true), which renews a one-tick "unknown"
++  // ticket on it: that is what keeps every chunk of a network loaded while its master ticks. A cached answer
++  // makes the same getChunk call first (touchChunk), so the same chunks stay loaded.
++  private final Map<DimPos, NodeCaches> nodeCaches = new HashMap<>();
++  private Set<DimPos> nodeCachesFor;
++
++  private static final class NodeCaches {
++
++    final net.minecraft.server.level.ServerLevel level;
++    final BlockPos pos;
++    final Runnable invalidated;
++    private net.neoforged.neoforge.capabilities.BlockCapabilityCache<ConnectableNode, Direction> connectable;
++    private net.neoforged.neoforge.capabilities.BlockCapabilityCache<CapabilityConnectable, Direction> storage;
++    private net.neoforged.neoforge.capabilities.BlockCapabilityCache<com.lothrazar.storagenetwork.api.capabilities.CapabilityImportExport, Direction> io;
++    private net.neoforged.neoforge.capabilities.BlockCapabilityCache<com.lothrazar.storagenetwork.api.capabilities.CapabilityProcessing, Direction> processing;
++
++    NodeCaches(net.minecraft.server.level.ServerLevel level, BlockPos pos, Runnable invalidated) {
++      this.level = level;
++      this.pos = pos;
++      this.invalidated = invalidated;
++    }
++
++    @SuppressWarnings("unchecked")
++    <T> T get(net.neoforged.neoforge.capabilities.BlockCapability<T, Direction> capability) {
++      if (capability == StorageNetworkCapabilities.CONNECTABLE) {
++        if (connectable == null) {
++          connectable = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(StorageNetworkCapabilities.CONNECTABLE, level, pos, null, () -> true, invalidated);
++        }
++        return (T) connectable.getCapability();
++      }
++      if (capability == StorageNetworkCapabilities.CONNECTABLE_ITEM_STORAGE) {
++        if (storage == null) {
++          storage = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(StorageNetworkCapabilities.CONNECTABLE_ITEM_STORAGE, level, pos, null, () -> true, invalidated);
++        }
++        return (T) storage.getCapability();
++      }
++      if (capability == StorageNetworkCapabilities.CONNECTABLE_AUTO_IO) {
++        if (io == null) {
++          io = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(StorageNetworkCapabilities.CONNECTABLE_AUTO_IO, level, pos, null, () -> true, invalidated);
++        }
++        return (T) io.getCapability();
++      }
++      if (capability == StorageNetworkCapabilities.PROCESSING) {
++        if (processing == null) {
++          processing = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(StorageNetworkCapabilities.PROCESSING, level, pos, null, () -> true, invalidated);
++        }
++        return (T) processing.getCapability();
++      }
++      return level.getCapability(capability, pos, null);
++    }
++  }
++
++  /**
++   * The chunk access a capability lookup at pos makes first (Level.getBlockState): getChunk(x, z, FULL, load), which
++   * renews the chunk's "unknown" ticket unless the chunk is among the chunk source's last four. Every later access of
++   * the lookup is to the same chunk, so it changes nothing.
++   */
++  private static void touchChunk(net.minecraft.server.level.ServerLevel level, BlockPos pos) {
++    level.getChunk(net.minecraft.core.SectionPos.blockToSectionCoord(pos.getX()), net.minecraft.core.SectionPos.blockToSectionCoord(pos.getZ()));
++  }
++
++  /**
++   * What pos.getCapability(capability, null) returns, answered from a capability cache when pos is a loaded node of this
++   * network, after the chunk access the lookup would make.
++   */
++  public <T> T nodeCapability(DimPos pos, net.neoforged.neoforge.capabilities.BlockCapability<T, Direction> capability) {
++    net.minecraft.world.level.Level level = pos.resolveLevel();
++    BlockPos blockPos = pos.getBlockPos();
++    if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel) || blockPos == null || !serverLevel.isLoaded(blockPos)) {
++      uncached++;
++      return pos.getCapability(capability, null);
++    }
++    if (nodeCachesFor != connectables) {
++      nodeCaches.keySet().retainAll(connectables);
++      nodeCachesFor = connectables;
++    }
++    NodeCaches node = nodeCaches.get(pos);
++    if (node == null || node.level != serverLevel || !node.pos.equals(blockPos)) {
++      if (!connectables.contains(pos)) {
++        uncached++;
++        return pos.getCapability(capability, null);
++      }
++      node = new NodeCaches(serverLevel, blockPos, () -> nodesInvalidated = true);
++      nodeCaches.put(pos, node);
++    }
++    touchChunk(serverLevel, blockPos);
++    return node.get(capability);
++  }
++
++  // Lookups nodeCapability answered without a cache, and whether NeoForge invalidated one of the caches.
++  private int uncached;
++  private boolean nodesInvalidated;
++  private TickPlan plan;
++
++  /**
++   * A node of getConnectables() with the position it had and the processing and import/export capabilities found there
++   * when the plan was made.
++   */
++  public record PlannedNode(ConnectableNode node, DimPos pos, com.lothrazar.storagenetwork.api.capabilities.CapabilityProcessing processing,
++      com.lothrazar.storagenetwork.api.capabilities.CapabilityImportExport io) {}
++
++  /** A chunk the plan's lookups would read, in a level. */
++  private record PlannedChunk(net.minecraft.server.level.ServerLevel level, int x, int z) {}
++
++  private record TickPlan(Set<DimPos> madeFor, List<DimPos> positions, List<PlannedNode> nodes, List<PlannedChunk> chunks) {}
++
++  /**
++   * The nodes getConnectables() would return now, in its iteration order, each with what a lookup of its capabilities
++   * finds; or null when that is not known without the lookups, and the caller must make them. A plan holds while the
++   * connectables set is the one it was made for, every position stays loaded and no node capability cache was
++   * invalidated: then the same nodes are found, in the same order (a HashSet of the same objects added in the same order),
++   * with the same capabilities, which are fields of their block entities.
++   *
++   * The lookups it replaces (getConnectables() and each node's processing and import/export lookups) read every node's
++   * chunk with getChunk(x, z, FULL, true), renewing its one-tick "unknown" ticket. A plan in use makes that call once
++   * for every chunk holding a node, before the master reads any node, so the same chunks are renewed in the same tick
++   * (the order of the calls already differs between launches of the unmodified mod: getConnectables() returns a HashSet
++   * of nodes, which have identity hashes).
++   */
++  public List<PlannedNode> plannedNodes() {
++    if (plan != null && (plan.madeFor() != connectables || nodesInvalidated)) {
++      plan = null;
++    }
++    if (plan != null) {
++      for (DimPos pos : plan.positions()) {
++        if (!pos.isLoaded()) {
++          plan = null;
++          break;
++        }
++      }
++    }
++    if (plan == null) {
++      plan = makePlan();
++      return plan == null ? null : plan.nodes();
++    }
++    for (PlannedChunk chunk : plan.chunks()) {
++      chunk.level().getChunk(chunk.x(), chunk.z());
++    }
++    if (nodesInvalidated) {
++      // Nothing the calls above do invalidates a cache (every chunk was loaded), but if one did, look up again.
++      plan = null;
++      return null;
++    }
++    return plan.nodes();
++  }
++
++  private TickPlan makePlan() {
++    nodesInvalidated = false;
++    int before = uncached;
++    Set<DimPos> madeFor = connectables;
++    List<DimPos> positions = new ArrayList<>(new HashSet<>(connectables));
++    for (DimPos pos : positions) {
++      if (!pos.isLoaded()) {
++        return null;
++      }
++    }
++    Set<ConnectableNode> nodes = getConnectables();
++    if (nodes.size() != positions.size()) {
++      // A position without a node: getConnectables() logs it on every call, so keep making the call.
++      return null;
++    }
++    List<PlannedNode> planned = new ArrayList<>(nodes.size());
++    for (ConnectableNode node : nodes) {
++      DimPos pos = node == null ? null : node.getPos();
++      if (pos == null) {
++        planned.add(new PlannedNode(node, null, null, null));
++        continue;
++      }
++      planned.add(new PlannedNode(node, pos, nodeCapability(pos, StorageNetworkCapabilities.PROCESSING), nodeCapability(pos, StorageNetworkCapabilities.CONNECTABLE_AUTO_IO)));
++    }
++    if (uncached != before || nodesInvalidated || madeFor != connectables) {
++      return null;
++    }
++    Set<PlannedChunk> chunks = new java.util.LinkedHashSet<>();
++    for (DimPos pos : positions) {
++      if (!(pos.resolveLevel() instanceof net.minecraft.server.level.ServerLevel serverLevel) || pos.getBlockPos() == null) {
++        return null;
++      }
++      chunks.add(new PlannedChunk(serverLevel, net.minecraft.core.SectionPos.blockToSectionCoord(pos.getBlockPos().getX()), net.minecraft.core.SectionPos.blockToSectionCoord(pos.getBlockPos().getZ())));
++    }
++    return new TickPlan(madeFor, positions, planned, List.copyOf(chunks));
++  }
++
++  /** What nodeCapability(node.getPos(), PROCESSING) returns now. */
++  public com.lothrazar.storagenetwork.api.capabilities.CapabilityProcessing processingOf(PlannedNode planned) {
++    DimPos pos = planned.node().getPos();
++    if (!nodesInvalidated && planned.pos() != null && (pos == planned.pos() || planned.pos().equals(pos))) {
++      return planned.processing();
++    }
++    return nodeCapability(pos, StorageNetworkCapabilities.PROCESSING);
++  }
++
++  /** What nodeCapability(node.getPos(), CONNECTABLE_AUTO_IO) returns now. */
++  public com.lothrazar.storagenetwork.api.capabilities.CapabilityImportExport ioOf(PlannedNode planned) {
++    DimPos pos = planned.node().getPos();
++    if (!nodesInvalidated && planned.pos() != null && (pos == planned.pos() || planned.pos().equals(pos))) {
++      return planned.io();
++    }
++    return nodeCapability(pos, StorageNetworkCapabilities.CONNECTABLE_AUTO_IO);
++  }
+ 
+   /**
+    * gets list of validated connected nodes, ignoring content or subtype
+@@ -70,7 +273,7 @@ public class NetworkModuleDefault implements NetworkModule {
+       if (!pos.isLoaded()) {
+         continue;
+       }
+-      ConnectableNode cap = pos.getCapability(StorageNetworkCapabilities.CONNECTABLE, null);
++      ConnectableNode cap = nodeCapability(pos, StorageNetworkCapabilities.CONNECTABLE);
+       if (cap == null) {
+         LOGGER.debug("Somehow stored a dimpos that is not connectable... Skipping " + pos);
+         continue;
+@@ -506,11 +709,11 @@ public class NetworkModuleDefault implements NetworkModule {
+       if (!dimpos.isLoaded()) {
+         continue;
+       }
+-      CapabilityConnectable capConnect = dimpos.getCapability(StorageNetworkCapabilities.CONNECTABLE_ITEM_STORAGE, null);
++      CapabilityConnectable capConnect = nodeCapability(dimpos, StorageNetworkCapabilities.CONNECTABLE_ITEM_STORAGE);
+       if (capConnect == null) {
+         continue;
+       }
+-      ConnectableNode baseConn = dimpos.getCapability(StorageNetworkCapabilities.CONNECTABLE, null);
++      ConnectableNode baseConn = nodeCapability(dimpos, StorageNetworkCapabilities.CONNECTABLE);
+       if (baseConn != null && baseConn.needsRedstone()
+           && !dimpos.getWorld().hasNeighborSignal(dimpos.getBlockPos())) {
+         continue;
+diff --git a/src/main/java/com/lothrazar/storagenetwork/block/main/TileMain.java b/src/main/java/com/lothrazar/storagenetwork/block/main/TileMain.java
+index e598b200..badb01bc 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/block/main/TileMain.java
++++ b/src/main/java/com/lothrazar/storagenetwork/block/main/TileMain.java
+@@ -214,18 +214,24 @@ public class TileMain extends BlockEntity implements BlockEntityMainNetwork {
+     refresh();
+     RequestBatch requestBatch = new RequestBatch();
+     int exportCableCount = 0;
+-    for (ConnectableNode connectable : nw.getConnectables()) {
++    // The same nodes in the same order as getConnectables(), with capabilities known without a lookup while nothing changed.
++    List<NetworkModuleDefault.PlannedNode> planned = nw.plannedNodes();
++    java.util.Iterator<?> nodes = planned != null ? planned.iterator() : nw.getConnectables().iterator();
++    while (nodes.hasNext()) {
++      Object next = nodes.next();
++      NetworkModuleDefault.PlannedNode plan = next instanceof NetworkModuleDefault.PlannedNode p ? p : null;
++      ConnectableNode connectable = plan != null ? plan.node() : (ConnectableNode) next;
+       if (connectable == null || connectable.getPos() == null) {
+         continue;
+       }
+       //does it have processing capability?
+       //in practice it will not have both, its either IO or processing
+-      CapabilityProcessing processingCap = connectable.getPos().getCapability(StorageNetworkCapabilities.PROCESSING, null);
++      CapabilityProcessing processingCap = plan != null ? nw.processingOf(plan) : nw.nodeCapability(connectable.getPos(), StorageNetworkCapabilities.PROCESSING);
+       if (processingCap != null && isRunnable(connectable)) {
+         processingCap.execute(this);
+       }
+       //now  try running all import and export capabilities, known as IO
+-      CapabilityImportExport ioCap = connectable.getPos().getCapability(StorageNetworkCapabilities.CONNECTABLE_AUTO_IO, null);
++      CapabilityImportExport ioCap = plan != null ? nw.ioOf(plan) : nw.nodeCapability(connectable.getPos(), StorageNetworkCapabilities.CONNECTABLE_AUTO_IO);
+       if (ioCap != null && isRunnable(connectable)) {
+         // Give the storage a chance to have a cooldown or other conditions that prevent it from running
+         if (!ioCap.canRunNow(connectable.getPos(), this)) {

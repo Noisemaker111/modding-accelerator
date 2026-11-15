@@ -9,6 +9,7 @@ step is opened, so the page works from a local file and on GitHub Pages without 
 
     python bench/porting_map.py      step files and the redirect page
 """
+import sys
 import base64
 import gzip
 import zlib
@@ -559,4 +560,7 @@ $("#gen").textContent = IX.generated;
 """
 
 if __name__ == "__main__":
+    for stream in (sys.stdout, sys.stderr):  # UTF-8 whatever the console or PYTHONIOENCODING says
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     main()

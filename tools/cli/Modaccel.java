@@ -21,7 +21,9 @@ public final class Modaccel {
         }
 
         Path log(String name) {
-            return directory.resolve(stages.size() + "-" + name + ".log");
+            Path log = directory.resolve(stages.size() + "-" + name + ".log");
+            Run.progress(name, log);
+            return log;
         }
 
         void stage(String name, Run.Result result, Map<String, Object> extra) {
@@ -84,6 +86,7 @@ public final class Modaccel {
             "refresh",
             "help",
             "dry-run",
+            "no-compile",
             "fix",
             "direct",
             "expect-world",
@@ -98,10 +101,15 @@ public final class Modaccel {
             "intermediary",
             "no-heap",
             "allow-hidden",
-            "keep"
+            "keep",
+            "check-only"
         );
         static final Set<String> VALUES = Set.of(
             "command",
+            "label",
+            "session",
+            "parent",
+            "jit",
             "root",
             "project",
             "task",
@@ -149,7 +157,8 @@ public final class Modaccel {
             "attach", "instance", "launch", "duration", "warmup", "out", "scenario",
             "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block",
             "check",
-            "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch"
+            "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch",
+            "min-runs", "min-speedup", "arms", "replay", "max-calls-per-tick"
         );
         final Map<String, String> values = new LinkedHashMap<>();
         final Set<String> flags = new HashSet<>();
@@ -210,6 +219,9 @@ public final class Modaccel {
         }
     }
 
+    /** Commands for modaccel's own tests, left out of help. */
+    static final Set<String> INTERNAL = Set.of("legacy-agent");
+
     static final Set<String> COMMANDS = Set.of(
         "perf", "perf-report", "perf-diff", "perf-template", "perf-optimize",
         "support",
@@ -242,11 +254,37 @@ public final class Modaccel {
         "help"
     );
 
+    /**
+     * Output that goes to a file or pipe (the desktop app, an agent's log, a redirect) is written in UTF-8, as those
+     * readers decode it. Java otherwise writes redirected output in the platform charset: on Windows (windows-1252)
+     * perf-optimize's "95% 9.94–11.33" and "baseline → candidate" reached a log as a replacement character and "?".
+     * A terminal keeps the charset Java chose for it.
+     */
+    public static void utf8WhenRedirected() {
+        if (terminal()) return;
+        System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.out), 8192), true, java.nio.charset.StandardCharsets.UTF_8));
+        System.setErr(new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.err), 8192), true, java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    /** Whether standard output is a terminal: System.console() is null when redirected before Java 22, and says so after. */
+    static boolean terminal() {
+        Console console = System.console();
+        if (console == null) return false;
+        try {
+            return (Boolean) Console.class.getMethod("isTerminal").invoke(console);
+        } catch (ReflectiveOperationException beforeJava22) {
+            return true;
+        }
+    }
+
     public static void main(String[] args) {
+        utf8WhenRedirected();
         int exit = 2;
         Options options = null;
         Report report = null;
         ProjectLock lock = null;
+        // convert --dry-run keeps its receipt here while it runs and deletes it after: it leaves nothing behind.
+        Path previewReceipts = null;
         try {
             options = new Options(args);
             if (options.has("help") || options.command.equals("help")) {
@@ -307,12 +345,16 @@ public final class Modaccel {
             ProjectModel project = new ProjectModel(root);
             if (!Set.of("package", "self-test").contains(options.command)) project.requireGradleBuild();
             // Commands that build, edit or start the game take the project lock; reading state and talking to a running game don't.
+            // convert --dry-run converts a copy elsewhere: it takes no lock and keeps no receipt.
+            boolean preview = options.command.equals("convert") && options.has("dry-run") && !options.values.containsKey("undo");
             if (
+                !preview &&
                 !Set.of("discover", "doctor", "package", "self-test", "game-status", "game-stop", "eval").contains(
                     options.command
                 )
             ) lock = ProjectLock.acquire(project, options.command);
-            report = new Report(project.root, options.command);
+            if (preview) previewReceipts = Files.createTempDirectory("modaccel-convert-receipt-");
+            report = new Report(preview ? previewReceipts : project.root, options.command);
             Map<String, Object> result;
             String interrupted = options.command.equals("port") ? null : Port.interruptedText(project);
             long discovered = System.nanoTime();
@@ -428,7 +470,7 @@ public final class Modaccel {
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }
                     case "convert" -> {
-                        result = new Convert(build).run(options);
+                        result = preview ? Convert.preview(project.root, home, options) : new Convert(build).run(options);
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }
                     case "explain" -> {
@@ -546,6 +588,7 @@ public final class Modaccel {
                 interrupted + " Undo it with: modaccel port --root \"" + project.root + "\" --undo"
             );
             Map<String, Object> output = report.finish(exit, result);
+            if (previewReceipts != null) output.remove("receipt");
             if (options.has("json")) System.out.println(Json.write(output));
             else {
                 System.out.printf(
@@ -566,9 +609,11 @@ public final class Modaccel {
                     "Undo: modaccel port --root \"" + project.root + "\" --undo \"" + result.get("undo") + "\""
                 );
                 if (result.containsKey("zip")) System.out.println("Package: " + result.get("zip"));
-                System.out.println("Receipt: " + output.get("receipt"));
+                if (output.get("receipt") != null) System.out.println("Receipt: " + output.get("receipt"));
             }
         } catch (Exception error) {
+            // MODACCEL_TRACE=1 prints where a failure came from, for a bug in modaccel itself.
+            if (System.getenv("MODACCEL_TRACE") != null) error.printStackTrace();
             try {
                 String reported = plainError(error);
                 // A dedicated server that died mid-check is the likelier cause of a client failure: say so with the error.
@@ -577,6 +622,7 @@ public final class Modaccel {
                 ) reported += "\n" + Json.object(stage).get("details");
                 var value = Json.map("error", reported);
                 if (report != null) value = report.finish(2, value);
+                if (previewReceipts != null) value.remove("receipt");
                 if (options != null && options.has("json")) System.out.println(Json.write(value));
                 else if (options != null && options.command.equals("eval")) {
                     // A snippet's own error doesn't need the game log; a game that died does.
@@ -599,6 +645,9 @@ public final class Modaccel {
         } finally {
             if (lock != null) try {
                 lock.close();
+            } catch (IOException ignored) {}
+            if (previewReceipts != null) try {
+                OwnCompile.deleteTree(previewReceipts);
             } catch (IOException ignored) {}
         }
         System.exit(exit);
@@ -798,13 +847,16 @@ public final class Modaccel {
     static String help(String command) {
         return switch (command) {
             case "perf" -> "Profile a running local Java 17+ game/server: modaccel perf [--attach PID | --instance FOLDER | --root SOURCE] [--duration 30] [--warmup 5] [--out FOLDER] [--json]\n" +
-                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root can launch a visible client.\n" +
+                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root profiles the client modaccel started as your preferences say, hidden or not, with no --allow-hidden needed (hidden: frame timing is not representative).\n" +
                 "Open report.html in the output folder. Frame/tick hooks depend on game mappings; missing metrics are explicit. GPU timing is not collected.\n" +
-                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden profiles a hidden, throttled source session (frame timing not representative); --no-heap skips the post-capture class histogram.\n" +
+                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden lets --attach or --instance profile a hidden, throttled game (frame timing not representative; --root implies it); --no-heap skips the post-capture class histogram.\n" +
                 "--no-hooks records JFR only. --prepare prints a startup -javaagent argument when dynamic attach is disabled. Requires JDK 17+ and same OS user.\n" +
+                "Each capture writes record.json (--session NAME groups runs) and names known patterns from knowledge/perf-patterns.json that its hotspots match.\n" +
                 "--scenario FILE --rcon-port 25575 [--rcon-password-env MODACCEL_RCON_PASSWORD] [--repeat 1] [--seed 0] drives explicit test-world commands.\n" +
                 "Scenarios edit the selected local server world: use a disposable world. Each command requires an expected response. Repeats share one JVM.";
             case "perf-template" -> "Generate editable scenario files: modaccel perf-template --family transport|block-scene|entity-crowd|mod-content [--block MOD:BLOCK] [--entity MOD:ENTITY] [--counts 1,16,64] [--root SOURCE] [--out FOLDER]\n" +
+                "--family experiment --from CAPTURE --root SOURCE [--out .runs/MOD-experiment] [--max-calls-per-tick 256] writes a perf-optimize experiment, probes and gate snippets to fill in from a perf --root capture.\n" +
+                "Methods the capture timed above --max-calls-per-tick get no probe (capture again with perf --probes CAPTURE/probes.suggested.json for call counts); a probe metric counts Server thread calls only (serverInclusiveMsPerTick).\n" +
                 "mod-content reads the mod's lang files for its own blocks and entities. Generation does not edit a world. perf --root SOURCE --scenario FILE runs it in the source client's own world; other games need a disposable local server with RCON.";
             case "perf-diff" -> "Compare observed captures: modaccel perf-diff --baseline FOLDER_OR_REPORT --candidate FOLDER_OR_REPORT [--out FOLDER]\nDescriptive differences only; this does not establish equal workload, causality or statistical significance.";
             case "perf-optimize" -> "Accept or reject one candidate change with measured speedup: modaccel perf-optimize --root SOURCE --experiment EXPERIMENT.json --patch CANDIDATE.diff [--runs 5] [--out FOLDER] [--dry-run] [--keep]\n" +
@@ -812,7 +864,11 @@ public final class Modaccel {
                 "are separate git worktrees, launched alternately in fresh games. Each launch runs the experiment's setup snippets, a cold capture and a warm capture of\n" +
                 "the chosen metric (a timing probe or a report value), then its gates: eval snippets compared exactly, against an expected value or within a tolerance,\n" +
                 "and 1280x720 framebuffer captures compared pixel by pixel. Every gate must also agree baseline-to-baseline. Accepted only when all gates pass and the\n" +
-                "95% bootstrap interval of the speedup is above 1 for cold and warm; an accepted diff is then applied to SOURCE (not with --dry-run). See PERFORMANCE.md.";
+                "95% bootstrap interval of the speedup is above 1 for cold and warm; an accepted diff is then applied to SOURCE (not with --dry-run). See PERFORMANCE.md.\n" +
+                "--label TEXT names the candidate and --session NAME groups runs in record.json, which bench/perf_sessions.py summarises.\n" +
+                "Pairs stop at the first failed gate, or from --min-runs pairs (3) once 99% t intervals lie above 1 (cold and warm) or below --min-speedup (1). Each pair prints a line; creating OUT/stop ends the run after the pair in progress.\n" +
+                "--arms auto|parallel|sequential: auto starts both arms of a pair together on 12 or more cores.\n" +
+                "--check-only checks the experiment (and --patch) offline, as every run does first. --replay OUT1,OUT2 decides finished runs again and prints their wall time.";
             case "perf-report" -> "Render an existing capture/JFR locally: modaccel perf-report --file FOLDER_OR_JFR [--out FOLDER]\nNo game or network is required. External JFR files may lack frame/tick events or code-origin metadata.";
             case "self-test" -> "Test modaccel itself, with no game and no network: modaccel self-test [--only SUITE,SUITE] [--json]\n" +
             "Suites: " +
@@ -821,7 +877,8 @@ public final class Modaccel {
             "A failed suite is reported first, with the end of its log; --only runs the named suites alone.";
             case "preferences" -> "See or save your game launch preferences: modaccel preferences [--background on|off] [--quiet on|off] [--json]\n" +
             "Background keeps the client hidden and prevents cursor capture (default off).\n" +
-            "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off.";
+            "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off,\n" +
+            "and the next game gets back the sound, narrator and first-launch options quiet changed in its folder.";
             case "port" -> "Port a Gradle mod source checkout (not a JAR):\n" +
             "  modaccel discover --root SOURCE\n" +
             "  modaccel dependencies --root SOURCE --to 1.21.6 --json\n" +
@@ -831,7 +888,7 @@ public final class Modaccel {
             "--check COMMAND runs the mod's own real-game check on the ported project (MODACCEL_PORTED_ROOT is set); the port is ok only when it passes. --learn-from-mods also runs the rule book's older rules mined from other mods (provenance third-party-mods) and learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and our own rules.\n" +
             "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n" +
             "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
-            case "convert" -> "Move a mod's source to another loader on the same Minecraft version: modaccel convert --root SOURCE --to neoforge|fabric [--dry-run] [--json]\n" +
+            case "convert" -> "Move a mod's source to another loader on the same Minecraft version: modaccel convert --root SOURCE --to neoforge|fabric [--dry-run | --no-compile] [--json]\n" +
             "  modaccel convert --root SOURCE --undo [ID]   restore every file the conversion changed, byte for byte\n" +
             "Fabric to NeoForge (any version with a NeoForge release) and NeoForge to Fabric (Minecraft 26.1 and later, where both use Mojang's names).\n" +
             "It rewrites the build (Loom <-> ModDevGradle, the newest loader releases for that Minecraft version), the metadata (fabric.mod.json <->\n" +
@@ -839,8 +896,10 @@ public final class Modaccel {
             "code with the rules in knowledge/loaders.json: loader calls, events, key mappings, Mod Menu's config screen. Every rule names classes checked\n" +
             "against the loaders' own published jars (python bench/loader_api.py verify) and has a before/after test. There is no AI step.\n" +
             "Anything with no rule is listed with its file and line and left as it was, never dropped. Then the converted build is compiled\n" +
-            "(--dry-run skips that); exit 0 means it compiled and nothing was left. A compile is not proof: check the mod in the game with ui-check or\n" +
-            "world-check and --assert. Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
+            "(--no-compile skips that); exit 0 means it compiled and nothing was left. --dry-run writes nothing in the project (no state, no\n" +
+            "receipt): it lists each file that would change or be removed and what would be left, compiles nothing, and exits 0 when it ran.\n" +
+            "A compile is not proof: check the mod in the game with ui-check or world-check and --assert.\n" +
+            "Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
             case "explain" -> "Explain a port's compiler errors: modaccel explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n" +
             "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n" +
             "class, method or field it names as each project's jars have it: where a missing class lives, a member's signatures, or similar names.\n" +
@@ -946,6 +1005,7 @@ public final class Modaccel {
             "  pack-check             a modpack on its real Forge/NeoForge/Fabric/Quilt server: crashes, conflicts, worlds that will not reopen\n" +
             "  preferences            show or change your game window and sound choices\n" +
             "  perf, perf-report      where a mod's CPU, memory, I/O and frame/tick time go\n" +
+            "  perf-diff              compare two captures    perf-template      scenario files for perf --scenario\n" +
             "  perf-optimize          accept or reject a candidate change with equivalence gates and measured speedup\n" +
             "  package, self-test     build or test modaccel itself\n" +
             "Run modaccel help COMMAND for one command (port, convert, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +

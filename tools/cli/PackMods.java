@@ -137,9 +137,12 @@ final class PackMods {
             for (String file : FORMATS) if (zip.getEntry(file) != null) others.add(file);
             boolean plugin = !modType.equals("null") || zip.stream().anyMatch(PackMods::loaderService);
             if (plugin) {
-                // A loader plugin: its own mod, if it carries one, is a jar inside it (Connector's Embedded-Dependencies-Mod).
+                // A loader plugin or library: its own mod, if it carries one, is a jar inside it (Connector's
+                // Embedded-Dependencies-Mod, or Kotlin for Forge's kffmod in its jarjar list), and Forge loads it from there.
                 scan.plugins.add(owner);
-                if (!embedded.equals("null")) nestedRead(zip, owner, List.of(embedded), metadata, scan);
+                List<String> inside = new ArrayList<>(jarjar(zip));
+                if (!embedded.equals("null")) inside.add(embedded);
+                nestedRead(zip, owner, inside, metadata, scan);
             } else if (others.isEmpty()) scan.notMods.add(owner);
             else scan.foreign.put(owner, others);
             return;
@@ -149,11 +152,20 @@ final class PackMods {
         if (format.endsWith(".toml")) toml(text, owner, bundled, format, manifestVersion, scan);
         else if (format.equals("fabric.mod.json")) fabric(text, owner, bundled, scan, nested);
         else quilt(text, owner, bundled, scan, nested);
-        ZipEntry jarjar = zip.getEntry("META-INF/jarjar/metadata.json");
-        if (jarjar != null) for (Object j : Json.array(
-            Json.object(Json.parse(new String(zip.getInputStream(jarjar).readAllBytes(), StandardCharsets.UTF_8))).get("jars")
-        )) nested.add(Json.text(Json.object(j), "path", ""));
+        nested.addAll(jarjar(zip));
         nestedRead(zip, owner, nested, metadata, scan);
+    }
+
+    /** The jars Forge's and NeoForge's jar-in-jar list (META-INF/jarjar/metadata.json) names. */
+    static List<String> jarjar(ZipFile zip) throws IOException {
+        List<String> paths = new ArrayList<>();
+        ZipEntry list = zip.getEntry("META-INF/jarjar/metadata.json");
+        if (list == null) return paths;
+        try (var in = zip.getInputStream(list)) {
+            if (!(lenient(new String(in.readAllBytes(), StandardCharsets.UTF_8)) instanceof Map<?, ?> meta) || !(meta.get("jars") instanceof List<?> jars)) return paths;
+            for (Object j : jars) if (j instanceof Map<?, ?> entry && entry.get("path") != null) paths.add(String.valueOf(entry.get("path")));
+        }
+        return paths;
     }
 
     static void nestedRead(ZipFile zip, String owner, List<String> nested, List<String> metadata, Scan scan) throws IOException {
@@ -284,9 +296,7 @@ final class PackMods {
             if (d instanceof Map<?, ?> m) {
                 dependency = String.valueOf(m.get("id"));
                 optional = Boolean.TRUE.equals(m.get("optional"));
-                Object versions = m.get("versions");
-                if (versions instanceof List<?> list) for (Object r : list) ranges.add(String.valueOf(r));
-                else if (versions != null) ranges.add(String.valueOf(versions));
+                ranges.addAll(quiltRanges(m.get("versions")));
             } else dependency = String.valueOf(d);
             if (ranges.isEmpty()) ranges.add("*");
             if (dependency.contains(":")) dependency = dependency.substring(dependency.indexOf(':') + 1);
@@ -297,6 +307,49 @@ final class PackMods {
         for (Object j : Json.array(meta.getOrDefault("jars", List.of()))) nested.add(String.valueOf(j));
     }
 
+    /**
+     * Why a jar cannot run on a server, read from its code: a Fabric or Quilt server entrypoint (fabric.mod.json "main" or
+     * "server", quilt.mod.json "init" or "server_init") that, as it is loaded and initialised (its supertypes, constructor,
+     * static initialiser and onInitialize methods), reaches a game class the server does not have. The loader then stops
+     * at start-up with NoClassDefFoundError. Null when no entrypoint does. Forge's @Mod classes are not read: they name
+     * client classes in handlers that a Dist check keeps a server from running.
+     */
+    static String clientCode(Path jar, java.util.function.Predicate<String> clientOnly) {
+        try (var zip = new ZipFile(jar.toFile())) {
+            Map<String, List<Object>> entrypoints = new LinkedHashMap<>();
+            ZipEntry fabric = zip.getEntry("fabric.mod.json"), quilt = zip.getEntry("quilt.mod.json");
+            if (fabric != null) {
+                var meta = Json.object(lenient(new String(zip.getInputStream(fabric).readAllBytes(), StandardCharsets.UTF_8)));
+                var points = Json.object(meta.getOrDefault("entrypoints", Map.of()));
+                for (String stage : List.of("main", "server")) entrypoints.put(stage, Json.array(points.getOrDefault(stage, List.of())));
+            } else if (quilt != null) {
+                var meta = Json.object(Json.object(lenient(new String(zip.getInputStream(quilt).readAllBytes(), StandardCharsets.UTF_8))).get("quilt_loader"));
+                var points = Json.object(meta.getOrDefault("entrypoints", Map.of()));
+                for (String stage : List.of("init", "server_init")) {
+                    Object value = points.get(stage);
+                    entrypoints.put(stage, value instanceof List<?> list ? Json.array(list) : value == null ? List.of() : List.of(value));
+                }
+            }
+            for (var stage : entrypoints.entrySet()) for (Object point : stage.getValue()) {
+                String type = point instanceof Map<?, ?> m ? String.valueOf(m.get("value")) : String.valueOf(point);
+                if (type.contains("::")) type = type.substring(0, type.indexOf("::"));
+                ZipEntry entry = zip.getEntry(type.replace('.', '/') + ".class");
+                if (entry == null) continue;
+                ClassRefs refs = ClassRefs.read(zip.getInputStream(entry).readAllBytes());
+                List<String> client = refs.touched(m -> m.equals("<init>") || m.equals("<clinit>") || m.startsWith("onInitialize"))
+                    .stream()
+                    .filter(clientOnly)
+                    .sorted()
+                    .toList();
+                if (!client.isEmpty()) return "its " + stage.getKey() + " entrypoint " + type + " reaches client-only game classes: " +
+                    String.join(", ", client.subList(0, Math.min(3, client.size())));
+            }
+        } catch (IOException | RuntimeException unreadable) {
+            return null;
+        }
+        return null;
+    }
+
     /** Mod metadata is often written by hand: a JSON reader that fails would hide the mod, so a broken file reads as empty. */
     static Object lenient(String text) {
         try {
@@ -304,6 +357,23 @@ final class PackMods {
         } catch (RuntimeException unreadable) {
             return Map.of();
         }
+    }
+
+    /**
+     * A quilt.mod.json "versions" as the alternatives accepts() tries: a string; an array, any of whose entries may match;
+     * {"any": [...]}, the same; or {"all": [...]}, whose constraints must all hold, as one space-separated range.
+     */
+    static List<String> quiltRanges(Object versions) {
+        List<String> out = new ArrayList<>();
+        if (versions == null) return out;
+        if (versions instanceof List<?> list) for (Object r : list) out.addAll(quiltRanges(r));
+        else if (versions instanceof Map<?, ?> m && m.get("any") instanceof List<?> any) for (Object r : any) out.addAll(quiltRanges(r));
+        else if (versions instanceof Map<?, ?> m && m.get("all") instanceof List<?> all) {
+            List<String> each = new ArrayList<>();
+            for (Object r : all) each.add(String.valueOf(r));
+            out.add(String.join(" ", each));
+        } else out.add(String.valueOf(versions));
+        return out;
     }
 
     /** Fabric and Quilt compare versions as SemVer, where build metadata (after "+") never counts: 0.5.11+mc1.21 is 0.5.11. */
@@ -323,7 +393,7 @@ final class PackMods {
                 } catch (RuntimeException unreadable) {
                     return true;
                 }
-            } else if (Versions.matches(r, semantic(version))) return true;
+            } else if (Versions.matches(r.replaceAll("\\+[^\\s]*", ""), semantic(version))) return true;
         }
         return false;
     }

@@ -28,12 +28,15 @@ For a source project supported by Mod Accel's existing launcher:
 ./modaccel perf --root /path/to/my-mod --duration 60
 ```
 
-This starts a **visible** client if none is running. Enter your world and perform
-the actions you want to measure. Increase `--warmup` (up to 600 seconds) when you
-need more time. Existing hidden/throttled source sessions are refused: stop that
-session with `game-stop`, then run `perf --root` again. Profiling does not cap FPS,
-change vsync, mute your game, modify your saves or stop a game you attached to.
-Source launches retain the existing control agent's focus behavior.
+This starts a client if none is running, the way `modaccel preferences` says:
+hidden with background on (frame timing is then not representative, and the report
+says so; server ticks and timed methods are unaffected), visible otherwise. It runs
+the full JIT even when hidden, unlike other hidden test sessions, which compile with
+C1 alone: C1 code is slower than players' and gives JFR far fewer samples. A session
+that is already running is profiled as it is; the report warns when it is C1-only.
+Enter your world and perform the actions you want to measure. Increase `--warmup`
+(up to 600 seconds) when you need more time. Profiling does not cap FPS, change
+vsync, mute your game, modify your saves or stop a game you attached to.
 
 ## Where your mod's cost goes
 
@@ -45,13 +48,17 @@ packages come from the checkout; for an installed pack, mods are named from each
 jar's `fabric.mod.json` or `mods.toml`. Use `--mod-package com.example.mymod` to
 name your code explicitly, or `--mod-root my-mod` with `--attach PID`.
 
-`perf` refuses a hidden, throttled source session because its frame timing is not
+`perf --attach` refuses a hidden, throttled game because its frame timing is not
 representative. When only server ticks or timed methods matter, `--allow-hidden`
 captures it anyway and the report says frame values are not representative.
 
 Each sampled stack, allocation, lock wait and I/O event is charged to the
 **innermost mod frame** on its stack. Game, JVM, loader and library code above that
-frame is work the mod asked for, so it counts as the mod's. Expand a mod to see its
+frame is work the mod asked for, so it counts as the mod's. Work inside Mod Accel's
+own frame/tick hooks and timing probes is profiler overhead, reported apart and never
+charged to a mod. JFR weighs an allocation sample by what its thread allocated since
+its previous sample, so each thread's first sample, which also covers time before the
+capture, only starts that thread's count. Expand a mod to see its
 **features**, named by how the game entered the mod:
 
 - `event handler · EntityTickEvent.Pre → EventHandler.onEntityTick` when an event bus
@@ -321,9 +328,10 @@ git -C my-mod diff > candidate.diff && git -C my-mod checkout -- .
 ./modaccel perf-optimize --root my-mod --experiment experiment.json --patch candidate.diff --runs 5
 ```
 
-It makes two git worktrees of the mod's `HEAD`: **baseline** and **candidate**
-(`HEAD` plus the diff). For each of `--runs` pairs it launches each arm in a fresh
-game, alternating which goes first, and in every launch:
+First it checks the experiment offline (below); a problem stops it before any worktree or
+launch. It makes two git worktrees of the mod's `HEAD`: **baseline** and **candidate**
+(`HEAD` plus the diff). For up to `--runs` pairs it launches each arm in a fresh game, and
+in every launch:
 
 1. copies the experiment's `files` (configs, `options.txt`) and a fresh copy of
    `worldSource` into the arm, then starts it (`world-check --world`, or `ui-check`
@@ -335,7 +343,8 @@ game, alternating which goes first, and in every launch:
 4. runs every gate and stops the game.
 
 The metric is a timing probe's `inclusiveMsPerTick` (or another statistic of its
-exact row, such as `meanInclusiveMs`) or any numeric `report.json` path such as
+exact row, such as `meanInclusiveMs`), the CPU time of threads whose names match
+(`{"threadCpu": "^mymod-worker"}`, below), or any numeric `report.json` path such as
 `metrics.tick_ms.mean`. Choose a server-side or timed metric when launches are
 hidden: hidden clients are throttled, so FPS and frame intervals are not
 representative. Speedup is baseline ÷ candidate per pair; the report gives
@@ -356,6 +365,35 @@ A frame gate's optional `file` runs first to set up a fixed view; inspect the sa
 whose baseline launches disagree fails: it cannot tell a change from noise, so
 freeze or isolate what it reads. `"tests": true` also runs `fast` in both
 worktrees and requires the candidate to pass if the baseline does.
+
+With 12 or more logical cores the two arms of a pair start together, each in its own
+game (`--arms auto`; `--arms sequential` launches them one after the other, alternating
+which goes first). A pair then takes its slower arm's time, and a burst of load from
+elsewhere hits both arms of the pair alike. Phases in the run record count half of each
+arm's step time, so they still add up to wall time; each step keeps its elapsed seconds.
+
+Pairs stop as soon as the outcome is decided:
+
+- a failed gate cannot pass again, so it ends the run: an `expect` gate at the first pair
+  that fails it, a gate compared with the baseline (exact, tolerance, pixels) from the second
+  pair, once two baseline launches show whether the gate itself is reproducible;
+- from `--min-runs` pairs (default 3), a 99% Student-t interval of the mean log speedup is
+  computed for cold and warm after each pair: both entirely above 1, or either entirely
+  below `--min-speedup` (default 1), end the run.
+
+Otherwise it continues to `--runs` (default 5). Creating the file `OUT/stop` ends the run
+after the pair in progress, for a candidate already shown not to matter or a machine that is
+needed back. The verdict always comes from the rule below over the pairs measured;
+`optimize.json` and the record name where and why a run stopped.
+
+After each pair it prints one line to stderr: that pair's cold and warm speedups, the
+geometric means so far with their 99% t intervals, and each gate (`ok`, `FAILED`, or
+`pending` until a second baseline launch shows whether the gate is reproducible). At the
+start it copies every file the experiment names (snippets, probes, the files each launch
+copies) into `OUT/experiment/` and reads only those copies, so editing the experiment while
+a run is going changes the next run, not this one. The 99% interval is wider than the 95% bootstrap at every pair count, so stopping
+for speed is rare unless a change is large and consistent; it adds at most 0.5% one-sided
+error per look.
 
 The change is **accepted** only when every gate passes and both cold and warm
 intervals lie above 1. An accepted diff is applied to `--root` (not with
@@ -379,13 +417,80 @@ hold every launch, capture, gate value and frame.
 }
 ```
 
+`modaccel perf-optimize --check-only --experiment E --root SOURCE [--patch P]` runs only the
+offline check. It refuses missing snippet, probe, file and world paths (a world needs
+`level.dat`), metrics and scopes naming a timing probe the probe file lacks, gate snippets
+still holding the template mark, a frame or FPS metric while launches are hidden (a hidden
+client presents about 8 frames per second), and a patch that does not apply to the
+checkout. It warns about exact gates that read clocks or randomness, the C1-only JIT and
+captures shorter than 15 s.
+
+`modaccel perf-template --family experiment --from CAPTURE --root SOURCE --out DIR` writes a
+starting experiment from a `perf --root` capture: the metric (the mod's top timing probe per
+tick when the server thread carries its cost, else its sampled CPU on its busiest threads),
+scopes, `probes.json` from the capture's suggestions, `options.txt`, `"jit": "full"`, and two
+gate snippets to write. The check refuses to launch until they are written.
+
+`modaccel perf-optimize --replay OUT1,OUT2` decides finished runs again with the current
+stopping rule from their `optimize.json`, and prints where each would have stopped, its
+verdict then, and the wall time sequentially and with paired arms (estimated as each
+pair's slower arm).
+
 Paths are relative to the experiment file. Measurements apply to that scenario,
 world and machine; other load on the machine widens the intervals, and a change too
 small to separate from that noise is rejected. If a run is interrupted, stop its
 games with `game-stop --root OUT/baseline` (and `candidate`) and run
 `git worktree prune` in the mod. Each arm builds in its own worktree, so the first run of an
-experiment includes two cold builds. [`bench/zombie-siege`](bench/zombie-siege/README.md)
-is a complete experiment for a real NeoForge mod.
+experiment includes two cold builds. [`bench/zombie-siege`](bench/zombie-siege/README.md),
+[`bench/pipez`](bench/pipez/README.md) and [`bench/storagenetwork`](bench/storagenetwork/README.md)
+are complete experiments for real NeoForge mods. `self-test` checks that every
+`bench/*/experiment.json` names only files the checkout has.
+
+More experiment fields, for a mod whose cost is spread over threads:
+
+- `"metric": {"threadCpu": "^diorama-baker"}` is the operating system's CPU time, in ms per
+  second of the window, of every thread whose name matches (`threadCpuTime` in `report.json`:
+  each thread's ThreadMXBean CPU time at the window's end less at its start; a thread started
+  during the window counts from zero). It is exact, and only time on a processor counts. Prefer
+  it for a mod's own threads: on a busy machine execution samples also count a preempted thread
+  that is in Java code, so a sampled metric overstates a gain when the arms meet different load.
+  Shared threads (`Render thread`, `Server thread`) run the game's work too, so their CPU time
+  is a scope that shows a candidate didn't add to them, not a metric. `"perCall": "label"` divides
+  by the calls a counted probe saw (ms per call): when a faster build finishes more work inside the
+  window, the per-window figure understates its gain and per-call wall-time scopes rise with the
+  extra work, so read both. `perf-template` writes it
+  for a mod's own threads and keeps their sampled CPU as a scope.
+- `"metric": {"mod": "diorama"}` is the mod's whole sampled CPU (`sampledCpuMsPerSecond`
+  of its attribution row), every thread included. Add `"threads": "^(mymod-worker|Render thread)"`
+  to count only the mod's threads whose names match: a mod's background job that takes up
+  whatever time the rest leaves it (a catch-up import, a prefetcher) would otherwise hide a saving.
+- `measure.before` runs snippets right before each capture (`{"cold": [...], "warm": [...]}`,
+  each step `{"file", "thread", "expect"}`), so a workload starts with its own window rather than
+  at a fixed time that drifts with how long the previous capture's report took.
+- `measure.scopes` lists more values to report per capture, each with its own speedup and
+  interval: a timing probe (`{"name", "probe", "statistic"}`), or a method's inclusive
+  sampled CPU (`{"name", "mod", "method": "TileSpots.pick"}`; a pair where either arm registered nothing is left out). Sampled CPU stays put when
+  other load on the machine stretches wall time; inclusive wall time does not. Scopes do not
+  decide acceptance.
+- `"reset": ["run/mymod-cache"]` deletes those paths in each arm before every launch, for
+  state a mod keeps beside the save that would otherwise carry from one launch to the next.
+- `"jit": "full"` launches with the JIT players have. A hidden test client otherwise runs
+  C1 alone, which starts cheaply but weighs code differently from a player's game.
+
+Every `perf` capture and every `perf-optimize` decision writes `record.json`: the mod, its
+version and loader, wall time per phase (setup, build, launch, warmup, measure, gates),
+machine load, the candidate's label and diff hash, each gate, the speedups with intervals,
+the verdict and why a change was rejected. A copy goes to `.runs/perf-records/`.
+`--label` and `--session` name the candidate and group runs. Keep a run with
+`python bench/record.py perf RECORD` (it lands in `coverage/perf-runs.json`) and summarise
+time per phase, verdicts and the slowest steps with `python bench/perf_sessions.py`.
+
+Accepted changes become entries in `knowledge/perf-patterns.json`: a symptom written as a
+condition over a capture's attribution (a share of a mod's samples in methods, features or
+threads matching a regex), the change, its measured gain, the gate that proved it and the
+run that did. A `perf` report lists the patterns its hotspots match under **Known patterns**.
+`self-test` checks every entry: it must cite an accepted kept run, and its own `test` rows
+must fire and stay quiet.
 
 ## Files and troubleshooting
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Describe measured sample shares and bake budgets without inferring wall time from samples."""
+import sys
 import argparse
 import json
 import math
@@ -117,4 +118,7 @@ def main():
 
 
 if __name__ == '__main__':
+    for stream in (sys.stdout, sys.stderr):  # UTF-8 whatever the console or PYTHONIOENCODING says
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     main()

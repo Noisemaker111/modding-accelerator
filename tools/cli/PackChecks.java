@@ -243,9 +243,15 @@ final class PackChecks {
         if (c.opened()) return;
         String failure = String.valueOf(c.start.get("failure"));
         List<Map<String, Object>> suspects = Json.array(c.start.getOrDefault("suspects", List.of())).stream().map(Json::object).toList();
-        boolean clientOnly = c.loader.clientOnly().stream().anyMatch(failure::contains);
+        Map<String, Object> javaBuild = suspects.stream().filter(s -> Boolean.TRUE.equals(s.get("runtime"))).findFirst().orElse(null);
+        boolean clientOnly = javaBuild == null && (
+            c.loader.clientOnly().stream().anyMatch(failure::contains) ||
+            suspects.stream().anyMatch(s -> String.valueOf(s.get("why")).contains("client-only"))
+        );
         String named = names(suspects);
-        String summary = clientOnly
+        String summary = javaBuild != null
+            ? "The pack's server did not start because of the Java build, not a mod: " + Json.array(javaBuild.get("why")).get(0) + "."
+            : clientOnly
             ? "A client-only mod stopped the pack's server" +
             (named.isEmpty() ? " and the log names none. Neither CurseForge nor Modrinth knows the sides of the mods listed here; one of them is the likely cause." : ": " + named + ".")
             : "The pack's server did not finish starting a new world." + (named.isEmpty() ? " The log names no mod." : " The log names " + named + ".");
@@ -291,7 +297,8 @@ final class PackChecks {
     }
 
     static void dimensionRows(Context c, Map<String, Object> probe) {
-        for (Object d : Json.array(probe.get("dimensions"))) {
+        // A probe that stopped before reading the world has no dimensions; placements() reports that it stopped.
+        for (Object d : Json.array(probe.getOrDefault("dimensions", List.of()))) {
             var dimension = Json.object(d);
             if (dimension.get("write") == null && dimension.get("read") == null && dimension.get("error") == null) continue;
             List<Object> biomes = Json.array(dimension.getOrDefault("outOfRangeBiomes", List.of()));
@@ -316,7 +323,19 @@ final class PackChecks {
     static void placements(Context c) {
         if (!c.opened()) return;
         var probe = c.probe();
-        for (Object d : Json.array(probe.get("different"))) {
+        // The world opened but pack-check's own probe stopped before placing: say so, as a gap of the check, not the pack.
+        if (probe.get("error") != null && probe.get("different") == null) {
+            c.add(
+                "not-checked",
+                "note",
+                "pack-check's probe stopped before placing blocks, so block placement was not checked: " +
+                String.valueOf(probe.get("error")).lines().findFirst().orElse(""),
+                "evidence",
+                String.valueOf(probe.get("error"))
+            );
+            return;
+        }
+        for (Object d : Json.array(probe.getOrDefault("different", List.of()))) {
             var row = Json.object(d);
             String item = Json.text(row, "item", ""), expected = Json.text(row, "expected", ""), landed = Json.text(row, "landed", "");
             String itemMod = item.split(":")[0], landedMod = landed.split(":")[0];
@@ -386,7 +405,7 @@ final class PackChecks {
 
     static void changedBySave(Context c) {
         if (!c.opened()) return;
-        for (Object change : Json.array(c.probe().get("changed"))) c.add(
+        for (Object change : Json.array(c.probe().getOrDefault("changed", List.of()))) c.add(
             "changed-by-save",
             "problem",
             "Saving and reopening changed a block: " + Json.text(Json.object(change), "before", "") + " became " + Json.text(Json.object(change), "after", ""),
@@ -424,11 +443,62 @@ final class PackChecks {
      * cause's stack that runs a pack jar's code. Each comes with why it is named.
      */
     static List<Map<String, Object>> suspects(String log, List<String> reports, PackMods.Scan scan, PackLoaders.Loader loader) {
+        return suspects(log, reports, scan, loader, type -> false);
+    }
+
+    /**
+     * clientClass: whether a game class (internal name) is one the server does not have. Evidence that is only near the
+     * failure (a mixin config named in an ordinary start-up line) blames nobody: mixin configs and handlers count only in
+     * the failure's own lines. A failure that is the Java runtime lacking one of its own members, called from the loader,
+     * blames the Java build and no mod; a game class the server lacks blames only the mod the failure shows reaching it.
+     */
+    static List<Map<String, Object>> suspects(
+        String log,
+        List<String> reports,
+        PackMods.Scan scan,
+        PackLoaders.Loader loader,
+        java.util.function.Predicate<String> clientClass
+    ) {
+        log = unwrapStderr(log);
         Map<String, Map<String, Object>> found = new LinkedHashMap<>();
+        // A server that logged Done finished its start: the start-up lines before it (mixin configs, mods loading) blame nobody.
+        // Only what failed after it, or a crash report, can name a mod.
+        String done = startedLine(log);
+        if (done != null) {
+            String after = log.substring(log.indexOf(done) + done.length());
+            if (reports.isEmpty() && !FAILED_AFTER_START.matcher(after).find()) return List.of();
+            log = after;
+        }
         String all = plain(log + "\n" + String.join("\n", reports));
+        String failing = String.join("\n", failureLines(all));
+        Map<String, Object> runtime = runtime(failing, scan);
+        if (Boolean.TRUE.equals(runtime == null ? null : runtime.get("runtime"))) return List.of(runtime);
+        if (runtime != null) {
+            blame(found, scan, null, (String) runtime.get("jar"), Json.array(runtime.get("why")).get(0).toString());
+            return new ArrayList<>(found.values());
+        }
         for (Pattern named : loader.modNamed()) {
             Matcher m = named.matcher(all);
             while (m.find()) blame(found, scan, m.group(1), null, "the loader names it: " + line(all, m.start()));
+        }
+        String missing = missingClientClass(failing, clientClass);
+        if (missing != null) {
+            // Only the mod the failure shows reaching the class: named by the loader in the failure, else its code in the stack.
+            Map<String, Map<String, Object>> reached = new LinkedHashMap<>();
+            String reaches = "it reaches " + missing + ", a game class the server does not have (client-only): ";
+            for (Pattern named : loader.modNamed()) {
+                Matcher m = named.matcher(failing);
+                while (m.find()) blame(reached, scan, m.group(1), null, reaches + line(failing, m.start()));
+            }
+            if (reached.isEmpty()) for (String frameLine : failing.lines().toList()) {
+                Matcher frame = FRAME.matcher(frameLine);
+                if (!frame.find() || frame.group(2).startsWith("modaccel.packprobe")) continue;
+                String jar = owner(scan, frame.group(2));
+                if (frame.group(1) != null && scan.providers.containsKey(frame.group(1))) blame(reached, scan, frame.group(1), null, reaches + frameLine.strip());
+                else if (jar != null) blame(reached, scan, null, jar, reaches + frameLine.strip());
+                if (!reached.isEmpty()) break;
+            }
+            if (!reached.isEmpty()) return new ArrayList<>(reached.values());
         }
         for (String report : reports) {
             List<String> lines = report.lines().toList();
@@ -439,12 +509,12 @@ final class PackChecks {
                 }
             }
         }
-        Matcher config = MIXIN_CONFIG.matcher(all);
+        Matcher config = MIXIN_CONFIG.matcher(failing);
         while (config.find()) {
             String jar = scan.mixins.get(config.group(1));
             if (jar != null) blame(found, scan, null, jar, "its mixin config " + config.group(1) + " is in the failure");
         }
-        Matcher handler = HANDLER.matcher(all);
+        Matcher handler = HANDLER.matcher(failing);
         while (handler.find()) if (scan.providers.containsKey(handler.group(1))) blame(
             found,
             scan,
@@ -475,6 +545,86 @@ final class PackChecks {
             }
         }
         return new ArrayList<>(found.values());
+    }
+
+    /** Log4j's wrapper round lines a program printed to stderr, kept by Forge: "[time] [thread/INFO] [STDERR/]: [Class:method:line]: ". */
+    static final Pattern STDERR = Pattern.compile("\\[\\d{2}:\\d{2}:\\d{2}\\] \\[[^\\]]*\\] \\[STDERR/?\\]: (?:\\[[^\\]]*:\\d+\\]: )?");
+
+    /** The log with each stderr line as the program printed it, so an uncaught exception reads as one stack. */
+    static String unwrapStderr(String log) {
+        return STDERR.matcher(log).replaceAll("");
+    }
+
+    static final Pattern THROWABLE = Pattern.compile(
+        "^(?:Exception in thread \"[^\"]*\" |Caused by: )?(?:[\\w$]+\\.)+[\\w$]*(?:Exception|Error|Throwable)\\b.*"
+    );
+
+    /**
+     * The lines that are the failure itself: each exception's header, causes and frames, and a log line at ERROR or FATAL
+     * that the exception right below it belongs to. An uncaught exception ("Exception in thread") belongs to no log line.
+     */
+    static List<String> failureLines(String log) {
+        List<String> lines = log.lines().toList(), out = new ArrayList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i), stripped = line.strip();
+            boolean thrown = THROWABLE.matcher(stripped).matches() || stripped.startsWith("at ") || stripped.startsWith("Caused by:") ||
+                stripped.startsWith("Exception message:") || stripped.matches("\\.\\.\\. \\d+ more");
+            String next = i + 1 < lines.size() ? lines.get(i + 1).strip() : "";
+            boolean owner = (line.contains("/ERROR]") || line.contains("/FATAL]")) && !next.startsWith("Exception in thread") &&
+                (THROWABLE.matcher(next).matches() || next.startsWith("Caused by:"));
+            if (thrown || owner) out.add(line);
+        }
+        return out;
+    }
+
+    static final Pattern MISSING_TYPE = Pattern.compile("(?:NoClassDefFoundError|ClassNotFoundException):? ([\\w$./]+)");
+
+    /** The first game class the failure could not find that the server does not have, as an internal name; null if none. */
+    static String missingClientClass(String failing, java.util.function.Predicate<String> clientClass) {
+        Matcher m = MISSING_TYPE.matcher(failing);
+        while (m.find()) {
+            String type = m.group(1).replace('.', '/');
+            if (clientClass.test(type)) return type;
+        }
+        return null;
+    }
+
+    static final Pattern MISSING_MEMBER = Pattern.compile(
+        "(NoSuchMethodError|NoSuchFieldError|IllegalAccessError|AbstractMethodError|NoClassDefFoundError|ClassNotFoundException):? '?" +
+        "(?:[\\w$.\\[\\]]+ )?((?:sun|jdk\\.internal|com\\.sun|java|javax)\\.[\\w$.]+(?:<init>|<clinit>)?(?:\\([^)]*\\)\\S*)?)"
+    );
+
+    /**
+     * A failure that is the Java runtime lacking one of its own classes or members (java.*, javax.*, sun.*, jdk.internal.*).
+     * Called from a pack jar's code, that mod needs another Java ("jar" names it). Called from the loader or the game, no
+     * mod is at fault: the entry has "runtime": true, the Java build does not suit the loader. Null for any other failure.
+     */
+    static Map<String, Object> runtime(String failing, PackMods.Scan scan) {
+        List<String> lines = failing.lines().toList();
+        for (int i = 0; i < lines.size(); i++) {
+            Matcher m = MISSING_MEMBER.matcher(lines.get(i));
+            if (!m.find()) continue;
+            String member = m.group(2), caller = null;
+            for (int j = i + 1; j < lines.size() && caller == null; j++) {
+                Matcher frame = FRAME.matcher(lines.get(j));
+                if (frame.find()) caller = frame.group(2);
+            }
+            if (caller == null) continue;
+            String jar = owner(scan, caller);
+            String why = "this Java lacks " + member + ", which " + caller + " calls (" + m.group(1) + ")";
+            if (jar != null) return Json.map("mod", null, "jar", jar, "why", List.of("its code needs another Java build: " + why));
+            return Json.map(
+                "mod",
+                "java",
+                "jar",
+                "",
+                "runtime",
+                true,
+                "why",
+                List.of("the Java build, not a mod: " + why + "; the loader needs a Java build that has it")
+            );
+        }
+        return null;
     }
 
     /** Minecraft's colour codes (a section sign and one character), which Forge puts round mod names; a log read in the wrong code page shows the sign as U+FFFD. */
@@ -514,7 +664,9 @@ final class PackChecks {
 
     static String names(List<Map<String, Object>> suspects) {
         List<String> shown = new ArrayList<>();
-        for (var s : suspects.subList(0, Math.min(4, suspects.size()))) shown.add(s.get("mod") + (Json.text(s, "jar", "").isEmpty() ? "" : " (" + s.get("jar") + ")"));
+        for (var s : suspects.subList(0, Math.min(4, suspects.size()))) shown.add(
+            Boolean.TRUE.equals(s.get("runtime")) ? "the Java build" : s.get("mod") + (Json.text(s, "jar", "").isEmpty() ? "" : " (" + s.get("jar") + ")")
+        );
         return String.join(", ", shown);
     }
 
@@ -524,6 +676,11 @@ final class PackChecks {
      * a pack jar in that block. A mod failing for any other reason is not counted: leaving it out would hide a real fault.
      */
     static Set<String> clientOnly(String log, PackLoaders.Loader loader, PackMods.Scan scan) {
+        return clientOnly(log, loader, scan, type -> false);
+    }
+
+    /** clientClass: a game class the server does not have; a block that could not find one counts as client-only too. */
+    static Set<String> clientOnly(String log, PackLoaders.Loader loader, PackMods.Scan scan, java.util.function.Predicate<String> clientClass) {
         Set<String> ids = new LinkedHashSet<>();
         log = plain(log);
         if (loader.failed().stream().noneMatch(log::contains)) return ids;
@@ -533,11 +690,19 @@ final class PackChecks {
             int end = i + 1;
             while (end < lines.size() && !lines.get(end).startsWith("[")) end++;
             String block = String.join("\n", lines.subList(i, end));
-            if (loader.clientOnly().stream().noneMatch(block::contains)) continue;
+            if (loader.clientOnly().stream().noneMatch(block::contains) && missingClientClass(block, clientClass) == null) continue;
             Set<String> named = new LinkedHashSet<>();
             for (Pattern pattern : loader.modNamed()) {
                 Matcher m = pattern.matcher(lines.get(i));
                 if (m.find()) named.add(m.group(1));
+            }
+            // Quilt and Fabric name the mod a few lines into the block ("... provided by 'lilac'!").
+            if (named.isEmpty()) for (Pattern pattern : loader.modNamed()) {
+                Matcher m = pattern.matcher(block);
+                if (m.find() && scan.providers.containsKey(m.group(1))) {
+                    named.add(m.group(1));
+                    break;
+                }
             }
             // A line of its own (a mod printing the error it caught) names no mod: only a mod's failure block counts.
             if (named.isEmpty() && end > i + 1) for (String line : lines.subList(i + 1, end)) {
@@ -555,10 +720,28 @@ final class PackChecks {
     }
 
     /** What stopped a start: the loader's or game's own words, and their causes. */
+    /** The dedicated server's "Done (12.3s)! For help" line: it finished starting. Null when the log has none. */
+    static String startedLine(String log) {
+        Matcher m = STARTED.matcher(log);
+        return m.find() ? m.group() : null;
+    }
+
+    static final Pattern STARTED = Pattern.compile("(?m)^.*\\bDone \\(\\d+(?:[.,]\\d+)?s\\)! For help.*$");
+    static final Pattern FAILED_AFTER_START = Pattern.compile("Caused by:|Exception in thread|/FATAL\\]|Crash report saved|This crash report has been saved");
+
     static String failure(String log, List<String> failed) {
-        List<String> lines = plain(log).lines().toList(), out = new ArrayList<>();
+        String done = startedLine(log);
+        if (done != null && !FAILED_AFTER_START.matcher(log.substring(log.indexOf(done) + done.length())).find()) return (
+            "The server finished starting (" + plain(done).strip() + ") but modaccel's probe never reported back: a fault of the probe, not of a mod in the pack."
+        );
+        List<String> lines = plain(unwrapStderr(log)).lines().toList(), out = new ArrayList<>();
+        // Forge logs a class a mixin only probed for, on the wrong side, at FATAL from RuntimeDistCleaner; that alone stops nothing.
         for (String line : lines) if (
-            failed.stream().anyMatch(line::contains) || line.startsWith("Caused by:") || line.contains("Exception message:") || line.contains("/FATAL]")
+            failed.stream().anyMatch(line::contains) ||
+            line.startsWith("Caused by:") ||
+            line.startsWith("Exception in thread") ||
+            line.contains("Exception message:") ||
+            (line.contains("/FATAL]") && !line.contains("RuntimeDistCleaner"))
         ) out.add(line.strip());
         if (out.isEmpty()) out.addAll(lines.subList(Math.max(0, lines.size() - 12), lines.size()));
         List<String> unique = new ArrayList<>(new LinkedHashSet<>(out));

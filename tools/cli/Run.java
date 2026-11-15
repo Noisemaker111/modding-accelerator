@@ -26,6 +26,17 @@ final class Run {
         return end >= 0 && end + 2 < stat.length() && "ZXx".indexOf(stat.charAt(end + 2)) >= 0;
     }
 
+    /**
+     * With MODACCEL_PROGRESS set (the desktop app sets it), one stderr line per step while --json keeps its answer
+     * for the end: modaccel-progress {"step": what is running, "log": the file that step writes, or null}.
+     */
+    static void progress(String step, Path log) {
+        if (System.getenv("MODACCEL_PROGRESS") == null) return;
+        String file = log == null ? null : log.toAbsolutePath().toString();
+        System.err.println("modaccel-progress " + Json.write(Json.map("step", step, "log", file)));
+        System.err.flush();
+    }
+
     record Result(int exit, Path log, double seconds) {}
 
     /** A command stopped at its time limit; the caller says what the limit was for. */

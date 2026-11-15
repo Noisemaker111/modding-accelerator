@@ -1,0 +1,7 @@
+{"events": [
+  {"t": 0.3, "type": "tap", "key": "nav-modpack"},
+  {"t": 1.0, "type": "tap", "key": "pack-folder"},
+  {"t": 1.5, "type": "file-dialog", "path": ".runs/desktop/pack-fixture/instance"},
+  {"t": 3.5, "type": "tap", "key": "pack-run"},
+  {"t": 40.0, "type": "mark", "name": "end"}
+]}

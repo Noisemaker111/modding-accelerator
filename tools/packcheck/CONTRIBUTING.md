@@ -27,8 +27,11 @@ the Java version from the game's own `version.json`. A pack that names no loader
 If one game version is published under other coordinates (NeoForge for 1.20.1 is), add a `byMinecraft` entry to that
 loader in `pack-loaders.json`.
 
-The probe compiles against the game API from 1.20.1 to 1.21.1. A version whose API moved fails at `probe-compile`
-with javac's error; fix it in `ModaccelPackProbe.java`, keeping one source for every loader.
+The probe compiles against the game API from 1.16 to 26.x, as Java 8 source (1.16 servers run on Java 8). Every game call that changed between versions is in a
+game layer, `tools/packcheck/game/VERSION/ModaccelPackGame.java`, and pack-check compiles the probe with the layer
+whose VERSION is the newest at or below the pack's. A version whose API moved again fails at `probe-compile` with
+javac's error: add a layer named after the first version with the new API, with the same methods as the others, and
+list it in `tools/cli/Installation.java`. Keep loader-specific code out of the layers.
 
 ## Add a loader
 
@@ -44,11 +47,26 @@ Add an entry under `loaders` in `knowledge/pack-loaders.json`:
 - `builtIn`, `failed`, `modNamed`, `clientOnly`: mod ids it provides itself, words that mean a start failed, patterns
   whose first group is a mod id it blames, and words that mean a mod reached client-only code on a server.
 
+A loader that needs an exact Java build gets a rule under `javaBuilds`: the JDK member (`call`) its jars under
+`libraries/<libraries>` call, and the Temurin `release` that still has it. It applies when the game's Java as installed
+lacks that member; the release is downloaded and must match both the vendor's API SHA-256 and its published checksum file.
+
 A loader that fits neither style needs a `Style` subclass in `PackLoaders.java`, added to the `switch` in `all()`.
 If it reads a metadata format pack-check does not know, add a reader in `PackMods.read` and the probe's own file
 beside `ModaccelPackProbe.java`. If its server keeps the running game somewhere new, add that lookup to `findServer`
 in the probe. If its run-time names differ, return them from `names()`. Add an alias and a launch test to
 `PackCheckTest.loaders`, then prove the loader on a real public pack (below).
+
+## Which jars a server gets
+
+`PackCheck.serverMods` decides, from the pack's side lists and the loader's own metadata. A jar marked client-side
+(CurseForge, Modrinth, the `.mrpack`'s `env`, Fabric's `environment`) is left out, unless a kept mod requires a mod id
+only it provides: then it is kept and the loader decides (Fabric and Quilt keep an `environment: client` jar out of the
+game and treat a dependency on it as met; Forge runs it). A jar a start showed to be client-only (`client-only.json`)
+cannot run on a server, and a mod that requires an id only such jars provide is left out with it, through its
+dependants. A jar no list or metadata gives a side is client-only when its Fabric or Quilt server entrypoint reaches,
+as it initialises, a game class the installed server does not have (`PackMods.clientCode`). The result's
+`game.leftOut` and `game.keptForDependants` say why for each jar.
 
 ## Add a pack input
 
@@ -88,8 +106,10 @@ A repair is an entry in `knowledge/pack-fixes.json`, added only after a real run
 }
 ```
 
-- `match.type`: `mod-below` (the version the loader uses is older than `below`), `mod-range` (it is inside `range`) or
-  `mods-together` (all of `mods` are present). The loader uses the highest version of an id anywhere, bundled or not.
+- `match.type`: `mod-below` (the version the loader uses is older than `below`), `mod-range` (it is inside `range`),
+  `mods-together` (all of `mods` are present), `dependency-unmet` (`mod` requires `dependency` in a range the pack's
+  version misses) or `dependency-missing` (`mod` requires `dependency` and no jar provides it). The loader uses the
+  highest version of an id anywhere, bundled or not.
 - `action.type`: `add-jar`, `remove-mod` or `replace-mod`. Downloads are checked against `sha512`.
 - `check`: the finding kind the repair is proven against; the repaired lane must not show it.
 - `test`: jars written in the loader's own metadata format that must match before the action and must not after it.

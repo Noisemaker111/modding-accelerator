@@ -1,0 +1,56 @@
+diff --git a/src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java b/src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java
+index a56902c..2d83dd4 100644
+--- a/src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java
++++ b/src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java
+@@ -144,20 +144,40 @@ public abstract class UpgradeTileEntity extends PipeTileEntity implements Cleara
+         upgradeInventory.clear();
+     }
+ 
++    /**
++     * The connection list the sorted lists below were made from. The connection cache is replaced, never changed in
++     * place, so while getConnections() returns the same list the sorted copies are still right.
++     */
++    @Nullable
++    private List<PipeTileEntity.Connection> sortedFrom;
++    @Nullable
++    private List<PipeTileEntity.Connection> nearestFirst;
++    @Nullable
++    private List<PipeTileEntity.Connection> furthestFirst;
++
+     public List<PipeTileEntity.Connection> getSortedConnections(Direction side, PipeType pipeType) {
+         UpgradeTileEntity.Distribution distribution = getDistribution(side, pipeType);
+-        switch (distribution) {
+-            case FURTHEST:
+-                return getConnections().stream().sorted((o1, o2) -> Integer.compare(o2.getDistance(), o1.getDistance())).collect(Collectors.toList());
+-            case RANDOM:
+-                ArrayList<PipeTileEntity.Connection> shuffle = new ArrayList<>(getConnections());
+-                Collections.shuffle(shuffle);
+-                return shuffle;
+-            case NEAREST:
+-            case ROUND_ROBIN:
+-            default:
+-                return getConnections().stream().sorted(Comparator.comparingInt(PipeTileEntity.Connection::getDistance)).collect(Collectors.toList());
++        if (distribution == Distribution.RANDOM) {
++            ArrayList<PipeTileEntity.Connection> shuffle = new ArrayList<>(getConnections());
++            Collections.shuffle(shuffle);
++            return shuffle;
++        }
++        List<PipeTileEntity.Connection> connections = getConnections();
++        if (connections != sortedFrom) {
++            sortedFrom = connections;
++            nearestFirst = null;
++            furthestFirst = null;
++        }
++        if (distribution == Distribution.FURTHEST) {
++            if (furthestFirst == null) {
++                furthestFirst = Collections.unmodifiableList(connections.stream().sorted((o1, o2) -> Integer.compare(o2.getDistance(), o1.getDistance())).collect(Collectors.toList()));
++            }
++            return furthestFirst;
++        }
++        if (nearestFirst == null) {
++            nearestFirst = Collections.unmodifiableList(connections.stream().sorted(Comparator.comparingInt(PipeTileEntity.Connection::getDistance)).collect(Collectors.toList()));
+         }
++        return nearestFirst;
+     }
+ 
+     public enum Distribution implements ICyclable<Distribution> {

@@ -1,0 +1,319 @@
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/batch/Request.java b/src/main/java/com/lothrazar/storagenetwork/api/batch/Request.java
+index 11e6f907..8b768c28 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/batch/Request.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/batch/Request.java
+@@ -22,6 +22,10 @@ public class Request {
+     return count;
+   }
+ 
++  public CapabilityImportExport getStorage() {
++    return storage;
++  }
++
+   public int getPriority() {
+     return storage.getPriority();
+   }
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java
+index 6d958bf9..e3ddf484 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java
+@@ -325,6 +325,51 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+     return itemHandler.extractItem(slot, amount, simulate);
+   }
+ 
++  /** True when addToStackProviderBatch lists nothing from this storage, before it looks at any slot. */
++  public boolean listsNoProviders() {
++    return filterDirection == EnumStorageDirection.IN || inventoryFace == null || connectable.getPos() == null;
++  }
++
++  /** The vanilla barrels or chests this storage reads, when they are plain (PlainInventories); else null. */
++  public List<BlockEntity> plainInventory() {
++    if (inventoryFace == null || connectable == null || connectable.getPos() == null) {
++      return null;
++    }
++    DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
++    return PlainInventories.of(itemHandler, inventoryPos.resolveLevel(), inventoryPos.getBlockPos());
++  }
++
++  /**
++   * For a plain storage: batch.extractStacks(this, slot, item) for each slot addToStackProviderBatch would list as a provider
++   * of item, in slot order, deciding each slot just before it is used, until done says every request is met. Returns false
++   * when it stopped for done.
++   */
++  public boolean extractProviders(com.lothrazar.storagenetwork.api.batch.RequestBatch batch, net.minecraft.world.item.Item item, java.util.function.BooleanSupplier done) {
++    if (listsNoProviders()) {
++      return true;
++    }
++    DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
++    if (itemHandler == null) {
++      return true;
++    }
++    for (int slot = 0; slot < itemHandler.getSlots(); slot++) {
++      if (itemHandler.getStackInSlot(slot).getItem() != item) {
++        continue;
++      }
++      if (done.getAsBoolean()) {
++        return false;
++      }
++      ItemStack stack = itemHandler.extractItem(slot, 1, true);
++      if (stack == null || stack.isEmpty() || filters.isStackFiltered(stack) || stack.getItem() != item) {
++        continue;
++      }
++      batch.extractStacks(this, slot, item);
++    }
++    return true;
++  }
++
+   @Override
+   public void addToStackProviderBatch(Batch<StackProvider> availableItems) {
+     // If this storage is configured to only export from the network, do not
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
+index 1ecd33d8..56d90aa0 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
+@@ -181,6 +181,19 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+     }
+   }
+ 
++  /**
++   * The vanilla barrel or single chest this cable inserts into, when it is plain (PlainInventories) and known without
++   * reading any chunk; else null. The unmodified mod reads the target only when an export moves something, so a check
++   * made before every export must not read it (a read renews the chunk's ticket and can keep it loaded).
++   */
++  public List<net.minecraft.world.level.block.entity.BlockEntity> plainTarget() {
++    if (inventoryFace == null || connectable == null || connectable.getPos() == null) {
++      return null;
++    }
++    DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
++    return PlainInventories.ofSingle(targetHandler.peek(inventoryPos, inventoryFace.getOpposite()));
++  }
++
+   @Override
+   public EnumStorageDirection ioDirection() {
+     return direction;
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java
+new file mode 100644
+index 00000000..42617beb
+--- /dev/null
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java
+@@ -0,0 +1,69 @@
++package com.lothrazar.storagenetwork.api.capabilities;
++
++import java.util.List;
++import net.minecraft.core.BlockPos;
++import net.minecraft.world.CompoundContainer;
++import net.minecraft.world.Container;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.ChestBlock;
++import net.minecraft.world.level.block.entity.BarrelBlockEntity;
++import net.minecraft.world.level.block.entity.BlockEntity;
++import net.minecraft.world.level.block.entity.ChestBlockEntity;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.block.state.properties.ChestType;
++import net.neoforged.neoforge.items.IItemHandler;
++import net.neoforged.neoforge.items.wrapper.InvWrapper;
++
++/**
++ * Vanilla barrels and chests behind a plain InvWrapper, the inventories whose slots behave independently: a simulated
++ * extract returns the slot's own item or nothing and changes nothing, an extract of 0 returns nothing, and taking from
++ * one slot changes no other. A chest that still has loot to unpack is not plain: reading any of its slots fills it.
++ */
++public final class PlainInventories {
++
++  private PlainInventories() {}
++
++  /** The block entities whose slots handler reads and writes, at pos in level, when they are plain; else null. */
++  public static List<BlockEntity> of(IItemHandler handler, Level level, BlockPos pos) {
++    if (handler == null || handler.getClass() != InvWrapper.class || level == null || pos == null) {
++      return null;
++    }
++    Container inventory = ((InvWrapper) handler).getInv();
++    if (inventory != null && (inventory.getClass() == BarrelBlockEntity.class || inventory.getClass() == ChestBlockEntity.class)) {
++      return plain((BlockEntity) inventory) ? List.of((BlockEntity) inventory) : null;
++    }
++    if (inventory == null || inventory.getClass() != CompoundContainer.class) {
++      return null;
++    }
++    BlockState state = level.getBlockState(pos);
++    if (!state.hasProperty(ChestBlock.TYPE) || state.getValue(ChestBlock.TYPE) == ChestType.SINGLE) {
++      return null;
++    }
++    BlockEntity here = level.getBlockEntity(pos);
++    BlockEntity other = level.getBlockEntity(pos.relative(ChestBlock.getConnectedDirection(state)));
++    if (here == null || other == null || here == other || here.getClass() != ChestBlockEntity.class || other.getClass() != ChestBlockEntity.class) {
++      return null;
++    }
++    CompoundContainer both = (CompoundContainer) inventory;
++    if (!both.contains((Container) here) || !both.contains((Container) other) || !plain(here) || !plain(other)) {
++      return null;
++    }
++    return List.of(here, other);
++  }
++
++  /** The barrel or single chest handler reads and writes, when it is plain; else null (a double chest included). */
++  public static List<BlockEntity> ofSingle(IItemHandler handler) {
++    if (handler == null || handler.getClass() != InvWrapper.class) {
++      return null;
++    }
++    Container inventory = ((InvWrapper) handler).getInv();
++    if (inventory != null && (inventory.getClass() == BarrelBlockEntity.class || inventory.getClass() == ChestBlockEntity.class)) {
++      return plain((BlockEntity) inventory) ? List.of((BlockEntity) inventory) : null;
++    }
++    return null;
++  }
++
++  private static boolean plain(BlockEntity entity) {
++    return ((net.minecraft.world.RandomizableContainer) entity).getLootTable() == null;
++  }
++}
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
+index c7b5e4ab..2c043662 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
+@@ -39,6 +39,8 @@ public final class TargetItemHandler {
+   private Direction side;
+   // False after a lookup found a target whose chunk accesses are not known: then look up until it is a barrel or chest.
+   private boolean replayable = true;
++  // True while the cache holds an answer NeoForge has not invalidated since get() last read it.
++  private boolean known;
+ 
+   public IItemHandler get(DimPos inventoryPos, Direction side) {
+     Level resolved = inventoryPos.resolveLevel();
+@@ -47,7 +49,7 @@ public final class TargetItemHandler {
+       return inventoryPos.getItemHandler(side);
+     }
+     if (cache == null || level != serverLevel || this.side != side || !blockPos.equals(pos)) {
+-      cache = BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, serverLevel, blockPos, side);
++      cache = newCache(serverLevel, blockPos, side);
+       level = serverLevel;
+       pos = blockPos;
+       this.side = side;
+@@ -57,7 +59,7 @@ public final class TargetItemHandler {
+       IItemHandler fresh = inventoryPos.getItemHandler(side);
+       if (vanilla(fresh)) {
+         // Start from a new cache, so its first answer is a lookup made now.
+-        cache = BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, serverLevel, blockPos, side);
++        cache = newCache(serverLevel, blockPos, side);
+         replayable = true;
+       }
+       return fresh;
+@@ -66,6 +68,7 @@ public final class TargetItemHandler {
+     touchChunk(serverLevel, blockPos);
+     // A valid cache answers what a lookup would; an invalidated one makes the lookup now.
+     IItemHandler handler = cache.getCapability();
++    known = true;
+     if (!vanilla(handler)) {
+       // Only an invalidated cache can answer something else, and that answer came from a lookup just made.
+       replayable = false;
+@@ -82,6 +85,22 @@ public final class TargetItemHandler {
+     return handler;
+   }
+ 
++  /**
++   * What get(inventoryPos, side) would return, without any chunk access, when the cache already knows it: the target
++   * is a vanilla barrel or chest that get() read and NeoForge has not invalidated since. Else null.
++   */
++  public IItemHandler peek(DimPos inventoryPos, Direction side) {
++    if (!known || !replayable || cache == null || this.side != side || inventoryPos.resolveLevel() != level || !pos.equals(inventoryPos.getBlockPos())) {
++      return null;
++    }
++    return cache.getCapability();
++  }
++
++  private BlockCapabilityCache<IItemHandler, Direction> newCache(ServerLevel level, BlockPos pos, Direction side) {
++    known = false;
++    return BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, level, pos, side, () -> true, () -> known = false);
++  }
++
+   /** NeoForge's answer for a vanilla barrel, chest or double chest. */
+   private static boolean vanilla(IItemHandler handler) {
+     if (handler == null || handler.getClass() != InvWrapper.class) {
+diff --git a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
+index 22cd4153..d1434f5a 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
+@@ -573,8 +573,31 @@ public class NetworkModuleDefault implements NetworkModule {
+     if (batch == null) {
+       return;
+     }
++    List<CapabilityConnectable> storages = getSortedConnectableStorage();
++    if (providersStayPut(batch, storages)) {
++      // The providers listed below, taken item by item in the same order, each decided just before it is used. Nothing
++      // the batch does changes a slot not yet reached: extracting changes only the provider's own slot of a plain
++      // inventory, and no export target is a storage. Once every request for an item has count 0, each later provider's
++      // extractStacks is a simulation that changes nothing, so the scan stops there.
++      for (Item item : batch.keySet()) {
++        java.util.function.BooleanSupplier met = () -> {
++          for (com.lothrazar.storagenetwork.api.batch.Request request : batch.get(item)) {
++            if (request.getCount() != 0) {
++              return false;
++            }
++          }
++          return true;
++        };
++        for (CapabilityConnectable storage : storages) {
++          if (!((com.lothrazar.storagenetwork.api.capabilities.CapabilityConnectableDefault) storage).extractProviders(batch, item, met)) {
++            break;
++          }
++        }
++      }
++      return;
++    }
+     Batch<StackProvider> availableItems = new Batch<StackProvider>();
+-    for (CapabilityConnectable storage : getSortedConnectableStorage()) {
++    for (CapabilityConnectable storage : storages) {
+       storage.addToStackProviderBatch(availableItems);
+     }
+     for (Item item : batch.keySet()) {
+@@ -587,6 +610,49 @@ public class NetworkModuleDefault implements NetworkModule {
+     }
+   }
+ 
++  /**
++   * True when every storage that lists providers and every export target is a plain vanilla inventory (PlainInventories),
++   * no block entity is behind two storages, and no export target is a storage: then the batch changes no slot it has not
++   * reached yet, and providers can be decided as they are reached instead of all first.
++   */
++  private static boolean providersStayPut(RequestBatch batch, List<CapabilityConnectable> storages) {
++    Set<BlockEntity> stored = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
++    for (CapabilityConnectable storage : storages) {
++      if (!(storage instanceof com.lothrazar.storagenetwork.api.capabilities.CapabilityConnectableDefault plain)) {
++        return false;
++      }
++      if (plain.listsNoProviders()) {
++        continue;
++      }
++      List<BlockEntity> inventories = plain.plainInventory();
++      if (inventories == null) {
++        return false;
++      }
++      for (BlockEntity inventory : inventories) {
++        if (!stored.add(inventory)) {
++          return false;
++        }
++      }
++    }
++    for (List<com.lothrazar.storagenetwork.api.batch.Request> requests : batch.values()) {
++      for (com.lothrazar.storagenetwork.api.batch.Request request : requests) {
++        if (!(request.getStorage() instanceof com.lothrazar.storagenetwork.api.capabilities.CapabilityImportExportDefault exporter)) {
++          return false;
++        }
++        List<BlockEntity> targets = exporter.plainTarget();
++        if (targets == null) {
++          return false;
++        }
++        for (BlockEntity target : targets) {
++          if (stored.contains(target)) {
++            return false;
++          }
++        }
++      }
++    }
++    return true;
++  }
++
+   /**
+    * TODO: move or refactor?
+    */

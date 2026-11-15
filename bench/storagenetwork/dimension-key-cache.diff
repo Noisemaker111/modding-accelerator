@@ -1,0 +1,38 @@
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/DimPos.java b/src/main/java/com/lothrazar/storagenetwork/api/DimPos.java
+index 2068c028..51cde2fd 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/DimPos.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/DimPos.java
+@@ -72,9 +72,14 @@ public class DimPos implements INBTSerializable<CompoundTag> {  // NOPMD
+     return getTileEntity(tileEntityClassOrInterface, getWorld());
+   }
+ 
++  // Dimension strings and keys convert the same way every time: ResourceKey.create interns its result,
++  // so a remembered key is the very object a fresh parse would return.
++  private static final java.util.concurrent.ConcurrentHashMap<String, ResourceKey<Level>> DIMENSION_KEYS = new java.util.concurrent.ConcurrentHashMap<>();
++  private static final java.util.concurrent.ConcurrentHashMap<ResourceKey<Level>, String> DIMENSION_NAMES = new java.util.concurrent.ConcurrentHashMap<>();
++
+   public static String dimensionToString(Level w) {
+     //example: returns "minecraft:overworld" resource location
+-    return w.dimension().location().toString();
++    return DIMENSION_NAMES.computeIfAbsent(w.dimension(), key -> key.location().toString());
+   }
+ 
+   public static final String NBT_Z = "Z";
+@@ -104,7 +109,16 @@ public class DimPos implements INBTSerializable<CompoundTag> {  // NOPMD
+   }
+ 
+   public static ServerLevel stringDimensionLookup(String s, MinecraftServer serv) {
+-    return stringDimensionLookup(ResourceLocation.tryParse(s), serv);
++    ResourceKey<Level> worldKey = DIMENSION_KEYS.get(s);
++    if (worldKey == null) {
++      ResourceLocation location = ResourceLocation.tryParse(s);
++      if (location == null) {
++        return stringDimensionLookup(location, serv);
++      }
++      worldKey = ResourceKey.create(Registries.DIMENSION, location);
++      DIMENSION_KEYS.put(s, worldKey);
++    }
++    return serv.getLevel(worldKey);
+   }
+ 
+   public static ServerLevel stringDimensionLookup(ResourceLocation s, MinecraftServer serv) {

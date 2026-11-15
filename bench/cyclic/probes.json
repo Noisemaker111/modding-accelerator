@@ -1,0 +1,4 @@
+{"probes": [
+  {"class": "com.lothrazar.cyclic.block.crafter.TileCrafter", "method": "serverTick", "descriptor": "(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lcom/lothrazar/cyclic/block/crafter/TileCrafter;)V", "label": "crafterTick", "mode": "timing"},
+  {"class": "com.lothrazar.cyclic.block.batterycreative.TileBatteryInfinite", "method": "serverTick", "descriptor": "(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lcom/lothrazar/cyclic/block/batterycreative/TileBatteryInfinite;)V", "label": "batteryTick", "mode": "timing"}
+]}
