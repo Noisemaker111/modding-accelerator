@@ -3,7 +3,6 @@ package ${package};
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -15,15 +14,16 @@ final class GameEvents {
     private GameEvents() {}
 
     static void hook() {
+        IEntityExtension.register();
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> Bus.INSTANCE.post(new PlayerEvent.PlayerLoggedInEvent(handler.player)));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> Bus.INSTANCE.post(new PlayerEvent.PlayerLoggedOutEvent(handler.player)));
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> Bus.INSTANCE.post(new PlayerEvent.PlayerRespawnEvent(newPlayer, alive)));
+        ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> IEntityExtension.copyPersisted(oldPlayer, newPlayer));
         ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> Bus.INSTANCE.post(new PlayerEvent.Clone(newPlayer, oldPlayer, !alive)));
         ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> Bus.INSTANCE.post(new PlayerEvent.PlayerChangedDimensionEvent(player, origin.dimension(), destination.dimension())));
         ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> !Bus.INSTANCE.post(new LivingDeathEvent(entity, source)).canceled);
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> !Bus.INSTANCE.post(new LivingIncomingDamageEvent(entity, source, amount)).canceled);
-        // Fabric API for 1.21.1 has no event before an entity joins a level, only ENTITY_LOAD once it has.
-        ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> Bus.INSTANCE.post(new EntityJoinLevelEvent(entity, level)));
+        // EntityJoinLevelEvent comes from EntityJoinLevelMixin: Fabric API for 1.21.1 has no event before an entity joins a level.
         ServerWorldEvents.LOAD.register((server, level) -> Bus.INSTANCE.post(new LevelEvent.Load(level)));
         ServerWorldEvents.UNLOAD.register((server, level) -> Bus.INSTANCE.post(new LevelEvent.Unload(level)));
         ServerTickEvents.START_WORLD_TICK.register(level -> Bus.INSTANCE.post(new LevelTickEvent.Pre(() -> true, level)));

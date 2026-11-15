@@ -1492,7 +1492,17 @@
     "net.neoforged.neoforge.event.tick.PlayerTickEvent": "PlayerTickEvent",
     "net.neoforged.neoforge.event.EventHooks": "EventHooks",
     "net.neoforged.neoforge.common.util.BlockSnapshot": "BlockSnapshot",
-    "net.neoforged.neoforge.event.level.BlockEvent": "BlockEvent"
+    "net.neoforged.neoforge.event.level.BlockEvent": "BlockEvent",
+    "net.neoforged.neoforge.event.entity.living.LivingDropsEvent": "LivingDropsEvent",
+    "net.neoforged.neoforge.event.entity.living.MobSpawnEvent": "MobSpawnEvent",
+    "net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent": "FinalizeSpawnEvent",
+    "net.neoforged.neoforge.event.entity.EntityMobGriefingEvent": "EntityMobGriefingEvent",
+    "net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent": "LivingDestroyBlockEvent",
+    "net.neoforged.neoforge.event.entity.living.LivingConversionEvent": "LivingConversionEvent",
+    "net.neoforged.neoforge.common.CommonHooks": "CommonHooks",
+    "net.neoforged.neoforge.common.extensions.IEntityExtension": "IEntityExtension",
+    "net.neoforged.neoforge.common.extensions.IBlockStateExtension": "IBlockStateExtension",
+    "net.neoforged.neoforge.common.extensions.IItemStackExtension": "IItemStackExtension"
    },
    "symbols": {
     "neoforge": [
@@ -1599,7 +1609,41 @@
      "neoforge|net.neoforged.neoforge.event.level.BlockEvent$EntityMultiPlaceEvent#getReplacedBlockSnapshots",
      "neoforge|net.neoforged.neoforge.event.level.BlockEvent$NeighborNotifyEvent#getNotifiedSides",
      "neoforge|net.neoforged.neoforge.event.level.BlockEvent$FluidPlaceBlockEvent#setNewState",
-     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$FarmlandTrampleEvent#getFallDistance"
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$FarmlandTrampleEvent#getFallDistance",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#getDrops",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#getSource",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#isRecentlyHit",
+     "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent#getLevel",
+     "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$SpawnPlacementCheck#getPlacementCheckResult",
+     "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$SpawnPlacementCheck$Result",
+     "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$PositionCheck#getSpawner",
+     "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$PositionCheck$Result",
+     "neoforge|net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent#setSpawnData",
+     "neoforge|net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent#getSpawner",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityMobGriefingEvent#canGrief",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityMobGriefingEvent#isMobGriefingEnabled",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent#getState",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingConversionEvent$Pre#setConversionTimer",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingConversionEvent$Post#getOutcome",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityJoinLevelEvent#loadedFromDisk",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onBlockPlace",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onMultiBlockPlace",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onEntityDestroyBlock",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#canEntityGrief",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#checkSpawnPlacements",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#checkSpawnPosition",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#finalizeMobSpawn",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#canLivingConvert",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onLivingConvert",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#onLivingDrops",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#canEntityDestroy",
+     "neoforge|net.neoforged.neoforge.common.extensions.IEntityExtension#getPersistentData",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockEntityExtension#getPersistentData",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getLightEmission",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#canEntityDestroy",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#canEntityDestroy",
+     "neoforge|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot",
+     "neoforge|net.neoforged.neoforge.common.extensions.IItemExtension#getEquipmentSlot"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -1652,7 +1696,40 @@
      "minecraft|net.minecraft.world.level.block.entity.BlockEntity#saveWithFullMetadata",
      "minecraft|net.minecraft.world.level.block.entity.BlockEntity#problemPath",
      "minecraft|net.minecraft.world.level.storage.TagValueInput#create",
-     "minecraft|net.minecraft.resources.ResourceKey#identifier"
+     "minecraft|net.minecraft.resources.ResourceKey#identifier",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#create",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#persistent",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#initializer",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttached",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#setAttached",
+     "minecraft|net.minecraft.nbt.CompoundTag#CODEC",
+     "minecraft|net.minecraft.resources.Identifier#fromNamespaceAndPath",
+     "minecraft|net.minecraft.world.entity.LivingEntity#dropAllDeathLoot",
+     "minecraft|net.minecraft.world.entity.LivingEntity#lastHurtByPlayerMemoryTime",
+     "minecraft|net.minecraft.world.entity.LivingEntity#drop",
+     "minecraft|net.minecraft.world.entity.Entity#spawnAtLocation",
+     "minecraft|net.minecraft.world.entity.EntityEquipment#dropAll",
+     "minecraft|net.minecraft.world.entity.player.Inventory#dropAll",
+     "minecraft|net.minecraft.world.entity.player.Inventory#player",
+     "minecraft|net.minecraft.world.level.Level#addFreshEntity",
+     "minecraft|net.minecraft.server.level.ServerLevel#addFreshEntity",
+     "minecraft|net.minecraft.world.entity.SpawnPlacements#checkSpawnRules",
+     "minecraft|net.minecraft.world.entity.EntityType#isAllowedInPeaceful",
+     "minecraft|net.minecraft.world.level.NaturalSpawner#isValidPositionForMob",
+     "minecraft|net.minecraft.world.level.NaturalSpawner#spawnMobsForChunkGeneration",
+     "minecraft|net.minecraft.util.SpawnUtil#trySpawnMob",
+     "minecraft|net.minecraft.world.entity.Mob#checkSpawnRules",
+     "minecraft|net.minecraft.world.entity.Mob#checkSpawnObstruction",
+     "minecraft|net.minecraft.world.entity.Mob#finalizeSpawn",
+     "minecraft|net.minecraft.world.entity.EntitySpawnReason",
+     "minecraft|net.minecraft.world.level.gamerules.GameRules#MOB_GRIEFING",
+     "minecraft|net.minecraft.world.level.gamerules.GameRules#get",
+     "minecraft|net.minecraft.client.multiplayer.ClientLevel#addEntity",
+     "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#getLightEmission",
+     "minecraft|net.minecraft.world.entity.boss.wither.WitherBoss#canDestroy",
+     "minecraft|net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull",
+     "minecraft|net.minecraft.tags.BlockTags#DRAGON_IMMUNE"
     ]
    },
    "test": {
@@ -1741,7 +1818,30 @@
        "neoforge-21.1|net.neoforged.neoforge.common.util.BlockSnapshot#restoreBlockEntity",
        "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$BreakEvent#getPlayer",
        "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$EntityPlaceEvent#getPlacedAgainst",
-       "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$FarmlandTrampleEvent#getFallDistance"
+       "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$FarmlandTrampleEvent#getFallDistance",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#getDrops",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$SpawnPlacementCheck#getSpawnType",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$PositionCheck#getSpawnType",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent#getSpawnType",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.EntityMobGriefingEvent#canGrief",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent#getState",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingConversionEvent$Pre#setConversionTimer",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.EntityJoinLevelEvent#loadedFromDisk",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onBlockPlace",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onMultiBlockPlace",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onEntityDestroyBlock",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#canEntityGrief",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#checkSpawnPlacements",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#checkSpawnPosition",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#finalizeMobSpawn",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#canLivingConvert",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onLivingConvert",
+       "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#onLivingDrops",
+       "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#canEntityDestroy",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IEntityExtension#getPersistentData",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getLightEmission",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension#canEntityDestroy",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot"
       ],
       "fabric": [
        "fabric-api-1.21.1|net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#MODIFY_ENTRIES_ALL",
@@ -1790,10 +1890,117 @@
        "minecraft-1.21.1|net.minecraft.world.entity.Entity#rideTick",
        "minecraft-1.21.1|net.minecraft.world.entity.player.Player#tick",
        "minecraft-1.21.1|net.minecraft.world.level.block.entity.BlockEntity#loadWithComponents",
-       "minecraft-1.21.1|net.minecraft.world.level.block.entity.BlockEntity#saveWithFullMetadata"
+       "minecraft-1.21.1|net.minecraft.world.level.block.entity.BlockEntity#saveWithFullMetadata",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#create",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate",
+       "minecraft-1.21.1|net.minecraft.world.entity.LivingEntity#dropAllDeathLoot",
+       "minecraft-1.21.1|net.minecraft.world.entity.LivingEntity#lastHurtByPlayerTime",
+       "minecraft-1.21.1|net.minecraft.world.entity.Entity#spawnAtLocation",
+       "minecraft-1.21.1|net.minecraft.server.level.ServerPlayer#drop",
+       "minecraft-1.21.1|net.minecraft.world.level.Level#addFreshEntity",
+       "minecraft-1.21.1|net.minecraft.world.entity.SpawnPlacements#checkSpawnRules",
+       "minecraft-1.21.1|net.minecraft.world.level.NaturalSpawner#isValidPositionForMob",
+       "minecraft-1.21.1|net.minecraft.world.level.NaturalSpawner#spawnMobsForChunkGeneration",
+       "minecraft-1.21.1|net.minecraft.util.SpawnUtil#trySpawnMob",
+       "minecraft-1.21.1|net.minecraft.world.entity.Mob#checkSpawnRules",
+       "minecraft-1.21.1|net.minecraft.world.entity.Mob#checkSpawnObstruction",
+       "minecraft-1.21.1|net.minecraft.world.entity.Mob#finalizeSpawn",
+       "minecraft-1.21.1|net.minecraft.world.entity.MobSpawnType",
+       "minecraft-1.21.1|net.minecraft.world.level.GameRules#RULE_MOBGRIEFING",
+       "minecraft-1.21.1|net.minecraft.world.level.GameRules#getBoolean",
+       "minecraft-1.21.1|net.minecraft.world.level.entity.PersistentEntitySectionManager#addEntity",
+       "minecraft-1.21.1|net.minecraft.client.multiplayer.ClientLevel#addEntity",
+       "minecraft-1.21.1|net.minecraft.world.entity.projectile.WitherSkull",
+       "minecraft-1.21.1|net.minecraft.world.entity.boss.wither.WitherBoss#canDestroy"
       ]
      },
-     "below": "1.21.2"
+     "below": "1.21.2",
+     "mixins": [
+      {
+       "mixin": "EntityTickMixin",
+       "client": false,
+       "for": [
+        "EntityTickEvent"
+       ]
+      },
+      {
+       "mixin": "EntityRideTickMixin",
+       "client": false,
+       "for": [
+        "EntityTickEvent"
+       ]
+      },
+      {
+       "mixin": "ClientEntityTickMixin",
+       "client": true,
+       "for": [
+        "EntityTickEvent"
+       ]
+      },
+      {
+       "mixin": "PlayerTickMixin",
+       "client": false,
+       "for": [
+        "PlayerTickEvent"
+       ]
+      },
+      {
+       "mixin": "LivingDropsMixin",
+       "client": false,
+       "for": [
+        "LivingDropsEvent"
+       ]
+      },
+      {
+       "mixin": "EntityDropsMixin",
+       "client": false,
+       "for": [
+        "LivingDropsEvent"
+       ]
+      },
+      {
+       "mixin": "InventoryDropsMixin",
+       "client": false,
+       "for": [
+        "LivingDropsEvent"
+       ]
+      },
+      {
+       "mixin": "SpawnPlacementsMixin",
+       "client": false,
+       "for": [
+        "MobSpawnEvent"
+       ]
+      },
+      {
+       "mixin": "MobSpawnPositionMixin",
+       "client": false,
+       "for": [
+        "MobSpawnEvent"
+       ]
+      },
+      {
+       "mixin": "SpawnUtilPositionMixin",
+       "client": false,
+       "for": [
+        "MobSpawnEvent"
+       ]
+      },
+      {
+       "mixin": "EntityJoinLevelMixin",
+       "client": false,
+       "for": [
+        "EntityJoinLevelEvent"
+       ]
+      },
+      {
+       "mixin": "ClientEntityJoinMixin",
+       "client": true,
+       "for": [
+        "EntityJoinLevelEvent"
+       ]
+      }
+     ]
     }
    ],
    "tests": [
@@ -1830,6 +2037,62 @@
      "client": false,
      "for": [
       "PlayerTickEvent"
+     ]
+    },
+    {
+     "mixin": "LivingDropsMixin",
+     "client": false,
+     "for": [
+      "LivingDropsEvent"
+     ]
+    },
+    {
+     "mixin": "EntityDropsMixin",
+     "client": false,
+     "for": [
+      "LivingDropsEvent"
+     ]
+    },
+    {
+     "mixin": "EquipmentDropsMixin",
+     "client": false,
+     "for": [
+      "LivingDropsEvent"
+     ]
+    },
+    {
+     "mixin": "InventoryDropsMixin",
+     "client": false,
+     "for": [
+      "LivingDropsEvent"
+     ]
+    },
+    {
+     "mixin": "SpawnPlacementsMixin",
+     "client": false,
+     "for": [
+      "MobSpawnEvent"
+     ]
+    },
+    {
+     "mixin": "MobSpawnPositionMixin",
+     "client": false,
+     "for": [
+      "MobSpawnEvent"
+     ]
+    },
+    {
+     "mixin": "SpawnUtilPositionMixin",
+     "client": false,
+     "for": [
+      "MobSpawnEvent"
+     ]
+    },
+    {
+     "mixin": "ClientEntityJoinMixin",
+     "client": true,
+     "for": [
+      "EntityJoinLevelEvent"
      ]
     }
    ]
