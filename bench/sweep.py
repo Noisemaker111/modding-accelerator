@@ -553,8 +553,8 @@ def load_runs(tag):
 def compact(r):
     return {k: r.get(k) for k in ("id", "mod", "loader", "names", "kinds", "from", "to", "jump", "javaLines", "build",
                                   "errorsBefore", "errorsAfter", "classes", "blocker", "seconds", "modid")} | {
-        "baseline": r["baseline"] if isinstance(r.get("baseline"), (bool, type(None))) else r["baseline"].get("ok"),
-        "load": r["load"] if isinstance(r.get("load"), (bool, type(None))) else r["load"].get("ok"), "behaviour": r["behaviour"] if isinstance(r.get("behaviour"), (bool, type(None))) else r["behaviour"].get("ok"),
+        "baseline": r.get("baseline") if isinstance(r.get("baseline"), (bool, type(None))) else r["baseline"].get("ok"),
+        "load": r.get("load") if isinstance(r.get("load"), (bool, type(None))) else r["load"].get("ok"), "behaviour": r.get("behaviour") if isinstance(r.get("behaviour"), (bool, type(None))) else r["behaviour"].get("ok"),
         "apis": sorted({f"{e['class']}|{e['api']}" for e in r.get("errors") or []})}
 
 
