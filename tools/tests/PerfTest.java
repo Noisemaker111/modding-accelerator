@@ -498,6 +498,7 @@ public final class PerfTest {
         check(PerfOptimize.childOutput(cp1252).contains("�") && PerfOptimize.childJava(Path.of(".")).contains("-Dstdout.encoding=UTF-8"),
             "a child's answer is read as UTF-8 without failing on a stray byte, and the child is told to write UTF-8");
         Files.delete(cp1252);
+        redirectedOutputIsUtf8();
         boolean refused = false;
         try { PerfOptimize.parallel("both"); } catch (IllegalArgumentException expected) { refused = true; }
         check(refused && PerfOptimize.parallel("parallel") && !PerfOptimize.parallel("sequential"), "--arms is auto, parallel or sequential");
@@ -644,6 +645,23 @@ public final class PerfTest {
         packet.putInt(bytes.length + 10).putInt(id).putInt(type).put(bytes).put((byte) 0).put((byte) 0);
         output.write(packet.array());
         output.flush();
+    }
+
+    /** modaccel run with its output redirected (no -Dstdout.encoding) writes UTF-8, whatever the platform charset. */
+    static void redirectedOutputIsUtf8() throws Exception {
+        Path scratch = Files.createTempDirectory("perf-utf8-");
+        Path source = scratch.resolve("Utf8Probe.java");
+        Files.writeString(source, "public class Utf8Probe { public static void main(String[] args) { Modaccel.utf8WhenRedirected(); "
+            + "System.out.print(\"95% 9.94\\u201311.33; 3.97 \\u2192 0.38\"); System.out.flush(); } }");
+        Path out = scratch.resolve("out.txt");
+        String classes = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+        Process process = new ProcessBuilder(ProcessHandle.current().info().command().orElse("java"), "-cp", classes, source.toString())
+            .redirectErrorStream(true).redirectOutput(out.toFile()).start();
+        boolean done = process.waitFor(60, java.util.concurrent.TimeUnit.SECONDS);
+        String text = new String(Files.readAllBytes(out), java.nio.charset.StandardCharsets.UTF_8);
+        check(done && process.exitValue() == 0 && text.equals("95% 9.94\u201311.33; 3.97 \u2192 0.38"),
+            "redirected modaccel output is UTF-8, so a log or the desktop app reads its dashes and arrows: " + text);
+        Files.walk(scratch).sorted(Comparator.reverseOrder()).forEach(path -> path.toFile().delete());
     }
 
 }
