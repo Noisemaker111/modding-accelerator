@@ -13,6 +13,11 @@ minutes; delete it when the cause is gone.
 - Fix: run them in the cloud (`tools/cloud-run`, AGENTS.md). Locally: one game at a time, `port_board.py --changed`,
   `pack-check --focus MODID`.
 
+## A hidden game keeps running after the command that started it
+- Cause: by design `ui-check`/`world-check` leave the game up for `reload` and `eval`. A failed, interrupted or
+  SIGTERM'd start now takes its game down (`Run.Owned`), but a hard kill of modaccel alone runs no cleanup.
+- Fix: `modaccel game-stop --root R` when done. A hidden game with no modaccel request for 15 minutes quits itself.
+
 ## Self-test passes in the checkout and fails in CI
 - Cause: the jar ships only `Installation.RESOURCES` (directories there are packed whole); a file the CLI reads that is
   not listed is missing from `~/.modaccel/packages/<hash>`.
