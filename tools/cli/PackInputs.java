@@ -167,6 +167,11 @@ final class PackInputs {
 
         /** The hosts a .mrpack may download from, as Modrinth's format allows. */
         static final Set<String> HOSTS = Set.of("cdn.modrinth.com", "github.com", "raw.githubusercontent.com", "gitlab.com");
+        /**
+         * CurseForge's file CDN, which early .mrpacks (Fabulously Optimized for 1.16.5) name. Used last, for a file Modrinth
+         * does not hold: pack-check fetches CurseForge exports' files from there too, and the pack's pinned hashes decide.
+         */
+        static final Set<String> CURSEFORGE_CDN = Set.of("edge.forgecdn.net", "mediafilez.forgecdn.net");
 
         public String id() {
             return "modrinth-mrpack";
@@ -248,6 +253,7 @@ final class PackInputs {
         if (!sha1.matches("[0-9a-f]{40}")) throw new IOException(path + " has no SHA-1 in modrinth.index.json");
         String name = path.substring(path.lastIndexOf('/') + 1);
         Path jar = cache.resolve(sha1).resolve(name);
+        String source = "modrinth-index " + path;
         if (!Files.isRegularFile(jar) || !PackCheck.sha1(jar).equals(sha1)) {
             byte[] bytes = null;
             IOException last = null;
@@ -259,6 +265,23 @@ final class PackInputs {
                 }
                 try {
                     bytes = PackCheck.get(url);
+                    break;
+                } catch (Exception failed) {
+                    last = new IOException(path + " from " + url + ": " + failed.getMessage());
+                }
+            }
+            // A download from a host the format does not allow, or one that is gone: the same file from Modrinth, by the hash the pack pins,
+            // and failing that from CurseForge's CDN when the pack names it there.
+            if (bytes == null) {
+                bytes = sha512.isEmpty() ? PackCheck.modrinthByHash("sha1", sha1) : PackCheck.modrinthByHash("sha512", sha512);
+                if (bytes != null) source += ", from Modrinth by its " + (sha512.isEmpty() ? "SHA-1" : "SHA-512") + (last == null ? "" : " (" + last.getMessage() + ")");
+            }
+            if (bytes == null && !Boolean.getBoolean("modaccel.pack.offline")) for (Object u : Json.array(file.get("downloads"))) {
+                String url = String.valueOf(u);
+                if (!ModrinthPack.CURSEFORGE_CDN.contains(String.valueOf(URI.create(url).getHost()))) continue;
+                try {
+                    bytes = PackCheck.get(url);
+                    source += ", from CurseForge's CDN (Modrinth has no file with its hash)";
                     break;
                 } catch (Exception failed) {
                     last = new IOException(path + " from " + url + ": " + failed.getMessage());
@@ -280,7 +303,7 @@ final class PackInputs {
         boolean client = !"unsupported".equals(env.get("client")), server = !"unsupported".equals(env.get("server"));
         // The pack's own word only when it rules a side out; "required" on both is the default, so Modrinth's project is asked.
         String side = client && !server ? "client" : server && !client ? "server" : "unknown";
-        return new PackCheck.Mod(name, jar, side, "modrinth-index " + path);
+        return new PackCheck.Mod(name, jar, side, source);
     }
 
     // ------------------------------------------------------------------ launchers

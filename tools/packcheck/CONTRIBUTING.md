@@ -53,6 +53,15 @@ beside `ModaccelPackProbe.java`. If its server keeps the running game somewhere 
 in the probe. If its run-time names differ, return them from `names()`. Add an alias and a launch test to
 `PackCheckTest.loaders`, then prove the loader on a real public pack (below).
 
+## Which jars a server gets
+
+`PackCheck.serverMods` decides, from the pack's side lists and the loader's own metadata. A jar marked client-side
+(CurseForge, Modrinth, the `.mrpack`'s `env`, Fabric's `environment`) is left out, unless a kept mod requires a mod id
+only it provides: then it is kept and the loader decides (Fabric and Quilt keep an `environment: client` jar out of the
+game and treat a dependency on it as met; Forge runs it). A jar a start showed to be client-only (`client-only.json`)
+cannot run on a server, and a mod that requires an id only such jars provide is left out with it, through its
+dependants. The result's `game.leftOut` and `game.keptForDependants` say why for each jar.
+
 ## Add a pack input
 
 Implement `PackInputs.Input` and put it in `ALL` before any more general shape it overlaps with. `accepts` looks for a
@@ -91,8 +100,10 @@ A repair is an entry in `knowledge/pack-fixes.json`, added only after a real run
 }
 ```
 
-- `match.type`: `mod-below` (the version the loader uses is older than `below`), `mod-range` (it is inside `range`) or
-  `mods-together` (all of `mods` are present). The loader uses the highest version of an id anywhere, bundled or not.
+- `match.type`: `mod-below` (the version the loader uses is older than `below`), `mod-range` (it is inside `range`),
+  `mods-together` (all of `mods` are present), `dependency-unmet` (`mod` requires `dependency` in a range the pack's
+  version misses) or `dependency-missing` (`mod` requires `dependency` and no jar provides it). The loader uses the
+  highest version of an id anywhere, bundled or not.
 - `action.type`: `add-jar`, `remove-mod` or `replace-mod`. Downloads are checked against `sha512`.
 - `check`: the finding kind the repair is proven against; the repaired lane must not show it.
 - `test`: jars written in the loader's own metadata format that must match before the action and must not after it.
