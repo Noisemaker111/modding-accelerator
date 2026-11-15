@@ -61,5 +61,7 @@ for module in (C, P):
     check(module.records_coverage(argparse.Namespace(only="", record=False)), f"{module.__name__}: a full run writes the coverage file")
     check(not module.records_coverage(argparse.Namespace(only="krypton", record=False)), f"{module.__name__}: a partial run does not")
     check(module.records_coverage(argparse.Namespace(only="krypton", record=True)), f"{module.__name__}: unless --record asks it to")
+check(not P.records_coverage(argparse.Namespace(only="", record=True, focus="soulsweapons", corpus=P.CORPUS)), "a focused pack sweep never writes it")
+check(not P.records_coverage(argparse.Namespace(only="", record=True, focus="", corpus=P.CORPUS.with_name("repro.json"))), "nor one of another corpus")
 
 print(f"{checks} sweep checks passed")

@@ -1,4 +1,0 @@
-{"events": [
-  {"t": 0.5, "type": "tap", "key": "nav-checks"},
-  {"t": 1.5, "type": "mark", "name": "end"}
-]}
