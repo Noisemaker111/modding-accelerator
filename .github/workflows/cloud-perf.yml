@@ -4,7 +4,7 @@ name: Cloud perf A/B
 # virtual display (Xvfb) with Mesa's software OpenGL. Dispatch with tools/cloud-run (python tools/cloud-run.py perf).
 # Defaults are the Diorama play experiment (bench/diorama/README.md) with tint-carry-over.patch. It never applies the
 # patch (--dry-run). The run's optimize.json, report, record.json and game logs are uploaded. Gradle's cache is only
-# restored, from the Diorama 1.21.1 cache main's PR checks already keep, never saved. No retries.
+# restored, from the Stonecutter cache (Diorama 1.21.1 among it) integration.yml keeps on main, never saved. No retries.
 run-name: "Cloud perf A/B: ${{ inputs.patch }} x${{ inputs.runs }} ${{ inputs.request }}"
 on:
   workflow_dispatch:
@@ -29,7 +29,7 @@ on:
         default: '3'
       gradle-cache:
         description: Restore-key prefix of a Gradle cache main keeps; empty for none
-        default: sample-Linux-diorama-1.21.1-
+        default: stonecutter-
       request:
         description: Set by tools/cloud-run to find the run it started
         default: ''
@@ -65,7 +65,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
+            ~/.modaccel/jdks
           key: cloud-perf-never-saved
           restore-keys: ${{ inputs.gradle-cache }}
       - name: Virtual display with software OpenGL
