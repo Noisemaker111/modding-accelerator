@@ -406,11 +406,39 @@ public final class Modaccel {
                     ? options.get("project", "") + "," + options.get("against", "")
                     : options.get("project", "");
                 Build build = new Build(project, home, selected, report);
-                Map<String, Object> model = Set.of("game-status", "game-stop", "eval").contains(options.command) ||
+                boolean noModel = Set.of("game-status", "game-stop", "eval").contains(options.command) ||
                     (options.command.equals("port") && options.values.containsKey("undo")) ||
-                    options.command.equals("convert")
-                    ? Json.map()
-                    : build.model(options.has("refresh"), options.command.equals("port"));
+                    options.command.equals("convert");
+                Map<String, Object> model;
+                try {
+                    model = noModel ? Json.map() : build.model(options.has("refresh"), options.command.equals("port"));
+                } catch (IOException unreadable) {
+                    // A port may drop a decompiler-only plugin that is no longer published; the port's undo restores it.
+                    String dead = options.command.equals("port") && options.has("fix") && !options.has("dry-run")
+                        ? Port.deadDevPlugin(unreadable.getMessage())
+                        : null;
+                    if (dead == null) throw unreadable;
+                    List<String> changed = Port.removeDevPlugin(project, dead);
+                    if (changed.isEmpty()) throw unreadable;
+                    report.stages.add(
+                        Json.map(
+                            "name",
+                            "dead-dev-plugin",
+                            "plugin",
+                            dead,
+                            "files",
+                            changed,
+                            "evidence",
+                            "the build names a version of this decompiler-only plugin that none of its repositories publishes"
+                        )
+                    );
+                    try {
+                        model = build.model(true, true);
+                    } catch (IOException still) {
+                        Port.restorePending(project);
+                        throw still;
+                    }
+                }
                 switch (options.command) {
                     case "setup" -> {
                         result = summary(model, project);
@@ -432,7 +460,12 @@ public final class Modaccel {
                             : 0;
                     }
                     case "port" -> {
-                        result = new Port(build, model).run(options);
+                        try {
+                            result = new Port(build, model).run(options);
+                        } finally {
+                            // Changes made before the port's transaction are undone unless the transaction took them over.
+                            Port.restorePending(project);
+                        }
                         if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model));
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }
@@ -852,7 +885,7 @@ public final class Modaccel {
             "  modaccel port --root SOURCE --from 1.21.5 --to 1.21.6 --fix --json\n" +
             "  modaccel port --root SOURCE --undo TRANSACTION\n" +
             "  modaccel port --root SOURCE --from 1.21.1 --to 26.3 --fix --check \"java tools/tests/ZombieAiCheck.java ...\" --json\n" +
-            "--check COMMAND runs the mod's own real-game check on the ported project (MODACCEL_PORTED_ROOT is set); the port is ok only when it passes. --learn-from-mods also learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and the rule book.\n" +
+            "--check COMMAND runs the mod's own real-game check on the ported project (MODACCEL_PORTED_ROOT is set); the port is ok only when it passes. --learn-from-mods also runs the rule book's older rules mined from other mods (provenance third-party-mods) and learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and our own rules.\n" +
             "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n" +
             "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
             case "convert" -> "Move a mod's source to another loader on the same Minecraft version: modaccel convert --root SOURCE --to neoforge|fabric [--dry-run | --no-compile] [--json]\n" +

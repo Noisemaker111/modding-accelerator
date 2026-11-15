@@ -1,0 +1,4479 @@
+{
+ "tag": "base",
+ "runs_total": 126,
+ "builds": 5,
+ "loads": 3,
+ "behaviour": 0,
+ "behaviour_checked": 0,
+ "corpus": "bench/sweep/corpus.json",
+ "runs": [
+  {
+   "id": "appleskin-1.20.1",
+   "mod": "AppleSkin",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "client-hud"
+   ],
+   "from": "1.20.1",
+   "to": "1.20.2",
+   "jump": "adjacent",
+   "javaLines": 2015,
+   "build": false,
+   "errorsBefore": 2,
+   "errorsAfter": 1,
+   "classes": {
+    "signature-change": 1
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 88.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "signature-change|CustomPayloadS2CPacket"
+   ]
+  },
+  {
+   "id": "appleskin-1.20.1",
+   "mod": "AppleSkin",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "client-hud"
+   ],
+   "from": "1.20.1",
+   "to": "1.21.1",
+   "jump": "to-1.21.1",
+   "javaLines": 2015,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.fabricmc:fabric-loom:1.18.4. Add the repository that publishes it, or a version that exists, then rerun. A problem occurred configuring roo"
+   },
+   "seconds": {
+    "port": 25.9
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "arsnouveau-1.21.1",
+   "mod": "Ars Nouveau",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "library-dependent",
+    "entities",
+    "blocks",
+    "large"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 140099,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: org.parchmentmc.data:parchment-1.21.2:2024.11.17. Searched: https://maven.neoforged.net, https://maven.theillusivec4.top, https://maven.blamejared.com, https://m"
+   },
+   "seconds": {
+    "port": 95.3
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "arsnouveau-1.21.1",
+   "mod": "Ars Nouveau",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "library-dependent",
+    "entities",
+    "blocks",
+    "large"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 140099,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: org.parchmentmc.data:parchment-1.21.6:2024.11.17. Searched: https://maven.neoforged.net, https://maven.theillusivec4.top, https://maven.blamejared.com, https://m"
+   },
+   "seconds": {
+    "port": 186.5
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "arsnouveau-1.21.1",
+   "mod": "Ars Nouveau",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "library-dependent",
+    "entities",
+    "blocks",
+    "large"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 140099,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: org.parchmentmc.data:parchment-26.3:2024.11.17. Searched: https://maven.neoforged.net, https://maven.theillusivec4.top, https://maven.blamejared.com, https://mav"
+   },
+   "seconds": {
+    "port": 201.9
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "betterf3-1.20.4",
+   "mod": "BetterF3",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "client-hud",
+    "multi-module"
+   ],
+   "from": "1.20.4",
+   "to": "1.20.5",
+   "jump": "adjacent",
+   "javaLines": 5289,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':common'. > Mod was built with a newer version of Loom (1.7.413), you are using Loom (1.5.391) Log: C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664"
+   },
+   "seconds": {
+    "port": 69.3
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "betterf3-1.20.4",
+   "mod": "BetterF3",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "client-hud",
+    "multi-module"
+   ],
+   "from": "1.20.4",
+   "to": "1.21.1",
+   "jump": "to-1.21.1",
+   "javaLines": 5289,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':common'. > Mod was built with a newer version of Loom (1.7.413), you are using Loom (1.5.391) Log: C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664"
+   },
+   "seconds": {
+    "port": 60.9
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "bop-1.21.1",
+   "mod": "Biomes O' Plenty",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "worldgen",
+    "blocks",
+    "multi-module",
+    "datagen"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 30611,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "There is no project :neoforge in this build. It has 4: :Common, :Fabric, :Forge, :NeoForge. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+   },
+   "seconds": {
+    "port": 32.5
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "bop-1.21.1",
+   "mod": "Biomes O' Plenty",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "worldgen",
+    "blocks",
+    "multi-module",
+    "datagen"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 30611,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "There is no project :neoforge in this build. It has 4: :Common, :Fabric, :Forge, :NeoForge. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+   },
+   "seconds": {
+    "port": 25.0
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "bop-1.21.1",
+   "mod": "Biomes O' Plenty",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "worldgen",
+    "blocks",
+    "multi-module",
+    "datagen"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 30611,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "There is no project :neoforge in this build. It has 4: :Common, :Fabric, :Forge, :NeoForge. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+   },
+   "seconds": {
+    "port": 29.1
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "carpet-1.16.5",
+   "mod": "Carpet",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "mixin-heavy",
+    "server",
+    "commands"
+   ],
+   "from": "1.16.5",
+   "to": "1.17",
+   "jump": "adjacent",
+   "javaLines": 50249,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. An exception occurred applying plugin request [id: 'fabric-loom', version: '0.8-SNAPSHOT'] > Failed to apply plugin 'fabric-loom'. > You are using an outdated version of Java (11). Java 16 or higher i"
+   },
+   "seconds": {
+    "port": 8.5
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "carpet-1.16.5",
+   "mod": "Carpet",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "mixin-heavy",
+    "server",
+    "commands"
+   ],
+   "from": "1.16.5",
+   "to": "1.20.1",
+   "jump": "to-1.20.1",
+   "javaLines": 50249,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. An exception occurred applying plugin request [id: 'fabric-loom', version: '0.8-SNAPSHOT'] > Failed to apply plugin 'fabric-loom'. > You are using an outdated version of Java (11). Java 16 or higher i"
+   },
+   "seconds": {
+    "port": 9.3
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "carryon-1.21.1",
+   "mod": "Carry On",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "entities",
+    "networking",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 8716,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':Forge'. > Could not resolve dependency: net.minecraftforge:forge:1.21.2-52.1.14:userdev Log: C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a8281"
+   },
+   "seconds": {
+    "port": 109.5
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "carryon-1.21.1",
+   "mod": "Carry On",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "entities",
+    "networking",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 8716,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':Forge'. > Could not resolve dependency: net.minecraftforge:forge:1.21.6-52.1.14:userdev Log: C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a8281"
+   },
+   "seconds": {
+    "port": 131.9
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "carryon-1.21.1",
+   "mod": "Carry On",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "entities",
+    "networking",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 8716,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "tool-crash": 1
+   },
+   "blocker": {
+    "class": "tool-crash",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':Fabric'. > Failed to setup Minecraft, java.lang.IllegalStateException: Minecraft 26.3 requires Java 25 but Gradle is using 21 Log: C:\\Users\\Jk101\\.t3\\worktrees"
+   },
+   "seconds": {
+    "port": 118.9
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "cca-1.20.1",
+   "mod": "Cardinal Components API",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "library",
+    "multi-module",
+    "networking"
+   ],
+   "from": "1.20",
+   "to": "1.20.1",
+   "jump": "adjacent",
+   "javaLines": 14131,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Automatic target setup needs one selected project; choose --project."
+   },
+   "seconds": {
+    "port": 18.0
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "cca-1.20.1",
+   "mod": "Cardinal Components API",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "library",
+    "multi-module",
+    "networking"
+   ],
+   "from": "1.20",
+   "to": "1.21.1",
+   "jump": "to-1.21.1",
+   "javaLines": 14131,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Automatic target setup needs one selected project; choose --project."
+   },
+   "seconds": {
+    "port": 5.3
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "chatheads-1.21.4",
+   "mod": "Chat Heads",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "client-hud",
+    "multi-module"
+   ],
+   "from": "1.21.4",
+   "to": "1.21.5",
+   "jump": "adjacent",
+   "javaLines": 2322,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.minecraftforge:forge:1.21.5-54.0.16. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://maven.minecraftforge.ne"
+   },
+   "seconds": {
+    "port": 65.6
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "chatheads-1.21.4",
+   "mod": "Chat Heads",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "client-hud",
+    "multi-module"
+   ],
+   "from": "1.21.4",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 2322,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.minecraftforge:forge:1.21.6-54.0.16. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://maven.minecraftforge.ne"
+   },
+   "seconds": {
+    "port": 82.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "chatheads-1.21.4",
+   "mod": "Chat Heads",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "client-hud",
+    "multi-module"
+   ],
+   "from": "1.21.4",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 2322,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':common'. > Failed to setup Minecraft, java.lang.RuntimeException: Failed to find official mojang mappings for 26.3 Log: C:\\Users\\Jk101\\.t3\\worktrees\\modding-ac"
+   },
+   "seconds": {
+    "port": 84.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "continuity-1.20.1",
+   "mod": "Continuity",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "rendering"
+   ],
+   "from": "1.20.1",
+   "to": "1.20.2",
+   "jump": "adjacent",
+   "javaLines": 8231,
+   "build": false,
+   "errorsBefore": 3,
+   "errorsAfter": 3,
+   "classes": {
+    "signature-change": 3
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 57.7
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "signature-change|Screen.renderBackground",
+    "signature-change|incompatible types: incompatible parameter types in lambda expression",
+    "signature-change|load"
+   ]
+  },
+  {
+   "id": "continuity-1.20.1",
+   "mod": "Continuity",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "rendering"
+   ],
+   "from": "1.20.1",
+   "to": "1.21.1",
+   "jump": "to-1.21.1",
+   "javaLines": 8231,
+   "build": false,
+   "errorsBefore": 24,
+   "errorsAfter": 16,
+   "classes": {
+    "signature-change": 10,
+    "access-transformer": 5,
+    "semantic-api-change": 1
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 43.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "access-transformer|Identifier.Identifier",
+    "semantic-api-change|Context.id",
+    "signature-change|Identifier.Identifier",
+    "signature-change|Screen.renderBackground",
+    "signature-change|incompatible types: Identifier cannot be converted to ModelIdentifier",
+    "signature-change|incompatible types: Map<Property<?>,Comparable<?>> cannot be converted",
+    "signature-change|incompatible types: incompatible parameter types in lambda expression",
+    "signature-change|load"
+   ]
+  },
+  {
+   "id": "continuity-26.1",
+   "mod": "Continuity",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "rendering"
+   ],
+   "from": "26.1",
+   "to": "1.21.11",
+   "jump": "adjacent-back",
+   "javaLines": 7628,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "access-transformer": 1
+   },
+   "blocker": {
+    "class": "access-transformer",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring root project 'continuity-26.1'. > Failed to setup Minecraft, java.io.IOException: Failed to process jar when running jar processor: fabric-loom:access-widener - Expected"
+   },
+   "seconds": {
+    "port": 42.7
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "continuity-26.1",
+   "mod": "Continuity",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "rendering"
+   ],
+   "from": "26.1",
+   "to": "26.1.1",
+   "jump": "adjacent",
+   "javaLines": 7628,
+   "build": true,
+   "errorsBefore": 0,
+   "errorsAfter": 0,
+   "classes": {},
+   "blocker": null,
+   "seconds": {
+    "port": 74.1,
+    "load": 86.2
+   },
+   "modid": "continuity",
+   "baseline": true,
+   "load": false,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "corpse-1.21.1",
+   "mod": "Corpse",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "entities",
+    "client-ui"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 2324,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: de.maxhenkel.corelib:corelib:1.21.2-2.1.11. Searched: https://maven.neoforged.net, https://maven.maxhenkel.de, https://libraries.minecraft.net. Add the repositor"
+   },
+   "seconds": {
+    "port": 56.0
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "corpse-1.21.1",
+   "mod": "Corpse",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "entities",
+    "client-ui"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 2324,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: de.maxhenkel.corelib:corelib:1.21.6-2.1.11. Searched: https://maven.neoforged.net, https://maven.maxhenkel.de, https://libraries.minecraft.net. Add the repositor"
+   },
+   "seconds": {
+    "port": 329.3
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "corpse-1.21.1",
+   "mod": "Corpse",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "entities",
+    "client-ui"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 2324,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: de.maxhenkel.corelib:corelib:26.3-2.1.11. Searched: https://maven.neoforged.net, https://maven.maxhenkel.de, https://libraries.minecraft.net. Add the repository "
+   },
+   "seconds": {
+    "port": 244.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "curios-1.21.1",
+   "mod": "Curios API",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "library",
+    "networking",
+    "client-ui"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 17829,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
+   },
+   "seconds": {
+    "port": 37.2
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "curios-1.21.1",
+   "mod": "Curios API",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "library",
+    "networking",
+    "client-ui"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 17829,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
+   },
+   "seconds": {
+    "port": 29.7
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "curios-1.21.1",
+   "mod": "Curios API",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "library",
+    "networking",
+    "client-ui"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 17829,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
+   },
+   "seconds": {
+    "port": 22.6
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "curios-26.2",
+   "mod": "Curios API",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "library",
+    "networking",
+    "client-ui"
+   ],
+   "from": "26.2",
+   "to": "26.1.2",
+   "jump": "adjacent-back",
+   "javaLines": 17817,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: mezz.jei:jei-26.1.2-neoforge-api:30.13.0.78. Searched: https://maven.neoforged.net, https://www.cursemaven.com, https://maven.blamejared.com, https://maven.terra"
+   },
+   "seconds": {
+    "port": 181.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "curios-26.2",
+   "mod": "Curios API",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "library",
+    "networking",
+    "client-ui"
+   ],
+   "from": "26.2",
+   "to": "26.3",
+   "jump": "adjacent",
+   "javaLines": 17817,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "access-transformer": 1
+   },
+   "blocker": {
+    "class": "access-transformer",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Execution failed for task ':createMinecraftArtifacts' (registered in build file 'build.gradle'). > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with n"
+   },
+   "seconds": {
+    "port": 337.3
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "cyclic-1.21.1",
+   "mod": "Cyclic",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "items",
+    "large"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 60225,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve 4 dependencies: mezz.jei:jei-1.21.2-neoforge-api:19.38.0.366, top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.2, vazkii.patchouli:Patchouli:1.21.2-93-NEOFORGE, com.blameja"
+   },
+   "seconds": {
+    "port": 211.6
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "cyclic-1.21.1",
+   "mod": "Cyclic",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "items",
+    "large"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 60225,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve 4 dependencies: mezz.jei:jei-1.21.6-neoforge-api:19.38.0.366, top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.6, vazkii.patchouli:Patchouli:1.21.6-93-NEOFORGE, com.blameja"
+   },
+   "seconds": {
+    "port": 192.4
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "cyclic-1.21.1",
+   "mod": "Cyclic",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "items",
+    "large"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 60225,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "access-transformer": 1
+   },
+   "blocker": {
+    "class": "access-transformer",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Execution failed for task ':createMinecraftArtifacts'. > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\."
+   },
+   "seconds": {
+    "port": 243.7
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "diorama-1.21.1",
+   "mod": "Diorama",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "stonecutter",
+    "blocks",
+    "rendering"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 30789,
+   "build": false,
+   "errorsBefore": 50,
+   "errorsAfter": 48,
+   "classes": {
+    "semantic-api-change": 6,
+    "dependency-unavailable": 4,
+    "missing-mapping": 26,
+    "signature-change": 11,
+    "other": 1
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 79.4
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|FastColor",
+    "missing-mapping|BlockAndTintGetter.getMinBuildHeight",
+    "missing-mapping|ClientLevel.getMaxBuildHeight",
+    "missing-mapping|ClientLevel.getMinBuildHeight",
+    "missing-mapping|LevelChunk.getMinBuildHeight",
+    "missing-mapping|LevelChunk.getMinSection",
+    "missing-mapping|Minecraft.getTimer",
+    "missing-mapping|NativeImage.getPixelRGBA",
+    "other|GameRenderer.getPositionTexColorShader",
+    "semantic-api-change|EntityRenderer.getTextureLocation",
+    "semantic-api-change|FastColor",
+    "semantic-api-change|GameRenderer.getPositionTexColorShader",
+    "semantic-api-change|GuiGraphics.drawManaged",
+    "semantic-api-change|HierarchicalModel",
+    "semantic-api-change|Minecraft.tell",
+    "signature-change|CompiledShaderProgram.CompiledShaderProgram",
+    "signature-change|TintProbe is not abstract and does not override abstract method getMin",
+    "signature-change|blit",
+    "signature-change|blitSprite",
+    "signature-change|incompatible types: ShaderProgram is not a functional interface",
+    "signature-change|wrong number of type arguments; required 2"
+   ]
+  },
+  {
+   "id": "diorama-1.21.1",
+   "mod": "Diorama",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "stonecutter",
+    "blocks",
+    "rendering"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 30789,
+   "build": false,
+   "errorsBefore": 181,
+   "errorsAfter": 5,
+   "classes": {
+    "signature-change": 3,
+    "access-transformer": 2
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 92.7
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "access-transformer|DisplayData.height",
+    "access-transformer|DisplayData.width",
+    "signature-change|ClientLevel.disconnect",
+    "signature-change|Minecraft.disconnect",
+    "signature-change|takeScreenshot"
+   ]
+  },
+  {
+   "id": "diorama-1.21.1",
+   "mod": "Diorama",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "stonecutter",
+    "blocks",
+    "rendering"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 30789,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Could not determine the dependencies of task ':modaccelMetadata'. > A problem occurred configuring project ':1.21.1'. > Failed to setup Minecraft, java.lang.RuntimeException: Failed to find official m"
+   },
+   "seconds": {
+    "port": 87.7
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "effective-1.20.1",
+   "mod": "Effective",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "rendering",
+    "library-dependent"
+   ],
+   "from": "1.20.1",
+   "to": "1.20.2",
+   "jump": "adjacent",
+   "javaLines": 8437,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 10
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "dev.onyxstudios.cardinal-components-api:cardinal-components-base 5.2.2; dev.onyxstudios.cardinal-components-api:cardinal-components-world 5.2.2; dev.onyxstudios.cardinal-components-api:cardinal-components-entity 5.2.2; team.lodestar.lodestone:lodestone 1.20.1-1.6.2.3f-fabric; io.github.fabricators_o"
+   },
+   "seconds": {
+    "port": 101.8
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|dev.onyxstudios.cardinal-components-api:cardinal-components-base",
+    "dependency-unavailable|dev.onyxstudios.cardinal-components-api:cardinal-components-entity",
+    "dependency-unavailable|dev.onyxstudios.cardinal-components-api:cardinal-components-world",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:blocks",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:config",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:core",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:data",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:items",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:tool_actions",
+    "dependency-unavailable|team.lodestar.lodestone:lodestone"
+   ]
+  },
+  {
+   "id": "effective-1.20.1",
+   "mod": "Effective",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "rendering",
+    "library-dependent"
+   ],
+   "from": "1.20.1",
+   "to": "1.21.1",
+   "jump": "to-1.21.1",
+   "javaLines": 8437,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 20
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "dev.onyxstudios.cardinal-components-api:cardinal-components-base 5.2.2; dev.onyxstudios.cardinal-components-api:cardinal-components-world 5.2.2; dev.onyxstudios.cardinal-components-api:cardinal-components-entity 5.2.2; team.lodestar.lodestone:lodestone 1.20.1-1.6.2.3f-fabric; io.github.fabricators_o"
+   },
+   "seconds": {
+    "port": 34.6
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|dev.onyxstudios.cardinal-components-api:cardinal-components-base",
+    "dependency-unavailable|dev.onyxstudios.cardinal-components-api:cardinal-components-entity",
+    "dependency-unavailable|dev.onyxstudios.cardinal-components-api:cardinal-components-world",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:accessors",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:base",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:blocks",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:config",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:core",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:data",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:entity",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:extensions",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:items",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:lazy_registration",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:model_generators",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:models",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:networking",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:tags",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:tool_actions",
+    "dependency-unavailable|io.github.fabricators_of_create.Porting-Lib:transfer",
+    "dependency-unavailable|team.lodestar.lodestone:lodestone"
+   ]
+  },
+  {
+   "id": "enchdesc-1.21.1",
+   "mod": "Enchantment Descriptions",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "client-hud",
+    "library-dependent",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 329,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 3
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "net.darkhax.bookshelf:bookshelf-fabric-1.21.1 21.1.2; net.darkhax.pricklemc:prickle-fabric-1.21.1 21.1.2; mezz.jei:jei-1.21.1-fabric 19.18.10.218"
+   },
+   "seconds": {
+    "port": 51.5
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|mezz.jei:jei-1.21.1-fabric",
+    "dependency-unavailable|net.darkhax.bookshelf:bookshelf-fabric-1.21.1",
+    "dependency-unavailable|net.darkhax.pricklemc:prickle-fabric-1.21.1"
+   ]
+  },
+  {
+   "id": "enchdesc-1.21.1",
+   "mod": "Enchantment Descriptions",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "client-hud",
+    "library-dependent",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 329,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 3
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "net.darkhax.bookshelf:bookshelf-fabric-1.21.1 21.1.2; net.darkhax.pricklemc:prickle-fabric-1.21.1 21.1.2; mezz.jei:jei-1.21.1-fabric 19.18.10.218"
+   },
+   "seconds": {
+    "port": 14.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|mezz.jei:jei-1.21.1-fabric",
+    "dependency-unavailable|net.darkhax.bookshelf:bookshelf-fabric-1.21.1",
+    "dependency-unavailable|net.darkhax.pricklemc:prickle-fabric-1.21.1"
+   ]
+  },
+  {
+   "id": "enchdesc-1.21.1",
+   "mod": "Enchantment Descriptions",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "client-hud",
+    "library-dependent",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 329,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 3
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "net.darkhax.bookshelf:bookshelf-fabric-1.21.1 21.1.2; net.darkhax.pricklemc:prickle-fabric-1.21.1 21.1.2; mezz.jei:jei-1.21.1-fabric 19.18.10.218"
+   },
+   "seconds": {
+    "port": 17.3
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|mezz.jei:jei-1.21.1-fabric",
+    "dependency-unavailable|net.darkhax.bookshelf:bookshelf-fabric-1.21.1",
+    "dependency-unavailable|net.darkhax.pricklemc:prickle-fabric-1.21.1"
+   ]
+  },
+  {
+   "id": "example-mod-1.17.1",
+   "mod": "Fabric Example Mod",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "tiny",
+    "mixin"
+   ],
+   "from": "1.17.1",
+   "to": "1.18",
+   "jump": "adjacent",
+   "javaLines": 45,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "The Mixin check did not complete: The loader did not start: Some of your mods are incompatible with the game or each other! A potential solution has been determined, this may resolve your problem: - Replace mod 'Fabric API' (fabric) 0.46.6+1.18 with any version that is compatible with: - minecraft 1"
+   },
+   "seconds": {
+    "port": 22.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "example-mod-1.17.1",
+   "mod": "Fabric Example Mod",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "tiny",
+    "mixin"
+   ],
+   "from": "1.17.1",
+   "to": "1.20.1",
+   "jump": "to-1.20.1",
+   "javaLines": 45,
+   "build": true,
+   "errorsBefore": 0,
+   "errorsAfter": 0,
+   "classes": {},
+   "blocker": null,
+   "seconds": {
+    "port": 135.2,
+    "load": 40.5,
+    "behaviour": 0.0
+   },
+   "modid": "modid",
+   "baseline": true,
+   "load": true,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "farmersdelight-1.20.4",
+   "mod": "Farmer's Delight",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "items",
+    "datagen"
+   ],
+   "from": "1.20.4",
+   "to": "1.20.5",
+   "jump": "adjacent",
+   "javaLines": 18628,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin net.neoforged.gradle.mixin 7.1.39, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle). Plugi"
+   },
+   "seconds": {
+    "port": 69.1
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "farmersdelight-1.20.4",
+   "mod": "Farmer's Delight",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "items",
+    "datagen"
+   ],
+   "from": "1.20.4",
+   "to": "1.21.1",
+   "jump": "to-1.21.1",
+   "javaLines": 18628,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin net.neoforged.gradle.mixin 7.1.39, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle). Plugi"
+   },
+   "seconds": {
+    "port": 36.9
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "farmersdelight-1.21.1",
+   "mod": "Farmer's Delight",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "items",
+    "datagen"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 22580,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: com.mojang:jtracy:1.0.29. Searched: https://maven.neoforged.net, https://dvs1.progwml6.com, https://maven.blamejared.com, https://maven.ryanliptak.com, https://m"
+   },
+   "seconds": {
+    "port": 66.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "farmersdelight-1.21.1",
+   "mod": "Farmer's Delight",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "items",
+    "datagen"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 22580,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: com.mojang:jtracy:1.0.29. Searched: https://maven.neoforged.net, https://dvs1.progwml6.com, https://maven.blamejared.com, https://maven.ryanliptak.com, https://m"
+   },
+   "seconds": {
+    "port": 85.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "farmersdelight-1.21.1",
+   "mod": "Farmer's Delight",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "items",
+    "datagen"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 22580,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: com.mojang:jtracy:1.14.38. Searched: https://maven.neoforged.net, https://dvs1.progwml6.com, https://maven.blamejared.com, https://maven.ryanliptak.com, https://"
+   },
+   "seconds": {
+    "port": 153.6
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "ferritecore-1.21.1",
+   "mod": "FerriteCore",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "mixin-heavy",
+    "multi-module",
+    "performance"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 3791,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':Fabric'. > Failed to setup Minecraft, java.io.UncheckedIOException: Failed to setup mappings: loom:mappings:layered+hash.2198 Log: C:\\Users\\Jk101\\.t3\\worktrees"
+   },
+   "seconds": {
+    "port": 32.6
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "ferritecore-1.21.1",
+   "mod": "FerriteCore",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "mixin-heavy",
+    "multi-module",
+    "performance"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 3791,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':Fabric'. > Failed to setup Minecraft, java.io.UncheckedIOException: Failed to setup mappings: loom:mappings:layered+hash.2198 Log: C:\\Users\\Jk101\\.t3\\worktrees"
+   },
+   "seconds": {
+    "port": 23.4
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "ferritecore-1.21.1",
+   "mod": "FerriteCore",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "mixin-heavy",
+    "multi-module",
+    "performance"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 3791,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':Fabric'. > Failed to setup Minecraft, java.io.UncheckedIOException: Failed to setup mappings: loom:mappings:layered+hash.2198 Log: C:\\Users\\Jk101\\.t3\\worktrees"
+   },
+   "seconds": {
+    "port": 20.0
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "gravestone-1.21.1",
+   "mod": "Gravestone",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 2034,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: de.maxhenkel.corelib:corelib:1.21.2-2.1.4. Searched: https://maven.neoforged.net, https://maven.maxhenkel.de, https://libraries.minecraft.net. Add the repository"
+   },
+   "seconds": {
+    "port": 87.0
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "gravestone-1.21.1",
+   "mod": "Gravestone",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 2034,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: de.maxhenkel.corelib:corelib:1.21.6-2.1.4. Searched: https://maven.neoforged.net, https://maven.maxhenkel.de, https://libraries.minecraft.net. Add the repository"
+   },
+   "seconds": {
+    "port": 238.3
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "gravestone-1.21.1",
+   "mod": "Gravestone",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 2034,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: de.maxhenkel.corelib:corelib:26.3-2.1.4. Searched: https://maven.neoforged.net, https://maven.maxhenkel.de, https://libraries.minecraft.net. Add the repository t"
+   },
+   "seconds": {
+    "port": 242.8
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "ias-26.3",
+   "mod": "In-Game Account Switcher",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "stonecutter",
+    "client-ui",
+    "networking"
+   ],
+   "from": "26.3",
+   "to": "26.2",
+   "jump": "adjacent-back",
+   "javaLines": 63329,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Minecraft is pinned inside build logic; update its owning setting, then rerun port."
+   },
+   "seconds": {
+    "port": 16.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "immediatelyfast-1.21.1",
+   "mod": "ImmediatelyFast",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "rendering",
+    "mixin-heavy",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 4836,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "resource-format": 1
+   },
+   "blocker": {
+    "class": "resource-format",
+    "detail": "Fabric manifest depends.minecraft has a complex constraint >=1.21 <=1.21.1 in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\immediatelyfast-1.21.1\\fabric\\src\\main\\resources\\fabric.mod.json; update its owner manually."
+   },
+   "seconds": {
+    "port": 8.8
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "immediatelyfast-1.21.1",
+   "mod": "ImmediatelyFast",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "rendering",
+    "mixin-heavy",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 4836,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "resource-format": 1
+   },
+   "blocker": {
+    "class": "resource-format",
+    "detail": "Fabric manifest depends.minecraft has a complex constraint >=1.21 <=1.21.1 in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\immediatelyfast-1.21.1\\fabric\\src\\main\\resources\\fabric.mod.json; update its owner manually."
+   },
+   "seconds": {
+    "port": 5.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "immediatelyfast-1.21.1",
+   "mod": "ImmediatelyFast",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "rendering",
+    "mixin-heavy",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 4836,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "No published Yarn mappings for 26.3; mapping namespace changes need a guided migration."
+   },
+   "seconds": {
+    "port": 5.0
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "ironchest-1.21.3",
+   "mod": "Iron Chests",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ],
+   "from": "1.21.3",
+   "to": "1.21.4",
+   "jump": "adjacent",
+   "javaLines": 3947,
+   "build": false,
+   "errorsBefore": 22,
+   "errorsAfter": 22,
+   "classes": {
+    "semantic-api-change": 20,
+    "signature-change": 2
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 146.9
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "semantic-api-change|BlockEntityRenderDispatcher.renderItem",
+    "semantic-api-change|BlockEntityWithoutLevelRenderer",
+    "semantic-api-change|ExistingFileHelper",
+    "semantic-api-change|GatherDataEvent.includeClient",
+    "semantic-api-change|GatherDataEvent.includeServer",
+    "semantic-api-change|IConditionBuilder",
+    "semantic-api-change|IronChestItemStackRenderer.super",
+    "semantic-api-change|IronChestRender.BlockEntityWithoutLevelRenderer",
+    "semantic-api-change|IronChests.ExistingFileHelper",
+    "semantic-api-change|IronChestsBlockTags.ExistingFileHelper",
+    "semantic-api-change|IronChestsSpriteSourceProvider.ExistingFileHelper",
+    "semantic-api-change|RenderShape.ENTITYBLOCK_ANIMATED",
+    "signature-change|BlockEntityWithoutLevelRenderer.renderByItem",
+    "signature-change|BlockItem.getCustomRenderer"
+   ]
+  },
+  {
+   "id": "ironchest-1.21.3",
+   "mod": "Iron Chests",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ],
+   "from": "1.21.3",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 3947,
+   "build": false,
+   "errorsBefore": 49,
+   "errorsAfter": 42,
+   "classes": {
+    "semantic-api-change": 23,
+    "missing-mapping": 2,
+    "signature-change": 17
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 183.4
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "missing-mapping|BlockEntity.DataComponentInput",
+    "semantic-api-change|BlockEntityRenderDispatcher.renderItem",
+    "semantic-api-change|BlockEntityWithoutLevelRenderer",
+    "semantic-api-change|ExistingFileHelper",
+    "semantic-api-change|GatherDataEvent.includeClient",
+    "semantic-api-change|GatherDataEvent.includeServer",
+    "semantic-api-change|IConditionBuilder",
+    "semantic-api-change|IronChestItemStackRenderer.super",
+    "semantic-api-change|IronChestRender.BlockEntityWithoutLevelRenderer",
+    "semantic-api-change|IronChests.ExistingFileHelper",
+    "semantic-api-change|IronChestsBlockTags.ExistingFileHelper",
+    "semantic-api-change|IronChestsSpriteSourceProvider.ExistingFileHelper",
+    "semantic-api-change|RenderShape.ENTITYBLOCK_ANIMATED",
+    "semantic-api-change|bus",
+    "semantic-api-change|onRemove",
+    "signature-change|AbstractIronChestBlockEntity.removeComponentsFromTag",
+    "signature-change|AbstractTrappedIronChestBlockEntity.removeComponentsFromTag",
+    "signature-change|BaseContainerBlockEntity.loadAdditional",
+    "signature-change|BaseContainerBlockEntity.saveAdditional",
+    "signature-change|BaseEntityBlock.onRemove",
+    "signature-change|BlockEntity.render",
+    "signature-change|BlockEntityWithoutLevelRenderer.renderByItem",
+    "signature-change|BlockItem.getCustomRenderer",
+    "signature-change|ContainerHelper.loadAllItems",
+    "signature-change|IronChestRenderer is not abstract and does not override abstract metho",
+    "signature-change|RandomizableContainerBlockEntity.loadAdditional",
+    "signature-change|RandomizableContainerBlockEntity.saveAdditional",
+    "signature-change|incompatible types: CompoundTag cannot be converted to ValueInput",
+    "signature-change|incompatible types: CompoundTag cannot be converted to ValueOutput"
+   ]
+  },
+  {
+   "id": "ironchest-1.21.3",
+   "mod": "Iron Chests",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ],
+   "from": "1.21.3",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 3947,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Execution failed for task ':createMinecraftArtifacts'. > Process 'command 'C:\\Program Files\\Microsoft\\jdk-21.0.13.21-hotspot\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\.t3\\"
+   },
+   "seconds": {
+    "port": 91.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "ironchest-26.1.2",
+   "mod": "Iron Chests",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ],
+   "from": "26.1.2",
+   "to": "26.1.1",
+   "jump": "adjacent-back",
+   "javaLines": 3992,
+   "build": true,
+   "errorsBefore": 0,
+   "errorsAfter": 0,
+   "classes": {},
+   "blocker": null,
+   "seconds": {
+    "port": 294.1,
+    "load": 46.6
+   },
+   "modid": "ironchest",
+   "baseline": true,
+   "load": false,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "ironchest-26.1.2",
+   "mod": "Iron Chests",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ],
+   "from": "26.1.2",
+   "to": "26.2",
+   "jump": "adjacent",
+   "javaLines": 3992,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "access-transformer": 1
+   },
+   "blocker": {
+    "class": "access-transformer",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Execution failed for task ':createMinecraftArtifacts'. > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\."
+   },
+   "seconds": {
+    "port": 135.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "jade-1.21.1",
+   "mod": "Jade",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "client-hud",
+    "rendering",
+    "library"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 23259,
+   "build": false,
+   "errorsBefore": 80,
+   "errorsAfter": 26,
+   "classes": {
+    "access-transformer": 8,
+    "signature-change": 15,
+    "semantic-api-change": 2,
+    "other": 1
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 389.4
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "access-transformer|GuiGraphics.blitTiledSprite",
+    "other|GameRenderer.getPositionTexShader",
+    "semantic-api-change|GuiGraphics.bufferSource",
+    "signature-change|BakedGlyph.render",
+    "signature-change|GuiGraphics.blitSprite",
+    "signature-change|blitSprite",
+    "signature-change|incompatible types: FileToIdConverter cannot be converted to String",
+    "signature-change|incompatible types: Provider cannot be converted to RegistryAccess",
+    "signature-change|incompatible types: ResourceLocation cannot be converted to Function<R"
+   ]
+  },
+  {
+   "id": "jade-1.21.1",
+   "mod": "Jade",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "client-hud",
+    "rendering",
+    "library"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 23259,
+   "build": false,
+   "errorsBefore": 251,
+   "errorsAfter": 30,
+   "classes": {
+    "semantic-api-change": 21,
+    "mixin-target-change": 1,
+    "signature-change": 7,
+    "other": 1
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 1003.6
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "mixin-target-change|Font.StringRenderOutput",
+    "other|GameRenderer.getPositionTexShader",
+    "semantic-api-change|BaseOptionsScreen.setTooltipForNextRenderPass",
+    "semantic-api-change|BufferUploader",
+    "semantic-api-change|ClientProxy.RegisterClientReloadListenersEvent",
+    "semantic-api-change|DisplayHelper.BufferUploader",
+    "semantic-api-change|EntityVariantProvider.VariantHolder",
+    "semantic-api-change|FogRenderer.FogData",
+    "semantic-api-change|FogRenderer.MobEffectFogFunction",
+    "semantic-api-change|GuiGraphics.bufferSource",
+    "semantic-api-change|GuiGraphics.flush",
+    "semantic-api-change|LightTexture.getDarknessGamma",
+    "semantic-api-change|Matrix3x2fStack.last",
+    "semantic-api-change|Minecraft.addCustomNbtData",
+    "semantic-api-change|PreviewOptionsScreen.deferredTooltipRendering",
+    "semantic-api-change|RegisterClientReloadListenersEvent",
+    "semantic-api-change|RenderType.gui",
+    "semantic-api-change|VariantHolder",
+    "signature-change|BakedGlyph.render",
+    "signature-change|IItemExtension.getCreatorModId",
+    "signature-change|ItemEnchantments.addToTooltip",
+    "signature-change|blitSprite",
+    "signature-change|incompatible types: Provider cannot be converted to RegistryAccess",
+    "signature-change|incompatible types: ResourceLocation cannot be converted to RenderPipe"
+   ]
+  },
+  {
+   "id": "jade-1.21.1",
+   "mod": "Jade",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "client-hud",
+    "rendering",
+    "library"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 23259,
+   "build": false,
+   "errorsBefore": 1101,
+   "errorsAfter": 263,
+   "classes": {
+    "semantic-api-change": 145,
+    "mixin-target-change": 1,
+    "signature-change": 86,
+    "other": 5,
+    "missing-mapping": 26
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 2140.5
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "missing-mapping|AbstractWidget.renderWidget",
+    "missing-mapping|BaseOptionsScreen.mouseDragged",
+    "missing-mapping|Button.renderWidget",
+    "missing-mapping|Capabilities.EnergyStorage",
+    "missing-mapping|Capabilities.FluidHandler",
+    "missing-mapping|Capabilities.ItemHandler",
+    "missing-mapping|ContainerObjectSelectionList.extractSelection",
+    "missing-mapping|ContainerObjectSelectionList.mouseDragged",
+    "missing-mapping|ContainerObjectSelectionList.renderWidget",
+    "missing-mapping|CustomData.getUnsafe",
+    "missing-mapping|Holder.unwrap",
+    "missing-mapping|Minecraft.setScreen",
+    "missing-mapping|ObjectSelectionList.extractSelection",
+    "missing-mapping|OptionsList.extractDecorations",
+    "missing-mapping|OptionsList.itemHeight",
+    "missing-mapping|OptionsNav.itemHeight",
+    "missing-mapping|VertexFormat.Mode",
+    "missing-mapping|itemHeight",
+    "missing-mapping|renderListItems",
+    "missing-mapping|renderListSeparators",
+    "missing-mapping|scrollbarVisible",
+    "mixin-target-change|Font.StringRenderOutput",
+    "other|Event.registerReloadListener",
+    "other|FriendlyByteBuf.writeBlockHitResult",
+    "other|GameRenderer.getPositionTexShader",
+    "other|ResourceKey.location",
+    "other|getPluginUid() in JEICompat cannot implement getPluginUid() in IModPlu",
+    "semantic-api-change|BakedGlyph.render",
+    "semantic-api-change|BaseOptionsScreen.hasShiftDown",
+    "semantic-api-change|BaseOptionsScreen.setTooltipForNextRenderPass",
+    "semantic-api-change|BoxElement.GuiSpriteManager",
+    "semantic-api-change|BufferUploader",
+    "semantic-api-change|Builder.withInitialValue",
+    "semantic-api-change|Camera.getPosition",
+    "semantic-api-change|ChatFormatting.getColor",
+    "semantic-api-change|ClientProxy.RegisterClientReloadListenersEvent",
+    "semantic-api-change|CommonInputs",
+    "semantic-api-change|CommonProxy.IEnergyStorage",
+    "semantic-api-change|CommonProxy.IFluidHandler",
+    "semantic-api-change|CommonProxy.IItemHandler",
+    "semantic-api-change|CustomData.read",
+    "semantic-api-change|DisplayHelper.BufferUploader",
+    "semantic-api-change|EntityVariantProvider.VariantHolder",
+    "semantic-api-change|Entry.CommonInputs",
+    "semantic-api-change|Event.registerReloadListener",
+    "semantic-api-change|FMLEnvironment.production",
+    "semantic-api-change|FluidCollectingResult.Tuple",
+    "semantic-api-change|FogRenderer.FogData",
+    "semantic-api-change|FogRenderer.MobEffectFogFunction",
+    "semantic-api-change|Font.fonts",
+    "semantic-api-change|ForwardingItemHandler",
+    "semantic-api-change|GameProfile.getName",
+    "semantic-api-change|GameRenderer.getRenderDistance",
+    "semantic-api-change|Gui.getTabList",
+    "semantic-api-change|GuiGraphicsExtractor.bufferSource",
+    "semantic-api-change|GuiGraphicsExtractor.flush",
+    "semantic-api-change|GuiGraphicsExtractor.setColor",
+    "semantic-api-change|GuiSpriteManager",
+    "semantic-api-change|I18n.exists",
+    "semantic-api-change|IClientFluidTypeExtensions.getStillTexture",
+    "semantic-api-change|IClientFluidTypeExtensions.getTintColor",
+    "semantic-api-change|IEnergyStorage",
+    "semantic-api-change|IFluidHandler",
+    "semantic-api-change|IItemHandler",
+    "semantic-api-change|Identifier.Serializer",
+    "semantic-api-change|ItemStackHandler",
+    "semantic-api-change|JadeClient.LightTexture",
+    "semantic-api-change|JadeFont.filterFishyGlyphs",
+    "semantic-api-change|JadeForgeUtils.IFluidHandler",
+    "semantic-api-change|JadeForgeUtils.IItemHandler",
+    "semantic-api-change|JadeForgeUtils.Tuple",
+    "semantic-api-change|Key.displayName",
+    "semantic-api-change|LazyLoadedValue",
+    "semantic-api-change|LightTexture",
+    "semantic-api-change|LootPoolEntryContainer.conditions",
+    "semantic-api-change|Matrix3x2fStack.last",
+    "semantic-api-change|Matrix3x2fStack.rotateDegrees",
+    "semantic-api-change|Minecraft.addCustomNbtData",
+    "semantic-api-change|Minecraft.getChatListener",
+    "semantic-api-change|Minecraft.getTextureAtlas",
+    "semantic-api-change|Minecraft.getToasts",
+    "semantic-api-change|MultiBufferSource",
+    "semantic-api-change|NestedLootTable.contents",
+    "semantic-api-change|OS.openFile",
+    "semantic-api-change|OptionsNav.ensureVisible",
+    "semantic-api-change|PreviewOptionsScreen.deferredTooltipRendering",
+    "semantic-api-change|RegisterClientReloadListenersEvent",
+    "semantic-api-change|RenderSystem.setShaderColor",
+    "semantic-api-change|RenderSystem.setShaderTexture",
+    "semantic-api-change|RenderType.gui",
+    "semantic-api-change|ResolvableProfile.isResolved",
+    "semantic-api-change|Screen.hasControlDown",
+    "semantic-api-change|Screen.hasShiftDown",
+    "semantic-api-change|Screen.isCopy",
+    "semantic-api-change|Screen.isCut",
+    "semantic-api-change|Screen.isPaste",
+    "semantic-api-change|Screen.isSelectAll",
+    "semantic-api-change|SignBlockEntity.getFrontText",
+    "semantic-api-change|SignBlockEntity.isFacingFrontText",
+    "semantic-api-change|SkullBlockEntity.fetchGameProfile",
+    "semantic-api-change|SnowItemHandler.getStackInSlot",
+    "semantic-api-change|SpriteBase.GuiSpriteManager",
+    "semantic-api-change|Stream.entrySet",
+    "semantic-api-change|StringRenderOutputMixin.MultiBufferSource",
+    "semantic-api-change|TagsUpdatedEvent.getLookupProvider",
+    "semantic-api-change|TagsUpdatedEvent.getUpdateCause",
+    "semantic-api-change|Tesselator",
+    "semantic-api-change|Test.ItemStackHandler",
+    "semantic-api-change|Tuple",
+    "semantic-api-change|VariantHolder",
+    "semantic-api-change|cannot access ResourceLocation",
+    "semantic-api-change|ensureVisible",
+    "signature-change|<anonymous snownee.jade.test.Test$1> is not abstract and does not over",
+    "signature-change|AbstractContainerWidget.mouseClicked",
+    "signature-change|AbstractContainerWidget.mouseDragged",
+    "signature-change|AbstractWidget.charTyped",
+    "signature-change|AbstractWidget.keyPressed",
+    "signature-change|AbstractWidget.onClick",
+    "signature-change|BaseOptionsScreen.keyPressed",
+    "signature-change|BaseOptionsScreen.keyReleased",
+    "signature-change|BaseOptionsScreen.mouseReleased",
+    "signature-change|ContainerEventHandler.keyPressed",
+    "signature-change|ContainerEventHandler.keyReleased",
+    "signature-change|ContainerEventHandler.mouseDragged",
+    "signature-change|ContainerEventHandler.mouseReleased",
+    "signature-change|ContainerObjectSelectionList.ensureVisible",
+    "signature-change|ContainerObjectSelectionList.entriesCanBeSelected",
+    "signature-change|ContainerObjectSelectionList.keyPressed",
+    "signature-change|ContainerObjectSelectionList.mouseClicked",
+    "signature-change|ContainerObjectSelectionList.render",
+    "signature-change|CreditButton is not abstract and does not override abstract method ext",
+    "signature-change|CycleButton.booleanBuilder",
+    "signature-change|GuiEventListener.mouseClicked",
+    "signature-change|GuiGraphicsExtractor.blitTiledSprite",
+    "signature-change|IItemExtension.getCreatorModId",
+    "signature-change|IItemHandler.getItemInSlot",
+    "signature-change|IItemHandler.getSlotCount",
+    "signature-change|IModPlugin.getPluginUid",
+    "signature-change|ItemEnchantments.addToTooltip",
+    "signature-change|ItemStackHandler.getCapability",
+    "signature-change|ItemStackHandler.getStackLimit",
+    "signature-change|ItemStackHandler.isItemValid",
+    "signature-change|ItemStackHandler.onContentsChanged",
+    "signature-change|KeyMapping",
+    "signature-change|NotUglyEditBox is not abstract and does not override abstract method e",
+    "signature-change|ObjectSelectionList.keyPressed",
+    "signature-change|ObjectSelectionList.mouseClicked",
+    "signature-change|ObjectSelectionList.render",
+    "signature-change|Screen.keyPressed",
+    "signature-change|Screen.mouseClicked",
+    "signature-change|blitSprite",
+    "signature-change|builder",
+    "signature-change|getKey",
+    "signature-change|incompatible types: BlockState cannot be converted to Direction",
+    "signature-change|incompatible types: GlyphInfo cannot be converted to Glyph",
+    "signature-change|incompatible types: Holder<LootItemCondition> cannot be converted to L",
+    "signature-change|incompatible types: Identifier cannot be converted to RenderPipeline",
+    "signature-change|incompatible types: NbtOps cannot be converted to DataComponentType<Cu",
+    "signature-change|incompatible types: String cannot be converted to URI",
+    "signature-change|incompatible types: TextureAtlasSprite cannot be converted to RenderPi",
+    "signature-change|incompatible types: cannot infer type arguments for ViewGroup<>",
+    "signature-change|incompatible types: possible lossy conversion from float to int",
+    "signature-change|incompatible types: void cannot be converted to int",
+    "signature-change|render",
+    "signature-change|snownee.jade.gui.config.OptionsList.Entry is not abstract and does not",
+    "signature-change|snownee.jade.gui.config.OptionsNav.Entry is not abstract and does not "
+   ]
+  },
+  {
+   "id": "jei-1.21.1",
+   "mod": "Just Enough Items",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "client-ui",
+    "multi-module",
+    "library"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 119881,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: net.neoforged:neoform:1.21.2-20240808.144430. Searched: https://maven.neoforged.net. Add the repository that publishes it, or a version that exists, then rerun. "
+   },
+   "seconds": {
+    "port": 70.6
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "jei-1.21.1",
+   "mod": "Just Enough Items",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "client-ui",
+    "multi-module",
+    "library"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 119881,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: net.neoforged:neoform:1.21.6-20240808.144430. Searched: https://maven.neoforged.net. Add the repository that publishes it, or a version that exists, then rerun. "
+   },
+   "seconds": {
+    "port": 87.0
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "jei-1.21.1",
+   "mod": "Just Enough Items",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "client-ui",
+    "multi-module",
+    "library"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 119881,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Gradle could not resolve a dependency: net.neoforged:neoform:26.3-20240808.144430. Searched: https://maven.neoforged.net. Add the repository that publishes it, or a version that exists, then rerun. Ex"
+   },
+   "seconds": {
+    "port": 160.9
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "krypton-26.3",
+   "mod": "Krypton",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "networking",
+    "mixin-heavy"
+   ],
+   "from": "26.3",
+   "to": "26.2",
+   "jump": "adjacent-back",
+   "javaLines": 934,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "resource-format": 1
+   },
+   "blocker": {
+    "class": "resource-format",
+    "detail": "Fabric manifest depends.minecraft has a complex constraint >=26.3 in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\krypton-26.3\\src\\main\\resources\\fabric.mod.json; update its owner manually."
+   },
+   "seconds": {
+    "port": 6.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "lithium-1.20.1",
+   "mod": "Lithium",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "mixin-heavy",
+    "performance"
+   ],
+   "from": "1.20.1",
+   "to": "1.20.2",
+   "jump": "adjacent",
+   "javaLines": 22784,
+   "build": false,
+   "errorsBefore": 11,
+   "errorsAfter": 9,
+   "classes": {
+    "semantic-api-change": 9
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 75.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "semantic-api-change|PacketByteBuf.getVarIntLength",
+    "semantic-api-change|PlayerChunkWatchingManager.movePlayer",
+    "semantic-api-change|ServerPlayerEntity.sendUnloadChunkPacket",
+    "semantic-api-change|ThreadedAnvilChunkStorage.isWithinDistance",
+    "semantic-api-change|ThreadedAnvilChunkStorageMixin.isWithinDistance"
+   ]
+  },
+  {
+   "id": "lithium-1.20.1",
+   "mod": "Lithium",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "mixin-heavy",
+    "performance"
+   ],
+   "from": "1.20.1",
+   "to": "1.21.1",
+   "jump": "to-1.21.1",
+   "javaLines": 22784,
+   "build": false,
+   "errorsBefore": 1,
+   "errorsAfter": 1,
+   "classes": {
+    "semantic-api-change": 1
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 54.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "semantic-api-change|LootableContainerBlockEntity.checkLootInteraction"
+   ]
+  },
+  {
+   "id": "midnightlib-1.21.1",
+   "mod": "MidnightLib",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "config",
+    "library",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 1410,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':neoforge'. > Failed to setup Minecraft, java.lang.UnsupportedOperationException: NeoForge 21.1.192 is not for Minecraft 1.21.2 (expected: 1.21.1). You can supp"
+   },
+   "seconds": {
+    "port": 67.9
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "midnightlib-1.21.1",
+   "mod": "MidnightLib",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "config",
+    "library",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 1410,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':neoforge'. > Failed to setup Minecraft, java.lang.UnsupportedOperationException: NeoForge 21.1.192 is not for Minecraft 1.21.6 (expected: 1.21.1). You can supp"
+   },
+   "seconds": {
+    "port": 49.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "midnightlib-1.21.1",
+   "mod": "MidnightLib",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "config",
+    "library",
+    "multi-module"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 1410,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "No published Yarn mappings for 26.3; mapping namespace changes need a guided migration."
+   },
+   "seconds": {
+    "port": 4.8
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "modernfix-1.21.1",
+   "mod": "ModernFix",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "mixin-heavy",
+    "multi-module",
+    "performance"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 15324,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "There is no project :neoforge in this build. It has 2: :annotation-processor, :annotations. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+   },
+   "seconds": {
+    "port": 9.9
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "modernfix-1.21.1",
+   "mod": "ModernFix",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "mixin-heavy",
+    "multi-module",
+    "performance"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 15324,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "There is no project :neoforge in this build. It has 2: :annotation-processor, :annotations. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+   },
+   "seconds": {
+    "port": 4.6
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "modernfix-1.21.1",
+   "mod": "ModernFix",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "mixin-heavy",
+    "multi-module",
+    "performance"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 15324,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "There is no project :neoforge in this build. It has 2: :annotation-processor, :annotations. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+   },
+   "seconds": {
+    "port": 4.2
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "modmenu-1.16.5",
+   "mod": "Mod Menu",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "client-ui",
+    "config"
+   ],
+   "from": "1.16.5",
+   "to": "1.17",
+   "jump": "adjacent",
+   "javaLines": 3552,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "tool-crash": 1
+   },
+   "blocker": {
+    "class": "tool-crash",
+    "detail": "No such file or folder: C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\modmenu-1.16.5\\.modaccel\\portable\\plan-model.json."
+   },
+   "seconds": {
+    "port": 10.6
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "modmenu-1.16.5",
+   "mod": "Mod Menu",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "client-ui",
+    "config"
+   ],
+   "from": "1.16.5",
+   "to": "1.20.1",
+   "jump": "to-1.20.1",
+   "javaLines": 3552,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "tool-crash": 1
+   },
+   "blocker": {
+    "class": "tool-crash",
+    "detail": "No such file or folder: C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\modmenu-1.16.5\\.modaccel\\portable\\plan-model.json."
+   },
+   "seconds": {
+    "port": 9.6
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "modmenu-1.20.1",
+   "mod": "Mod Menu",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "client-ui",
+    "config"
+   ],
+   "from": "1.20.1",
+   "to": "1.20.2",
+   "jump": "adjacent",
+   "javaLines": 4147,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: org.ajoberstar.grgit:grgit-core:4.1.0. Searched: https://plugins.gradle.org. Add the repository that publishes it, or a version that exists, th"
+   },
+   "seconds": {
+    "port": 6.8
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "modmenu-1.20.1",
+   "mod": "Mod Menu",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "client-ui",
+    "config"
+   ],
+   "from": "1.20.1",
+   "to": "1.21.1",
+   "jump": "to-1.21.1",
+   "javaLines": 4147,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: org.ajoberstar.grgit:grgit-core:4.1.0. Searched: https://plugins.gradle.org. Add the repository that publishes it, or a version that exists, th"
+   },
+   "seconds": {
+    "port": 6.7
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "naturescompass-1.19.4",
+   "mod": "Nature's Compass",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "worldgen",
+    "items",
+    "client-ui"
+   ],
+   "from": "1.19.4",
+   "to": "1.20.1",
+   "jump": "to-1.20.1",
+   "javaLines": 2506,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. An exception occurred applying plugin request [id: 'fabric-loom', version: '1.5.8'] > Failed to apply plugin 'fabric-loom'. > You are using an outdated version of Gradle (8.0.1). Gradle 8.3 or higher "
+   },
+   "seconds": {
+    "port": 30.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "naturescompass-1.19.4",
+   "mod": "Nature's Compass",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "worldgen",
+    "items",
+    "client-ui"
+   ],
+   "from": "1.19.4",
+   "to": "1.20",
+   "jump": "adjacent",
+   "javaLines": 2506,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. An exception occurred applying plugin request [id: 'fabric-loom', version: '1.2.8'] > Failed to apply plugin 'fabric-loom'. > You are using an outdated version of Gradle (8.0.1). Gradle 8.1 or higher "
+   },
+   "seconds": {
+    "port": 35.4
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "ncr-1.20.1",
+   "mod": "No Chat Reports",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "networking",
+    "multi-module"
+   ],
+   "from": "1.20.1",
+   "to": "1.20.2",
+   "jump": "adjacent",
+   "javaLines": 10323,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Automatic target setup needs one selected project; choose --project."
+   },
+   "seconds": {
+    "port": 19.6
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "ncr-1.20.1",
+   "mod": "No Chat Reports",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "networking",
+    "multi-module"
+   ],
+   "from": "1.20.1",
+   "to": "1.21.1",
+   "jump": "to-1.21.1",
+   "javaLines": 10323,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Automatic target setup needs one selected project; choose --project."
+   },
+   "seconds": {
+    "port": 3.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "origins-1.21.1",
+   "mod": "Origins",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "library-dependent",
+    "entities",
+    "networking"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 7125,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 2
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "io.github.apace100:apoli 2.12.0-pre.4+mc.1.21.1; io.github.llamalad7:mixinextras-fabric 0.4.0"
+   },
+   "seconds": {
+    "port": 42.0
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|io.github.apace100:apoli",
+    "dependency-unavailable|io.github.llamalad7:mixinextras-fabric"
+   ]
+  },
+  {
+   "id": "origins-1.21.1",
+   "mod": "Origins",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "library-dependent",
+    "entities",
+    "networking"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 7125,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 2
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "io.github.apace100:apoli 2.12.0-pre.4+mc.1.21.1; io.github.llamalad7:mixinextras-fabric 0.4.0"
+   },
+   "seconds": {
+    "port": 83.8
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|io.github.apace100:apoli",
+    "dependency-unavailable|io.github.llamalad7:mixinextras-fabric"
+   ]
+  },
+  {
+   "id": "origins-1.21.1",
+   "mod": "Origins",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "library-dependent",
+    "entities",
+    "networking"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 7125,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "No published Yarn mappings for 26.3; mapping namespace changes need a guided migration."
+   },
+   "seconds": {
+    "port": 27.3
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "owo-1.18.2",
+   "mod": "owo-lib",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "config",
+    "networking",
+    "client-ui",
+    "library"
+   ],
+   "from": "1.18.2",
+   "to": "1.19",
+   "jump": "adjacent",
+   "javaLines": 8893,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+   },
+   "seconds": {
+    "port": 9.8
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "owo-1.18.2",
+   "mod": "owo-lib",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "config",
+    "networking",
+    "client-ui",
+    "library"
+   ],
+   "from": "1.18.2",
+   "to": "1.20.1",
+   "jump": "to-1.20.1",
+   "javaLines": 8893,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+   },
+   "seconds": {
+    "port": 8.4
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "polymer-1.17.1",
+   "mod": "Polymer",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "networking",
+    "multi-module",
+    "library"
+   ],
+   "from": "1.17.1",
+   "to": "1.18",
+   "jump": "adjacent",
+   "javaLines": 5424,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.3.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+   },
+   "seconds": {
+    "port": 6.9
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "polymer-1.17.1",
+   "mod": "Polymer",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "networking",
+    "multi-module",
+    "library"
+   ],
+   "from": "1.17.1",
+   "to": "1.20.1",
+   "jump": "to-1.20.1",
+   "javaLines": 5424,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.3.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+   },
+   "seconds": {
+    "port": 7.5
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "repurposed-1.21.5",
+   "mod": "Repurposed Structures",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "worldgen"
+   ],
+   "from": "1.21.5",
+   "to": "1.21.6",
+   "jump": "adjacent",
+   "javaLines": 16838,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred evaluating project ':fabric'. > Plugin with id 'net.fabricmc.fabric-loom-companion' not found. Log: C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.ru"
+   },
+   "seconds": {
+    "port": 64.8
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "repurposed-1.21.5",
+   "mod": "Repurposed Structures",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "worldgen"
+   ],
+   "from": "1.21.5",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 16838,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "gradle.properties sets parchment_minecraft_version=1.21, Parchment publishes no names for 26.3, and no parchment { } block reading it was found to remove. Remove the Parchment setting from the build, then rerun port."
+   },
+   "seconds": {
+    "port": 11.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "satin-1.19.2",
+   "mod": "Satin",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "rendering",
+    "library"
+   ],
+   "from": "1.19.2",
+   "to": "1.19.3",
+   "jump": "adjacent",
+   "javaLines": 5586,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+   },
+   "seconds": {
+    "port": 12.6
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "satin-1.19.2",
+   "mod": "Satin",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "rendering",
+    "library"
+   ],
+   "from": "1.19.2",
+   "to": "1.20.1",
+   "jump": "to-1.20.1",
+   "javaLines": 5586,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 1
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+   },
+   "seconds": {
+    "port": 8.5
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "snowrealmagic-1.19.2",
+   "mod": "Snow! Real Magic!",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "blocks",
+    "library-dependent"
+   ],
+   "from": "1.19.2",
+   "to": "1.19.3",
+   "jump": "adjacent",
+   "javaLines": 3665,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Execution failed for task ':modaccelProjectMetadata'. > Could not create task ':modrinth'. > 'void com.modrinth.minotaur.TaskModrinthUpload.notCompatibleWithConfigurationCache(java.lang.String)' Log: "
+   },
+   "seconds": {
+    "port": 39.5
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "snowrealmagic-1.19.2",
+   "mod": "Snow! Real Magic!",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "blocks",
+    "library-dependent"
+   ],
+   "from": "1.19.2",
+   "to": "1.20.1",
+   "jump": "to-1.20.1",
+   "javaLines": 3665,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Execution failed for task ':modaccelProjectMetadata'. > Could not create task ':modrinth'. > 'void com.modrinth.minotaur.TaskModrinthUpload.notCompatibleWithConfigurationCache(java.lang.String)' Log: "
+   },
+   "seconds": {
+    "port": 33.2
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "sophbackpacks-1.21.1",
+   "mod": "Sophisticated Backpacks",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "items",
+    "library-dependent",
+    "client-ui"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 27522,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Automatic target dependency setup requires one Fabric or NeoForge project; found [forge, neoforge]. Set this loader's target dependencies in the source build, then rerun port --from OLD --to NEW --fix."
+   },
+   "seconds": {
+    "port": 6.8
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "sophbackpacks-1.21.1",
+   "mod": "Sophisticated Backpacks",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "items",
+    "library-dependent",
+    "client-ui"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 27522,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Automatic target dependency setup requires one Fabric or NeoForge project; found [forge, neoforge]. Set this loader's target dependencies in the source build, then rerun port --from OLD --to NEW --fix."
+   },
+   "seconds": {
+    "port": 3.5
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "sophbackpacks-1.21.1",
+   "mod": "Sophisticated Backpacks",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "items",
+    "library-dependent",
+    "client-ui"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 27522,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Automatic target dependency setup requires one Fabric or NeoForge project; found [forge, neoforge]. Set this loader's target dependencies in the source build, then rerun port --from OLD --to NEW --fix."
+   },
+   "seconds": {
+    "port": 3.2
+   },
+   "modid": null,
+   "baseline": false,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "soundphysics-1.21.1",
+   "mod": "Sound Physics Remastered",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "mixin-heavy",
+    "audio"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 4305,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "resource-format": 1
+   },
+   "blocker": {
+    "class": "resource-format",
+    "detail": "Fabric manifest depends.minecraft is not one literal string in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\soundphysics-1.21.1\\fabric\\src\\main\\resources\\fabric.mod.json; update its owner manually."
+   },
+   "seconds": {
+    "port": 63.0
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "soundphysics-1.21.1",
+   "mod": "Sound Physics Remastered",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "mixin-heavy",
+    "audio"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 4305,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "resource-format": 1
+   },
+   "blocker": {
+    "class": "resource-format",
+    "detail": "Fabric manifest depends.minecraft is not one literal string in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\soundphysics-1.21.1\\fabric\\src\\main\\resources\\fabric.mod.json; update its owner manually."
+   },
+   "seconds": {
+    "port": 14.5
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "soundphysics-1.21.1",
+   "mod": "Sound Physics Remastered",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "mixin-heavy",
+    "audio"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 4305,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "resource-format": 1
+   },
+   "blocker": {
+    "class": "resource-format",
+    "detail": "Fabric manifest depends.minecraft is not one literal string in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\soundphysics-1.21.1\\fabric\\src\\main\\resources\\fabric.mod.json; update its owner manually."
+   },
+   "seconds": {
+    "port": 29.4
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "storagedrawers-1.20.6",
+   "mod": "Storage Drawers",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ],
+   "from": "1.20.6",
+   "to": "1.21.1",
+   "jump": "to-1.21.1",
+   "javaLines": 24338,
+   "build": false,
+   "errorsBefore": 18,
+   "errorsAfter": 18,
+   "classes": {
+    "access-transformer": 7,
+    "semantic-api-change": 2,
+    "missing-mapping": 1,
+    "signature-change": 8
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 355.4
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "access-transformer|ResourceLocation.ResourceLocation",
+    "missing-mapping|VertexConsumer.overlayCoords",
+    "semantic-api-change|ItemKey.BASE_ATTACK_DAMAGE_UUID",
+    "semantic-api-change|Minecraft.getFrameTime",
+    "signature-change|AddUpgradeRecipe is not abstract and does not override abstract method",
+    "signature-change|CustomRecipe.assemble",
+    "signature-change|CustomRecipe.matches",
+    "signature-change|RecipeManager.getRecipesFor",
+    "signature-change|ResourceLocation.ResourceLocation",
+    "signature-change|incompatible types: CraftingContainer cannot be converted to CraftingI"
+   ]
+  },
+  {
+   "id": "storagedrawers-1.20.6",
+   "mod": "Storage Drawers",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "rendering"
+   ],
+   "from": "1.20.6",
+   "to": "1.21",
+   "jump": "adjacent",
+   "javaLines": 24338,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring root project 'storagedrawers-1.20.6'. > (The run type 'data' was not found) null. Potential Solution: Ensure the run type is defined in the run or a dependency. More inf"
+   },
+   "seconds": {
+    "port": 48.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "torchmaster-1.21.1",
+   "mod": "Torchmaster",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "small"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 4349,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": 18,
+   "classes": {
+    "semantic-api-change": 18
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 174.9
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "semantic-api-change|DreadLampEntityBlockingLight.EntitySpawnReason",
+    "semantic-api-change|EntityBlocker.EntitySpawnReason",
+    "semantic-api-change|EntityBlockingManager.EntitySpawnReason",
+    "semantic-api-change|EntitySpawnReason",
+    "semantic-api-change|FilteredLightManager.EntitySpawnReason",
+    "semantic-api-change|IBlockingLightManager.EntitySpawnReason",
+    "semantic-api-change|IEntityBlockingLight.EntitySpawnReason",
+    "semantic-api-change|MegatorchEntityBlockingLight.EntitySpawnReason",
+    "semantic-api-change|TorchmasterEventHandler.EntitySpawnReason"
+   ]
+  },
+  {
+   "id": "torchmaster-1.21.1",
+   "mod": "Torchmaster",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "small"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 4349,
+   "build": false,
+   "errorsBefore": 0,
+   "errorsAfter": 19,
+   "classes": {
+    "semantic-api-change": 19
+   },
+   "blocker": null,
+   "seconds": {
+    "port": 161.2
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "semantic-api-change|DreadLampEntityBlockingLight.EntitySpawnReason",
+    "semantic-api-change|EntityBlocker.EntitySpawnReason",
+    "semantic-api-change|EntityBlockingManager.EntitySpawnReason",
+    "semantic-api-change|EntitySpawnReason",
+    "semantic-api-change|FilteredLightManager.EntitySpawnReason",
+    "semantic-api-change|GlStateManager",
+    "semantic-api-change|IBlockingLightManager.EntitySpawnReason",
+    "semantic-api-change|IEntityBlockingLight.EntitySpawnReason",
+    "semantic-api-change|MegatorchEntityBlockingLight.EntitySpawnReason",
+    "semantic-api-change|TorchmasterEventHandler.EntitySpawnReason"
+   ]
+  },
+  {
+   "id": "torchmaster-1.21.1",
+   "mod": "Torchmaster",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "small"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 4349,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "tool-crash": 1
+   },
+   "blocker": {
+    "class": "tool-crash",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':fabric'. > Failed to setup Minecraft, java.lang.IllegalStateException: Minecraft 26.3 requires Java 25 but Gradle is using 21 Log: C:\\Users\\Jk101\\.t3\\worktrees"
+   },
+   "seconds": {
+    "port": 109.6
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "trashcans-1.21.4",
+   "mod": "Trash Cans",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "library-dependent",
+    "small"
+   ],
+   "from": "1.21.4",
+   "to": "1.21.5",
+   "jump": "adjacent",
+   "javaLines": 2982,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 3
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "teamreborn:energy 4.1.0; curse.maven:supermartijn642s-core-lib-454372 8943285; curse.maven:supermartijn642s-config-lib-438332 5546988"
+   },
+   "seconds": {
+    "port": 23.9
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|curse.maven:supermartijn642s-config-lib-438332",
+    "dependency-unavailable|curse.maven:supermartijn642s-core-lib-454372",
+    "dependency-unavailable|teamreborn:energy"
+   ]
+  },
+  {
+   "id": "trashcans-1.21.4",
+   "mod": "Trash Cans",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "library-dependent",
+    "small"
+   ],
+   "from": "1.21.4",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 2982,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 3
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "teamreborn:energy 4.1.0; curse.maven:supermartijn642s-core-lib-454372 8943285; curse.maven:supermartijn642s-config-lib-438332 5546988"
+   },
+   "seconds": {
+    "port": 6.5
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|curse.maven:supermartijn642s-config-lib-438332",
+    "dependency-unavailable|curse.maven:supermartijn642s-core-lib-454372",
+    "dependency-unavailable|teamreborn:energy"
+   ]
+  },
+  {
+   "id": "trashcans-1.21.4",
+   "mod": "Trash Cans",
+   "loader": "fabric",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "library-dependent",
+    "small"
+   ],
+   "from": "1.21.4",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 2982,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 3
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "teamreborn:energy 4.1.0; curse.maven:supermartijn642s-core-lib-454372 8943285; curse.maven:supermartijn642s-config-lib-438332 5546988"
+   },
+   "seconds": {
+    "port": 9.0
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|curse.maven:supermartijn642s-config-lib-438332",
+    "dependency-unavailable|curse.maven:supermartijn642s-core-lib-454372",
+    "dependency-unavailable|teamreborn:energy"
+   ]
+  },
+  {
+   "id": "trinkets-1.20.1",
+   "mod": "Trinkets",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "library",
+    "items",
+    "client-ui"
+   ],
+   "from": "1.20.1",
+   "to": "1.20.2",
+   "jump": "adjacent",
+   "javaLines": 4710,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 2
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "dev.onyxstudios.cardinal-components-api:cardinal-components-base 5.2.0; dev.onyxstudios.cardinal-components-api:cardinal-components-entity 5.2.0"
+   },
+   "seconds": {
+    "port": 30.6
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|dev.onyxstudios.cardinal-components-api:cardinal-components-base",
+    "dependency-unavailable|dev.onyxstudios.cardinal-components-api:cardinal-components-entity"
+   ]
+  },
+  {
+   "id": "trinkets-1.20.1",
+   "mod": "Trinkets",
+   "loader": "fabric",
+   "names": "yarn",
+   "kinds": [
+    "library",
+    "items",
+    "client-ui"
+   ],
+   "from": "1.20.1",
+   "to": "1.21.1",
+   "jump": "to-1.21.1",
+   "javaLines": 4710,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "dependency-unavailable": 2
+   },
+   "blocker": {
+    "class": "dependency-unavailable",
+    "detail": "dev.onyxstudios.cardinal-components-api:cardinal-components-base 5.2.0; dev.onyxstudios.cardinal-components-api:cardinal-components-entity 5.2.0"
+   },
+   "seconds": {
+    "port": 10.3
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": [
+    "dependency-unavailable|dev.onyxstudios.cardinal-components-api:cardinal-components-base",
+    "dependency-unavailable|dev.onyxstudios.cardinal-components-api:cardinal-components-entity"
+   ]
+  },
+  {
+   "id": "twilightforest-1.21.1",
+   "mod": "The Twilight Forest",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "worldgen",
+    "entities",
+    "large",
+    "datagen"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 166365,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Automatic target setup needs one selected project; choose --project."
+   },
+   "seconds": {
+    "port": 33.9
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "twilightforest-1.21.1",
+   "mod": "The Twilight Forest",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "worldgen",
+    "entities",
+    "large",
+    "datagen"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 166365,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Automatic target setup needs one selected project; choose --project."
+   },
+   "seconds": {
+    "port": 4.7
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "twilightforest-1.21.1",
+   "mod": "The Twilight Forest",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "worldgen",
+    "entities",
+    "large",
+    "datagen"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 166365,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Automatic target setup needs one selected project; choose --project."
+   },
+   "seconds": {
+    "port": 5.3
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "waystones-1.21.1",
+   "mod": "Waystones",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "library-dependent",
+    "multi-module",
+    "networking"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 23254,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':forge'. > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\.t3\\wor"
+   },
+   "seconds": {
+    "port": 122.7
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "waystones-1.21.1",
+   "mod": "Waystones",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "library-dependent",
+    "multi-module",
+    "networking"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 23254,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':forge'. > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\.t3\\wor"
+   },
+   "seconds": {
+    "port": 141.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "waystones-1.21.1",
+   "mod": "Waystones",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "blocks",
+    "library-dependent",
+    "multi-module",
+    "networking"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 23254,
+   "build": false,
+   "errorsBefore": null,
+   "errorsAfter": null,
+   "classes": {
+    "build-tooling": 1
+   },
+   "blocker": {
+    "class": "build-tooling",
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':fabric'. > Failed to setup Minecraft, java.lang.RuntimeException: Failed to find official mojang mappings for 26.3 Log: C:\\Users\\Jk101\\.t3\\worktrees\\modding-ac"
+   },
+   "seconds": {
+    "port": 119.1
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "zaa-1.21.1",
+   "mod": "ZombieApocalypseAddon",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "entities"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.2",
+   "jump": "adjacent",
+   "javaLines": 20471,
+   "build": false,
+   "errorsBefore": 32,
+   "errorsAfter": null,
+   "classes": {
+    "resource-format": 1
+   },
+   "blocker": {
+    "class": "resource-format",
+    "detail": "The packaged mod's Minecraft versionRange \"[1.21.2,1.21.2]\" is not a valid Maven range (Range cannot have identical boundaries: [1.21.2,1.21.2]); NeoForge refuses the mod. Fix the range and rerun."
+   },
+   "seconds": {
+    "port": 526.3
+   },
+   "modid": null,
+   "baseline": true,
+   "load": null,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "zaa-1.21.1",
+   "mod": "ZombieApocalypseAddon",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "entities"
+   ],
+   "from": "1.21.1",
+   "to": "1.21.6",
+   "jump": "to-1.21.6",
+   "javaLines": 20471,
+   "build": true,
+   "errorsBefore": 96,
+   "errorsAfter": 0,
+   "classes": {},
+   "blocker": null,
+   "seconds": {
+    "port": 266.9,
+    "load": 36.6,
+    "behaviour": 0.0
+   },
+   "modid": "zombieapocalypseaddon",
+   "baseline": true,
+   "load": true,
+   "behaviour": null,
+   "apis": []
+  },
+  {
+   "id": "zaa-1.21.1",
+   "mod": "ZombieApocalypseAddon",
+   "loader": "neoforge",
+   "names": "mojmap",
+   "kinds": [
+    "entities"
+   ],
+   "from": "1.21.1",
+   "to": "26.3",
+   "jump": "to-26.x",
+   "javaLines": 20471,
+   "build": true,
+   "errorsBefore": 353,
+   "errorsAfter": 0,
+   "classes": {},
+   "blocker": null,
+   "seconds": {
+    "port": 546.9,
+    "load": 46.1,
+    "behaviour": 0.0
+   },
+   "modid": "zombieapocalypseaddon",
+   "baseline": true,
+   "load": true,
+   "behaviour": null,
+   "apis": []
+  }
+ ]
+}
