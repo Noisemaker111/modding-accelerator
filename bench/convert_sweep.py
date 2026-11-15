@@ -19,7 +19,7 @@ bench/convert-sweep/corpus.json pins each mod (repository and commit). For each 
 Per-run records go to .runs/convert-sweep/runs/ID-to-LOADER.json. The ranked gap table and the pass rates
 go to coverage/sweeps/convert.json; --label keeps each sweep's pass rates in its history, so a batch of
 rules shows its before and after. Launches follow ~/.modaccel/preferences.json (hidden and muted).
-The runner never calls a network model: convert's rules are plain data.
+After each mod, modaccel game-stop ends its games and Gradle daemons. The runner never calls a network model: convert's rules are plain data.
 """
 import argparse
 import concurrent.futures
@@ -268,7 +268,22 @@ def parse_registries(text):
     return out
 
 
+def stop(work):
+    """Ends the game and the Gradle daemons modaccel started for one checkout, so nothing waits out its idle timeout."""
+    if work is not None and Path(work).is_dir():
+        modaccel(["game-stop", "--root", str(work), "--json"], TIMEOUT["game-stop"])
+
+
 def run_one(mod, args, concepts):
+    started = []
+    try:
+        return run_mod(mod, args, concepts, started)
+    finally:
+        for work in started:
+            stop(work)
+
+
+def run_mod(mod, args, concepts, started):
     to = OTHER[mod["loader"]]
     record = {"id": mod["id"], "name": mod["name"], "label": args.label, "from": mod["loader"], "to": to, "commit": mod["commit"],
               "features": mod["features"], "started": datetime.datetime.now().isoformat(timespec="seconds")}
@@ -278,6 +293,7 @@ def run_one(mod, args, concepts):
         record.update(stage="clone", error=str(e), concepts={"clone failed": 1})
         return record
     work = fresh_copy(src, f"{mod['id']}-to-{to}")
+    started.append(work)
     props = (work / "gradle.properties").read_text(encoding="utf-8", errors="replace") if (work / "gradle.properties").is_file() else ""
     yarn = bool(re.search(r"(?m)^\s*yarn_(?:mappings|version)\s*=", props)) and mod["loader"] == "fabric"
     record["yarn"] = yarn
@@ -332,6 +348,7 @@ def run_one(mod, args, concepts):
             record["game"] = game_registries(work, namespace)
             if record["game"].get("loaded"):
                 original = fresh_copy(src, f"{mod['id']}-original")
+                started.append(original)
                 record["originalGame"] = game_registries(original, mod_namespace(original, mod["loader"]))
                 a = parse_registries(record["game"].get("registries"))
                 b = parse_registries(record["originalGame"].get("registries"))

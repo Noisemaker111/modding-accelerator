@@ -64,6 +64,16 @@ def kill_tree(pid):
         subprocess.run(["pkill", "-TERM", "-P", str(pid)], capture_output=True)
 
 
+def leftover_servers(instance):
+    """Stops any server JVM pack-check left running in this pack's instance folder (each runs with -Xmx6G)."""
+    if not instance or not WINDOWS:
+        return 0
+    script = ("Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" | Where-Object { $_.CommandLine -like '*modaccel.probe*' -and "
+              "$_.CommandLine -like '*" + str(Path(instance).name) + "*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force; $_.ProcessId }")
+    r = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True)
+    return len([l for l in r.stdout.split() if l.strip().isdigit()])
+
+
 def pack_check(path, args):
     command = MODACCEL + ["pack-check", "--pack", str(path), "--json"] + (["--fix"] if args.fix else [])
     started = time.monotonic()
@@ -217,6 +227,7 @@ def run_one(pack, args, corpus):
             CORPUS.write_text(json.dumps(corpus, indent=2) + "\n", encoding="utf-8")
         code, result, seconds, raw = pack_check(path, args)
         record = analyse(pack, code, result, seconds)
+        record["leftoverServersStopped"] = leftover_servers(((result.get("game") or {}).get("instance")) if isinstance(result, dict) else None)
         logs = WORK / "logs"
         logs.mkdir(parents=True, exist_ok=True)
         (logs / f"{pack['id']}.out").write_text(raw, encoding="utf-8")
@@ -233,7 +244,7 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run")
     run.add_argument("--only", default="")
-    run.add_argument("--jobs", type=int, default=1, help="packs at once (each runs one server; at most 2)")
+    run.add_argument("--jobs", type=int, default=1, help="ignored: one pack at a time, since each server takes up to 6 GB")
     run.add_argument("--fix", action="store_true", help="pack-check --fix: a repaired server beside the shipped one")
     run.add_argument("--timeout", type=int, default=5400)
     run.add_argument("--label", default="latest")
@@ -256,7 +267,7 @@ def main():
     if args.resume:
         done = {r["id"] for r in load_records() if r.get("label") == args.label}
         packs = [p for p in packs if p["id"] not in done]
-    jobs = max(1, min(2 if not args.fix else 1, args.jobs))
+    jobs = 1
     with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
         futures = {pool.submit(run_one, p, args, corpus): p for p in packs}
         for f in concurrent.futures.as_completed(futures):
