@@ -46,6 +46,7 @@ final class Installation {
         "tools/packcheck/game/26.1/ModaccelPackGame.java",
         "knowledge/pack-fixes.json",
         "knowledge/pack-loaders.json",
+        "knowledge/perf-patterns.json",
         "tools/VersionMap.java",
         "tools/GameDiff.java",
         "tools/MixinAudit.java",
@@ -124,6 +125,10 @@ final class Installation {
     static Path home() throws Exception {
         Path location = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         if (!location.toString().endsWith(".jar")) return Path.of(System.getProperty("modaccel.home", "."))
+            .toAbsolutePath()
+            .normalize();
+        // A child started by this package (PerfOptimize.childJava) names the parent's home; a test names its own.
+        if (System.getProperty("modaccel.home") != null) return Path.of(System.getProperty("modaccel.home"))
             .toAbsolutePath()
             .normalize();
         Path directory = Path.of(

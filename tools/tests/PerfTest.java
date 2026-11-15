@@ -37,9 +37,14 @@ public final class PerfTest {
         check(Run.exitedProcStat("123 (name with ) spaces) Z 1 2 3"), "unreaped Linux exits are not running games");
         check(!Run.exitedProcStat("123 (java) S 1 2 3"), "sleeping Linux process remains live");
         Path home = Path.of(args[0]);
-        runRecords(home);
-        patternLibrary(home);
-        committedExperiments(home);
+        // The checked-in records, patterns and experiments belong to the checkout. From the source launcher the harness
+        // is the checkout; the package's harness is its unpacked resources, so the checkout is self-test's --root, the
+        // working directory. CI runs only the package's self-test, so reading the harness there checked none of them.
+        Path checkout = Files.isDirectory(home.resolve("bench")) ? home : Path.of("").toAbsolutePath();
+        runRecords(checkout);
+        patternLibrary(checkout);
+        if (Files.isDirectory(checkout.resolve("bench"))) committedExperiments(checkout);
+        else System.out.println("Not a modaccel checkout: no committed experiments to check");
         Path scratch = Files.createTempDirectory(Path.of(args[1]).toAbsolutePath().getParent(), "perf-fixture-");
         Modaccel.Report receipt = new Modaccel.Report(scratch, "perf-test");
         Path agent = Performance.agent(home, receipt);
