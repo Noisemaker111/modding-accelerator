@@ -216,9 +216,12 @@ final class PackLoaders {
         public String newest(Context context, String minecraft) throws Exception {
             String prefix = fill(setting(minecraft, "versionPrefix"), minecraft, "", null);
             String xml = new String(PackCheck.get(fill(setting(minecraft, "versions"), minecraft, "", null)), StandardCharsets.UTF_8);
+            // The prefix picks this game version's releases. It is taken off only where the installer's address puts it back
+            // (Forge's "{mc}-{version}"); NeoForge's address takes the whole version ("21.1.266"), not "266".
+            boolean restored = fill(setting(minecraft, "installer"), minecraft, "{version}", null).contains(prefix + "{version}");
             List<String> found = new ArrayList<>();
             Matcher m = Pattern.compile("<version>([^<]+)</version>").matcher(xml);
-            while (m.find()) if (m.group(1).startsWith(prefix)) found.add(m.group(1).substring(prefix.length()));
+            while (m.find()) if (m.group(1).startsWith(prefix)) found.add(restored ? m.group(1).substring(prefix.length()) : m.group(1));
             if (found.isEmpty()) throw new IOException(id + " publishes no server for Minecraft " + minecraft + ".");
             List<String> stable = found.stream().filter(v -> !v.contains("beta") && !v.contains("alpha")).toList();
             return (stable.isEmpty() ? found : stable).stream().max(Versions::compare).get();

@@ -42,7 +42,9 @@ against the game's own classes) or on the loader's real dedicated server (inside
 - Code a mod runs in its own server or level tick events runs while the world is frozen, before the scenario starts.
 - Randomness a mod keeps in its own static fields, or takes from `ThreadLocalRandom`, `Math.random`, `new Random()` or the clock.
 - The order of hash maps and sets keyed by identity: identity hash codes differ in every run.
-- Work on other threads: chunk generation, lighting, a mod's own executors.
+- Work on other threads: chunk generation, lighting, a mod's own executors. The level's random state (`randomState`) is
+  drawn from once per chunk the server ticks, including spawn chunks outside the recorded area that finish loading a tick
+  sooner or later, so two records of the same jar can differ there while every block, entity and ticket is the same.
 - Before Minecraft 1.20.3 there is no tick freeze: the world runs from load until the scenario holds the server thread.
 - Development clients of yarn-named Fabric sources: the probe is Mojang-named; use `--jar` (the server path).
 
