@@ -32,6 +32,7 @@ public final class PackCheckTest {
             inputs(harness, scratch);
             fabricAndQuilt(harness, scratch);
             logs(harness, scratch);
+            serverMods(harness, scratch);
             loaders(harness, scratch);
             List<String> repairs = PackRepairs.selfTest(harness, scratch.resolve("repairs"));
             expect(!repairs.isEmpty(), "every repair in pack-fixes.json passes its test: " + repairs);
@@ -39,7 +40,7 @@ public final class PackCheckTest {
                 count +
                 " pack-check checks passed: six pack inputs, Forge/Fabric/Quilt metadata with bundled mods, duplicate ids, missing and wrong-version mods," +
                 " game and loader version mismatches, declared conflicts, mods for another loader, shared look files and block names, mod sides from" +
-                " CurseForge and Modrinth, known faults and the repair tests (" + repairs + "), client-only mods and remembering them, the mod a crash names," +
+                " CurseForge and Modrinth, known faults and the repair tests (" + repairs + "), client-only mods and remembering them, which jars a server gets (client-side jars a kept mod requires, dependants of client-only ones), a library jar's bundled mods, the mod a crash names," +
                 " failed-start words, four loader adapters, a port lost to the other server, a free voice chat port"
             );
         } finally {
@@ -513,6 +514,26 @@ public final class PackCheckTest {
             "a crash report's suspected mod and a module frame name mods: " + neoSuspects
         );
         expect(PackChecks.names(neoSuspects).equals("flywheel (create.jar!flywheel.jar), create (create.jar)"), "suspects read as a list of mods and jars");
+        // Found by an independent rerun of Optimized FPS (Forge 1.16.5): the probe never found the server, and pack-check blamed
+        // ModernFix by quoting a successful start-up log. A server that logged Done blames nobody for what came before it.
+        String startedLog = String.join(
+            "\n",
+            "[main/INFO] [mixin/]: Mixing mixins.iris.json:MixinLevelRenderer",
+            "[Server thread/INFO] [minecraft/DedicatedServer]: Done (12.345s)! For help, type \"help\""
+        );
+        var startedSuspects = PackChecks.suspects(startedLog, List.of(), scan, fabric);
+        String startedFailure = PackChecks.failure(startedLog, fabric.failed());
+        expect(
+            startedSuspects.isEmpty() && startedFailure.contains("finished starting") && startedFailure.contains("not of a mod"),
+            "a log with a finished start names no mod, and says the probe never reported: " + startedSuspects + " " + startedFailure
+        );
+        var crashedAfter = PackChecks.suspects(startedLog + "\n" + mixinLog, List.of(), scan, fabric);
+        expect(crashedAfter.size() == 1 && crashedAfter.get(0).get("mod").equals("iris"), "a failure after the start still names its mod: " + crashedAfter);
+        String probe = Files.readString(harness.resolve("tools/packcheck/ModaccelPackProbe.java"));
+        expect(
+            probe.contains("\"net.minecraftforge.fml.server.ServerLifecycleHooks\"") && probe.contains("for (String hooks : SERVER_HOOKS)"),
+            "the probe looks for the server where Forge 1.16 keeps it (net.minecraftforge.fml.server.ServerLifecycleHooks)"
+        );
 
         // Simple Voice Chat's fixed UDP port, taken by the other lane's server: that start runs again alone.
         String lost = String.join(
@@ -536,6 +557,100 @@ public final class PackCheckTest {
         );
         expect(PackCheck.doneSeconds("[Server thread/INFO] Done (41.250s)! For help, type \"help\"") == 41.25, "the start time is read");
         expect(Json.write(Json.map("probeFile", scratch.resolve("probe-place.json"))).contains("probe-place.json"), "a path in a result is written as text");
+    }
+
+    // ------------------------------------------------------------------ which jars a server gets
+    static void serverMods(Path harness, Path scratch) throws Exception {
+        // Prominence II (Fabric 1.20.1, from the pack sweep): Chipped needs Athena, Simply Swords needs Simply Tooltips and
+        // Forge Config Screens needs Mod Menu, each marked client-side by Modrinth, CurseForge or its own environment. Leaving
+        // them out stopped the server ("requires athena, which is missing"); kept, Fabric decides (it keeps an
+        // environment-client jar out of the game and treats a dependency on it as met).
+        Path fabricMods = Files.createDirectories(scratch.resolve("sides-fabric/mods"));
+        List<PackCheck.Mod> fabric = new ArrayList<>();
+        for (String[] m : List.of(
+            new String[] { "chipped.jar", "unknown", "{\"id\":\"chipped\",\"version\":\"3.0.7\",\"depends\":{\"athena\":\">=3.1.1\",\"minecraft\":\">=1.20.1\"}}" },
+            new String[] { "athena.jar", "client", "{\"id\":\"athena\",\"version\":\"3.1.2\"}" },
+            new String[] { "simplyswords.jar", "both", "{\"id\":\"simplyswords\",\"version\":\"1.70.2\",\"depends\":{\"simplytooltips\":\"*\"}}" },
+            new String[] { "simplytooltips.jar", "client", "{\"id\":\"simplytooltips\",\"version\":\"0.1.5\",\"depends\":{\"fzzy_config\":\"*\"}}" },
+            new String[] { "fzzy.jar", "client", "{\"id\":\"fzzy_config\",\"version\":\"0.6.6\"}" },
+            new String[] { "forgeconfigscreens.jar", "unknown", "{\"id\":\"forgeconfigscreens\",\"version\":\"8\",\"depends\":{\"modmenu\":\"*\"}}" },
+            new String[] { "modmenu.jar", "unknown", "{\"id\":\"modmenu\",\"version\":\"7.2.2\",\"environment\":\"client\"}" },
+            new String[] { "sodium.jar", "client", "{\"id\":\"sodium\",\"version\":\"0.5\"}" }
+        )) fabric.add(new PackCheck.Mod(m[0], jar(fabricMods.resolve(m[0]), Map.of("fabric.mod.json", m[2])), m[1], "test"));
+        PackMods.Scan fabricScan = PackMods.scan(fabric, List.of("fabric.mod.json"));
+        fabric = PackCheck.sides(fabric, fabricScan);
+        PackCheck.ServerMods kept = PackCheck.serverMods(fabric, fabricScan, Set.of(), List.of());
+        PackMods.Scan chippedAlone = PackMods.scan(fabric.subList(0, 1), List.of("fabric.mod.json"));
+        expect(
+            PackRepairs.dependencyMissing(Map.of("mod", "chipped", "dependency", "athena"), chippedAlone).contains("requires athena >=3.1.1, which no jar") &&
+            PackRepairs.dependencyMissing(Map.of("mod", "chipped", "dependency", "athena"), fabricScan) == null,
+            "the dependency-missing repair match holds only while no jar provides the dependency"
+        );
+        expect(
+            kept.kept().containsAll(List.of("chipped.jar", "athena.jar", "simplyswords.jar", "simplytooltips.jar", "fzzy.jar", "forgeconfigscreens.jar", "modmenu.jar")) &&
+            kept.leftOut().keySet().equals(Set.of("sodium.jar")) &&
+            kept.required().get("athena.jar").equals("chipped (chipped.jar) requires athena") &&
+            kept.required().get("fzzy.jar").equals("simplytooltips (simplytooltips.jar) requires fzzy_config"),
+            "a client-side jar a kept mod requires is kept, through its own dependencies; one nothing requires is left out: " + kept
+        );
+
+        // Optimized FPS (Forge 1.16.5, from the pack sweep): Embeddium Extension needs Embeddium, which Modrinth marks
+        // client-only. Kept, Embeddium is tried; once a start shows it reaching client-only code, it and every mod that
+        // requires it (here, through a second mod) are left out.
+        Path forgeMods = Files.createDirectories(scratch.resolve("sides-forge/mods"));
+        List<PackCheck.Mod> forge = List.of(
+            new PackCheck.Mod("embeddium.jar", jar(forgeMods.resolve("embeddium.jar"), Map.of("META-INF/mods.toml", toml("embeddium", "0.3.18", ""))), "client", "test"),
+            new PackCheck.Mod(
+                "embeddiumextension.jar",
+                jar(forgeMods.resolve("embeddiumextension.jar"), Map.of("META-INF/mods.toml", toml("embeddiumextension", "0.1.1", dependency("embeddium", "true", "[0.1.14,)")))),
+                "unknown",
+                "test"
+            ),
+            new PackCheck.Mod(
+                "addon.jar",
+                jar(forgeMods.resolve("addon.jar"), Map.of("META-INF/mods.toml", toml("addon", "1", dependency("embeddiumextension", "true", "[0,)")))),
+                "unknown",
+                "test"
+            ),
+            new PackCheck.Mod("create.jar", jar(forgeMods.resolve("create.jar"), Map.of("META-INF/mods.toml", toml("create", "6", dependency("forge", "true", "[47,)")))), "both", "test")
+        );
+        PackMods.Scan forgeScan = PackMods.scan(forge, List.of("META-INF/mods.toml"));
+        PackCheck.ServerMods tried = PackCheck.serverMods(forge, forgeScan, Set.of(), List.of());
+        expect(
+            tried.kept().equals(Set.of("embeddium.jar", "embeddiumextension.jar", "addon.jar", "create.jar")) && tried.required().containsKey("embeddium.jar"),
+            "Forge: a client-side library a kept mod requires is tried on the server: " + tried
+        );
+        PackCheck.ServerMods shown = PackCheck.serverMods(forge, forgeScan, Set.of("embeddium.jar"), List.of());
+        expect(
+            shown.kept().equals(Set.of("create.jar")) &&
+            shown.leftOut().get("embeddiumextension.jar").equals("it requires embeddium, and embeddium.jar cannot run on a server") &&
+            shown.leftOut().get("addon.jar").startsWith("it requires embeddiumextension") &&
+            shown.leftOut().get("embeddium.jar").contains("client-only code"),
+            "a mod whose required mod cannot run on a server is left out too, through its dependants: " + shown
+        );
+        expect(
+            PackCheck.serverMods(forge, forgeScan, Set.of(), List.of("embeddiumextension.jar")).kept().equals(Set.of("create.jar", "addon.jar")),
+            "a jar a repair removes is not on the server, and nothing is kept for it: " + PackCheck.serverMods(forge, forgeScan, Set.of(), List.of("embeddiumextension.jar"))
+        );
+
+        // Create+ (Forge 1.19.2, from the pack sweep): Kotlin for Forge 3.12 is a LIBRARY jar whose mod is in its jarjar list.
+        Path kffMod = jar(scratch.resolve("kffmod.jar"), Map.of("META-INF/mods.toml", toml("kotlinforforge", "3.12.0", "")));
+        Path kff = jar(
+            forgeMods.resolve("kotlinforforge-3.12.0-all.jar"),
+            Map.of(
+                "META-INF/MANIFEST.MF",
+                "Manifest-Version: 1.0\nFMLModType: LIBRARY\n",
+                "META-INF/jarjar/metadata.json",
+                "{\"jars\":[{\"identifier\":{\"group\":\"thedarkcolour\",\"artifact\":\"kffmod\"},\"path\":\"META-INF/jarjar/kffmod-3.12.0.jar\"}]}",
+                "META-INF/jarjar/kffmod-3.12.0.jar",
+                kffMod
+            )
+        );
+        PackMods.Scan kotlin = PackMods.scan(List.of(new PackCheck.Mod("kotlinforforge-3.12.0-all.jar", kff, "unknown", "test")), List.of("META-INF/mods.toml"));
+        expect(
+            kotlin.providers.containsKey("kotlinforforge") && kotlin.plugins.contains("kotlinforforge-3.12.0-all.jar"),
+            "a loader library's mods in its jarjar list are read: " + kotlin.providers.keySet()
+        );
     }
 
     // ------------------------------------------------------------------ loaders
@@ -562,6 +677,17 @@ public final class PackCheckTest {
             "not-checked".equals(Json.object(stopped.get(0)).get("kind")) &&
             "note".equals(Json.object(stopped.get(0)).get("severity")),
             "a probe that stopped before placing is a note that placement went unchecked: " + stopped
+        );
+        // Optimized FPS (Forge 1.16.5, from the pack sweep): a probe that failed before reading the world wrote only its error.
+        List<Object> early = new ArrayList<>();
+        PackChecks.Context failed = new PackChecks.Context(null, new PackMods.Scan(), PackLoaders.all(harness).get("forge"), early);
+        failed.start = Map.of("opened", true, "probe", Map.of("error", "java.lang.NoSuchMethodError: x", "ok", false));
+        PackChecks.dimensions(failed);
+        PackChecks.changedBySave(failed);
+        PackChecks.placements(failed);
+        expect(
+            early.size() == 1 && "not-checked".equals(Json.object(early.get(0)).get("kind")),
+            "a probe result with only its error is a gap of the check, not a pack-check crash: " + early
         );
         // SodiumPlus (Quilt 1.20.1, the pack sweep): QFAPI accepts Minecraft {"all": [">=1.20-", "<1.20.2-"]}, which 1.20.1 satisfies.
         List<String> allOf = PackMods.quiltRanges(Map.of("all", List.of(">=1.20-", "<1.20.2-")));

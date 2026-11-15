@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "about": "Repairs pack-check applies for a cause proven in a real run. Each entry names the loader and game versions it is for, a match (read from the jars before the game runs: mod-below, mod-range, mods-together, dependency-unmet), the check that shows the fault in the game, an action (add-jar, remove-mod, replace-mod) whose downloads are checked against their SHA-512, the evidence, and a test: jars that must match before the action and must not after it (run by self-test). A finding with no entry here is reported with its evidence and left alone.",
+  "about": "Repairs pack-check applies for a cause proven in a real run. Each entry names the loader and game versions it is for, a match (read from the jars before the game runs: mod-below, mod-range, mods-together, dependency-unmet, dependency-missing), the check that shows the fault in the game, an action (add-jar, remove-mod, replace-mod) whose downloads are checked against their SHA-512, the evidence, and a test: jars that must match before the action and must not after it (run by self-test). A finding with no entry here is reported with its evidence and left alone.",
   "fixes": [
     {
       "id": "biolith-saved-climate-list",

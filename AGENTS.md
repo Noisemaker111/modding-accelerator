@@ -25,6 +25,7 @@ python3 bench/test_record.py &&
 python3 bench/test_ledger_rule.py &&
 python3 bench/test_java_lines.py &&
 python3 bench/test_loader_api.py &&
+python3 bench/test_sweeps.py &&
 python3 bench/test_session_cost.py &&
 python3 bench/test_perf_sessions.py
 ```

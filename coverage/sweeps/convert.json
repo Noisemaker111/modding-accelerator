@@ -2,20 +2,23 @@
   "about": "modaccel convert on the pinned corpus in bench/convert-sweep/corpus.json, by python bench/convert_sweep.py. gaps ranks each missing loader concept by how many mods it affects (blocking: refusals). history keeps each labelled sweep's pass rates.",
   "corpus": 35,
   "latest": {
-    "label": "batch-3",
-    "date": "2026-11-14",
+    "label": "round-2",
+    "date": "2026-11-15",
     "runs": 35,
-    "not refused": 27,
-    "compiled": 4,
+    "not refused": 28,
+    "compiled": 5,
     "compiled with nothing left": 3,
-    "loaded in the game": 4,
-    "registers what the original does": 4,
-    "converted back and compiled": 1,
+    "loaded in the game": 5,
+    "registers what the original does": 3,
+    "same behaviour as the original (registries, or mixins when it registers nothing)": 5,
+    "loaded with nothing to compare": 0,
+    "converted back and compiled": 5,
     "outcomes": {
-      "refused": 8,
+      "refused": 7,
       "converted, does not compile": 23,
-      "loads, registers what the original does": 3,
-      "compiles, items left": 1
+      "loads, applies the same mixins as the original": 2,
+      "compiles, items left": 2,
+      "loads, registers what the original does": 1
     }
   },
   "history": [
@@ -42,13 +45,15 @@
       "compiled": 1,
       "compiled with nothing left": 1,
       "loaded in the game": 1,
-      "registers what the original does": 1,
+      "registers what the original does": 0,
       "converted back and compiled": 1,
       "outcomes": {
         "refused": 23,
         "converted, does not compile": 11,
         "loads, registers what the original does": 1
-      }
+      },
+      "recorded registers what the original does": 1,
+      "corrected": "zero registry entries against zero no longer counts as registering what the original does (fabric-example registered nothing on either loader)"
     },
     {
       "label": "batch-1",
@@ -58,13 +63,15 @@
       "compiled": 1,
       "compiled with nothing left": 1,
       "loaded in the game": 1,
-      "registers what the original does": 1,
+      "registers what the original does": 0,
       "converted back and compiled": 1,
       "outcomes": {
         "refused": 9,
         "converted, does not compile": 25,
         "loads, registers what the original does": 1
-      }
+      },
+      "recorded registers what the original does": 1,
+      "corrected": "zero registry entries against zero no longer counts as registering what the original does (fabric-example registered nothing on either loader)"
     },
     {
       "label": "batch-2",
@@ -74,13 +81,15 @@
       "compiled": 1,
       "compiled with nothing left": 1,
       "loaded in the game": 1,
-      "registers what the original does": 1,
+      "registers what the original does": 0,
       "converted back and compiled": 1,
       "outcomes": {
         "refused": 8,
         "converted, does not compile": 26,
         "loads, registers what the original does": 1
-      }
+      },
+      "recorded registers what the original does": 1,
+      "corrected": "zero registry entries against zero no longer counts as registering what the original does (fabric-example registered nothing on either loader)"
     },
     {
       "label": "batch-3",
@@ -90,13 +99,35 @@
       "compiled": 4,
       "compiled with nothing left": 3,
       "loaded in the game": 4,
-      "registers what the original does": 4,
+      "registers what the original does": 2,
       "converted back and compiled": 1,
       "outcomes": {
         "refused": 8,
         "converted, does not compile": 23,
         "loads, registers what the original does": 3,
         "compiles, items left": 1
+      },
+      "recorded registers what the original does": 4,
+      "corrected": "zero registry entries against zero no longer counts as registering what the original does (fabric-example, krypton registered nothing on either loader)"
+    },
+    {
+      "label": "round-2",
+      "date": "2026-11-15",
+      "runs": 35,
+      "not refused": 28,
+      "compiled": 5,
+      "compiled with nothing left": 3,
+      "loaded in the game": 5,
+      "registers what the original does": 3,
+      "same behaviour as the original (registries, or mixins when it registers nothing)": 5,
+      "loaded with nothing to compare": 0,
+      "converted back and compiled": 5,
+      "outcomes": {
+        "refused": 7,
+        "converted, does not compile": 23,
+        "loads, applies the same mixins as the original": 2,
+        "compiles, items left": 2,
+        "loads, registers what the original does": 1
       }
     }
   ],
@@ -115,10 +146,9 @@
         "jade-neoforge",
         "justdirethings",
         "laserio",
-        "mdk-mdg-1.21.1",
         "modmenu",
+        "morered",
         "naturesaura",
-        "prettypipes",
         "satin",
         "seedmapper",
         "theoneprobe-fabric",
@@ -127,7 +157,7 @@
         "twilightforest",
         "zombie"
       ],
-      "items": 478,
+      "items": 251,
       "blocking": 0,
       "examples": [
         "buildinggadgets2: net.neoforged.neoforge.event.EventHooks",
@@ -150,6 +180,7 @@
         "jade-neoforge",
         "justdirethings",
         "laserio",
+        "morered",
         "naturesaura",
         "prettypipes",
         "satin",
@@ -160,7 +191,7 @@
         "twilightforest",
         "zombie"
       ],
-      "items": 317,
+      "items": 326,
       "blocking": 0,
       "examples": [
         "buildinggadgets2: net.neoforged.neoforge.client.fluid.FluidTintSource",
@@ -182,13 +213,14 @@
         "jade-neoforge",
         "justdirethings",
         "laserio",
+        "morered",
         "naturesaura",
         "prettypipes",
         "theoneprobe-fabric",
         "theoneprobe-neoforge",
         "twilightforest"
       ],
-      "items": 927,
+      "items": 1060,
       "blocking": 0,
       "examples": [
         "buildinggadgets2: net.neoforged.neoforge.transfer.access.ItemAccess",
@@ -197,62 +229,6 @@
         "buildinggadgets2: net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent"
       ],
       "rank": 3
-    },
-    {
-      "concept": "player, entity and block events",
-      "mods": [
-        "buildinggadgets2",
-        "clientcommands",
-        "curios",
-        "farmersdelight",
-        "framedblocks",
-        "ironchest",
-        "jade-fabric",
-        "jade-neoforge",
-        "justdirethings",
-        "naturesaura",
-        "theoneprobe-neoforge",
-        "trinkets",
-        "twilightforest",
-        "zombie"
-      ],
-      "items": 185,
-      "blocking": 0,
-      "examples": [
-        "buildinggadgets2: net.neoforged.neoforge.event.level.block.BreakBlockEvent",
-        "buildinggadgets2: net.neoforged.neoforge.event.level.block.BreakBlockEvent",
-        "buildinggadgets2: net.neoforged.neoforge.event.level.block.BreakBlockEvent",
-        "buildinggadgets2: package net.neoforged.neoforge.event.level.block does not exist"
-      ],
-      "rank": 4
-    },
-    {
-      "concept": "lifecycle, tick and reload events",
-      "mods": [
-        "curios",
-        "enhancedblockentities",
-        "farmersdelight",
-        "framedblocks",
-        "jade-fabric",
-        "jade-neoforge",
-        "justdirethings",
-        "laserio",
-        "mdk-mdg-1.21.1",
-        "naturesaura",
-        "theoneprobe-neoforge",
-        "trinkets",
-        "twilightforest",
-        "zombie"
-      ],
-      "items": 64,
-      "blocking": 0,
-      "examples": [
-        "curios: net.neoforged.neoforge.event.OnDatapackSyncEvent",
-        "curios: net.neoforged.neoforge.event.server.ServerAboutToStartEvent",
-        "curios: net.neoforged.neoforge.event.AddServerReloadListenersEvent",
-        "enhancedblockentities: net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents"
-      ],
-      "rank": 5
     },
     {
       "concept": "renderers (block entity, entity, world, item, colors, render layers, models)",
@@ -267,11 +243,12 @@
         "jade-neoforge",
         "justdirethings",
         "laserio",
+        "morered",
         "naturesaura",
         "seedmapper",
         "twilightforest"
       ],
-      "items": 241,
+      "items": 262,
       "blocking": 0,
       "examples": [
         "buildinggadgets2: net.neoforged.neoforge.client.event.RenderLevelStageEvent",
@@ -279,7 +256,35 @@
         "buildinggadgets2: net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper",
         "buildinggadgets2: net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper"
       ],
-      "rank": 6
+      "rank": 4
+    },
+    {
+      "concept": "player, entity and block events",
+      "mods": [
+        "buildinggadgets2",
+        "clientcommands",
+        "curios",
+        "farmersdelight",
+        "framedblocks",
+        "ironchest",
+        "jade-fabric",
+        "jade-neoforge",
+        "justdirethings",
+        "morered",
+        "naturesaura",
+        "trinkets",
+        "twilightforest",
+        "zombie"
+      ],
+      "items": 151,
+      "blocking": 0,
+      "examples": [
+        "buildinggadgets2: net.neoforged.neoforge.event.level.block.BreakBlockEvent",
+        "buildinggadgets2: net.neoforged.neoforge.event.level.block.BreakBlockEvent",
+        "buildinggadgets2: net.neoforged.neoforge.event.level.block.BreakBlockEvent",
+        "buildinggadgets2: package net.neoforged.neoforge.event.level.block does not exist"
+      ],
+      "rank": 5
     },
     {
       "concept": "menus and screens (extended menus, screen events)",
@@ -294,11 +299,12 @@
         "justdirethings",
         "laserio",
         "modmenu",
+        "morered",
         "naturesaura",
         "prettypipes",
         "theoneprobe-neoforge"
       ],
-      "items": 31,
+      "items": 32,
       "blocking": 0,
       "examples": [
         "buildinggadgets2: net.neoforged.neoforge.client.event.RegisterMenuScreensEvent",
@@ -306,33 +312,7 @@
         "clientcommands: net.fabricmc.fabric.api.client.screen.v1.ScreenEvents",
         "curios: net.neoforged.neoforge.client.event.RegisterMenuScreensEvent"
       ],
-      "rank": 7
-    },
-    {
-      "concept": "registration (DeferredRegister, registry builders)",
-      "mods": [
-        "curios",
-        "farmersdelight",
-        "framedblocks",
-        "ironchest",
-        "jade-neoforge",
-        "justdirethings",
-        "laserio",
-        "mdk-mdg-1.21.1",
-        "naturesaura",
-        "prettypipes",
-        "theoneprobe-neoforge",
-        "twilightforest"
-      ],
-      "items": 177,
-      "blocking": 0,
-      "examples": [
-        "curios: net.neoforged.neoforge.registries.NeoForgeRegistries",
-        "farmersdelight: net.neoforged.neoforge.registries.DeferredRegister",
-        "farmersdelight: net.neoforged.neoforge.registries.DeferredRegister",
-        "farmersdelight: net.neoforged.neoforge.registries.DeferredRegister"
-      ],
-      "rank": 8
+      "rank": 6
     },
     {
       "concept": "build settings with no counterpart",
@@ -346,11 +326,12 @@
         "justdirethings",
         "mdk-mdg-1.21.1",
         "mdk-mdg-26.3",
+        "morered",
         "satin",
         "trinkets",
         "twilightforest"
       ],
-      "items": 59,
+      "items": 63,
       "blocking": 0,
       "examples": [
         "buildinggadgets2: neoForge run client: systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id",
@@ -358,7 +339,33 @@
         "buildinggadgets2: neoForge run clientAuthed: systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id",
         "buildinggadgets2: neoForge run server: systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id"
       ],
-      "rank": 9
+      "rank": 7
+    },
+    {
+      "concept": "registration (DeferredRegister, registry builders)",
+      "mods": [
+        "curios",
+        "farmersdelight",
+        "framedblocks",
+        "ironchest",
+        "jade-neoforge",
+        "justdirethings",
+        "laserio",
+        "morered",
+        "naturesaura",
+        "prettypipes",
+        "theoneprobe-neoforge",
+        "twilightforest"
+      ],
+      "items": 129,
+      "blocking": 0,
+      "examples": [
+        "curios: net.neoforged.neoforge.registries.NeoForgeRegistries",
+        "farmersdelight: net.neoforged.neoforge.registries.NeoForgeRegistries",
+        "farmersdelight: net.neoforged.neoforge.registries.NeoForgeRegistries",
+        "farmersdelight: net.neoforged.neoforge.registries.NeoForgeRegistries"
+      ],
+      "rank": 8
     },
     {
       "concept": "convention tags (c: / Tags)",
@@ -371,17 +378,44 @@
         "jade-neoforge",
         "justdirethings",
         "laserio",
+        "morered",
         "naturesaura",
         "traverse",
         "twilightforest"
       ],
-      "items": 86,
+      "items": 99,
       "blocking": 0,
       "examples": [
         "buildinggadgets2: net.neoforged.neoforge.common.Tags",
         "buildinggadgets2: net.neoforged.neoforge.common.Tags",
         "buildinggadgets2: net.neoforged.neoforge.common.Tags",
         "buildinggadgets2: package net.neoforged.neoforge.common does not exist"
+      ],
+      "rank": 9
+    },
+    {
+      "concept": "third-party mod dependency with no build for the target loader",
+      "mods": [
+        "buildinggadgets2",
+        "clientcommands",
+        "enhancedblockentities",
+        "framedblocks",
+        "jade-fabric",
+        "justdirethings",
+        "modmenu",
+        "naturesaura",
+        "seedmapper",
+        "theoneprobe-fabric",
+        "traverse",
+        "trinkets"
+      ],
+      "items": 20,
+      "blocking": 0,
+      "examples": [
+        "buildinggadgets2: dependency compileOnly \"top.theillusivec4.curios:curios-neoforge:${curios_version}:api\"",
+        "buildinggadgets2: dependency runtimeOnly \"top.theillusivec4.curios:curios-neoforge:${curios_version}\"",
+        "clientcommands: dependency include implementation(\"dev.xpple:betterconfig-fabric:${project.betterconfig_version}\")",
+        "enhancedblockentities: dependency modCompileOnlyApi \"maven.modrinth:sodium:${project.sodium_version}\""
       ],
       "rank": 10
     },
@@ -395,11 +429,12 @@
         "ironchest",
         "justdirethings",
         "laserio",
+        "morered",
         "naturesaura",
         "traverse",
         "twilightforest"
       ],
-      "items": 145,
+      "items": 163,
       "blocking": 0,
       "examples": [
         "buildinggadgets2: net.neoforged.neoforge.common.data.BlockTagsProvider",
@@ -410,28 +445,53 @@
       "rank": 11
     },
     {
-      "concept": "networking payloads",
+      "concept": "access wideners / access transformers",
       "mods": [
-        "clientcommands",
-        "farmersdelight",
-        "framedblocks",
-        "ironchest",
-        "jade-fabric",
-        "laserio",
-        "naturesaura",
-        "theoneprobe-fabric",
+        "curios",
+        "enhancedblockentities",
+        "jade-neoforge",
+        "justdirethings",
+        "morered",
+        "satin",
         "theoneprobe-neoforge",
-        "trinkets"
+        "traverse",
+        "trinkets",
+        "twilightforest",
+        "zombie"
       ],
-      "items": 89,
+      "items": 120,
       "blocking": 0,
       "examples": [
-        "clientcommands: net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry",
-        "clientcommands: net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking",
-        "clientcommands: net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry",
-        "clientcommands: net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking"
+        "curios: public net.minecraft.client.gui.screens.inventory.AbstractContainerScreen clickedSlot (an access widener names the field's type, which the transformer line does",
+        "curios: public net.minecraft.client.gui.screens.inventory.AbstractContainerScreen isSplittingStack (an access widener names the field's type, which the transformer line",
+        "curios: public net.minecraft.client.gui.screens.inventory.AbstractContainerScreen draggingItem (an access widener names the field's type, which the transformer line doe",
+        "enhancedblockentities: accessible      class   net/minecraft/client/option/SimpleOption$Callbacks (not in Mojang's names)"
       ],
       "rank": 12
+    },
+    {
+      "concept": "lifecycle, tick and reload events",
+      "mods": [
+        "curios",
+        "enhancedblockentities",
+        "farmersdelight",
+        "framedblocks",
+        "jade-fabric",
+        "jade-neoforge",
+        "justdirethings",
+        "theoneprobe-neoforge",
+        "trinkets",
+        "twilightforest"
+      ],
+      "items": 29,
+      "blocking": 0,
+      "examples": [
+        "curios: net.neoforged.neoforge.event.server.ServerAboutToStartEvent",
+        "curios: net.neoforged.neoforge.event.AddServerReloadListenersEvent",
+        "curios: package net.neoforged.neoforge.event.server does not exist",
+        "enhancedblockentities: net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents"
+      ],
+      "rank": 13
     },
     {
       "concept": "HUD layers",
@@ -455,52 +515,28 @@
         "farmersdelight: class RegisterGuiLayersEvent",
         "farmersdelight: package net.neoforged.neoforge.client.event does not exist"
       ],
-      "rank": 13
-    },
-    {
-      "concept": "third-party mod dependency with no build for the target loader",
-      "mods": [
-        "buildinggadgets2",
-        "clientcommands",
-        "enhancedblockentities",
-        "framedblocks",
-        "jade-fabric",
-        "justdirethings",
-        "naturesaura",
-        "seedmapper",
-        "traverse",
-        "trinkets"
-      ],
-      "items": 19,
-      "blocking": 0,
-      "examples": [
-        "buildinggadgets2: dependency compileOnly \"top.theillusivec4.curios:curios-neoforge:${curios_version}:api\"",
-        "buildinggadgets2: dependency runtimeOnly \"top.theillusivec4.curios:curios-neoforge:${curios_version}\"",
-        "clientcommands: dependency include implementation(\"dev.xpple:betterconfig-fabric:${project.betterconfig_version}\")",
-        "clientcommands: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nA problem occurred evaluating root project 'clientcommands'."
-      ],
       "rank": 14
     },
     {
-      "concept": "access wideners / access transformers",
+      "concept": "data attachments",
       "mods": [
         "curios",
-        "enhancedblockentities",
-        "jade-neoforge",
+        "framedblocks",
         "justdirethings",
-        "satin",
+        "laserio",
+        "morered",
+        "naturesaura",
+        "theoneprobe-fabric",
         "theoneprobe-neoforge",
-        "traverse",
-        "trinkets",
         "twilightforest"
       ],
-      "items": 110,
+      "items": 23,
       "blocking": 0,
       "examples": [
-        "curios: public net.minecraft.client.gui.screens.inventory.AbstractContainerScreen clickedSlot (an access widener names the field's type, which the transformer line does",
-        "curios: public net.minecraft.client.gui.screens.inventory.AbstractContainerScreen isSplittingStack (an access widener names the field's type, which the transformer line",
-        "curios: public net.minecraft.client.gui.screens.inventory.AbstractContainerScreen draggingItem (an access widener names the field's type, which the transformer line doe",
-        "enhancedblockentities: accessible      class   net/minecraft/client/option/SimpleOption$Callbacks (not in Mojang's names)"
+        "curios: net.neoforged.neoforge.attachment.IAttachmentHolder",
+        "curios: net.neoforged.neoforge.attachment.AttachmentType",
+        "curios: package net.neoforged.neoforge.attachment does not exist",
+        "curios: class IAttachmentHolder"
       ],
       "rank": 15
     },
@@ -516,7 +552,7 @@
         "theoneprobe-neoforge",
         "twilightforest"
       ],
-      "items": 140,
+      "items": 146,
       "blocking": 0,
       "examples": [
         "buildinggadgets2: net.neoforged.neoforge.fluids.FluidStack",
@@ -527,69 +563,48 @@
       "rank": 16
     },
     {
-      "concept": "keybinds and input",
+      "concept": "recipes and conditions",
       "mods": [
-        "buildinggadgets2",
         "curios",
+        "farmersdelight",
         "framedblocks",
-        "jade-fabric",
-        "jade-neoforge",
         "justdirethings",
-        "theoneprobe-fabric",
-        "theoneprobe-neoforge"
+        "laserio",
+        "morered",
+        "naturesaura",
+        "twilightforest"
       ],
-      "items": 39,
+      "items": 45,
       "blocking": 0,
       "examples": [
-        "buildinggadgets2: net.neoforged.neoforge.client.settings.KeyModifier",
-        "buildinggadgets2: net.neoforged.neoforge.client.event.InputEvent",
-        "buildinggadgets2: net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent",
-        "buildinggadgets2: net.neoforged.neoforge.client.settings.IKeyConflictContext"
+        "curios: net.neoforged.neoforge.common.conditions.ICondition",
+        "curios: net.neoforged.neoforge.common.conditions.ICondition",
+        "curios: net.neoforged.neoforge.common.conditions.ICondition",
+        "curios: net.neoforged.neoforge.common.conditions.ICondition"
       ],
       "rank": 17
     },
     {
-      "concept": "data attachments",
+      "concept": "keybinds and input",
       "mods": [
-        "curios",
+        "buildinggadgets2",
         "framedblocks",
+        "jade-fabric",
+        "jade-neoforge",
         "justdirethings",
-        "laserio",
-        "naturesaura",
+        "morered",
         "theoneprobe-fabric",
-        "theoneprobe-neoforge",
-        "twilightforest"
+        "theoneprobe-neoforge"
       ],
-      "items": 21,
+      "items": 29,
       "blocking": 0,
       "examples": [
-        "curios: net.neoforged.neoforge.attachment.IAttachmentHolder",
-        "curios: net.neoforged.neoforge.attachment.AttachmentType",
-        "curios: package net.neoforged.neoforge.attachment does not exist",
-        "curios: class IAttachmentHolder"
+        "buildinggadgets2: net.neoforged.neoforge.client.settings.KeyModifier",
+        "buildinggadgets2: net.neoforged.neoforge.client.event.InputEvent",
+        "buildinggadgets2: net.neoforged.neoforge.client.settings.IKeyConflictContext",
+        "buildinggadgets2: net.neoforged.neoforge.client.settings.KeyConflictContext"
       ],
       "rank": 18
-    },
-    {
-      "concept": "config (ModConfigSpec, config screens, config libraries)",
-      "mods": [
-        "farmersdelight",
-        "laserio",
-        "mdk-mdg-1.21.1",
-        "modmenu",
-        "naturesaura",
-        "theoneprobe-neoforge",
-        "zombie"
-      ],
-      "items": 288,
-      "blocking": 0,
-      "examples": [
-        "farmersdelight: net.neoforged.neoforge.common.ModConfigSpec",
-        "farmersdelight: net.neoforged.fml.config.ModConfig",
-        "farmersdelight: net.neoforged.neoforge.client.gui.ConfigurationScreen",
-        "farmersdelight: net.neoforged.neoforge.client.gui.IConfigScreenFactory"
-      ],
-      "rank": 19
     },
     {
       "concept": "items and item events (settings, tooltips, enchantments, components)",
@@ -602,36 +617,74 @@
         "naturesaura",
         "twilightforest"
       ],
-      "items": 63,
+      "items": 58,
       "blocking": 0,
       "examples": [
         "curios: net.neoforged.neoforge.event.AddAttributeTooltipsEvent",
         "curios: net.neoforged.neoforge.event.GatherSkippedAttributeTooltipsEvent",
-        "curios: net.neoforged.neoforge.event.entity.player.ItemTooltipEvent",
+        "curios: package net.neoforged.neoforge.event does not exist",
         "curios: package net.neoforged.neoforge.event does not exist"
+      ],
+      "rank": 19
+    },
+    {
+      "concept": "networking payloads",
+      "mods": [
+        "clientcommands",
+        "framedblocks",
+        "ironchest",
+        "jade-fabric",
+        "theoneprobe-fabric",
+        "theoneprobe-neoforge",
+        "trinkets"
+      ],
+      "items": 46,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry",
+        "clientcommands: net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking",
+        "clientcommands: net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry",
+        "clientcommands: net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking"
       ],
       "rank": 20
     },
     {
-      "concept": "recipes and conditions",
+      "concept": "config (ModConfigSpec, config screens, config libraries)",
       "mods": [
-        "curios",
-        "farmersdelight",
-        "framedblocks",
-        "justdirethings",
-        "laserio",
+        "modmenu",
+        "morered",
         "naturesaura",
-        "twilightforest"
+        "theoneprobe-neoforge",
+        "zombie"
       ],
-      "items": 37,
+      "items": 174,
       "blocking": 0,
       "examples": [
-        "curios: net.neoforged.neoforge.common.conditions.ICondition",
-        "curios: net.neoforged.neoforge.common.conditions.ICondition",
-        "curios: net.neoforged.neoforge.common.conditions.ICondition",
-        "curios: net.neoforged.neoforge.common.conditions.ICondition"
+        "modmenu: Mod Menu API",
+        "modmenu: com.terraformersmc.modmenu.ModMenu",
+        "modmenu: com.terraformersmc.modmenu.gui.ModsScreen",
+        "modmenu: com.terraformersmc.modmenu.util.NullScreenFactory"
       ],
       "rank": 21
+    },
+    {
+      "concept": "build evaluation failed",
+      "mods": [
+        "clientcommands",
+        "laserio",
+        "prettypipes",
+        "satin",
+        "seedmapper"
+      ],
+      "items": 5,
+      "blocking": 0,
+      "examples": [
+        "clientcommands: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nA problem occurred evaluating root project 'clientcommands'.",
+        "laserio: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nExecution failed for task ':modaccelProjectMetadata' (regist",
+        "prettypipes: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nA problem occurred evaluating root project 'prettypipes-to-f",
+        "satin: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nAn exception occurred applying plugin request [id: 'io.githu"
+      ],
+      "rank": 22
     },
     {
       "concept": "no release of the target loader for this Minecraft version",
@@ -649,7 +702,7 @@
         "libgui: NeoForge has published no release for Minecraft 26.3-rc-2 (no net.neoforged:neoforge 26.3-rc-2.0.x on maven.neoforged.net).",
         "universal-graves: NeoForge has published no release for Minecraft 26.3-rc-1 (no net.neoforged:neoforge 26.3-rc-1.0.x on maven.neoforged.net)."
       ],
-      "rank": 22
+      "rank": 23
     },
     {
       "concept": "client commands",
@@ -667,7 +720,7 @@
         "clientcommands: net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource",
         "clientcommands: net.fabricmc.fabric.api.client.command.v2.ClientCommands."
       ],
-      "rank": 23
+      "rank": 24
     },
     {
       "concept": "sounds, particles and chat",
@@ -684,24 +737,6 @@
         "buildinggadgets2: package net.neoforged.neoforge.client.event does not exist",
         "buildinggadgets2: class RegisterParticleProvidersEvent",
         "farmersdelight: class RegisterParticleProvidersEvent"
-      ],
-      "rank": 24
-    },
-    {
-      "concept": "build evaluation failed",
-      "mods": [
-        "laserio",
-        "prettypipes",
-        "seedmapper",
-        "theoneprobe-fabric"
-      ],
-      "items": 4,
-      "blocking": 0,
-      "examples": [
-        "laserio: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nExecution failed for task ':modaccelProjectMetadata' (regist",
-        "prettypipes: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nA problem occurred evaluating root project 'prettypipes-to-f",
-        "seedmapper: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nA problem occurred evaluating root project 'seedmapper-to-ne",
-        "theoneprobe-fabric: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nA problem occurred evaluating root project 'theoneprobe-fabr"
       ],
       "rank": 25
     },
@@ -740,23 +775,6 @@
       "rank": 27
     },
     {
-      "concept": "creative tabs and item groups",
-      "mods": [
-        "ironchest",
-        "mdk-mdg-1.21.1",
-        "traverse"
-      ],
-      "items": 7,
-      "blocking": 0,
-      "examples": [
-        "ironchest: package net.fabricmc.fabric.api.creativetab.v1 does not exist",
-        "mdk-mdg-1.21.1: net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent",
-        "mdk-mdg-1.21.1: package net.fabricmc.fabric.api.creativetab.v1 does not exist",
-        "mdk-mdg-1.21.1: package net.neoforged.neoforge.event does not exist"
-      ],
-      "rank": 28
-    },
-    {
       "concept": "entities (types, attributes, spawns)",
       "mods": [
         "justdirethings",
@@ -771,7 +789,7 @@
         "prettypipes: net.neoforged.neoforge.entity.IEntityWithComplexSpawn",
         "twilightforest: net.neoforged.neoforge.entity.IEntityWithComplexSpawn"
       ],
-      "rank": 29
+      "rank": 28
     },
     {
       "concept": "shape: source sets outside src/main (custom layout)",
@@ -785,7 +803,7 @@
         "appleskin-fabric: convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\",
         "appleskin-neoforge: convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\"
       ],
-      "rank": 30
+      "rank": 29
     },
     {
       "concept": "game rules, data maps and block property registries",
@@ -800,6 +818,22 @@
         "farmersdelight: net.neoforged.neoforge.event.village.WandererTradesEvent",
         "traverse: net.fabricmc.fabric.api.registry.StrippableBlockRegistry",
         "traverse: net.fabricmc.fabric.api.object.builder.v1.block.type.BlockSetTypeBuilder"
+      ],
+      "rank": 30
+    },
+    {
+      "concept": "NeoForge extension methods on game classes",
+      "mods": [
+        "jade-neoforge",
+        "zombie"
+      ],
+      "items": 13,
+      "blocking": 0,
+      "examples": [
+        "jade-neoforge: method has(DataComponentType<CAP#1>)",
+        "zombie: method getEquipmentSlot()",
+        "zombie: method canEntityDestroy(ServerLevel,BlockPos,Zombie)",
+        "zombie: method getPersistentData()"
       ],
       "rank": 31
     },
@@ -820,6 +854,22 @@
       "rank": 32
     },
     {
+      "concept": "unclassified: variable EventHooks",
+      "mods": [
+        "jade-neoforge",
+        "zombie"
+      ],
+      "items": 7,
+      "blocking": 0,
+      "examples": [
+        "jade-neoforge: variable EventHooks",
+        "zombie: variable EventHooks",
+        "zombie: variable EventHooks",
+        "zombie: variable EventHooks"
+      ],
+      "rank": 33
+    },
+    {
       "concept": "worldgen (biome modifiers, features, dimensions)",
       "mods": [
         "farmersdelight",
@@ -833,22 +883,22 @@
         "farmersdelight: net.neoforged.neoforge.common.world.BiomeModifier",
         "naturesaura: net.neoforged.neoforge.common.world.BiomeModifier"
       ],
-      "rank": 33
+      "rank": 34
     },
     {
-      "concept": "unclassified: package com.electronwill.nightconfig.core does not exist",
+      "concept": "unclassified: package MobSpawnEvent does not exist",
       "mods": [
-        "jade-neoforge",
+        "naturesaura",
         "zombie"
       ],
       "items": 3,
       "blocking": 0,
       "examples": [
-        "jade-neoforge: package com.electronwill.nightconfig.core does not exist",
-        "zombie: package com.electronwill.nightconfig.core does not exist",
-        "zombie: package com.electronwill.nightconfig.core does not exist"
+        "naturesaura: package MobSpawnEvent does not exist",
+        "zombie: package MobSpawnEvent does not exist",
+        "zombie: package MobSpawnEvent does not exist"
       ],
-      "rank": 34
+      "rank": 35
     },
     {
       "concept": "block entities",
@@ -862,21 +912,21 @@
         "framedblocks: net.neoforged.neoforge.event.BlockEntityTypeAddBlocksEvent",
         "twilightforest: net.neoforged.neoforge.event.BlockEntityTypeAddBlocksEvent"
       ],
-      "rank": 35
+      "rank": 36
     },
     {
-      "concept": "commands (server, argument types)",
+      "concept": "unclassified left: neoForge $ block",
       "mods": [
-        "naturesaura",
-        "zombie"
+        "morered",
+        "twilightforest"
       ],
       "items": 2,
       "blocking": 0,
       "examples": [
-        "naturesaura: net.neoforged.neoforge.event.RegisterCommandsEvent",
-        "zombie: net.neoforged.neoforge.event.RegisterCommandsEvent"
+        "morered: neoForge $ block",
+        "twilightforest: neoForge $ block"
       ],
-      "rank": 36
+      "rank": 37
     },
     {
       "concept": "shape: Kotlin build script (build.gradle.kts)",
@@ -887,18 +937,6 @@
       "blocking": 1,
       "examples": [
         "bobby: convert rewrites a Groovy build.gradle; this project has build.gradle.kts."
-      ],
-      "rank": 37
-    },
-    {
-      "concept": "shape: Minecraft version not in gradle.properties",
-      "mods": [
-        "morered"
-      ],
-      "items": 1,
-      "blocking": 1,
-      "examples": [
-        "morered: convert reads the Minecraft version from minecraft_version in gradle.properties; there is none."
       ],
       "rank": 38
     },
@@ -963,6 +1001,21 @@
       "rank": 42
     },
     {
+      "concept": "unclassified: class Identifier",
+      "mods": [
+        "morered"
+      ],
+      "items": 11,
+      "blocking": 0,
+      "examples": [
+        "morered: class Identifier",
+        "morered: class Identifier",
+        "morered: class Identifier",
+        "morered: class Identifier"
+      ],
+      "rank": 43
+    },
+    {
       "concept": "unclassified: class BooleanValue",
       "mods": [
         "theoneprobe-neoforge"
@@ -975,7 +1028,7 @@
         "theoneprobe-neoforge: class BooleanValue",
         "theoneprobe-neoforge: class BooleanValue"
       ],
-      "rank": 43
+      "rank": 44
     },
     {
       "concept": "unclassified: variable registryKey",
@@ -990,7 +1043,52 @@
         "traverse: variable registryKey",
         "traverse: variable registryKey"
       ],
-      "rank": 44
+      "rank": 45
+    },
+    {
+      "concept": "unclassified: package net.minecraft.resources does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 6,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.resources does not exist",
+        "morered: package net.minecraft.resources does not exist",
+        "morered: package net.minecraft.resources does not exist",
+        "morered: package net.minecraft.resources does not exist"
+      ],
+      "rank": 46
+    },
+    {
+      "concept": "unclassified: class Block",
+      "mods": [
+        "morered"
+      ],
+      "items": 5,
+      "blocking": 0,
+      "examples": [
+        "morered: class Block",
+        "morered: class Block",
+        "morered: class Block",
+        "morered: class Block"
+      ],
+      "rank": 47
+    },
+    {
+      "concept": "unclassified: package net.minecraft.client.renderer.item does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 5,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.client.renderer.item does not exist",
+        "morered: package net.minecraft.client.renderer.item does not exist",
+        "morered: package net.minecraft.client.renderer.item does not exist",
+        "morered: package net.minecraft.client.renderer.item does not exist"
+      ],
+      "rank": 48
     },
     {
       "concept": "unclassified: class FabricPackOutput",
@@ -1005,7 +1103,7 @@
         "traverse: class FabricPackOutput",
         "traverse: class FabricPackOutput"
       ],
-      "rank": 45
+      "rank": 49
     },
     {
       "concept": "unclassified: method does not override or implement a method from a supertype",
@@ -1020,7 +1118,7 @@
         "traverse: method does not override or implement a method from a supertype",
         "traverse: method does not override or implement a method from a supertype"
       ],
-      "rank": 46
+      "rank": 50
     },
     {
       "concept": "Fabric interface injection on game classes",
@@ -1034,7 +1132,7 @@
         "traverse: method addValidBlock(S)",
         "traverse: method addValidBlock(S)"
       ],
-      "rank": 47
+      "rank": 51
     },
     {
       "concept": "unclassified: class Builder",
@@ -1048,7 +1146,7 @@
         "theoneprobe-neoforge: class Builder",
         "theoneprobe-neoforge: class Builder"
       ],
-      "rank": 48
+      "rank": 52
     },
     {
       "concept": "unclassified: class ValueIOSerializable",
@@ -1062,7 +1160,61 @@
         "curios: class ValueIOSerializable",
         "curios: class ValueIOSerializable"
       ],
-      "rank": 49
+      "rank": 53
+    },
+    {
+      "concept": "unclassified: package com.mojang.serialization does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 3,
+      "blocking": 0,
+      "examples": [
+        "morered: package com.mojang.serialization does not exist",
+        "morered: package com.mojang.serialization does not exist",
+        "morered: package com.mojang.serialization does not exist"
+      ],
+      "rank": 54
+    },
+    {
+      "concept": "unclassified: package net.minecraft.tags does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 3,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.tags does not exist",
+        "morered: package net.minecraft.tags does not exist",
+        "morered: package net.minecraft.tags does not exist"
+      ],
+      "rank": 55
+    },
+    {
+      "concept": "creative tabs and item groups",
+      "mods": [
+        "traverse"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "traverse: method getEnabledFeatures()",
+        "traverse: method insertAfter in class BuildCreativeModeTabContentsEvent cannot be applied to given types;"
+      ],
+      "rank": 56
+    },
+    {
+      "concept": "unclassified: cannot infer type arguments for Factory<>",
+      "mods": [
+        "zombie"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "zombie: cannot infer type arguments for Factory<>",
+        "zombie: cannot infer type arguments for Factory<>"
+      ],
+      "rank": 57
     },
     {
       "concept": "unclassified: class BlockGrowFeatureEvent",
@@ -1075,7 +1227,7 @@
         "naturesaura: class BlockGrowFeatureEvent",
         "naturesaura: class BlockGrowFeatureEvent"
       ],
-      "rank": 50
+      "rank": 58
     },
     {
       "concept": "unclassified: class DoubleValue",
@@ -1088,7 +1240,7 @@
         "theoneprobe-neoforge: class DoubleValue",
         "theoneprobe-neoforge: class DoubleValue"
       ],
-      "rank": 51
+      "rank": 59
     },
     {
       "concept": "unclassified: class Entries",
@@ -1101,7 +1253,7 @@
         "traverse: class Entries",
         "traverse: class Entries"
       ],
-      "rank": 52
+      "rank": 60
     },
     {
       "concept": "unclassified: class FabricTagsProvider",
@@ -1114,7 +1266,7 @@
         "traverse: class FabricTagsProvider",
         "traverse: class FabricTagsProvider"
       ],
-      "rank": 53
+      "rank": 61
     },
     {
       "concept": "unclassified: class ItemAccess",
@@ -1127,7 +1279,7 @@
         "curios: class ItemAccess",
         "curios: class ItemAccess"
       ],
-      "rank": 54
+      "rank": 62
     },
     {
       "concept": "unclassified: class ItemResource",
@@ -1140,20 +1292,7 @@
         "buildinggadgets2: class ItemResource",
         "buildinggadgets2: class ItemResource"
       ],
-      "rank": 55
-    },
-    {
-      "concept": "unclassified: class Mod",
-      "mods": [
-        "mdk-mdg-1.21.1"
-      ],
-      "items": 2,
-      "blocking": 0,
-      "examples": [
-        "mdk-mdg-1.21.1: class Mod",
-        "mdk-mdg-1.21.1: class Mod"
-      ],
-      "rank": 56
+      "rank": 63
     },
     {
       "concept": "unclassified: class RegisterRecipeBookCategoriesEvent",
@@ -1166,7 +1305,7 @@
         "farmersdelight: class RegisterRecipeBookCategoriesEvent",
         "farmersdelight: class RegisterRecipeBookCategoriesEvent"
       ],
-      "rank": 57
+      "rank": 64
     },
     {
       "concept": "unclassified: class VertexConsumerWrapper",
@@ -1179,7 +1318,7 @@
         "buildinggadgets2: class VertexConsumerWrapper",
         "buildinggadgets2: class VertexConsumerWrapper"
       ],
-      "rank": 58
+      "rank": 65
     },
     {
       "concept": "unclassified: package CustomizeGuiOverlayEvent does not exist",
@@ -1192,55 +1331,111 @@
         "jade-neoforge: package CustomizeGuiOverlayEvent does not exist",
         "jade-neoforge: package CustomizeGuiOverlayEvent does not exist"
       ],
-      "rank": 59
+      "rank": 66
     },
     {
-      "concept": "NeoForge extension methods on game classes",
+      "concept": "unclassified: package com.mojang.serialization.codecs does not exist",
       "mods": [
-        "jade-neoforge"
+        "morered"
       ],
-      "items": 1,
+      "items": 2,
       "blocking": 0,
       "examples": [
-        "jade-neoforge: method has(DataComponentType<CAP#1>)"
+        "morered: package com.mojang.serialization.codecs does not exist",
+        "morered: package com.mojang.serialization.codecs does not exist"
       ],
-      "rank": 60
+      "rank": 67
     },
     {
-      "concept": "unclassified left: @Mod class ExampleMod",
+      "concept": "unclassified: package net.commoble.exmachina.api does not exist",
       "mods": [
-        "mdk-mdg-1.21.1"
+        "morered"
       ],
-      "items": 1,
+      "items": 2,
       "blocking": 0,
       "examples": [
-        "mdk-mdg-1.21.1: @Mod class ExampleMod"
+        "morered: package net.commoble.exmachina.api does not exist",
+        "morered: package net.commoble.exmachina.api does not exist"
       ],
-      "rank": 61
+      "rank": 68
     },
     {
-      "concept": "unclassified left: @Mod class ExampleModClient",
+      "concept": "unclassified: package net.minecraft.core does not exist",
       "mods": [
-        "mdk-mdg-1.21.1"
+        "morered"
       ],
-      "items": 1,
+      "items": 2,
       "blocking": 0,
       "examples": [
-        "mdk-mdg-1.21.1: @Mod class ExampleModClient"
+        "morered: package net.minecraft.core does not exist",
+        "morered: package net.minecraft.core does not exist"
       ],
-      "rank": 62
+      "rank": 69
     },
     {
-      "concept": "unclassified left: @Mod class FarmersDelight",
+      "concept": "unclassified: package net.minecraft.core.registries does not exist",
       "mods": [
-        "farmersdelight"
+        "morered"
       ],
-      "items": 1,
+      "items": 2,
       "blocking": 0,
       "examples": [
-        "farmersdelight: @Mod class FarmersDelight"
+        "morered: package net.minecraft.core.registries does not exist",
+        "morered: package net.minecraft.core.registries does not exist"
       ],
-      "rank": 63
+      "rank": 70
+    },
+    {
+      "concept": "unclassified: package net.minecraft.data does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.data does not exist",
+        "morered: package net.minecraft.data does not exist"
+      ],
+      "rank": 71
+    },
+    {
+      "concept": "unclassified: package net.minecraft.data.tags does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.data.tags does not exist",
+        "morered: package net.minecraft.data.tags does not exist"
+      ],
+      "rank": 72
+    },
+    {
+      "concept": "unclassified: package net.minecraft.world.level.block does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.world.level.block does not exist",
+        "morered: package net.minecraft.world.level.block does not exist"
+      ],
+      "rank": 73
+    },
+    {
+      "concept": "unclassified: package net.minecraft.world.level.storage.loot does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 2,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.world.level.storage.loot does not exist",
+        "morered: package net.minecraft.world.level.storage.loot does not exist"
+      ],
+      "rank": 74
     },
     {
       "concept": "unclassified left: @Mod class IronChests",
@@ -1252,43 +1447,7 @@
       "examples": [
         "ironchest: @Mod class IronChests"
       ],
-      "rank": 64
-    },
-    {
-      "concept": "unclassified left: @Mod class LaserIO",
-      "mods": [
-        "laserio"
-      ],
-      "items": 1,
-      "blocking": 0,
-      "examples": [
-        "laserio: @Mod class LaserIO"
-      ],
-      "rank": 65
-    },
-    {
-      "concept": "unclassified left: @Mod class NaturesAura",
-      "mods": [
-        "naturesaura"
-      ],
-      "items": 1,
-      "blocking": 0,
-      "examples": [
-        "naturesaura: @Mod class NaturesAura"
-      ],
-      "rank": 66
-    },
-    {
-      "concept": "unclassified left: @Mod class ZombieApocalypseAddon",
-      "mods": [
-        "zombie"
-      ],
-      "items": 1,
-      "blocking": 0,
-      "examples": [
-        "zombie: @Mod class ZombieApocalypseAddon"
-      ],
-      "rank": 67
+      "rank": 75
     },
     {
       "concept": "unclassified left: addListener(GuardedAccess::onBlockEntityTypeAddBlocks",
@@ -1300,7 +1459,7 @@
       "examples": [
         "framedblocks: addListener(GuardedAccess::onBlockEntityTypeAddBlocks"
       ],
-      "rank": 68
+      "rank": 76
     },
     {
       "concept": "unclassified left: addListener(GuardedAccess::onRegisterCapabilities",
@@ -1312,7 +1471,7 @@
       "examples": [
         "framedblocks: addListener(GuardedAccess::onRegisterCapabilities"
       ],
-      "rank": 69
+      "rank": 77
     },
     {
       "concept": "unclassified left: addListener(GuardedClientAccess::onRegisterClientExtensions",
@@ -1324,7 +1483,7 @@
       "examples": [
         "framedblocks: addListener(GuardedClientAccess::onRegisterClientExtensions"
       ],
-      "rank": 70
+      "rank": 78
     },
     {
       "concept": "unclassified left: addListener(GuardedClientAccess::onRegisterModelWrappers",
@@ -1336,7 +1495,7 @@
       "examples": [
         "framedblocks: addListener(GuardedClientAccess::onRegisterModelWrappers"
       ],
-      "rank": 71
+      "rank": 79
     },
     {
       "concept": "unclassified left: addListener(GuardedClientAccess::onRegisterSpriteSourceDetails",
@@ -1348,7 +1507,7 @@
       "examples": [
         "framedblocks: addListener(GuardedClientAccess::onRegisterSpriteSourceDetails"
       ],
-      "rank": 72
+      "rank": 80
     },
     {
       "concept": "unclassified left: addListener(StalactiteReloadListener.INSTANCE::registerListener",
@@ -1360,19 +1519,19 @@
       "examples": [
         "twilightforest: addListener(StalactiteReloadListener.INSTANCE::registerListener"
       ],
-      "rank": 73
+      "rank": 81
     },
     {
-      "concept": "unclassified left: neoForge $ block",
+      "concept": "unclassified: class AABBTicket",
       "mods": [
-        "twilightforest"
+        "naturesaura"
       ],
       "items": 1,
       "blocking": 0,
       "examples": [
-        "twilightforest: neoForge $ block"
+        "naturesaura: class AABBTicket"
       ],
-      "rank": 74
+      "rank": 82
     },
     {
       "concept": "unclassified: class CanItemPerformAbility",
@@ -1384,19 +1543,7 @@
       "examples": [
         "jade-neoforge: class CanItemPerformAbility"
       ],
-      "rank": 75
-    },
-    {
-      "concept": "unclassified: class CommentedConfig",
-      "mods": [
-        "zombie"
-      ],
-      "items": 1,
-      "blocking": 0,
-      "examples": [
-        "zombie: class CommentedConfig"
-      ],
-      "rank": 76
+      "rank": 83
     },
     {
       "concept": "unclassified: class CompostableRegistry",
@@ -1408,7 +1555,19 @@
       "examples": [
         "traverse: class CompostableRegistry"
       ],
-      "rank": 77
+      "rank": 84
+    },
+    {
+      "concept": "unclassified: class EnergyStorage",
+      "mods": [
+        "naturesaura"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "naturesaura: class EnergyStorage"
+      ],
+      "rank": 85
     },
     {
       "concept": "unclassified: class ExtendedSlider",
@@ -1420,7 +1579,7 @@
       "examples": [
         "buildinggadgets2: class ExtendedSlider"
       ],
-      "rank": 78
+      "rank": 86
     },
     {
       "concept": "unclassified: class FluidResource",
@@ -1432,7 +1591,7 @@
       "examples": [
         "jade-neoforge: class FluidResource"
       ],
-      "rank": 79
+      "rank": 87
     },
     {
       "concept": "unclassified: class IArmPoseTransformer",
@@ -1444,19 +1603,7 @@
       "examples": [
         "farmersdelight: class IArmPoseTransformer"
       ],
-      "rank": 80
-    },
-    {
-      "concept": "unclassified: class IModBusEvent",
-      "mods": [
-        "curios"
-      ],
-      "items": 1,
-      "blocking": 0,
-      "examples": [
-        "curios: class IModBusEvent"
-      ],
-      "rank": 81
+      "rank": 88
     },
     {
       "concept": "unclassified: class INBTSerializable",
@@ -1468,7 +1615,31 @@
       "examples": [
         "naturesaura: class INBTSerializable"
       ],
-      "rank": 82
+      "rank": 89
+    },
+    {
+      "concept": "unclassified: class InvWrapper",
+      "mods": [
+        "farmersdelight"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "farmersdelight: class InvWrapper"
+      ],
+      "rank": 90
+    },
+    {
+      "concept": "unclassified: class Item",
+      "mods": [
+        "morered"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "morered: class Item"
+      ],
+      "rank": 91
     },
     {
       "concept": "unclassified: class ItemAbility",
@@ -1480,19 +1651,19 @@
       "examples": [
         "jade-neoforge: class ItemAbility"
       ],
-      "rank": 83
+      "rank": 92
     },
     {
-      "concept": "unclassified: class Lazy",
+      "concept": "unclassified: class KeyTagProvider",
       "mods": [
-        "curios"
+        "morered"
       ],
       "items": 1,
       "blocking": 0,
       "examples": [
-        "curios: class Lazy"
+        "morered: class KeyTagProvider"
       ],
-      "rank": 84
+      "rank": 93
     },
     {
       "concept": "unclassified: class LivingExperienceDropEvent",
@@ -1504,7 +1675,19 @@
       "examples": [
         "naturesaura: class LivingExperienceDropEvent"
       ],
-      "rank": 85
+      "rank": 94
+    },
+    {
+      "concept": "unclassified: class MechanicalComponent",
+      "mods": [
+        "morered"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "morered: class MechanicalComponent"
+      ],
+      "rank": 95
     },
     {
       "concept": "unclassified: class QuadBakingVertexConsumer",
@@ -1516,7 +1699,7 @@
       "examples": [
         "buildinggadgets2: class QuadBakingVertexConsumer"
       ],
-      "rank": 86
+      "rank": 96
     },
     {
       "concept": "unclassified: class RegisterClientExtensionsEvent",
@@ -1528,7 +1711,7 @@
       "examples": [
         "farmersdelight: class RegisterClientExtensionsEvent"
       ],
-      "rank": 87
+      "rank": 97
     },
     {
       "concept": "unclassified: class RegisterClientPayloadHandlersEvent",
@@ -1540,7 +1723,7 @@
       "examples": [
         "ironchest: class RegisterClientPayloadHandlersEvent"
       ],
-      "rank": 88
+      "rank": 98
     },
     {
       "concept": "unclassified: class RegisterClientTooltipComponentFactoriesEvent",
@@ -1552,7 +1735,7 @@
       "examples": [
         "farmersdelight: class RegisterClientTooltipComponentFactoriesEvent"
       ],
-      "rank": 89
+      "rank": 99
     },
     {
       "concept": "unclassified: class RegisterSpecialBlockModelRendererEvent",
@@ -1564,7 +1747,7 @@
       "examples": [
         "ironchest: class RegisterSpecialBlockModelRendererEvent"
       ],
-      "rank": 90
+      "rank": 100
     },
     {
       "concept": "unclassified: class RenderArmEvent",
@@ -1576,7 +1759,19 @@
       "examples": [
         "curios: class RenderArmEvent"
       ],
-      "rank": 91
+      "rank": 101
+    },
+    {
+      "concept": "unclassified: class TagKey",
+      "mods": [
+        "morered"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "morered: class TagKey"
+      ],
+      "rank": 102
     },
     {
       "concept": "unclassified: createTooltipPositioner(ScreenRectangle,boolean,boolean) in <anonymous snownee.j",
@@ -1588,7 +1783,7 @@
       "examples": [
         "jade-neoforge: createTooltipPositioner(ScreenRectangle,boolean,boolean) in <anonymous snownee.jade.gui.config.OptionsNav$Entry$1> cannot override createTooltipPositioner(Scree"
       ],
-      "rank": 92
+      "rank": 103
     },
     {
       "concept": "unclassified: incompatible types: ItemLike cannot be converted to ItemStack",
@@ -1600,7 +1795,7 @@
       "examples": [
         "traverse: incompatible types: ItemLike cannot be converted to ItemStack"
       ],
-      "rank": 93
+      "rank": 104
     },
     {
       "concept": "unclassified: method getCreatorModId(Provider,ItemStack)",
@@ -1612,7 +1807,19 @@
       "examples": [
         "jade-neoforge: method getCreatorModId(Provider,ItemStack)"
       ],
-      "rank": 94
+      "rank": 105
+    },
+    {
+      "concept": "unclassified: method getLightEmission in class BlockStateBase cannot be applied to given types",
+      "mods": [
+        "zombie"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "zombie: method getLightEmission in class BlockStateBase cannot be applied to given types;"
+      ],
+      "rank": 106
     },
     {
       "concept": "unclassified: method registerInteger in class GameRules cannot be applied to given types;",
@@ -1624,7 +1831,7 @@
       "examples": [
         "jade-neoforge: method registerInteger in class GameRules cannot be applied to given types;"
       ],
-      "rank": 95
+      "rank": 107
     },
     {
       "concept": "unclassified: package FabricTagsProvider does not exist",
@@ -1636,7 +1843,7 @@
       "examples": [
         "traverse: package FabricTagsProvider does not exist"
       ],
-      "rank": 96
+      "rank": 108
     },
     {
       "concept": "unclassified: package FuelValueEvents does not exist",
@@ -1648,19 +1855,31 @@
       "examples": [
         "traverse: package FuelValueEvents does not exist"
       ],
-      "rank": 97
+      "rank": 109
     },
     {
-      "concept": "unclassified: package MobSpawnEvent does not exist",
+      "concept": "unclassified: package MobSpawnEvent.PositionCheck does not exist",
       "mods": [
-        "naturesaura"
+        "zombie"
       ],
       "items": 1,
       "blocking": 0,
       "examples": [
-        "naturesaura: package MobSpawnEvent does not exist"
+        "zombie: package MobSpawnEvent.PositionCheck does not exist"
       ],
-      "rank": 98
+      "rank": 110
+    },
+    {
+      "concept": "unclassified: package MobSpawnEvent.SpawnPlacementCheck does not exist",
+      "mods": [
+        "zombie"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "zombie: package MobSpawnEvent.SpawnPlacementCheck does not exist"
+      ],
+      "rank": 111
     },
     {
       "concept": "unclassified: package ModelModifier.OnLoad does not exist",
@@ -1672,19 +1891,103 @@
       "examples": [
         "enhancedblockentities: package ModelModifier.OnLoad does not exist"
       ],
-      "rank": 99
+      "rank": 112
     },
     {
-      "concept": "unclassified: package com.electronwill.nightconfig.core.file does not exist",
+      "concept": "unclassified: package PlayerXpEvent does not exist",
       "mods": [
-        "zombie"
+        "curios"
       ],
       "items": 1,
       "blocking": 0,
       "examples": [
-        "zombie: package com.electronwill.nightconfig.core.file does not exist"
+        "curios: package PlayerXpEvent does not exist"
       ],
-      "rank": 100
+      "rank": 113
+    },
+    {
+      "concept": "unclassified: package com.google.common.collect does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "morered: package com.google.common.collect does not exist"
+      ],
+      "rank": 114
+    },
+    {
+      "concept": "unclassified: package net.minecraft.client.renderer.block.dispatch does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.client.renderer.block.dispatch does not exist"
+      ],
+      "rank": 115
+    },
+    {
+      "concept": "unclassified: package net.minecraft.core.HolderLookup does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.core.HolderLookup does not exist"
+      ],
+      "rank": 116
+    },
+    {
+      "concept": "unclassified: package net.minecraft.data.PackOutput does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.data.PackOutput does not exist"
+      ],
+      "rank": 117
+    },
+    {
+      "concept": "unclassified: package net.minecraft.world.item does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.world.item does not exist"
+      ],
+      "rank": 118
+    },
+    {
+      "concept": "unclassified: package net.minecraft.world.item.crafting does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "morered: package net.minecraft.world.item.crafting does not exist"
+      ],
+      "rank": 119
+    },
+    {
+      "concept": "unclassified: package org.apache.commons.lang3.text does not exist",
+      "mods": [
+        "morered"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "morered: package org.apache.commons.lang3.text does not exist"
+      ],
+      "rank": 120
     },
     {
       "concept": "unclassified: updateTextPosition() in NotUglyEditBox cannot override updateTextPosition() in E",
@@ -1696,19 +1999,31 @@
       "examples": [
         "jade-neoforge: updateTextPosition() in NotUglyEditBox cannot override updateTextPosition() in EditBox"
       ],
-      "rank": 101
+      "rank": 121
     },
     {
-      "concept": "unclassified: variable EventHooks",
+      "concept": "unclassified: variable BlockSnapshot",
       "mods": [
-        "jade-neoforge"
+        "zombie"
       ],
       "items": 1,
       "blocking": 0,
       "examples": [
-        "jade-neoforge: variable EventHooks"
+        "zombie: variable BlockSnapshot"
       ],
-      "rank": 102
+      "rank": 122
+    },
+    {
+      "concept": "unclassified: variable CommonHooks",
+      "mods": [
+        "zombie"
+      ],
+      "items": 1,
+      "blocking": 0,
+      "examples": [
+        "zombie: variable CommonHooks"
+      ],
+      "rank": 123
     }
   ],
   "runs": [
@@ -1720,8 +2035,8 @@
       "commit": "66fcdb8b12820c9b1cf3147abfdcf5530559f62b",
       "yarn": false,
       "outcome": "refused",
-      "convertSeconds": 1.2,
-      "refusal": "convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d2797744-06fcd7bd9daf6c93\\.runs\\convert-sweep\\work\\appleskin-fabric-to-neoforge. It converts one-module Fabric and NeoForge mods.",
+      "convertSeconds": 1.1,
+      "refusal": "convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-68ac65db-2f30c670093bb128\\.runs\\convert-sweep\\work\\appleskin-fabric-to-neoforge. It converts one-module Fabric and NeoForge mods.",
       "concepts": {
         "shape: source sets outside src/main (custom layout)": 1
       }
@@ -1734,8 +2049,8 @@
       "commit": "8872c5d34d7c632535d6a97416ca7b72a1821eef",
       "yarn": false,
       "outcome": "refused",
-      "convertSeconds": 1.7,
-      "refusal": "convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-d2797744-06fcd7bd9daf6c93\\.runs\\convert-sweep\\work\\appleskin-neoforge-to-fabric. It converts one-module Fabric and NeoForge mods.",
+      "convertSeconds": 2.3,
+      "refusal": "convert found neither src/main/resources/fabric.mod.json nor src/main/resources/META-INF/neoforge.mods.toml in C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-68ac65db-2f30c670093bb128\\.runs\\convert-sweep\\work\\appleskin-neoforge-to-fabric. It converts one-module Fabric and NeoForge mods.",
       "concepts": {
         "shape: source sets outside src/main (custom layout)": 1
       }
@@ -1748,7 +2063,7 @@
       "commit": "241f973106ee4e5552a5950d0a12433c07921c93",
       "yarn": false,
       "outcome": "refused",
-      "convertSeconds": 1.2,
+      "convertSeconds": 1.7,
       "refusal": "convert rewrites a Groovy build.gradle; this project has build.gradle.kts.",
       "concepts": {
         "shape: Kotlin build script (build.gradle.kts)": 1
@@ -1763,7 +2078,7 @@
       "minecraft": "26.1.2",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 56.1,
+      "convertSeconds": 50.8,
       "compileErrors": 88,
       "capped": false,
       "rulesApplied": [
@@ -1782,14 +2097,14 @@
         "build settings with no counterpart": 7,
         "third-party mod dependency with no build for the target loader": 2,
         "capabilities and transfer (items, fluids, energy)": 55,
-        "keybinds and input": 14,
+        "keybinds and input": 11,
         "renderers (block entity, entity, world, item, colors, render layers, models)": 23,
         "other loader API": 10,
         "fluids (FluidType, fluid stacks)": 24,
         "sounds, particles and chat": 3,
         "convention tags (c: / Tags)": 5,
         "player, entity and block events": 6,
-        "datagen (data providers)": 5,
+        "datagen (data providers)": 7,
         "menus and screens (extended menus, screen events)": 2,
         "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 2,
         "unclassified: class VertexConsumerWrapper": 2,
@@ -1806,7 +2121,7 @@
       "commit": "9c1bec181eebae1cd8fbab3e1872bb6cd8139071",
       "yarn": false,
       "outcome": "refused",
-      "convertSeconds": 4.5,
+      "convertSeconds": 5.0,
       "refusal": "NeoForge has published no release for Minecraft 26.1 (no net.neoforged:neoforge 26.1.0.x on maven.neoforged.net).",
       "concepts": {
         "no release of the target loader for this Minecraft version": 1
@@ -1821,7 +2136,7 @@
       "minecraft": "26.3",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 42.7,
+      "convertSeconds": 55.1,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -1842,14 +2157,15 @@
         "server-tick-end"
       ],
       "concepts": {
-        "third-party mod dependency with no build for the target loader": 2,
+        "third-party mod dependency with no build for the target loader": 1,
         "networking payloads": 10,
         "other loader API": 24,
         "client commands": 158,
         "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 14,
         "menus and screens (extended menus, screen events)": 1,
         "renderers (block entity, entity, world, item, colors, render layers, models)": 10,
-        "player, entity and block events": 1
+        "player, entity and block events": 1,
+        "build evaluation failed": 1
       }
     },
     {
@@ -1861,8 +2177,8 @@
       "minecraft": "26.3",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 63.6,
-      "compileErrors": 93,
+      "convertSeconds": 47.1,
+      "compileErrors": 92,
       "capped": false,
       "rulesApplied": [
         "access-widener",
@@ -1876,24 +2192,22 @@
       "concepts": {
         "access wideners / access transformers": 3,
         "build settings with no counterpart": 5,
-        "capabilities and transfer (items, fluids, energy)": 65,
-        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 12,
+        "capabilities and transfer (items, fluids, energy)": 72,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 7,
         "datagen (data providers)": 7,
-        "player, entity and block events": 28,
-        "other loader API": 17,
+        "other loader API": 19,
         "recipes and conditions": 12,
         "renderers (block entity, entity, world, item, colors, render layers, models)": 8,
-        "items and item events (settings, tooltips, enchantments, components)": 8,
-        "keybinds and input": 3,
+        "items and item events (settings, tooltips, enchantments, components)": 5,
         "menus and screens (extended menus, screen events)": 8,
         "data attachments": 4,
+        "player, entity and block events": 15,
         "lifecycle, tick and reload events": 3,
         "registration (DeferredRegister, registry builders)": 1,
         "unclassified: class ItemAccess": 2,
         "unclassified: class ValueIOSerializable": 3,
-        "unclassified: class IModBusEvent": 1,
         "unclassified: class RenderArmEvent": 1,
-        "unclassified: class Lazy": 1
+        "unclassified: package PlayerXpEvent does not exist": 1
       }
     },
     {
@@ -1905,7 +2219,7 @@
       "minecraft": "1.21.4",
       "yarn": true,
       "outcome": "converted, does not compile",
-      "convertSeconds": 29.1,
+      "convertSeconds": 42.6,
       "compileErrors": 76,
       "capped": false,
       "rulesApplied": [
@@ -1933,8 +2247,8 @@
       "commit": "7cc83aa9cb1f145c4d717bce3413e67a6e5f4678",
       "minecraft": "26.3",
       "yarn": false,
-      "outcome": "loads, registers what the original does",
-      "convertSeconds": 24.8,
+      "outcome": "loads, applies the same mixins as the original",
+      "convertSeconds": 22.4,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -1943,15 +2257,16 @@
       ],
       "concepts": {},
       "behaviour": {
-        "check": "registry entries in the mod's namespace, converted vs original",
+        "check": "mixins applied to game classes, converted vs original (the mod registers nothing)",
+        "signal": "mixins",
         "equal": true,
-        "entries": 0,
-        "missing": {},
-        "extra": {}
+        "mixins": 2,
+        "missing": [],
+        "extra": []
       },
       "back": {
         "exit": 0,
-        "seconds": 20.2,
+        "seconds": 30.3,
         "compiled": true,
         "left": 0,
         "javaFilesSame": 2,
@@ -1959,7 +2274,7 @@
       },
       "game": {
         "loaded": true,
-        "loadSeconds": 27.7
+        "loadSeconds": 25.6
       }
     },
     {
@@ -1970,7 +2285,7 @@
       "commit": "8a35a5d8329a75361222971bce60db043a5bdfa4",
       "yarn": false,
       "outcome": "refused",
-      "convertSeconds": 3.2,
+      "convertSeconds": 4.2,
       "refusal": "NeoForge has published no release for Minecraft 26.1 (no net.neoforged:neoforge 26.1.0.x on maven.neoforged.net).",
       "concepts": {
         "no release of the target loader for this Minecraft version": 1
@@ -1985,42 +2300,43 @@
       "minecraft": "1.21.1",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 95.6,
+      "convertSeconds": 72.7,
       "compileErrors": 100,
       "capped": true,
       "rulesApplied": [
         "access-widener",
-        "creative-tab-builder",
+        "creative-tab-builder-1.21",
         "dependency-other-loader-build",
+        "entrypoint-ModInitializer",
+        "neoforge-bridge",
+        "neoforge-bridge-entrypoint",
         "physical-side"
       ],
       "concepts": {
-        "unclassified left: @Mod class FarmersDelight": 1,
         "build settings with no counterpart": 5,
-        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 72,
-        "lifecycle, tick and reload events": 8,
-        "other loader API": 21,
+        "other loader API": 22,
         "renderers (block entity, entity, world, item, colors, render layers, models)": 8,
-        "networking payloads": 6,
-        "items and item events (settings, tooltips, enchantments, components)": 17,
         "HUD layers": 6,
-        "capabilities and transfer (items, fluids, energy)": 73,
-        "convention tags (c: / Tags)": 12,
-        "player, entity and block events": 10,
-        "config (ModConfigSpec, config screens, config libraries)": 4,
+        "capabilities and transfer (items, fluids, energy)": 91,
+        "items and item events (settings, tooltips, enchantments, components)": 17,
+        "convention tags (c: / Tags)": 13,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 13,
+        "player, entity and block events": 9,
         "recipes and conditions": 8,
         "datagen (data providers)": 22,
         "game rules, data maps and block property registries": 2,
         "loot (tables, modifiers)": 12,
-        "registration (DeferredRegister, registry builders)": 34,
         "worldgen (biome modifiers, features, dimensions)": 3,
+        "registration (DeferredRegister, registry builders)": 8,
         "menus and screens (extended menus, screen events)": 2,
+        "lifecycle, tick and reload events": 1,
         "unclassified: class RegisterClientExtensionsEvent": 1,
         "unclassified: class RegisterRecipeBookCategoriesEvent": 2,
         "unclassified: class RegisterClientTooltipComponentFactoriesEvent": 1,
         "sounds, particles and chat": 1,
         "unclassified: class RecipeWrapper": 7,
-        "unclassified: class IArmPoseTransformer": 1
+        "unclassified: class IArmPoseTransformer": 1,
+        "unclassified: class InvWrapper": 1
       }
     },
     {
@@ -2032,7 +2348,7 @@
       "minecraft": "26.1.2",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 51.8,
+      "convertSeconds": 60.4,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2063,15 +2379,15 @@
         "other loader API": 28,
         "capabilities and transfer (items, fluids, energy)": 91,
         "items and item events (settings, tooltips, enchantments, components)": 4,
-        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 33,
         "fluids (FluidType, fluid stacks)": 14,
         "registration (DeferredRegister, registry builders)": 11,
         "data attachments": 5,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 9,
         "HUD layers": 2,
         "player, entity and block events": 2,
-        "keybinds and input": 2,
+        "keybinds and input": 1,
         "block entities": 1,
-        "lifecycle, tick and reload events": 5,
+        "lifecycle, tick and reload events": 3,
         "networking payloads": 2
       }
     },
@@ -2084,12 +2400,12 @@
       "minecraft": "1.21.9",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 77.7,
+      "convertSeconds": 62.7,
       "compileErrors": 100,
       "capped": true,
       "rulesApplied": [
         "access-widener",
-        "creative-tab-builder",
+        "creative-tab-builder-1.21",
         "creative-tab-order",
         "physical-side",
         "side-only"
@@ -2102,14 +2418,13 @@
         "menus and screens (extended menus, screen events)": 3,
         "other loader API": 4,
         "player, entity and block events": 3,
-        "networking payloads": 8,
+        "networking payloads": 9,
         "registration (DeferredRegister, registry builders)": 76,
         "datagen (data providers)": 11,
         "convention tags (c: / Tags)": 2,
         "capabilities and transfer (items, fluids, energy)": 5,
         "unclassified: class RegisterSpecialBlockModelRendererEvent": 1,
-        "unclassified: class RegisterClientPayloadHandlersEvent": 1,
-        "creative tabs and item groups": 1
+        "unclassified: class RegisterClientPayloadHandlersEvent": 1
       }
     },
     {
@@ -2121,7 +2436,7 @@
       "minecraft": "26.3",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 40.8,
+      "convertSeconds": 45.5,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2165,8 +2480,8 @@
       "minecraft": "26.3",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 70.9,
-      "compileErrors": 91,
+      "convertSeconds": 67.7,
+      "compileErrors": 89,
       "capped": false,
       "rulesApplied": [
         "access-widener",
@@ -2182,22 +2497,21 @@
         "build settings with no counterpart": 4,
         "items and item events (settings, tooltips, enchantments, components)": 4,
         "loot (tables, modifiers)": 2,
-        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 20,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 14,
         "other loader API": 18,
         "lifecycle, tick and reload events": 6,
-        "player, entity and block events": 10,
-        "keybinds and input": 9,
+        "player, entity and block events": 7,
+        "keybinds and input": 7,
         "client commands": 3,
         "HUD layers": 2,
         "renderers (block entity, entity, world, item, colors, render layers, models)": 3,
         "menus and screens (extended menus, screen events)": 3,
-        "capabilities and transfer (items, fluids, energy)": 32,
+        "capabilities and transfer (items, fluids, energy)": 37,
         "convention tags (c: / Tags)": 2,
         "fluids (FluidType, fluid stacks)": 5,
         "registration (DeferredRegister, registry builders)": 2,
         "unclassified: class ItemAbility": 1,
         "unclassified: package CustomizeGuiOverlayEvent does not exist": 2,
-        "unclassified: package com.electronwill.nightconfig.core does not exist": 1,
         "unclassified: class FluidResource": 1,
         "unclassified: class CanItemPerformAbility": 1,
         "unclassified: updateTextPosition() in NotUglyEditBox cannot override updateTextPosition() in E": 1,
@@ -2217,7 +2531,7 @@
       "minecraft": "26.1.2",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 38.0,
+      "convertSeconds": 32.3,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2236,18 +2550,18 @@
         "build settings with no counterpart": 6,
         "third-party mod dependency with no build for the target loader": 2,
         "capabilities and transfer (items, fluids, energy)": 323,
-        "keybinds and input": 6,
-        "player, entity and block events": 18,
+        "keybinds and input": 5,
+        "player, entity and block events": 15,
         "renderers (block entity, entity, world, item, colors, render layers, models)": 9,
         "other loader API": 31,
         "fluids (FluidType, fluid stacks)": 39,
         "recipes and conditions": 2,
-        "lifecycle, tick and reload events": 2,
         "HUD layers": 2,
         "sounds, particles and chat": 1,
         "convention tags (c: / Tags)": 12,
         "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 23,
         "items and item events (settings, tooltips, enchantments, components)": 5,
+        "lifecycle, tick and reload events": 1,
         "datagen (data providers)": 6,
         "registration (DeferredRegister, registry builders)": 3,
         "entities (types, attributes, spawns)": 2,
@@ -2263,8 +2577,8 @@
       "commit": "bc08466ff900d97b27bfabcde92005b4774717e8",
       "minecraft": "26.3",
       "yarn": false,
-      "outcome": "loads, registers what the original does",
-      "convertSeconds": 31.5,
+      "outcome": "loads, applies the same mixins as the original",
+      "convertSeconds": 28.0,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2273,27 +2587,28 @@
         "entrypoint-DedicatedServerModInitializer",
         "entrypoint-ModInitializer",
         "physical-side",
-        "side-only"
+        "side-only-dropped"
       ],
       "concepts": {},
       "behaviour": {
-        "check": "registry entries in the mod's namespace, converted vs original",
+        "check": "mixins applied to game classes, converted vs original (the mod registers nothing)",
+        "signal": "mixins",
         "equal": true,
-        "entries": 0,
-        "missing": {},
-        "extra": {}
+        "mixins": 10,
+        "missing": [],
+        "extra": []
       },
       "back": {
-        "exit": 1,
-        "seconds": 10.8,
-        "compiled": false,
+        "exit": 0,
+        "seconds": 27.9,
+        "compiled": true,
         "left": 0,
-        "javaFilesSame": 25,
-        "javaFilesDiffer": 1
+        "javaFilesSame": 24,
+        "javaFilesDiffer": 2
       },
       "game": {
         "loaded": true,
-        "loadSeconds": 32.6
+        "loadSeconds": 32.2
       }
     },
     {
@@ -2305,34 +2620,33 @@
       "minecraft": "1.21.1",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 47.0,
+      "convertSeconds": 36.9,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
-        "creative-tab-builder",
+        "creative-tab-builder-1.21",
         "creative-tab-order",
         "dependency-other-loader-build",
+        "entrypoint-ModInitializer",
         "mod-loaded",
+        "neoforge-bridge",
+        "neoforge-bridge-entrypoint",
         "physical-side",
         "side-only"
       ],
       "concepts": {
-        "unclassified left: @Mod class LaserIO": 1,
-        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 16,
         "other loader API": 8,
         "renderers (block entity, entity, world, item, colors, render layers, models)": 6,
         "fluids (FluidType, fluid stacks)": 21,
         "capabilities and transfer (items, fluids, energy)": 80,
-        "networking payloads": 32,
-        "registration (DeferredRegister, registry builders)": 11,
         "sounds, particles and chat": 1,
-        "lifecycle, tick and reload events": 3,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 1,
         "datagen (data providers)": 8,
         "convention tags (c: / Tags)": 1,
         "recipes and conditions": 1,
         "menus and screens (extended menus, screen events)": 2,
-        "config (ModConfigSpec, config screens, config libraries)": 2,
         "data attachments": 1,
+        "registration (DeferredRegister, registry builders)": 1,
         "build evaluation failed": 1
       }
     },
@@ -2344,7 +2658,7 @@
       "commit": "6757789e0c1eec3c2e05a46fb1ac98ae1e294622",
       "yarn": false,
       "outcome": "refused",
-      "convertSeconds": 4.0,
+      "convertSeconds": 3.3,
       "refusal": "NeoForge has published no release for Minecraft 26.3-rc-2 (no net.neoforged:neoforge 26.3-rc-2.0.x on maven.neoforged.net).",
       "concepts": {
         "no release of the target loader for this Minecraft version": 1
@@ -2358,25 +2672,41 @@
       "commit": "e93d7f09d4eec12c76d1d7be9bf4eaad0246e9e0",
       "minecraft": "1.21.1",
       "yarn": false,
-      "outcome": "converted, does not compile",
-      "convertSeconds": 60.2,
-      "compileErrors": 51,
+      "outcome": "compiles, items left",
+      "convertSeconds": 64.4,
+      "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
-        "creative-tab-builder",
+        "creative-tab-builder-1.21",
         "creative-tab-order",
+        "entrypoint-ClientModInitializer",
+        "entrypoint-ModInitializer",
+        "neoforge-bridge",
+        "neoforge-bridge-entrypoint",
         "physical-side"
       ],
       "concepts": {
-        "unclassified left: @Mod class ExampleMod": 1,
-        "unclassified left: @Mod class ExampleModClient": 1,
-        "build settings with no counterpart": 5,
-        "config (ModConfigSpec, config screens, config libraries)": 16,
-        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 24,
-        "lifecycle, tick and reload events": 9,
-        "creative tabs and item groups": 4,
-        "registration (DeferredRegister, registry builders)": 17,
-        "unclassified: class Mod": 2
+        "build settings with no counterpart": 5
+      },
+      "behaviour": {
+        "check": "registry entries in the mod's namespace, converted vs original",
+        "signal": "registries",
+        "equal": true,
+        "entries": 4,
+        "missing": {},
+        "extra": {}
+      },
+      "back": {
+        "exit": 0,
+        "seconds": 34.8,
+        "compiled": true,
+        "left": 0,
+        "javaFilesSame": 1,
+        "javaFilesDiffer": 2
+      },
+      "game": {
+        "loaded": true,
+        "loadSeconds": 29.5
       }
     },
     {
@@ -2388,7 +2718,7 @@
       "minecraft": "26.3",
       "yarn": false,
       "outcome": "compiles, items left",
-      "convertSeconds": 31.4,
+      "convertSeconds": 86.9,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2405,22 +2735,23 @@
       },
       "behaviour": {
         "check": "registry entries in the mod's namespace, converted vs original",
+        "signal": "registries",
         "equal": true,
         "entries": 4,
         "missing": {},
         "extra": {}
       },
       "back": {
-        "exit": 1,
-        "seconds": 30.7,
-        "compiled": false,
-        "left": 10,
-        "javaFilesSame": 0,
-        "javaFilesDiffer": 3
+        "exit": 0,
+        "seconds": 55.4,
+        "compiled": true,
+        "left": 0,
+        "javaFilesSame": 1,
+        "javaFilesDiffer": 2
       },
       "game": {
         "loaded": true,
-        "loadSeconds": 53.9
+        "loadSeconds": 56.8
       }
     },
     {
@@ -2432,7 +2763,7 @@
       "minecraft": "26.3",
       "yarn": false,
       "outcome": "loads, registers what the original does",
-      "convertSeconds": 31.6,
+      "convertSeconds": 42.1,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2447,22 +2778,23 @@
       "concepts": {},
       "behaviour": {
         "check": "registry entries in the mod's namespace, converted vs original",
+        "signal": "registries",
         "equal": true,
         "entries": 4,
         "missing": {},
         "extra": {}
       },
       "back": {
-        "exit": 1,
-        "seconds": 34.1,
-        "compiled": false,
-        "left": 10,
-        "javaFilesSame": 0,
-        "javaFilesDiffer": 3
+        "exit": 0,
+        "seconds": 22.1,
+        "compiled": true,
+        "left": 0,
+        "javaFilesSame": 1,
+        "javaFilesDiffer": 2
       },
       "game": {
         "loaded": true,
-        "loadSeconds": 44.7
+        "loadSeconds": 40.5
       }
     },
     {
@@ -2474,7 +2806,7 @@
       "minecraft": "26.3",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 25.0,
+      "convertSeconds": 17.4,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2490,6 +2822,7 @@
       ],
       "concepts": {
         "config (ModConfigSpec, config screens, config libraries)": 158,
+        "third-party mod dependency with no build for the target loader": 1,
         "menus and screens (extended menus, screen events)": 2,
         "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 22
       }
@@ -2500,12 +2833,64 @@
       "from": "neoforge",
       "to": "fabric",
       "commit": "0faabeaf33bc13dbe9518c8dc6e566649aa84e6e",
+      "minecraft": "26.1.2",
       "yarn": false,
-      "outcome": "refused",
-      "convertSeconds": 1.7,
-      "refusal": "convert reads the Minecraft version from minecraft_version in gradle.properties; there is none.",
+      "outcome": "converted, does not compile",
+      "convertSeconds": 34.1,
+      "compileErrors": 75,
+      "capped": false,
+      "rulesApplied": [
+        "access-widener",
+        "creative-tab-builder",
+        "dependency-other-loader-build",
+        "entrypoint-ClientModInitializer",
+        "entrypoint-ModInitializer",
+        "neoforge-bridge",
+        "neoforge-bridge-entrypoint",
+        "physical-side"
+      ],
       "concepts": {
-        "shape: Minecraft version not in gradle.properties": 1
+        "access wideners / access transformers": 4,
+        "build settings with no counterpart": 4,
+        "unclassified left: neoForge $ block": 1,
+        "renderers (block entity, entity, world, item, colors, render layers, models)": 21,
+        "datagen (data providers)": 16,
+        "convention tags (c: / Tags)": 12,
+        "recipes and conditions": 8,
+        "registration (DeferredRegister, registry builders)": 5,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 6,
+        "player, entity and block events": 9,
+        "keybinds and input": 1,
+        "other loader API": 4,
+        "menus and screens (extended menus, screen events)": 1,
+        "data attachments": 2,
+        "capabilities and transfer (items, fluids, energy)": 93,
+        "config (ModConfigSpec, config screens, config libraries)": 2,
+        "unclassified: package org.apache.commons.lang3.text does not exist": 1,
+        "unclassified: package net.commoble.exmachina.api does not exist": 2,
+        "unclassified: package net.minecraft.client.renderer.item does not exist": 5,
+        "unclassified: package net.minecraft.core.registries does not exist": 2,
+        "unclassified: package net.minecraft.resources does not exist": 6,
+        "unclassified: package net.minecraft.tags does not exist": 3,
+        "unclassified: package net.minecraft.world.level.block does not exist": 2,
+        "unclassified: package net.minecraft.world.level.storage.loot does not exist": 2,
+        "unclassified: class Block": 5,
+        "unclassified: package net.minecraft.client.renderer.block.dispatch does not exist": 1,
+        "unclassified: package net.minecraft.world.item does not exist": 1,
+        "unclassified: package net.minecraft.world.item.crafting does not exist": 1,
+        "unclassified: class Identifier": 11,
+        "unclassified: package com.mojang.serialization does not exist": 3,
+        "unclassified: package com.mojang.serialization.codecs does not exist": 2,
+        "unclassified: package net.minecraft.data.PackOutput does not exist": 1,
+        "unclassified: package net.minecraft.core.HolderLookup does not exist": 1,
+        "unclassified: package net.minecraft.data does not exist": 2,
+        "unclassified: package com.google.common.collect does not exist": 1,
+        "unclassified: package net.minecraft.core does not exist": 2,
+        "unclassified: package net.minecraft.data.tags does not exist": 2,
+        "unclassified: class KeyTagProvider": 1,
+        "unclassified: class Item": 1,
+        "unclassified: class TagKey": 1,
+        "unclassified: class MechanicalComponent": 1
       }
     },
     {
@@ -2517,41 +2902,42 @@
       "minecraft": "1.21.1",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 124.2,
-      "compileErrors": 100,
-      "capped": true,
+      "convertSeconds": 65.1,
+      "compileErrors": 98,
+      "capped": false,
       "rulesApplied": [
         "dependency-other-loader-build",
+        "entrypoint-ModInitializer",
+        "neoforge-bridge",
+        "neoforge-bridge-entrypoint",
         "physical-side",
         "side-only"
       ],
       "concepts": {
-        "unclassified left: @Mod class NaturesAura": 1,
         "third-party mod dependency with no build for the target loader": 1,
-        "other loader API": 7,
-        "capabilities and transfer (items, fluids, energy)": 73,
+        "other loader API": 9,
+        "capabilities and transfer (items, fluids, energy)": 83,
         "data attachments": 3,
-        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 93,
-        "player, entity and block events": 45,
-        "items and item events (settings, tooltips, enchantments, components)": 8,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 19,
+        "player, entity and block events": 34,
+        "items and item events (settings, tooltips, enchantments, components)": 7,
         "convention tags (c: / Tags)": 7,
-        "fluids (FluidType, fluid stacks)": 2,
-        "lifecycle, tick and reload events": 9,
+        "fluids (FluidType, fluid stacks)": 8,
         "datagen (data providers)": 17,
         "worldgen (biome modifiers, features, dimensions)": 2,
         "registration (DeferredRegister, registry builders)": 5,
         "renderers (block entity, entity, world, item, colors, render layers, models)": 6,
         "HUD layers": 2,
-        "commands (server, argument types)": 1,
-        "config (ModConfigSpec, config screens, config libraries)": 6,
-        "networking payloads": 6,
+        "config (ModConfigSpec, config screens, config libraries)": 1,
         "recipes and conditions": 1,
         "menus and screens (extended menus, screen events)": 2,
         "unclassified: class INBTSerializable": 1,
         "unclassified: class LivingExperienceDropEvent": 1,
         "unclassified: class RecipeWrapper": 3,
         "unclassified: class BlockGrowFeatureEvent": 2,
-        "unclassified: package MobSpawnEvent does not exist": 1
+        "unclassified: package MobSpawnEvent does not exist": 1,
+        "unclassified: class EnergyStorage": 1,
+        "unclassified: class AABBTicket": 1
       }
     },
     {
@@ -2563,7 +2949,7 @@
       "minecraft": "26.1.2",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 14.5,
+      "convertSeconds": 16.7,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2580,7 +2966,6 @@
         "entities (types, attributes, spawns)": 1,
         "capabilities and transfer (items, fluids, energy)": 40,
         "other loader API": 6,
-        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 1,
         "registration (DeferredRegister, registry builders)": 1,
         "build evaluation failed": 1
       }
@@ -2594,7 +2979,7 @@
       "minecraft": "1.21.1",
       "yarn": true,
       "outcome": "converted, does not compile",
-      "convertSeconds": 13.8,
+      "convertSeconds": 42.3,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2606,7 +2991,8 @@
         "access wideners / access transformers": 12,
         "build settings with no counterpart": 1,
         "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 19,
-        "other loader API": 2
+        "other loader API": 1,
+        "build evaluation failed": 1
       }
     },
     {
@@ -2618,13 +3004,14 @@
       "minecraft": "26.3",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 15.5,
+      "convertSeconds": 17.5,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
         "access-widener",
         "client-tick-end",
         "config-dir",
+        "dependency-other-loader-build",
         "development-environment",
         "entrypoint-ClientModInitializer",
         "key-mapping"
@@ -2647,7 +3034,7 @@
       "minecraft": "26.3",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 35.6,
+      "convertSeconds": 144.8,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2655,6 +3042,7 @@
         "client-tick-end",
         "commands",
         "creative-tab-builder",
+        "dependency-other-loader-build",
         "entrypoint-ClientModInitializer",
         "entrypoint-ModInitializer",
         "player-join"
@@ -2667,7 +3055,7 @@
         "keybinds and input": 1,
         "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 2,
         "data attachments": 2,
-        "build evaluation failed": 1
+        "third-party mod dependency with no build for the target loader": 1
       }
     },
     {
@@ -2679,7 +3067,7 @@
       "minecraft": "26.3",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 65.0,
+      "convertSeconds": 54.9,
       "compileErrors": 93,
       "capped": false,
       "rulesApplied": [
@@ -2698,9 +3086,8 @@
         "capabilities and transfer (items, fluids, energy)": 29,
         "networking payloads": 2,
         "config (ModConfigSpec, config screens, config libraries)": 2,
-        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 2,
-        "player, entity and block events": 1,
-        "keybinds and input": 3,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 1,
+        "keybinds and input": 2,
         "HUD layers": 2,
         "menus and screens (extended menus, screen events)": 1,
         "lifecycle, tick and reload events": 1,
@@ -2722,7 +3109,7 @@
       "minecraft": "26.2",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 40.4,
+      "convertSeconds": 34.0,
       "compileErrors": 99,
       "capped": false,
       "rulesApplied": [
@@ -2770,7 +3157,7 @@
       "minecraft": "1.21.5",
       "yarn": true,
       "outcome": "converted, does not compile",
-      "convertSeconds": 32.5,
+      "convertSeconds": 38.9,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2804,7 +3191,7 @@
       "minecraft": "26.2.0",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 56.0,
+      "convertSeconds": 54.2,
       "compileErrors": 0,
       "capped": false,
       "rulesApplied": [
@@ -2820,7 +3207,7 @@
         "side-only"
       ],
       "concepts": {
-        "player, entity and block events": 51,
+        "player, entity and block events": 36,
         "unclassified left: addListener(StalactiteReloadListener.INSTANCE::registerListener": 1,
         "access wideners / access transformers": 67,
         "build settings with no counterpart": 11,
@@ -2831,15 +3218,15 @@
         "convention tags (c: / Tags)": 17,
         "registration (DeferredRegister, registry builders)": 14,
         "loot (tables, modifiers)": 8,
-        "items and item events (settings, tooltips, enchantments, components)": 17,
+        "items and item events (settings, tooltips, enchantments, components)": 16,
         "recipes and conditions": 6,
-        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 67,
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 49,
         "fluids (FluidType, fluid stacks)": 4,
         "capabilities and transfer (items, fluids, energy)": 34,
         "HUD layers": 3,
         "data attachments": 4,
-        "lifecycle, tick and reload events": 6,
         "entities (types, attributes, spawns)": 3,
+        "lifecycle, tick and reload events": 4,
         "block entities": 1
       }
     },
@@ -2851,7 +3238,7 @@
       "commit": "7f7508e019b1dd845b54ff56e0cd140e150ddd93",
       "yarn": false,
       "outcome": "refused",
-      "convertSeconds": 3.2,
+      "convertSeconds": 5.1,
       "refusal": "NeoForge has published no release for Minecraft 26.3-rc-1 (no net.neoforged:neoforge 26.3-rc-1.0.x on maven.neoforged.net).",
       "concepts": {
         "no release of the target loader for this Minecraft version": 1
@@ -2866,23 +3253,30 @@
       "minecraft": "1.21.1",
       "yarn": false,
       "outcome": "converted, does not compile",
-      "convertSeconds": 59.6,
-      "compileErrors": 100,
-      "capped": true,
+      "convertSeconds": 46.2,
+      "compileErrors": 57,
+      "capped": false,
       "rulesApplied": [
-        "mod-loaded"
+        "entrypoint-ModInitializer",
+        "mod-loaded",
+        "neoforge-bridge",
+        "neoforge-bridge-entrypoint"
       ],
       "concepts": {
-        "unclassified left: @Mod class ZombieApocalypseAddon": 1,
-        "config (ModConfigSpec, config screens, config libraries)": 100,
-        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 14,
-        "other loader API": 1,
-        "player, entity and block events": 7,
-        "lifecycle, tick and reload events": 2,
-        "commands (server, argument types)": 1,
-        "unclassified: package com.electronwill.nightconfig.core does not exist": 2,
-        "unclassified: package com.electronwill.nightconfig.core.file does not exist": 1,
-        "unclassified: class CommentedConfig": 1
+        "sides, mod list and event bus (ModList, FabricLoader, @EventBusSubscriber)": 8,
+        "other loader API": 2,
+        "player, entity and block events": 11,
+        "unclassified: cannot infer type arguments for Factory<>": 2,
+        "NeoForge extension methods on game classes": 12,
+        "config (ModConfigSpec, config screens, config libraries)": 11,
+        "unclassified: variable CommonHooks": 1,
+        "unclassified: variable EventHooks": 6,
+        "unclassified: variable BlockSnapshot": 1,
+        "unclassified: package MobSpawnEvent does not exist": 2,
+        "unclassified: package MobSpawnEvent.SpawnPlacementCheck does not exist": 1,
+        "unclassified: package MobSpawnEvent.PositionCheck does not exist": 1,
+        "unclassified: method getLightEmission in class BlockStateBase cannot be applied to given types": 1,
+        "access wideners / access transformers": 6
       }
     }
   ]

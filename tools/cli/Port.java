@@ -3109,7 +3109,8 @@ final class Port {
         }
         var original = Json.object(state.get("before"));
         for (String relative : after.keySet()) {
-            if (original.get(relative) == null && !removed.contains(relative)) Files.delete(
+            if (original.get(relative) == null && !removed.contains(relative)) deleteWithEmptiedFolders(
+                project.root,
                 project.root.resolve(relative)
             );
             else {
@@ -3136,6 +3137,20 @@ final class Port {
                 ? "The " + kind + " changed no files, so there was nothing to restore."
                 : "Restored " + after.size() + " file(s) to their state before the " + kind + "."
         );
+    }
+
+    /**
+     * Deletes a file undo found the port or conversion made, and every folder that deleting it left empty, up to (not
+     * including) the project root: a folder that held only made files was made with them.
+     */
+    static void deleteWithEmptiedFolders(Path root, Path file) throws IOException {
+        Files.delete(file);
+        for (Path parent = file.getParent(); parent != null && parent.startsWith(root) && !parent.equals(root); parent = parent.getParent()) {
+            try (var entries = Files.list(parent)) {
+                if (entries.findAny().isPresent()) break;
+            }
+            Files.delete(parent);
+        }
     }
 
     /**
@@ -3167,7 +3182,7 @@ final class Port {
         for (String relative : changed) {
             Path file = project.root.resolve(relative).normalize();
             if (original.get(relative) == null) {
-                Files.delete(file);
+                deleteWithEmptiedFolders(project.root, file);
                 continue;
             }
             Files.createDirectories(file.getParent());

@@ -28,7 +28,9 @@ final class PackRepairs {
         "mods-together",
         PackRepairs::modsTogether,
         "dependency-unmet",
-        PackRepairs::dependencyUnmet
+        PackRepairs::dependencyUnmet,
+        "dependency-missing",
+        PackRepairs::dependencyMissing
     );
 
     static final Set<String> ACTIONS = Set.of("add-jar", "remove-mod", "replace-mod");
@@ -118,6 +120,16 @@ final class PackRepairs {
             d.owner().equals(owner.jar()) && d.id().equals(dependency) && d.kind().equals("required") && !PackMods.accepts(d, used.version())
         ) return mod + " " + owner.version() + " (" + owner.jar() + ") requires " + dependency + " " + String.join(" or ", d.ranges()) +
             ", and the pack has " + used.version() + " (" + used.jar() + ")";
+        return null;
+    }
+
+    /** A mod's own required dependency that no jar in the pack provides (a library its source no longer serves). */
+    static String dependencyMissing(Map<String, Object> spec, PackMods.Scan scan) {
+        String mod = Json.text(spec, "mod", ""), dependency = Json.text(spec, "dependency", "");
+        PackMods.Provider owner = scan.used(mod);
+        if (owner == null || scan.providers.containsKey(dependency)) return null;
+        for (var d : scan.dependencies) if (d.owner().equals(owner.jar()) && d.id().equals(dependency) && d.kind().equals("required")) return mod + " " +
+            owner.version() + " (" + owner.jar() + ") requires " + dependency + " " + String.join(" or ", d.ranges()) + ", which no jar in the pack provides";
         return null;
     }
 

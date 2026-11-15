@@ -86,6 +86,7 @@ public final class Modaccel {
             "refresh",
             "help",
             "dry-run",
+            "no-compile",
             "fix",
             "direct",
             "expect-world",
@@ -318,12 +319,15 @@ public final class Modaccel {
             ProjectModel project = new ProjectModel(root);
             if (!Set.of("package", "self-test").contains(options.command)) project.requireGradleBuild();
             // Commands that build, edit or start the game take the project lock; reading state and talking to a running game don't.
+            // convert --dry-run converts a copy elsewhere: it takes no lock and leaves its receipt outside the project.
+            boolean preview = options.command.equals("convert") && options.has("dry-run") && !options.values.containsKey("undo");
             if (
+                !preview &&
                 !Set.of("discover", "doctor", "package", "self-test", "game-status", "game-stop", "eval").contains(
                     options.command
                 )
             ) lock = ProjectLock.acquire(project, options.command);
-            report = new Report(project.root, options.command);
+            report = new Report(preview ? Files.createTempDirectory("modaccel-convert-receipt-") : project.root, options.command);
             Map<String, Object> result;
             String interrupted = options.command.equals("port") ? null : Port.interruptedText(project);
             long discovered = System.nanoTime();
@@ -406,7 +410,7 @@ public final class Modaccel {
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }
                     case "convert" -> {
-                        result = new Convert(build).run(options);
+                        result = preview ? Convert.preview(project.root, home, options) : new Convert(build).run(options);
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }
                     case "explain" -> {
@@ -818,16 +822,17 @@ public final class Modaccel {
             "--check COMMAND runs the mod's own real-game check on the ported project (MODACCEL_PORTED_ROOT is set); the port is ok only when it passes. --learn-from-mods also learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and the rule book.\n" +
             "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n" +
             "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
-            case "convert" -> "Move a mod's source to another loader on the same Minecraft version: modaccel convert --root SOURCE --to neoforge|fabric [--dry-run] [--json]\n" +
+            case "convert" -> "Move a mod's source to another loader on the same Minecraft version: modaccel convert --root SOURCE --to neoforge|fabric [--dry-run | --no-compile] [--json]\n" +
             "  modaccel convert --root SOURCE --undo [ID]   restore every file the conversion changed, byte for byte\n" +
             "Fabric to NeoForge (any version with a NeoForge release) and NeoForge to Fabric (Minecraft 26.1 and later, where both use Mojang's names).\n" +
             "It rewrites the build (Loom <-> ModDevGradle, the newest loader releases for that Minecraft version), the metadata (fabric.mod.json <->\n" +
             "META-INF/neoforge.mods.toml), the entrypoints (ModInitializer <-> @Mod classes that run it in NeoForge's first registry event), and the\n" +
             "code with the rules in knowledge/loaders.json: loader calls, events, key mappings, Mod Menu's config screen. Every rule names classes checked\n" +
             "against the loaders' own published jars (python bench/loader_api.py verify) and has a before/after test. There is no AI step.\n" +
-            "Anything with no rule is listed with its file and line and left as it was, never dropped. Then the converted build is compiled;\n" +
-            "exit 0 means it compiled and nothing was left. --dry-run writes nothing: it lists each file that would change or be removed and what\n" +
-            "would be left, and compiles nothing. A compile is not proof: check the mod in the game with ui-check or world-check and --assert.\n" +
+            "Anything with no rule is listed with its file and line and left as it was, never dropped. Then the converted build is compiled\n" +
+            "(--no-compile skips that); exit 0 means it compiled and nothing was left. --dry-run writes nothing in the project (no state, no\n" +
+            "receipt): it lists each file that would change or be removed and what would be left, compiles nothing, and exits 0 when it ran.\n" +
+            "A compile is not proof: check the mod in the game with ui-check or world-check and --assert.\n" +
             "Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
             case "explain" -> "Explain a port's compiler errors: modaccel explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n" +
             "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n" +
