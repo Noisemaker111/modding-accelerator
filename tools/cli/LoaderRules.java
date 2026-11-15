@@ -366,7 +366,12 @@ final class LoaderRules {
     static String dropImport(String text, String name) {
         String simple = name.substring(name.lastIndexOf('.') + 1);
         if (uses(text, simple)) return text;
-        return Pattern.compile("(?m)^import\\s+" + Pattern.quote(name) + "\\s*;[^\\n]*\\n?").matcher(text).replaceAll("");
+        return tidy(Pattern.compile("(?m)^import\\s+" + Pattern.quote(name) + "\\s*;[^\\n]*\\n?").matcher(text).replaceAll(""));
+    }
+
+    /** After imports are removed: no run of blank lines between the package line and the code. */
+    static String tidy(String text) {
+        return text.replaceFirst("^(package [^\\n]*;\\n)\\n{2,}", "$1\n");
     }
 
     /** The class a simple or dotted name refers to in this file, through its imports or its own package. */
@@ -837,7 +842,7 @@ final class LoaderRules {
             String head = names.size() == 1 ? names.get(0) : "(" + String.join(", ", names) + ")";
             String indent = indent(text, start);
             String lambda;
-            if (lines.size() == 1 && lines.get(0).endsWith(";") && !lines.get(0).startsWith("return") && !lines.get(0).startsWith("if ")) lambda = head + " -> " + lines.get(0).substring(0, lines.get(0).length() - 1);
+            if (lines.size() == 1 && expressionStatement(lines.get(0))) lambda = head + " -> " + lines.get(0).substring(0, lines.get(0).length() - 1);
             else lambda = bracedLambda(head, lines, indent, unit);
             String method = render(member, holes);
             out.append(text, last, start).append(ownerSimple).append('.').append(method).append(".register(").append(lambda).append(')');
@@ -853,6 +858,15 @@ final class LoaderRules {
         for (String name : strings(neo.get("imports"))) text = dropImport(text, name);
         result.text = text;
         result.applied.add(Json.text(rule, "id", "event"));
+    }
+
+    static final Pattern STATEMENT_KEYWORD = Pattern.compile("^(?:if|for|while|do|switch|try|return|throw|synchronized|var|final|break|continue|yield|class|record|assert|int|long|boolean|double|float|char|byte|short)\\b");
+    static final Pattern DECLARATION = Pattern.compile("^[A-Za-z_$][\\w$.]*(?:<[^;]*>)?(?:\\[\\])*\\s+[A-Za-z_$][\\w$]*\\s*(?:=|;)");
+
+    /** True for one statement that can be a lambda's expression body: a call, an assignment, an increment. */
+    static boolean expressionStatement(String line) {
+        String s = line.strip();
+        return s.endsWith(";") && !s.contains("\n") && !STATEMENT_KEYWORD.matcher(s).find() && !DECLARATION.matcher(s).find() && !s.startsWith("{");
     }
 
     /** Splits an argument list at its top-level commas. */
@@ -914,7 +928,7 @@ final class LoaderRules {
 
     /** A Mod Menu entry class, made to stand alone: its factory becomes a Function<Screen, Screen>. */
     static String modMenuToNeoForge(String text) {
-        text = Pattern.compile("(?m)^import\\s+com\\.terraformersmc\\.modmenu\\.api\\.\\w+\\s*;[^\\n]*\\n?").matcher(text).replaceAll("");
+        text = tidy(Pattern.compile("(?m)^import\\s+com\\.terraformersmc\\.modmenu\\.api\\.\\w+\\s*;[^\\n]*\\n?").matcher(text).replaceAll(""));
         text = text.replaceAll("\\s+implements\\s+ModMenuApi\\s*(?=\\{)", " ");
         text = text.replaceAll("(implements\\s+)ModMenuApi\\s*,\\s*", "$1");
         text = text.replaceAll(",\\s*ModMenuApi(?=[\\s,{])", "");
