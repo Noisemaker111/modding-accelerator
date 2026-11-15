@@ -532,6 +532,36 @@ public final class PackCheckTest {
             "NeoForge reads neoforge.mods.toml from 1.20.5 and mods.toml before"
         );
         expect(all.get("quilt").metadata("1.21.1").equals(List.of("quilt.mod.json", "fabric.mod.json")), "Quilt reads its own metadata, then Fabric's");
+        Map<String, String> layers = new LinkedHashMap<>();
+        for (String v : List.of("1.18.2", "1.19.2", "1.19.3", "1.20.1", "1.21.1", "1.21.4", "1.21.5", "1.21.10", "1.21.11", "26.1.2", "26.3")) layers.put(
+            v,
+            PackLoaders.gameLayer(harness, v).getParent().getFileName().toString()
+        );
+        expect(
+            layers.equals(
+                Map.ofEntries(
+                    Map.entry("1.18.2", "1.18"),
+                    Map.entry("1.19.2", "1.18"),
+                    Map.entry("1.19.3", "1.19.3"),
+                    Map.entry("1.20.1", "1.19.3"),
+                    Map.entry("1.21.1", "1.19.3"),
+                    Map.entry("1.21.4", "1.21.2"),
+                    Map.entry("1.21.5", "1.21.5"),
+                    Map.entry("1.21.10", "1.21.5"),
+                    Map.entry("1.21.11", "1.21.11"),
+                    Map.entry("26.1.2", "26.1"),
+                    Map.entry("26.3", "26.1")
+                )
+            ),
+            "the probe compiles with the newest game layer at or below the pack's version: " + layers
+        );
+        boolean refused = false;
+        try {
+            PackLoaders.gameLayer(harness, "1.17.1");
+        } catch (IOException none) {
+            refused = none.getMessage().contains("no game layer");
+        }
+        expect(refused, "a version older than every game layer is named, not compiled");
         expect(
             PackLoaders.neoforgeLine("1.21.1").equals("21.1") && PackLoaders.neoforgeLine("1.21").equals("21.0") && PackLoaders.neoforgeLine("26.1").equals("26.1"),
             "NeoForge's version line follows the game version"
