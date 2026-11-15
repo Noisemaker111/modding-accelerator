@@ -783,12 +783,21 @@ final class PerfOptimize {
     }
 
     static String git(Path directory, String... args) throws Exception {
-        List<String> command = new ArrayList<>(List.of("git", "-C", directory.toString()));
-        command.addAll(Arrays.asList(args));
+        List<String> command = gitCommand(directory, args);
         Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
         String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         if (!process.waitFor(300, TimeUnit.SECONDS) || process.exitValue() != 0) throw new IOException("git " + String.join(" ", args) + ": " + output.strip());
         return output;
+    }
+
+    /**
+     * git with long paths allowed: a worktree under OUT adds OUT's length to every file path, and on Windows Storage
+     * Network's Patchouli pages then passed 260 characters and the checkout failed before any launch.
+     */
+    static List<String> gitCommand(Path directory, String... args) {
+        List<String> command = new ArrayList<>(List.of("git", "-c", "core.longpaths=true", "-C", directory.toString()));
+        command.addAll(Arrays.asList(args));
+        return command;
     }
 
     static void copyTree(Path from, Path to) throws IOException {

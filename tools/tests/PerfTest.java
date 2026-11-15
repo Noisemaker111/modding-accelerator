@@ -491,6 +491,8 @@ public final class PerfTest {
         Files.writeString(experimentDir.resolve("stop"), "");
         Map<String, Object> asked = PerfOptimize.asked(experimentDir, 2);
         check(asked != null && "asked".equals(asked.get("decided")) && asked.get("afterPairs").equals(2), "OUT/stop ends a run after the pair in progress: " + asked);
+        check(PerfOptimize.gitCommand(Path.of("."), "worktree", "add").containsAll(List.of("-c", "core.longpaths=true")),
+            "worktrees are made with long paths allowed, as OUT lengthens every path in them");
         Path cp1252 = Files.createTempFile("perf-child-", ".json");
         Files.write(cp1252, new byte[] {'{', '"', 'a', '"', ':', '"', (byte) 0xb7, '"', '}'});
         check(PerfOptimize.childOutput(cp1252).contains("�") && PerfOptimize.childJava(Path.of(".")).contains("-Dstdout.encoding=UTF-8"),
