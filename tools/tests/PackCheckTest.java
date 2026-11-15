@@ -102,6 +102,26 @@ public final class PackCheckTest {
             report.contains("stuck in \"Server thread\"") && !report.contains("spark") && named.stream().map(s -> s.get("mod")).toList().equals(List.of("ae2")),
             "a stuck start's thread dump names the mod holding the server thread: " + named + "\n" + report
         );
+        // Enigmatica 6 and Prominence 2: an item that puts down another mod's block of the same name is a pack unifying it.
+        List<Object> found = new ArrayList<>();
+        var placed = new PackChecks.Context(pack, scan, fabric, found);
+        placed.start = Json.map(
+            "opened",
+            true,
+            "probe",
+            Json.map(
+                "different",
+                List.of(
+                    Json.map("item", "modern_industrialization:tin_ore", "expected", "modern_industrialization:tin_ore", "landed", "techreborn:tin_ore"),
+                    Json.map("item", "powah:energy_cable_basic", "expected", "powah:energy_cable_basic", "landed", "techreborn:glassfiber_cable")
+                )
+            )
+        );
+        PackChecks.placements(placed);
+        expect(
+            found.size() == 2 && "note".equals(Json.object(found.get(0)).get("severity")) && "problem".equals(Json.object(found.get(1)).get("severity")),
+            "a same-named block from another mod is a note, another block a problem: " + found
+        );
         String failing = PackRepairs.failing(
             "[main/ERROR]: Failed to start\n| vinery | 1.1.4 | Vinery |\n - Mod 'AstralVinery' (astralvinery) 1.2.0 requires version 1.1.4 of vinery, which is missing!\n[main/INFO]: Loading 200 mods: vinery"
         );

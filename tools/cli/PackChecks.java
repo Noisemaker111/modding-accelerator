@@ -341,11 +341,15 @@ final class PackChecks {
             String item = Json.text(row, "item", ""), expected = Json.text(row, "expected", ""), landed = Json.text(row, "landed", "");
             String itemMod = item.split(":")[0], landedMod = landed.split(":")[0];
             boolean otherMod = !landedMod.equals(itemMod) && !landedMod.equals(expected.split(":")[0]) && !landedMod.equals("minecraft");
+            // Another mod's block of the same name (tin_ore for tin_ore) is a pack unifying a block two mods both add, on purpose.
+            boolean unified = otherMod && landed.contains(":") && expected.contains(":") && landed.split(":", 2)[1].equals(expected.split(":", 2)[1]);
             c.add(
                 "placed-other-block",
-                otherMod ? "problem" : "note",
+                otherMod && !unified ? "problem" : "note",
                 "Placing " + item + " put down " + landed + " instead of " + expected +
-                (otherMod ? ": a block from another mod." : ": the item's own mod does this (a growth stage or a deliberate swap)."),
+                (unified
+                    ? ": the same block from another mod, as a pack does when it unifies a block two mods both add."
+                    : otherMod ? ": a block from another mod." : ": the item's own mod does this (a growth stage or a deliberate swap)."),
                 "evidence",
                 row
             );
