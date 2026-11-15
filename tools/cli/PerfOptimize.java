@@ -76,7 +76,7 @@ final class PerfOptimize {
             if (!Files.isRegularFile(experimentFile)) throw new IllegalArgumentException("--experiment FILE is required");
             Path patch = options.values.containsKey("patch") ? Path.of(options.get("patch", "")).toAbsolutePath() : null;
             Path root = Path.of(options.get("root", ".")).toAbsolutePath().normalize();
-            Map<String, Object> checked = PerfCheck.check(experimentFile, Json.read(experimentFile), root, patch, Preferences.read(Preferences.file()));
+            Map<String, Object> checked = PerfCheck.check(experimentFile, withFingerprint(Json.read(experimentFile), options.get("only", "")), root, patch, Preferences.read(Preferences.file()));
             checked.put("details", PerfCheck.text(checked));
             return checked;
         }
