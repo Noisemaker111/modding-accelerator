@@ -43,7 +43,7 @@ public final class PackCheckTest {
                 count +
                 " pack-check checks passed: six pack inputs, Forge/Fabric/Quilt metadata with bundled mods, duplicate ids, missing and wrong-version mods," +
                 " game and loader version mismatches, declared conflicts, mods for another loader, shared look files and block names, mod sides from" +
-                " CurseForge and Modrinth, known faults and the repair tests (" + repairs + "), client-only mods and remembering them, which jars a server gets (client-side jars a kept mod requires, dependants of client-only ones), a library jar's bundled mods, the mod a crash names (only the failure's own lines; the Java build when the JDK lacks what the loader calls; only the mod reaching a client class), client-only code read from server entrypoints, the Java build a loader needs," +
+                " CurseForge and Modrinth, known faults and the repair tests (" + repairs + "), client-only mods and remembering them, which jars a server gets (client-side jars a kept mod requires, dependants of client-only ones, a --focus set), a library jar's bundled mods, the mod a crash names (only the failure's own lines; the Java build when the JDK lacks what the loader calls; only the mod reaching a client class), client-only code read from server entrypoints, the Java build a loader needs," +
                 " failed-start words, four loader adapters, a port lost to the other server, a free voice chat port"
             );
         } finally {
@@ -824,6 +824,19 @@ public final class PackCheckTest {
             PackCheck.serverMods(forge, forgeScan, Set.of(), List.of("embeddiumextension.jar")).kept().equals(Set.of("create.jar", "addon.jar")),
             "a jar a repair removes is not on the server, and nothing is kept for it: " + PackCheck.serverMods(forge, forgeScan, Set.of(), List.of("embeddiumextension.jar"))
         );
+        List<String> focused = PackCheck.focus(forge, forgeScan, List.of("addon")).stream().map(PackCheck.Mod::file).toList();
+        expect(
+            focused.equals(List.of("embeddium.jar", "embeddiumextension.jar", "addon.jar")) &&
+            PackCheck.focus(forge, forgeScan, List.of("create")).stream().map(PackCheck.Mod::file).toList().equals(List.of("create.jar")),
+            "--focus keeps the named mod and its required mods through theirs, and nothing else: " + focused
+        );
+        boolean refused = false;
+        try {
+            PackCheck.focus(forge, forgeScan, List.of("nosuchmod"));
+        } catch (IllegalArgumentException e) {
+            refused = e.getMessage().contains("nosuchmod");
+        }
+        expect(refused, "--focus refuses an id no jar of the pack provides");
 
         // Create+ (Forge 1.19.2, from the pack sweep): Kotlin for Forge 3.12 is a LIBRARY jar whose mod is in its jarjar list.
         Path kffMod = jar(scratch.resolve("kffmod.jar"), Map.of("META-INF/mods.toml", toml("kotlinforforge", "3.12.0", "")));
