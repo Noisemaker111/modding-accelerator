@@ -303,6 +303,8 @@ final class PackInputs {
         boolean client = !"unsupported".equals(env.get("client")), server = !"unsupported".equals(env.get("server"));
         // The pack's own word only when it rules a side out; "required" on both is the default, so Modrinth's project is asked.
         String side = client && !server ? "client" : server && !client ? "server" : "unknown";
+        // A server the pack says may go without the mod: what a repair that leaves a crashing mod off the server reads.
+        if ("optional".equals(env.get("server"))) source += ", server_side optional";
         return new PackCheck.Mod(name, jar, side, source);
     }
 

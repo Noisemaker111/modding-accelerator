@@ -61,7 +61,7 @@ public final class ModaccelPackProbe {
     static final class Work {
         final JsonObject result = new JsonObject();
         MinecraftServer server;
-        Iterator<Item> items; Placement placement; Set<Long> area; long waitingSince;
+        Iterator<Item> items; Placement placement; Set<Long> area; Deque<Long> toForce; long waitingSince, lastProgress = System.nanoTime();
         volatile boolean finished;
 
         Work() {
@@ -78,10 +78,10 @@ public final class ModaccelPackProbe {
                     Thread.sleep(250);
                     if (System.nanoTime() - since > TimeUnit.MINUTES.toNanos(60)) return;
                 }
-                CompletableFuture.runAsync(this::started, server).get(10, TimeUnit.MINUTES);
+                onServer(this::started);
                 while (!finished) {
                     if (!server.isRunning()) return;
-                    CompletableFuture.runAsync(this::step, server).get(10, TimeUnit.MINUTES);
+                    onServer(this::step);
                     Thread.sleep(10);
                 }
             } catch (Throwable failure) {
@@ -89,6 +89,19 @@ public final class ModaccelPackProbe {
                     result.addProperty("error", stack(failure));
                     finish(false);
                 }
+            }
+        }
+
+        /**
+         * Runs work on the server thread and waits for it as long as the server runs: a big pack on a busy machine can hold
+         * its server thread for many minutes (chunk after chunk loaded in one tick), and that is pack-check's to judge from
+         * the log, not the probe's to give up on.
+         */
+        void onServer(Runnable work) throws Exception {
+            CompletableFuture<Void> done = CompletableFuture.runAsync(work, server);
+            while (true) {
+                try { done.get(1, TimeUnit.MINUTES); return; }
+                catch (java.util.concurrent.TimeoutException busy) { if (!server.isRunning()) return; }
             }
         }
 
@@ -107,10 +120,14 @@ public final class ModaccelPackProbe {
             area = new HashSet<>();
             int rows = rows();
             result.addProperty("gridRows", rows);
+            // Forcing a chunk generates it on the server thread: a big pack's grid is over a thousand chunks, which in one task
+            // ran past the watchdog's 300 s. They are forced a few per tick in step(), and the 300 s wait starts after.
+            toForce = new ArrayDeque<>();
             for (int x = (origin.getX() >> 4) - 1; x <= (origin.getX() + COLUMNS * SPACING >> 4) + 1; x++)
                 for (int z = (origin.getZ() >> 4) - 1; z <= (origin.getZ() + rows * SPACING >> 4) + 1; z++) {
-                    level.setChunkForced(x, z, true); area.add(ModaccelPackGame.chunkKey(x, z));
+                    toForce.add(ModaccelPackGame.chunkKey(x, z)); area.add(ModaccelPackGame.chunkKey(x, z));
                 }
+            result.addProperty("areaChunks", area.size());
             waitingSince = System.nanoTime();
         }
 
@@ -118,9 +135,26 @@ public final class ModaccelPackProbe {
             if (finished) return;
             ServerLevel level = server.overworld();
             try {
+                if (toForce != null && !toForce.isEmpty()) {
+                    long budget = System.nanoTime() + 40_000_000L;
+                    do {
+                        long chunk = toForce.poll();
+                        ModaccelPackGame.forceChunk(level, net.minecraft.world.level.ChunkPos.getX(chunk), net.minecraft.world.level.ChunkPos.getZ(chunk));
+                    } while (!toForce.isEmpty() && System.nanoTime() < budget);
+                    if (System.nanoTime() - lastProgress > 30_000_000_000L) {
+                        lastProgress = System.nanoTime();
+                        System.out.println("MODACCEL-PROBE-PROGRESS loading the test area: " + (area.size() - toForce.size()) + " of " + area.size() + " chunks");
+                    }
+                    waitingSince = System.nanoTime();
+                    return;
+                }
                 if (area != null) {
                     for (long chunk : area) if (!level.hasChunk(net.minecraft.world.level.ChunkPos.getX(chunk), net.minecraft.world.level.ChunkPos.getZ(chunk))) {
                         if (System.nanoTime() - waitingSince > 300_000_000_000L) throw new IllegalStateException("The test area's chunks did not load in 300 s");
+                        if (System.nanoTime() - lastProgress > 30_000_000_000L) {
+                            lastProgress = System.nanoTime();
+                            System.out.println("MODACCEL-PROBE-PROGRESS loading the test area");
+                        }
                         return;
                     }
                     result.addProperty("areaLoadSeconds", (System.nanoTime() - waitingSince) / 1e9);
@@ -131,6 +165,11 @@ public final class ModaccelPackProbe {
                 }
                 long budget = System.nanoTime() + 40_000_000L;
                 while (items.hasNext() && System.nanoTime() < budget) placement.place(items.next());
+                // A line every 30 s while placing, so pack-check sees a long run of a big pack is still working.
+                if (System.nanoTime() - lastProgress > 30_000_000_000L) {
+                    lastProgress = System.nanoTime();
+                    System.out.println("MODACCEL-PROBE-PROGRESS " + placement.tried + " block items placed");
+                }
                 if (!items.hasNext()) { placement.finish(); finish(true); }
             } catch (Throwable failure) {
                 result.addProperty("error", stack(failure));
@@ -261,8 +300,8 @@ public final class ModaccelPackProbe {
     /** One block item at a time, a few per slice. */
     static final class Placement {
         final ServerLevel level; final JsonObject result; final ServerPlayer player; final Set<String> only = only(); final BlockPos origin;
-        final JsonArray different = new JsonArray(), unplaced = new JsonArray(), failed = new JsonArray(), placed = new JsonArray();
-        int tried, same, cell;
+        final JsonArray different = new JsonArray(), unplaced = new JsonArray(), failed = new JsonArray(), placed = new JsonArray(), unsendable = new JsonArray();
+        int tried, same, cell, hidden;
         // Surfaces tried in order until the block lands: the top of stone (most blocks), grass (plants), farmland
         // (crops) and sand (cacti), then a wall face, a ceiling, and sand under water.
         static final String[] SURFACES = { "minecraft:stone", "minecraft:grass_block", "minecraft:farmland", "minecraft:sand", "wall", "ceiling", "water" };
@@ -275,6 +314,11 @@ public final class ModaccelPackProbe {
         }
         void place(Item item) {
             if (!chosen(item, only)) return;
+            // An item in no creative tab is not one a player places (unless asked for by --only): left alone, and counted.
+            if (only.isEmpty() && !ModaccelPackGame.listed(item)) { hidden++; return; }
+            // A developer's debug block (Applied Energistics 2's debug chunk loader loads chunks while its own chunk loads, which
+            // hangs the next start) is a tool for the mod's author, not pack content.
+            if (only.isEmpty() && ModaccelPackGame.itemId(item).split(":", 2)[1].matches("(.*_)?debug(_.*)?")) { hidden++; return; }
             BlockItem blockItem = (BlockItem) item;
             String id = ModaccelPackGame.itemId(item);
             tried++;
@@ -327,8 +371,28 @@ public final class ModaccelPackProbe {
                 row.addProperty("landed", landedId);
                 row.addProperty("state", landed.toString());
                 row.addProperty("x", at.getX()); row.addProperty("y", at.getY()); row.addProperty("z", at.getZ());
+                // The next tick sends each changed block's block entity to players through this same call. A block whose entity
+                // cannot write itself bare (a mod's portal or spectral block, normally placed by the mod with its data) stops the
+                // whole server there: it is taken out again and named, so the rest of the pack is still checked.
+                net.minecraft.world.level.block.entity.BlockEntity entity = level.getBlockEntity(at);
+                if (entity != null) try { entity.getUpdatePacket(); }
+                catch (Throwable broken) {
+                    row.addProperty("error", stack(broken));
+                    unsendable.add(row);
+                    level.removeBlockEntity(at);
+                    level.setBlock(at, Blocks.AIR.defaultBlockState(), UPDATE_CLIENTS | UPDATE_KNOWN_SHAPE);
+                    clear(level, support);
+                    cell++;
+                    return;
+                }
                 // An item with a wall or hanging form (torch, sign) registers both blocks as its own: either is the item's block.
-                if (landed.getBlock() == expected || landed.getBlock().asItem() == item) same++; else different.add(row);
+                if (landed.getBlock() == expected || landed.getBlock().asItem() == item) same++;
+                else {
+                    // The item's own block built on the one that landed (Supplementaries' tater in a jar on Quark's tiny potato):
+                    // the item's mod chose the other block in its own compatibility code.
+                    if (landed.getBlock().getClass().isAssignableFrom(expected.getClass())) row.addProperty("related", true);
+                    different.add(row);
+                }
                 placed.add(row);
                 cell++;
             } catch (Throwable failure) {
@@ -346,15 +410,26 @@ public final class ModaccelPackProbe {
                 BlockState now = level.getBlockState(new BlockPos(row.get("x").getAsInt(), row.get("y").getAsInt(), row.get("z").getAsInt()));
                 String nowId = ModaccelPackGame.blockId(now.getBlock());
                 row.addProperty("saved", nowId);
+                // A block still waiting for a scheduled tick when the world saves (coral out of water, a cactus beside a block)
+                // changes by the game's own rules when that tick runs after the reload; the save is not what changed it.
+                BlockPos at = new BlockPos(row.get("x").getAsInt(), row.get("y").getAsInt(), row.get("z").getAsInt());
+                try { if (level.getBlockTicks().hasScheduledTick(at, now.getBlock())) row.addProperty("ticking", true); }
+                catch (Throwable unknown) { /* this game's tick list cannot say; the block is compared as it is */ }
+                // A block that cannot survive where it stands (a shrub a mod lets you place on stone) breaks at its next block
+                // update, whenever that comes: the game's survival rule, not the save, changes it.
+                try { if (!now.canSurvive(level, at)) row.addProperty("ticking", true); }
+                catch (Throwable unknown) { /* a block whose survival check needs more than the level: compared as it is */ }
                 if (!nowId.equals(row.get("landed").getAsString())) changedWhileRunning.add(row.get("item").getAsString() + ": " + row.get("landed").getAsString() + " -> " + nowId);
             }
             result.add("changedWhileRunning", changedWhileRunning);
             result.addProperty("blockItems", tried);
+            result.addProperty("hiddenBlockItems", hidden);
             result.addProperty("landedAsExpected", same);
             result.add("different", different);
             result.add("unplaced", unplaced);
             result.add("failed", failed);
             result.add("placed", placed);
+            result.add("unsendable", unsendable);
         }
     }
 
@@ -363,8 +438,9 @@ public final class ModaccelPackProbe {
         // new JsonParser().parse: the Gson of 1.16 has no static parseString.
         @SuppressWarnings("deprecation")
         JsonObject before = new JsonParser().parse(new String(Files.readAllBytes(Paths.get(System.getProperty("modaccel.probe.placed"))), StandardCharsets.UTF_8)).getAsJsonObject();
-        JsonArray changed = new JsonArray();
+        JsonArray changed = new JsonArray(), settled = new JsonArray();
         int read = 0, kept = 0;
+        if (!before.has("placed")) throw new IllegalStateException("the first start placed nothing to read back" + (before.has("error") ? ": " + before.get("error").getAsString().split("\n")[0] : ""));
         for (JsonElement element : before.getAsJsonArray("placed")) {
             JsonObject row = element.getAsJsonObject();
             BlockPos at = new BlockPos(row.get("x").getAsInt(), row.get("y").getAsInt(), row.get("z").getAsInt());
@@ -378,11 +454,12 @@ public final class ModaccelPackProbe {
             change.addProperty("before", saved);
             change.addProperty("after", nowId);
             change.addProperty("state", now.toString());
-            changed.add(change);
+            if (row.has("ticking") && row.get("ticking").getAsBoolean()) settled.add(change); else changed.add(change);
         }
         result.addProperty("read", read);
         result.addProperty("kept", kept);
         result.add("changed", changed);
+        result.add("settled", settled);
     }
 
     static void clear(ServerLevel level, BlockPos support) {
