@@ -18,8 +18,11 @@ import javax.tools.*;
  * class, method or field in every release. Joining each version's readable names (Mojang's
  * official mappings, or yarn) through intermediary gives every rename and every signature change.
  *
- *   java tools/VersionMap.java <from> <to> [--names mojmap|yarn] [--out map.json] [--cache dir]
- *   java tools/VersionMap.java --chain <v1,v2,...> [--names mojmap|yarn] --out map.json   (one map across every update, with history)
+ *   java tools/VersionMap.java <from> <to> [--names mojmap|yarn|mcp[:channel]] [--out map.json] [--cache dir]
+ *   java tools/VersionMap.java --chain <v1,v2,...> [--names mojmap|yarn|mcp[:channel]] --out map.json   (one map across every update, with history)
+ *
+ * Releases before 1.14.4 have no intermediary and no Mojang mappings; Forge's SRG ids are their
+ * stable identity instead, with MCP's published names as the readable side (see Srg).
  *   java tools/VersionMap.java --map map.json --explain <build log>
  *   java tools/VersionMap.java --map map.json --fix <build log> --repo <dir> [--rules learned.json] [--dry-run]
  *   java tools/VersionMap.java --map map.json --learn <a.diff> [--learn <b.diff>...] --out learned.json
@@ -31,7 +34,13 @@ import javax.tools.*;
 public final class VersionMap {
 
     static Path cache = Path.of(System.getProperty("user.home"), ".mmt", "mappings");
+    static final String FORGE_MAVEN = "https://maven.minecraftforge.net/";
     static final HttpClient HTTP = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+
+    /** The published name sets a table can be built from; mcp may pin a channel (mcp:stable_39). */
+    static boolean knownNames(String names) {
+        return names != null && (names.equals("mojmap") || names.equals("yarn") || names.equals("mcp") || names.startsWith("mcp:"));
+    }
 
     public static void main(String[] args) throws Exception {
         List<String> pos = new ArrayList<>();
@@ -67,9 +76,9 @@ public final class VersionMap {
             }
         }
         if (chain != null) {
-            if (!(names.equals("mojmap") || names.equals("yarn")) || out == null) {
+            if (!knownNames(names) || out == null) {
                 System.err.println(
-                    "usage: java tools/VersionMap.java --chain <v1,v2,...> [--names mojmap|yarn] --out map.json"
+                    "usage: java tools/VersionMap.java --chain <v1,v2,...> [--names mojmap|yarn|mcp[:channel]] --out map.json"
                 );
                 System.exit(2);
             }
@@ -125,12 +134,12 @@ public final class VersionMap {
         }
         if (
             pos.size() != 2 ||
-            !(names.equals("mojmap") || names.equals("yarn")) ||
-            (fromNames != null && !(fromNames.equals("mojmap") || fromNames.equals("yarn"))) ||
-            (toNames != null && !(toNames.equals("mojmap") || toNames.equals("yarn")))
+            !knownNames(names) ||
+            (fromNames != null && !knownNames(fromNames)) ||
+            (toNames != null && !knownNames(toNames))
         ) {
             System.err.println(
-                "usage: java tools/VersionMap.java <from> <to> [--names mojmap|yarn] [--from-names] [--to-names] [--out map.json]"
+                "usage: java tools/VersionMap.java <from> <to> [--names mojmap|yarn|mcp[:channel]] [--from-names] [--to-names] [--out map.json]"
             );
             System.exit(2);
         }
@@ -213,6 +222,7 @@ public final class VersionMap {
     static final class Table {
 
         final String version;
+        String mappings; // the published artifacts these names came from (the mcp lane's provenance)
         final Map<String, String> classes = new HashMap<>(); // intermediary -> named
         final Map<String, Member> methods = new HashMap<>(); // key -> named
         final Map<String, Member> fields = new HashMap<>();
@@ -222,12 +232,29 @@ public final class VersionMap {
             this.version = version;
         }
 
+        /** Ids assigned once and never reused: intermediary's method_/field_ and SRG's func_/field_. */
+        static boolean stableId(String interName) {
+            return interName.startsWith("method_") || interName.startsWith("field_") || interName.startsWith("func_");
+        }
+
         static String key(String interOwner, String interName, String interDesc) {
-            boolean stable = interName.startsWith("method_") || interName.startsWith("field_");
-            return stable ? interOwner + "." + interName : interOwner + "." + interName + interDesc;
+            return stableId(interName) ? interOwner + "." + interName : interOwner + "." + interName + interDesc;
+        }
+
+        /** Stable method ids by bare name, so a member moved to another owner is found when its key misses. */
+        void indexMoved() {
+            for (String k : methods.keySet()) {
+                String name = k.substring(k.indexOf('.') + 1);
+                if (name.startsWith("method_") || name.startsWith("func_")) {
+                    methodsByInterName.computeIfAbsent(name, x -> new ArrayList<>()).add(k);
+                }
+            }
         }
 
         static Table load(String version, String names) throws Exception {
+            if (names.equals("mcp") || names.startsWith("mcp:")) {
+                return loadMcp(version, names.length() > 4 ? names.substring(4) : null);
+            }
             String manifest = fetchText(
                 "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json",
                 "version_manifest_v2.json"
@@ -334,13 +361,7 @@ public final class VersionMap {
                     }
                 }
             }
-            for (var e : t.methods.entrySet()) {
-                String k = e.getKey();
-                String name = k.substring(k.indexOf('.') + 1);
-                if (name.startsWith("method_")) {
-                    t.methodsByInterName.computeIfAbsent(name, x -> new ArrayList<>()).add(k);
-                }
-            }
+            t.indexMoved();
             return t;
         }
 
@@ -360,14 +381,119 @@ public final class VersionMap {
                 String interDesc = Tiny.remapDesc(row.obfDesc, obfToInter);
                 String named = namer.name(interOwner, row.interName, interDesc, row.method);
                 if (named == null) {
-                    named = row.interName.startsWith("method_") || row.interName.startsWith("field_")
-                        ? row.obfName
-                        : row.interName;
+                    named = stableId(row.interName) ? row.obfName : row.interName;
                 }
                 String namedDesc = Tiny.remapDesc(interDesc, interToNamed);
                 Member m = new Member(interToNamed.getOrDefault(interOwner, interOwner), named, namedDesc, interDesc);
                 (row.method ? t.methods : t.fields).put(key(interOwner, row.interName, interDesc), m);
             }
+        }
+
+        /**
+         * One version's names the pre-1.14.4 way: Forge's SRG table for identity (joined.srg in
+         * de.oceanlabs.mcp:mcp's srg zips, published to 1.12.2; joined.tsrg in mcp_config from 1.12.2)
+         * and MCP's CSVs for the readable side. The channel names the published name set the source
+         * was written against (stable_39, snapshot_20171003); the default is the last stable set
+         * published for the release.
+         */
+        static Table loadMcp(String version, String channel) throws Exception {
+            String srgMeta = fetchText(FORGE_MAVEN + "de/oceanlabs/mcp/mcp/maven-metadata.xml", "mcp-meta.xml");
+            Tiny rows;
+            String srgFrom;
+            if (srgMeta.contains("<version>" + version + "</version>")) {
+                Path z = fetch(
+                    FORGE_MAVEN + "de/oceanlabs/mcp/mcp/" + version + "/mcp-" + version + "-srg.zip",
+                    "mcp-" + version + "-srg.zip"
+                );
+                rows = Srg.srg(zipEntry(z, "joined.srg"));
+                srgFrom = "mcp " + version + " joined.srg";
+            } else {
+                Path z = fetch(
+                    FORGE_MAVEN + "de/oceanlabs/mcp/mcp_config/" + version + "/mcp_config-" + version + ".zip",
+                    "mcp_config-" + version + ".zip"
+                );
+                rows = Srg.tsrg(zipEntry(z, "config/joined.tsrg"));
+                srgFrom = "mcp_config " + version + " joined.tsrg";
+            }
+            String group = channel != null && channel.startsWith("snapshot_") ? "mcp_snapshot" : "mcp_stable";
+            String namesMeta = fetchText(FORGE_MAVEN + "de/oceanlabs/mcp/" + group + "/maven-metadata.xml", group + "-meta.xml");
+            String artifact = mcpArtifact(namesMeta, version, channel);
+            if (artifact == null) {
+                throw new IOException(
+                    "no MCP " +
+                    group +
+                    " names published for " +
+                    version +
+                    " (a legacy source can only be read in the names it was written against)"
+                );
+            }
+            Path nz = fetch(
+                FORGE_MAVEN + "de/oceanlabs/mcp/" + group + "/" + artifact + "/" + group + "-" + artifact + ".zip",
+                group + "-" + artifact + ".zip"
+            );
+            Table t = fromSrg(version, rows, Srg.csv(zipEntry(nz, "fields.csv"), zipEntry(nz, "methods.csv")));
+            t.mappings = srgFrom + ", " + group + " " + artifact;
+            return t;
+        }
+
+        /** The published MCP name artifact for a release: an explicit channel wins, else the last stable set. */
+        static String mcpArtifact(String metadata, String version, String channel) {
+            List<String> all = new ArrayList<>();
+            Matcher m = Pattern.compile("<version>([^<]+)</version>").matcher(metadata);
+            while (m.find()) {
+                all.add(m.group(1));
+            }
+            if (channel != null) {
+                String prefix = channel.substring(channel.indexOf('_') + 1) + "-";
+                for (String a : all) {
+                    if (a.startsWith(prefix)) {
+                        return a;
+                    }
+                }
+                return null;
+            }
+            int secondDot = version.indexOf('.', version.indexOf('.') + 1);
+            String minor = secondDot < 0 ? version : version.substring(0, secondDot); // 39-1.12 serves 1.12.2
+            String best = null, bestForMinor = null;
+            long bestN = -1, bestMinorN = -1;
+            for (String a : all) {
+                int dash = a.indexOf('-');
+                if (dash < 0) {
+                    continue;
+                }
+                long n;
+                try {
+                    n = Long.parseLong(a.substring(0, dash));
+                } catch (NumberFormatException e) {
+                    continue;
+                }
+                String suffix = a.substring(dash + 1);
+                if (suffix.equals(version) && n > bestN) {
+                    best = a;
+                    bestN = n;
+                } else if (suffix.equals(minor) && n > bestMinorN) {
+                    bestForMinor = a;
+                    bestMinorN = n;
+                }
+            }
+            return best != null ? best : bestForMinor;
+        }
+
+        /**
+         * A table from SRG rows and MCP names. SRG class names are already deobfuscated and MCP never
+         * renames a class, so a class's named side is its SRG name; a member MCP never named keeps its
+         * SRG id, which is what legacy sources call it by.
+         */
+        static Table fromSrg(String version, Tiny rows, Map<String, String> names) {
+            Table t = new Table(version);
+            Map<String, String> identity = new HashMap<>();
+            for (String srg : rows.classes.values()) {
+                identity.put(srg, srg);
+            }
+            t.classes.putAll(identity);
+            fill(t, rows, rows.classes, (owner, name, desc, method) -> names.getOrDefault(name, name), identity);
+            t.indexMoved();
+            return t;
         }
     }
 
@@ -512,6 +638,106 @@ public final class VersionMap {
                     }
                 };
             return "[".repeat(dims) + base;
+        }
+    }
+
+    // ------------------------------------------------------------------ SRG (MCP)
+
+    /**
+     * Forge's SRG mappings: the stable identity of the releases intermediary never covered. Both
+     * spellings (the joined.srg text MCP shipped and mcp_config's joined.tsrg) parse into the row
+     * shape the other lanes use, with the SRG id standing where the intermediary id stands. SRG field
+     * rows carry no type, so a field's descriptor stays empty in this lane.
+     */
+    static final class Srg {
+
+        static Tiny srg(String text) {
+            Tiny t = new Tiny();
+            for (String line : text.split("\r?\n")) {
+                String[] p = line.split(" ");
+                switch (p[0]) {
+                    case "CL:" -> {
+                        if (p.length == 3) {
+                            t.classes.put(p[1], p[2]);
+                        }
+                    }
+                    case "FD:" -> {
+                        if (p.length == 3) {
+                            int s = p[1].lastIndexOf('/');
+                            t.memberRows.add(
+                                new Tiny.Row(
+                                    false,
+                                    p[1].substring(0, s),
+                                    p[1].substring(s + 1),
+                                    "",
+                                    p[2].substring(p[2].lastIndexOf('/') + 1)
+                                )
+                            );
+                        }
+                    }
+                    case "MD:" -> {
+                        if (p.length == 5) {
+                            int s = p[1].lastIndexOf('/');
+                            t.memberRows.add(
+                                new Tiny.Row(
+                                    true,
+                                    p[1].substring(0, s),
+                                    p[1].substring(s + 1),
+                                    p[2],
+                                    p[3].substring(p[3].lastIndexOf('/') + 1)
+                                )
+                            );
+                        }
+                    }
+                    default -> {} // PK: package rows name nothing a class row does not
+                }
+            }
+            return t;
+        }
+
+        static Tiny tsrg(String text) {
+            Tiny t = new Tiny();
+            String owner = null;
+            for (String line : text.split("\r?\n")) {
+                if (line.isEmpty() || line.startsWith("tsrg2")) {
+                    continue;
+                }
+                if (line.startsWith("\t")) {
+                    if (owner == null) {
+                        continue;
+                    }
+                    String[] p = line.trim().split(" ");
+                    if (p.length == 3 && p[1].startsWith("(")) {
+                        t.memberRows.add(new Tiny.Row(true, owner, p[0], p[1], p[2]));
+                    } else if (p.length >= 2) {
+                        t.memberRows.add(new Tiny.Row(false, owner, p[0], p.length == 3 ? p[1] : "", p[p.length - 1]));
+                    }
+                } else {
+                    String[] p = line.trim().split(" ");
+                    if (p.length >= 2) {
+                        owner = p[0];
+                        t.classes.put(p[0], p[1]);
+                    }
+                }
+            }
+            return t;
+        }
+
+        /** Searge id to MCP name from the first two columns only; the quoted javadoc column is never read. */
+        static Map<String, String> csv(String... texts) {
+            Map<String, String> names = new HashMap<>();
+            for (String text : texts) {
+                for (String line : text.split("\r?\n")) {
+                    int a = line.indexOf(','), b = a < 0 ? -1 : line.indexOf(',', a + 1);
+                    if (b > a) {
+                        String id = line.substring(0, a);
+                        if (id.startsWith("func_") || id.startsWith("field_")) {
+                            names.put(id, line.substring(a + 1, b));
+                        }
+                    }
+                }
+            }
+            return names;
         }
     }
 

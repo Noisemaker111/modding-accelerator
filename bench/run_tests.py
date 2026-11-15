@@ -45,9 +45,10 @@ def checkout_data():
 def port_preflight():
     out = ROOT / ".runs" / "preflight-tests"
     yield ["javac", "--release", "21", "-encoding", "UTF-8", "-d", str(out), "tools/VersionMap.java",
-           "tools/tests/PortPreflightTest.java", "tools/tests/ChainMapTest.java"]
+           "tools/tests/PortPreflightTest.java", "tools/tests/ChainMapTest.java", "tools/tests/LegacyMapTest.java"]
     yield java("-cp", str(out), "PortPreflightTest")
     yield java("-cp", str(out), "ChainMapTest")
+    yield java("-cp", str(out), "LegacyMapTest")
 
 
 def legacy_agent():
