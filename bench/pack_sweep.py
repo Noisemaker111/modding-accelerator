@@ -76,8 +76,6 @@ def leftover_servers(instance):
 
 def pack_check(path, args):
     command = MODACCEL + ["pack-check", "--pack", str(path), "--json"] + (["--fix"] if args.fix else [])
-    if args.start_timeout:
-        command += ["--timeout", str(args.start_timeout)]
     started = time.monotonic()
     # MODACCEL_TRACE: a pack-check that stops with an error prints its stack into the pack's log.
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
@@ -258,7 +256,6 @@ def main():
     run.add_argument("--jobs", type=int, default=1, help="ignored: one pack at a time, since each server takes up to 6 GB")
     run.add_argument("--fix", action="store_true", help="pack-check --fix: a repaired server beside the shipped one")
     run.add_argument("--timeout", type=int, default=5400)
-    run.add_argument("--start-timeout", type=int, default=0, help="pack-check --timeout: seconds one server start may take (its default is 1200)")
     run.add_argument("--label", default="latest")
     run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
     run.add_argument("--modaccel", default="")

@@ -560,6 +560,12 @@ public final class PackCheckTest {
         PackMods.Scan fabricScan = PackMods.scan(fabric, List.of("fabric.mod.json"));
         fabric = PackCheck.sides(fabric, fabricScan);
         PackCheck.ServerMods kept = PackCheck.serverMods(fabric, fabricScan, Set.of(), List.of());
+        PackMods.Scan chippedAlone = PackMods.scan(fabric.subList(0, 1), List.of("fabric.mod.json"));
+        expect(
+            PackRepairs.dependencyMissing(Map.of("mod", "chipped", "dependency", "athena"), chippedAlone).contains("requires athena >=3.1.1, which no jar") &&
+            PackRepairs.dependencyMissing(Map.of("mod", "chipped", "dependency", "athena"), fabricScan) == null,
+            "the dependency-missing repair match holds only while no jar provides the dependency"
+        );
         expect(
             kept.kept().containsAll(List.of("chipped.jar", "athena.jar", "simplyswords.jar", "simplytooltips.jar", "fzzy.jar", "forgeconfigscreens.jar", "modmenu.jar")) &&
             kept.leftOut().keySet().equals(Set.of("sodium.jar")) &&
