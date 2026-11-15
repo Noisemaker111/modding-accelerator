@@ -25,6 +25,14 @@ public final class RulesTest {
                 continue;
             }
             if (!ids.add(id)) problems.add(id + ": id used twice");
+            // Where a rule came from is recorded; rules learned from other people's mods are only the old mined ones.
+            String provenance = Json.text(rule, "provenance", "");
+            if (!Set.of("hand", "game-diff", "third-party-mods").contains(provenance)) problems.add(
+                id + ": provenance must be hand, game-diff or third-party-mods, not \"" + provenance + "\""
+            );
+            if ("third-party-mods".equals(provenance) != "stonecutter".equals(rule.get("source"))) problems.add(
+                id + ": only the rules mined from Stonecutter mods (source stonecutter) come from third-party mods"
+            );
             Pattern find = null;
             try {
                 Pattern.compile(Json.text(rule, "match", ""));

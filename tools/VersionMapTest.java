@@ -83,9 +83,53 @@ public final class VersionMapTest {
 		check(VersionMap.Fix.sourcePath(new VersionMap.Err(backup.toString(), 1, "error", "", 0, null, null), repo) == null,
 				"compiler diagnostics cannot direct a repair into undo backups", failures);
 		apiChecks(scratch, failures);
+		inheritedChecks(scratch, failures);
 		if (!failures.isEmpty()) { throw new AssertionError(String.join("; ", failures)); }
 		System.out.println("PASS: learner safety, import positions, unique diagnostics");
 	}
+	/** A mod's own subclass of a game widget: what it inherits, and what it overrides, follow the game's unanimous rename. */
+	static void inheritedChecks(Path scratch, List<String> failures) throws Exception {
+		Path repo = scratch.resolve("inherited");
+		Files.createDirectories(repo);
+		Path map = repo.resolve("map.json");
+		Files.writeString(map, """
+			{
+			  "methods": [
+			    { "owner": "net.minecraft.client.gui.components.AbstractSelectionList", "from": "getScrollbarPosition", "to": "scrollBarX" },
+			    { "owner": "net.minecraft.client.gui.screens.packs.TransferableSelectionList", "from": "getScrollbarPosition", "to": "scrollBarX" }
+			  ],
+			  "methodsMoved": [
+			    { "owner": "net.minecraft.client.gui.components.AbstractSelectionList", "from": "getMaxScroll", "to": "maxScrollAmount", "newOwner": "net.minecraft.client.gui.components.AbstractScrollArea" }
+			  ]
+			}
+			""");
+		Path source = repo.resolve("OptionsList.java");
+		Files.writeString(source, """
+			package mod;
+
+			import net.minecraft.client.gui.components.ContainerObjectSelectionList;
+
+			public class OptionsList extends ContainerObjectSelectionList<Entry> {
+				@Override
+				protected int getScrollbarPosition() {
+					return getMaxScroll();
+				}
+			}
+			""");
+		Path log = repo.resolve("build.log");
+		Files.writeString(log, source + ":6: error: method does not override or implement a method from a supertype\n\t@Override\n\t^\n"
+				+ source + ":8: error: cannot find symbol\n\t\treturn getMaxScroll();\n\t\t       ^\n  symbol:   method getMaxScroll()\n  location: class OptionsList\n");
+		VersionMap.Fix.run(map, log, repo, false, null);
+		String fixed = Files.readString(source);
+		check(fixed.contains("protected int scrollBarX()") && fixed.contains("return maxScrollAmount();"),
+				"a mod subclass of a game class follows the game's unanimous rename, in a call and in an override: " + fixed, failures);
+		Path plain = repo.resolve("Plain.java");
+		Files.writeString(plain, "package mod;\n\npublic class Plain {\n\tint f() {\n\t\treturn getMaxScroll();\n\t}\n}\n");
+		Files.writeString(log, plain + ":5: error: cannot find symbol\n\t\treturn getMaxScroll();\n\t\t       ^\n  symbol:   method getMaxScroll()\n  location: class Plain\n");
+		VersionMap.Fix.run(map, log, repo, false, null);
+		check(Files.readString(plain).contains("getMaxScroll()"), "a mod class that extends nothing of the game keeps its own names", failures);
+	}
+
 	static void apiChecks(Path scratch, List<String> failures) throws Exception {
 		VersionMap.Known k = new VersionMap.Known();
 		k.names = "yarn"; k.toVersion = "1.21.9";

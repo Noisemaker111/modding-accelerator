@@ -120,6 +120,7 @@ final class Target {
             toolchain(setup, build, to);
             runTypeRename(setup, build, to);
             parchmentFollows(setup, build, to);
+            unitTestsInFml(setup, build, to, resolved);
             setup.applied.add(
                 Json.map(
                     "artifact",
@@ -494,6 +495,19 @@ final class Target {
             String current = pin.group(2), newest = latestNeoGradle(build, "7");
             if (Versions.compare(newest, current) <= 0) return;
             setup.replace(file, pin.group(0), pin.group(1) + newest + pin.group(3));
+            // NeoGradle's other plugins (mixin, vanilla, ...) are published with userdev and only work at its version:
+            // Jade's mixin plugin left on 7.0.145 beside userdev 7.1 failed to apply (net/minecraftforge/gdi/BaseDSLElement).
+            if (!file.equals(properties) && Versions.compare(newest, "7.1") >= 0) dropMixinPlugin(setup, build, file);
+            if (!file.equals(properties)) {
+                Matcher sibling = Pattern.compile(
+                    "(id\\s*\\(?\\s*[\"']net\\.neoforged\\.gradle\\.(?!userdev[\"'])[\\w.]+[\"']\\s*\\)?\\s*version\\s*[\"'])" +
+                    Pattern.quote(current) +
+                    "([\"'])"
+                ).matcher(setup.text(file));
+                List<String> siblings = new ArrayList<>();
+                while (sibling.find()) siblings.add(sibling.group(0));
+                for (String line : siblings) setup.replace(file, line, line.replace(current, newest));
+            }
             setup.applied.add(
                 Json.map(
                     "file",
@@ -517,6 +531,70 @@ final class Target {
             );
             return;
         }
+    }
+
+    /**
+     * NeoGradle 7.1 has no mixin plugin (net.neoforged.gradle.mixin ends at 7.0.192): FML reads a mod's mixin configs from
+     * its neoforge.mods.toml [[mixins]] entries, which is all the plugin's mixin { config ... } block was for. So the
+     * plugin line and its block go, and every config the block named is declared in the mods.toml if it is not already.
+     */
+    static void dropMixinPlugin(Setup setup, Build build, Path file) throws IOException {
+        String text = setup.text(file);
+        Matcher plugin = Pattern.compile(
+            "(?m)^[ \\t]*id\\s*\\(?\\s*[\"']net\\.neoforged\\.gradle\\.mixin[\"']\\s*\\)?(?:\\s*version\\s*[\"'][^\"']*[\"'])?[ \\t]*\\r?\\n"
+        ).matcher(text);
+        if (!plugin.find()) return;
+        Matcher block = Pattern.compile("(?m)^mixin\\s*\\{").matcher(text);
+        List<String> configs = new ArrayList<>();
+        String out = text.substring(0, plugin.start()) + text.substring(plugin.end());
+        if (block.find()) {
+            int depth = 0, end = -1;
+            for (int i = block.end() - 1; i < text.length(); i++) {
+                char c = text.charAt(i);
+                if (c == '{') depth++;
+                else if (c == '}' && --depth == 0) {
+                    end = i + 1;
+                    break;
+                }
+            }
+            if (end < 0) return;
+            String body = text.substring(block.start(), end);
+            Matcher config = Pattern.compile("(?m)^\\s*config\\s*\\(?\\s*[\"']([^\"']+)[\"']").matcher(body);
+            while (config.find()) configs.add(config.group(1));
+            String withoutPlugin = out;
+            int at = withoutPlugin.indexOf(body);
+            out = withoutPlugin.substring(0, at) + withoutPlugin.substring(at + body.length()).replaceFirst("^\\r?\\n", "");
+        }
+        Path toml = null;
+        for (String dir : List.of("src/main/resources/META-INF/", "src/main/templates/META-INF/")) {
+            Path candidate = build.project.root.resolve(dir + "neoforge.mods.toml");
+            if (Files.isRegularFile(candidate)) toml = candidate;
+        }
+        if (toml == null && !configs.isEmpty()) return;
+        if (toml != null) {
+            String metadata = setup.text(toml), added = metadata;
+            for (String config : configs) {
+                String literal = config.replace("${mod_id}", Objects.requireNonNullElse(modId(build.project.root), "${mod_id}"));
+                if (added.contains("\"" + config + "\"") || added.contains("\"" + literal + "\"")) continue;
+                added = added + (added.endsWith("\n") ? "" : "\n") + "\n[[mixins]]\nconfig = \"" + config + "\"\n";
+            }
+            if (!added.equals(metadata)) {
+                setup.originals.putIfAbsent(toml, metadata);
+                setup.texts.put(toml, added);
+            }
+        }
+        setup.originals.putIfAbsent(file, text);
+        setup.texts.put(file, out);
+        setup.applied.add(
+            Json.map(
+                "file",
+                file.toString(),
+                "change",
+                "NeoGradle's mixin plugin removed (NeoGradle 7.1 has none); its configs " + configs + " are mods.toml [[mixins]]",
+                "evidence",
+                "net.neoforged.gradle.mixin's newest release on maven.neoforged.net is 7.0.192"
+            )
+        );
     }
 
     /** The newest release of one Loom line (e.g. 1.10 -> 1.10.5), read from maven.fabricmc.net. */
@@ -631,6 +709,103 @@ final class Target {
             if (match.find()) throw new IOException("Duplicate property " + pin.getKey() + " in " + owner);
             setup.replace(owner, text, text.substring(0, start) + prefix + pin.getValue() + text.substring(end));
         }
+    }
+
+    /**
+     * The mod's own JUnit tests keep running on NeoForge 26.x. Since 1.21.11 the game's Commands class builds permission
+     * codecs from the built-in registries when it loads, so a plain test that registers a command tree stops with "Not
+     * bootstrapped"; and on NeoForge 26.x the game can only be bootstrapped inside FancyModLoader (SharedConstants asks
+     * FML whether it runs in production). NeoForge's userdev ships a junit run type for exactly this: the test task runs
+     * on junit-fml, which starts FML, puts the mod and its tests in FML's class loader (MOD_CLASSES) and bootstraps the
+     * game. Zombie Apocalypse Addon 1.21.1 -> 26.3: 7 of 128 tests failed plain, all 128 pass this way. NeoGradle
+     * projects only (ModDevGradle has its own unitTest block), forward ports onto 26.1+, and only when there are tests.
+     */
+    static void unitTestsInFml(Setup setup, Build build, String to, String neoForge) throws Exception {
+        if (Versions.compare(to, "26.1") < 0) return;
+        String from = "";
+        for (String key : List.of("minecraft_version", "minecraftVersion", "mc_version")) if (setup.pins.containsKey(key)) {
+            from = setup.pins.get(key);
+            break;
+        }
+        if (from.isEmpty() || Versions.compare(from, "26.1") >= 0) return;
+        Path file = build.project.root.resolve("build.gradle");
+        if (!Files.isRegularFile(file)) return;
+        String text = setup.text(file);
+        if (
+            !text.contains("net.neoforged.gradle.userdev") ||
+            text.contains("junit-fml") ||
+            text.contains("unitTestSource") ||
+            !hasJUnitTests(build.project.root.resolve("src/test/java"))
+        ) return;
+        String modId = modId(build.project.root);
+        if (modId == null) return;
+        Matcher loader = Pattern.compile(
+            "<artifactId>loader</artifactId>\\s*<version>([^<]+)</version>"
+        ).matcher(
+            fetch(
+                build,
+                "https://maven.neoforged.net/releases/net/neoforged/neoforge/" + neoForge + "/neoforge-" + neoForge + ".pom"
+            )
+        );
+        if (!loader.find()) return;
+        String block =
+            "\n// Written by modaccel port: on NeoForge 26.x the game can only be bootstrapped inside FancyModLoader, so the\n" +
+            "// tests run on junit-fml, with the mod and its tests in FML's class loader.\n" +
+            "runs {\n    junit {\n        junit true\n        modSource sourceSets.main\n        unitTestSource sourceSets.test\n    }\n}\n\n" +
+            "dependencies {\n    testRuntimeOnly 'net.neoforged.fancymodloader:junit-fml:" +
+            loader.group(1) +
+            "'\n}\n\n" +
+            "tasks.named('test', Test).configure {\n" +
+            "    jvmArgs '--add-opens', 'java.base/java.lang.invoke=ALL-UNNAMED', '--enable-native-access=ALL-UNNAMED', '--sun-misc-unsafe-memory-access=allow'\n" +
+            "    def roots = sourceSets.main.output.classesDirs.files + [sourceSets.main.output.resourcesDir] + sourceSets.test.output.classesDirs.files\n" +
+            "    environment 'MOD_CLASSES', roots.collect { \"" +
+            modId +
+            "%%${it}\" }.join(File.pathSeparator)\n}\n";
+        setup.originals.putIfAbsent(file, text);
+        setup.texts.put(file, text + block);
+        setup.applied.add(
+            Json.map(
+                "file",
+                file.toString(),
+                "change",
+                "tests run on junit-fml " + loader.group(1) + " (FancyModLoader) for " + to,
+                "evidence",
+                "NeoForge " + neoForge + "'s published pom names FancyModLoader " + loader.group(1)
+            )
+        );
+    }
+
+    static boolean hasJUnitTests(Path tests) throws IOException {
+        if (!Files.isDirectory(tests)) return false;
+        try (var walk = Files.walk(tests)) {
+            for (Path file : walk.filter(p -> p.toString().endsWith(".java")).toList()) if (
+                Files.readString(file).contains("org.junit")
+            ) return true;
+        }
+        return false;
+    }
+
+    /** The first modId in the mod's neoforge.mods.toml (or mods.toml), literal or from a ${mod_id}-style property. */
+    static String modId(Path root) throws IOException {
+        for (String name : List.of("neoforge.mods.toml", "mods.toml")) for (String dir : List.of(
+            "src/main/resources/META-INF/",
+            "src/main/templates/META-INF/"
+        )) {
+            Path toml = root.resolve(dir + name);
+            if (!Files.isRegularFile(toml)) continue;
+            Matcher id = Pattern.compile("(?m)^\\s*modId\\s*=\\s*\"([^\"]+)\"").matcher(Files.readString(toml));
+            if (!id.find()) continue;
+            String value = id.group(1);
+            Matcher property = Pattern.compile("\\$\\{(\\w+)}").matcher(value);
+            if (!property.matches()) return value;
+            Path props = root.resolve("gradle.properties");
+            if (!Files.isRegularFile(props)) return null;
+            Matcher pin = Pattern.compile("(?m)^\\s*" + Pattern.quote(property.group(1)) + "\\s*=\\s*(\\S+)").matcher(
+                Files.readString(props)
+            );
+            return pin.find() ? pin.group(1) : null;
+        }
+        return null;
     }
 
     /**

@@ -231,10 +231,29 @@ final class Port {
         // names and each removal keeps the update that removed it. Only releases before 26.1 share
         // intermediary ids; the rest of a route into 26.x is left to the compiler and the rules. Yarn has no
         // names past 1.21.11, so a yarn source bound for 26.x keeps the identity map (a name bridge is step 14).
-        List<String> chain = route == null ? List.of() : route.mappedChain();
+        // A Mojang-named source gets a map derived from the game itself (tools/GameDiff.java): Mojang's client jars and
+        // mappings for every release on the route, 26.x included, linked release to release from their own bytecode, plus
+        // NeoForge's own published classes; no intermediary. A yarn source's names are Fabric's, keyed by intermediary,
+        // so it keeps the intermediary map; so does --intermediary.
+        Set<String> sourceLoaders = new TreeSet<>();
+        for (Object p : Json.array(model.get("projects"))) sourceLoaders.addAll(Support.loaders(Json.object(p)));
+        boolean own = names.equals("mojmap") && route != null && !options.has("intermediary");
+        List<String> chain = route == null ? List.of() : own ? route.versions : route.mappedChain();
         boolean routed =
             chain.size() >= 2 && !(names.equals("yarn") && Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0);
-        if (routed) map = build.project.state().resolve("maps/route-" + names + "-" + from + "-" + to + ".json");
+        // A generated map is named after the tools that made it, so a changed generator makes a new one.
+        String generator = own ? tools.classes.getFileName().toString() : "";
+        if (routed) map = build.project.state().resolve(
+            "maps/" +
+            (own ? "game-" + generator.substring(0, Math.min(12, generator.length())) + "-" : "route-") +
+            names +
+            "-" +
+            from +
+            "-" +
+            to +
+            ".json"
+        );
+        String loaderDiff = own && sourceLoaders.contains("neoforge") ? "neoforge" : "";
         // 26.1 and newer ship with the game's own names and publish no intermediary, so there is nothing to
         // generate: a source already in that namespace compiles, and every difference left is an API change
         // the compiler names. The identity map keeps the repair rounds working on such a target.
@@ -243,15 +262,21 @@ final class Port {
             boolean current = false;
             if (Files.isRegularFile(map)) {
                 var cached = Json.read(map);
-                current = chain.equals(ProjectModel.strings(cached.get("chain"))) && names.equals(cached.get("names"));
+                String cachedLoader = cached.get("loader") instanceof Map<?, ?> loader
+                    ? String.valueOf(loader.get("name"))
+                    : "";
+                current =
+                    chain.equals(ProjectModel.strings(cached.get("chain"))) &&
+                    names.equals(cached.get("names")) &&
+                    own == "game-bytecode".equals(cached.get("linked")) &&
+                    (!own || loaderDiff.equals(cachedLoader));
             }
             if (!current) {
                 Files.createDirectories(map.getParent());
-                var mapped = tools.run(
-                    "VersionMap",
-                    List.of("--chain", String.join(",", chain), "--names", names, "--out", map.toString()),
-                    "mapping-route"
-                );
+                List<String> arguments = new ArrayList<>(List.of("--chain", String.join(",", chain), "--out", map.toString()));
+                if (own && !loaderDiff.isEmpty()) arguments.addAll(List.of("--loader", loaderDiff));
+                if (!own) arguments.addAll(List.of("--names", names));
+                var mapped = tools.run(own ? "GameDiff" : "VersionMap", arguments, "mapping-route");
                 if (mapped.exit() != 0) throw new IOException(
                     "No verified mapping along the route " + String.join(" -> ", chain) + ". " + Run.tail(mapped.log())
                 );
@@ -296,7 +321,12 @@ final class Port {
         Map<String, Object> routeRecord = route == null ? null : route.record();
         if (routeRecord != null) routeRecord.put(
             "mapping",
-            routed
+            routed && own
+                ? "one map joined across " +
+                String.join(" -> ", chain) +
+                " from the game itself: Mojang's jars and mappings linked release to release by their own bytecode" +
+                (loaderDiff.isEmpty() ? "" : ", with " + loaderDiff + "'s own published classes")
+                : routed
                 ? "one map joined across " +
                 String.join(" -> ", chain) +
                 " by Fabric intermediary ids" +
@@ -401,7 +431,7 @@ final class Port {
         saveInProgress();
         Path log;
         boolean compiled = false;
-        int rounds = Integer.parseInt(options.get("rounds", "5"));
+        int rounds = Integer.parseInt(options.get("rounds", "12"));
         List<String> removed = new ArrayList<>();
         if (rounds < 1 || rounds > 20) throw new IllegalArgumentException("--rounds must be 1–20");
         try {
@@ -453,7 +483,8 @@ final class Port {
                 if (!seen.add(state)) break;
                 roundsTried = round + 1;
                 applyRules(log);
-                if (!corpusLoaded) {
+                // Rules are not learned from other people's mods unless asked: the map comes from the game itself.
+                if (!corpusLoaded && options.has("learn-from-mods")) {
                     learned = Corpus.rules(build, model, tools, map, from, to, names);
                     corpusLoaded = true;
                 }
@@ -548,6 +579,25 @@ final class Port {
                         : Run.tail(log)
             );
             if (!unchecked.isEmpty()) result.put("uncheckedDependencies", unchecked);
+            // A port is done when the mod works in the real game: --check runs the mod's own game check on the result.
+            boolean checkFailed = false;
+            if (passed && options.values.containsKey("check")) {
+                Map<String, Object> check = gameCheck(options.get("check", ""));
+                boolean works = Boolean.TRUE.equals(check.get("ok"));
+                checkFailed = !works;
+                result.put("gameCheck", check);
+                result.put("gameVerified", works);
+                result.put("behaviorVerified", works);
+                result.put("ok", works);
+                if (works) result.put("tier", "behaviour");
+                else result.put("reason", "The port built, but the game check failed; see gameCheck.");
+                result.put(
+                    "details",
+                    works
+                        ? "Built, " + mixinSummary(mixins) + ", and the game check passed: " + check.get("command")
+                        : "Built and " + mixinSummary(mixins) + ", but the game check failed: " + check.get("tail")
+                );
+            }
             if (audit != null) result.put(
                 "mixinHint",
                 Json.map(
@@ -638,6 +688,7 @@ final class Port {
                 );
             }
             if (route != null) result.put("rulesApplied", rulesApplied);
+            result.put("rulesByProvenance", provenance(rulesApplied.keySet()));
             return result;
         } catch (Exception failure) {
             throw new IOException(
@@ -1160,6 +1211,49 @@ final class Port {
     }
 
     /**
+     * The mod's own game check, run on the ported project: a command (a modaccel eval/ui-check script, or a test program)
+     * started in the project with MODACCEL_PORTED_ROOT set to it. Its exit code is the verdict.
+     */
+    Map<String, Object> gameCheck(String command) throws Exception {
+        long start = System.nanoTime();
+        List<String> shell = Runtimes.WINDOWS ? List.of("cmd.exe", "/d", "/s", "/c", command) : List.of("sh", "-c", command);
+        Run.Result run = Run.command(
+            shell,
+            build.project.root,
+            Map.of("MODACCEL_PORTED_ROOT", build.project.root.toString()),
+            build.report.log("port-game-check"),
+            3600
+        );
+        build.report.stage("port-game-check", run, Map.of());
+        return Json.map(
+            "ok",
+            run.exit() == 0,
+            "command",
+            command,
+            "exit",
+            run.exit(),
+            "seconds",
+            (System.nanoTime() - start) / 1e9,
+            "log",
+            run.log().toString(),
+            "tail",
+            Run.tail(run.log())
+        );
+    }
+
+    /** How many of the rules a port applied came from each source (knowledge/fixes.json "provenance"). */
+    Map<String, Object> provenance(Set<String> ids) throws IOException {
+        Map<String, Object> counts = new TreeMap<>();
+        if (ids.isEmpty()) return counts;
+        for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
+            var rule = Json.object(item);
+            if (!ids.contains(Json.text(rule, "id", ""))) continue;
+            counts.merge(Json.text(rule, "provenance", "unrecorded"), 1, (a, b) -> (Integer) a + (Integer) b);
+        }
+        return counts;
+    }
+
+    /**
      * A rule with "loader" runs only on a project built for that loader: NeoForge's GuiLayer replaces 1.21.6's removed
      * LayeredDraw.Layer, while a Fabric mod needs Fabric's HUD API for the same error.
      */
@@ -1476,8 +1570,98 @@ final class Port {
             : Versions.compare(to, changed) < 0;
     }
 
+    /**
+     * A game member the mod reached through its access transformer that the target game moved, renamed or re-typed is
+     * private again: the old entry names a member that is gone. javac names the member and the class it lives in now
+     * ("X(args) has private access in Y", "X is not public in Y"), so the entry is written for the member as the target
+     * game has it, its descriptor read from the target's own class files. NeoForge mods only (accesstransformer.cfg);
+     * an entry already there is not written twice. Returns the lines added.
+     */
+    List<String> repairAccess(Path log) throws Exception {
+        Set<String> loaders = new TreeSet<>();
+        for (Object p : Json.array(model.get("projects"))) loaders.addAll(Support.loaders(Json.object(p)));
+        if (!loaders.contains("neoforge")) return List.of();
+        String errors = Files.readString(log);
+        Matcher denied = Pattern.compile(
+            "(?m)^\\s*" +
+            FILE +
+            ":[0-9]+: error: (\\w+)(?:\\(([^)]*)\\))? (?:has private access in|is not public in) ([\\w.$]+)"
+        ).matcher(errors);
+        Map<String, String[]> wanted = new LinkedHashMap<>();
+        while (denied.find()) wanted.putIfAbsent(
+            denied.group(4) + "." + denied.group(2) + "(" + denied.group(3) + ")",
+            new String[] { denied.group(2), denied.group(3), denied.group(4) }
+        );
+        // An overloaded call names the private candidate in its list: "(m(args) has private access in Y)".
+        Matcher candidate = Pattern.compile("\\((\\w+)\\(([^)]*)\\) has private access in ([\\w.$]+)\\)").matcher(errors);
+        while (candidate.find()) wanted.putIfAbsent(
+            candidate.group(3) + "." + candidate.group(1) + "(" + candidate.group(2) + ")",
+            new String[] { candidate.group(1), candidate.group(2), candidate.group(3) }
+        );
+        if (wanted.isEmpty()) return List.of();
+        Path at = accessTransformer();
+        if (at == null || !Files.isRegularFile(at)) return List.of();
+        Explain.Index index = new Explain.Index(classpath(model));
+        String text = Files.readString(at, StandardCharsets.UTF_8);
+        List<String> lines = new ArrayList<>();
+        for (String[] member : wanted.values()) {
+            String owner = null;
+            for (String found : index.resolve(member[2], List.of())) if (
+                found.startsWith("net/minecraft/") || found.startsWith("com/mojang/")
+            ) {
+                owner = found;
+                break;
+            }
+            if (owner == null) continue;
+            Explain.ClassInfo info = index.info(owner);
+            if (info == null) continue;
+            String entry = null;
+            for (Explain.Member m : info.members()) {
+                if (!m.name().equals(member[0]) || m.method() != (member[1] != null)) continue;
+                if (m.method() && !parameters(m.descriptor()).equals(member[1].replace(" ", ""))) continue;
+                entry = "public " + owner.replace('/', '.') + " " + m.name() + (m.method() ? m.descriptor() : "");
+                break;
+            }
+            if (entry == null || text.contains(entry) || lines.contains(entry)) continue;
+            lines.add(entry);
+        }
+        if (lines.isEmpty()) return lines;
+        track(at);
+        String added =
+            (text.endsWith("\n") ? "" : "\n") +
+            "\n# Written by modaccel port: members the target game made private again, as it has them now\n" +
+            String.join("\n", lines) +
+            "\n";
+        Files.writeString(at, text + added, StandardCharsets.UTF_8);
+        rulesApplied.putIfAbsent("access-transformer-repair", List.of());
+        return lines;
+    }
+
+    /** A descriptor's parameter types written the way javac's messages write them: (ILjava/lang/String;)V -> int,String. */
+    static String parameters(String descriptor) {
+        List<String> types = new ArrayList<>();
+        int[] at = { 1 };
+        while (descriptor.charAt(at[0]) != ')') types.add(Explain.Index.type(descriptor, at));
+        return String.join(",", types);
+    }
+
+    /** The NeoForge access transformer the build applies: NeoGradle's accessTransformers file, or META-INF/accesstransformer.cfg. */
+    Path accessTransformer() throws IOException {
+        for (String script : List.of("build.gradle", "build.gradle.kts")) {
+            Path file = build.project.root.resolve(script);
+            if (!Files.isRegularFile(file)) continue;
+            Matcher configured = Pattern.compile(
+                "accessTransformers?[^\\n]*?file\\s*\\(?\\s*(?:rootProject\\.|project\\.)?file\\(\\s*['\"]([^'\"]+)['\"]"
+            ).matcher(Files.readString(file));
+            if (configured.find()) return build.project.root.resolve(configured.group(1)).normalize();
+        }
+        Path fallback = build.project.root.resolve("src/main/resources/META-INF/accesstransformer.cfg");
+        return Files.isRegularFile(fallback) ? fallback : null;
+    }
+
     void applyRules(Path log) throws Exception {
         removeDeadMixinTargets(log);
+        repairAccess(log);
         String errors = Files.readString(log);
         List<Path> all = ownedJava();
         Set<Path> logged = new HashSet<>();

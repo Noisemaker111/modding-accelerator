@@ -37,7 +37,7 @@ final class MixinCheck {
         "net.fabricmc.loader.launch.knot.KnotClient",
         "net.fabricmc.loader.launch.knot.KnotServer"
     );
-    static final String NEO_MAIN = "cpw.mods.bootstraplauncher.BootstrapLauncher";
+    static final String NEO_MAIN = "cpw.mods.bootstraplauncher.BootstrapLauncher", FML_STARTUP = "net.neoforged.fml.startup.";
     static final int TIMEOUT_SECONDS = 600;
 
     final Build build;
@@ -617,9 +617,16 @@ final class MixinCheck {
         List<String> arguments = new ArrayList<>(launch.arguments());
         if (loader.equals("fabric")) {
             main = fabricMain(launch, "ModaccelMixinCheck", command);
+        } else if (main.startsWith(FML_STARTUP)) {
+            // FancyModLoader 12 (NeoForge 26.x) starts through net.neoforged.fml.startup: the check calls the same
+            // startup the Client and Server mains call, with the recorded arguments, and loads the targets instead.
+            main = "ModaccelMixinCheck";
+            command.add("-Dmodaccel.mixincheck.fml=startup");
         } else {
             if (!main.equals(NEO_MAIN)) throw new IOException(
-                "Unrecognised NeoForge dev launch (main class " + main + "); the Mixin check needs BootstrapLauncher."
+                "Unrecognised NeoForge dev launch (main class " +
+                main +
+                "); the Mixin check knows BootstrapLauncher and FancyModLoader's net.neoforged.fml.startup."
             );
             main = "ModaccelMixinCheck";
             // NeoForge's unit-test launch target sets up FML, its mods and Mixin with no early window, as junit-fml does.

@@ -14,6 +14,7 @@ final class JavaTools {
         jdk = Runtimes.ensureAtLeast(build.harness, 25);
         List<Path> sources = List.of(
             build.harness.resolve("tools/VersionMap.java"),
+            build.harness.resolve("tools/GameDiff.java"),
             build.harness.resolve("tools/MixinAudit.java"),
             build.harness.resolve("tools/GamePrep.java")
         );

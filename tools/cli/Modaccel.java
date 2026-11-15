@@ -94,6 +94,8 @@ public final class Modaccel {
             "list",
             "prepare",
             "no-hooks",
+            "learn-from-mods",
+            "intermediary",
             "no-heap",
             "allow-hidden",
             "keep"
@@ -146,6 +148,7 @@ public final class Modaccel {
             "memory",
             "attach", "instance", "launch", "duration", "warmup", "out", "scenario",
             "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block",
+            "check",
             "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch"
         );
         final Map<String, String> values = new LinkedHashMap<>();
@@ -791,6 +794,8 @@ public final class Modaccel {
             "  modaccel dependencies --root SOURCE --to 1.21.6 --json\n" +
             "  modaccel port --root SOURCE --from 1.21.5 --to 1.21.6 --fix --json\n" +
             "  modaccel port --root SOURCE --undo TRANSACTION\n" +
+            "  modaccel port --root SOURCE --from 1.21.1 --to 26.3 --fix --check \"java tools/tests/ZombieAiCheck.java ...\" --json\n" +
+            "--check COMMAND runs the mod's own real-game check on the ported project (MODACCEL_PORTED_ROOT is set); the port is ok only when it passes. --learn-from-mods also learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and the rule book.\n" +
             "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n" +
             "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
             case "convert" -> "Move a mod's source to another loader on the same Minecraft version: modaccel convert --root SOURCE --to neoforge|fabric [--dry-run] [--json]\n" +

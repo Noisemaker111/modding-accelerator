@@ -1084,6 +1084,18 @@ public final class VersionMap {
             return names.size() == 1 ? names.iterator().next() : null;
         }
 
+        /** The new name when every owner that renamed this member chose the same one, else null. */
+        static String unanimous(Set<String[]> candidates) {
+            if (candidates == null || candidates.isEmpty()) {
+                return null;
+            }
+            Set<String> names = new HashSet<>();
+            for (String[] c : candidates) {
+                names.add(c[1]);
+            }
+            return names.size() == 1 ? names.iterator().next() : null;
+        }
+
         static String locationType(String location) {
             if (location == null) {
                 return null;
@@ -1284,6 +1296,47 @@ public final class VersionMap {
             return result;
         }
 
+        /** The source that declares TYPE: this file when it does, else the first project file that does (or this file). */
+        static String declaring(String text, String type, List<Path> files) throws IOException {
+            if (type == null) {
+                return text;
+            }
+            Pattern declared = Pattern.compile("\\bclass\\s+" + Pattern.quote(type) + "\\b");
+            if (declared.matcher(text).find()) {
+                return text;
+            }
+            for (Path f : files) {
+                if (!f.getFileName().toString().equals(type + ".java")) {
+                    continue;
+                }
+                String other = Files.readString(f, StandardCharsets.UTF_8);
+                if (declared.matcher(other).find()) {
+                    return other;
+                }
+            }
+            return text;
+        }
+
+        /** Whether the file declares TYPE as extending a class it imports from the game (net.minecraft or com.mojang). */
+        static boolean extendsGameClass(String text, String type) {
+            if (type == null) {
+                return false;
+            }
+            Matcher declared = Pattern.compile(
+                "\\bclass\\s+" + Pattern.quote(type) + "\\b[^{;]*?\\bextends\\s+([\\w.]+)"
+            ).matcher(text);
+            if (!declared.find()) {
+                return false;
+            }
+            String parent = declared.group(1);
+            if (parent.startsWith("net.minecraft.") || parent.startsWith("com.mojang.")) {
+                return true;
+            }
+            return Pattern.compile(
+                "(?m)^import\\s+(?:net\\.minecraft|com\\.mojang)\\.[\\w.]*\\." + Pattern.quote(parent) + "\\s*;"
+            ).matcher(text).find();
+        }
+
         static void run(Path mapFile, Path log, Path repo, boolean dryRun, Path rulesFile) throws IOException {
             Known k = Known.load(mapFile);
             Map<Path, String> texts = new LinkedHashMap<>();
@@ -1365,14 +1418,19 @@ public final class VersionMap {
                 } else {
                     continue;
                 }
-                if (to == null) {
-                    continue;
-                }
                 Path f = sourcePath(e, repo);
                 if (f == null || !Files.isRegularFile(f)) {
                     continue;
                 }
                 String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                if (to == null && method && extendsGameClass(declaring(text, Known.locationType(e.location()), files), Known.locationType(e.location()))) {
+                    // A mod's own subclass of a game class: the member is inherited, so a rename the game made the
+                    // same way on every owner is the one it means (getMaxScroll -> maxScrollAmount on a list widget).
+                    to = Known.unanimous(k.methodTo.get(from));
+                }
+                if (to == null) {
+                    continue;
+                }
                 String nl = text.contains("\r\n") ? "\r\n" : "\n";
                 String[] lines = text.split("\r?\n", -1);
                 if (e.line() < 1 || e.line() > lines.length) {
@@ -1395,6 +1453,46 @@ public final class VersionMap {
                 texts.put(f, String.join(nl, lines));
                 replacements++;
                 byKind.merge(method ? "method" : "field", 1, Integer::sum);
+            }
+            // 2b. An @Override that no longer overrides: the game renamed the method it overrode, the same way on every owner.
+            for (Err e : readErrors(log)) {
+                if (!e.message().startsWith("method does not override or implement a method from a supertype")) {
+                    continue;
+                }
+                Path f = sourcePath(e, repo);
+                if (f == null || !Files.isRegularFile(f)) {
+                    continue;
+                }
+                String text = texts.containsKey(f) ? texts.get(f) : Files.readString(f, StandardCharsets.UTF_8);
+                String nl = text.contains("\r\n") ? "\r\n" : "\n";
+                String[] lines = text.split("\r?\n", -1);
+                // Only in a class that extends a game class: the method it meant to override is the game's.
+                String enclosing = null;
+                for (int back = Math.min(lines.length, e.line()) - 1; back >= 0 && enclosing == null; back--) {
+                    Matcher type = Pattern.compile("\\bclass\\s+(\\w+)").matcher(lines[back]);
+                    if (type.find()) {
+                        enclosing = type.group(1);
+                    }
+                }
+                if (!extendsGameClass(text, enclosing)) {
+                    continue;
+                }
+                for (int at = e.line() - 1; at >= 0 && at < Math.min(lines.length, e.line() + 3); at++) {
+                    Matcher declared = Pattern.compile(
+                        "^(\\s*(?:(?:public|protected|private|static|final|synchronized)\\s+)*[\\w.<>\\[\\], ?]+\\s+)(\\w+)(\\s*\\()"
+                    ).matcher(lines[at]);
+                    if (!declared.find() || lines[at].trim().startsWith("@")) {
+                        continue;
+                    }
+                    String to = Known.unanimous(k.methodTo.get(declared.group(2)));
+                    if (to != null) {
+                        lines[at] = declared.group(1) + to + lines[at].substring(declared.end(2));
+                        texts.put(f, String.join(nl, lines));
+                        replacements++;
+                        byKind.merge("override", 1, Integer::sum);
+                    }
+                    break;
+                }
             }
             // 3. Learned rewrites (from other mods' real ports of this jump), on the reported lines only.
             if (rulesFile != null && Files.isRegularFile(rulesFile)) {

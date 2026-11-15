@@ -30,7 +30,7 @@ Version tags build a standalone JAR and portable ZIP with SHA-256 files in a dra
 | | Goal | You run | Today |
 |:-:|---|---|---|
 | 1 | **Test a mod in seconds** | `fast` `data-check` `ui-check` `world-check` `mp-check` `server-check` | Works. Logic tests, the game's data and real-game checks all run with no game window |
-| 2 | **Port a mod to any Minecraft version** | `port` `explain` | Works for Fabric and NeoForge, 1.14.4 to 26.3. Small jumps need no hand edits |
+| 2 | **Port a mod to any Minecraft version** | `port` `explain` | Works for Fabric and NeoForge, 1.14.4 to 26.3. Proven mods port with no hand edits, 1.21.1 → 26.3 included |
 | 3 | **Make modpacks work together** | `pack-check` | Works for Forge, NeoForge, Fabric and Quilt packs on their real servers, with two proven repairs |
 | 4 | **Change loader or platform** | `convert` | Works for Fabric ↔ NeoForge on one Minecraft version: two real Fabric mods run on NeoForge with no hand edits. Forge, Quilt and Paper are not converted yet |
 
@@ -63,9 +63,13 @@ On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.ja
 ### 2 · Port a mod to any Minecraft version
 
 - **Fabric and NeoForge**, any version from 1.14.4 to 26.3, forward or back, routed through the versions most mods use. Every edit can be undone with `port --undo`.
-- **Proven with no hand edits** on F3Nope 1.21.5 ↔ 1.21.6 and Zombie Apocalypse Addon 1.21.1 → 1.21.4.
+- **One command does the whole move:** `port --fix` updates the build (loader, NeoGradle or Loom, Gradle, Java, dependencies). It renames what the game renamed, applies the rule book and recompiles until the mod builds. Then Mixin applies the mod's mixins, the mod's own tests run, and the jar is built. `--check COMMAND` runs the mod's own real-game check last. The port only counts as working once that check passes.
+- **Renames come from the game itself.** For Mojang-named mods, `tools/GameDiff.java` reads Mojang's client jars and mappings for every release on the route, 26.x included. It links each release to the next from their own bytecode, and links NeoForge's own published classes the same way. Yarn-named Fabric mods use Fabric's yarn tables, because their names are yarn's.
+- **The rule book** (`knowledge/fixes.json`) covers what a rename can't. Each rule carries a test `{error, before, after}` and its provenance: `hand` is written from a port's compiler errors against the game's own classes, and `third-party-mods` is the older set mined from other mods. New rules are never taken from other mods' code, and `--learn-from-mods` is off unless asked. `port` makes no AI or network-model calls; its rules are plain data.
+- **Proven with no hand edits and checked in the real game:** AppleSkin 1.20.1 → 1.21.6 and 1.21.5 ↔ 1.21.6 (Fabric), AppleSkin 1.21.6 → 26.3 (NeoForge), Zombie Apocalypse Addon 1.21.1 → 1.21.4, 1.21.6 and 26.3, and Notes 1.21 → 1.21.6. Receipts are in `coverage/ledger.json`.
 - **`explain`** shows each compiler error beside what that class looks like in both versions.
-- **Not yet:** big jumps stop with named errors (AppleSkin 1.20.1 → 1.21.6 stops at 11). Forge, Quilt, Paper plugins and versions before 1.14.4 are not ported.
+- **When a game member the mod reached through its access transformer turns private again**, the port writes the entry as the target game has it. **A mod's own subclass of a game class** follows the game's renames too.
+- **Not yet:** Jade 1.21.1 → 1.21.6 stops at 30 named errors, from 98. They are in Jade's own renderer and font mixins, which 1.21.5–1.21.6's render rewrite replaced, and in fog, entity variants and two Jade API types. Forge, Quilt, Paper plugins and versions before 1.14.4 are not ported.
 
 ### 3 · Make modpacks work together
 
@@ -99,7 +103,7 @@ A check that only shows the mod loaded is not proof it works. Proof is a check o
 ## Limits
 
 - **Source only.** A compiled mod JAR can't be ported. Compiled mods are only read when a modpack is checked.
-- **No AI guessing.** Ports use the game's own name lists, rules learned from real multi-version mods, and checked repairs. What's left is listed, not guessed.
+- **Deterministic ports.** A port uses the game's own jars and mappings, NeoForge's own artifacts and the tested rule book. A change no rule covers yet is named with the update that caused it, so the next rule can be written.
 
 ## More
 

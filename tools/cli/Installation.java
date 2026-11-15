@@ -40,6 +40,7 @@ final class Installation {
         "knowledge/pack-fixes.json",
         "knowledge/pack-loaders.json",
         "tools/VersionMap.java",
+        "tools/GameDiff.java",
         "tools/MixinAudit.java",
         "tools/mixincheck/ModaccelMixinCheck.java",
         "tools/mixincheck/ModaccelMixinErrors.java",
