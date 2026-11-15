@@ -23,6 +23,9 @@ final class Convert {
     final List<String> removed = new ArrayList<>(), changed = new ArrayList<>(), notes = new ArrayList<>();
     final List<Map<String, Object>> left = new ArrayList<>();
     final Map<String, List<String>> applied = new TreeMap<>();
+    /** Access transformer lines the rewritten code needs on NeoForge. */
+    final Set<String> accessTransformers = new LinkedHashSet<>();
+    static final String AT_FILE = "src/main/resources/META-INF/accesstransformer.cfg";
     String modid = "", unit = "\t";
 
     Convert(Build build) {
@@ -190,6 +193,7 @@ final class Convert {
             LoaderRules.Result result = new LoaderRules(rules, from, to, modid).apply(text);
             for (String id : result.applied) applied.computeIfAbsent(id, k -> new ArrayList<>()).add(file);
             for (LoaderRules.Left l : result.left) leave(file, l.line(), l.what(), l.why());
+            accessTransformers.addAll(result.accessTransformers);
             write(file, result.text);
         }
     }
@@ -240,6 +244,14 @@ final class Convert {
             }
         }
         if (menu != null) menuToNeoForge(menu, entrypoints);
+        if (!accessTransformers.isEmpty()) {
+            // NeoForge applies a mod's access transformers when its mods.toml names the file (modsToml adds that).
+            String existing = read(AT_FILE);
+            StringBuilder lines = new StringBuilder(existing.isEmpty() || existing.endsWith("\n") ? existing : existing + "\n");
+            for (String line : accessTransformers) if (!existing.contains(line)) lines.append(line).append('\n');
+            write(AT_FILE, lines.toString());
+            notes.add("Access transformer " + AT_FILE + " opens " + accessTransformers.size() + " member(s) the converted code calls.");
+        }
         write("src/main/resources/META-INF/neoforge.mods.toml", modsToml(meta, minecraft));
         delete(metaFile);
         buildToNeoForge(minecraft);
@@ -451,6 +463,7 @@ final class Convert {
             }
         }
         if (!minecraftDone) out.append("\n[[dependencies.").append(modid).append("]]\nmodId = \"minecraft\"\ntype = \"required\"\nversionRange = ").append(tomlString("[" + minecraft + ",)")).append("\nordering = \"NONE\"\nside = \"BOTH\"\n");
+        if (!accessTransformers.isEmpty()) out.append("\n[[accessTransformers]]\nfile = \"META-INF/accesstransformer.cfg\"\n");
         for (Object m : meta.get("mixins") instanceof List<?> ? Json.array(meta.get("mixins")) : List.of()) {
             String config = m instanceof Map<?, ?> ? Json.text(Json.object(m), "config", "") : String.valueOf(m);
             out.append("\n[[mixins]]\nconfig = ").append(tomlString(config)).append('\n');
@@ -781,6 +794,20 @@ final class Convert {
             }
         }
         buildToFabric(minecraft, menu != null);
+        // Access transformer lines a rule added for NeoForge go away with the code that needed them.
+        Set<String> known = new HashSet<>();
+        for (Object rule : LoaderRules.list(rules.get("expressions"))) if (Json.object(rule).get("accessTransformers") instanceof Map<?, ?> at) known.addAll(LoaderRules.strings(Json.object(at).get("neoforge")));
+        boolean atLeft = false;
+        if (Files.isRegularFile(project.root.resolve(AT_FILE))) {
+            List<String> keep = new ArrayList<>();
+            for (String line : read(AT_FILE).lines().toList()) if (!known.contains(line.strip())) keep.add(line);
+            if (keep.stream().allMatch(l -> l.isBlank() || l.strip().startsWith("#"))) delete(AT_FILE);
+            else {
+                write(AT_FILE, String.join("\n", keep) + "\n");
+                atLeft = true;
+            }
+        }
+        if (!atLeft) toml.remove("[[accessTransformers]]");
         write("src/main/resources/fabric.mod.json", fabricJson(toml, mod, entrypoints, minecraft, menu != null));
         delete(metaFile);
         leftovers(List.of("net.neoforged."));

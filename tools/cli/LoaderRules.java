@@ -17,6 +17,8 @@ final class LoaderRules {
         String text;
         final List<String> applied = new ArrayList<>();
         final List<Left> left = new ArrayList<>();
+        /** Access transformer lines the converted code needs (NeoForge), from the rules that changed it. */
+        final Set<String> accessTransformers = new LinkedHashSet<>();
 
         Result(String text) {
             this.text = text;
@@ -427,12 +429,63 @@ final class LoaderRules {
         }
     }
 
+    /** The span of the method around index, or the whole text. */
+    static int[] scopeSpan(String text, int index) {
+        Matcher m = METHOD.matcher(text);
+        int start = -1;
+        while (m.find() && m.start() < index) start = m.start();
+        if (start < 0) return new int[] {0, text.length()};
+        int open = text.indexOf('{', start), end = close(text, code(text), open);
+        return end < 0 || end < index ? new int[] {0, text.length()} : new int[] {start, end};
+    }
+
+    /**
+     * A local variable that only holds the rule's receiver (FlammableBlockRegistry registry = FlammableBlockRegistry.getDefaultInstance();)
+     * is inlined, so the rule's pattern sees registry.add(...) as FlammableBlockRegistry.getDefaultInstance().add(...).
+     */
+    static String inline(String text, String type, String value) {
+        Pattern declaration = Pattern.compile("(?m)^[ \\t]*(?:final\\s+)?" + Pattern.quote(type) + "\\s+(\\w+)\\s*=\\s*" + Pattern.quote(value) + "\\s*;[ \\t]*\\n");
+        while (true) {
+            Matcher m = declaration.matcher(text);
+            boolean done = true;
+            while (m.find()) {
+                if (!code(text)[m.start() + m.group().indexOf(type.charAt(0))]) continue;
+                String name = m.group(1);
+                int[] span = scopeSpan(text, m.start());
+                String rest = text.substring(m.end(), span[1]);
+                boolean[] code = code(rest);
+                Matcher use = Pattern.compile("(?<![\\w$.])" + Pattern.quote(name) + "(?![\\w$])(\\s*\\.)?").matcher(rest);
+                boolean onlyReceiver = true;
+                StringBuilder out = new StringBuilder();
+                int last = 0;
+                while (use.find()) {
+                    if (!code[use.start()]) continue;
+                    if (use.group(1) == null) {
+                        onlyReceiver = false;
+                        break;
+                    }
+                    out.append(rest, last, use.start()).append(value).append('.');
+                    last = use.end();
+                }
+                if (!onlyReceiver) continue;
+                out.append(rest.substring(last));
+                text = text.substring(0, m.start()) + out + text.substring(span[1]);
+                done = false;
+                break;
+            }
+            if (done) return text;
+        }
+    }
+
     void expression(Result result, Map<String, Object> rule) {
         String source = Json.text(rule, from, ""), target = Json.text(rule, to, "");
         var imports = Json.object(rule.get("imports"));
         List<String> needed = strings(imports.get(from)), added = strings(imports.get(to));
         String text = result.text;
         for (String name : needed) if (!imported(text, name)) return;
+        if (rule.get("inline") instanceof Map<?, ?> inline && Json.object(inline).get(from) instanceof Map<?, ?> how) {
+            text = inline(text, Json.text(Json.object(how), "type", ""), Json.text(Json.object(how), "value", ""));
+        }
         List<Match> matches = find(text, source);
         if (matches.isEmpty()) return;
         StringBuilder out = new StringBuilder();
@@ -447,6 +500,7 @@ final class LoaderRules {
         for (String name : needed) text = dropImport(text, name);
         result.text = text;
         result.applied.add(Json.text(rule, "id", "expression"));
+        if (rule.get("accessTransformers") instanceof Map<?, ?> at) result.accessTransformers.addAll(strings(Json.object(at).get(to)));
     }
 
     String modBus() {

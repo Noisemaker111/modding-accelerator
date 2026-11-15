@@ -25,6 +25,16 @@
    "maven": "https://maven.neoforged.net/releases",
    "coordinate": "net.neoforged:bus:8.0.5",
    "docs": "https://docs.neoforged.net/docs/concepts/events"
+  },
+  "minecraft": {
+   "manifest": true,
+   "version": "26.3",
+   "docs": "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
+  },
+  "distmarker": {
+   "maven": "https://maven.neoforged.net/releases",
+   "coordinate": "net.neoforged:mergetool:2.0.7:api",
+   "docs": "https://docs.neoforged.net/docs/concepts/sides"
   }
  },
  "buses": {
@@ -41,6 +51,63 @@
    ]
   }
  },
+ "entrypoints": [
+  {
+   "id": "entrypoint-main",
+   "about": "fabric.mod.json main entrypoint (ModInitializer.onInitialize) <-> a @Mod class whose constructor runs onInitialize in NeoForge's first RegisterEvent, when every registry is open (GameData.unfreezeData runs before postRegisterEvents), so Registry.register calls work unchanged.",
+   "symbols": {
+    "fabric": [
+     "fabric-loader|net.fabricmc.api.ModInitializer#onInitialize"
+    ],
+    "neoforge": [
+     "fml|net.neoforged.fml.common.Mod",
+     "neoforge|net.neoforged.neoforge.registries.RegisterEvent#getRegistryKey",
+     "minecraft|net.minecraft.core.registries.Registries#ATTRIBUTE",
+     "bus|net.neoforged.bus.api.IEventBus#addListener"
+    ]
+   }
+  },
+  {
+   "id": "entrypoint-client",
+   "about": "client entrypoint (ClientModInitializer.onInitializeClient, which Fabric runs once Minecraft exists and before its options load) <-> @Mod(dist = Dist.CLIENT) whose constructor runs it in RegisterKeyMappingsEvent at HIGHEST: NeoForge's first client event after Minecraft.instance is set, posted one priority phase at a time (ModLoader.postEvent), so key mappings it adds at normal priority still register.",
+   "symbols": {
+    "fabric": [
+     "fabric-loader|net.fabricmc.api.ClientModInitializer#onInitializeClient"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent",
+     "bus|net.neoforged.bus.api.EventPriority#HIGHEST",
+     "fml|net.neoforged.fml.ModLoader#postEvent",
+     "distmarker|net.neoforged.api.distmarker.Dist#CLIENT"
+    ]
+   }
+  },
+  {
+   "id": "entrypoint-server",
+   "about": "server entrypoint (DedicatedServerModInitializer.onInitializeServer) <-> @Mod(dist = Dist.DEDICATED_SERVER) that runs it after the main entrypoint, in the first RegisterEvent at LOW priority.",
+   "symbols": {
+    "fabric": [
+     "fabric-loader|net.fabricmc.api.DedicatedServerModInitializer#onInitializeServer"
+    ],
+    "neoforge": [
+     "distmarker|net.neoforged.api.distmarker.Dist#DEDICATED_SERVER",
+     "bus|net.neoforged.bus.api.EventPriority#LOW"
+    ]
+   }
+  },
+  {
+   "id": "metadata",
+   "about": "fabric.mod.json <-> META-INF/neoforge.mods.toml: id, version, name, description, authors, license, contact, icon (iconFile from NeoForge 26.2, logoFile before), depends/recommends/suggests/breaks/conflicts <-> required/optional/incompatible/discouraged dependencies with Maven ranges, mixins <-> [[mixins]], access transformers <-> [[accessTransformers]].",
+   "symbols": {
+    "fabric": [
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getId"
+    ],
+    "neoforge": [
+     "fml|net.neoforged.fml.loading.moddiscovery.ModInfo#getModId"
+    ]
+   }
+  }
+ ],
  "expressions": [
   {
    "id": "config-dir",
@@ -169,6 +236,47 @@
     "fabric": "import net.fabricmc.loader.api.FabricLoader;\nclass A { void a() { var side = FabricLoader.getInstance().getEnvironmentType(); } }",
     "neoforge": "import net.neoforged.fml.loading.FMLEnvironment;\nclass A { void a() { var side = FMLEnvironment.getDist(); } }"
    }
+  },
+  {
+   "id": "flammable-block",
+   "about": "Fabric's FlammableBlockRegistry.add(block, burn, spread) fills the same two odds vanilla FireBlock.setFlammable(block, igniteOdds, burnOdds) keeps, in that order (Fabric's FireBlockMixin returns the first for getIgniteOdds and the second for getBurnOdds). NeoForge leaves setFlammable private, so the mod gets an access transformer for it; NeoForge 26.3 also reads a flammable data map.",
+   "fabric": "FlammableBlockRegistry.getDefaultInstance().add($block, $burn, $spread)",
+   "neoforge": "((FireBlock) Blocks.FIRE).setFlammable($block, $burn, $spread)",
+   "inline": {
+    "fabric": {
+     "type": "FlammableBlockRegistry",
+     "value": "FlammableBlockRegistry.getDefaultInstance()"
+    }
+   },
+   "imports": {
+    "fabric": [
+     "net.fabricmc.fabric.api.registry.FlammableBlockRegistry"
+    ],
+    "neoforge": [
+     "net.minecraft.world.level.block.Blocks",
+     "net.minecraft.world.level.block.FireBlock"
+    ]
+   },
+   "accessTransformers": {
+    "neoforge": [
+     "public net.minecraft.world.level.block.FireBlock setFlammable(Lnet/minecraft/world/level/block/Block;II)V"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.registry.FlammableBlockRegistry#getDefaultInstance",
+     "fabric-api|net.fabricmc.fabric.api.registry.FlammableBlockRegistry#add"
+    ],
+    "neoforge": [
+     "minecraft|net.minecraft.world.level.block.FireBlock#setFlammable",
+     "minecraft|net.minecraft.world.level.block.Blocks#FIRE"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;\nclass A {\n    void init() {\n        FlammableBlockRegistry registry = FlammableBlockRegistry.getDefaultInstance();\n        registry.add(FLAG, 30, 60);\n        registry.add(BANNER, 5, 20);\n    }\n}",
+    "neoforge": "import net.minecraft.world.level.block.Blocks;\nimport net.minecraft.world.level.block.FireBlock;\nclass A {\n    void init() {\n        ((FireBlock) Blocks.FIRE).setFlammable(FLAG, 30, 60);\n        ((FireBlock) Blocks.FIRE).setFlammable(BANNER, 5, 20);\n    }\n}",
+    "back": "import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;\nclass A {\n    void init() {\n        FlammableBlockRegistry.getDefaultInstance().add(FLAG, 30, 60);\n        FlammableBlockRegistry.getDefaultInstance().add(BANNER, 5, 20);\n    }\n}"
+   }
   }
  ],
  "types": [
@@ -186,8 +294,8 @@
      "fabric-loader|net.fabricmc.api.EnvType#SERVER"
     ],
     "neoforge": [
-     "fml|net.neoforged.api.distmarker.Dist#CLIENT",
-     "fml|net.neoforged.api.distmarker.Dist#DEDICATED_SERVER"
+     "distmarker|net.neoforged.api.distmarker.Dist#CLIENT",
+     "distmarker|net.neoforged.api.distmarker.Dist#DEDICATED_SERVER"
     ]
    },
    "test": {
