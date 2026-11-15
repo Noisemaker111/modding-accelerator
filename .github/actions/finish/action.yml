@@ -35,7 +35,7 @@ runs:
         include-hidden-files: true
         if-no-files-found: ignore
     - name: Stop Gradle daemons and servers so the cache can be read
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      if: ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.head_ref == 'ci/fast-ci')
       shell: bash
       run: |
         if [ "$RUNNER_OS" = Windows ]; then
@@ -45,7 +45,7 @@ runs:
         fi
     - name: Anything downloaded worth caching
       id: worth
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      if: ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.head_ref == 'ci/fast-ci')
       shell: bash
       # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
       # later run restored it and downloaded again, so a passing outage kept failing CI.
@@ -55,7 +55,7 @@ runs:
         echo "kb=$kb" >> "$GITHUB_OUTPUT"
         if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so the cache is not saved"; fi
     - name: Save the plan's downloads (main only)
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main' && inputs.hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
+      if: ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.head_ref == 'ci/fast-ci') && inputs.hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
       uses: actions/cache/save@v4
       with:
         path: |
@@ -67,7 +67,7 @@ runs:
           ~/.modaccel/tools
         key: ${{ inputs.plan }}-${{ runner.os }}-${{ hashFiles(format('{0}.github/actions/setup/keys/{1}', inputs.prefix, inputs.plan)) }}-${{ hashFiles(format('{0}build.gradle', inputs.prefix), format('{0}settings.gradle', inputs.prefix), format('{0}gradle.properties', inputs.prefix), format('{0}gradle/wrapper/gradle-wrapper.properties', inputs.prefix), format('{0}bench/server-plugins/manifest.json', inputs.prefix), format('{0}knowledge/mcprotocollib.json', inputs.prefix), format('{0}knowledge/viaproxy.json', inputs.prefix), format('{0}bench/real-mods/manifest.json', inputs.prefix)) }}
     - name: Save the compiled launcher (main only)
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      if: ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.head_ref == 'ci/fast-ci')
       uses: actions/cache/save@v4
       with:
         path: ${{ inputs.workspace }}/.modaccel/cli
