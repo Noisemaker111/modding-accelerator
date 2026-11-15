@@ -469,11 +469,15 @@ final class Port {
             );
             excludeOtherTargets(tasks, model);
             tasks.add(0, "-Dmodaccel.recompile=true");
+            // Every compile task whose inputs built reports its errors, not only the first one to fail.
+            tasks.add(0, "--continue");
             // Repair rounds only need the compiler; the full build (tests, jar) runs once when the source is clean.
             List<String> repairTasks = new ArrayList<>(explicitTask ? tasks : build.tasks(model, "classes"));
             if (repairTasks.isEmpty()) repairTasks = tasks;
             else excludeOtherTargets(repairTasks, model);
+            repairTasks.removeIf(argument -> argument.equals("--continue") || argument.equals("-Dmodaccel.recompile=true"));
             repairTasks.add(0, "-Dmodaccel.recompile=true");
+            repairTasks.add(0, "--continue");
             applySilentRules(from, to);
             renameClassesInStrings(map);
             var initial = build.gradle(tasks, explicitTask ? "port-initial-compile" : "port-initial-build");
