@@ -86,6 +86,8 @@ final class Target {
         );
         var project = Json.object(projects.size() == 1 ? projects.get(0) : modProjects.size() == 1 ? modProjects.get(0) : root);
         Set<String> loaders = Support.loaders(project);
+        // A NeoForge build (ModDevGradle or NeoGradle applied) that also lists a Forge artifact among its dependencies is NeoForge.
+        if (loaders.equals(Set.of("forge", "neoforge")) && String.valueOf(project.get("plugins")).toLowerCase(Locale.ROOT).matches("(?s).*(moddev|net\\.neoforged\\.gradle).*")) loaders = Set.of("neoforge");
         if (!loaders.equals(Set.of("fabric")) && !loaders.equals(Set.of("neoforge"))) throw new IOException(
             "Automatic target dependency setup requires one Fabric or NeoForge project; found " +
             loaders +
@@ -647,6 +649,8 @@ final class Target {
         for (String name : List.of("build.gradle", "build.gradle.kts")) if (
             Files.isRegularFile(build.project.root.resolve(name))
         ) scripts.add(build.project.root.resolve(name));
+        // A multi-module build keeps its parchment block in a module's script (Repurposed Structures' :common).
+        for (Path input : build.project.inputs()) if (input.getFileName().toString().matches("build\\.gradle(\\.kts)?") && !scripts.contains(input)) scripts.add(input);
         Pattern layered = Pattern.compile(
             "parchment\\(\\s*[\"']org\\.parchmentmc\\.data:parchment-([^:\"']+):([^@\"']+)@zip[\"']\\s*\\)"
         );
