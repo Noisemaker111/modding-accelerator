@@ -291,7 +291,8 @@ final class PackChecks {
     }
 
     static void dimensionRows(Context c, Map<String, Object> probe) {
-        for (Object d : Json.array(probe.get("dimensions"))) {
+        // A probe that stopped before reading the world has no dimensions; placements() reports that it stopped.
+        for (Object d : Json.array(probe.getOrDefault("dimensions", List.of()))) {
             var dimension = Json.object(d);
             if (dimension.get("write") == null && dimension.get("read") == null && dimension.get("error") == null) continue;
             List<Object> biomes = Json.array(dimension.getOrDefault("outOfRangeBiomes", List.of()));
@@ -398,7 +399,7 @@ final class PackChecks {
 
     static void changedBySave(Context c) {
         if (!c.opened()) return;
-        for (Object change : Json.array(c.probe().get("changed"))) c.add(
+        for (Object change : Json.array(c.probe().getOrDefault("changed", List.of()))) c.add(
             "changed-by-save",
             "problem",
             "Saving and reopening changed a block: " + Json.text(Json.object(change), "before", "") + " became " + Json.text(Json.object(change), "after", ""),
@@ -577,8 +578,12 @@ final class PackChecks {
     /** What stopped a start: the loader's or game's own words, and their causes. */
     static String failure(String log, List<String> failed) {
         List<String> lines = plain(log).lines().toList(), out = new ArrayList<>();
+        // Forge logs a class a mixin only probed for, on the wrong side, at FATAL from RuntimeDistCleaner; that alone stops nothing.
         for (String line : lines) if (
-            failed.stream().anyMatch(line::contains) || line.startsWith("Caused by:") || line.contains("Exception message:") || line.contains("/FATAL]")
+            failed.stream().anyMatch(line::contains) ||
+            line.startsWith("Caused by:") ||
+            line.contains("Exception message:") ||
+            (line.contains("/FATAL]") && !line.contains("RuntimeDistCleaner"))
         ) out.add(line.strip());
         if (out.isEmpty()) out.addAll(lines.subList(Math.max(0, lines.size() - 12), lines.size()));
         List<String> unique = new ArrayList<>(new LinkedHashSet<>(out));

@@ -176,8 +176,8 @@ final class PackLoaders {
         }
 
         /**
-         * Forge's own names (SRG: methods named m_12345_) when the game its install made has them, else the Mojang names
-         * newer Forge and every NeoForge since 1.20.2 run with. Read from the installed game itself: NeoForge calls its
+         * Forge's own names (SRG: methods named m_12345_, before 1.17 func_12345_a) when the game its install made has them,
+         * else the Mojang names newer Forge and every NeoForge since 1.20.2 run with. Read from the installed game itself: NeoForge calls its
          * Mojang-named jar -srg.jar too, so the file name proves nothing.
          */
         Names forgeNames(Path install, String minecraft) throws IOException {
@@ -192,12 +192,16 @@ final class PackLoaders {
                 ZipEntry type = zip.getEntry("net/minecraft/server/MinecraftServer.class");
                 if (type == null) return new Names("mojang", null);
                 String constants = new String(zip.getInputStream(type).readAllBytes(), StandardCharsets.ISO_8859_1);
-                if (!Pattern.compile("m_[0-9]+_").matcher(constants).find()) return new Names("mojang", null);
+                if (!Pattern.compile("m_[0-9]+_|func_[0-9]+_[a-z]").matcher(constants).find()) return new Names("mojang", null);
             }
-            Path mcp = PackCheck.file(
-                PackCheck.only(install.resolve("libraries/de/oceanlabs/mcp/mcp_config"), minecraft + "-"),
-                "-mappings-merged.txt"
-            );
+            // Official to SRG: MCP config's merged file from 1.17, its plain TSRG file before.
+            Path config = PackCheck.only(install.resolve("libraries/de/oceanlabs/mcp/mcp_config"), minecraft + "-");
+            Path mcp;
+            try {
+                mcp = PackCheck.file(config, "-mappings-merged.txt");
+            } catch (IOException older) {
+                mcp = PackCheck.file(config, "-mappings.txt");
+            }
             return new Names("srg", mcp);
         }
     }

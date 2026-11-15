@@ -157,9 +157,12 @@ public final class ModaccelPackProbe {
         }
     }
 
-    /** The running server, from whichever loader is present: Forge and NeoForge keep it in ServerLifecycleHooks, Fabric and Quilt in FabricLoader. */
+    /**
+     * The running server, from whichever loader is present: Forge and NeoForge keep it in ServerLifecycleHooks (Forge
+     * before 1.17 in its fml.server package), Fabric and Quilt in FabricLoader.
+     */
     static MinecraftServer findServer() {
-        for (String hooks : Arrays.asList("net.neoforged.neoforge.server.ServerLifecycleHooks", "net.minecraftforge.server.ServerLifecycleHooks")) {
+        for (String hooks : Arrays.asList("net.neoforged.neoforge.server.ServerLifecycleHooks", "net.minecraftforge.server.ServerLifecycleHooks", "net.minecraftforge.fml.server.ServerLifecycleHooks")) {
             Object server = call(hooks, "getCurrentServer");
             if (server instanceof MinecraftServer) return (MinecraftServer) server;
         }
