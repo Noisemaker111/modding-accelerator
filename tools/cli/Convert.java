@@ -855,6 +855,67 @@ final class Convert {
         );
     }
 
+    /** gradle.properties keys of a Fabric build that a NeoForge build has no use for: convert removes them. */
+    static final List<String> FABRIC_PROPERTIES = List.of(
+        "loader_version",
+        "fabric_loader_version",
+        "fabric_version",
+        "fabric_api_version",
+        "loom_version",
+        "fabric_loom_version",
+        "yarn_mappings",
+        "modmenu_version"
+    );
+
+    /**
+     * A Groovy map entry (key: project.NAME, or key: NAME) for a property the conversion removes, dropped with its comma:
+     * such entries only passed a loader's version to the metadata the other loader's build no longer has.
+     */
+    static String dropPropertyEntries(String gradle, List<String> names, List<String> dropped) {
+        for (String name : names) {
+            String value = "(?:project\\.)?" + Pattern.quote(name) + "(?![\\w.])";
+            for (String form : List.of(",\\s*(\\w+)\\s*:\\s*" + value, "(\\w+)\\s*:\\s*" + value + "\\s*,\\s*")) {
+                Matcher m = Pattern.compile(form).matcher(gradle);
+                StringBuilder out = new StringBuilder();
+                while (m.find()) {
+                    dropped.add(m.group(1) + ": " + name);
+                    m.appendReplacement(out, "");
+                }
+                m.appendTail(out);
+                gradle = out.toString();
+            }
+        }
+        return gradle;
+    }
+
+    /**
+     * Build code written against the source loader's Gradle plugin classes (import net.fabricmc.loom.task..., import
+     * net.neoforged.moddevgradle.internal...): the imports and every top-level statement that names an imported class go,
+     * since the other loader's plugin has no such class; each removed statement is named.
+     */
+    String dropPluginCode(String gradle, String pluginPackage) {
+        Matcher m = Pattern.compile("(?m)^import\\s+(" + Pattern.quote(pluginPackage) + "[\\w.]*\\.(\\w+))\\s*;?[ \\t]*\\n?").matcher(gradle);
+        List<String> simple = new ArrayList<>();
+        while (m.find()) simple.add(m.group(2));
+        if (simple.isEmpty()) return gradle;
+        gradle = m.reset().replaceAll("");
+        Pattern names = Pattern.compile("\\b(?:" + String.join("|", simple) + ")\\b");
+        List<String> removed = new ArrayList<>();
+        gradle = dropStatements(gradle, s -> names.matcher(s).find(), removed);
+        for (String statement : removed) leave(
+            "build.gradle",
+            0,
+            statement.strip().lines().findFirst().orElse(""),
+            "build code using " + pluginPackage + " classes, which the other loader's Gradle plugin does not have; removed"
+        );
+        return gradle;
+    }
+
+    /** The loader a publishing plugin names (mod-publish-plugin's modLoaders.add, publishMods' loaders) follows the build. */
+    static String publishLoader(String gradle, String from, String to) {
+        return gradle.replaceAll("(modLoaders\\.add\\(\\s*[\"'])" + from + "([\"']\\s*\\))", "$1" + to + "$2");
+    }
+
     /** Fabric-only libraries the Fabric bridge mirrors, by group:artifact, when the code uses the bridge (bridges[].replaces). */
     final Map<String, String> fabricBridgeReplaces = new LinkedHashMap<>();
 
@@ -2013,6 +2074,12 @@ final class Convert {
             .replace("filesMatching(\"fabric.mod.json\")", "filesMatching(\"META-INF/neoforge.mods.toml\")")
             .replace("filesMatching('fabric.mod.json')", "filesMatching('META-INF/neoforge.mods.toml')");
         gradle = gradle.replaceAll("\\bremapJar\\b", "jar").replaceAll("\\bremapSourcesJar\\b", "sourcesJar");
+        // The properties the Fabric build had and NeoForge's has not: a map entry that only passed one to the metadata goes.
+        List<String> droppedEntries = new ArrayList<>();
+        gradle = dropPropertyEntries(gradle, FABRIC_PROPERTIES, droppedEntries);
+        if (!droppedEntries.isEmpty()) notes.add("Build: removed " + String.join(", ", droppedEntries) + " (Fabric's properties, which only filled fabric.mod.json).");
+        gradle = publishLoader(gradle, "fabric", "neoforge");
+        gradle = dropPluginCode(gradle, "net.fabricmc.loom");
         // A line of code (not a comment) that still names Fabric.
         boolean[] gradleCode = LoaderRules.code(gradle);
         for (Matcher named = Pattern.compile("(?m)^.*fabricmc.*$").matcher(gradle); named.find(); ) {
@@ -2021,15 +2088,7 @@ final class Convert {
         }
         write("build.gradle", gradle.replaceAll("\\n{3,}", "\n\n"));
         Map<String, String> props = new LinkedHashMap<>();
-        for (String key : List.of(
-            "loader_version",
-            "fabric_loader_version",
-            "fabric_version",
-            "fabric_api_version",
-            "loom_version",
-            "yarn_mappings",
-            "modmenu_version"
-        )) props.put(key, null);
+        for (String key : FABRIC_PROPERTIES) props.put(key, null);
         props.put("neo_version", neo);
         write("gradle.properties", setProperties(read("gradle.properties"), props));
         String settings = read("settings.gradle");
@@ -3437,6 +3496,17 @@ final class Convert {
         gradle = gradle
             .replace("filesMatching(\"META-INF/neoforge.mods.toml\")", "filesMatching(\"fabric.mod.json\")")
             .replace("filesMatching('META-INF/neoforge.mods.toml')", "filesMatching('fabric.mod.json')");
+        // ModDevGradle's Jar-in-Jar: Loom nests include dependencies in its own jar task, so the switch goes and the
+        // jarJar task's output is Loom's jar (remapJar before 26.1).
+        List<String> jarJarDropped = new ArrayList<>();
+        gradle = dropStatements(gradle, s -> s.strip().matches("jarJar\\.enable\\(\\)\\s*;?"), jarJarDropped);
+        if (!jarJarDropped.isEmpty()) notes.add("Build: removed jarJar.enable(); Loom nests include dependencies in its jar.");
+        gradle = gradle.replaceAll("\\btasks\\.jarJar\\b", remap ? "tasks.remapJar" : "tasks.jar");
+        gradle = publishLoader(gradle, "neoforge", "fabric");
+        gradle = dropPluginCode(gradle, "net.neoforged.moddevgradle");
+        gradle = dropPluginCode(gradle, "net.neoforged.gradle");
+        // Gradle 9, which Loom needs, has no JvmVendorSpec.JETBRAINS constant; matching("JetBrains") picks the same JDKs.
+        gradle = gradle.replaceAll("\\bJvmVendorSpec\\.JETBRAINS\\b", "JvmVendorSpec.matching(\"JetBrains\")");
         if (!neutralDependencies.isEmpty() && !gradle.contains("exclude group: 'net.neoforged', module: 'neoforge'")) {
             // A dependency kept as it is can be a NeoForge mod whose own metadata asks for NeoForge; Fabric's build has none.
             gradle +=

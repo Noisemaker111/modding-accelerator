@@ -58,7 +58,8 @@ for (var registry : net.minecraft.core.registries.BuiltInRegistries.REGISTRY) {
 return out.toString();
 """
 
-# For a mod that registers nothing: which of its mixins Mixin applied to which game classes. The configs Mixin selected
+# For a mod that registers nothing: which of its mixins Mixin applied to which game classes (the mixins of a convert
+# bridge, which stand in for the other loader's own patches, are not the mod's and are left out). The configs Mixin selected
 # live in its active transformer's processor (Mixins.getConfigs() is empty once they are selected). Every target of a
 # config whose package is the mod's is loaded (not initialised); a merged method carries @MixinMerged (kept at run time)
 # naming its mixin, and an accessor or interface mixin is an interface the target now implements.
@@ -75,6 +76,8 @@ for (Object item : (java.util.List<?>) configsField.get(processor)) {
     var config = (org.spongepowered.asm.mixin.extensibility.IMixinConfig) item;
     String pkg = config.getMixinPackage();
     if (pkg == null || !(PACKAGES)) continue;
+    // A convert bridge's own mixins are the other loader's hooks (NeoForge's patches, Fabric API's mixins), not the mod's.
+    if (pkg.contains(".loaderbridge.") || pkg.contains(".fabricbridge.")) continue;
     for (String target : config.getTargets()) {
         String name = target.replace('/', '.');
         try {

@@ -1060,6 +1060,19 @@ public final class PortableTests {
             Convert.loomConfigurationsToNeoForge("\tmodImplementation include(\"a:b:1\")\n").equals("\timplementation jarJar(\"a:b:1\")\n"),
             "Loom's configurations become ModDevGradle's, and only whole configuration names"
         );
+        // Found by the convert sweep (SeedMapper): processResources passed a removed Fabric property to the metadata.
+        List<String> droppedEntries = new ArrayList<>();
+        String expandMap = Convert.dropPropertyEntries(
+            "def props = [version: project.mod_version, loader_version: project.fabric_loader_version]\ndef other = [fabric_loader_version: fabric_loader_version, x: 1]\n",
+            Convert.FABRIC_PROPERTIES,
+            droppedEntries
+        );
+        check(
+            expandMap.equals("def props = [version: project.mod_version]\ndef other = [x: 1]\n") &&
+            droppedEntries.size() == 2 &&
+            Convert.publishLoader("publishMods {\n\tmodLoaders.add(\"neoforge\")\n}\n", "neoforge", "fabric").contains("modLoaders.add(\"fabric\")"),
+            "map entries that only passed a removed loader property go with their comma, and the publishing plugin names the new loader: " + expandMap
+        );
         List<String> unconverted = new ArrayList<>();
         List<String> transformers = Convert.widenerToTransformer(
             "classTweaker v1 official\n# comment\naccessible class net/minecraft/A$B\nextendable class net/minecraft/C\n" +
