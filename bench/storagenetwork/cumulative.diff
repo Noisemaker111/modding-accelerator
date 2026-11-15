@@ -1,0 +1,740 @@
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/DimPos.java b/src/main/java/com/lothrazar/storagenetwork/api/DimPos.java
+index 2068c028..51cde2fd 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/DimPos.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/DimPos.java
+@@ -72,9 +72,14 @@ public class DimPos implements INBTSerializable<CompoundTag> {  // NOPMD
+     return getTileEntity(tileEntityClassOrInterface, getWorld());
+   }
+ 
++  // Dimension strings and keys convert the same way every time: ResourceKey.create interns its result,
++  // so a remembered key is the very object a fresh parse would return.
++  private static final java.util.concurrent.ConcurrentHashMap<String, ResourceKey<Level>> DIMENSION_KEYS = new java.util.concurrent.ConcurrentHashMap<>();
++  private static final java.util.concurrent.ConcurrentHashMap<ResourceKey<Level>, String> DIMENSION_NAMES = new java.util.concurrent.ConcurrentHashMap<>();
++
+   public static String dimensionToString(Level w) {
+     //example: returns "minecraft:overworld" resource location
+-    return w.dimension().location().toString();
++    return DIMENSION_NAMES.computeIfAbsent(w.dimension(), key -> key.location().toString());
+   }
+ 
+   public static final String NBT_Z = "Z";
+@@ -104,7 +109,16 @@ public class DimPos implements INBTSerializable<CompoundTag> {  // NOPMD
+   }
+ 
+   public static ServerLevel stringDimensionLookup(String s, MinecraftServer serv) {
+-    return stringDimensionLookup(ResourceLocation.tryParse(s), serv);
++    ResourceKey<Level> worldKey = DIMENSION_KEYS.get(s);
++    if (worldKey == null) {
++      ResourceLocation location = ResourceLocation.tryParse(s);
++      if (location == null) {
++        return stringDimensionLookup(location, serv);
++      }
++      worldKey = ResourceKey.create(Registries.DIMENSION, location);
++      DIMENSION_KEYS.put(s, worldKey);
++    }
++    return serv.getLevel(worldKey);
+   }
+ 
+   public static ServerLevel stringDimensionLookup(ResourceLocation s, MinecraftServer serv) {
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/batch/Request.java b/src/main/java/com/lothrazar/storagenetwork/api/batch/Request.java
+index 11e6f907..8b768c28 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/batch/Request.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/batch/Request.java
+@@ -22,6 +22,10 @@ public class Request {
+     return count;
+   }
+ 
++  public CapabilityImportExport getStorage() {
++    return storage;
++  }
++
+   public int getPriority() {
+     return storage.getPriority();
+   }
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java
+index 42a8060a..e3ddf484 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityConnectableDefault.java
+@@ -33,6 +33,8 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+   private EnumStorageDirection filterDirection = EnumStorageDirection.BOTH;
+   private Direction inventoryFace;
+   private int priority;
++  // The target inventory's item handler, from a NeoForge capability cache while the target is loaded.
++  private final TargetItemHandler targetHandler = new TargetItemHandler();
+ 
+ //  CapabilityConnectableLink() {
+ //    connectable = new CapabilityConnectable();
+@@ -72,7 +74,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return Collections.emptyList();
+     }
+@@ -107,7 +109,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     try {
+       // Test whether the connected block has the IItemHandler capability
+-      IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++      IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+       if (itemHandler == null) {
+         return stack;
+       }
+@@ -139,7 +141,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return ItemStack.EMPTY;
+     }
+@@ -197,7 +199,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return 0;
+     }
+@@ -218,7 +220,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+       return 0;
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return 0;
+     }
+@@ -238,7 +240,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+       return 0;
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return 0;
+     }
+@@ -316,14 +318,58 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+   public ItemStack extractFromSlot(int slot, int amount, boolean simulate) {
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getCapability(Capabilities.ItemHandler.BLOCK,
+-        inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return ItemStack.EMPTY;
+     }
+     return itemHandler.extractItem(slot, amount, simulate);
+   }
+ 
++  /** True when addToStackProviderBatch lists nothing from this storage, before it looks at any slot. */
++  public boolean listsNoProviders() {
++    return filterDirection == EnumStorageDirection.IN || inventoryFace == null || connectable.getPos() == null;
++  }
++
++  /** The vanilla barrels or chests this storage reads, when they are plain (PlainInventories); else null. */
++  public List<BlockEntity> plainInventory() {
++    if (inventoryFace == null || connectable == null || connectable.getPos() == null) {
++      return null;
++    }
++    DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
++    return PlainInventories.of(itemHandler, inventoryPos.resolveLevel(), inventoryPos.getBlockPos());
++  }
++
++  /**
++   * For a plain storage: batch.extractStacks(this, slot, item) for each slot addToStackProviderBatch would list as a provider
++   * of item, in slot order, deciding each slot just before it is used, until done says every request is met. Returns false
++   * when it stopped for done.
++   */
++  public boolean extractProviders(com.lothrazar.storagenetwork.api.batch.RequestBatch batch, net.minecraft.world.item.Item item, java.util.function.BooleanSupplier done) {
++    if (listsNoProviders()) {
++      return true;
++    }
++    DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
++    if (itemHandler == null) {
++      return true;
++    }
++    for (int slot = 0; slot < itemHandler.getSlots(); slot++) {
++      if (itemHandler.getStackInSlot(slot).getItem() != item) {
++        continue;
++      }
++      if (done.getAsBoolean()) {
++        return false;
++      }
++      ItemStack stack = itemHandler.extractItem(slot, 1, true);
++      if (stack == null || stack.isEmpty() || filters.isStackFiltered(stack) || stack.getItem() != item) {
++        continue;
++      }
++      batch.extractStacks(this, slot, item);
++    }
++    return true;
++  }
++
+   @Override
+   public void addToStackProviderBatch(Batch<StackProvider> availableItems) {
+     // If this storage is configured to only export from the network, do not
+@@ -340,8 +386,7 @@ public class CapabilityConnectableDefault implements CapabilityConnectable, INBT
+     }
+     DimPos inventoryPos = connectablePos.offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getCapability(Capabilities.ItemHandler.BLOCK,
+-        inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return;
+     }
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
+index 34722770..3f9adc14 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/CapabilityImportExportDefault.java
+@@ -47,6 +47,8 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+   private final FilterItemStackHandler filters = new FilterItemStackHandler();
+   private int priority = 0;
+   private Direction inventoryFace;
++  // The target inventory's item handler, from a NeoForge capability cache while the target is loaded.
++  private final TargetItemHandler targetHandler = new TargetItemHandler();
+   public ItemStack operationStack = ItemStack.EMPTY;
+   public int operationLimit = 0;
+   public int operationType = OpCompareType.LESS.ordinal();
+@@ -86,7 +88,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return Collections.emptyList();
+     }
+@@ -179,6 +181,16 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+     }
+   }
+ 
++  /** The vanilla barrels or chests this cable inserts into, when they are plain (PlainInventories); else null. */
++  public List<net.minecraft.world.level.block.entity.BlockEntity> plainTarget() {
++    if (inventoryFace == null || connectable == null || connectable.getPos() == null) {
++      return null;
++    }
++    DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
++    return PlainInventories.of(itemHandler, inventoryPos.resolveLevel(), inventoryPos.getBlockPos());
++  }
++
+   @Override
+   public EnumStorageDirection ioDirection() {
+     return direction;
+@@ -201,7 +213,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return stack;
+     }
+@@ -214,7 +226,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+     // Test whether the connected block has the IItemHandler capability
+-    IItemHandler itemHandler = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    IItemHandler itemHandler = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+     if (itemHandler == null) {
+       return Collections.emptyList();
+     }
+@@ -248,7 +260,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+       return null;
+     }
+     DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+-    return inventoryPos.getItemHandler(inventoryFace.getOpposite());
++    return targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+   }
+ 
+   @Override
+@@ -351,7 +363,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+         // STOCK upgrade means
+         try {
+           DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+-          IItemHandler targetInventory = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++          IItemHandler targetInventory = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+           // request with false to see how many even exist in there.
+           int stillNeeds = UtilInventory.containsAtLeastHowManyNeeded(targetInventory, matcher.getStack(),
+               matcher.getStack().getCount());
+@@ -394,7 +406,7 @@ public class CapabilityImportExportDefault implements INBTSerializable<CompoundT
+         if (this.isStockMode()) {
+           int filterSize = this.getFilters().getStackCount(stackCurrent);
+           DimPos inventoryPos = connectable.getPos().offset(inventoryFace);
+-          IItemHandler targetInventory = inventoryPos.getItemHandler(inventoryFace.getOpposite());
++          IItemHandler targetInventory = targetHandler.get(inventoryPos, inventoryFace.getOpposite());
+           //request with false to see how many even exist in there.
+           int chestHowMany = UtilInventory.countHowMany(targetInventory, stackCurrent);
+           //so if chest=37 items of that kind
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/FilterItemStackHandler.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/FilterItemStackHandler.java
+index 34c9a5db..ae617dc9 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/FilterItemStackHandler.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/FilterItemStackHandler.java
+@@ -65,10 +65,15 @@ public class FilterItemStackHandler extends ItemStackHandlerEx {
+   }
+ 
+   public boolean isStackFiltered(ItemStack stack) {
+-    if (isAllowList) {
+-      return getStackMatchers().stream().noneMatch(matcher -> matcher.match(stack));
++    // The matchers getStackMatchers() would make, one per slot in slot order, asked directly.
++    boolean matched = false;
++    for (int slot = 0; slot < getSlots(); slot++) {
++      if (ItemStackMatcherDefault.matches(getStackInSlot(slot), nbt, stack)) {
++        matched = true;
++        break;
++      }
+     }
+-    return getStackMatchers().stream().anyMatch(matcher -> matcher.match(stack));
++    return isAllowList ? !matched : matched;
+   }
+ 
+   public boolean allAreEmpty() {
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/ItemStackMatcherDefault.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/ItemStackMatcherDefault.java
+index 909a4335..cf5f8ec7 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/ItemStackMatcherDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/ItemStackMatcherDefault.java
+@@ -76,6 +76,13 @@ public class ItemStackMatcherDefault implements ItemStackMatcher {
+ 
+   @Override
+   public boolean match(ItemStack stackIn) {
++    return matches(stack, nbt, stackIn);
++  }
++
++  /**
++   * What a matcher of this filter stack and nbt flag answers for stackIn, without making the matcher.
++   */
++  public static boolean matches(ItemStack stack, boolean nbt, ItemStack stackIn) {
+     if (stackIn.isEmpty()) {
+       return false;
+     }
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java
+new file mode 100644
+index 00000000..0889ee62
+--- /dev/null
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/PlainInventories.java
+@@ -0,0 +1,57 @@
++package com.lothrazar.storagenetwork.api.capabilities;
++
++import java.util.List;
++import net.minecraft.core.BlockPos;
++import net.minecraft.world.CompoundContainer;
++import net.minecraft.world.Container;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.ChestBlock;
++import net.minecraft.world.level.block.entity.BarrelBlockEntity;
++import net.minecraft.world.level.block.entity.BlockEntity;
++import net.minecraft.world.level.block.entity.ChestBlockEntity;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.block.state.properties.ChestType;
++import net.neoforged.neoforge.items.IItemHandler;
++import net.neoforged.neoforge.items.wrapper.InvWrapper;
++
++/**
++ * Vanilla barrels and chests behind a plain InvWrapper, the inventories whose slots behave independently: a simulated
++ * extract returns the slot's own item or nothing and changes nothing, an extract of 0 returns nothing, and taking from
++ * one slot changes no other. A chest that still has loot to unpack is not plain: reading any of its slots fills it.
++ */
++public final class PlainInventories {
++
++  private PlainInventories() {}
++
++  /** The block entities whose slots handler reads and writes, at pos in level, when they are plain; else null. */
++  public static List<BlockEntity> of(IItemHandler handler, Level level, BlockPos pos) {
++    if (handler == null || handler.getClass() != InvWrapper.class || level == null || pos == null) {
++      return null;
++    }
++    Container inventory = ((InvWrapper) handler).getInv();
++    if (inventory != null && (inventory.getClass() == BarrelBlockEntity.class || inventory.getClass() == ChestBlockEntity.class)) {
++      return plain((BlockEntity) inventory) ? List.of((BlockEntity) inventory) : null;
++    }
++    if (inventory == null || inventory.getClass() != CompoundContainer.class) {
++      return null;
++    }
++    BlockState state = level.getBlockState(pos);
++    if (!state.hasProperty(ChestBlock.TYPE) || state.getValue(ChestBlock.TYPE) == ChestType.SINGLE) {
++      return null;
++    }
++    BlockEntity here = level.getBlockEntity(pos);
++    BlockEntity other = level.getBlockEntity(pos.relative(ChestBlock.getConnectedDirection(state)));
++    if (here == null || other == null || here == other || here.getClass() != ChestBlockEntity.class || other.getClass() != ChestBlockEntity.class) {
++      return null;
++    }
++    CompoundContainer both = (CompoundContainer) inventory;
++    if (!both.contains((Container) here) || !both.contains((Container) other) || !plain(here) || !plain(other)) {
++      return null;
++    }
++    return List.of(here, other);
++  }
++
++  private static boolean plain(BlockEntity entity) {
++    return ((net.minecraft.world.RandomizableContainer) entity).getLootTable() == null;
++  }
++}
+diff --git a/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
+new file mode 100644
+index 00000000..85c7dfb7
+--- /dev/null
++++ b/src/main/java/com/lothrazar/storagenetwork/api/capabilities/TargetItemHandler.java
+@@ -0,0 +1,42 @@
++package com.lothrazar.storagenetwork.api.capabilities;
++
++import com.lothrazar.storagenetwork.api.DimPos;
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.Direction;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.level.Level;
++import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
++import net.neoforged.neoforge.capabilities.Capabilities;
++import net.neoforged.neoforge.items.IItemHandler;
++
++/**
++ * The item handler a cable reads and writes, from a NeoForge capability cache of its target.
++ *
++ * get(inventoryPos, side) returns what inventoryPos.getItemHandler(side) returns. NeoForge invalidates the cache when a
++ * block entity is placed or removed there, when its chunk loads or unloads, and whenever a provider's answer changes
++ * otherwise (its contract for providers; vanilla chests invalidate when they join or leave a double chest, and the
++ * composter's handler forwards to its current state). The cache is used only while the target is loaded, as a fresh
++ * lookup would load the chunk.
++ */
++public final class TargetItemHandler {
++
++  private BlockCapabilityCache<IItemHandler, Direction> cache;
++  private ServerLevel level;
++  private BlockPos pos;
++  private Direction side;
++
++  public IItemHandler get(DimPos inventoryPos, Direction side) {
++    Level resolved = inventoryPos.resolveLevel();
++    BlockPos blockPos = inventoryPos.getBlockPos();
++    if (!(resolved instanceof ServerLevel serverLevel) || blockPos == null || !serverLevel.isLoaded(blockPos)) {
++      return inventoryPos.getItemHandler(side);
++    }
++    if (cache == null || level != serverLevel || this.side != side || !blockPos.equals(pos)) {
++      cache = BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, serverLevel, blockPos, side);
++      level = serverLevel;
++      pos = blockPos;
++      this.side = side;
++    }
++    return cache.getCapability();
++  }
++}
+diff --git a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
+index 9107b0c3..8f47ff07 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
+@@ -55,6 +55,170 @@ public class NetworkModuleDefault implements NetworkModule {
+   NetworkCache ch = new NetworkCache();
+   private Set<DimPos> connectables = new HashSet<>();
+   private boolean shouldRefresh = true;
++  // NeoForge capability caches for this network's nodes, by node position. NeoForge invalidates them when a
++  // block entity is placed or removed and when a chunk loads or unloads; the mod's node capabilities are
++  // fields of their block entity, so a cached answer is the one a fresh lookup would give.
++  private final Map<DimPos, NodeCaches> nodeCaches = new HashMap<>();
++  private Set<DimPos> nodeCachesFor;
++
++  private static final class NodeCaches {
++
++    final net.minecraft.server.level.ServerLevel level;
++    final BlockPos pos;
++    final Runnable invalidated;
++    private net.neoforged.neoforge.capabilities.BlockCapabilityCache<ConnectableNode, Direction> connectable;
++    private net.neoforged.neoforge.capabilities.BlockCapabilityCache<CapabilityConnectable, Direction> storage;
++    private net.neoforged.neoforge.capabilities.BlockCapabilityCache<com.lothrazar.storagenetwork.api.capabilities.CapabilityImportExport, Direction> io;
++    private net.neoforged.neoforge.capabilities.BlockCapabilityCache<com.lothrazar.storagenetwork.api.capabilities.CapabilityProcessing, Direction> processing;
++
++    NodeCaches(net.minecraft.server.level.ServerLevel level, BlockPos pos, Runnable invalidated) {
++      this.level = level;
++      this.pos = pos;
++      this.invalidated = invalidated;
++    }
++
++    @SuppressWarnings("unchecked")
++    <T> T get(net.neoforged.neoforge.capabilities.BlockCapability<T, Direction> capability) {
++      if (capability == StorageNetworkCapabilities.CONNECTABLE) {
++        if (connectable == null) {
++          connectable = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(StorageNetworkCapabilities.CONNECTABLE, level, pos, null, () -> true, invalidated);
++        }
++        return (T) connectable.getCapability();
++      }
++      if (capability == StorageNetworkCapabilities.CONNECTABLE_ITEM_STORAGE) {
++        if (storage == null) {
++          storage = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(StorageNetworkCapabilities.CONNECTABLE_ITEM_STORAGE, level, pos, null, () -> true, invalidated);
++        }
++        return (T) storage.getCapability();
++      }
++      if (capability == StorageNetworkCapabilities.CONNECTABLE_AUTO_IO) {
++        if (io == null) {
++          io = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(StorageNetworkCapabilities.CONNECTABLE_AUTO_IO, level, pos, null, () -> true, invalidated);
++        }
++        return (T) io.getCapability();
++      }
++      if (capability == StorageNetworkCapabilities.PROCESSING) {
++        if (processing == null) {
++          processing = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(StorageNetworkCapabilities.PROCESSING, level, pos, null, () -> true, invalidated);
++        }
++        return (T) processing.getCapability();
++      }
++      return level.getCapability(capability, pos, null);
++    }
++  }
++
++  /**
++   * What pos.getCapability(capability, null) returns, answered from a capability cache when pos is a loaded node of this network.
++   */
++  public <T> T nodeCapability(DimPos pos, net.neoforged.neoforge.capabilities.BlockCapability<T, Direction> capability) {
++    net.minecraft.world.level.Level level = pos.resolveLevel();
++    BlockPos blockPos = pos.getBlockPos();
++    if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel) || blockPos == null || !serverLevel.isLoaded(blockPos)) {
++      uncached++;
++      return pos.getCapability(capability, null);
++    }
++    if (nodeCachesFor != connectables) {
++      nodeCaches.keySet().retainAll(connectables);
++      nodeCachesFor = connectables;
++    }
++    NodeCaches node = nodeCaches.get(pos);
++    if (node == null || node.level != serverLevel || !node.pos.equals(blockPos)) {
++      if (!connectables.contains(pos)) {
++        uncached++;
++        return pos.getCapability(capability, null);
++      }
++      node = new NodeCaches(serverLevel, blockPos, () -> nodesInvalidated = true);
++      nodeCaches.put(pos, node);
++    }
++    return node.get(capability);
++  }
++
++  // Lookups nodeCapability answered without a cache, and whether NeoForge invalidated one of the caches.
++  private int uncached;
++  private boolean nodesInvalidated;
++  private TickPlan plan;
++
++  /**
++   * A node of getConnectables() with the position it had and the processing and import/export capabilities found there
++   * when the plan was made.
++   */
++  public record PlannedNode(ConnectableNode node, DimPos pos, com.lothrazar.storagenetwork.api.capabilities.CapabilityProcessing processing,
++      com.lothrazar.storagenetwork.api.capabilities.CapabilityImportExport io) {}
++
++  private record TickPlan(Set<DimPos> madeFor, List<DimPos> positions, List<PlannedNode> nodes) {}
++
++  /**
++   * The nodes getConnectables() would return now, in its iteration order, each with what a lookup of its capabilities
++   * finds; or null when that is not known without the lookups, and the caller must make them. A plan holds while the
++   * connectables set is the one it was made for, every position stays loaded and no node capability cache was
++   * invalidated: then the same nodes are found, in the same order (a HashSet of the same objects added in the same order),
++   * with the same capabilities, which are fields of their block entities.
++   */
++  public List<PlannedNode> plannedNodes() {
++    if (plan != null && (plan.madeFor() != connectables || nodesInvalidated)) {
++      plan = null;
++    }
++    if (plan != null) {
++      for (DimPos pos : plan.positions()) {
++        if (!pos.isLoaded()) {
++          plan = null;
++          break;
++        }
++      }
++    }
++    if (plan == null) {
++      plan = makePlan();
++    }
++    return plan == null ? null : plan.nodes();
++  }
++
++  private TickPlan makePlan() {
++    nodesInvalidated = false;
++    int before = uncached;
++    Set<DimPos> madeFor = connectables;
++    List<DimPos> positions = new ArrayList<>(new HashSet<>(connectables));
++    for (DimPos pos : positions) {
++      if (!pos.isLoaded()) {
++        return null;
++      }
++    }
++    Set<ConnectableNode> nodes = getConnectables();
++    if (nodes.size() != positions.size()) {
++      // A position without a node: getConnectables() logs it on every call, so keep making the call.
++      return null;
++    }
++    List<PlannedNode> planned = new ArrayList<>(nodes.size());
++    for (ConnectableNode node : nodes) {
++      DimPos pos = node == null ? null : node.getPos();
++      if (pos == null) {
++        planned.add(new PlannedNode(node, null, null, null));
++        continue;
++      }
++      planned.add(new PlannedNode(node, pos, nodeCapability(pos, StorageNetworkCapabilities.PROCESSING), nodeCapability(pos, StorageNetworkCapabilities.CONNECTABLE_AUTO_IO)));
++    }
++    if (uncached != before || nodesInvalidated || madeFor != connectables) {
++      return null;
++    }
++    return new TickPlan(madeFor, positions, planned);
++  }
++
++  /** What nodeCapability(node.getPos(), PROCESSING) returns now. */
++  public com.lothrazar.storagenetwork.api.capabilities.CapabilityProcessing processingOf(PlannedNode planned) {
++    DimPos pos = planned.node().getPos();
++    if (!nodesInvalidated && planned.pos() != null && (pos == planned.pos() || planned.pos().equals(pos))) {
++      return planned.processing();
++    }
++    return nodeCapability(pos, StorageNetworkCapabilities.PROCESSING);
++  }
++
++  /** What nodeCapability(node.getPos(), CONNECTABLE_AUTO_IO) returns now. */
++  public com.lothrazar.storagenetwork.api.capabilities.CapabilityImportExport ioOf(PlannedNode planned) {
++    DimPos pos = planned.node().getPos();
++    if (!nodesInvalidated && planned.pos() != null && (pos == planned.pos() || planned.pos().equals(pos))) {
++      return planned.io();
++    }
++    return nodeCapability(pos, StorageNetworkCapabilities.CONNECTABLE_AUTO_IO);
++  }
+ 
+   /**
+    * gets list of validated connected nodes, ignoring content or subtype
+@@ -70,7 +234,7 @@ public class NetworkModuleDefault implements NetworkModule {
+       if (!pos.isLoaded()) {
+         continue;
+       }
+-      ConnectableNode cap = pos.getCapability(StorageNetworkCapabilities.CONNECTABLE, null);
++      ConnectableNode cap = nodeCapability(pos, StorageNetworkCapabilities.CONNECTABLE);
+       if (cap == null) {
+         LOGGER.debug("Somehow stored a dimpos that is not connectable... Skipping " + pos);
+         continue;
+@@ -370,8 +534,31 @@ public class NetworkModuleDefault implements NetworkModule {
+     if (batch == null) {
+       return;
+     }
++    List<CapabilityConnectable> storages = getSortedConnectableStorage();
++    if (providersStayPut(batch, storages)) {
++      // The providers listed below, taken item by item in the same order, each decided just before it is used. Nothing
++      // the batch does changes a slot not yet reached: extracting changes only the provider's own slot of a plain
++      // inventory, and no export target is a storage. Once every request for an item has count 0, each later provider's
++      // extractStacks is a simulation that changes nothing, so the scan stops there.
++      for (Item item : batch.keySet()) {
++        java.util.function.BooleanSupplier met = () -> {
++          for (com.lothrazar.storagenetwork.api.batch.Request request : batch.get(item)) {
++            if (request.getCount() != 0) {
++              return false;
++            }
++          }
++          return true;
++        };
++        for (CapabilityConnectable storage : storages) {
++          if (!((com.lothrazar.storagenetwork.api.capabilities.CapabilityConnectableDefault) storage).extractProviders(batch, item, met)) {
++            break;
++          }
++        }
++      }
++      return;
++    }
+     Batch<StackProvider> availableItems = new Batch<StackProvider>();
+-    for (CapabilityConnectable storage : getSortedConnectableStorage()) {
++    for (CapabilityConnectable storage : storages) {
+       storage.addToStackProviderBatch(availableItems);
+     }
+     for (Item item : batch.keySet()) {
+@@ -384,6 +571,49 @@ public class NetworkModuleDefault implements NetworkModule {
+     }
+   }
+ 
++  /**
++   * True when every storage that lists providers and every export target is a plain vanilla inventory (PlainInventories),
++   * no block entity is behind two storages, and no export target is a storage: then the batch changes no slot it has not
++   * reached yet, and providers can be decided as they are reached instead of all first.
++   */
++  private static boolean providersStayPut(RequestBatch batch, List<CapabilityConnectable> storages) {
++    Set<BlockEntity> stored = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
++    for (CapabilityConnectable storage : storages) {
++      if (!(storage instanceof com.lothrazar.storagenetwork.api.capabilities.CapabilityConnectableDefault plain)) {
++        return false;
++      }
++      if (plain.listsNoProviders()) {
++        continue;
++      }
++      List<BlockEntity> inventories = plain.plainInventory();
++      if (inventories == null) {
++        return false;
++      }
++      for (BlockEntity inventory : inventories) {
++        if (!stored.add(inventory)) {
++          return false;
++        }
++      }
++    }
++    for (List<com.lothrazar.storagenetwork.api.batch.Request> requests : batch.values()) {
++      for (com.lothrazar.storagenetwork.api.batch.Request request : requests) {
++        if (!(request.getStorage() instanceof com.lothrazar.storagenetwork.api.capabilities.CapabilityImportExportDefault exporter)) {
++          return false;
++        }
++        List<BlockEntity> targets = exporter.plainTarget();
++        if (targets == null) {
++          return false;
++        }
++        for (BlockEntity target : targets) {
++          if (stored.contains(target)) {
++            return false;
++          }
++        }
++      }
++    }
++    return true;
++  }
++
+   /**
+    * TODO: move or refactor?
+    */
+@@ -506,11 +736,11 @@ public class NetworkModuleDefault implements NetworkModule {
+       if (!dimpos.isLoaded()) {
+         continue;
+       }
+-      CapabilityConnectable capConnect = dimpos.getCapability(StorageNetworkCapabilities.CONNECTABLE_ITEM_STORAGE, null);
++      CapabilityConnectable capConnect = nodeCapability(dimpos, StorageNetworkCapabilities.CONNECTABLE_ITEM_STORAGE);
+       if (capConnect == null) {
+         continue;
+       }
+-      ConnectableNode baseConn = dimpos.getCapability(StorageNetworkCapabilities.CONNECTABLE, null);
++      ConnectableNode baseConn = nodeCapability(dimpos, StorageNetworkCapabilities.CONNECTABLE);
+       if (baseConn != null && baseConn.needsRedstone()
+           && !dimpos.getWorld().hasNeighborSignal(dimpos.getBlockPos())) {
+         continue;
+diff --git a/src/main/java/com/lothrazar/storagenetwork/block/main/TileMain.java b/src/main/java/com/lothrazar/storagenetwork/block/main/TileMain.java
+index e598b200..badb01bc 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/block/main/TileMain.java
++++ b/src/main/java/com/lothrazar/storagenetwork/block/main/TileMain.java
+@@ -214,18 +214,24 @@ public class TileMain extends BlockEntity implements BlockEntityMainNetwork {
+     refresh();
+     RequestBatch requestBatch = new RequestBatch();
+     int exportCableCount = 0;
+-    for (ConnectableNode connectable : nw.getConnectables()) {
++    // The same nodes in the same order as getConnectables(), with capabilities known without a lookup while nothing changed.
++    List<NetworkModuleDefault.PlannedNode> planned = nw.plannedNodes();
++    java.util.Iterator<?> nodes = planned != null ? planned.iterator() : nw.getConnectables().iterator();
++    while (nodes.hasNext()) {
++      Object next = nodes.next();
++      NetworkModuleDefault.PlannedNode plan = next instanceof NetworkModuleDefault.PlannedNode p ? p : null;
++      ConnectableNode connectable = plan != null ? plan.node() : (ConnectableNode) next;
+       if (connectable == null || connectable.getPos() == null) {
+         continue;
+       }
+       //does it have processing capability?
+       //in practice it will not have both, its either IO or processing
+-      CapabilityProcessing processingCap = connectable.getPos().getCapability(StorageNetworkCapabilities.PROCESSING, null);
++      CapabilityProcessing processingCap = plan != null ? nw.processingOf(plan) : nw.nodeCapability(connectable.getPos(), StorageNetworkCapabilities.PROCESSING);
+       if (processingCap != null && isRunnable(connectable)) {
+         processingCap.execute(this);
+       }
+       //now  try running all import and export capabilities, known as IO
+-      CapabilityImportExport ioCap = connectable.getPos().getCapability(StorageNetworkCapabilities.CONNECTABLE_AUTO_IO, null);
++      CapabilityImportExport ioCap = plan != null ? nw.ioOf(plan) : nw.nodeCapability(connectable.getPos(), StorageNetworkCapabilities.CONNECTABLE_AUTO_IO);
+       if (ioCap != null && isRunnable(connectable)) {
+         // Give the storage a chance to have a cooldown or other conditions that prevent it from running
+         if (!ioCap.canRunNow(connectable.getPos(), this)) {

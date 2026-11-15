@@ -1,0 +1,9 @@
+{"probes": [
+  {"class": "com.lothrazar.storagenetwork.block.main.TileMain", "method": "tick", "descriptor": "()V", "label": "masterTick", "mode": "timing"},
+  {"class": "com.lothrazar.storagenetwork.block.main.NetworkModuleDefault", "method": "getConnectables", "descriptor": "()Ljava/util/Set;", "label": "connectables", "mode": "timing"},
+  {"class": "com.lothrazar.storagenetwork.block.main.NetworkModuleDefault", "method": "executeRequestBatch", "descriptor": "(Lcom/lothrazar/storagenetwork/api/batch/RequestBatch;)V", "label": "exportBatch", "mode": "timing"},
+  {"class": "com.lothrazar.storagenetwork.block.main.NetworkModuleDefault", "method": "doRefresh", "descriptor": "(Lcom/lothrazar/storagenetwork/api/DimPos;Ljava/util/Set;)V", "label": "refresh", "mode": "timing"},
+  {"class": "com.lothrazar.storagenetwork.block.main.NetworkModuleDefault", "method": "getComparatorSignal", "descriptor": "()I", "label": "comparator", "mode": "timing"},
+  {"class": "com.lothrazar.storagenetwork.block.main.NetworkModuleDefault", "method": "insertStack", "descriptor": "(Lnet/minecraft/world/item/ItemStack;Z)I", "label": "insert", "mode": "timing"},
+  {"class": "com.lothrazar.storagenetwork.block.main.NetworkModuleDefault", "method": "getSortedConnectableStorage", "descriptor": "()Ljava/util/List;", "label": "sortedStorage", "mode": "timing"}
+]}
