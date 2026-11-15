@@ -1491,7 +1491,8 @@
     "net.neoforged.fml.loading.FMLLoader": "FMLLoader",
     "net.neoforged.fml.ModLoadingContext": "ModLoadingContext",
     "net.neoforged.fml.ModLoader": "ModLoader",
-    "net.neoforged.fml.util.ObfuscationReflectionHelper": "ObfuscationReflectionHelper"
+    "net.neoforged.fml.util.ObfuscationReflectionHelper": "ObfuscationReflectionHelper",
+    "net.neoforged.neoforge.common.Tags": "Tags"
    },
    "symbols": {
     "neoforge": [
@@ -1597,7 +1598,17 @@
      "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#findConstructor",
      "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#findField",
      "distmarker|net.neoforged.api.distmarker.Dist#isClient",
-     "distmarker|net.neoforged.api.distmarker.Dist#isDedicatedServer"
+     "distmarker|net.neoforged.api.distmarker.Dist#isDedicatedServer",
+     "neoforge|net.neoforged.neoforge.common.Tags$Blocks",
+     "neoforge|net.neoforged.neoforge.common.Tags$Items",
+     "neoforge|net.neoforged.neoforge.common.Tags$Fluids",
+     "neoforge|net.neoforged.neoforge.common.Tags$EntityTypes",
+     "neoforge|net.neoforged.neoforge.common.Tags$Enchantments",
+     "neoforge|net.neoforged.neoforge.common.Tags$Biomes",
+     "neoforge|net.neoforged.neoforge.common.Tags$Structures",
+     "neoforge|net.neoforged.neoforge.common.Tags$DamageTypes",
+     "neoforge|net.neoforged.neoforge.common.Tags$Items#INGOTS_IRON",
+     "neoforge|net.neoforged.neoforge.common.Tags$Blocks#ORES"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -1715,7 +1726,9 @@
        "fml-21.1|net.neoforged.fml.loading.FMLEnvironment#dist",
        "fml-21.1|net.neoforged.fml.loading.FMLEnvironment#production",
        "fml-21.1|net.neoforged.fml.ModList#isLoaded",
-       "fml-21.1|net.neoforged.fml.ModList#getModContainerById"
+       "fml-21.1|net.neoforged.fml.ModList#getModContainerById",
+       "neoforge-21.1|net.neoforged.neoforge.common.Tags$Items#INGOTS_IRON",
+       "neoforge-21.1|net.neoforged.neoforge.common.Tags$Blocks#ORES"
       ],
       "fabric": [
        "fabric-api-1.21.1|net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#MODIFY_ENTRIES_ALL",
@@ -1774,6 +1787,11 @@
      "from": "package demo;\n\nimport net.neoforged.fml.ModLoadingContext;\nimport net.neoforged.fml.loading.FMLLoader;\nimport net.neoforged.fml.util.ObfuscationReflectionHelper;\n\npublic final class Side {\n\tstatic boolean client() {\n\t\treturn FMLLoader.getCurrent().getDist().isClient();\n\t}\n\n\tstatic String id() {\n\t\treturn ModLoadingContext.get().getActiveContainer().getModId();\n\t}\n\n\tstatic Object field(Object target) {\n\t\treturn ObfuscationReflectionHelper.getPrivateValue(Object.class, target, \"x\");\n\t}\n}\n",
      "to": "package demo;\n\nimport demo.loaderbridge.ModLoadingContext;\nimport demo.loaderbridge.FMLLoader;\nimport demo.loaderbridge.ObfuscationReflectionHelper;\nimport net.fabricmc.api.EnvType;\n\npublic final class Side {\n\tstatic boolean client() {\n\t\treturn (FMLLoader.getCurrent().getDist() == EnvType.CLIENT);\n\t}\n\n\tstatic String id() {\n\t\treturn ModLoadingContext.get().getActiveContainer().getModId();\n\t}\n\n\tstatic Object field(Object target) {\n\t\treturn ObfuscationReflectionHelper.getPrivateValue(Object.class, target, \"x\");\n\t}\n}\n",
      "back": "package demo;\n\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.fml.ModLoadingContext;\nimport net.neoforged.fml.loading.FMLLoader;\nimport net.neoforged.fml.util.ObfuscationReflectionHelper;\n\npublic final class Side {\n\tstatic boolean client() {\n\t\treturn (FMLLoader.getCurrent().getDist() == Dist.CLIENT);\n\t}\n\n\tstatic String id() {\n\t\treturn ModLoadingContext.get().getActiveContainer().getModId();\n\t}\n\n\tstatic Object field(Object target) {\n\t\treturn ObfuscationReflectionHelper.getPrivateValue(Object.class, target, \"x\");\n\t}\n}\n"
+    },
+    {
+     "name": "Ores",
+     "from": "package demo;\n\nimport net.minecraft.world.item.ItemStack;\nimport net.neoforged.neoforge.common.Tags;\n\npublic final class Ores {\n\tstatic boolean iron(ItemStack stack) {\n\t\treturn stack.is(Tags.Items.INGOTS_IRON);\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.world.item.ItemStack;\nimport demo.loaderbridge.Tags;\n\npublic final class Ores {\n\tstatic boolean iron(ItemStack stack) {\n\t\treturn stack.is(Tags.Items.INGOTS_IRON);\n\t}\n}\n"
     }
    ]
   },

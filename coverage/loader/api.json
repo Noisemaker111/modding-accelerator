@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "60336003b39ff5394158c56ed68e8338030017b1df475d92798fcf340dce88e4",
+ "rules_sha256": "bfa22223c09622a4ff65b5d10a662418b6143ef99359d016fa60bdde969d3a34",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -1344,6 +1344,46 @@
    {
     "symbol": "distmarker|net.neoforged.api.distmarker.Dist#isDedicatedServer",
     "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.Tags$Blocks",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.Tags$Items",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.Tags$Fluids",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.Tags$EntityTypes",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.Tags$Enchantments",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.Tags$Biomes",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.Tags$Structures",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.Tags$DamageTypes",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.Tags$Items#INGOTS_IRON",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.Tags$Blocks#ORES",
+    "found": true
    }
   ],
   "neoforge-on-fabric@1.21.1": [
@@ -1757,6 +1797,14 @@
    },
    {
     "symbol": "fml-21.1|net.neoforged.fml.ModList#getModContainerById",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.Tags$Items#INGOTS_IRON",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.Tags$Blocks#ORES",
     "found": true
    }
   ],
