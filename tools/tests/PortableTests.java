@@ -1320,6 +1320,17 @@ public final class PortableTests {
             "classifier and shareCaches() rewritten for Gradle 8 and Loom 1.x"
         );
         check(Target.removedDsl("    classifier \"dev\"\n", false).equals("    classifier \"dev\"\n"), "a classifier stays on Gradle 7");
+        // A Forge project a target has no Forge for leaves settings.gradle; the other loaders stay.
+        check(
+            Target.withoutForgeInclude("include(\":common\")\ninclude(\":fabric\")\ninclude(\":forge\")\ninclude(\":neoforge\")\n")
+                .equals("include(\":common\")\ninclude(\":fabric\")\ninclude(\":neoforge\")\n"),
+            "a one-name Forge include goes"
+        );
+        check(
+            Target.withoutForgeInclude("include 'common', 'fabric', 'Forge', 'neoforge'\n").equals("include 'common', 'fabric', 'neoforge'\n"),
+            "Forge leaves a longer include list"
+        );
+        check(Target.withoutForgeInclude("include 'Forge', 'Fabric'\n").equals("include 'Fabric'\n"), "Forge first in the list");
         // A rename that changes what the member returns (getMaxBuildHeight -> getMaxY is one lower) leaves the map; the rest stays.
         {
             Path meaningMap = scratch.resolve("meaning-map.json");

@@ -193,14 +193,19 @@ final class Target {
         Object own = setup.project.get("buildFile");
         if (own != null) files.add(Path.of(own.toString()));
         for (String name : List.of("build.gradle", "build.gradle.kts")) files.add(build.project.root.resolve(name));
-        // An access widener names the namespace its entries are in; on the unobfuscated game that is "official".
-        for (Object set : Json.array(setup.project.get("sourceSets"))) for (String resources : ProjectModel.strings(
-            Json.object(set).get("resources")
-        )) {
+        // An access widener names the namespace its entries are in; on the unobfuscated game that is "official". The planning
+        // model may list no resource folders (Origins), so the project's src folder is searched too.
+        Set<String> resourceDirs = new LinkedHashSet<>();
+        for (Object set : Json.array(setup.project.get("sourceSets"))) resourceDirs.addAll(
+            ProjectModel.strings(Json.object(set).get("resources"))
+        );
+        Object projectDir = setup.project.get("directory");
+        resourceDirs.add((projectDir == null ? build.project.root : Path.of(projectDir.toString())).resolve("src").toString());
+        for (String resources : resourceDirs) {
             Path dir = Path.of(resources);
             if (!Files.isDirectory(dir)) continue;
             List<Path> wideners;
-            try (var walk = Files.walk(dir, 4)) {
+            try (var walk = Files.walk(dir, 6)) {
                 wideners = walk.filter(p -> p.toString().endsWith(".accesswidener") || p.toString().endsWith(".classtweaker")).toList();
             }
             for (Path widener : wideners) {
@@ -494,7 +499,7 @@ final class Target {
                 setup.applied.add(
                     Json.map("change", "enabled_platforms drops forge for " + to, "evidence", "Forge publishes no release for Minecraft " + to + " (maven.minecraftforge.net)")
                 );
-            } else setup.unchecked.add(
+            } else if (!dropForgeProject(setup, build, to)) setup.unchecked.add(
                 Json.map("artifact", "net.minecraftforge:forge (sibling project)", "version", to, "reason", "Forge publishes no release for Minecraft " + to)
             );
         }
@@ -631,6 +636,36 @@ final class Target {
             setup.texts.put(script, text);
             setup.applied.add(Json.map("file", script.toString(), "change", "build-script settings the new Gradle and Loom removed (classifier -> archiveClassifier, shareCaches())"));
         }
+    }
+
+    /**
+     * A multi-loader build that includes its Forge project by name in settings.gradle (ImmediatelyFast: include(":forge"))
+     * cannot configure it for a game Forge publishes nothing for, and Gradle configures every included project. The Forge
+     * project leaves the include list, so the other loaders build; port does not port Forge projects in any case.
+     */
+    static boolean dropForgeProject(Setup setup, Build build, String to) throws IOException {
+        boolean dropped = false;
+        for (String name : List.of("settings.gradle", "settings.gradle.kts")) {
+            Path settings = build.project.root.resolve(name);
+            if (!Files.isRegularFile(settings)) continue;
+            String before = setup.text(settings), text = withoutForgeInclude(before);
+            if (text.equals(before)) continue;
+            setup.originals.putIfAbsent(settings, before);
+            setup.texts.put(settings, text);
+            setup.applied.add(
+                Json.map("file", settings.toString(), "change", "Forge project left out of the build for " + to, "evidence", "Forge publishes no release for Minecraft " + to + " (maven.minecraftforge.net)")
+            );
+            dropped = true;
+        }
+        return dropped;
+    }
+
+    /** A settings script without its Forge project: a one-name include line goes, a name in a longer list leaves it. */
+    static String withoutForgeInclude(String text) {
+        String forge = "[\"']:?[Ff]orge[\"']";
+        text = text.replaceAll("(?m)^[ \\t]*include\\s*\\(?\\s*" + forge + "\\s*\\)?[ \\t]*\\r?\\n", "");
+        text = text.replaceAll("(?m)^([ \\t]*include\\b[^\\n]*?),\\s*" + forge, "$1");
+        return text.replaceAll("(?m)^([ \\t]*include\\s*\\(?\\s*)" + forge + "\\s*,\\s*", "$1");
     }
 
     /** Parchment's newest release of parameter names for exactly this Minecraft version, or "" when it publishes none. */
