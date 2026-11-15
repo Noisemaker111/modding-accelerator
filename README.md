@@ -32,7 +32,7 @@ with its output compared exactly.
 |---|---|---|
 | **Test** a mod in the real game, with no window on screen | `fast` `data-check` `mixin-check` `ui-check` `world-check` `mp-check` `server-check` | Works for Fabric and NeoForge mods and Paper plugins; Forge mods load in a client |
 | **Port** a mod to another Minecraft version, finishing on its own | `port --fix` `explain` | Fabric and NeoForge, 1.14.4 to 26.3. 7 routes of 3 mods proven in the game with no hand edits |
-| **Switch loader** | `convert` | Fabric ↔ NeoForge on one Minecraft version. Two Fabric mods and NeoForge's MDKs proven in the game |
+| **Switch loader** | `convert` | Fabric ↔ NeoForge on one Minecraft version. The One Probe both ways, two more Fabric mods and NeoForge's MDKs proven in the game |
 | **Make a modpack work**, with repairs | `pack-check --fix` | Forge, NeoForge, Fabric and Quilt packs on their real servers. 24 of 24 corpus packs pass, 3 of them repaired |
 | **Make a mod dramatically faster**, with nothing changed in what it does | `perf` `perf-optimize` | Accepted changes so far: Cyclic's auto-crafter 15.7×, Simple Storage Network 5–6×, Diorama 1.6–2.2× |
 | **Desktop app** for people who don't use a terminal | `mmt-desktop` | Windows and Linux, in the portable ZIP |
@@ -103,7 +103,17 @@ and line, never dropped. `convert --undo` restores every file.
 - **Proven in the game with no hand edits:** Auto Omen (Fabric 26.3) on NeoForge passes its own in-game raid self test,
   23 of 23 checks. Pride Flags (Fabric 26.1.2) on NeoForge registers its 13 blocks and 26 items and renders its flags.
   NeoForge's 26.3 and 1.21.1 MDKs run on Fabric through the NeoForge bridge, register what their NeoForge builds do,
-  and convert back.
+  and convert back. The One Probe (26.3) converts Fabric → NeoForge and NeoForge → Fabric, loads on the other loader
+  with the same 8 registry entries as its original (items, creative tab, data attachment), and converts back and
+  compiles. Zombie Apocalypse (NeoForge 1.21.1) loads on Fabric with its 12 bridge mixins applied, and its own 141
+  unit tests pass there as on NeoForge.
+- **Bridges** carry what has no one-call rule, written on the other loader's API and copied into the mod
+  (`knowledge/bridges/`): NeoForge on Fabric (registration, event bus, config, payloads, events with no Fabric API
+  callback fired by mixins at the point NeoForge's own patches fire them, extension methods, client events, data
+  attachments, `Tags`), Fabric on NeoForge (Fabric's events, Fabric Loader, networking, client commands, HUD, Team
+  Reborn Energy, Forge Config API Port), and capabilities ↔ Transfer API for items, fluids and energy both ways
+  (81 droplets per millibucket; semantics in each bridge's `about`). `python bench/bridge_check.py` compiles a whole
+  bridge inside a real MDK; each bridge's before/after tests run both ways in `self-test`.
 - **Across a corpus** of 35 pinned mods (`coverage/sweeps/convert.json`): 28 convert without a refusal, 5 compile,
   5 load in the game with the same behaviour as the original, and 5 convert back and compile.
 

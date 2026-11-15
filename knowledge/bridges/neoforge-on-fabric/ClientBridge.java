@@ -14,6 +14,7 @@ public final class ClientBridge {
     public static void client(String modid) {
         hook();
         ClientGameEvents.keyMappings();
+        ClientGameEvents.registration();
         Bus.INSTANCE.post(new RegisterClientPayloadHandlersEvent());
         for (var handler : PayloadRegistrar.CLIENT_HANDLERS.entrySet()) receive(handler.getKey(), handler.getValue());
         PayloadRegistrar.CLIENT_HANDLERS.clear();

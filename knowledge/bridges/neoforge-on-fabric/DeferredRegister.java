@@ -115,15 +115,20 @@ public class DeferredRegister<T> {
         if (registered) return;
         registered = true;
         Registry<T> registry = getRegistry().get();
+        // NeoForge's own registries the bridge mirrors (attachment types) are made on first use.
+        if (registry == null) registry = NeoForgeRegistries.registry(registryKey);
         if (registry == null) throw new IllegalStateException("No registry " + registryKey.identifier() + " for " + namespace);
         for (var entry : entries.entrySet()) {
             ResourceKey<T> key = entry.getKey().getKey();
-            Registry.register(registry, key, entry.getValue().apply(key.identifier()));
+            T value = entry.getValue().apply(key.identifier());
+            Registry.register(registry, key, value);
+            // A NeoForge attachment type becomes Fabric API's attachment type of the same id.
+            if (value instanceof AttachmentType<?> attachment) attachment.bind(key.identifier());
             entry.getKey().bind();
         }
     }
 
-    /** Every handed-over register, in the game's own registry order, then any registry the game does not list. */
+    /** Every handed-over register, in the game's own registry order, each registry followed by its RegisterEvent, then any registry the game does not list. */
     static void registerPending() {
         List<DeferredRegister<?>> left = new ArrayList<>(PENDING);
         for (Registry<?> registry : BuiltInRegistries.REGISTRY) {
@@ -131,6 +136,7 @@ public class DeferredRegister<T> {
                 register.registerAll();
                 left.remove(register);
             }
+            RegisterEvent.post(registry);
         }
         for (DeferredRegister<?> register : left) register.registerAll();
         PENDING.clear();

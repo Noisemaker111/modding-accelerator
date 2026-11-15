@@ -47,7 +47,9 @@ MMT = [str(ROOT / ("mmt.cmd" if WINDOWS else "mmt"))]
 OTHER = {"fabric": "neoforge", "neoforge": "fabric"}
 TIMEOUT = {"convert": 3600, "ui-check": 1500, "eval": 300, "game-stop": 300, "fingerprint": 3600}
 
-# Reads every registry entry in one namespace; works on 1.20.2 to 26.x (ResourceLocation or Identifier).
+# Reads every registry entry in one namespace; works on 1.20.2 to 26.x (ResourceLocation or Identifier). Data attachment
+# types count as entries of neoforge:attachment_types on both loaders: NeoForge registers them there, Fabric API keeps them
+# in its own attachment table, which is read under that name so the two compare.
 REGISTRY_SNIPPET = """
 java.util.Map<String, java.util.List<String>> out = new java.util.TreeMap<>();
 for (var registry : net.minecraft.core.registries.BuiltInRegistries.REGISTRY) {
@@ -55,10 +57,20 @@ for (var registry : net.minecraft.core.registries.BuiltInRegistries.REGISTRY) {
     for (var key : registry.keySet()) if (key.getNamespace().equals("NAMESPACE")) ids.add(key.getPath());
     if (!ids.isEmpty()) { java.util.Collections.sort(ids); out.put(String.valueOf(registry.key()), ids); }
 }
+// Data attachment types: NeoForge keeps them in its neoforge:attachment_types registry, Fabric API in its own table.
+try {
+    java.lang.reflect.Field table = Class.forName("net.fabricmc.fabric.impl.attachment.AttachmentRegistryImpl").getDeclaredField("attachmentRegistry");
+    table.setAccessible(true);
+    java.util.TreeSet<String> ids = new java.util.TreeSet<>(out.getOrDefault("ResourceKey[minecraft:root / neoforge:attachment_types]", java.util.List.of()));
+    for (Object id : ((java.util.Map<?, ?>) table.get(null)).keySet()) if (String.valueOf(id).startsWith("NAMESPACE:")) ids.add(String.valueOf(id).substring("NAMESPACE:".length()));
+    if (!ids.isEmpty()) out.put("ResourceKey[minecraft:root / neoforge:attachment_types]", new java.util.ArrayList<>(ids));
+} catch (ClassNotFoundException notFabric) {
+}
 return out.toString();
 """
 
-# For a mod that registers nothing: which of its mixins Mixin applied to which game classes. The configs Mixin selected
+# For a mod that registers nothing: which of its mixins Mixin applied to which game classes (the mixins of a convert
+# bridge, which stand in for the other loader's own patches, are not the mod's and are left out). The configs Mixin selected
 # live in its active transformer's processor (Mixins.getConfigs() is empty once they are selected). Every target of a
 # config whose package is the mod's is loaded (not initialised); a merged method carries @MixinMerged (kept at run time)
 # naming its mixin, and an accessor or interface mixin is an interface the target now implements.
@@ -75,6 +87,8 @@ for (Object item : (java.util.List<?>) configsField.get(processor)) {
     var config = (org.spongepowered.asm.mixin.extensibility.IMixinConfig) item;
     String pkg = config.getMixinPackage();
     if (pkg == null || !(PACKAGES)) continue;
+    // A convert bridge's own mixins are the other loader's hooks (NeoForge's patches, Fabric API's mixins), not the mod's.
+    if (pkg.contains(".loaderbridge.") || pkg.contains(".fabricbridge.")) continue;
     for (String target : config.getTargets()) {
         String name = target.replace('/', '.');
         try {
