@@ -2032,7 +2032,9 @@ final class Convert {
                 String owner = m.group(2).equals("this") ? text : classSource(text, m.group(2));
                 Matcher method = owner == null
                     ? null
-                    : Pattern.compile("\\b" + Pattern.quote(m.group(3)) + "\\s*\\(\\s*(?:final\\s+)?([A-Z][\\w.]*)(?:<[^>]*>)?\\s+\\w+\\s*\\)").matcher(owner);
+                    : Pattern.compile(
+                        "\\b" + Pattern.quote(m.group(3)) + "\\s*\\(\\s*(?:(?:final|@[\\w.]+(?:\\([^)]*\\))?)\\s+)*([A-Z][\\w.]*)(?:<[^>]*>)?\\s+\\w+\\s*\\)"
+                    ).matcher(owner);
                 if (method != null && method.find()) type = method.group(1);
             }
             if (type == null) {
@@ -2054,6 +2056,10 @@ final class Convert {
         Matcher pkg = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(text);
         String full = imported.find() ? imported.group(1) : pkg.find() ? pkg.group(1) + "." + simple : simple;
         String file = classFile(full);
+        // A class reached through a wildcard import (import a.b.*;).
+        for (Matcher wild = Pattern.compile("(?m)^import\\s+([\\w.]+)\\.\\*\\s*;").matcher(text); file == null && wild.find(); ) file = classFile(
+            wild.group(1) + "." + simple
+        );
         return file == null ? null : read(file);
     }
 
