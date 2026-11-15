@@ -6,15 +6,16 @@
     "date": "2026-11-15",
     "packs": 24,
     "ran": 24,
-    "started": 21,
+    "started": 20,
     "world made and reopened": 20,
-    "repaired": 4,
-    "passing with repairs": 24,
+    "repaired": 3,
+    "passing with repairs": 23,
     "repairs proven": 4,
-    "failed start with a named culprit": 0,
+    "failed start with a named culprit": 1,
     "outcomes": {
       "world made and reopened": 20,
-      "repaired: world made and reopened": 4
+      "start failed": 1,
+      "repaired: world made and reopened": 3
     }
   },
   "history": [
@@ -78,15 +79,16 @@
       "date": "2026-11-15",
       "packs": 24,
       "ran": 24,
-      "started": 21,
+      "started": 20,
       "world made and reopened": 20,
-      "repaired": 4,
-      "passing with repairs": 24,
+      "repaired": 3,
+      "passing with repairs": 23,
       "repairs proven": 4,
-      "failed start with a named culprit": 0,
+      "failed start with a named culprit": 1,
       "outcomes": {
         "world made and reopened": 20,
-        "repaired: world made and reopened": 4
+        "start failed": 1,
+        "repaired: world made and reopened": 3
       }
     }
   ],
@@ -104,6 +106,7 @@
     {
       "gap": "server start failed, culprit named",
       "packs": [
+        "atm10-neoforge-1.21.1",
         "atm9-forge-1.20.1",
         "create-astral-fabric-1.18.2",
         "sodiumplus-quilt-1.20.1"
@@ -111,25 +114,18 @@
       "rank": 2
     },
     {
-      "gap": "problem with no proven repair: changed-by-save",
-      "packs": [
-        "atm10-neoforge-1.21.1"
-      ],
-      "rank": 3
-    },
-    {
       "gap": "problem with no proven repair: placed-other-block",
       "packs": [
         "prominence-2-fabric-1.20.1"
       ],
-      "rank": 4
+      "rank": 3
     },
     {
-      "gap": "world did not reopen, no culprit named",
+      "gap": "problem with no proven repair: server-start",
       "packs": [
-        "create-above-and-beyond-forge-1.16.5"
+        "atm10-neoforge-1.21.1"
       ],
-      "rank": 5
+      "rank": 4
     }
   ],
   "runs": [
@@ -249,13 +245,10 @@
       "loader": "neoforge",
       "minecraft": "1.21.1",
       "exit": 1,
-      "seconds": 530.3,
+      "seconds": 641.8,
       "gaps": [
-        "problem with no proven repair: changed-by-save",
-        "problem with no proven repair: changed-by-save",
-        "problem with no proven repair: changed-by-save",
-        "problem with no proven repair: changed-by-save",
-        "problem with no proven repair: changed-by-save"
+        "server start failed, culprit named",
+        "problem with no proven repair: server-start"
       ],
       "mods": 499,
       "loaderUsed": "neoforge 21.1.266",
@@ -264,60 +257,317 @@
         "findings": 36
       },
       "start": {
-        "opened": true,
-        "seconds": 359.1291253,
-        "failure": null,
-        "suspects": null
+        "opened": false,
+        "seconds": 618.7777652,
+        "failure": "[08:54:43] [Server Watchdog/FATAL] [ne.ne.ne.co.NeoForgeMod/]: Preparing crash report with UUID cb93edd3-f2ca-485b-a4e9-df7f7d431535\n[08:54:43] [Server Watchdog/FATAL] [ne.ne.ne.co.NeoForgeMod/]: Preparing crash report with UUID 9db092c9-d9b2-45e5-ad3a-b4663d343190",
+        "suspects": [
+          {
+            "mod": "cupboard",
+            "jar": "cupboard-1.21.1-4.2.jar",
+            "why": [
+              "its mixin config cupboard.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "modernfix",
+            "jar": "modernfix-neoforge-5.27.27+mc1.21.1.jar",
+            "why": [
+              "its mixin config modernfix-modernfix.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "journeymap",
+            "jar": "journeymap-neoforge-1.21.1-6.0.9.jar",
+            "why": [
+              "its mixin config journeymap.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "mffs",
+            "jar": "mffs-5.4.44.jar",
+            "why": [
+              "its mixin config mffs.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "alltheleaks",
+            "jar": "alltheleaks-1.1.16-1.21.1-neoforge.jar",
+            "why": [
+              "its mixin config alltheleaks.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "neovitae",
+            "jar": "neovitae-1.21.1-1.1.53.jar",
+            "why": [
+              "its mixin config neovitae.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "ad_astra",
+            "jar": "adastra-1.21.1-1.16.26-neoforge.jar",
+            "why": [
+              "its mixin config adastra.mixins.json is in the failure",
+              "its mixin config adastra-common.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "xycraft_core",
+            "jar": "xycraft_core-0.7.53-all.jar",
+            "why": [
+              "its mixin config xycraft_core.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "irons_spellbooks",
+            "jar": "irons_spellbooks-1.21.1-3.16.3.jar",
+            "why": [
+              "its mixin config irons_spellbooks.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "aether",
+            "jar": "aether-1.21.1-1.5.10-neoforge.jar",
+            "why": [
+              "its mixin config aether.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "refurbished_furniture",
+            "jar": "refurbished_furniture-neoforge-1.21.1-1.0.22.jar",
+            "why": [
+              "its mixin config refurbished_furniture.common.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "kubejs",
+            "jar": "kubejs-neoforge-2101.7.2-build.381.jar",
+            "why": [
+              "its mixin config kubejs.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "tesseract_api",
+            "jar": "tesseract-api-neoforge-1.12.20-1.21.1.jar",
+            "why": [
+              "its mixin config tesseract_api.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "the_bumblezone",
+            "jar": "the_bumblezone-7.17.3+1.21.1-neoforge.jar",
+            "why": [
+              "its mixin config the_bumblezone-common.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "betterendisland",
+            "jar": "YungsBetterEndIsland-1.21.1-NeoForge-3.1.2.jar",
+            "why": [
+              "its mixin config betterendisland.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "yungsapi",
+            "jar": "YungsApi-1.21.1-NeoForge-5.1.9.jar",
+            "why": [
+              "its mixin config yungsapi.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "supplementaries",
+            "jar": "supplementaries-1.21.1-4.1.1-neoforge.jar",
+            "why": [
+              "its mixin config supplementaries-common.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "corgilib",
+            "jar": "Corgilib-NeoForge-1.21.1-5.0.0.10.jar",
+            "why": [
+              "its mixin config corgilib-common.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "fancymenu",
+            "jar": "fancymenu_neoforge_3.10.0_MC_1.21.1.jar",
+            "why": [
+              "its mixin config fancymenu.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "modularrouters",
+            "jar": "modular-routers-13.2.7+mc1.21.1.jar",
+            "why": [
+              "its mixin config mixins.modularrouters.json is in the failure"
+            ]
+          },
+          {
+            "mod": "eternal_starlight",
+            "jar": "eternalstarlight-0.9.1+1.21.1+neoforge.jar",
+            "why": [
+              "its mixin config eternal_starlight-common.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "immersiveengineering",
+            "jar": "ImmersiveEngineering-1.21.1-12.4.2-194.jar",
+            "why": [
+              "its mixin config immersiveengineering.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "ohthetreesyoullgrow",
+            "jar": "Oh-The-Trees-Youll-Grow-neoforge-1.21.1-5.3.6.jar",
+            "why": [
+              "its mixin config ohthetreesyoullgrow.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "polymorph",
+            "jar": "polymorph-neoforge-1.2.0+1.21.1.jar",
+            "why": [
+              "its mixin config polymorph.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "astralsorcery",
+            "jar": "AstralSorcery-2.0.3.59.jar",
+            "why": [
+              "its mixin config astralsorcery.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "create",
+            "jar": "create-1.21.1-6.0.10.jar",
+            "why": [
+              "its mixin config create.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "ars_elemental",
+            "jar": "ars_elemental-1.21.1-0.7.10.4.jar",
+            "why": [
+              "its mixin config ars_elemental.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "comforts",
+            "jar": "comforts-neoforge-9.0.5+1.21.1.jar",
+            "why": [
+              "its mixin config comforts.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "betterdeserttemples",
+            "jar": "YungsBetterDesertTemples-1.21.1-NeoForge-4.1.5.jar",
+            "why": [
+              "its mixin config betterdeserttemples.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "moonlight",
+            "jar": "moonlight-1.21.1-3.8.3-neoforge.jar",
+            "why": [
+              "its mixin config moonlight-common.mixins.json is in the failure",
+              "its mixin config moonlight.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "logisticsnetworks",
+            "jar": "logisticsnetworks-1.21.1-1.18.0.jar",
+            "why": [
+              "its mixin config logisticsnetworks.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "bcc",
+            "jar": "better-compatability-checker-neoforge-21.1.8.jar",
+            "why": [
+              "its mixin config bcc.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "rechiseled",
+            "jar": "rechiseled-1.2.6-neoforge-mc1.21.jar",
+            "why": [
+              "its mixin config rechiseled.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "lootr",
+            "jar": "lootr-neoforge-1.21.1-1.11.38.127.jar",
+            "why": [
+              "its mixin config lootr-common.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "balm",
+            "jar": "balm-neoforge-1.21.1-21.0.67.jar",
+            "why": [
+              "its mixin config balm.neoforge.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "lmft",
+            "jar": "lmft-1.1.1+1.21.9-neoforge.jar",
+            "why": [
+              "its mixin config lmft-common.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "uranus",
+            "jar": "uranus-2.4.1-bugfix-1.21.1-neoforge.jar",
+            "why": [
+              "its mixin config uranus.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "regions_unexplored",
+            "jar": "regions_unexplored-neoforge-1.21.1-0.5.9.jar",
+            "why": [
+              "its mixin config regions_unexplored.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "ae2",
+            "jar": "appliedenergistics2-19.2.19.jar",
+            "why": [
+              "its mixin config ae2.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "extended_industrialization",
+            "jar": "extended-industrialization-1.16.5-1.21.1.jar",
+            "why": [
+              "its mixin config extended_industrialization.mixins.json is in the failure"
+            ]
+          },
+          {
+            "mod": "villagesandpillages",
+            "jar": "villagesandpillages-neoforge-2.0.0+mc1.21.1.jar",
+            "why": [
+              "a mixin handler of this mod is in the stack"
+            ]
+          }
+        ]
       },
-      "reopen": {
-        "opened": true,
-        "seconds": 151.685719301,
-        "failure": null,
-        "suspects": null
-      },
+      "reopen": null,
       "clientOnlyLeftOut": 0,
       "leftOutOfServer": 40,
       "keptForDependants": [],
-      "probe": {
-        "dimensions": 28,
-        "failed": 26,
-        "placed": 43538
-      },
+      "probe": {},
       "findings": {
-        "note:duplicate-mod": 1,
-        "note:minecraft-mismatch": 30,
-        "warning:minecraft-mismatch": 1,
+        "warning:duplicate-mod": 1,
+        "warning:minecraft-mismatch": 31,
         "note:same-block-file": 3,
         "note:same-block-name": 1,
-        "note:placed-other-block": 1,
-        "note:not-checked": 2,
-        "note:placement-error": 1,
-        "problem:changed-by-save": 5
+        "problem:server-start": 1
       },
       "problems": [
         {
-          "kind": "changed-by-save",
-          "summary": "Saving and reopening changed a block: regions_unexplored:small_desert_shrub became minecraft:air",
-          "jars": []
-        },
-        {
-          "kind": "changed-by-save",
-          "summary": "Saving and reopening changed a block: regions_unexplored:steppe_grass became minecraft:air",
-          "jars": []
-        },
-        {
-          "kind": "changed-by-save",
-          "summary": "Saving and reopening changed a block: regions_unexplored:baobab_sapling became minecraft:air",
-          "jars": []
-        },
-        {
-          "kind": "changed-by-save",
-          "summary": "Saving and reopening changed a block: regions_unexplored:blackwood_shrub became minecraft:air",
-          "jars": []
-        },
-        {
-          "kind": "changed-by-save",
-          "summary": "Saving and reopening changed a block: regions_unexplored:redwood_shrub became minecraft:air",
+          "kind": "server-start",
+          "summary": "The pack's server did not finish starting a new world. The log names cupboard (cupboard-1.21.1-4.2.jar), modernfix (modernfix-neoforge-5.27.27+mc1.21.1.jar), journeymap (journeymap-neoforge-1.21.1-6.0.9.jar), mffs (mffs-5.4.44.jar).",
           "jars": []
         }
       ],
@@ -345,32 +595,36 @@
       "stages": [
         {
           "name": "fetch",
-          "seconds": 0.2
+          "seconds": 0.1
         },
         {
           "name": "modrinth-sides",
-          "seconds": 0.2
+          "seconds": 0.1
         },
         {
           "name": "read",
-          "seconds": 1.2
+          "seconds": 1.0
         },
         {
           "name": "static-checks",
-          "seconds": 3.6
+          "seconds": 3.4
+        },
+        {
+          "name": "probe-stubs",
+          "seconds": 1.5
+        },
+        {
+          "name": "probe-compile",
+          "seconds": 3.0
         },
         {
           "name": "server-place",
-          "seconds": 359.1
-        },
-        {
-          "name": "server-verify",
-          "seconds": 151.7
+          "seconds": 618.8
         }
       ],
-      "outcome": "world made and reopened",
+      "outcome": "start failed",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T08:37:01",
+      "started": "2026-11-15T08:55:01",
       "label": "repairs"
     },
     {
@@ -639,10 +893,8 @@
       "loader": "forge",
       "minecraft": "1.16.5",
       "exit": 0,
-      "seconds": 751.5,
-      "gaps": [
-        "world did not reopen, no culprit named"
-      ],
+      "seconds": 323.7,
+      "gaps": [],
       "mods": 133,
       "loaderUsed": "forge 36.2.20",
       "staticChecks": {
@@ -651,15 +903,15 @@
       },
       "start": {
         "opened": true,
-        "seconds": 100.3234933,
+        "seconds": 86.7840164,
         "failure": null,
         "suspects": null
       },
       "reopen": {
-        "opened": false,
-        "seconds": 645.4746291,
-        "failure": "Caused by: java.io.FileNotFoundException: https://raw.githubusercontent.com/Samarium150/StructuresCompass/main/docs/update.json\nCaused by: java.lang.IllegalStateException: Expected BEGIN_OBJECT but was STRING at line 1 column 1 path $\nCaused by: java.io.FileNotFoundException: https://version-check.covers1624.net/check/?mod=ProjectRed&mc=1.16.5\nCaused by: java.io.IOException: Server returned HTTP response code: 403 for URL: https://mrcrayfish.com/modupdatejson?id=catalogue\nCaused by: java.io.FileNotFoundException: https://mc-curse-update-checker.herokuapp.com/222908\nCaused by: java.io.FileNotFoundException: https://mc-curse-update-checker.herokuapp.com/284745",
-        "suspects": []
+        "opened": true,
+        "seconds": 77.0910992,
+        "failure": null,
+        "suspects": null
       },
       "clientOnlyLeftOut": 0,
       "leftOutOfServer": 3,
@@ -676,23 +928,17 @@
         "problem:known-fault": 1,
         "note:placed-other-block": 1,
         "note:not-checked": 2,
-        "note:placement-error": 1,
-        "problem:world-reopen": 1
+        "note:placement-error": 1
       },
       "problems": [
         {
           "kind": "unavailable-file",
-          "summary": "3 mod file(s) the pack lists cannot be downloaded any more, so a player cannot install the pack as published; the rest is checked without them: project 236542, file 3302417: CurseForge no longer lists it; project 457570, file 3546348: CurseForge no longer lists it; project 267193, file 3507658: Curs",
+          "summary": "3 mod file(s) the pack lists cannot be downloaded any more, so a player cannot install the pack as published; the rest is checked without them: project 267193, file 3507658: CurseForge no longer lists it; project 236542, file 3302417: CurseForge no longer lists it; project 457570, file 3546348: Curs",
           "jars": []
         },
         {
           "kind": "known-fault",
-          "summary": "project 236542, file 3302417: CurseForge no longer lists it; project 457570, file 3546348: CurseForge no longer lists it; project 267193, file 3507658: CurseForge no longer lists it: A player cannot install the pack as published: a mod file its manifest lists is no longer served by CurseForge.",
-          "jars": []
-        },
-        {
-          "kind": "world-reopen",
-          "summary": "A world this pack made opens once and then fails to open again.",
+          "summary": "project 267193, file 3507658: CurseForge no longer lists it; project 236542, file 3302417: CurseForge no longer lists it; project 457570, file 3546348: CurseForge no longer lists it: A player cannot install the pack as published: a mod file its manifest lists is no longer served by CurseForge.",
           "jars": []
         }
       ],
@@ -702,9 +948,9 @@
           "unavailable-curseforge-file"
         ],
         "notes": [
+          "unavailable-curseforge-file: file 3507658 of project 267193 is served no more; the same project's Chunk Pregenerator-1.16-3.5.0.jar (file 3946416) for Minecraft 1.16.5 stands in, checked by its size and its own metadata",
           "unavailable-curseforge-file: project 236542 serves no file for Minecraft 1.16.5 on forge to stand in for file 3302417; it is left out of the pack, which was checked without it",
-          "unavailable-curseforge-file: file 3546348 of project 457570 is served no more; the same project's configured-1.5.3-1.16.5.jar (file 3946491) for Minecraft 1.16.5 stands in, checked by its size and its own metadata",
-          "unavailable-curseforge-file: file 3507658 of project 267193 is served no more; the same project's Chunk Pregenerator-1.16-3.5.0.jar (file 3946416) for Minecraft 1.16.5 stands in, checked by its size and its own metadata"
+          "unavailable-curseforge-file: file 3546348 of project 457570 is served no more; the same project's configured-1.5.3-1.16.5.jar (file 3946491) for Minecraft 1.16.5 stands in, checked by its size and its own metadata"
         ],
         "proven": true,
         "rounds": [],
@@ -732,19 +978,19 @@
           },
           {
             "check": "world-reopen",
-            "shipped": 1,
+            "shipped": 0,
             "repaired": 0
           }
         ],
-        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T15-38-01.113566700Z-ee1cfdc9\\create-above-and-beyond-forge-1.16.5 (modaccel fixed).zip",
+        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T16-38-50.299005300Z-24062bab\\create-above-and-beyond-forge-1.16.5 (modaccel fixed).zip",
         "recheck": {
           "newWorld": {
             "opened": true,
-            "seconds": 91.2631948
+            "seconds": 195.180775601
           },
           "reopen": {
             "opened": true,
-            "seconds": 78.9624272
+            "seconds": 119.3538928
           }
         }
       },
@@ -752,7 +998,7 @@
       "stages": [
         {
           "name": "fetch",
-          "seconds": 0.4
+          "seconds": 0.5
         },
         {
           "name": "modrinth-sides",
@@ -760,32 +1006,48 @@
         },
         {
           "name": "read",
-          "seconds": 0.9
+          "seconds": 0.8
         },
         {
           "name": "static-checks",
+          "seconds": 1.1
+        },
+        {
+          "name": "probe-stubs",
+          "seconds": 0.7
+        },
+        {
+          "name": "probe-compile",
+          "seconds": 0.8
+        },
+        {
+          "name": "probe-official-names",
           "seconds": 0.9
         },
         {
-          "name": "repaired-server-place",
-          "seconds": 91.3
+          "name": "probe-srg-names",
+          "seconds": 0.8
         },
         {
           "name": "server-place",
-          "seconds": 100.3
-        },
-        {
-          "name": "repaired-server-verify",
-          "seconds": 79.0
+          "seconds": 86.8
         },
         {
           "name": "server-verify",
-          "seconds": 645.5
+          "seconds": 77.1
+        },
+        {
+          "name": "repaired-server-place",
+          "seconds": 195.2
+        },
+        {
+          "name": "repaired-server-verify",
+          "seconds": 119.4
         }
       ],
-      "outcome": "repaired: world made and reopened",
+      "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T07:50:33",
+      "started": "2026-11-15T08:44:15",
       "label": "repairs"
     },
     {

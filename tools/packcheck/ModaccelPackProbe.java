@@ -61,7 +61,7 @@ public final class ModaccelPackProbe {
     static final class Work {
         final JsonObject result = new JsonObject();
         MinecraftServer server;
-        Iterator<Item> items; Placement placement; Set<Long> area; long waitingSince, lastProgress = System.nanoTime();
+        Iterator<Item> items; Placement placement; Set<Long> area; Deque<Long> toForce; long waitingSince, lastProgress = System.nanoTime();
         volatile boolean finished;
 
         Work() {
@@ -107,10 +107,14 @@ public final class ModaccelPackProbe {
             area = new HashSet<>();
             int rows = rows();
             result.addProperty("gridRows", rows);
+            // Forcing a chunk generates it on the server thread: a big pack's grid is over a thousand chunks, which in one task
+            // ran past the watchdog's 300 s. They are forced a few per tick in step(), and the 300 s wait starts after.
+            toForce = new ArrayDeque<>();
             for (int x = (origin.getX() >> 4) - 1; x <= (origin.getX() + COLUMNS * SPACING >> 4) + 1; x++)
                 for (int z = (origin.getZ() >> 4) - 1; z <= (origin.getZ() + rows * SPACING >> 4) + 1; z++) {
-                    level.setChunkForced(x, z, true); area.add(ModaccelPackGame.chunkKey(x, z));
+                    toForce.add(ModaccelPackGame.chunkKey(x, z)); area.add(ModaccelPackGame.chunkKey(x, z));
                 }
+            result.addProperty("areaChunks", area.size());
             waitingSince = System.nanoTime();
         }
 
@@ -118,6 +122,19 @@ public final class ModaccelPackProbe {
             if (finished) return;
             ServerLevel level = server.overworld();
             try {
+                if (toForce != null && !toForce.isEmpty()) {
+                    long budget = System.nanoTime() + 40_000_000L;
+                    do {
+                        long chunk = toForce.poll();
+                        level.setChunkForced(net.minecraft.world.level.ChunkPos.getX(chunk), net.minecraft.world.level.ChunkPos.getZ(chunk), true);
+                    } while (!toForce.isEmpty() && System.nanoTime() < budget);
+                    if (System.nanoTime() - lastProgress > 30_000_000_000L) {
+                        lastProgress = System.nanoTime();
+                        System.out.println("MODACCEL-PROBE-PROGRESS loading the test area: " + (area.size() - toForce.size()) + " of " + area.size() + " chunks");
+                    }
+                    waitingSince = System.nanoTime();
+                    return;
+                }
                 if (area != null) {
                     for (long chunk : area) if (!level.hasChunk(net.minecraft.world.level.ChunkPos.getX(chunk), net.minecraft.world.level.ChunkPos.getZ(chunk))) {
                         if (System.nanoTime() - waitingSince > 300_000_000_000L) throw new IllegalStateException("The test area's chunks did not load in 300 s");
