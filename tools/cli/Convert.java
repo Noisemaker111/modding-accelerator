@@ -26,7 +26,14 @@ final class Convert {
     /** Access transformer lines the rewritten code needs on NeoForge. */
     final Set<String> accessTransformers = new LinkedHashSet<>();
     static final String AT_FILE = "src/main/resources/META-INF/accesstransformer.cfg";
-    String modid = "", unit = "\t";
+    String modid = "", fabricId = "", unit = "\t";
+
+    /** A Fabric mod id as NeoForge accepts it (^[a-z][a-z0-9_]{1,63}$): Fabric also allows "-". */
+    static String neoforgeModId(String id) {
+        String out = id.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
+        if (out.isEmpty() || !Character.isLetter(out.charAt(0))) out = "mod_" + out;
+        return out.length() > 64 ? out.substring(0, 64) : out;
+    }
 
     Convert(Build build) {
         this.build = build;
@@ -249,8 +256,13 @@ final class Convert {
     void toNeoForge(String minecraft) throws Exception {
         String metaFile = "src/main/resources/fabric.mod.json";
         Map<String, Object> meta = Json.object(Json.parse(read(metaFile)));
-        modid = Json.text(meta, "id", "");
-        if (modid.isEmpty()) throw new IOException("fabric.mod.json has no id.");
+        fabricId = Json.text(meta, "id", "");
+        if (fabricId.isEmpty()) throw new IOException("fabric.mod.json has no id.");
+        modid = neoforgeModId(fabricId);
+        if (!modid.equals(fabricId)) notes.add(
+            "NeoForge mod ids allow only a-z, 0-9 and _, so " + fabricId + " is " + modid + " on NeoForge; " +
+            "its resources and registry ids keep the " + fabricId + " namespace, and neoforge.mods.toml keeps the Fabric id for the way back."
+        );
         rewriteSources("fabric", "neoforge");
         Map<String, Object> entrypoints = meta.get("entrypoints") instanceof Map<?, ?>
             ? Json.object(meta.get("entrypoints"))
@@ -766,6 +778,7 @@ final class Convert {
             .append(tomlString(String.valueOf(new TreeMap<>(Json.object(icon)).lastEntry().getValue())))
             .append('\n');
         out.append("description = ").append(tomlString(Json.text(meta, "description", ""))).append('\n');
+        if (!modid.equals(fabricId)) out.append("\n[modproperties.").append(modid).append("]\nfabricId = ").append(tomlString(fabricId)).append('\n');
         if ("client".equals(meta.get("environment"))) notes.add(
             "fabric.mod.json said environment client: on NeoForge the mod's only entry class is @Mod(dist = Dist.CLIENT), so a server loads none of its code."
         );
@@ -1365,6 +1378,7 @@ final class Convert {
         );
         Map<String, Object> mod = Json.object(mods.get(0));
         modid = Json.text(mod, "modId", "");
+        fabricId = toml.get("[modproperties." + modid + "]") instanceof Map<?, ?> properties ? Json.text(Json.object(properties), "fabricId", modid) : modid;
         // The @Mod classes first: their annotation names Dist, which the source rules would otherwise rename.
         Map<String, List<String>> entrypoints = new LinkedHashMap<>();
         String menu = null;
@@ -1555,7 +1569,7 @@ final class Convert {
     ) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("schemaVersion", 1);
-        out.put("id", modid);
+        out.put("id", fabricId);
         out.put("version", Json.text(mod, "version", "${version}"));
         out.put("name", Json.text(mod, "displayName", modid));
         out.put("description", Json.text(mod, "description", ""));

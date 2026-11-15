@@ -941,6 +941,11 @@ public final class PortableTests {
             Convert.fabricPredicate("[1.2,)").equals(">=1.2"),
             "Fabric version predicates and Maven ranges convert both ways"
         );
+        check(
+            Convert.neoforgeModId("pointless-piglins").equals("pointless_piglins") && Convert.neoforgeModId("demo").equals("demo") &&
+            Convert.neoforgeModId("2fast").equals("mod_2fast"),
+            "a Fabric mod id with a hyphen becomes one NeoForge accepts"
+        );
 
         LoaderRules.Provider models = LoaderRules.datagenProvider(
             "package d;\n\nimport net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;\nimport net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;\n\npublic class Models extends FabricModelProvider {\n\tpublic Models(FabricPackOutput output) {\n\t\tsuper(output);\n\t}\n\n\t@Override\n\tpublic void generateBlockStateModels(BlockModelGenerators blocks) {\n\t}\n\n\t@Override\n\tpublic void generateItemModels(ItemModelGenerators items) {\n\t}\n}\n",
