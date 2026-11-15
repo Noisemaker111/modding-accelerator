@@ -6354,6 +6354,26 @@
         "after": "package mod;\n\n\nclass StoveBlock {}\n",
         "from": "written for this rule"
       }
+    },
+    {
+      "id": "lootable-generate-loot-yarn",
+      "provenance": "hand",
+      "jump": "1.20.2 -> 1.20.3 (yarn)",
+      "match": "symbol:\\s+method checkLootInteraction\\(",
+      "apply": {
+        "find": "\\bcheckLootInteraction\\(",
+        "replace": "generateLoot("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.20.3 moved LootableContainerBlockEntity.checkLootInteraction(PlayerEntity) into the new LootableInventory interface as generateLoot(PlayerEntity), same descriptor; yarn gave it a new intermediary id, so the route map records the old method as removed. Mojang's name, unpackLootTable, did not change.",
+      "verified": "Fabric's yarn 1.20.2+build.4: LootableContainerBlockEntity.checkLootInteraction (method_11289, (Lnet/minecraft/class_1657;)V); yarn 1.20.3+build.1 and 1.21.1+build.3: LootableInventory.generateLoot (method_54873, (Lnet/minecraft/class_1657;)V); Mojang's 1.20.2 and 1.20.4 mappings both name it unpackLootTable(Player)",
+      "test": {
+        "error": "LithiumInventory.java:55: error: cannot find symbol\n  symbol:   method checkLootInteraction(PlayerEntity)\n",
+        "before": "package me.jellysquid.mods.lithium.api.inventory;\n\npublic interface LithiumInventory {\n\tdefault void generate(LootableContainerBlockEntity lootable) {\n\t\tlootable.checkLootInteraction(null);\n\t}\n}\n",
+        "after": "package me.jellysquid.mods.lithium.api.inventory;\n\npublic interface LithiumInventory {\n\tdefault void generate(LootableContainerBlockEntity lootable) {\n\t\tlootable.generateLoot(null);\n\t}\n}\n",
+        "from": "written for this rule (the shape of Lithium 1.20.1's LithiumInventory)"
+      }
     }
   ]
 }
