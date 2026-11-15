@@ -58,7 +58,14 @@ public final class FabricMetadataTest {
             require(Target.manifestEdits(selected, "1.21.6").isEmpty(), "missing Minecraft constraint is not invented");
             Json.object(placeholder.get("depends")).put("minecraft", List.of("~1.20.1", "1.21.6"));
             Files.writeString(manifest, Json.write(placeholder));
-            reject(selected, "not one literal string");
+            require(Target.manifestEdits(selected, "1.21.6").isEmpty(), "a list with an alternative that accepts the target is left alone");
+            Json.object(placeholder.get("depends")).put("minecraft", List.of("1.21", "1.21.1"));
+            Files.writeString(manifest, Json.write(placeholder));
+            var listed = Target.manifestEdits(selected, "1.21.6");
+            require(
+                listed.size() == 1 && "1.21.6".equals(Json.object(Json.object(Json.parse(listed.get(0).after())).get("depends")).get("minecraft")),
+                "a list none of whose alternatives accepts the target becomes the target release (Sound Physics)"
+            );
             Json.object(placeholder.get("depends")).put("minecraft", ">=1.20.1 <1.22");
             Files.writeString(manifest, Json.write(placeholder));
             require(

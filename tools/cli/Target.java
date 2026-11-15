@@ -127,6 +127,7 @@ final class Target {
             } catch (IOException sibling) {
                 setup.unchecked.add(Json.map("artifact", "Fabric (sibling project)", "version", to, "reason", sibling.getMessage()));
             }
+            forgeSibling(setup, build, pins, to);
             Dependencies.resolve(setup, "neoforge");
             applyReplacements(setup, build, pins);
             neoGradleFollows(setup, build, to);
@@ -154,6 +155,7 @@ final class Target {
         fabricPins(setup, build, pins, to);
         // A multi-loader build keeps NeoForge's version beside Fabric's: the sibling project must follow the same game.
         neoForgeSibling(setup, build, pins, to);
+        forgeSibling(setup, build, pins, to);
         Dependencies.resolve(setup);
         applyReplacements(setup, build, pins);
         loomFollows(setup, build, to);
@@ -447,6 +449,60 @@ final class Target {
             if (!v.matches(".*-(?:beta|alpha|rc|SNAPSHOT).*") && (release == null || Versions.compare(v, release) > 0)) release = v;
         }
         return release != null ? release : any;
+    }
+
+    /**
+     * A multi-loader build (Architectury, MultiLoader) keeps Forge's version beside Fabric's and NeoForge's, and Gradle
+     * configures every project: a Forge project left on the old game stops the whole build (Chat Heads 1.21.4 -> 1.21.5
+     * asked for forge 1.21.5-54.0.16, which does not exist). Forge's pin moves to Forge's newest release for the target
+     * (maven.minecraftforge.net); when Forge publishes none, an Architectury enabled_platforms list drops forge, so the
+     * other loaders still build. The game version ranges the build keeps for each loader's metadata follow the target.
+     */
+    static void forgeSibling(Setup setup, Build build, Map<String, Object> pins, String to) throws Exception {
+        for (String key : List.of("forge_version", "forgeVersion", "minecraft_forge_version")) if (pins.containsKey(key)) {
+            String old = String.valueOf(pins.get(key)), release;
+            try {
+                release = forgeRelease(fetch(build, "https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml"), to);
+            } catch (IOException unreachable) {
+                setup.unchecked.add(Json.map("artifact", "net.minecraftforge:forge (sibling project)", "version", to, "reason", unreachable.getMessage()));
+                continue;
+            }
+            if (release != null) {
+                setup.replacements.put(key, old.contains("-") ? release : release.substring(release.indexOf('-') + 1));
+                setup.applied.add(
+                    Json.map("artifact", "net.minecraftforge:forge", "to", release, "evidence", "the build's Forge project follows the same game: Forge " + release + " publishes for " + to)
+                );
+            } else if (pins.containsKey("enabled_platforms") && String.valueOf(pins.get("enabled_platforms")).contains("forge")) {
+                String platforms = String.join(
+                    ",",
+                    Arrays.stream(String.valueOf(pins.get("enabled_platforms")).split(",")).map(String::trim).filter(p -> !p.equals("forge")).toList()
+                );
+                setup.replacements.put("enabled_platforms", platforms);
+                setup.applied.add(
+                    Json.map("change", "enabled_platforms drops forge for " + to, "evidence", "Forge publishes no release for Minecraft " + to + " (maven.minecraftforge.net)")
+                );
+            } else setup.unchecked.add(
+                Json.map("artifact", "net.minecraftforge:forge (sibling project)", "version", to, "reason", "Forge publishes no release for Minecraft " + to)
+            );
+        }
+        for (var pin : pins.entrySet()) {
+            String key = pin.getKey(), value = String.valueOf(pin.getValue());
+            if (key.equals("minecraft_version_range") || setup.replacements.containsKey(key)) continue;
+            if (!key.matches("(?i)(?:forge|neoforge|neo|fabric|quilt)_?(?:game|minecraft|mc)_?version_?range")) continue;
+            if (!value.matches("[\\[(][^,]*,[^,]*[\\])]") || value.contains(to)) continue;
+            setup.replacements.put(key, "[" + to + "," + to + "]");
+        }
+    }
+
+    /** Forge's newest release for one game version in its maven-metadata.xml ("1.21.5-55.0.21"), or null. */
+    static String forgeRelease(String xml, String to) {
+        String newest = null;
+        Matcher version = Pattern.compile("<version>(" + Pattern.quote(to) + "-[0-9][^<]*)</version>").matcher(xml);
+        while (version.find()) {
+            String v = version.group(1);
+            if (newest == null || Versions.compare(v.substring(to.length() + 1), newest.substring(to.length() + 1)) > 0) newest = v;
+        }
+        return newest;
     }
 
     /** Parchment's newest release of parameter names for exactly this Minecraft version, or "" when it publishes none. */
@@ -1324,6 +1380,21 @@ final class Target {
             if (!(metadata.get("depends") instanceof Map<?, ?>)) continue;
             var depends = Json.object(metadata.get("depends"));
             if (!depends.containsKey("minecraft")) continue;
+            // A list of alternatives (Sound Physics: ["1.21", "1.21.1"]) accepts the target when one of them does; when none
+            // does, the list becomes the target release, as a single constraint would.
+            if (depends.get("minecraft") instanceof List<?> alternatives && alternatives.stream().allMatch(a -> a instanceof String)) {
+                boolean accepted = false;
+                for (Object a : alternatives) if (String.valueOf(a).contains("${") || Versions.matches(String.valueOf(a), setup.to)) accepted = true;
+                if (accepted) continue;
+                Matcher list = Pattern.compile("(\"minecraft\"\\s*:\\s*)\\[[^\\]]*\\]").matcher(before);
+                if (!list.find()) throw new IOException("Cannot locate depends.minecraft in " + file + "; update its owner manually.");
+                int at = list.start();
+                if (list.find()) throw new IOException("Fabric manifest names minecraft lists twice in " + file + "; update its owner manually.");
+                Matcher only = Pattern.compile("(\"minecraft\"\\s*:\\s*)\\[[^\\]]*\\]").matcher(before);
+                only.find(at);
+                setup.replace(file, before, before.substring(0, only.start()) + only.group(1) + "\"" + setup.to + "\"" + before.substring(only.end()));
+                continue;
+            }
             if (!(depends.get("minecraft") instanceof String constraint)) throw new IOException(
                 "Fabric manifest depends.minecraft is not one literal string in " +
                 file +

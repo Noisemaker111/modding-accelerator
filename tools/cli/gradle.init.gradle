@@ -127,6 +127,9 @@ gradle.afterProject { p ->
                  'yarn_mappings','yarn_version','neoforge_version','neo_version','neoForgeVersion','neoforgeVersion','forge_version'].each { key -> if (p.hasProperty(key)) pins[key] = p.property(key).toString() }
                 // Declared accepted game/loader ranges must travel with the version pins.
                 ['minecraft_version_range','neo_version_range','neoforge_version_range','forge_version_range','loader_version_range'].each { key -> if (p.hasProperty(key)) pins[key] = p.property(key).toString() }
+                // Multi-loader builds: each loader's accepted game range, and Architectury's list of loaders it builds.
+                p.properties.each { k, v -> if (k instanceof String && v instanceof String && k.matches('(?i)(forge|neoforge|neo|fabric|quilt)_?(game|minecraft|mc)_?version_?range')) pins[k] = v }
+                if (p.hasProperty('enabled_platforms')) pins['enabled_platforms'] = p.property('enabled_platforms').toString()
                 def tasks = p.tasks.findAll { t -> t instanceof JavaExec || t instanceof Test || t.name == 'build' || t.name == 'classes' || t.name == 'testClasses' }.collect { t ->
                     [task: t.path, kind: t instanceof Test ? 'test' : t instanceof JavaExec ? 'java' : 'build',
                      directory: t instanceof JavaExec ? launchDirectory(t).absolutePath : null]
