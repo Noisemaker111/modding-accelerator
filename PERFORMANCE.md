@@ -28,12 +28,15 @@ For a source project supported by Mod Accel's existing launcher:
 ./modaccel perf --root /path/to/my-mod --duration 60
 ```
 
-This starts a **visible** client if none is running. Enter your world and perform
-the actions you want to measure. Increase `--warmup` (up to 600 seconds) when you
-need more time. Existing hidden/throttled source sessions are refused: stop that
-session with `game-stop`, then run `perf --root` again. Profiling does not cap FPS,
-change vsync, mute your game, modify your saves or stop a game you attached to.
-Source launches retain the existing control agent's focus behavior.
+This starts a client if none is running, the way `modaccel preferences` says:
+hidden with background on (frame timing is then not representative, and the report
+says so; server ticks and timed methods are unaffected), visible otherwise. It runs
+the full JIT even when hidden, unlike other hidden test sessions, which compile with
+C1 alone: C1 code is slower than players' and gives JFR far fewer samples. A session
+that is already running is profiled as it is; the report warns when it is C1-only.
+Enter your world and perform the actions you want to measure. Increase `--warmup`
+(up to 600 seconds) when you need more time. Profiling does not cap FPS, change
+vsync, mute your game, modify your saves or stop a game you attached to.
 
 ## Where your mod's cost goes
 
@@ -45,13 +48,17 @@ packages come from the checkout; for an installed pack, mods are named from each
 jar's `fabric.mod.json` or `mods.toml`. Use `--mod-package com.example.mymod` to
 name your code explicitly, or `--mod-root my-mod` with `--attach PID`.
 
-`perf` refuses a hidden, throttled source session because its frame timing is not
+`perf --attach` refuses a hidden, throttled game because its frame timing is not
 representative. When only server ticks or timed methods matter, `--allow-hidden`
 captures it anyway and the report says frame values are not representative.
 
 Each sampled stack, allocation, lock wait and I/O event is charged to the
 **innermost mod frame** on its stack. Game, JVM, loader and library code above that
-frame is work the mod asked for, so it counts as the mod's. Expand a mod to see its
+frame is work the mod asked for, so it counts as the mod's. Work inside Mod Accel's
+own frame/tick hooks and timing probes is profiler overhead, reported apart and never
+charged to a mod. JFR weighs an allocation sample by what its thread allocated since
+its previous sample, so each thread's first sample, which also covers time before the
+capture, only starts that thread's count. Expand a mod to see its
 **features**, named by how the game entered the mod:
 
 - `event handler · EntityTickEvent.Pre → EventHandler.onEntityTick` when an event bus

@@ -131,7 +131,7 @@ final class Performance {
         return matching.get(0);
     }
 
-    /** The visible source session for --root, started when none runs. */
+    /** The source session for --root, started when none runs; hidden when the background preference is on. */
     static Map<String, Object> rootSession(Path home, Modaccel.Options options, Modaccel.Report receipt) throws Exception {
         ProjectModel project = new ProjectModel(Path.of(options.get("root", ".")));
         project.requireGradleBuild();
@@ -143,8 +143,6 @@ final class Performance {
                 game = new Game(build, build.model(options.has("refresh"), false));
                 session = game.start(options, game.fingerprint());
             }
-            if (Boolean.TRUE.equals(session.get("background"))) throw new IOException(
-                "This source session is throttled/hidden. Run game-stop for this project, then perf --root again to launch visibly.");
             return session;
         }
     }
@@ -213,7 +211,8 @@ final class Performance {
             properties.setProperty("modPackages", value);
         }
         properties.setProperty("heap", options.has("no-heap") ? "off" : "on");
-        if (options.has("allow-hidden")) properties.setProperty("allowHidden", "true");
+        // --root profiles the session modaccel started with the user's own window preference.
+        if (options.has("allow-hidden") || options.values.containsKey("root")) properties.setProperty("allowHidden", "true");
         try (Writer writer = Files.newBufferedWriter(request)) { properties.store(writer, "Mod Accel capture request"); }
     }
 

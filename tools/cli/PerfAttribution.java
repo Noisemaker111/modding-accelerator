@@ -33,8 +33,8 @@ final class PerfAttribution {
     final Map<String, Unit> units = new TreeMap<>();
     final Map<String, Long> threadSamples = new HashMap<>();
     final Map<String, double[]> threadCpu = new TreeMap<>();
-    long samples, attributedSamples;
-    double allocationTotal, blockedTotal;
+    long samples, attributedSamples, profilerSamples;
+    double allocationTotal, blockedTotal, profilerAllocation;
 
     record Origin(String key, String name, boolean mod, String location) { }
 
@@ -250,9 +250,19 @@ final class PerfAttribution {
         return type.substring(type.lastIndexOf('.') + 1).replace('$', '.');
     }
 
+    /** Work the profiler's own hooks and timing probes did, often inside a mod's method: never the mod's cost. */
+    static boolean profiler(List<RecordedFrame> frames) {
+        for (RecordedFrame frame : frames) if (typeName(frame).startsWith("dev.modaccel.")) return true;
+        return false;
+    }
+
     void sample(List<RecordedFrame> frames, String thread) {
         samples++;
         threadSamples.merge(thread, 1L, Long::sum);
+        if (profiler(frames)) {
+            profilerSamples++;
+            return;
+        }
         Hit hit = hit(frames);
         Set<String> present = new HashSet<>();
         for (RecordedFrame frame : frames) {
@@ -281,6 +291,10 @@ final class PerfAttribution {
 
     void allocation(RecordedEvent event, long weight) {
         allocationTotal += weight;
+        if (profiler(PerfReport.frames(event.getStackTrace()))) {
+            profilerAllocation += weight;
+            return;
+        }
         Hit hit = stack(event);
         if (hit == null) return;
         hit.unit.total.allocation += weight;
@@ -428,6 +442,8 @@ final class PerfAttribution {
         threads.sort(Comparator.comparingDouble((Object r) -> -((Number) Json.object(r).get("meanCpuPercentOfMachine")).doubleValue()));
         return Json.map("mods", rows, "threads", threads.stream().limit(40).toList(),
             "executionSamples", samples, "attributedSamples", attributedSamples, "samplePeriodMs", period,
+            "profilerOverhead", Json.map("samples", profilerSamples, "allocationBytesPerSecond", profilerAllocation / seconds,
+                "meaning", "Samples and allocation inside modaccel's own frame/tick hooks and timing probes; charged to no mod."),
             "unattributed", exact.getOrDefault("[unattributed]", List.of()),
             "basis", Json.map(
                 "sampled", "Execution samples, allocation samples, lock and I/O events are charged to the innermost mod frame on their stack; "
