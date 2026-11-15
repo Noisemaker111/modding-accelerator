@@ -140,6 +140,7 @@ public final class PerfTest {
             check(Files.isRegularFile(first.resolve("stacks.speedscope.json")), "sampled stack export exists");
             functionTiming(report, first);
             attribution(report, first);
+            childOutputEncoding(scratch, first);
             Path second = scratch.resolve("no-hooks");
             Files.createDirectories(second);
             Performance.capture(pid, agent, Performance.request(second, 1, 0, true), second, 1, 0, false);
@@ -271,6 +272,41 @@ public final class PerfTest {
             .filter(r -> r.get("label").equals("outer")).findFirst().orElseThrow(() -> new AssertionError("timed game method listed as unattributed exact cost"));
         check(Boolean.TRUE.equals(outer.get("complete")) && ((Number) outer.get("calls")).longValue() > 0,
             "exact rows come from complete agent totals, not the capped per-call history");
+    }
+
+    /**
+     * A perf-optimize child prints a matched pattern's provenIn ("mod version · scope") and the parent reads it.
+     * On Windows the console code page once turned "·" into byte 0xB7 and the whole run ended in MalformedInputException.
+     * LC_ALL=C gives POSIX children an ASCII console the same way.
+     */
+    static void childOutputEncoding(Path scratch, Path capture) throws Exception {
+        Path home = scratch.resolve("pattern-home");
+        Files.createDirectories(home.resolve("knowledge"));
+        Map<String, Object> pattern = Json.map("id", "façade-cache", "symptom", Json.map("text", "Façade work", "when",
+            List.of(Json.map("in", "methods", "matches", ".", "minShare", 0))), "change", "réutiliser", "gain", Json.map(),
+            "gate", Json.map("name", "g"), "provenIn", Json.map("mod", "Façade", "version", "1", "scope", "näive"));
+        Json.save(home.resolve("knowledge/perf-patterns.json"), Json.map("schema", 1, "patterns", List.of(pattern)));
+        List<String> command = PerfOptimize.javaCommand(home);
+        command.addAll(List.of("perf-report", "--file", capture.toString(), "--out", scratch.resolve("pattern-report").toString(), "--json"));
+        Path stdout = scratch.resolve("pattern-report.json"), stderr = scratch.resolve("pattern-report.log");
+        ProcessBuilder builder = new ProcessBuilder(command).redirectOutput(stdout.toFile()).redirectError(stderr.toFile());
+        builder.environment().put("LC_ALL", "C");
+        Process child = builder.start();
+        check(child.waitFor(120, java.util.concurrent.TimeUnit.SECONDS), "perf-report child finishes");
+        Map<String, Object> answer = PerfOptimize.answer(stdout, stderr, child.exitValue());
+        check(Boolean.TRUE.equals(answer.get("ok")), "a child's non-ASCII output is read back: " + answer.get("error"));
+        List<Object> patterns = Json.array(Json.object(answer.get("result")).get("patterns"));
+        check(!patterns.isEmpty() && "Façade 1 · näive".equals(Json.object(patterns.get(0)).get("provenIn")),
+            "provenIn survives the child's console encoding: " + patterns);
+        Files.write(stdout, new byte[]{'{', '"', 'o', 'k', '"', ':', 't', 'r', 'u', 'e', ',', '"', 'x', '"', ':', '"', (byte) 0xB7, '"', '}'});
+        Map<String, Object> garbled = PerfOptimize.answer(stdout, stderr, 0);
+        check(Boolean.FALSE.equals(garbled.get("ok")) && garbled.get("error").toString().contains("not UTF-8"), "cp1252 output is the step's error, not an exception");
+        Files.write(stderr, new byte[]{'a', ' ', (byte) 0xB7, ' ', 'b'});
+        check(Run.tail(stderr).equals("a · b"), "a log in the console code page is still readable: " + Run.tail(stderr));
+        Map<String, Object> crashed = Json.map("accepted", false, "error", "java.nio.charset.MalformedInputException: Input length = 1");
+        check("error".equals(PerfOptimize.verdict(crashed)) && PerfOptimize.summary(crashed).startsWith("ERROR"),
+            "a tool crash is an error, never a candidate rejection: " + PerfOptimize.summary(crashed));
+        check("rejected".equals(PerfOptimize.verdict(Json.map("accepted", false))), "a decided slower candidate is still a rejection");
     }
 
     static void modTemplates() throws Exception {

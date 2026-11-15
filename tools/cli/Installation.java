@@ -456,7 +456,8 @@ final class Installation {
         List<String> failed = new ArrayList<>(), passedLines = new ArrayList<>(), failedText = new ArrayList<>();
         for (Suite suite : suites) {
             List<String> command = new ArrayList<>(
-                List.of(jdk.java().toString(), "-cp", own + File.pathSeparator + classes, suite.main())
+                List.of(jdk.java().toString(), "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-Dsun.stdout.encoding=UTF-8",
+                    "-Dsun.stderr.encoding=UTF-8", "-cp", own + File.pathSeparator + classes, suite.main())
             );
             if (suite.wantsHarness()) command.add(harness.toString());
             if (suite.wantsScratch()) command.add(report.directory.resolve("fixtures").toString());

@@ -1,5 +1,6 @@
 import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
+import java.nio.charset.*;
 import java.nio.file.*;
 import java.time.*;
 import java.util.*;
@@ -81,15 +82,33 @@ final class Run {
         return new Result(process.exitValue(), log, (System.nanoTime() - start) / 1e9);
     }
 
+    /**
+     * A child's log as text. Logs are UTF-8 when the child was told so; a JVM left on the console code page
+     * (cp1252 on Windows) writes its native charset instead, which must not turn a diagnostic into an exception.
+     */
+    static List<String> logLines(Path log) throws IOException {
+        byte[] bytes = Files.readAllBytes(log);
+        String text;
+        try {
+            text = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString();
+        } catch (CharacterCodingException notUtf8) {
+            String nativeName = System.getProperty("native.encoding", "");
+            Charset fallback = !nativeName.isBlank() && Charset.isSupported(nativeName) ? Charset.forName(nativeName) : StandardCharsets.ISO_8859_1;
+            if (fallback.equals(StandardCharsets.UTF_8)) fallback = StandardCharsets.ISO_8859_1;
+            text = new String(bytes, fallback);
+        }
+        return text.lines().toList();
+    }
+
     static String tail(Path log) throws IOException {
         if (!Files.exists(log)) return "";
-        List<String> lines = Files.readAllLines(log, StandardCharsets.UTF_8);
+        List<String> lines = logLines(log);
         return String.join("\n", lines.subList(Math.max(0, lines.size() - 24), lines.size()));
     }
 
     static String failure(Path log) throws IOException {
         if (!Files.exists(log)) return "";
-        List<String> causes = Files.readAllLines(log, StandardCharsets.UTF_8)
+        List<String> causes = logLines(log)
             .stream()
             .filter(
                 line ->
