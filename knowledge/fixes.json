@@ -6106,6 +6106,26 @@
         "after": "package mod;\n\nclass Spawner {\n\tboolean inside(World world, int y) { return y < world.getTopYInclusive() + 1; }\n}\n",
         "from": "written for this rule"
       }
+    },
+    {
+      "id": "nbt-getcompound-or-empty-any-key",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incompatible types: Optional<(?:CompoundTag|ListTag)> cannot be converted to",
+      "apply": {
+        "find": "\\.getCompound\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)(?!\\s*\\.\\s*(?:orElse|orElseGet|orElseThrow|ifPresent|ifPresentOrElse|isPresent|isEmpty|map|flatMap|filter|get\\b|stream))",
+        "replace": ".getCompoundOrEmpty($1)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.5 made CompoundTag.getCompound(String) return Optional<CompoundTag>; getCompoundOrEmpty(String) returns the tag or an empty one, as getCompound did. For any key expression (\"itemFilter\" + i); a call already used as an Optional is left alone.",
+      "verified": "Mojang's 26.1 client jar (same API since 1.21.5): CompoundTag.getCompound(String) -> Optional<CompoundTag>, getCompoundOrEmpty(String) -> CompoundTag; port sweep 2026-11-15: Trash Cans 1.21.4 -> 1.21.5 left exactly these two errors",
+      "test": {
+        "error": "TrashCanBlockEntity.java:80: error: incompatible types: Optional<CompoundTag> cannot be converted to CompoundTag\n",
+        "before": "package mod;\n\nclass TrashCanBlockEntity {\n\tvoid load(CompoundTag tag) {\n\t\tfor (int i = 0; i < 9; i++) this.itemFilter.set(i, tag.contains(\"itemFilter\" + i) ? decode(tag.getCompound(\"itemFilter\" + i), access) : ItemStack.EMPTY);\n\t\ttag.getCompound(\"x\").ifPresent(this::read);\n\t}\n}\n",
+        "after": "package mod;\n\nclass TrashCanBlockEntity {\n\tvoid load(CompoundTag tag) {\n\t\tfor (int i = 0; i < 9; i++) this.itemFilter.set(i, tag.contains(\"itemFilter\" + i) ? decode(tag.getCompoundOrEmpty(\"itemFilter\" + i), access) : ItemStack.EMPTY);\n\t\ttag.getCompound(\"x\").ifPresent(this::read);\n\t}\n}\n",
+        "from": "written for this rule (the shape of Trash Cans 1.21.4's TrashCanBlockEntity)"
+      }
     }
   ]
 }
