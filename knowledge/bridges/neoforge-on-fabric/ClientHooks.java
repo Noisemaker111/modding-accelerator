@@ -39,6 +39,18 @@ public final class ClientHooks {
         return screen;
     }
 
+    /**
+     * Bridge-only: the second component of a KeyEvent, its key code (keycode()) since 26.3 and its scan code (scancode())
+     * before, read by its record component since the accessor's name differs; ScreenEvent and InputEvent's getKeycode().
+     */
+    public static int keycode(KeyEvent event) {
+        try {
+            return (int) KeyEvent.class.getRecordComponents()[1].getAccessor().invoke(event);
+        } catch (ReflectiveOperationException failed) {
+            throw new IllegalStateException(failed);
+        }
+    }
+
     public static boolean onScreenInitPre(Screen screen, List<GuiEventListener> listeners, Consumer<GuiEventListener> add, Consumer<GuiEventListener> remove) {
         return Bus.INSTANCE.post(new ScreenEvent.Init.Pre(screen, listeners, add, remove)).isCanceled();
     }

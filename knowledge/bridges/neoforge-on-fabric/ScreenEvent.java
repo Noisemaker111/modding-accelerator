@@ -395,7 +395,7 @@ public abstract class ScreenEvent extends Event {
         }
 
         public int getKeycode() {
-            return this.keyEvent.keycode();
+            return ClientHooks.keycode(this.keyEvent);
         }
 
         public int getModifiers() {

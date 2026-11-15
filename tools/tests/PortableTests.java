@@ -1615,6 +1615,11 @@ public final class PortableTests {
             "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml",
             "<metadata><versioning><versions><version>0.116.18+1.21.1</version><version>0.161.0+26.3</version><version>0.166.2+26.3</version><version>0.150.0+26.1.2</version></versions></versioning></metadata>"
         );
+        // A bridge test written for 1.21.1 converts back to NeoForge 21.1.
+        bridgeAnswers.put(
+            "https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml",
+            "<metadata><versioning><versions><version>21.1.250</version><version>26.3.0.90</version><version>26.3.0.103</version><version>26.1.2.126</version><version>26.3.0.104-beta</version></versions></versioning></metadata>"
+        );
         for (Object item : LoaderRules.list(rules.get("bridges"))) {
             var b = Json.object(item);
             boolean fromNeo = "neoforge".equals(b.get("from"));

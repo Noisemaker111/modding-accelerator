@@ -134,7 +134,7 @@ public abstract class InputEvent extends Event {
         }
 
         public int getKeycode() {
-            return this.keyEvent.keycode();
+            return ClientHooks.keycode(this.keyEvent);
         }
 
         public int getAction() {
