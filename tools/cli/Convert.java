@@ -111,7 +111,8 @@ final class Convert {
     /**
      * NeoForge access transformer lines as a Fabric access widener (v2), the reverse of widenerToTransformer. A field
      * line names no field type, which an access widener needs: fieldTypes gives it from the game (owner/name to
-     * descriptor), and a field it does not know goes to unconverted with wildcards and +f.
+     * descriptor), and a field it does not know goes to unconverted with wildcards and +f. Asked for a method (owner,
+     * name+descriptor), it gives "access N", the method's access flags, when it knows: a private method is also extendable.
      */
     static String transformerToWidener(String text, boolean official, List<String> unconverted) {
         return transformerToWidener(text, official, unconverted, (owner, field) -> null);
@@ -152,7 +153,10 @@ final class Convert {
             }
             String name = t[2].substring(0, paren), desc = t[2].substring(paren);
             out.append("accessible method ").append(owner).append(' ').append(name).append(' ').append(desc).append('\n');
-            if (definal) out.append("extendable method ").append(owner).append(' ').append(name).append(' ').append(desc).append('\n');
+            // A widener makes a private method it opens final; a transformer leaves it overridable, and mods override it.
+            String access = fieldTypes.apply(owner, name + desc);
+            boolean wasPrivate = access != null && access.startsWith("access ") && (Integer.parseInt(access.substring(7)) & 0x0002) != 0;
+            if (definal || wasPrivate) out.append("extendable method ").append(owner).append(' ').append(name).append(' ').append(desc).append('\n');
         }
         return out.toString();
     }
@@ -192,7 +196,10 @@ final class Convert {
                 var entry = zip.getEntry(owner + ".class");
                 if (entry == null) return null;
                 try (var in = zip.getInputStream(entry)) {
-                    for (var member : Explain.Index.parse(in.readAllBytes()).members()) if (!member.method()) known.put(owner + " " + member.name(), member.descriptor());
+                    for (var member : Explain.Index.parse(in.readAllBytes()).members()) {
+                        if (member.method()) known.put(owner + " " + member.name() + member.descriptor(), "access " + member.access());
+                        else known.put(owner + " " + member.name(), member.descriptor());
+                    }
                 }
                 return known.get(key);
             } catch (Exception offline) {
@@ -913,6 +920,13 @@ final class Convert {
                 applied.computeIfAbsent("fabric-bridge", k -> new ArrayList<>()).add(file);
             }
         }
+        // Code that only calls what Fabric injects into game classes needs the bridge too (bridges[].mixins[].uses).
+        if (!used) {
+            List<String> texts = new ArrayList<>();
+            for (String file : javaFiles()) texts.add(read(file));
+            Object mixins = layer != null && layer.get("mixins") != null ? layer.get("mixins") : b.get("mixins");
+            for (Object mixin : LoaderRules.list(mixins)) used |= uses(Json.object(mixin).get("uses"), texts);
+        }
         if (!used) return;
         fabricBridgePackage = pkg;
         if (b.get("replaces") instanceof Map<?, ?> replaces) for (var e : Json.object(replaces).entrySet()) fabricBridgeReplaces.put(e.getKey(), String.valueOf(e.getValue()));
@@ -1033,6 +1047,9 @@ final class Convert {
         return null;
     }
 
+    /** The interfaces the Fabric bridge injects into game classes, as ModDevGradle reads them (interfaceInjectionData). */
+    static final String INJECTED_INTERFACES = "fabricbridge-interfaces.json";
+
     /** The Fabric bridge's marker: its FabricBridge class says this in its first comment. */
     static final String FABRIC_BRIDGE_MARK = "The Fabric bridge on NeoForge";
 
@@ -1068,6 +1085,7 @@ final class Convert {
         if (Files.isDirectory(resources)) try (var list = Files.list(resources)) {
             for (Path config : list.filter(p -> p.getFileName().toString().endsWith(".fabricbridge.mixins.json")).toList()) delete(relative(config));
         }
+        if (Files.isRegularFile(project.root.resolve(INJECTED_INTERFACES))) delete(INJECTED_INTERFACES);
         notes.add("Fabric bridge: " + pkg + " is removed; the code names Fabric API's own classes again.");
     }
 
@@ -2219,6 +2237,23 @@ final class Convert {
             neoForge.append('\n').append(unit).append("addModdingDependenciesTo(sourceSets.test)\n");
             notes.add("Build: the mod's tests use the game's classes, so ModDevGradle adds them to the test source set (addModdingDependenciesTo).");
         }
+        // What Fabric injects into game classes (FabricItem on Item ...): the Fabric bridge's mixins add its copies when the
+        // game runs, and ModDevGradle's interface injection adds them to the game the mod compiles against.
+        if (!bridgeInjected.isEmpty()) {
+            write(INJECTED_INTERFACES, pretty(new LinkedHashMap<String, Object>(bridgeInjected), "") + "\n");
+            neoForge
+                .append('\n')
+                .append(unit)
+                .append("interfaceInjectionData {\n")
+                .append(unit)
+                .append(unit)
+                .append("from(file('")
+                .append(INJECTED_INTERFACES)
+                .append("'))\n")
+                .append(unit)
+                .append("}\n");
+            notes.add("Build: ModDevGradle injects the Fabric bridge's interfaces into " + String.join(", ", bridgeInjected.keySet()) + " (" + INJECTED_INTERFACES + ").");
+        }
         neoForge.append("}\n");
         if (datagenOutput != null) neoForge
             .append(
@@ -2681,6 +2716,14 @@ final class Convert {
         List<String> out = new ArrayList<>();
         for (String line : lines) {
             String[] t = line.split("\\s+");
+            if (t.length == 2 && t[1].contains("$")) {
+                // A nested class (Hud$HeartType) is named in code as Outer.Inner, or imported by its full name.
+                String nested = t[1].substring(t[1].lastIndexOf('.') + 1).replace('$', '.');
+                if (nested.matches(".*\\.\\d+.*")) continue;
+                boolean named = Pattern.compile("(?<![\\w$])" + Pattern.quote(nested) + "(?![\\w$])").matcher(code).find();
+                if (named || code.contains("import " + t[1].replace('$', '.') + ";")) out.add(line);
+                continue;
+            }
             if (t.length < 3) continue;
             int paren = t[2].indexOf('(');
             String member = paren < 0 ? t[2] : t[2].substring(0, paren);
@@ -2731,7 +2774,10 @@ final class Convert {
             ).matcher(text);
             String pkg = mod.reset().find() ? mod.group(1) + "." : "";
             String top = file.substring(file.lastIndexOf('/') + 1).replace(".java", "");
+            // A subscriber in a comment (a file kept commented out) is not one.
+            boolean[] code = LoaderRules.code(text);
             while (s.find()) {
+                if (!code[s.start()]) continue;
                 String args = s.group(1) == null ? "" : s.group(1);
                 boolean client = args.contains("Dist.CLIENT") && !args.contains("DEDICATED_SERVER");
                 String type = pkg + (s.group(2).equals(top) ? top : top + "." + s.group(2));
@@ -2894,11 +2940,12 @@ final class Convert {
 
     /**
      * NeoForge's Dist answers isClient() and isDedicatedServer(); on Fabric the side is EnvType, which has neither (the
-     * physical-side rule makes Dist EnvType). The side the bridge's FMLEnvironment and FMLLoader give is compared instead.
+     * physical-side rule makes Dist EnvType). The side the bridge's FMLEnvironment and FMLLoader give is compared instead,
+     * or Fabric Loader's own, which the environment-type rule writes for FMLEnvironment.getDist().
      */
     static String sideQueries(String text) {
         Matcher m = Pattern.compile(
-            "\\b(FMLEnvironment\\.getDist\\(\\)|FMLEnvironment\\.dist|FMLLoader\\.getCurrent\\(\\)\\.getDist\\(\\)|FMLLoader\\.getDist\\(\\))\\.(isClient|isDedicatedServer)\\(\\)"
+            "\\b(FMLEnvironment\\.getDist\\(\\)|FMLEnvironment\\.dist|FMLLoader\\.getCurrent\\(\\)\\.getDist\\(\\)|FMLLoader\\.getDist\\(\\)|FabricLoader\\.getInstance\\(\\)\\.getEnvironmentType\\(\\))\\.(isClient|isDedicatedServer)\\(\\)"
         ).matcher(text);
         if (!m.find()) return text;
         String out = m.reset().replaceAll(r -> Matcher.quoteReplacement("(" + r.group(1) + " == EnvType." + (r.group(2).equals("isClient") ? "CLIENT" : "SERVER") + ")"));
@@ -3049,13 +3096,17 @@ final class Convert {
      */
     String bridgeMixins(Map<String, Object> b, Map<String, Object> layer, String pkg, List<String> sources) throws Exception {
         Object list = layer != null && layer.get("mixins") != null ? layer.get("mixins") : b.get("mixins");
-        List<String> common = new ArrayList<>(), client = new ArrayList<>();
+        List<String> common = new ArrayList<>(), client = new ArrayList<>(), texts = new ArrayList<>();
         StringBuilder all = new StringBuilder();
-        for (String file : sources) all.append(read(file)).append('\n');
+        for (String file : sources) {
+            String source = read(file);
+            texts.add(source);
+            all.append(source).append('\n');
+        }
         String text = all.toString();
         for (Object item : LoaderRules.list(list)) {
             var mixin = Json.object(item);
-            boolean needed = false;
+            boolean needed = uses(mixin.get("uses"), texts);
             for (String target : LoaderRules.strings(mixin.get("for"))) if (
                 Pattern.compile("(?m)^import\\s+(?:static\\s+)?" + Pattern.quote(pkg + "." + target) + "\\b").matcher(text).find()
             ) needed = true;
@@ -3085,6 +3136,18 @@ final class Convert {
         );
         applied.computeIfAbsent("bridge-mixins", k -> new ArrayList<>()).add("src/main/resources/" + name);
         return name;
+    }
+
+    /**
+     * Whether a bridge mixin's "uses" finds the code that needs it: alternatives, each a list of patterns all found in one
+     * source file. Code that calls what Fabric injects into a game class (builder.contains(type)) imports no bridge class.
+     */
+    static boolean uses(Object uses, List<String> texts) {
+        for (Object alternative : LoaderRules.list(uses)) {
+            List<Pattern> all = LoaderRules.strings(alternative).stream().map(Pattern::compile).toList();
+            for (String text : texts) if (!all.isEmpty() && all.stream().allMatch(p -> p.matcher(text).find())) return true;
+        }
+        return false;
     }
 
     /** addListener(this::method) and addListener((Type event) -> ...) with the event class written in, as the bridge's IEventBus takes it. */
@@ -3916,6 +3979,8 @@ final class Convert {
                 .append(runs)
                 .append(unit)
                 .append("}\n}\n");
+            // The Fabric bridge's interface injection goes with the bridge (unbridgeFabric); Fabric API injects its own.
+            if (parts.getOrDefault("interfaceInjectionData", "").contains(INJECTED_INTERFACES)) parts.remove("interfaceInjectionData");
             for (String key : parts.keySet()) if (!Set.of("runs", "mods", "parchment").contains(key)) leave(
                 "build.gradle",
                 0,

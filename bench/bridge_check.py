@@ -67,6 +67,7 @@ def templates(b, layer):
     return out
 
 
+INJECTED = "fabricbridge-interfaces.json"  # Convert.INJECTED_INTERFACES
 TESTS = ROOT / "knowledge" / "bridge-tests"
 TEST_BUILD = """
 // bench/bridge_check.py: the bridge's runtime tests.
@@ -95,8 +96,11 @@ def run_tests(work, pkg_rel, pkg, modid, bridge_id, to_fabric):
     build = work / "build.gradle"
     text = build.read_text(encoding="utf-8")
     if "bench/bridge_check.py: the bridge's runtime tests" not in text:
-        # ModDevGradle gives the game to the main source set only; Loom gives it to the tests too.
-        extra = "" if to_fabric else "\nneoForge {\n    addModdingDependenciesTo(sourceSets.test)\n}\n"
+        # ModDevGradle gives the game to the main source set only; Loom gives it to the tests too. Its unit tests run inside
+        # FML with the host mod loaded, so the bridge's mixins apply as in the game (tests that use injected interfaces).
+        # NeoForge's test framework starts a server for a test that asks for one (tags and item components bound).
+        extra = "" if to_fabric else ("\nneoForge {\n    unitTest {\n        enable()\n        testedMod = mods.getByName(mod_id)\n    }\n}\n"
+                                      "dependencies {\n    testImplementation \"net.neoforged:testframework:${neo_version}\"\n}\n")
         build.write_text(text + TEST_BUILD + extra, encoding="utf-8")
     code, result, seconds = convert_sweep.mmt(["test", "--root", str(work), "--json"], 3600)
     out = {"ok": code == 0, "files": len(sources), "seconds": round(seconds, 1), "details": str(result.get("details", ""))[:300]}
@@ -170,6 +174,17 @@ def main():
             text = toml.read_text(encoding="utf-8")
             if name not in text:
                 toml.write_text(text + f'\n[[mixins]]\nconfig = "{name}"\n', encoding="utf-8")
+            # The interfaces the bridge's mixins add to game classes, injected by ModDevGradle for the compile (as convert does).
+            injected = {}
+            for m in mixins:
+                for target, interface in m.get("injects", {}).items():
+                    injected.setdefault(target, []).append((pkg + "." + interface).replace(".", "/"))
+            if injected:
+                (work / INJECTED).write_text(json.dumps(injected, indent=1), encoding="utf-8")
+                build = work / "build.gradle"
+                text = build.read_text(encoding="utf-8")
+                if INJECTED not in text:
+                    build.write_text(text + f"\nneoForge {{\n    interfaceInjectionData {{\n        from(file('{INJECTED}'))\n    }}\n}}\n", encoding="utf-8")
     code, result, seconds = convert_sweep.mmt(["compile", "--root", str(work), "--json"], 3600)
     errors = []
     # javac's errors are in the compile log of this run (the receipt's folder), not in the JSON mmt prints.

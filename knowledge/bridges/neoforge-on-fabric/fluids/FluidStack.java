@@ -240,6 +240,23 @@ public final class FluidStack implements DataComponentHolder, TypedInstance<Flui
         grow(-removedAmount);
     }
 
+    /**
+     * The fluid's tooltip as NeoForge builds it: its name, then (advanced) its registry id and component count, unless
+     * the components hide the tooltip outside creative. Fluids add no lines of their own on Fabric (NeoForge's
+     * Fluid.appendHoverText and fluid tooltip event have no Fabric counterpart).
+     */
+    public java.util.List<Component> getTooltipLines(net.minecraft.world.item.Item.TooltipContext context, net.minecraft.world.entity.player.@Nullable Player player, net.minecraft.world.item.TooltipFlag flag) {
+        var display = getOrDefault(net.minecraft.core.component.DataComponents.TOOLTIP_DISPLAY, net.minecraft.world.item.component.TooltipDisplay.DEFAULT);
+        if (!flag.isCreative() && display.hideTooltip()) return java.util.List.of();
+        java.util.List<Component> lines = new java.util.ArrayList<>();
+        lines.add(getHoverName());
+        if (flag.isAdvanced()) {
+            lines.add(Component.literal(BuiltInRegistries.FLUID.getKey(getFluid()).toString()).withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+            if (components.size() > 0) lines.add(Component.translatable("item.components", components.size()).withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+        }
+        return lines;
+    }
+
     @Override
     public String toString() {
         return getAmount() + " " + getFluid();
