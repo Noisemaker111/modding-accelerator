@@ -7,6 +7,10 @@ name: Cloud perf A/B
 # restored, from the Diorama 1.21.1 cache main's PR checks already keep, never saved. No retries.
 run-name: "Cloud perf A/B: ${{ inputs.patch }} x${{ inputs.runs }} ${{ inputs.request }}"
 on:
+  # TEMPORARY, removed before merge: registers the workflow so it can be dispatched on this branch.
+  push:
+    branches: [feat/cloud-offload]
+    paths: ['.github/workflows/cloud-*.yml']
   workflow_dispatch:
     inputs:
       repo:
@@ -37,6 +41,7 @@ permissions:
   contents: read
 jobs:
   ab:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     # Diorama cold: about 10 min to set up, compile and make the world; each launch about 4 min on software OpenGL.
     timeout-minutes: 120

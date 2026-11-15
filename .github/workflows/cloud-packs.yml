@@ -8,6 +8,10 @@ name: Cloud pack sweep
 # would evict the PR caches, and a runner downloads a JDK or loader in seconds. No retries: a failed run is read.
 run-name: "Cloud pack sweep: ${{ inputs.packs }}${{ inputs.focus && format(' --focus {0}', inputs.focus) || '' }}${{ inputs.fix && ' --fix' || '' }} ${{ inputs.request }}"
 on:
+  # TEMPORARY, removed before merge: registers the workflow so it can be dispatched on this branch.
+  push:
+    branches: [feat/cloud-offload]
+    paths: ['.github/workflows/cloud-*.yml']
   workflow_dispatch:
     inputs:
       packs:
@@ -33,6 +37,7 @@ permissions:
   contents: read
 jobs:
   plan:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:

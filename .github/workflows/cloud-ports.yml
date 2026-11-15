@@ -7,6 +7,10 @@ name: Cloud port board
 # the repository's caches are already past GitHub's 10 GB limit, so a case's setup is measured cold. No retries.
 run-name: "Cloud port board: ${{ inputs.cases }} ${{ inputs.request }}"
 on:
+  # TEMPORARY, removed before merge: registers the workflow so it can be dispatched on this branch.
+  push:
+    branches: [feat/cloud-offload]
+    paths: ['.github/workflows/cloud-*.yml']
   workflow_dispatch:
     inputs:
       cases:
@@ -19,6 +23,7 @@ permissions:
   contents: read
 jobs:
   plan:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
