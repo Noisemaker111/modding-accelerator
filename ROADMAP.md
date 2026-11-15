@@ -121,7 +121,7 @@ One command moves a mod's source from any version to any other, forward or back,
 
 - **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Small jumps need no hand edits; big jumps stop with named errors.
 - **The number that says most:** Real mods with a port that works in the game is **4 mods**, target 6 mods by Dec 18, step 12
-- **Also:** Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm is **50 errors**, target 0 errors by Jan 15, 2027, step 17
+- **Also:** Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm is **0 errors**, target 0 errors by Jan 15, 2027, step 17
 
 ### Neighbouring versions (1.21.x), Fabric and NeoForge
 
@@ -226,8 +226,8 @@ One command moves a mod's source from any version to any other, forward or back,
 | Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 0 errors (Nov 8) | 0 errors by Nov 20, step 7 | Met |
 | Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6, warm | 38 errors (Oct 24) | 0 errors (Nov 8) | 0 errors by Dec 4, step 10 | Met |
 | Errors left: Notes, NeoForge 1.21 → 1.21.6, warm | 14 errors (Oct 25) | 0 errors (Nov 8) | 0 errors by Dec 4, step 10 | Met |
-| Errors left: Jade, NeoForge 1.21.1 → 1.21.6, warm | — | 98 errors (Oct 24) | 0 errors by Jan 15, 2027, step 12 | Baseline |
-| Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm | 69 errors (Oct 25) | 50 errors (Oct 25) | 0 errors by Jan 15, 2027, step 17 | 28% of the way |
+| Errors left: Jade, NeoForge 1.21.1 → 1.21.6, warm | 98 errors (Oct 24) | 30 errors (Nov 14) | 0 errors by Jan 15, 2027, step 12 | 69% of the way |
+| Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm | 69 errors (Oct 25) | 0 errors (Nov 14) | 0 errors by Jan 15, 2027, step 17 | Met |
 | Hand-written files: AppleSkin, NeoForge 1.21.6 → 26.3 | 1 file (Oct 24) | 0 files (Nov 8) | 0 files by Nov 27, step 17 | Met |
 | Port to a packaged build: Zombie Apocalypse 1.21.1 → 1.21.4, warm | 2.6 min (Oct 24) | 2.8 min (Oct 25) | 1.5 min by Dec 18, step 10 | 0% of the way |
 | Port to a packaged build: AppleSkin 1.21.6 → 26.3, warm | — | 66 s (Oct 24) | 60 s by Nov 27, step 17 | Baseline |
