@@ -145,6 +145,8 @@ final class Target {
             return setup;
         }
         for (String key : List.of("yarn_mappings", "yarn_version")) if (pins.containsKey(key)) {
+            // The unobfuscated game has no yarn: the port crosses into Mojang's names and drops the mappings line.
+            if (Versions.compare(to, "26.1") >= 0) continue;
             var versions = Json.array(Json.parse(fetch(build, "https://meta.fabricmc.net/v2/versions/yarn/" + to)));
             if (versions.isEmpty()) throw new IOException(
                 "No published Yarn mappings for " + to + "; mapping namespace changes need a guided migration."
@@ -1072,6 +1074,18 @@ final class Target {
                     );
                 }
             }
+        }
+        // Gradle 9 removed the project-level sourceCompatibility and targetCompatibility; the java extension owns them.
+        String compatibility = setup.text(file), javaOwned = compatibility.replaceAll(
+            "(?m)^(sourceCompatibility|targetCompatibility)([ \\t]*=)",
+            "java.$1$2"
+        );
+        if (!javaOwned.equals(compatibility)) {
+            setup.originals.putIfAbsent(file, compatibility);
+            setup.texts.put(file, javaOwned);
+            setup.applied.add(
+                Json.map("file", file.toString(), "change", "sourceCompatibility/targetCompatibility -> java.* for Gradle 9")
+            );
         }
         // Gradle 9 removed the project-level archivesBaseName property; the base extension owns it now.
         Matcher archives = Pattern.compile("(?m)^[ \\t]*archivesBaseName[ \\t]*=[ \\t]*([^\\r\\n]+)$").matcher(

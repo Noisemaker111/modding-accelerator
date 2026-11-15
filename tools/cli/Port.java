@@ -161,6 +161,153 @@ final class Port {
         for (Path p : all) Files.deleteIfExists(p);
     }
 
+    /**
+     * One map from a yarn-named source to the unobfuscated game: names, the yarn -> Mojang table of the source release
+     * (VersionMap, through Fabric's intermediary), joined with the game's own Mojang-named route map (GameDiff) from the
+     * source release to the target. Every key stays in the source's yarn names and every value is the target's name, in
+     * the usual map shape, so the typed fixer reads it as it reads any map. The route's history is kept for explaining
+     * what is left.
+     */
+    static Map<String, Object> composeMaps(Map<String, Object> names, Map<String, Object> route) {
+        Map<String, String> toMojang = new HashMap<>(), fromMojang = new HashMap<>(), moved = new HashMap<>();
+        for (Object o : Json.array(names.get("classes"))) {
+            var c = Json.object(o);
+            toMojang.put(Json.text(c, "from", ""), Json.text(c, "to", ""));
+            fromMojang.put(Json.text(c, "to", ""), Json.text(c, "from", ""));
+        }
+        for (Object o : Json.array(route.get("classes"))) {
+            var c = Json.object(o);
+            moved.put(Json.text(c, "from", ""), Json.text(c, "to", ""));
+        }
+        Set<String> classesGone = new HashSet<>(ProjectModel.strings(route.get("classesRemoved")));
+        java.util.function.UnaryOperator<String> mojang = y -> toMojang.getOrDefault(y, y);
+        java.util.function.UnaryOperator<String> forward = m -> moved.getOrDefault(m, m);
+        java.util.function.UnaryOperator<String> yarn = m -> fromMojang.getOrDefault(m, m);
+        List<Object> classes = new ArrayList<>(), classesRemoved = new ArrayList<>();
+        Set<String> keyed = new HashSet<>();
+        for (var e : toMojang.entrySet()) {
+            keyed.add(e.getKey());
+            if (classesGone.contains(e.getValue())) classesRemoved.add(e.getKey());
+            else classes.add(Json.map("from", e.getKey(), "to", forward.apply(e.getValue())));
+        }
+        // Classes whose yarn and Mojang names agree are keyed by that name.
+        for (var e : moved.entrySet()) if (!fromMojang.containsKey(e.getKey()) && keyed.add(e.getKey())) classes.add(
+            Json.map("from", e.getKey(), "to", e.getValue())
+        );
+        for (String gone : classesGone) if (!fromMojang.containsKey(gone) && keyed.add(gone)) classesRemoved.add(gone);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("from", names.get("from"));
+        out.put("to", route.get("to"));
+        out.put("names", "yarn");
+        out.put("linked", "yarn-bridge");
+        out.put(
+            "source",
+            "yarn -> Mojang names of " + names.get("from") + " (Fabric's yarn and intermediary with Mojang's mappings), joined with " + route.get("source")
+        );
+        out.put("chain", route.get("chain"));
+        out.put("classes", classes);
+        out.put("classesRemoved", classesRemoved);
+        for (String kind : List.of("methods", "fields")) {
+            // Every route change of this kind, by Mojang owner, name and descriptor, with the list it came from.
+            Map<String, Map<String, Object>> changed = new HashMap<>();
+            Map<String, String> listOf = new HashMap<>();
+            List<String> lists = kind.equals("methods") ? List.of("methods", "methodsMoved", "signatures") : List.of("fields");
+            for (String list : lists) for (Object o : Json.array(route.get(list))) {
+                var m = Json.object(o);
+                String key = Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", "");
+                changed.put(key, m);
+                listOf.put(key, list);
+            }
+            Set<String> gone = new HashSet<>();
+            for (Object o : Json.array(route.get(kind + "Removed"))) {
+                var m = Json.object(o);
+                gone.add(Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", ""));
+            }
+            Map<String, List<Object>> result = new LinkedHashMap<>();
+            for (String list : lists) result.put(list, new ArrayList<>());
+            List<Object> removed = new ArrayList<>();
+            Set<String> reached = new HashSet<>();
+            for (Object o : Json.array(names.get(kind))) {
+                var m = Json.object(o);
+                String owner = Json.text(m, "owner", ""), mojangOwner = Json.text(m, "newOwner", mojang.apply(owner));
+                String key = mojangOwner + "." + Json.text(m, "to", "") + Json.text(m, "newDesc", "");
+                reached.add(key);
+                if (gone.contains(key)) {
+                    removed.add(Json.map("owner", owner, "from", m.get("from"), "desc", m.get("desc")));
+                    continue;
+                }
+                var next = changed.get(key);
+                String list = next == null ? lists.get(0) : listOf.get(key);
+                Map<String, Object> entry = new LinkedHashMap<>();
+                entry.put("owner", owner);
+                entry.put("from", m.get("from"));
+                entry.put("desc", m.get("desc"));
+                entry.put("to", next == null ? m.get("to") : next.get("to"));
+                entry.put("newDesc", next == null ? descriptor(Json.text(m, "newDesc", ""), forward) : next.get("newDesc"));
+                String finalOwner = next != null && next.get("newOwner") != null ? Json.text(next, "newOwner", "") : forward.apply(mojangOwner);
+                if (!finalOwner.equals(owner)) entry.put("newOwner", finalOwner);
+                result.get(list).add(entry);
+            }
+            // Members whose yarn and Mojang names agree are keyed by the yarn owner and descriptor.
+            for (var e : changed.entrySet()) {
+                if (reached.contains(e.getKey())) continue;
+                var m = e.getValue();
+                Map<String, Object> entry = new LinkedHashMap<>(m);
+                entry.put("owner", yarn.apply(Json.text(m, "owner", "")));
+                entry.put("desc", descriptor(Json.text(m, "desc", ""), yarn));
+                result.get(listOf.get(e.getKey())).add(entry);
+            }
+            for (Object o : Json.array(route.get(kind + "Removed"))) {
+                var m = Json.object(o);
+                String key = Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", "");
+                if (!reached.contains(key)) removed.add(
+                    Json.map("owner", yarn.apply(Json.text(m, "owner", "")), "from", m.get("from"), "desc", descriptor(Json.text(m, "desc", ""), yarn))
+                );
+            }
+            out.putAll(result);
+            out.put(kind + "Removed", removed);
+        }
+        out.put("history", route.getOrDefault("history", List.of()));
+        return out;
+    }
+
+    /** A JVM descriptor with each class name passed through names (dotted names, as the maps keep them). */
+    static String descriptor(String desc, java.util.function.UnaryOperator<String> names) {
+        Matcher type = Pattern.compile("L([^;]+);").matcher(desc);
+        StringBuilder out = new StringBuilder();
+        while (type.find()) type.appendReplacement(
+            out,
+            Matcher.quoteReplacement("L" + names.apply(type.group(1).replace('/', '.')).replace('.', '/') + ";")
+        );
+        return type.appendTail(out).toString();
+    }
+
+    /** Writes a map in the generators' own layout (one entry per line under each list), which the typed fixer reads line by line. */
+    static void saveMap(Path file, Map<String, Object> map) throws IOException {
+        StringBuilder out = new StringBuilder("{\n");
+        List<String> keys = new ArrayList<>(map.keySet());
+        for (int i = 0; i < keys.size(); i++) {
+            Object value = map.get(keys.get(i));
+            out.append("  ").append(Json.write(keys.get(i))).append(": ");
+            if (value instanceof List<?> list) {
+                out.append("[\n");
+                for (int j = 0; j < list.size(); j++) {
+                    Object item = list.get(j);
+                    out.append("    ");
+                    if (item instanceof Map<?, ?> entry) {
+                        List<String> fields = new ArrayList<>();
+                        for (var f : entry.entrySet()) fields.add(Json.write(String.valueOf(f.getKey())) + ": " + Json.write(f.getValue()));
+                        out.append("{ ").append(String.join(", ", fields)).append(" }");
+                    } else out.append(Json.write(item));
+                    out.append(j + 1 < list.size() ? ",\n" : "\n");
+                }
+                out.append("  ]");
+            } else out.append(Json.write(value));
+            out.append(i + 1 < keys.size() ? ",\n" : "\n");
+        }
+        Files.writeString(file, out.append("}\n").toString(), StandardCharsets.UTF_8);
+    }
+
     static List<Path> sources(ProjectModel project) throws IOException {
         List<Path> paths = new ArrayList<>(project.inputs());
         Files.walkFileTree(
@@ -326,14 +473,24 @@ final class Port {
         Set<String> sourceLoaders = new TreeSet<>();
         for (Object p : Json.array(model.get("projects"))) sourceLoaders.addAll(Support.loaders(Json.object(p)));
         boolean own = names.equals("mojmap") && route != null && !options.has("intermediary");
-        List<String> chain = route == null ? List.of() : own ? route.versions : route.mappedChain();
+        // A yarn source bound for the unobfuscated game (26.1+) crosses into Mojang's names: its map joins the source
+        // release's yarn -> Mojang table with the game's own route map (composeMaps).
+        boolean bridge =
+            names.equals("yarn") &&
+            route != null &&
+            !options.has("intermediary") &&
+            Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0 &&
+            Versions.compare(from, Route.FIRST_UNOBFUSCATED) < 0;
+        List<String> chain = route == null ? List.of() : own || bridge ? route.versions : route.mappedChain();
         boolean routed =
-            chain.size() >= 2 && !(names.equals("yarn") && Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0);
+            chain.size() >= 2 && (bridge || !(names.equals("yarn") && Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0));
         // A generated map is named after the tools that made it, so a changed generator makes a new one.
-        String generator = own ? tools.classes.getFileName().toString() : "";
+        String generator = own || bridge ? tools.classes.getFileName().toString() : "";
         if (routed) map = build.project.state().resolve(
             "maps/" +
-            (own ? "game-" + generator.substring(0, Math.min(12, generator.length())) + "-" : "route-") +
+            (own
+                    ? "game-" + generator.substring(0, Math.min(12, generator.length())) + "-"
+                    : bridge ? "bridge-" + generator.substring(0, Math.min(12, generator.length())) + "-" : "route-") +
             names +
             "-" +
             from +
@@ -356,10 +513,25 @@ final class Port {
                 current =
                     chain.equals(ProjectModel.strings(cached.get("chain"))) &&
                     names.equals(cached.get("names")) &&
-                    own == "game-bytecode".equals(cached.get("linked")) &&
+                    (bridge ? "yarn-bridge".equals(cached.get("linked")) : own == "game-bytecode".equals(cached.get("linked"))) &&
                     (!own || loaderDiff.equals(cachedLoader));
             }
-            if (!current) {
+            if (!current && bridge) {
+                Files.createDirectories(map.getParent());
+                Path game = map.resolveSibling(map.getFileName().toString().replace(".json", ".game.json"));
+                Path yarnNames = map.resolveSibling(map.getFileName().toString().replace(".json", ".names.json"));
+                var routeMap = tools.run("GameDiff", List.of("--chain", String.join(",", chain), "--out", game.toString()), "mapping-route");
+                if (routeMap.exit() != 0) throw new IOException(
+                    "No verified mapping along the route " + String.join(" -> ", chain) + ". " + Run.tail(routeMap.log())
+                );
+                var namesMap = tools.run(
+                    "VersionMap",
+                    List.of(from, from, "--from-names", "yarn", "--to-names", "mojmap", "--names", "yarn", "--out", yarnNames.toString()),
+                    "mapping-yarn-to-mojang"
+                );
+                if (namesMap.exit() != 0) throw new IOException("No yarn -> Mojang table for " + from + ". " + Run.tail(namesMap.log()));
+                saveMap(map, composeMaps(Json.read(yarnNames), Json.read(game)));
+            } else if (!current) {
                 Files.createDirectories(map.getParent());
                 List<String> arguments = new ArrayList<>(List.of("--chain", String.join(",", chain), "--out", map.toString()));
                 if (own && !loaderDiff.isEmpty()) arguments.addAll(List.of("--loader", loaderDiff));
@@ -409,7 +581,11 @@ final class Port {
         Map<String, Object> routeRecord = route == null ? null : route.record();
         if (routeRecord != null) routeRecord.put(
             "mapping",
-            routed && own
+            routed && bridge
+                ? "yarn names of " + from + " joined to Mojang's (Fabric's yarn and intermediary with Mojang's mappings), then one map across " +
+                String.join(" -> ", chain) +
+                " from the game itself"
+                : routed && own
                 ? "one map joined across " +
                 String.join(" -> ", chain) +
                 " from the game itself: Mojang's jars and mappings linked release to release by their own bytecode" +
