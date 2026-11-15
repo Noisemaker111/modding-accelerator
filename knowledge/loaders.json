@@ -1490,7 +1490,27 @@
     "net.neoforged.fml.ModList": "ModList",
     "net.neoforged.neoforge.event.tick.EntityTickEvent": "EntityTickEvent",
     "net.neoforged.neoforge.event.tick.PlayerTickEvent": "PlayerTickEvent",
-    "net.neoforged.neoforge.event.EventHooks": "EventHooks"
+    "net.neoforged.neoforge.event.EventHooks": "EventHooks",
+    "net.neoforged.neoforge.client.ClientHooks": "ClientHooks",
+    "net.neoforged.neoforge.client.settings.IKeyConflictContext": "IKeyConflictContext",
+    "net.neoforged.neoforge.client.settings.KeyConflictContext": "KeyConflictContext",
+    "net.neoforged.neoforge.client.settings.KeyModifier": "KeyModifier",
+    "net.neoforged.neoforge.client.event.RegisterMenuScreensEvent": "RegisterMenuScreensEvent",
+    "net.neoforged.neoforge.common.extensions.IMenuTypeExtension": "IMenuTypeExtension",
+    "net.neoforged.neoforge.network.IContainerFactory": "IContainerFactory",
+    "net.neoforged.neoforge.common.extensions.IPlayerExtension": "IPlayerExtension",
+    "net.neoforged.neoforge.client.gui.GuiLayer": "GuiLayer",
+    "net.neoforged.neoforge.client.gui.VanillaGuiLayers": "VanillaGuiLayers",
+    "net.neoforged.neoforge.client.event.RegisterGuiLayersEvent": "RegisterGuiLayersEvent",
+    "net.neoforged.neoforge.client.event.RenderGuiLayerEvent": "RenderGuiLayerEvent",
+    "net.neoforged.neoforge.client.event.RenderGuiEvent": "RenderGuiEvent",
+    "net.neoforged.neoforge.client.event.ScreenEvent": "ScreenEvent",
+    "net.neoforged.neoforge.client.event.InputEvent": "InputEvent",
+    "net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent": "ClientPlayerNetworkEvent",
+    "net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent": "CustomizeGuiOverlayEvent",
+    "net.neoforged.neoforge.client.event.RegisterClientCommandsEvent": "RegisterClientCommandsEvent",
+    "net.neoforged.neoforge.client.event.AddClientReloadListenersEvent": "AddClientReloadListenersEvent",
+    "net.neoforged.neoforge.client.gui.widget.ExtendedButton": "ExtendedButton"
    },
    "symbols": {
     "neoforge": [
@@ -1804,6 +1824,62 @@
      "client": false,
      "for": [
       "PlayerTickEvent"
+     ]
+    },
+    {
+     "mixin": "ScreenEventMixin",
+     "client": true,
+     "for": [
+      "ScreenEvent"
+     ]
+    },
+    {
+     "mixin": "ScreenKeyboardMixin",
+     "client": true,
+     "for": [
+      "ScreenEvent"
+     ]
+    },
+    {
+     "mixin": "ScreenMouseMixin",
+     "client": true,
+     "for": [
+      "ScreenEvent"
+     ]
+    },
+    {
+     "mixin": "ScreenOpeningMixin",
+     "client": true,
+     "for": [
+      "ScreenEvent"
+     ]
+    },
+    {
+     "mixin": "ScreenOpeningLegacyMixin",
+     "client": true,
+     "for": [
+      "ScreenEvent"
+     ]
+    },
+    {
+     "mixin": "InputKeyMixin",
+     "client": true,
+     "for": [
+      "InputEvent"
+     ]
+    },
+    {
+     "mixin": "InputMouseMixin",
+     "client": true,
+     "for": [
+      "InputEvent"
+     ]
+    },
+    {
+     "mixin": "BossEventProgressMixin",
+     "client": true,
+     "for": [
+      "CustomizeGuiOverlayEvent"
      ]
     }
    ]
