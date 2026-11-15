@@ -6066,6 +6066,46 @@
         "after": "package mod;\nimport net.minecraft.world.entity.EntityTypes;\n\nclass ModSpawns {\n\tboolean zombie(Entity e) { return e.getType() == EntityTypes.ZOMBIE || e.getType() == EntityTypes.HUSK; }\n}\n",
         "from": "written for this rule"
       }
+    },
+    {
+      "id": "level-height-max-y-exclusive",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method getMaxBuildHeight\\(\\)",
+      "apply": {
+        "find": "(?<![*/%~!]\\s{0,3}[\\w.()]{0,80})\\.getMaxBuildHeight\\(\\)(?=\\s*[)\\];,<>=+\\-?:&|])",
+        "replace": ".getMaxY() + 1"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 replaced LevelHeightAccessor.getMaxBuildHeight() (exclusive: minY + height) with getMaxY() (inclusive: minY + height - 1). The route map links them as a rename, which would move every height check down one block, so this runs first and keeps the old value as getMaxY() + 1. It only rewrites where + 1 binds as the old call did (beside a comparison, + or -, a comma or a closing bracket); a call inside * / % stays a reported error.",
+      "verified": "Mojang's 26.1 client jar (same as 1.21.2): LevelHeightAccessor.getMaxY() is getMinY() + getHeight() - 1 (bytecode); 1.21.1's getMaxBuildHeight() was getMinBuildHeight() + getHeight()",
+      "test": {
+        "error": "Spawner.java:22: error: cannot find symbol\n  symbol:   method getMaxBuildHeight()\n",
+        "before": "package mod;\n\nclass Spawner {\n\tboolean inside(Level level, int y) { return y >= level.getMinBuildHeight() && y < level.getMaxBuildHeight(); }\n\tint top(Level level) { return level.getMaxBuildHeight() - 1; }\n\tint twice(Level level) { return 2 * level.getMaxBuildHeight(); }\n}\n",
+        "after": "package mod;\n\nclass Spawner {\n\tboolean inside(Level level, int y) { return y >= level.getMinBuildHeight() && y < level.getMaxY() + 1; }\n\tint top(Level level) { return level.getMaxY() + 1 - 1; }\n\tint twice(Level level) { return 2 * level.getMaxBuildHeight(); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "height-limit-top-y-exclusive",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+method getTopY\\(\\)",
+      "apply": {
+        "find": "(?<![*/%~!]\\s{0,3}[\\w.()]{0,80})\\.getTopY\\(\\)(?=\\s*[)\\];,<>=+\\-?:&|])",
+        "replace": ".getTopYInclusive() + 1"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Yarn's names for the same 1.21.2 change: HeightLimitView.getTopY() (exclusive) became getTopYInclusive() (one lower). The yarn route map links them as a rename; this keeps the old value where + 1 binds as the old call did.",
+      "verified": "Mojang's 26.1 client jar: LevelHeightAccessor.getMaxY() (yarn getTopYInclusive) is getMinY() + getHeight() - 1; the yarn route map 1.21.1 -> 1.21.2 renames HeightLimitView.getTopY to getTopYInclusive",
+      "test": {
+        "error": "Spawner.java:22: error: cannot find symbol\n  symbol:   method getTopY()\n",
+        "before": "package mod;\n\nclass Spawner {\n\tboolean inside(World world, int y) { return y < world.getTopY(); }\n}\n",
+        "after": "package mod;\n\nclass Spawner {\n\tboolean inside(World world, int y) { return y < world.getTopYInclusive() + 1; }\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }

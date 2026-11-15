@@ -1313,6 +1313,30 @@ public final class PortableTests {
         check(Target.forgeRelease(forge, "1.21.2") == null, "no Forge release for a game Forge skipped");
         // An exact game range is written [1.21.2]: Maven's rules refuse [1.21.2,1.21.2] (identical boundaries), and NeoForge refuses the mod.
         check(MavenRange.own("[1.21.2]", "1.21.2") && !MavenRange.own("[1.21.2]", "1.21.3"), "an exact range written the way Maven accepts it");
+        // A rename that changes what the member returns (getMaxBuildHeight -> getMaxY is one lower) leaves the map; the rest stays.
+        {
+            Path meaningMap = scratch.resolve("meaning-map.json");
+            Files.writeString(
+                meaningMap,
+                String.join(
+                    "\n",
+                    "{",
+                    "  \"from\": \"1.21.1\", \"to\": \"1.21.2\", \"names\": \"mojmap\",",
+                    "  \"methods\": [",
+                    "    { \"owner\": \"a.LevelHeightAccessor\", \"from\": \"getMinBuildHeight\", \"desc\": \"()I\", \"to\": \"getMinY\", \"newDesc\": \"()I\" },",
+                    "    { \"owner\": \"a.LevelHeightAccessor\", \"from\": \"getMaxBuildHeight\", \"desc\": \"()I\", \"to\": \"getMaxY\", \"newDesc\": \"()I\" }",
+                    "  ]",
+                    "}",
+                    ""
+                )
+            );
+            check(Port.withoutMeaningChanges(meaningMap, home.resolve("knowledge/meaning-changes.json")) == 1, "the meaning-changing rename is dropped");
+            var kept = Json.read(meaningMap);
+            check(
+                Json.array(kept.get("methods")).size() == 1 && Json.text(Json.object(Json.array(kept.get("methods")).get(0)), "to", "").equals("getMinY"),
+                "the plain rename stays and the map still parses"
+            );
+        }
         // Old Loom states its minimum Gradle only as a constant of its bootstrap class: class constants are read from the
         // class file itself (an int and a String constant of the JDK's own classes), and a major line becomes its newest release.
         try (var integer = Object.class.getResourceAsStream("/java/lang/Integer.class"); var jar = Object.class.getResourceAsStream("/java/util/jar/JarFile.class")) {

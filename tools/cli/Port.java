@@ -423,6 +423,47 @@ final class Port {
         return names.size() == 1 ? names.iterator().next() : null;
     }
 
+    /**
+     * Drops from a route map the member renames knowledge/meaning-changes.json says change what the member returns
+     * (1.21.2's getMaxBuildHeight -> getMaxY is one lower), so the typed fixer never applies them; the rules that keep
+     * the old meaning run first, and what they cannot rewrite safely stays a reported error. Returns the lines dropped.
+     */
+    static int withoutMeaningChanges(Path map, Path knowledge) throws IOException {
+        if (!Files.isRegularFile(map) || !Files.isRegularFile(knowledge)) return 0;
+        List<String[]> pairs = new ArrayList<>();
+        for (Object o : Json.array(Json.read(knowledge).get("changes"))) {
+            var c = Json.object(o);
+            pairs.add(new String[] { Json.text(c, "from", ""), Json.text(c, "to", "") });
+        }
+        List<String> lines = new ArrayList<>(Files.readAllLines(map, StandardCharsets.UTF_8));
+        String section = "";
+        int dropped = 0;
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            Matcher heading = Pattern.compile("^  \"(\\w+)\": \\[").matcher(line);
+            if (heading.find()) {
+                section = heading.group(1);
+                continue;
+            }
+            if (!List.of("methods", "methodsMoved", "signatures").contains(section)) continue;
+            for (String[] pair : pairs) if (
+                line.contains("\"from\": \"" + pair[0] + "\"") && line.contains("\"to\": \"" + pair[1] + "\"")
+            ) {
+                lines.remove(i--);
+                dropped++;
+                break;
+            }
+        }
+        if (dropped == 0) return 0;
+        // A list whose last entry went keeps no trailing comma.
+        for (int i = 1; i < lines.size(); i++) if (lines.get(i).startsWith("  ]") && lines.get(i - 1).endsWith(",")) lines.set(
+            i - 1,
+            lines.get(i - 1).substring(0, lines.get(i - 1).length() - 1)
+        );
+        Files.write(map, lines, StandardCharsets.UTF_8);
+        return dropped;
+    }
+
     static List<Path> sources(ProjectModel project) throws IOException {
         List<Path> paths = new ArrayList<>(project.inputs());
         Files.walkFileTree(
@@ -689,6 +730,8 @@ final class Port {
                 "No verified mapping for this jump. " + Run.tail(mapped.log())
             );
         }
+        int meaningChanges = withoutMeaningChanges(map, build.harness.resolve("knowledge/meaning-changes.json"));
+        if (meaningChanges > 0) build.report.stages.add(Json.map("name", "meaning-changes", "dropped", meaningChanges, "source", "knowledge/meaning-changes.json"));
         var mapInfo = Json.read(map);
         mapFile = map;
         String mapFrom = routed ? chain.get(0) : from, mapTo = routed ? chain.get(chain.size() - 1) : to;
