@@ -412,9 +412,12 @@ final class Target {
                 ).matcher(setup.text(file))
                 : pluginLine.matcher(setup.text(file));
             if (!pin.find() || !pin.group(2).matches("\\d+\\.\\d+\\.\\d+(?:-beta)?")) continue;
-            String current = pin.group(2), newest = newestInLine(
+            // The unobfuscated game (26.1+) needs ModDevGradle 2: 1.x cannot set up its game artifacts (Iron Chests 1.21.3 -> 26.3).
+            String current = pin.group(2), line = current.substring(0, current.indexOf('.'));
+            if (Versions.compare(to, "26.1") >= 0 && Integer.parseInt(line) < 2) line = "2";
+            String newest = newestInLine(
                 fetch(build, "https://maven.neoforged.net/releases/net/neoforged/moddev-gradle/maven-metadata.xml"),
-                current.substring(0, current.indexOf('.'))
+                line
             );
             if (newest == null || Versions.compare(newest, current) <= 0) return;
             setup.replace(file, pin.group(0), pin.group(1) + newest + pin.group(3));
@@ -425,7 +428,7 @@ final class Target {
                     "change",
                     "ModDevGradle " + current + " -> " + newest + " for " + to,
                     "evidence",
-                    "the newest ModDevGradle " + current.substring(0, current.indexOf('.')) + ".x on maven.neoforged.net"
+                    "the newest ModDevGradle " + line + ".x on maven.neoforged.net"
                 )
             );
             gradleFollows(
@@ -867,8 +870,9 @@ final class Target {
             out = withoutPlugin.substring(0, at) + withoutPlugin.substring(at + body.length()).replaceFirst("^\\r?\\n", "");
         }
         Path toml = null;
-        for (String dir : List.of("src/main/resources/META-INF/", "src/main/templates/META-INF/")) {
-            Path candidate = build.project.root.resolve(dir + "neoforge.mods.toml");
+        // NeoForge before 20.5 read META-INF/mods.toml (Farmer's Delight 1.20.4); later releases neoforge.mods.toml.
+        for (String name : List.of("mods.toml", "neoforge.mods.toml")) for (String dir : List.of("src/main/resources/META-INF/", "src/main/templates/META-INF/")) {
+            Path candidate = build.project.root.resolve(dir + name);
             if (Files.isRegularFile(candidate)) toml = candidate;
         }
         if (toml == null && !configs.isEmpty()) return;
