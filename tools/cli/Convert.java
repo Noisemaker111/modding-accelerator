@@ -1311,6 +1311,21 @@ final class Convert {
         return null;
     }
 
+    /** A block body without the named blocks directly inside it: the settings written as plain lines. */
+    static String withoutChildren(String body) {
+        boolean[] code = LoaderRules.code(body);
+        Matcher m = Pattern.compile("([\\w\"'${}]+)\\s*\\{").matcher(body);
+        StringBuilder out = new StringBuilder();
+        int from = 0;
+        while (m.find(from)) {
+            int open = m.end() - 1, end = LoaderRules.close(body, code, open);
+            if (end < 0) break;
+            out.append(body, from, m.start());
+            from = end;
+        }
+        return out.append(body.substring(from)).toString();
+    }
+
     /** The next top-level block of that name starting at or after from, or null. */
     static int[] nextBlock(String text, String name, int from) {
         int[] found = block(text.substring(from), name, "(?m)^");
@@ -1326,7 +1341,8 @@ final class Convert {
         while (m.find(from)) {
             int open = m.end() - 1, end = LoaderRules.close(body, code, open);
             if (end < 0) break;
-            out.put(m.group(1).replaceAll("[\"']", ""), body.substring(open + 1, end - 1));
+            // A name given twice (two loom blocks read as one) keeps both bodies.
+            out.merge(m.group(1).replaceAll("[\"']", ""), body.substring(open + 1, end - 1), (a, b) -> a + "\n" + b);
             from = end;
         }
         return out;
@@ -1388,11 +1404,40 @@ final class Convert {
         "(?m)^([ \\t]*)id\\s*\\(?\\s*['\"](?:net\\.fabricmc\\.)?fabric-loom(?:-remap)?['\"]\\s*\\)?(?:\\s*version\\s*\\(?\\s*['\"][^'\"]*['\"]\\s*\\)?)?[ \\t]*$"
     );
 
+    /**
+     * Loom's dependency configurations in one statement as ModDevGradle's, wherever they are in it (implementation
+     * include("x") nests one in another); a configuration call only, never part of a longer name (includedLibrary).
+     */
+    static String loomConfigurationsToNeoForge(String raw) {
+        Matcher mod = Pattern.compile(
+            "\\b(mod(?:Implementation|Api|CompileOnly|CompileOnlyApi|RuntimeOnly|LocalRuntime)|client(?:Implementation|Api|CompileOnly|RuntimeOnly)|include|localRuntime)(?=\\s*[(\"']|\\s+\\w)"
+        ).matcher(raw);
+        StringBuilder renamed = new StringBuilder();
+        while (mod.find()) mod.appendReplacement(
+            renamed,
+            switch (mod.group(1)) {
+                case "modImplementation" -> "implementation";
+                case "modApi" -> "api";
+                case "modCompileOnly", "modCompileOnlyApi" -> "compileOnly";
+                case "modRuntimeOnly", "modLocalRuntime", "localRuntime", "clientRuntimeOnly" -> "runtimeOnly";
+                case "clientImplementation" -> "implementation";
+                case "clientApi" -> "api";
+                case "clientCompileOnly" -> "compileOnly";
+                default -> "jarJar";
+            }
+        );
+        mod.appendTail(renamed);
+        return renamed.toString();
+    }
+
     /** A top-level build statement that configures Loom through its extensions: loom.runs { }, delete loom.runs.x.runDirectory. */
     static boolean loomStatement(String statement) {
         String first = statement.strip();
         return first.matches("(?s)(?:loom|fabricApi)\\s*\\.\\s*\\w.*") || first.matches("(?s)\\w+\\s+(?:loom|fabricApi)\\.\\w.*");
     }
+
+    /** NightConfig as NeoForge 21.1.250's published module metadata requires it (com.electronwill.night-config core and toml). */
+    static final String NIGHT_CONFIG = "3.8.3";
 
     /** The oldest Gradle ModDevGradle applies on: its own check refuses anything older. */
     static final String MODDEV_GRADLE_MIN = "8.8";
@@ -1491,8 +1536,7 @@ final class Convert {
                     "no ModDevGradle counterpart in the rules"
                 );
             }
-            String rest = body;
-            for (var part : parts.entrySet()) rest = rest.replace(part.getValue(), "");
+            String rest = withoutChildren(body);
             for (String raw : rest.lines().toList()) {
                 String line = raw.strip().replaceAll("[\\w\"'${}]+\\s*\\{\\s*\\}", "").strip();
                 if (line.isEmpty() || line.startsWith("//") || line.equals("}")) continue;
@@ -1599,7 +1643,12 @@ final class Convert {
                     line.contains("net.fabricmc:fabric-loader") ||
                     line.contains("net.fabricmc.fabric-api") ||
                     line.contains("fabricApi.module") ||
-                    line.contains("com.terraformersmc:modmenu");
+                    line.contains("com.terraformersmc:modmenu") ||
+                    // Loom's own configurations for its production run tasks, which go with Loom.
+                    line.matches("(?s)productionRuntime(?:Mods)?\\b.*");
+                if (line.matches("(?s)productionRuntime(?:Mods)?\\b.*")) notes.add(
+                    "Build: removed `" + line + "` (Loom's production run configuration)."
+                );
                 if (drop) {
                     // A comment that only introduced the dropped statements goes with them.
                     while (
@@ -1618,26 +1667,7 @@ final class Convert {
                 }
                 // A Fabric build of another mod moves to its NeoForge build; Loom's own configurations are renamed after.
                 raw = dependencyLine(raw, "fabric", "neoforge", repositories(gradle), false);
-                // Loom's configurations, wherever they are in the statement (implementation include("x") nests one in another).
-                Matcher mod = Pattern.compile(
-                    "\\b(mod(?:Implementation|Api|CompileOnly|CompileOnlyApi|RuntimeOnly|LocalRuntime)|client(?:Implementation|Api|CompileOnly|RuntimeOnly)|include|localRuntime)(?=\\s*[(\"'\\w])"
-                ).matcher(raw);
-                StringBuilder renamed = new StringBuilder();
-                while (mod.find()) mod.appendReplacement(
-                    renamed,
-                    switch (mod.group(1)) {
-                        case "modImplementation" -> "implementation";
-                        case "modApi" -> "api";
-                        case "modCompileOnly", "modCompileOnlyApi" -> "compileOnly";
-                        case "modRuntimeOnly", "modLocalRuntime", "localRuntime", "clientRuntimeOnly" -> "runtimeOnly";
-                        case "clientImplementation" -> "implementation";
-                        case "clientApi" -> "api";
-                        case "clientCompileOnly" -> "compileOnly";
-                        default -> "jarJar";
-                    }
-                );
-                mod.appendTail(renamed);
-                kept.add(renamed.toString());
+                kept.add(loomConfigurationsToNeoForge(raw));
             }
             String inner = String.join("", kept);
             if (!inner.endsWith("\n")) inner += "\n";
@@ -1944,6 +1974,8 @@ final class Convert {
             var layer = Json.object(item);
             String from = Json.text(layer, "minecraft", "99");
             if (Versions.compare(minecraft, from) < 0) continue;
+            // A layer is checked against the releases of its own range only.
+            if (layer.get("below") != null && Versions.compare(minecraft, Json.text(layer, "below", "")) >= 0) continue;
             if (best == null || Versions.compare(from, Json.text(best, "minecraft", "")) > 0) best = layer;
         }
         return best;
@@ -2889,8 +2921,8 @@ final class Convert {
             // Whole statements, not lines: a dependency with a closure ({ exclude ... }) is one statement.
             for (String raw : statements(gradle.substring(deps[2] + 1, deps[3] - 1))) {
                 String line = raw.strip();
-                Matcher jar = Pattern.compile("^jarJar\\b").matcher(line);
-                if (jar.find()) raw = raw.replaceFirst("jarJar", "include");
+                // NeoForge's jarJar is Loom's include, wherever it is in the statement (implementation jarJar("x")).
+                raw = raw.replaceAll("\\bjarJar(?=\\s*[(\"'])", "include");
                 // NeoGradle names NeoForge itself as a dependency; the Loom lines above replace it.
                 if (line.matches("(?s)\\w+\\s*\\(?\\s*[\"']net\\.neoforged:neoforge:.*")) continue;
                 boolean comment = line.startsWith("//") || line.startsWith("/*") || line.startsWith("*");
@@ -2919,6 +2951,28 @@ final class Convert {
                 notes.add("Build: the JSR 305 annotations (javax.annotation) the code uses, which NeoForge's classpath carried, as a compile-only dependency.");
             }
         }
+        // NeoForge ships NightConfig (its config files' TOML library) and mods use it directly; on Fabric the mod carries it.
+        boolean nightConfig = false;
+        for (String file : javaFiles()) if (read(file).contains("import com.electronwill.nightconfig.")) nightConfig = true;
+        if (nightConfig && !gradle.contains("night-config")) {
+            int[] dependencies = block(gradle, "dependencies");
+            if (dependencies != null) {
+                gradle =
+                    gradle.substring(0, dependencies[3] - 1) +
+                    unit +
+                    "include implementation(\"com.electronwill.night-config:core:" +
+                    NIGHT_CONFIG +
+                    "\")\n" +
+                    unit +
+                    "include implementation(\"com.electronwill.night-config:toml:" +
+                    NIGHT_CONFIG +
+                    "\")\n" +
+                    gradle.substring(dependencies[3] - 1);
+                notes.add(
+                    "Build: NightConfig " + NIGHT_CONFIG + " (the version NeoForge 21.1 requires), which the code uses and NeoForge carried, inside the mod's jar."
+                );
+            }
+        }
         if (parchmentRepository && !gradle.contains("maven.parchmentmc.org")) gradle = addRepository(
             gradle,
             "https://maven.parchmentmc.org"
@@ -2939,6 +2993,14 @@ final class Convert {
         gradle = gradle
             .replace("filesMatching(\"META-INF/neoforge.mods.toml\")", "filesMatching(\"fabric.mod.json\")")
             .replace("filesMatching('META-INF/neoforge.mods.toml')", "filesMatching('fabric.mod.json')");
+        if (!neutralDependencies.isEmpty() && !gradle.contains("exclude group: 'net.neoforged', module: 'neoforge'")) {
+            // A dependency kept as it is can be a NeoForge mod whose own metadata asks for NeoForge; Fabric's build has none.
+            gradle +=
+                "\n// Dependencies kept from the NeoForge build may ask for NeoForge itself, which the Fabric build does not have.\nconfigurations.configureEach {\n" +
+                unit +
+                "exclude group: 'net.neoforged', module: 'neoforge'\n}\n";
+            notes.add("Build: NeoForge itself is excluded from the dependencies the kept libraries bring with them.");
+        }
         write("build.gradle", gradle.replaceAll("\\n{3,}", "\n\n"));
         Map<String, String> props = new LinkedHashMap<>();
         props.put("neo_version", null);

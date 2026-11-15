@@ -56,6 +56,11 @@
    "version": "1.21.1",
    "mojangMappings": true,
    "docs": "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
+  },
+  "fml-21.1": {
+   "maven": "https://maven.neoforged.net/releases",
+   "coordinate": "net.neoforged.fancymodloader:loader:4.0.44",
+   "docs": "https://docs.neoforged.net/docs/1.21.1/gettingstarted/modfiles"
   }
  },
  "buses": {
@@ -1477,7 +1482,12 @@
     "net.neoforged.neoforge.event.tick.LevelTickEvent": "LevelTickEvent",
     "net.neoforged.neoforge.event.OnDatapackSyncEvent": "OnDatapackSyncEvent",
     "net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent": "RegisterKeyMappingsEvent",
-    "net.neoforged.neoforge.event.entity.player.ItemTooltipEvent": "ItemTooltipEvent"
+    "net.neoforged.neoforge.event.entity.player.ItemTooltipEvent": "ItemTooltipEvent",
+    "net.neoforged.neoforge.common.util.Lazy": "Lazy",
+    "net.neoforged.neoforge.server.ServerLifecycleHooks": "ServerLifecycleHooks",
+    "net.neoforged.fml.event.IModBusEvent": "IModBusEvent",
+    "net.neoforged.fml.loading.FMLEnvironment": "FMLEnvironment",
+    "net.neoforged.fml.ModList": "ModList"
    },
    "symbols": {
     "neoforge": [
@@ -1556,7 +1566,16 @@
      "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getItemStack",
      "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getToolTip",
      "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getFlags",
-     "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getContext"
+     "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getContext",
+     "neoforge|net.neoforged.neoforge.common.util.Lazy#of",
+     "neoforge|net.neoforged.neoforge.common.util.Lazy#invalidate",
+     "neoforge|net.neoforged.neoforge.server.ServerLifecycleHooks#getCurrentServer",
+     "fml|net.neoforged.fml.event.IModBusEvent",
+     "fml|net.neoforged.fml.loading.FMLEnvironment#getDist",
+     "fml|net.neoforged.fml.loading.FMLEnvironment#isProduction",
+     "fml|net.neoforged.fml.ModList#get",
+     "fml|net.neoforged.fml.ModList#isLoaded",
+     "fml|net.neoforged.fml.ModList#getModContainerById"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -1594,7 +1613,10 @@
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#END_LEVEL_TICK",
      "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#START_LEVEL_TICK",
      "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#END_LEVEL_TICK",
-     "fabric-api|net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#registerKeyMapping"
+     "fabric-api|net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#registerKeyMapping",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#isModLoaded"
     ]
    },
    "test": {
@@ -1605,7 +1627,7 @@
     {
      "minecraft": "1.21.1",
      "folder": "knowledge/bridges/neoforge-on-fabric/1.21.1",
-     "about": "Minecraft 1.21.1 to 1.21.11 (obfuscated games, built with Loom on Mojang's names): the files whose names differ from 26.1's. NeoForge 21.1's registration (ResourceLocation ids, properties passed directly and not given their id, DeferredRegister.DataComponents, DeferredHolder as a plain Holder) Fabric API's networking (PayloadTypeRegistry.playS2C and playC2S, PlayerLookup.world), its world events where 26.1 says level, ServerEntityEvents.ENTITY_LOAD (so EntityJoinLevelEvent cannot be cancelled there), KeyBindingHelper, and its item group events (ItemGroupEvents.MODIFY_ENTRIES_ALL and FabricItemGroupEntries) for BuildCreativeModeTabContentsEvent. Checked against NeoForge 21.1.250, Fabric API 0.116.18+1.21.1 and Mojang's 1.21.1 mappings.",
+     "about": "Minecraft 1.21.1 (an obfuscated game, built with Loom on Mojang's names): the files whose names differ from 26.1's. NeoForge 21.1's registration (ResourceLocation ids, properties passed directly and not given their id, DeferredRegister.DataComponents, DeferredHolder as a plain Holder) Fabric API's networking (PayloadTypeRegistry.playS2C and playC2S, PlayerLookup.world), its world events where 26.1 says level, ServerEntityEvents.ENTITY_LOAD (so EntityJoinLevelEvent cannot be cancelled there), KeyBindingHelper, and its item group events (ItemGroupEvents.MODIFY_ENTRIES_ALL and FabricItemGroupEntries) for BuildCreativeModeTabContentsEvent. Checked against NeoForge 21.1.250, Fabric API 0.116.18+1.21.1 and Mojang's 1.21.1 mappings.",
      "symbols": {
       "neoforge": [
        "neoforge-21.1|net.neoforged.neoforge.registries.DeferredRegister#createBlocks",
@@ -1663,7 +1685,14 @@
        "neoforge-21.1|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getItemStack",
        "neoforge-21.1|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getToolTip",
        "neoforge-21.1|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getFlags",
-       "neoforge-21.1|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getContext"
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getContext",
+       "neoforge-21.1|net.neoforged.neoforge.common.util.Lazy#of",
+       "neoforge-21.1|net.neoforged.neoforge.server.ServerLifecycleHooks#getCurrentServer",
+       "fml-21.1|net.neoforged.fml.event.IModBusEvent",
+       "fml-21.1|net.neoforged.fml.loading.FMLEnvironment#dist",
+       "fml-21.1|net.neoforged.fml.loading.FMLEnvironment#production",
+       "fml-21.1|net.neoforged.fml.ModList#isLoaded",
+       "fml-21.1|net.neoforged.fml.ModList#getModContainerById"
       ],
       "fabric": [
        "fabric-api-1.21.1|net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#MODIFY_ENTRIES_ALL",
@@ -1707,7 +1736,8 @@
        "fabric-api-1.21.1|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#playC2S",
        "fabric-api-1.21.1|net.fabricmc.fabric.api.networking.v1.PlayerLookup#world"
       ]
-     }
+     },
+     "below": "1.21.2"
     }
    ]
   }

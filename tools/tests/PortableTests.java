@@ -1029,6 +1029,13 @@ public final class PortableTests {
             loomDropped.size() == 2 && !loomLeft.contains("loom.") && loomLeft.contains("mixin {"),
             "every loom block is found, and top-level loom. statements are dropped: " + loomDropped
         );
+        // Found by the convert sweep on Client Commands: a configuration of its own, includedLibrary, became jarJardLibrary.
+        check(
+            Convert.loomConfigurationsToNeoForge("\tincludedLibrary \"a:b:1\"\n").equals("\tincludedLibrary \"a:b:1\"\n") &&
+            Convert.loomConfigurationsToNeoForge("\tinclude implementation(\"a:b:1\")\n").equals("\tjarJar implementation(\"a:b:1\")\n") &&
+            Convert.loomConfigurationsToNeoForge("\tmodImplementation include(\"a:b:1\")\n").equals("\timplementation jarJar(\"a:b:1\")\n"),
+            "Loom's configurations become ModDevGradle's, and only whole configuration names"
+        );
         List<String> unconverted = new ArrayList<>();
         List<String> transformers = Convert.widenerToTransformer(
             "classTweaker v1 official\n# comment\naccessible class net/minecraft/A$B\nextendable class net/minecraft/C\n" +

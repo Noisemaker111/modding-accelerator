@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "0884ba3b078358004ab96bba907cd9c0db0d10f7a578c16161d491e1594bf5fe",
+ "rules_sha256": "712db2900d826eac68df2f648b159f34141527d5cfa717f4eeef1cd0a8fa8de4",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -31,6 +31,11 @@
    "coordinate": "net.neoforged.fancymodloader:loader:12.0.12",
    "url": "https://maven.neoforged.net/releases/net/neoforged/fancymodloader/loader/12.0.12/loader-12.0.12.jar",
    "sha256": "24e64f915da20669431445ffab5f567552c3e01fd3c5c2cf000e5ceb75424a27"
+  },
+  "fml-21.1": {
+   "coordinate": "net.neoforged.fancymodloader:loader:4.0.44",
+   "url": "https://maven.neoforged.net/releases/net/neoforged/fancymodloader/loader/4.0.44/loader-4.0.44.jar",
+   "sha256": "f2096cd86d605c0484971fc712208e0dc6cecfe53e056db61d44a98cadc19499"
   },
   "minecraft": {
    "coordinate": "minecraft:client:26.3",
@@ -913,6 +918,18 @@
     "found": true
    },
    {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#isModLoaded",
+    "found": true
+   },
+   {
     "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister#createBlocks",
     "found": true
    },
@@ -1214,6 +1231,42 @@
    },
    {
     "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getContext",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.Lazy#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.Lazy#invalidate",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.server.ServerLifecycleHooks#getCurrentServer",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.IModBusEvent",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.loading.FMLEnvironment#getDist",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.loading.FMLEnvironment#isProduction",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModList#get",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModList#isLoaded",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModList#getModContainerById",
     "found": true
    }
   ],
@@ -1600,6 +1653,34 @@
    },
    {
     "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getContext",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.util.Lazy#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.server.ServerLifecycleHooks#getCurrentServer",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.event.IModBusEvent",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.loading.FMLEnvironment#dist",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.loading.FMLEnvironment#production",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.ModList#isLoaded",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.ModList#getModContainerById",
     "found": true
    }
   ]
