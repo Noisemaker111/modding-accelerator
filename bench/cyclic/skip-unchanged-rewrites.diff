@@ -1,0 +1,77 @@
+diff --git a/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java b/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
+index 8051172fe..c3d5b21cb 100644
+--- a/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
++++ b/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
+@@ -136,12 +136,12 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+     if (lastValidRecipe == null) {
+       //reset 
+       this.timer = TIMER_FULL;
+-      setPreviewSlot(ItemStack.EMPTY);
++      writePreviewUnlessUnchanged(ItemStack.EMPTY);
+     }
+     else {
+       //recipes not null and it matches  
+       ItemStack recipeOutput = lastValidRecipe.value().getResultItem(level.registryAccess()).copy();
+-      setPreviewSlot(recipeOutput);
++      boolean previewWritten = writePreviewUnlessUnchanged(recipeOutput);
+       //if we have space for the output, then go ahead
+       if (hasFreeSpace(outHandler, recipeOutput)) {
+         if (!checkInput(inputHandler)) { //Checks input before processing
+@@ -152,6 +152,9 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+           return;
+         }
+         if (doCraft(lastValidRecipe)) {
++          if (!previewWritten) {
++            setPreviewSlot(recipeOutput); // as before: the preview holds this very stack, which may also go to an empty output slot
++          }
+           //reset the timer
+           this.timer = TIMER_FULL;
+           //pay energy cost
+@@ -173,6 +176,7 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+             //otherwise its something like bucket->empty bucket, so different item, so right side 
+             depositOutput(s, this.outHandler);
+           }
++          previewShared = true;
+           this.updateComparatorOutputLevel();
+         }
+       }
+@@ -192,6 +196,22 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+     return recipeOutput;
+   }
+ 
++  // Whether the preview's stack object may also be in an output slot. NeoForge's insertItem keeps the stack it is
++  // given, so on a craft tick the result stack goes into the preview and then into an empty output slot, where later
++  // crafts grow it; the next tick's write gives the preview a stack of its own again.
++  private boolean previewShared = true;
++
++  // Writes the preview as setPreviewSlot does, unless it already holds an equal stack of its own: taking it out and
++  // putting an equal one back would leave it as it is. Returns whether it wrote.
++  private boolean writePreviewUnlessUnchanged(ItemStack itemStack) {
++    if (!previewShared && ItemStack.matches(this.preview.getStackInSlot(0), itemStack)) {
++      return false;
++    }
++    setPreviewSlot(itemStack);
++    previewShared = false;
++    return true;
++  }
++
+   private void setPreviewSlot(ItemStack itemStack) {
+     IItemHandler previewHandler = this.preview;
+     if (previewHandler != null) {
+@@ -311,12 +331,12 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+   }
+ 
+   private RecipeHolder<CraftingRecipe> findMatchingRecipe(ArrayList<ItemStack> itemStacksInGrid) {
+-    for (int i = 0; i < this.gridCap.getSlots(); i++) {
+-      craftMatrix.setItem(i, this.gridCap.getStackInSlot(i).copy());//fake items anyway. but also jus do a copy
+-    }
+     java.util.Collection<RecipeHolder<?>> allRecipes = level.getRecipeManager().getRecipes();
+     if (scannedRecipes == allRecipes && gridMatchesScan()) {
+-      return scannedResult;
++      return scannedResult; // craftMatrix still holds the copies made for that scan, equal to the grid
++    }
++    for (int i = 0; i < this.gridCap.getSlots(); i++) {
++      craftMatrix.setItem(i, this.gridCap.getStackInSlot(i).copy());//fake items anyway. but also jus do a copy
+     }
+     RecipeHolder<CraftingRecipe> found = scanRecipes();
+     boolean cacheable = true;

@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "name": "cyclic-crafters",
+  "gameDirectory": "run",
+  "world": "cyclic-base",
+  "worldSource": "../../.runs/cyclic-world/cyclic-base",
+  "files": {"run/options.txt": "options.txt"},
+  "measure": {
+    "seconds": 30,
+    "warmup": 20,
+    "probes": "probes.json",
+    "metric": {"probe": "crafterTick", "statistic": "inclusiveMsPerTick"},
+    "scopes": [
+      {"name": "cyclicCpu", "mod": "cyclic"},
+      {"name": "batteryMs", "probe": "batteryTick", "statistic": "inclusiveMsPerTick"}
+    ]
+  },
+  "gates": [
+    {"name": "crafting", "file": "count.java", "thread": "control", "compare": "expect", "expect": "true"},
+    {"name": "crafts", "file": "trace.java", "thread": "control", "compare": "exact"}
+  ],
+  "jit": "full"
+}

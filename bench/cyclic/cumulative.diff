@@ -1,0 +1,177 @@
+diff --git a/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java b/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
+index bec056f71..c3d5b21cb 100644
+--- a/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
++++ b/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
+@@ -136,12 +136,12 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+     if (lastValidRecipe == null) {
+       //reset 
+       this.timer = TIMER_FULL;
+-      setPreviewSlot(ItemStack.EMPTY);
++      writePreviewUnlessUnchanged(ItemStack.EMPTY);
+     }
+     else {
+       //recipes not null and it matches  
+       ItemStack recipeOutput = lastValidRecipe.value().getResultItem(level.registryAccess()).copy();
+-      setPreviewSlot(recipeOutput);
++      boolean previewWritten = writePreviewUnlessUnchanged(recipeOutput);
+       //if we have space for the output, then go ahead
+       if (hasFreeSpace(outHandler, recipeOutput)) {
+         if (!checkInput(inputHandler)) { //Checks input before processing
+@@ -152,6 +152,9 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+           return;
+         }
+         if (doCraft(lastValidRecipe)) {
++          if (!previewWritten) {
++            setPreviewSlot(recipeOutput); // as before: the preview holds this very stack, which may also go to an empty output slot
++          }
+           //reset the timer
+           this.timer = TIMER_FULL;
+           //pay energy cost
+@@ -173,6 +176,7 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+             //otherwise its something like bucket->empty bucket, so different item, so right side 
+             depositOutput(s, this.outHandler);
+           }
++          previewShared = true;
+           this.updateComparatorOutputLevel();
+         }
+       }
+@@ -192,6 +196,22 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+     return recipeOutput;
+   }
+ 
++  // Whether the preview's stack object may also be in an output slot. NeoForge's insertItem keeps the stack it is
++  // given, so on a craft tick the result stack goes into the preview and then into an empty output slot, where later
++  // crafts grow it; the next tick's write gives the preview a stack of its own again.
++  private boolean previewShared = true;
++
++  // Writes the preview as setPreviewSlot does, unless it already holds an equal stack of its own: taking it out and
++  // putting an equal one back would leave it as it is. Returns whether it wrote.
++  private boolean writePreviewUnlessUnchanged(ItemStack itemStack) {
++    if (!previewShared && ItemStack.matches(this.preview.getStackInSlot(0), itemStack)) {
++      return false;
++    }
++    setPreviewSlot(itemStack);
++    previewShared = false;
++    return true;
++  }
++
+   private void setPreviewSlot(ItemStack itemStack) {
+     IItemHandler previewHandler = this.preview;
+     if (previewHandler != null) {
+@@ -208,32 +228,50 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+     return test.isEmpty(); //empty means all of it was allowed to go in
+   }
+ 
+-  // This could be done better, but it works so ¯\_(ツ)_/¯
++  // Answers what the list version did, without copying any stack: input stack i (in slot order) takes, in grid
++  // order, every grid stack still unclaimed whose item equals its own item, its count dropping by one per grid
++  // stack it takes; once its count reaches zero its item is air, so it then takes empty grid slots instead (and an
++  // empty input slot takes every unclaimed empty grid slot). The grid stacks it took are claimed after it is done,
++  // and so is every other unclaimed empty grid slot if it took one: the list version copied every empty stack to
++  // the one ItemStack.EMPTY, and removeAll compares by identity. True when every grid stack is claimed.
+   private boolean checkInput(IItemHandler inv) {
+-
+-    List<ItemStack> inputStacks = new ArrayList<ItemStack>();
+-    List<ItemStack> gridStacks = new ArrayList<ItemStack>();
+-    for (int i = 0; i < inv.getSlots(); i++) {
+-      inputStacks.add(inv.getStackInSlot(i).copy());
+-    }
+-    for (int i = 0; i < this.gridCap.getSlots(); i++) {
+-      gridStacks.add(this.gridCap.getStackInSlot(i).copy());
++    final int gridSlots = this.gridCap.getSlots();
++    net.minecraft.world.item.Item[] gridItems = new net.minecraft.world.item.Item[gridSlots];
++    boolean[] claimed = new boolean[gridSlots];
++    int unclaimed = gridSlots;
++    for (int j = 0; j < gridSlots; j++) {
++      gridItems[j] = this.gridCap.getStackInSlot(j).getItem();
+     }
+-    for (ItemStack stack : inputStacks) {
+-      List<ItemStack> lolbit = new ArrayList<ItemStack>();
+-      boolean match = false;
+-      for (ItemStack grid : gridStacks) {
+-        if (stack.getItem() == grid.getItem()) {
+-          match = true;
+-          lolbit.add(grid);
+-          stack.shrink(1);
++    for (int i = 0; i < inv.getSlots(); i++) {
++      ItemStack stack = inv.getStackInSlot(i);
++      net.minecraft.world.item.Item item = stack.getItem();
++      int count = stack.isEmpty() ? 0 : stack.getCount();
++      int took = 0;
++      for (int j = 0; j < gridSlots; j++) {
++        if (claimed[j]) {
++          continue;
++        }
++        net.minecraft.world.item.Item current = count > 0 ? item : net.minecraft.world.item.Items.AIR;
++        if (current == gridItems[j]) {
++          took |= 1 << j;
++          count--;
++        }
++      }
++      boolean tookEmpty = false;
++      for (int j = 0; j < gridSlots; j++) {
++        if ((took & (1 << j)) != 0 && gridItems[j] == net.minecraft.world.item.Items.AIR) {
++          tookEmpty = true;
+         }
+       }
+-      if (match) {
+-        gridStacks.removeAll(lolbit);
++      for (int j = 0; j < gridSlots; j++) {
++        boolean removed = (took & (1 << j)) != 0 || (tookEmpty && gridItems[j] == net.minecraft.world.item.Items.AIR);
++        if (removed && !claimed[j]) {
++          claimed[j] = true;
++          unclaimed--;
++        }
+       }
+     }
+-    return gridStacks.isEmpty();
++    return unclaimed == 0;
+   }
+ 
+   private boolean doCraft(RecipeHolder<CraftingRecipe> lastValidRecipe) {
+@@ -275,10 +313,45 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+     }
+   }
+ 
++  // The last scan's answer, kept while the grid holds equal stacks (item, count, components) and the server's
++  // recipes are the same set: RecipeManager replaces its map on every reload or replaceRecipes, so the identity
++  // of getRecipes() says when they change. A grid holding a filled map is always scanned: the map extending
++  // recipe's match reads the map's saved data from the level.
++  private java.util.Collection<RecipeHolder<?>> scannedRecipes;
++  private final ItemStack[] scannedGrid = new ItemStack[GRID_SIZE];
++  private RecipeHolder<CraftingRecipe> scannedResult;
++
++  private boolean gridMatchesScan() {
++    for (int i = 0; i < GRID_SIZE; i++) {
++      if (!ItemStack.matches(scannedGrid[i], this.gridCap.getStackInSlot(i))) {
++        return false;
++      }
++    }
++    return true;
++  }
++
+   private RecipeHolder<CraftingRecipe> findMatchingRecipe(ArrayList<ItemStack> itemStacksInGrid) {
++    java.util.Collection<RecipeHolder<?>> allRecipes = level.getRecipeManager().getRecipes();
++    if (scannedRecipes == allRecipes && gridMatchesScan()) {
++      return scannedResult; // craftMatrix still holds the copies made for that scan, equal to the grid
++    }
+     for (int i = 0; i < this.gridCap.getSlots(); i++) {
+       craftMatrix.setItem(i, this.gridCap.getStackInSlot(i).copy());//fake items anyway. but also jus do a copy
+     }
++    RecipeHolder<CraftingRecipe> found = scanRecipes();
++    boolean cacheable = true;
++    for (int i = 0; i < GRID_SIZE; i++) {
++      scannedGrid[i] = craftMatrix.getItem(i).copy();
++      if (scannedGrid[i].is(net.minecraft.world.item.Items.FILLED_MAP)) {
++        cacheable = false;
++      }
++    }
++    scannedRecipes = cacheable ? allRecipes : null;
++    scannedResult = found;
++    return found;
++  }
++
++  private RecipeHolder<CraftingRecipe> scanRecipes() {
+     CraftingInput craftingInput = CraftingInput.of(3, 3, java.util.List.of(
+         craftMatrix.getItem(0), craftMatrix.getItem(1), craftMatrix.getItem(2),
+         craftMatrix.getItem(3), craftMatrix.getItem(4), craftMatrix.getItem(5),

@@ -549,6 +549,210 @@
      ]
     }
    }
+  },
+  {
+   "id": "cache-recipe-match-until-inputs-or-recipes-change",
+   "symptom": {
+    "text": "A machine finds its recipe every tick by testing each recipe of a type in turn (often after RecipeManager.getAllRecipesFor, which copies the whole list on every call), although its inputs rarely change.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(find|get|lookup|match|search|check)\\w*Recipe\\w*\\(",
+      "minShare": 0.3
+     }
+    ]
+   },
+   "change": "Keep the scan's answer per block entity with copies of the stacks it was computed from, and return it while every input slot holds an equal stack (ItemStack.matches: item, count, components; compare copies, so a stack changed in place is noticed) and the server's recipes are the same set: RecipeManager replaces its maps on every reload and replaceRecipes, so the identity of getRecipes() changes exactly then. Scan as before whenever an input holds a filled map: the map extending recipe is the one vanilla crafting recipe whose match reads the level (the map's saved data). Vanilla's own Crafter keeps a RecipeCache under the same rule.",
+   "gain": {
+    "scope": "crafterTick (inclusive ms per server tick of TileCrafter.serverTick, 128 crafters compressing items every 40 ticks)",
+    "cold": {
+     "geometricMean": 10.491,
+     "low": 9.937,
+     "high": 11.331,
+     "pairs": 3
+    },
+    "warm": {
+     "geometricMean": 11.416,
+     "low": 10.674,
+     "high": 12.837,
+     "pairs": 3
+    }
+   },
+   "gate": {
+    "name": "crafts + crafting",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every slot (item, count, components), timer and energy of 12 frozen crafters after each of 160 hand-ticked rounds (full and partial grids, shapeless and shaped, map extending, no recipe, an empty grid, named stacks, redstone, low energy, the input check's empty-slot quirk), with grids changed through the handler and in place and the server's recipes replaced and restored mid-run; the live base's 128 crafters show no recipe while a grid slot is emptied, then each makes at least one more block from exactly nine ingredients"
+   },
+   "provenIn": {
+    "mod": "cyclic",
+    "version": "1.14.2",
+    "loader": "neoforge",
+    "scope": "crafterTick",
+    "record": "2026-11-15T12-33-11.489586Z-00cc39e4",
+    "patch": "bench/cyclic/cache-matched-recipe.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.findMatchingRecipe(Ljava/util/ArrayList;)Lm/R;",
+       "samples": 85
+      },
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 15
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "check-slots-in-place-instead-of-copied-lists",
+   "symptom": {
+    "text": "A per-tick check copies every input and recipe slot into new lists, matches them against each other with removeAll, and throws the lists away; it runs every tick although it only decides whether a timer may count down.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(check|has|can|validate|enough)\\w*(Input|Inputs|Ingredient|Ingredients|Items|Stacks)\\w*\\(",
+      "minShare": 0.1
+     }
+    ]
+   },
+   "change": "Compute the same answer from the slots in place, with items and counts in small arrays and no stack copied. Keep every quirk of the list version: a stack whose count ran out reads as air and so matches empty slots, and a copied empty stack is the one ItemStack.EMPTY, so removeAll (identity) took every empty slot at once when it took one.",
+   "gain": {
+    "scope": "crafterTick (inclusive ms per server tick of TileCrafter.serverTick, 128 crafters compressing items every 40 ticks)",
+    "cold": {
+     "geometricMean": 1.25,
+     "low": 1.2,
+     "high": 1.328,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 1.196,
+     "low": 1.116,
+     "high": 1.29,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "crafts + crafting",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every slot (item, count, components), timer and energy of 12 frozen crafters after each of 160 hand-ticked rounds (full and partial grids, shapeless and shaped, map extending, no recipe, an empty grid, named stacks, redstone, low energy, the input check's empty-slot quirk), with grids changed through the handler and in place and the server's recipes replaced and restored mid-run; the live base's 128 crafters show no recipe while a grid slot is emptied, then each makes at least one more block from exactly nine ingredients"
+   },
+   "provenIn": {
+    "mod": "cyclic",
+    "version": "1.14.2",
+    "loader": "neoforge",
+    "scope": "crafterTick",
+    "record": "2026-11-15T12-47-10.351307700Z-ba79f14c",
+    "patch": "bench/cyclic/check-input-without-copies.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.checkInput(Lm/IItemHandler;)Z",
+       "samples": 30
+      },
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 70
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "write-equal-slots-only-when-unshared",
+   "symptom": {
+    "text": "Every tick a block entity takes a display slot's stack out and puts an equal one back (a recipe preview, a ghost or result slot), and copies its grid into a crafting container, although neither changed.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(set|update|refresh|write)\\w*(Preview|Display|Ghost|Result)\\w*\\(",
+      "minShare": 0.05
+     }
+    ]
+   },
+   "change": "Skip the write while the slot already holds an equal stack (ItemStack.matches) of its own, and copy the grid into the crafting container only when the recipe is looked up again (the copies made then stay equal to the grid). NeoForge's ItemStackHandler.insertItem keeps the very stack it is given in an empty slot, so the same object can sit in two slots: Cyclic's crafter puts the result stack in its preview and then in an empty output slot on a craft tick, and later crafts grow it there. Write exactly as before whenever the slot's object may be shared (the craft tick and the tick after), and skip only when it is a stack the slot alone holds.",
+   "gain": {
+    "scope": "crafterTick (inclusive ms per server tick of TileCrafter.serverTick, 128 crafters compressing items every 40 ticks)",
+    "cold": {
+     "geometricMean": 1.554,
+     "low": 1.366,
+     "high": 1.91,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 1.322,
+     "low": 1.247,
+     "high": 1.417,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "crafts + crafting",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every slot (item, count, components), timer and energy of 12 frozen crafters after each of 160 hand-ticked rounds (full and partial grids, shapeless and shaped, map extending, no recipe, an empty grid, named stacks, redstone, low energy, the input check's empty-slot quirk), with grids changed through the handler and in place and the server's recipes replaced and restored mid-run; the live base's 128 crafters show no recipe while a grid slot is emptied, then each makes at least one more block from exactly nine ingredients"
+   },
+   "provenIn": {
+    "mod": "cyclic",
+    "version": "1.14.2",
+    "loader": "neoforge",
+    "scope": "crafterTick",
+    "record": "2026-11-15T13-08-28.398183200Z-1757061f",
+    "patch": "bench/cyclic/skip-unchanged-rewrites.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.setPreviewSlot(Lm/ItemStack;)V",
+       "samples": 10
+      },
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 90
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
   }
  ]
 }

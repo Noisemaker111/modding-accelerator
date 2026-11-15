@@ -43,6 +43,13 @@ during a run (fixed: runs read a snapshot of the experiment), a run aborted by h
 `OUT/stop`), and small candidates that ran all 8 pairs to be rejected near 1.0x: time each part of the remaining cost
 directly first, and skip a candidate worth a few percent.
 
+The fourth, Cyclic's auto-crafters (`bench/cyclic`, session `cyclic-optimize`), stacked three accepted changes into
+cold 15.70x and warm 15.90x against the unmodified mod (one cumulative run, 3 pairs). The first, keeping each
+crafter's recipe until its grid or the server's recipes change, was accepted 28 min after the clone at 10.5x by
+itself. Five runs took 70 min of run time and 84 min of wall clock from clone to the cumulative verdict: two
+candidates ran at the same time, and a candidate the exact gate rejected was fixed and checked against the baselines'
+recorded gate value in one launch before its rerun. Launching games was 42% of the run time.
+
 `modaccel perf-optimize --replay OUT1,OUT2` decides finished runs again under the current stopping rule and prints
 the wall time they would take, sequentially and with paired arms. Diorama's four `perf-optimize` runs replay to the
 same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with paired arms.
@@ -57,13 +64,15 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
    build's optional `localRuntime` test mods (Storage Network loaded AE2, Refined Storage, JEI, Curios, Patchouli), and
    set the run's `logLevel` to INFO. A mod's dev run often logs DEBUG to the console, where one line cost 15 µs; a
    player's game writes DEBUG only to the buffered `debug.log` (0.7 µs), so the dev console inflates fixed costs.
+   A fresh clone has no git identity: set a local `user.name` and `user.email` in it before that commit.
 2. **Make a world once and reuse it.** Start the client with `ui-check --root R --jit full`, create a fixed-seed
    superflat world with an eval snippet (`bench/pipez/create-world.java`), build the scene a player would have
    (`bench/pipez/scene.java`: a base whose pipes keep moving items), then save (`saveEverything`), `game-stop`, and copy
    the save to `.runs/<mod>-world/`. Every launch of every run copies that save; nothing is generated per launch.
    The workload must keep running for as long as the world does (a loop, not a one-off burst), so cold and warm
    captures see the same work.
-3. **Profile.** `modaccel perf --root R --duration 30 --warmup 5 --allow-hidden --session <mod>-optimize`. Open
+3. **Profile.** Load the save first (`modaccel world-check --root R --world NAME --jit full` leaves the game in it),
+   then `modaccel perf --root R --duration 30 --warmup 5 --allow-hidden --session <mod>-optimize`. Open
    `report.html`: **Where the cost is, by mod and feature**. Read your mod's row (★): ms per tick and per frame with
    95% ranges, its features (block entity, mixin, event handler) and their top methods, self and inclusive.
    Too few samples (under ~50 for the mod) means the scene is too small: scale it until the mod's cost is real.
@@ -157,6 +166,24 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
 - **NeoForge capability-cache listeners.** `BlockCapabilityCache.create(..., isValid, listener)` calls the listener
   only if the cache was queried since its last invalidation. Query every cache a plan depends on when making the plan,
   or the plan never hears of a change (Storage Network's walk replay kept a broken cable until its trace gate failed).
+- **A write that looks like a no-op can be an alias.** NeoForge's `ItemStackHandler.insertItem` keeps the very stack it
+  is given in an empty slot. Cyclic's crafter put its result stack in its preview slot and then in an empty output slot
+  on a craft tick, so the two slots held one object until the next tick wrote the preview again. A candidate that kept
+  the preview while it was equal let the next craft's `grow` change the preview too: the exact gate failed in both
+  pairs. Before skipping a write, ask whether the object it would replace is held anywhere else.
+- **Rewrites of quirky loops.** Replacing a loop over copied lists, keep what the copies did by accident: `copy()` of
+  any empty stack is the one `ItemStack.EMPTY`, so Cyclic's `removeAll` (identity) took every empty grid slot as soon
+  as it took one. Put the quirk in the exact gate's frozen input (`bench/cyclic/trace.java`, crafters 10 and 11).
+- **The probe can outweigh the method.** A timing probe records every call: about a microsecond each on a loaded
+  machine. Once Cyclic's crafter tick was down to about a microsecond, its probe (128 calls a tick) was half of what
+  the metric measured, so later candidates measured smaller than they were. Time the remaining parts directly
+  (`bench/cyclic/parts.java`) to decide what to write next, and say in the README that the metric includes the probe.
+- **Check a fixed candidate against a recorded baseline gate value.** Every run keeps the baselines' gate values. After
+  an exact gate fails, run the fixed candidate's gate in one launch on a fresh copy of the save and compare it with
+  that value (3 min) before spending pairs on it.
+- **Independent candidates can run together.** Two `perf-optimize` runs are two heavy jobs; Cyclic's second and third
+  candidates ran at the same time against the same accepted build, each with its own worktrees (first launches took
+  160 s instead of 145 s).
 - **Patterns travel.** Pipez's `cache-sorted-copy-until-source-replaced` fired on Storage Network's first capture
   (its storage list was sorted on every use); that was the candidate to write.
 
