@@ -101,7 +101,8 @@ public final class Modaccel {
             "intermediary",
             "no-heap",
             "allow-hidden",
-            "keep"
+            "keep",
+            "check-only"
         );
         static final Set<String> VALUES = Set.of(
             "command",
@@ -156,7 +157,8 @@ public final class Modaccel {
             "attach", "instance", "launch", "duration", "warmup", "out", "scenario",
             "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block",
             "check",
-            "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch"
+            "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch",
+            "min-runs", "min-speedup", "arms", "replay"
         );
         final Map<String, String> values = new LinkedHashMap<>();
         final Set<String> flags = new HashSet<>();
@@ -788,6 +790,7 @@ public final class Modaccel {
                 "--scenario FILE --rcon-port 25575 [--rcon-password-env MODACCEL_RCON_PASSWORD] [--repeat 1] [--seed 0] drives explicit test-world commands.\n" +
                 "Scenarios edit the selected local server world: use a disposable world. Each command requires an expected response. Repeats share one JVM.";
             case "perf-template" -> "Generate editable scenario files: modaccel perf-template --family transport|block-scene|entity-crowd|mod-content [--block MOD:BLOCK] [--entity MOD:ENTITY] [--counts 1,16,64] [--root SOURCE] [--out FOLDER]\n" +
+                "--family experiment --from CAPTURE --root SOURCE writes a perf-optimize experiment, probes and gate snippets to fill in from a perf --root capture.\n" +
                 "mod-content reads the mod's lang files for its own blocks and entities. Generation does not edit a world. perf --root SOURCE --scenario FILE runs it in the source client's own world; other games need a disposable local server with RCON.";
             case "perf-diff" -> "Compare observed captures: modaccel perf-diff --baseline FOLDER_OR_REPORT --candidate FOLDER_OR_REPORT [--out FOLDER]\nDescriptive differences only; this does not establish equal workload, causality or statistical significance.";
             case "perf-optimize" -> "Accept or reject one candidate change with measured speedup: modaccel perf-optimize --root SOURCE --experiment EXPERIMENT.json --patch CANDIDATE.diff [--runs 5] [--out FOLDER] [--dry-run] [--keep]\n" +
@@ -796,7 +799,10 @@ public final class Modaccel {
                 "the chosen metric (a timing probe or a report value), then its gates: eval snippets compared exactly, against an expected value or within a tolerance,\n" +
                 "and 1280x720 framebuffer captures compared pixel by pixel. Every gate must also agree baseline-to-baseline. Accepted only when all gates pass and the\n" +
                 "95% bootstrap interval of the speedup is above 1 for cold and warm; an accepted diff is then applied to SOURCE (not with --dry-run). See PERFORMANCE.md.\n" +
-                "--label TEXT names the candidate and --session NAME groups runs in record.json, which bench/perf_sessions.py summarises.";
+                "--label TEXT names the candidate and --session NAME groups runs in record.json, which bench/perf_sessions.py summarises.\n" +
+                "Pairs stop at the first failed gate, or from --min-runs pairs (3) once 99% t intervals lie above 1 (cold and warm) or below --min-speedup (1).\n" +
+                "--arms auto|parallel|sequential: auto starts both arms of a pair together on 12 or more cores.\n" +
+                "--check-only checks the experiment (and --patch) offline, as every run does first. --replay OUT1,OUT2 decides finished runs again and prints their wall time.";
             case "perf-report" -> "Render an existing capture/JFR locally: modaccel perf-report --file FOLDER_OR_JFR [--out FOLDER]\nNo game or network is required. External JFR files may lack frame/tick events or code-origin metadata.";
             case "self-test" -> "Test modaccel itself, with no game and no network: modaccel self-test [--only SUITE,SUITE] [--json]\n" +
             "Suites: " +

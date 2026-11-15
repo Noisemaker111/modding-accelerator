@@ -13,6 +13,8 @@ public final class PerfTest {
     public static void main(String[] args) throws Exception {
         adviceEvidence();
         optimizerGates();
+        optimizerStopping();
+        experimentCheck();
         modTemplates();
         check(Run.running(ProcessHandle.current()), "current process is running");
         Path modRoot = Path.of("/work/mymod").toAbsolutePath();
@@ -394,6 +396,101 @@ public final class PerfTest {
         try { PerfOptimize.validate(Json.map("schema", 1, "measure", Json.map("metric", Json.map("probe", "x")), "gates", List.of())); }
         catch (IllegalArgumentException expected) { refused = true; }
         check(refused, "an optimization with no equivalence gate is refused");
+    }
+
+    /** A measured pair with these cold and warm values per arm, and gate outputs. */
+    static List<Object> pair(int run, double base, double cand, String baseGate, String candGate) {
+        return List.of(Json.map("run", run, "arm", "baseline", "captures", Json.map("cold", Json.map("value", base), "warm", Json.map("value", base)),
+                "gates", Json.map("digest", baseGate)),
+            Json.map("run", run, "arm", "candidate", "captures", Json.map("cold", Json.map("value", cand), "warm", Json.map("value", cand)),
+                "gates", Json.map("digest", candGate)));
+    }
+
+    /** perf-optimize stops at the first failed gate, and once 99% t intervals decide; never before --min-runs for speed. */
+    static void optimizerStopping() throws Exception {
+        Map<String, Object> experiment = Json.map("gates", List.of(Json.map("name", "digest", "compare", "exact")));
+        List<Object> measured = new ArrayList<>(pair(0, 2.0, 1.0, "a", "b"));
+        check(PerfStopping.decide(experiment, measured, 3, 10, 1) == null,
+            "one pair cannot tell a candidate's difference from a gate that differs between launches");
+        measured.addAll(pair(1, 2.0, 1.0, "a", "b"));
+        Map<String, Object> stop = PerfStopping.decide(experiment, measured, 3, 10, 1);
+        check(stop != null && "rejected".equals(stop.get("decided")) && stop.get("reason").toString().contains("gate digest"),
+            "an exact gate that fails with two baseline launches ends the run: " + stop);
+        Map<String, Object> asserted = Json.map("gates", List.of(Json.map("name", "digest", "compare", "expect", "expect", "a")));
+        Map<String, Object> first = PerfStopping.decide(asserted, new ArrayList<>(pair(0, 2.0, 1.0, "a", "b")), 3, 10, 1);
+        check(first != null && "rejected".equals(first.get("decided")), "a failed expect gate ends the run at the first pair");
+        measured = new ArrayList<>();
+        double[][] fast = {{2.00, 1.00}, {2.02, 1.00}, {1.98, 1.00}};
+        for (int i = 0; i < fast.length; i++) {
+            measured.addAll(pair(i, fast[i][0], fast[i][1], "a", "a"));
+            Map<String, Object> early = PerfStopping.decide(experiment, measured, 3, 10, 1);
+            if (i < 2) check(early == null, "speed is not decided before --min-runs pairs");
+            else check(early != null && "faster".equals(early.get("decided")), "a large, consistent speedup is decided at --min-runs: " + early);
+        }
+        measured = new ArrayList<>();
+        double[] noisy = {1.3, 0.8, 1.2, 0.9, 1.1};
+        for (int i = 0; i < noisy.length; i++) measured.addAll(pair(i, noisy[i], 1.0, "a", "a"));
+        check(PerfStopping.decide(experiment, measured, 3, 10, 1) == null, "a noisy ratio around 1 keeps launching");
+        check(PerfStopping.decide(experiment, measured.subList(0, 6), 3, 3, 1) == null, "the last pair is decided by the final rule, not the stopping rule");
+        measured = new ArrayList<>();
+        for (int i = 0; i < 4; i++) measured.addAll(pair(i, 1.0, 1.5 + 0.01 * i, "a", "a"));
+        Map<String, Object> slower = PerfStopping.decide(experiment, measured, 3, 10, 1);
+        check(slower != null && "rejected".equals(slower.get("decided")), "a clearly slower candidate stops: " + slower);
+        measured.add(Json.map("run", 4, "arm", "baseline", "captures", Json.map("cold", Json.map("value", 1.0), "warm", Json.map("value", 1.0)), "gates", Json.map("digest", "a")));
+        check(PerfStopping.pairs(measured).size() == 4, "an arm without its pair is not a pair");
+        Map<String, Object> t = PerfStopping.interval(List.of(2.0, 2.0));
+        check(Math.abs(((Number) t.get("low")).doubleValue() - 2) < 1e-9, "identical ratios have no spread");
+        check(PerfStopping.t995(2) > PerfStopping.t995(10) && PerfStopping.t995(100) == PerfStopping.t995(30), "t quantiles shrink with pairs and stop at 30");
+        PerfRecord record = new PerfRecord("perf-optimize", null);
+        record.share = 0.5;
+        record.step("measure", "baseline-cold", 60);
+        record.share = 1;
+        record.step("setup", "worktrees", 2);
+        check(((Number) record.phases.get("measure")).doubleValue() == 30 && Json.object(record.steps.get(0)).get("seconds").equals(60.0),
+            "parallel arms count half of each step in the phases, and keep its elapsed seconds");
+        boolean refused = false;
+        try { PerfOptimize.parallel("both"); } catch (IllegalArgumentException expected) { refused = true; }
+        check(refused && PerfOptimize.parallel("parallel") && !PerfOptimize.parallel("sequential"), "--arms is auto, parallel or sequential");
+    }
+
+    /** What perf-optimize refuses before any launch. */
+    static void experimentCheck() throws Exception {
+        Path dir = Files.createTempDirectory("perf-check-");
+        fixture(dir, "gate.java", "// " + PerfCheck.TEMPLATE_MARK + "\nreturn \"\";\n");
+        fixture(dir, "clock.java", "return String.valueOf(System.currentTimeMillis());\n");
+        fixture(dir, "probes.json", "{\"probes\":[{\"class\":\"a.B\",\"method\":\"tick\",\"descriptor\":\"()V\",\"label\":\"tick\",\"mode\":\"timing\"}]}");
+        Map<String, Object> experiment = Json.map("schema", 1, "world", "w", "worldSource", "missing",
+            "measure", Json.map("probes", "probes.json", "metric", Json.map("report", "metrics.frame_ms.mean"),
+                "scopes", List.of(Json.map("name", "s", "probe", "absent"))),
+            "gates", List.of(Json.map("name", "template", "file", "gate.java", "compare", "exact"), Json.map("name", "clock", "file", "clock.java", "compare", "exact"),
+                Json.map("name", "gone", "file", "gone.java", "compare", "expect", "expect", "true")));
+        Map<String, Object> result = PerfCheck.check(dir.resolve("experiment.json"), experiment, null, null, Json.map("background", true));
+        String problems = String.join("\n", Json.array(result.get("problems")).stream().map(Object::toString).toList());
+        String warnings = String.join("\n", Json.array(result.get("warnings")).stream().map(Object::toString).toList());
+        check(Boolean.FALSE.equals(result.get("ok")), "a broken experiment does not pass");
+        check(problems.contains("still the generated template"), "an unwritten template gate is refused: " + problems);
+        check(problems.contains("gone.java does not exist"), "a missing snippet is refused");
+        check(problems.contains("level.dat"), "a missing world is refused");
+        check(problems.contains("probe absent"), "a scope naming a probe the file lacks is refused");
+        check(problems.contains("8 frames per second"), "a frame metric on a hidden client is refused");
+        check(warnings.contains("currentTimeMillis") && warnings.contains("C1"), "clock reads in exact gates and the C1-only JIT are warned about: " + warnings);
+        Map<String, Object> visible = PerfCheck.check(dir.resolve("experiment.json"), experiment, null, null, Json.map("background", false));
+        check(!Json.array(visible.get("problems")).toString().contains("frames per second"), "a visible client may measure frames");
+        Path capture = dir.resolve("capture");
+        fixture(capture, "report.json", Json.write(Json.map("attribution", Json.map("mods", List.of(Json.map("id", "pipes", "yourMod", true,
+            "threads", List.of(Json.map("name", "Server thread", "samples", 20))))))));
+        fixture(capture, "probes.suggested.json", Json.write(Json.map("probes", List.of(
+            Json.map("class", "p.Pipe", "method", "tick", "descriptor", "()V", "label", "Pipe.tick", "mode", "timing", "mod", "pipes"),
+            Json.map("class", "p.Pipe", "method", "sort", "descriptor", "()V", "label", "Pipe.sort", "mode", "timing", "mod", "pipes"),
+            Json.map("class", "o.Other", "method", "x", "descriptor", "()V", "label", "Other.x", "mode", "timing", "mod", "other")))));
+        Map<String, Object> made = PerfTemplates.run(new Modaccel.Options(new String[]{"perf-template", "--family", "experiment", "--from", capture.toString(),
+            "--root", dir.toString(), "--out", dir.resolve("exp").toString()}));
+        Map<String, Object> generated = Json.read(dir.resolve("exp/experiment.json"));
+        Map<String, Object> metric = Json.object(Json.object(generated.get("measure")).get("metric"));
+        check("Pipe.tick".equals(metric.get("probe")) && "full".equals(generated.get("jit")), "server-thread cost is measured by the top probe per tick, with the full JIT: " + made);
+        check(Json.array(Json.read(dir.resolve("exp/probes.json")).get("probes")).size() == 2, "only the mod's own suggested probes are kept");
+        Map<String, Object> fresh = PerfCheck.check(dir.resolve("exp/experiment.json"), generated, null, null, Json.map("background", true));
+        check(Json.array(fresh.get("problems")).toString().contains("still the generated template"), "a generated experiment cannot launch until its gates are written");
     }
 
     static void functionTiming(Map<String, Object> report, Path directory) throws Exception {

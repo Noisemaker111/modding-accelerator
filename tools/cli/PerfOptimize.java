@@ -4,7 +4,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
 
 /**
@@ -21,8 +22,11 @@ final class PerfOptimize {
     final Path home, root, out, experimentFile, patch;
     final Map<String, Object> experiment;
     final Modaccel.Options options;
-    final int runs;
-    final List<Object> log = new ArrayList<>();
+    final int runs, minRuns;
+    final double minSpeedup;
+    final boolean parallel;
+    final List<Object> log = Collections.synchronizedList(new ArrayList<>());
+    final AtomicInteger stepNumber = new AtomicInteger();
     final PerfRecord record;
 
     PerfOptimize(Path home, Modaccel.Options options) throws Exception {
@@ -36,6 +40,10 @@ final class PerfOptimize {
         experiment = Json.read(experimentFile);
         validate(experiment);
         runs = Performance.integer(options, "runs", 5, 2, 50);
+        // A sequential test: from --min-runs pairs on, stop once the intervals decide (PerfStopping).
+        minRuns = Performance.integer(options, "min-runs", Math.min(3, runs), 2, runs);
+        minSpeedup = Double.parseDouble(options.get("min-speedup", "1"));
+        parallel = parallel(options.get("arms", "auto"));
         out = Performance.output(options);
         if (Files.exists(out.resolve("optimize.json"))) throw new IOException("Output already holds an optimization run: " + out);
         record = new PerfRecord("perf-optimize", options);
@@ -44,10 +52,59 @@ final class PerfOptimize {
         record.record.put("metric", Json.object(experiment.get("measure")).get("metric"));
         Json.object(record.record.get("machine")).put("jit", "full".equals(experiment.get("jit")) ? "full" : "C1 only (hidden test client)");
         record.record.put("source", out.toString());
+        record.record.put("arms", parallel ? "parallel" : "sequential");
+    }
+
+    /**
+     * Both arms of a pair start together when the machine has the cores for two games (12 or more logical
+     * processors): a pair then takes its slower arm's time, not both, and both arms see the same machine load.
+     */
+    static boolean parallel(String arms) {
+        return switch (arms) {
+            case "parallel" -> true;
+            case "sequential" -> false;
+            case "auto" -> Runtime.getRuntime().availableProcessors() >= 12;
+            default -> throw new IllegalArgumentException("--arms is auto, parallel or sequential");
+        };
     }
 
     static Map<String, Object> run(Path home, Modaccel.Options options) throws Exception {
+        if (options.values.containsKey("replay")) return replay(options);
+        if (options.has("check-only")) {
+            Path experimentFile = Path.of(options.get("experiment", "")).toAbsolutePath();
+            if (!Files.isRegularFile(experimentFile)) throw new IllegalArgumentException("--experiment FILE is required");
+            Path patch = options.values.containsKey("patch") ? Path.of(options.get("patch", "")).toAbsolutePath() : null;
+            Path root = Path.of(options.get("root", ".")).toAbsolutePath().normalize();
+            Map<String, Object> checked = PerfCheck.check(experimentFile, Json.read(experimentFile), root, patch, Preferences.read(Preferences.file()));
+            checked.put("details", PerfCheck.text(checked));
+            return checked;
+        }
         return new PerfOptimize(home, options).execute();
+    }
+
+    /** Finished runs (comma-separated output folders) decided again with the stopping rule, with the wall time saved. */
+    static Map<String, Object> replay(Modaccel.Options options) throws Exception {
+        List<Object> replays = new ArrayList<>();
+        StringBuilder details = new StringBuilder();
+        double before = 0;
+        double sequential = 0;
+        double together = 0;
+        int minRuns = Performance.integer(options, "min-runs", 3, 2, 50);
+        double minSpeedup = Double.parseDouble(options.get("min-speedup", "1"));
+        for (String folder : options.get("replay", "").split(",")) {
+            Map<String, Object> replay = PerfStopping.replay(Path.of(folder.strip()).toAbsolutePath(), minRuns, minSpeedup);
+            replays.add(replay);
+            before += ((Number) replay.get("recordedSeconds")).doubleValue();
+            sequential += ((Number) replay.get("replaySequentialSeconds")).doubleValue();
+            together += ((Number) replay.get("replayParallelSeconds")).doubleValue();
+            details.append(String.format(Locale.ROOT, "%s: %s pairs -> %s, %s -> %s; %.0f s -> %.0f s sequential, %.0f s parallel%n",
+                Path.of(folder.strip()).getFileName(), replay.get("pairsRecorded"), replay.get("pairsReplayed"), replay.get("verdictRecorded"),
+                replay.get("verdictReplayed"), replay.get("recordedSeconds"), replay.get("replaySequentialSeconds"), replay.get("replayParallelSeconds")));
+        }
+        details.append(String.format(Locale.ROOT, "All: %.1f min -> %.1f min sequential, %.1f min with paired arms started together",
+            before / 60, sequential / 60, together / 60));
+        return Json.map("ok", true, "replays", replays, "recordedSeconds", before, "replaySequentialSeconds", sequential,
+            "replayParallelSeconds", together, "details", details.toString());
     }
 
     static void validate(Map<String, Object> experiment) {
@@ -95,8 +152,14 @@ final class PerfOptimize {
         String commit = git(root, "rev-parse", "HEAD").strip();
         Map<String, Object> result = Json.map("schema", 1, "kind", "optimization", "experiment", experimentFile.toString(),
             "experimentSha256", Performance.sha256(experimentFile), "patch", patch.toString(), "patchSha256", Performance.sha256(patch),
-            "root", root.toString(), "commit", commit, "runs", runs, "started", Instant.now().toString(), "steps", log);
+            "root", root.toString(), "commit", commit, "runs", runs, "minRuns", minRuns, "arms", parallel ? "parallel" : "sequential",
+            "started", Instant.now().toString(), "steps", log);
         long setupStart = System.nanoTime();
+        long wallStart = setupStart;
+        // Everything that can be wrong without a game is found before the first worktree and launch.
+        Map<String, Object> checked = PerfCheck.check(experimentFile, experiment, root, patch, Preferences.read(Preferences.file()));
+        result.put("check", checked);
+        if (!Boolean.TRUE.equals(checked.get("ok"))) throw new IllegalArgumentException(PerfCheck.text(checked));
         try {
             for (String arm : ARMS) {
                 Path tree = out.resolve(arm);
@@ -123,17 +186,30 @@ final class PerfOptimize {
             }
             List<Object> measured = new ArrayList<>();
             result.put("measurements", measured);
+            record.share = parallel ? 0.5 : 1;
             for (int run = 0; run < runs; run++) {
-                // Alternate which arm launches first so drift and thermal state do not favour one side.
-                List<String> order = run % 2 == 0 ? ARMS : List.of("candidate", "baseline");
-                for (String arm : order) measured.add(measure(arm, arms.get(arm), run, experimentDir));
+                if (parallel) {
+                    measured.addAll(together(arms, run, experimentDir));
+                } else {
+                    // Alternate which arm launches first so drift and thermal state do not favour one side.
+                    List<String> order = run % 2 == 0 ? ARMS : List.of("candidate", "baseline");
+                    for (String arm : order) measured.add(measure(arm, arms.get(arm), run, experimentDir));
+                }
                 Json.save(out.resolve("optimize.json"), result);
+                Map<String, Object> stop = PerfStopping.decide(experiment, measured, minRuns, runs, minSpeedup);
+                if (stop != null) {
+                    result.put("stopped", stop);
+                    record.record.put("stopped", stop);
+                    break;
+                }
             }
-            evaluate(result, measured);
+            record.share = 1;
+            evaluate(experiment, result, measured);
         } catch (Exception failure) {
             result.put("accepted", false);
             result.put("error", failure.toString());
         } finally {
+            record.share = 1;
             for (Path tree : arms.values()) {
                 try { modaccel(tree, "final-game-stop", List.of("game-stop"), 120); } catch (Exception ignored) { }
                 if (!options.has("keep")) {
@@ -155,6 +231,8 @@ final class PerfOptimize {
             result.put("applied", true);
         }
         result.put("finished", Instant.now().toString());
+        result.put("wallSeconds", (System.nanoTime() - wallStart) / 1e9);
+        record.record.put("wallSeconds", result.get("wallSeconds"));
         finishRecord(result, accepted);
         Json.save(out.resolve("optimize.json"), result);
         Files.writeString(out.resolve("optimize.html"), html(result));
@@ -162,6 +240,29 @@ final class PerfOptimize {
         result.put("html", out.resolve("optimize.html").toString());
         result.put("details", summary(result));
         return result;
+    }
+
+    /** Both arms of one pair at once, each in its own game; waits for both so neither game is left running. */
+    List<Map<String, Object>> together(Map<String, Path> arms, int run, Path experimentDir) throws Exception {
+        record.sampleLoad("pair " + run + " before launch");
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            Map<String, Future<Map<String, Object>>> running = new LinkedHashMap<>();
+            for (String arm : ARMS) running.put(arm, pool.submit(() -> measure(arm, arms.get(arm), run, experimentDir)));
+            List<Map<String, Object>> rows = new ArrayList<>();
+            Exception failure = null;
+            for (var arm : running.entrySet()) {
+                try {
+                    rows.add(arm.getValue().get());
+                } catch (ExecutionException error) {
+                    if (failure == null) failure = error.getCause() instanceof Exception cause ? cause : error;
+                }
+            }
+            if (failure != null) throw failure;
+            return rows;
+        } finally {
+            pool.shutdownNow();
+        }
     }
 
     Map<String, Object> measure(String arm, Path tree, int run, Path experimentDir) throws Exception {
@@ -178,7 +279,8 @@ final class PerfOptimize {
         // State the mod keeps beside the save (map caches, per-machine records) would otherwise carry
         // from one launch of an arm into the next and change what it does.
         for (Object item : Json.array(experiment.getOrDefault("reset", List.of()))) deleteTree(tree.resolve(item.toString()).normalize());
-        record.sampleLoad(arm + " run " + run + " before launch");
+        // Two arms sampling at once read each other's interval (the second reads 0): a pair together samples once.
+        if (!parallel) record.sampleLoad(arm + " run " + run + " before launch");
         List<String> launch = new ArrayList<>(world.isBlank() ? List.of("ui-check") : List.of("world-check", "--world", world));
         // "jit": "full" measures with the JIT players have, not the C1 a hidden test client starts with.
         if ("full".equals(experiment.get("jit"))) launch.addAll(List.of("--jit", "full"));
@@ -324,12 +426,8 @@ final class PerfOptimize {
         throw new IllegalStateException("Timing probe " + label + " has no " + statistic + " in " + report.get("recording") + "; was the method called during the capture?");
     }
 
-    void evaluate(Map<String, Object> result, List<Object> measured) throws Exception {
-        Map<Integer, Map<String, Map<String, Object>>> pairs = new TreeMap<>();
-        for (Object item : measured) {
-            Map<String, Object> row = Json.object(item);
-            pairs.computeIfAbsent(((Number) row.get("run")).intValue(), k -> new HashMap<>()).put(row.get("arm").toString(), row);
-        }
+    static void evaluate(Map<String, Object> experiment, Map<String, Object> result, List<Object> measured) throws Exception {
+        Map<Integer, Map<String, Map<String, Object>>> pairs = PerfStopping.pairs(measured);
         Map<String, Object> speedups = new LinkedHashMap<>();
         boolean faster = true;
         for (String phase : List.of("cold", "warm")) {
@@ -394,7 +492,8 @@ final class PerfOptimize {
         result.put("faster", faster);
         result.put("accepted", gatesPass && faster);
         result.put("rule", "Accepted only when every gate passes for every paired run, each gate is stable baseline-to-baseline, "
-            + "and the 95% bootstrap interval of the speedup is above 1 for both cold and warm captures.");
+            + "and the 95% bootstrap interval of the speedup is above 1 for both cold and warm captures. Runs stop early at the first failed gate, "
+            + "or from the minimum pairs on once 99% t intervals lie above 1 (both) or below the minimum speedup (either).");
     }
 
     static Object scope(Map<String, Object> row, String phase, String name) {
@@ -566,7 +665,7 @@ final class PerfOptimize {
         command.add("--json");
         Path logs = out.resolve("logs");
         Files.createDirectories(logs);
-        String file = String.format(Locale.ROOT, "%03d-%s", log.size(), name.replaceAll("[^A-Za-z0-9_.-]", "_"));
+        String file = String.format(Locale.ROOT, "%03d-%s", stepNumber.getAndIncrement(), name.replaceAll("[^A-Za-z0-9_.-]", "_"));
         Path stdout = logs.resolve(file + ".json"), stderr = logs.resolve(file + ".log");
         long start = System.nanoTime();
         Process process = new ProcessBuilder(command).directory(home.toFile()).redirectOutput(stdout.toFile()).redirectError(stderr.toFile()).start();
@@ -645,6 +744,10 @@ final class PerfOptimize {
     static String summary(Map<String, Object> result) {
         StringBuilder text = new StringBuilder(Boolean.TRUE.equals(result.get("accepted")) ? "ACCEPTED" : "REJECTED");
         if (result.containsKey("error")) text.append(": ").append(result.get("error"));
+        if (result.get("stopped") instanceof Map<?, ?> stopped) text.append("\nStopped early: ").append(stopped.get("reason"));
+        if (result.get("wallSeconds") instanceof Number wall) {
+            text.append(String.format(Locale.ROOT, "%nWall time %.1f min, arms %s", wall.doubleValue() / 60, result.get("arms")));
+        }
         if (result.get("speedup") instanceof Map<?, ?> speedup) for (String phase : List.of("cold", "warm")) {
             Map<String, Object> s = Json.object(speedup.get(phase));
             text.append(String.format(Locale.ROOT, "%n%s: %.2fx (95%% %.2f–%.2f) over %s paired launches; baseline %.4f → candidate %.4f",

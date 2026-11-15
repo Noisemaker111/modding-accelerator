@@ -4344,6 +4344,2351 @@
    },
    "finished": "2026-11-15T07:51:31.816197Z",
    "seconds": 1960.0
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T08-10-19.443625400Z-15fa1749",
+   "kind": "perf",
+   "session": "jade-optimize",
+   "started": "2026-11-15T08:10:19.443625400Z",
+   "mod": {
+    "id": "jade",
+    "version": "",
+    "loader": "",
+    "project": ""
+   },
+   "phases": {
+    "setup": 2.5922885,
+    "build": 0.0,
+    "launch": 0.0,
+    "warmup": 10.0,
+    "measure": 31.888733600000002,
+    "gates": 0.0,
+    "other": 0.7551987
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "attach",
+     "seconds": 2.5922885
+    },
+    {
+     "phase": "warmup",
+     "name": "capture warmup",
+     "seconds": 10.0
+    },
+    {
+     "phase": "measure",
+     "name": "capture",
+     "seconds": 31.888733600000002
+    },
+    {
+     "phase": "other",
+     "name": "report",
+     "seconds": 0.7551987
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "before capture",
+      "at": "2026-11-15T08:10:22.034176900Z",
+      "systemCpu": 0.45311201211763413,
+      "javaProcesses": 20
+     }
+    ],
+    "meanSystemCpu": 0.45311201211763413,
+    "maxSystemCpu": 0.45311201211763413
+   },
+   "candidate": null,
+   "gates": [],
+   "speedup": null,
+   "verdict": "observed",
+   "rejection": null,
+   "source": ".\\.runs\\jade-perf\\cap1",
+   "cost": {
+    "sampledCpuMsPerSecond": 0.3333111892489569,
+    "perFrameMs": 0.0,
+    "perTickMs": 0.04135834693877551,
+    "hotspots": [
+     {
+      "method": "snownee.jade.util.CommonProxy.createItemCollector(Lsnownee/jade/api/Accessor;Lcom/google/common/cache/Cache;)Lsnownee/jade/addon/universal/ItemCollector;",
+      "share": 1.0
+     }
+    ]
+   },
+   "patterns": [],
+   "finished": "2026-11-15T08:11:04.703377400Z",
+   "seconds": 45.236220800000005
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T08-16-43.907496800Z-4f97398b",
+   "kind": "perf",
+   "session": "pipez-optimize",
+   "started": "2026-11-15T08:16:43.908496900Z",
+   "mod": {
+    "id": "pipez",
+    "version": "",
+    "loader": "",
+    "project": ""
+   },
+   "phases": {
+    "setup": 2.4980169,
+    "build": 0.0,
+    "launch": 0.0,
+    "warmup": 5.0,
+    "measure": 31.663499100000003,
+    "gates": 0.0,
+    "other": 0.5994236
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "attach",
+     "seconds": 2.4980169
+    },
+    {
+     "phase": "warmup",
+     "name": "capture warmup",
+     "seconds": 5.0
+    },
+    {
+     "phase": "measure",
+     "name": "capture",
+     "seconds": 31.663499100000003
+    },
+    {
+     "phase": "other",
+     "name": "report",
+     "seconds": 0.5994236
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "before capture",
+      "at": "2026-11-15T08:16:46.404997Z",
+      "systemCpu": 0.5481659756813231,
+      "javaProcesses": 19
+     }
+    ],
+    "meanSystemCpu": 0.5481659756813231,
+    "maxSystemCpu": 0.5481659756813231
+   },
+   "candidate": null,
+   "gates": [],
+   "speedup": null,
+   "verdict": "observed",
+   "rejection": null,
+   "source": ".\\.runs\\pipez-perf\\cap1",
+   "cost": {
+    "sampledCpuMsPerSecond": 1.6666176458863091,
+    "perFrameMs": 0.0,
+    "perTickMs": 0.49263514705882355,
+    "hotspots": [
+     {
+      "method": "de.maxhenkel.pipez.blocks.tileentity.types.ItemPipeType.insertOrdered(Lde/maxhenkel/pipez/blocks/tileentity/PipeLogicTileEntity;Lnet/minecraft/core/Direction;Ljava/util/List;Lnet/neoforged/neoforge/items/IItemHandler;)V",
+      "share": 0.6
+     },
+     {
+      "method": "de.maxhenkel.pipez.blocks.tileentity.UpgradeTileEntity.getSortedConnections(Lnet/minecraft/core/Direction;Lde/maxhenkel/pipez/blocks/tileentity/types/PipeType;)Ljava/util/List;",
+      "share": 0.2
+     },
+     {
+      "method": "de.maxhenkel.pipez.blocks.tileentity.configuration.CachedPipeConfiguration.getValue(Lnet/minecraft/core/Direction;Lde/maxhenkel/pipez/blocks/tileentity/types/PipeType;)Ljava/lang/Object;",
+      "share": 0.2
+     }
+    ]
+   },
+   "patterns": [],
+   "finished": "2026-11-15T08:17:23.688696800Z",
+   "seconds": 39.76093960000001
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T08-18-36.482931100Z-a00e5b85",
+   "kind": "perf",
+   "session": "pipez-optimize",
+   "started": "2026-11-15T08:18:36.483938200Z",
+   "mod": {
+    "id": "pipez",
+    "version": "",
+    "loader": "",
+    "project": ""
+   },
+   "phases": {
+    "setup": 4.3739432,
+    "build": 0.0,
+    "launch": 0.0,
+    "warmup": 5.0,
+    "measure": 31.455827999999997,
+    "gates": 0.0,
+    "other": 0.8495965
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "attach",
+     "seconds": 4.3739432
+    },
+    {
+     "phase": "warmup",
+     "name": "capture warmup",
+     "seconds": 5.0
+    },
+    {
+     "phase": "measure",
+     "name": "capture",
+     "seconds": 31.455827999999997
+    },
+    {
+     "phase": "other",
+     "name": "report",
+     "seconds": 0.8495965
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "before capture",
+      "at": "2026-11-15T08:18:40.854389100Z",
+      "systemCpu": 1.0,
+      "javaProcesses": 23
+     }
+    ],
+    "meanSystemCpu": 1.0,
+    "maxSystemCpu": 1.0
+   },
+   "candidate": null,
+   "gates": [],
+   "speedup": null,
+   "verdict": "observed",
+   "rejection": null,
+   "source": ".\\.runs\\pipez-perf\\cap2",
+   "cost": {
+    "sampledCpuMsPerSecond": 8.333207835223334,
+    "perFrameMs": 3.4585760532407406,
+    "perTickMs": 0.9946475294117647,
+    "hotspots": [
+     {
+      "method": "de.maxhenkel.pipez.blocks.tileentity.types.ItemPipeType.insertOrdered(Lde/maxhenkel/pipez/blocks/tileentity/PipeLogicTileEntity;Lnet/minecraft/core/Direction;Ljava/util/List;Lnet/neoforged/neoforge/items/IItemHandler;)V",
+      "share": 0.4
+     },
+     {
+      "method": "de.maxhenkel.pipez.blocks.tileentity.UpgradeTileEntity.getSortedConnections(Lnet/minecraft/core/Direction;Lde/maxhenkel/pipez/blocks/tileentity/types/PipeType;)Ljava/util/List;",
+      "share": 0.28
+     },
+     {
+      "method": "de.maxhenkel.pipez.blocks.tileentity.configuration.CachedPipeConfiguration.getValue(Lnet/minecraft/core/Direction;Lde/maxhenkel/pipez/blocks/tileentity/types/PipeType;)Ljava/lang/Object;",
+      "share": 0.12
+     },
+     {
+      "method": "de.maxhenkel.pipez.blocks.tileentity.UpgradeTileEntity.getRedstoneMode(Lnet/minecraft/core/Direction;Lde/maxhenkel/pipez/blocks/tileentity/types/PipeType;)Lde/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity$RedstoneMode;",
+      "share": 0.08
+     },
+     {
+      "method": "de.maxhenkel.pipez.blocks.tileentity.render.PipeRenderer.renderExtractor(Lnet/minecraft/core/Direction;Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Ljava/util/List;II)V",
+      "share": 0.04
+     }
+    ]
+   },
+   "patterns": [],
+   "finished": "2026-11-15T08:19:18.197712800Z",
+   "seconds": 41.67936769999999
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T08-23-19.584572100Z-48a52396",
+   "kind": "perf-optimize",
+   "session": "pipez-optimize",
+   "started": "2026-11-15T08:23:19.584572100Z",
+   "mod": {
+    "id": "pipez",
+    "version": "1.21.1-1.2.31",
+    "loader": "neoforge",
+    "project": ""
+   },
+   "phases": {
+    "setup": 1.2710223999999999,
+    "build": 16.1070664,
+    "launch": 88.99107515,
+    "warmup": 20.0,
+    "measure": 80.62438350000001,
+    "gates": 6.6439428000000005,
+    "other": 4.86218985
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 0.7393724
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 16.2703116,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 84.9534203,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.5834668,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 15.943821199999999,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 93.02873,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.4798332,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 40.700271,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 39.5197263,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 41.0300227,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 3.71258,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 39.998747,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 3.1674665,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 3.4983202,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 3.7475125,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 2.9095189,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 1.9470368,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.0101068
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.0048084
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "candidate run 0 before launch",
+      "at": "2026-11-15T08:23:22.303523600Z",
+      "systemCpu": 0.4363534773339887,
+      "javaProcesses": 17
+     },
+     {
+      "when": "baseline run 0 before launch",
+      "at": "2026-11-15T08:23:22.303523600Z",
+      "systemCpu": 0.0,
+      "javaProcesses": 17
+     }
+    ],
+    "meanSystemCpu": 0.21817673866699436,
+    "maxSystemCpu": 0.4363534773339887,
+    "jit": "full"
+   },
+   "candidate": {
+    "label": "sabotage-nearest-reversed",
+    "diffSha256": "100f09006fcf1a584031876447116b10685ca73af69141dd8cfcdd2f3bb65d0a",
+    "changedFiles": [
+     "src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java"
+    ]
+   },
+   "gates": [
+    {
+     "name": "moving",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "transfers",
+     "compare": "exact",
+     "passed": false,
+     "failures": [
+      "candidate run 0 differs from baseline"
+     ]
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 0.8201224962807695,
+     "low": 0.8201224962807695,
+     "high": 0.8201224962807695,
+     "pairs": 1,
+     "baselineMean": 1.0652136439267887,
+     "candidateMean": 1.298847
+    },
+    "warm": {
+     "geometricMean": 0.4933714860367126,
+     "low": 0.4933714860367126,
+     "high": 0.4933714860367126,
+     "pairs": 1,
+     "baselineMean": 0.5033009983361065,
+     "candidateMean": 1.0201258333333334
+    },
+    "scopes": {
+     "pipezCpu": {
+      "cold": {
+       "geometricMean": 0.7568555725055583,
+       "low": 0.7568555725055583,
+       "high": 0.7568555725055583,
+       "pairs": 1,
+       "baselineMean": 8.325401473587403,
+       "candidateMean": 10.999987020015316
+      },
+      "warm": {
+       "geometricMean": 0.5101913436874637,
+       "low": 0.5101913436874637,
+       "high": 0.5101913436874637,
+       "pairs": 1,
+       "baselineMean": 7.992621291949486,
+       "candidateMean": 15.665928853637425
+      }
+     },
+     "insertOrderedMs": {
+      "cold": {
+       "geometricMean": 0.45469755073420204,
+       "low": 0.45469755073420204,
+       "high": 0.45469755073420204,
+       "pairs": 1,
+       "baselineMean": 0.48046222961730445,
+       "candidateMean": 1.0566633333333335
+      },
+      "warm": {
+       "geometricMean": 0.40875948928232436,
+       "low": 0.40875948928232436,
+       "high": 0.40875948928232436,
+       "pairs": 1,
+       "baselineMean": 0.34186272878535773,
+       "candidateMean": 0.836342
+      }
+     },
+     "sortedConnectionsMs": {
+      "cold": {
+       "geometricMean": 0.9378149395283952,
+       "low": 0.9378149395283952,
+       "high": 0.9378149395283952,
+       "pairs": 1,
+       "baselineMean": 0.10555091514143096,
+       "candidateMean": 0.11254983333333334
+      },
+      "warm": {
+       "geometricMean": 0.7998501321434514,
+       "low": 0.7998501321434514,
+       "high": 0.7998501321434514,
+       "pairs": 1,
+       "baselineMean": 0.0700332778702163,
+       "candidateMean": 0.087558
+      }
+     }
+    }
+   },
+   "verdict": "rejected",
+   "rejection": "gate transfers failed: [candidate run 0 differs from baseline]; cold speedup 0.820x, 95% interval 0.820-0.820 lies below 1 (slower); warm speedup 0.493x, 95% interval 0.493-0.493 lies below 1 (slower); stopped after 1 pair(s)",
+   "metric": {
+    "probe": "itemPipeTick",
+    "statistic": "inclusiveMsPerTick"
+   },
+   "source": ".\\.runs\\pipez-opt\\sabotage",
+   "arms": "parallel",
+   "stopped": {
+    "afterPairs": 1,
+    "decided": "rejected",
+    "reason": "gate transfers failed after 1 pair(s), and a failed gate cannot pass again: [candidate run 0 differs from baseline]"
+   },
+   "wallSeconds": 222.6992347,
+   "finished": "2026-11-15T08:27:02.330361100Z",
+   "seconds": 218.49968009999998,
+   "note": "Gate 'transfers' in this run was not reproducible across launches: Pipez orders equal-distance connections by DirectionalPosition.hashCode, which includes Direction's identity hash. The run stopped after 1 pair under the first version of the stopping rule, which no longer stops on a gate compared with the baseline before pair 2. trace.java was rebuilt without ties and both candidates were run again."
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T08-27-17.213524300Z-8b1365d2",
+   "kind": "perf-optimize",
+   "session": "pipez-optimize",
+   "started": "2026-11-15T08:27:17.214526400Z",
+   "mod": {
+    "id": "pipez",
+    "version": "1.21.1-1.2.31",
+    "loader": "neoforge",
+    "project": ""
+   },
+   "phases": {
+    "setup": 1.5107339,
+    "build": 17.991628650000003,
+    "launch": 74.408101,
+    "warmup": 20.0,
+    "measure": 79.9668788,
+    "gates": 5.9746191500000005,
+    "other": 4.25248495
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 1.1044891
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 17.8294879,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 74.4598019,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 18.1537694,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 74.3564001,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.4156144,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.3968752,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 40.3381668,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 40.5711682,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 39.1976524,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 39.8267702,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 3.155816,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 3.2282194,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 2.7637345,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 2.8014684,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.3853838,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.0004357,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.0425922
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.016983
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "candidate run 0 before launch",
+      "at": "2026-11-15T08:27:21.011198200Z",
+      "systemCpu": 0.7179512595675537,
+      "javaProcesses": 19
+     },
+     {
+      "when": "baseline run 0 before launch",
+      "at": "2026-11-15T08:27:21.011198200Z",
+      "systemCpu": 0.0,
+      "javaProcesses": 19
+     }
+    ],
+    "meanSystemCpu": 0.35897562978377684,
+    "maxSystemCpu": 0.7179512595675537,
+    "jit": "full"
+   },
+   "candidate": {
+    "label": "sorted-connections",
+    "diffSha256": "b3fe85f35b43b8ed19ba12f6b6d9de8279a90781242846d71c483b59034b7d80",
+    "changedFiles": [
+     "src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java"
+    ]
+   },
+   "gates": [
+    {
+     "name": "moving",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "transfers",
+     "compare": "exact",
+     "passed": false,
+     "failures": [
+      "candidate run 0 differs from baseline"
+     ]
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 1.8017916187374292,
+     "low": 1.8017916187374292,
+     "high": 1.8017916187374292,
+     "pairs": 1,
+     "baselineMean": 1.3225336666666667,
+     "candidateMean": 0.7340103333333333
+    },
+    "warm": {
+     "geometricMean": 1.385749377911057,
+     "low": 1.385749377911057,
+     "high": 1.385749377911057,
+     "pairs": 1,
+     "baselineMean": 0.8687539999999999,
+     "candidateMean": 0.62692
+    },
+    "scopes": {
+     "pipezCpu": {
+      "cold": {
+       "geometricMean": 1.444436745641166,
+       "low": 1.444436745641166,
+       "high": 1.444436745641166,
+       "pairs": 1,
+       "baselineMean": 12.999855441607489,
+       "candidateMean": 8.999947890301716
+      },
+      "warm": {
+       "geometricMean": 1.3548644513229666,
+       "low": 1.3548644513229666,
+       "high": 1.3548644513229666,
+       "pairs": 1,
+       "baselineMean": 13.99984231510939,
+       "candidateMean": 10.333020621685918
+      }
+     },
+     "insertOrderedMs": {
+      "cold": {
+       "geometricMean": 1.811770629285703,
+       "low": 1.811770629285703,
+       "high": 1.811770629285703,
+       "pairs": 1,
+       "baselineMean": 1.0741311666666666,
+       "candidateMean": 0.5928626666666666
+      },
+      "warm": {
+       "geometricMean": 1.2898430400308047,
+       "low": 1.2898430400308047,
+       "high": 1.2898430400308047,
+       "pairs": 1,
+       "baselineMean": 0.6543171666666667,
+       "candidateMean": 0.5072843333333333
+      }
+     },
+     "sortedConnectionsMs": {
+      "cold": {
+       "geometricMean": 7.930363749167032,
+       "low": 7.930363749167032,
+       "high": 7.930363749167032,
+       "pairs": 1,
+       "baselineMean": 0.11504049999999999,
+       "candidateMean": 0.014506333333333333
+      },
+      "warm": {
+       "geometricMean": 8.816709669142279,
+       "low": 8.816709669142279,
+       "high": 8.816709669142279,
+       "pairs": 1,
+       "baselineMean": 0.1030835,
+       "candidateMean": 0.011691833333333334
+      }
+     }
+    }
+   },
+   "verdict": "rejected",
+   "rejection": "gate transfers failed: [candidate run 0 differs from baseline]; stopped after 1 pair(s)",
+   "metric": {
+    "probe": "itemPipeTick",
+    "statistic": "inclusiveMsPerTick"
+   },
+   "source": ".\\.runs\\pipez-opt\\sorted-connections",
+   "arms": "parallel",
+   "stopped": {
+    "afterPairs": 1,
+    "decided": "rejected",
+    "reason": "gate transfers failed after 1 pair(s), and a failed gate cannot pass again: [candidate run 0 differs from baseline]"
+   },
+   "wallSeconds": 207.6211454,
+   "finished": "2026-11-15T08:30:44.916589700Z",
+   "seconds": 204.10444644999998,
+   "note": "Gate 'transfers' in this run was not reproducible across launches: Pipez orders equal-distance connections by DirectionalPosition.hashCode, which includes Direction's identity hash. The run stopped after 1 pair under the first version of the stopping rule, which no longer stops on a gate compared with the baseline before pair 2. trace.java was rebuilt without ties and both candidates were run again."
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T08-33-56.786530500Z-78f9ab4c",
+   "kind": "perf-optimize",
+   "session": "pipez-optimize",
+   "started": "2026-11-15T08:33:56.786530500Z",
+   "mod": {
+    "id": "pipez",
+    "version": "1.21.1-1.2.31",
+    "loader": "neoforge",
+    "project": ""
+   },
+   "phases": {
+    "setup": 1.6720457499999999,
+    "build": 14.4474261,
+    "launch": 105.0321998,
+    "warmup": 40.0,
+    "measure": 153.04743845000002,
+    "gates": 12.14534415,
+    "other": 7.64761805
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 0.7414743
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 14.440637299999999,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 64.3498251,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.5278252,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 14.2447905,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 66.59705149999999,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.3649416,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 37.5693948,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 37.6455917,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 37.5554441,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 37.4012887,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 3.4206602,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 3.223087,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 3.0780221,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 2.8469439,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.8530456,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.6929397,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.1058119,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 39.2736716,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.4667407,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.1036125,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 39.843851400000005,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.5016354,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 39.4919635,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 39.5660742,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 38.6499024,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 38.2152175,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 3.1818047,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 3.1491118,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 2.7066953,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 2.6843633,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.5862598,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.4251184,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.1613087
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.2076276
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "candidate run 0 before launch",
+      "at": "2026-11-15T08:33:59.740890400Z",
+      "systemCpu": 0.6584465692515353,
+      "javaProcesses": 17
+     },
+     {
+      "when": "baseline run 0 before launch",
+      "at": "2026-11-15T08:33:59.740890400Z",
+      "systemCpu": 0.0,
+      "javaProcesses": 17
+     },
+     {
+      "when": "candidate run 1 before launch",
+      "at": "2026-11-15T08:37:05.984706100Z",
+      "systemCpu": 0.4457452492624888,
+      "javaProcesses": 15
+     },
+     {
+      "when": "baseline run 1 before launch",
+      "at": "2026-11-15T08:37:05.985774800Z",
+      "systemCpu": 0.0,
+      "javaProcesses": 15
+     }
+    ],
+    "meanSystemCpu": 0.27604795462850606,
+    "maxSystemCpu": 0.6584465692515353,
+    "jit": "full"
+   },
+   "candidate": {
+    "label": "sabotage-nearest-reversed",
+    "diffSha256": "100f09006fcf1a584031876447116b10685ca73af69141dd8cfcdd2f3bb65d0a",
+    "changedFiles": [
+     "src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java"
+    ]
+   },
+   "gates": [
+    {
+     "name": "moving",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "transfers",
+     "compare": "exact",
+     "passed": false,
+     "failures": [
+      "candidate run 0 differs from baseline",
+      "candidate run 1 differs from baseline"
+     ]
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 0.530391532336695,
+     "low": 0.41241125329341105,
+     "high": 0.6821229423978036,
+     "pairs": 2,
+     "baselineMean": 0.6424729166666667,
+     "candidateMean": 1.182255005407654
+    },
+    "warm": {
+     "geometricMean": 0.533547222321442,
+     "low": 0.4620970144123914,
+     "high": 0.6160451800557936,
+     "pairs": 2,
+     "baselineMean": 0.5908583333333333,
+     "candidateMean": 1.0863551666666666
+    },
+    "scopes": {
+     "pipezCpu": {
+      "cold": {
+       "geometricMean": 0.603192889586847,
+       "low": 0.5675728137044447,
+       "high": 0.6410484316072185,
+       "pairs": 2,
+       "baselineMean": 7.666610680247176,
+       "candidateMean": 12.66628055444188
+      },
+      "warm": {
+       "geometricMean": 0.627648751378788,
+       "low": 0.5909100599794492,
+       "high": 0.6666715999403567,
+       "pairs": 2,
+       "baselineMean": 8.999851687075312,
+       "candidateMean": 14.333029367597774
+      }
+     },
+     "insertOrderedMs": {
+      "cold": {
+       "geometricMean": 0.43727334780310273,
+       "low": 0.3079304787650754,
+       "high": 0.6209452908518631,
+       "pairs": 2,
+       "baselineMean": 0.44434900000000005,
+       "candidateMean": 0.9728757985302274
+      },
+      "warm": {
+       "geometricMean": 0.4376545318480277,
+       "low": 0.35829802552686635,
+       "high": 0.5345870632847064,
+       "pairs": 2,
+       "baselineMean": 0.4013796666666667,
+       "candidateMean": 0.88868725
+      }
+     },
+     "sortedConnectionsMs": {
+      "cold": {
+       "geometricMean": 0.8802007126864714,
+       "low": 0.8720504194729188,
+       "high": 0.8884271795684078,
+       "pairs": 2,
+       "baselineMean": 0.08509766666666668,
+       "candidateMean": 0.09667596394897393
+      },
+      "warm": {
+       "geometricMean": 0.9286646898533775,
+       "low": 0.8907072063119449,
+       "high": 0.9682397313831009,
+       "pairs": 2,
+       "baselineMean": 0.08870516666666667,
+       "candidateMean": 0.09517383333333333
+      }
+     }
+    }
+   },
+   "verdict": "rejected",
+   "rejection": "gate transfers failed: [candidate run 0 differs from baseline, candidate run 1 differs from baseline]; cold speedup 0.530x, 95% interval 0.412-0.682 lies below 1 (slower); warm speedup 0.534x, 95% interval 0.462-0.616 lies below 1 (slower); stopped after 2 pair(s)",
+   "metric": {
+    "probe": "itemPipeTick",
+    "statistic": "inclusiveMsPerTick"
+   },
+   "source": ".\\.runs\\pipez-opt\\sabotage",
+   "arms": "parallel",
+   "stopped": {
+    "afterPairs": 2,
+    "decided": "rejected",
+    "reason": "gate transfers failed after 2 pair(s), and a failed gate cannot pass again: [candidate run 0 differs from baseline, candidate run 1 differs from baseline]"
+   },
+   "wallSeconds": 338.7579482,
+   "finished": "2026-11-15T08:39:35.601588800Z",
+   "seconds": 333.9920723
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T08-39-41.055874700Z-c46937a9",
+   "kind": "perf-optimize",
+   "session": "pipez-optimize",
+   "started": "2026-11-15T08:39:41.055874700Z",
+   "mod": {
+    "id": "pipez",
+    "version": "1.21.1-1.2.31",
+    "loader": "neoforge",
+    "project": ""
+   },
+   "phases": {
+    "setup": 4.740363800000001,
+    "build": 15.15015965,
+    "launch": 378.6415585,
+    "warmup": 160.0,
+    "measure": 629.87290795,
+    "gates": 49.79677530000001,
+    "other": 24.6111434
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 0.7296623
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 14.2918179,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 62.071650500000004,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.5433565,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 13.9398698,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 64.14804240000001,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.3658321,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 38.6983285,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 37.8272072,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 42.0052144,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 41.4699576,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 3.7470439,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 3.6450615,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 3.353319,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 4.0811515,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.6601225,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.4390091,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.1282452,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 42.087778799999995,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.4672924,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.1236054,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 42.7524528,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.3835405,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 39.4593497,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 39.5137668,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 39.4900359,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 39.3035029,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 3.2944949,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 3.2317377,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 2.6204754,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 2.6518771,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.4535756,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.3755727,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.157174,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 44.891303300000004,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.0588506,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.1478354,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 60.3734161,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.4993625,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 39.6455762,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 41.0264671,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 39.2541422,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 4.6016329,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 3.3703451,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 3.4975456,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 43.3228975,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 4.0201782,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 3.0793079,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 4.9110322,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.1776027,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 53.366706199999996,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.3992335,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.1389043,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 58.9005507,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.4590406,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 38.8581939,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 38.6385395,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 37.0660356,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 2.3450934,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 2.352071,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 36.6370121,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.5944121,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 3.1576723,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 2.2009889,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 1.8463424,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.1381275,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 41.346395199999996,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.1353214,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 41.6617865,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.3378704,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.3525758,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 38.4491339,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 38.5788015,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 37.0698296,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 37.3693743,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 2.6261083,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 2.6762203,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 2.4330362,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 2.3532792,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.0584918,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 1.8757209,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.1727962,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 39.2437069,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2053474,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 39.4630509,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.5657546,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.7093523,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 39.0957405,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 40.0446991,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 39.8651761,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 39.3567672,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 3.7464935,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 3.7452968,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 3.0688873,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 3.5200302,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.9686965,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 3.2412465,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.167364,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 44.98202,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.1397022,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 45.363472699999996,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.3701648,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.3805054,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 39.0354307,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 39.4038175,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 38.5463364,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 38.9831567,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 3.2811624,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 3.1866316,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 2.9098357,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 2.9367614,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.2838329,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.832551,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.1189949,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 38.291872700000006,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.117611,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 38.33891130000001,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.5792094,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.5494616,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 41.3581863,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 42.4856994,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 38.9191436,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 20.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 38.968296,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-moving",
+     "seconds": 3.3062189,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-moving",
+     "seconds": 3.0379442,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-transfers",
+     "seconds": 2.452685,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-transfers",
+     "seconds": 2.5605089,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 2.4330141,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 2.3765175,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.323331
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.8639707
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "baseline run 0 before launch",
+      "at": "2026-11-15T08:39:44.367729300Z",
+      "systemCpu": 0.0,
+      "javaProcesses": 16
+     },
+     {
+      "when": "candidate run 0 before launch",
+      "at": "2026-11-15T08:39:44.369729900Z",
+      "systemCpu": 0.9261045335493485,
+      "javaProcesses": 16
+     },
+     {
+      "when": "candidate run 1 before launch",
+      "at": "2026-11-15T08:42:53.527580800Z",
+      "systemCpu": 0.5925578058259033,
+      "javaProcesses": 16
+     },
+     {
+      "when": "baseline run 1 before launch",
+      "at": "2026-11-15T08:42:53.532582500Z",
+      "systemCpu": 0.0,
+      "javaProcesses": 16
+     },
+     {
+      "when": "baseline run 2 before launch",
+      "at": "2026-11-15T08:45:25.104584Z",
+      "systemCpu": 0.0,
+      "javaProcesses": 14
+     },
+     {
+      "when": "candidate run 2 before launch",
+      "at": "2026-11-15T08:45:25.104584Z",
+      "systemCpu": 0.8702722666210009,
+      "javaProcesses": 14
+     },
+     {
+      "when": "baseline run 3 before launch",
+      "at": "2026-11-15T08:48:23.843636900Z",
+      "systemCpu": 1.0,
+      "javaProcesses": 20
+     },
+     {
+      "when": "candidate run 3 before launch",
+      "at": "2026-11-15T08:48:23.908749600Z",
+      "systemCpu": 1.0,
+      "javaProcesses": 20
+     },
+     {
+      "when": "baseline run 4 before launch",
+      "at": "2026-11-15T08:51:07.067047800Z",
+      "systemCpu": 0.0,
+      "javaProcesses": 17
+     },
+     {
+      "when": "candidate run 4 before launch",
+      "at": "2026-11-15T08:51:07.067047800Z",
+      "systemCpu": 0.37672717218958574,
+      "javaProcesses": 17
+     },
+     {
+      "when": "baseline run 5 before launch",
+      "at": "2026-11-15T08:53:33.237583100Z",
+      "systemCpu": 0.0,
+      "javaProcesses": 15
+     },
+     {
+      "when": "candidate run 5 before launch",
+      "at": "2026-11-15T08:53:33.237583100Z",
+      "systemCpu": 0.43411061523181405,
+      "javaProcesses": 15
+     },
+     {
+      "when": "candidate run 6 before launch",
+      "at": "2026-11-15T08:56:04.480571900Z",
+      "systemCpu": 0.9603456673655555,
+      "javaProcesses": 16
+     },
+     {
+      "when": "baseline run 6 before launch",
+      "at": "2026-11-15T08:56:04.501673Z",
+      "systemCpu": 0.9603456673655555,
+      "javaProcesses": 16
+     },
+     {
+      "when": "candidate run 7 before launch",
+      "at": "2026-11-15T08:58:38.161126900Z",
+      "systemCpu": 0.4351817672892311,
+      "javaProcesses": 15
+     },
+     {
+      "when": "baseline run 7 before launch",
+      "at": "2026-11-15T08:58:38.161126900Z",
+      "systemCpu": 0.0,
+      "javaProcesses": 15
+     }
+    ],
+    "meanSystemCpu": 0.4722278434648747,
+    "maxSystemCpu": 1.0,
+    "jit": "full"
+   },
+   "candidate": {
+    "label": "sorted-connections",
+    "diffSha256": "b3fe85f35b43b8ed19ba12f6b6d9de8279a90781242846d71c483b59034b7d80",
+    "changedFiles": [
+     "src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java"
+    ]
+   },
+   "gates": [
+    {
+     "name": "moving",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "transfers",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 1.3022602950396651,
+     "low": 1.081586577235444,
+     "high": 1.5756658708219147,
+     "pairs": 8,
+     "baselineMean": 0.9395188908249861,
+     "candidateMean": 0.7148505051822482
+    },
+    "warm": {
+     "geometricMean": 1.1988520444741972,
+     "low": 1.006300170218689,
+     "high": 1.4416479481306126,
+     "pairs": 8,
+     "baselineMean": 0.7210146875,
+     "candidateMean": 0.6150326666666667
+    },
+    "scopes": {
+     "pipezCpu": {
+      "cold": {
+       "geometricMean": 1.1247103342885751,
+       "low": 0.8899528920539037,
+       "high": 1.4972806424101006,
+       "pairs": 8,
+       "baselineMean": 8.541284844647945,
+       "candidateMean": 7.749740213980914
+      },
+      "warm": {
+       "geometricMean": 1.1600995743063542,
+       "low": 0.9184004470332141,
+       "high": 1.5122244452097282,
+       "pairs": 8,
+       "baselineMean": 10.666262615850261,
+       "candidateMean": 9.249686500957102
+      }
+     },
+     "insertOrderedMs": {
+      "cold": {
+       "geometricMean": 1.1275365331962548,
+       "low": 0.9010302129501033,
+       "high": 1.4156949454797818,
+       "pairs": 8,
+       "baselineMean": 0.6514425731775181,
+       "candidateMean": 0.5668654802796327
+      },
+      "warm": {
+       "geometricMean": 1.067101465396769,
+       "low": 0.8518147015239086,
+       "high": 1.356715409927144,
+       "pairs": 8,
+       "baselineMean": 0.5133431041666667,
+       "candidateMean": 0.49408833333333335
+      }
+     },
+     "sortedConnectionsMs": {
+      "cold": {
+       "geometricMean": 8.85042186441862,
+       "low": 7.9504176449408215,
+       "high": 9.88906402503743,
+       "pairs": 8,
+       "baselineMean": 0.12591908131608237,
+       "candidateMean": 0.014290307804674458
+      },
+      "warm": {
+       "geometricMean": 9.154245873926328,
+       "low": 8.43070547110991,
+       "high": 9.863168527946257,
+       "pairs": 8,
+       "baselineMean": 0.09856939583333334,
+       "candidateMean": 0.010754958333333333
+      }
+     }
+    }
+   },
+   "verdict": "accepted",
+   "rejection": null,
+   "metric": {
+    "probe": "itemPipeTick",
+    "statistic": "inclusiveMsPerTick"
+   },
+   "source": ".\\.runs\\pipez-opt\\sorted-connections",
+   "arms": "parallel",
+   "wallSeconds": 1289.6326519,
+   "finished": "2026-11-15T09:01:10.739588400Z",
+   "seconds": 1262.8129086000001
   }
  ]
 }

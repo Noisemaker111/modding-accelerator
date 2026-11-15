@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "pipez-base",
+  "gameDirectory": "run",
+  "world": "pipez-base",
+  "worldSource": "../../.runs/pipez-world/pipez-base",
+  "files": {"run/options.txt": "options.txt"},
+  "measure": {
+    "seconds": 30,
+    "warmup": 20,
+    "probes": "probes.json",
+    "metric": {"probe": "itemPipeTick", "statistic": "inclusiveMsPerTick"},
+    "scopes": [
+      {"name": "pipezCpu", "mod": "pipez"},
+      {"name": "insertOrderedMs", "probe": "insertOrdered", "statistic": "inclusiveMsPerTick"},
+      {"name": "sortedConnectionsMs", "probe": "sortedConnections", "statistic": "inclusiveMsPerTick"}
+    ]
+  },
+  "gates": [
+    {"name": "moving", "file": "count.java", "thread": "control", "compare": "expect", "expect": "true"},
+    {"name": "transfers", "file": "trace.java", "thread": "control", "compare": "exact"}
+  ],
+  "jit": "full"
+}

@@ -141,6 +141,74 @@
      ]
     }
    }
+  },
+  {
+   "id": "cache-sorted-copy-until-source-replaced",
+   "symptom": {
+    "text": "A list that changes only when a cache is rebuilt (here a pipe's connections) is sorted, streamed into a new list, on every use: every extraction of every pipe, every tick.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.\\w*[Ss]orted\\w*\\(",
+      "minShare": 0.1
+     }
+    ]
+   },
+   "change": "Keep the sorted copy (one per order) beside the list it was made from, and reuse it while the source is the same object: the connection cache is replaced, never changed in place, so identity says when to sort again. Keep orders that must differ per call (a shuffle) uncached, and return the shared copy unmodifiable so no caller can change it.",
+   "gain": {
+    "scope": "itemPipeTick (inclusive ms per server tick of ItemPipeType.tick, 64 extracting pipes)",
+    "cold": {
+     "geometricMean": 1.302,
+     "low": 1.082,
+     "high": 1.576,
+     "pairs": 8
+    },
+    "warm": {
+     "geometricMean": 1.199,
+     "low": 1.006,
+     "high": 1.442,
+     "pairs": 8
+    }
+   },
+   "gate": {
+    "name": "transfers + moving",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every barrel slot and round-robin index after each of 120 hand-ticked rounds of a frozen network covering NEAREST, FURTHEST, ROUND_ROBIN, filters and full destinations; the live base conserves every item and keeps both lines moving"
+   },
+   "provenIn": {
+    "mod": "pipez",
+    "version": "1.21.1-1.2.31",
+    "loader": "neoforge",
+    "scope": "itemPipeTick",
+    "record": "2026-11-15T08-39-41.055874700Z-c46937a9",
+    "patch": "bench/pipez/sorted-connections.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Pipe.getSortedConnections(Lm/Side;)Ljava/util/List;",
+       "samples": 20
+      },
+      {
+       "name": "m.Pipe.insert(I)V",
+       "samples": 80
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Pipe.insert(I)V",
+       "samples": 100
+      }
+     ]
+    }
+   }
   }
  ]
 }
