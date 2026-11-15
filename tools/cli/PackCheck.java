@@ -1128,6 +1128,7 @@ final class PackCheck {
                         if (started == 0) started = System.nanoTime();
                         else if (System.nanoTime() - started > TimeUnit.SECONDS.toNanos(PROBE_SILENT_SECONDS)) {
                             ended = "probe silent " + PROBE_SILENT_SECONDS + " s after the server finished starting";
+                            threadDump(process);
                             stop(process);
                             break;
                         }
