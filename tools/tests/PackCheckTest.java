@@ -151,8 +151,8 @@ public final class PackCheckTest {
         );
         var faults = PackRepairs.match(harness, pack, scan, check.findings);
         expect(
-            faults.size() == 1 && "biolith-saved-climate-list".equals(faults.get(0).get("id")) && text(check, "known-fault").contains("1.0.1-alpha.1"),
-            "the bundled Biolith alpha matches the proven repair: " + faults
+            faults.stream().anyMatch(f -> "bundled-library-out-of-date".equals(f.get("id"))) && text(check, "known-fault").contains("biolith 1.0.1-alpha.1"),
+            "the bundled Biolith alpha matches the general repair for a library in use from inside another jar: " + faults
         );
 
         // Forge picks the highest version: a newer standalone Biolith replaces the bundled one, so the fault is gone.
@@ -161,11 +161,14 @@ public final class PackCheckTest {
         PackCheck.Pack fixedPack = fixed.read(scratch.resolve("instance"));
         PackMods.Scan fixedScan = statics(fixed, fixedPack, forge);
         expect(
-            PackRepairs.match(harness, fixedPack, fixedScan, fixed.findings).isEmpty() && !text(fixed, "duplicate-mod").contains("biolith"),
+            PackRepairs.match(harness, fixedPack, fixedScan, fixed.findings).stream().noneMatch(f -> "bundled-library-out-of-date".equals(f.get("id"))) && !text(fixed, "duplicate-mod").contains("biolith"),
             "Biolith beta in mods/ clears the fault, and a bundled copy beside a standalone jar is not a duplicate: " + fixed.findings
         );
         PackCheck.Pack newer = new PackCheck.Pack("p", "", "1.21.1", "forge", "52", pack.mods(), pack.layers(), pack.input(), true, "x");
-        expect(PackRepairs.match(harness, newer, scan, new ArrayList<>()).isEmpty(), "the repair is not offered for another game version");
+        expect(
+            PackRepairs.match(harness, newer, scan, new ArrayList<>()).stream().anyMatch(f -> "bundled-library-out-of-date".equals(f.get("id"))),
+            "a general repair names a kind of fault, not a mod or version: it is offered on another game version too"
+        );
     }
 
     // ------------------------------------------------------------------ the shapes a pack arrives in

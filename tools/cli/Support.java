@@ -109,7 +109,7 @@ final class Support {
                     "status",
                     "available",
                     "scope",
-                    "ui-check/world-check --expect-change PERCENT fails when the key, click or screen changes too little of the real frame; it caught the invisible F3Nope overlay that a passing build missed"
+                    "ui-check/world-check --expect-change PERCENT fails when the key, click or screen changes too little of the real frame; it caught an invisible debug-overlay change that a passing build missed"
                 ),
                 Json.map(
                     "name",
@@ -154,12 +154,12 @@ final class Support {
             ),
             "testedExamples",
             List.of(
-                "Fabric AppleSkin 1.21.5 -> 1.21.6 automatic port and client check",
-                "Fabric AppleSkin 1.21.6 -> 1.21.5 automatic backport and mixin audit",
-                "Fabric AppleSkin 1.21.6 -> 1.21.9 guided debug HUD migration",
-                "Fabric F3Nope 1.21.5 -> 1.21.6 automatic port and packaged build/mixin audit; gameplay checked separately",
-                "NeoForge ZombieApocalypseAddon 1.21.1 -> 1.21.4 build, mixin audit and a client that loads the mod",
-                "Kotlin-script Stonecutter Diorama: node setup, compile and a node version port attempt"
+                "Fabric 1.21.5 -> 1.21.6 automatic port and client check (coverage/ledger.json)",
+                "Fabric 1.21.6 -> 1.21.5 automatic backport and mixin audit (coverage/ledger.json)",
+                "Fabric 1.21.6 -> 1.21.9 guided debug HUD migration (coverage/ledger.json)",
+                "Fabric 1.21.5 -> 1.21.6 automatic port and packaged build/mixin audit of a client-only mod; gameplay checked separately",
+                "NeoForge 1.21.1 -> 1.21.4 build, mixin audit and a client that loads the mod (coverage/ledger.json)",
+                "Kotlin-script Stonecutter build: node setup, compile and a node version port attempt"
             )
         );
     }

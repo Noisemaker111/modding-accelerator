@@ -102,7 +102,10 @@ public final class Modaccel {
             "no-heap",
             "allow-hidden",
             "keep",
-            "check-only"
+            "check-only",
+            "freeze",
+            "fingerprint",
+            "across-versions"
         );
         static final Set<String> VALUES = Set.of(
             "command",
@@ -158,7 +161,8 @@ public final class Modaccel {
             "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block",
             "check",
             "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch",
-            "min-runs", "min-speedup", "arms", "replay", "max-calls-per-tick"
+            "min-runs", "min-speedup", "arms", "replay", "max-calls-per-tick",
+            "jar", "ticks", "every", "namespaces", "radius", "a", "b"
         );
         final Map<String, String> values = new LinkedHashMap<>();
         final Set<String> flags = new HashSet<>();
@@ -170,6 +174,11 @@ public final class Modaccel {
             if (command.equals("help") && i < args.length && !args[i].startsWith("-")) values.put("command", args[i++]);
             for (; i < args.length; i++) {
                 String key = args[i];
+                // fingerprint-diff A B: the two fingerprints by position.
+                if (command.equals("fingerprint-diff") && !key.startsWith("--") && !values.containsKey("b")) {
+                    values.put(values.containsKey("a") ? "b" : "a", key);
+                    continue;
+                }
                 if (!key.startsWith("--")) throw new IllegalArgumentException("Expected --option; got " + key);
                 key = key.substring(2);
                 if (SWITCHES.contains(key)) flags.add(key);
@@ -251,6 +260,8 @@ public final class Modaccel {
         "preferences",
         "legacy-agent",
         "pack-check",
+        "fingerprint",
+        "fingerprint-diff",
         "help"
     );
 
@@ -315,6 +326,18 @@ public final class Modaccel {
                 Map<String, Object> output = report.finish(exit, result);
                 if (options.has("json")) System.out.println(Json.write(output));
                 else System.out.println(Performance.text(result));
+                System.exit(exit);
+            }
+            if (options.command.equals("fingerprint") || options.command.equals("fingerprint-diff")) {
+                // Runs the game through child commands (each with its own receipt and lock), or reads two files: no lock here.
+                boolean source = options.command.equals("fingerprint") && !options.values.containsKey("jar");
+                report = new Report(source ? Path.of(options.get("root", ".")).toAbsolutePath().normalize() : PackCheck.receipts(), options.command);
+                Map<String, Object> result = options.command.equals("fingerprint") ? Fingerprint.run(home, options, report) : FingerprintDiff.run(home, options);
+                boolean ok = options.command.equals("fingerprint") ? Boolean.TRUE.equals(result.get("ok")) : Boolean.TRUE.equals(result.get("same"));
+                exit = ok ? 0 : 1;
+                Map<String, Object> output = report.finish(exit, result);
+                if (options.has("json")) System.out.println(Json.write(output));
+                else System.out.println(String.valueOf(result.getOrDefault("details", "")).strip() + "\nReceipt: " + output.get("receipt"));
                 System.exit(exit);
             }
             if (options.command.equals("pack-check")) {
@@ -909,7 +932,7 @@ public final class Modaccel {
             "An expression is returned; statements return what they return. 'mc' is the Minecraft instance, print(x) adds output,\n" +
             "vars is a map kept between snippets; call(objectOrClass, \"name\", args...) and field(objectOrClass, \"name\") reach private\n" +
             "members. Leading import lines are allowed. Start the game first with ui-check or world-check.";
-            case "world-check" -> "Check a loaded save: modaccel world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.";
+            case "world-check" -> "Check a loaded save: modaccel world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.\n--freeze opens the save with the game's tick freeze on from its first tick (Minecraft 1.20.3 and later): chunks load, nothing else moves.";
             case "fast",
                 "test" -> "Run the mod's logic tests without the game: modaccel fast --root SOURCE [--project :module]\n" +
             "fast runs JUnit 5 tests, reusing compiled code when nothing changed. With no Minecraft or loader on the test classpath\n" +
@@ -940,6 +963,17 @@ public final class Modaccel {
             "and items made by a recipe without a translation or model are warnings.\n" +
             "Build a jar with the project's own task: modaccel compile --root SOURCE --task :jar. That is the build path for\n" +
             "Paper/Bukkit plugins (the jar lands in build/libs); then modaccel plugin-check loads it.";
+            case "fingerprint" -> "Record what a mod does, the same way for every mod: modaccel fingerprint --root SOURCE [--project :module] [--ticks 100] [--every 20] [--seed N] [--namespaces ID,ID] [--out FILE.json] --json\n" +
+            "   or on its loader's real server: modaccel fingerprint --jar MOD.jar[,DEPENDENCY.jar] --minecraft VERSION --loader neoforge|forge|fabric|quilt [--out FILE.json]\n" +
+            "A flat world (fixed seed, time and weather, made by the vanilla server of the mod's version) is opened frozen in the mod's hidden\n" +
+            "development client; one probe places every block item and spawns every entity type of the mod's namespaces, gives containers a\n" +
+            "stack, seeds every random source it can reach, runs --ticks ticks with a checkpoint every --every, saves, and reads the save back.\n" +
+            "The record holds every registry (and tags, recipes, loot tables, advancements), placed block states, block-entity and entity data,\n" +
+            "inventories, chunk tickets and loaded chunks, scheduled ticks, the save round trip and the log's warnings and errors.\n" +
+            "What cannot be frozen is in FINGERPRINT.md. Compare two with fingerprint-diff.";
+            case "fingerprint-diff" -> "Compare two behaviour fingerprints: modaccel fingerprint-diff A.json B.json [--across-versions] [--map NORMALISE.json] [--namespaces ID,ID] [--out DIFF.json] --json\n" +
+            "Exits 0 when they match. Records of the same game version compare leaf by leaf; across versions (a port) only what the mod owns is\n" +
+            "compared, after the game's renames (knowledge/fingerprint-normalise.json, or --map). Prints each differing section and the first leaves.";
             case "pack-check" -> "Check a modpack the way its players run it: modaccel pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--fix] [--json]\n" +
             "--pack is a CurseForge export (.zip or folder), a Modrinth .mrpack (or folder), a CurseForge app, Prism/MultiMC or vanilla launcher\n" +
             "instance, or any folder with mods/. --minecraft 1.21.1 and --loader neoforge[-21.1.77] override what the pack says; with no loader\n" +

@@ -30,10 +30,16 @@ final class PackRepairs {
         "dependency-unmet",
         PackRepairs::dependencyUnmet,
         "dependency-missing",
-        PackRepairs::dependencyMissing
+        PackRepairs::dependencyMissing,
+        "bundled-in-use",
+        PackRepairs::bundledInUse
     );
 
-    static final Set<String> ACTIONS = Set.of("add-jar", "remove-mod", "replace-mod");
+    /**
+     * add-jar, remove-mod and replace-mod name their jar. replace-dependency and add-newer-bundled name none: the jar is
+     * found when the repair runs (PackResolve), so one entry serves every mod with the same kind of fault.
+     */
+    static final Set<String> ACTIONS = Set.of("add-jar", "remove-mod", "replace-mod", "replace-dependency", "add-newer-bundled");
 
     /** What a repair changes in the mods folder: jars to add (verified downloads) and jar file names to take out. */
     record Change(List<Path> add, List<String> remove, Map<String, Map<String, Object>> sources) {
@@ -55,12 +61,13 @@ final class PackRepairs {
             String found = applies(fix, pack.loader(), pack.minecraft(), scan);
             if (found == null) continue;
             matched.add(fix);
+            // A repair with "when" is for a fault the game shows (its check): until a start shows it, the match is a warning.
             findings.add(
                 Json.map(
                     "kind",
                     "known-fault",
                     "severity",
-                    "problem",
+                    fix.containsKey("when") ? "warning" : "problem",
                     "id",
                     fix.get("id"),
                     "summary",
@@ -77,9 +84,10 @@ final class PackRepairs {
         return matched;
     }
 
+    /** A general repair (loader "*", minecraft ["*"]) is for every loader and game version. */
     static String applies(Map<String, Object> fix, String loader, String minecraft, PackMods.Scan scan) {
-        if (!Json.text(fix, "loader", "").equals(loader)) return null;
-        if (!Json.array(fix.get("minecraft")).contains(minecraft)) return null;
+        if (!Json.text(fix, "loader", "").equals(loader) && !Json.text(fix, "loader", "").equals("*")) return null;
+        if (!Json.array(fix.get("minecraft")).contains(minecraft) && !Json.array(fix.get("minecraft")).contains("*")) return null;
         var spec = Json.object(fix.get("match"));
         Matcher matcher = MATCHERS.get(Json.text(spec, "type", ""));
         if (matcher == null) throw new IllegalStateException("pack-fixes.json: " + fix.get("id") + " has an unknown match type " + spec.get("type"));
@@ -111,16 +119,52 @@ final class PackRepairs {
         return String.join(" with ", found) + " have a proven fault together";
     }
 
-    /** A mod's own required dependency that the version in the pack does not satisfy (an exact pin on a library the pack has newer). */
+    /**
+     * A mod's own required dependency that the version in the pack does not satisfy (an exact pin on a library the pack
+     * has newer). "mod" and "dependency" may be "*": any mod, any library.
+     */
     static String dependencyUnmet(Map<String, Object> spec, PackMods.Scan scan) {
-        String mod = Json.text(spec, "mod", ""), dependency = Json.text(spec, "dependency", "");
-        PackMods.Provider owner = scan.used(mod), used = scan.used(dependency);
-        if (owner == null || used == null) return null;
-        for (var d : scan.dependencies) if (
-            d.owner().equals(owner.jar()) && d.id().equals(dependency) && d.kind().equals("required") && !PackMods.accepts(d, used.version())
-        ) return mod + " " + owner.version() + " (" + owner.jar() + ") requires " + dependency + " " + String.join(" or ", d.ranges()) +
-            ", and the pack has " + used.version() + " (" + used.jar() + ")";
-        return null;
+        var unmet = unmet(spec, scan);
+        if (unmet.isEmpty()) return null;
+        var d = unmet.get(0);
+        PackMods.Provider used = scan.used(d.id());
+        return d.owner() + " requires " + d.id() + " " + String.join(" or ", d.ranges()) + ", and the pack has " + used.version() + " (" + used.jar() + ")";
+    }
+
+    static List<PackMods.Dependency> unmet(Map<String, Object> spec, PackMods.Scan scan) {
+        String mod = Json.text(spec, "mod", "*"), dependency = Json.text(spec, "dependency", "*");
+        List<PackMods.Dependency> out = new ArrayList<>();
+        for (var d : scan.dependencies) {
+            if (!d.kind().equals("required") || !(dependency.equals("*") || d.id().equals(dependency))) continue;
+            PackMods.Provider used = scan.used(d.id());
+            if (used == null || PackMods.accepts(d, used.version())) continue;
+            if (!mod.equals("*")) {
+                PackMods.Provider owner = scan.used(mod);
+                if (owner == null || !d.owner().equals(owner.jar())) continue;
+            }
+            out.add(d);
+        }
+        return out;
+    }
+
+    /**
+     * A library the loader takes from inside another mod's jar: no copy of its own in the pack is as new as the bundled one.
+     * A library bundled out of date is fixed by adding its newer release on its own; the loader takes the highest version.
+     */
+    static String bundledInUse(Map<String, Object> spec, PackMods.Scan scan) {
+        List<String> found = new ArrayList<>();
+        for (var entry : bundled(scan).entrySet()) found.add(entry.getKey() + " " + entry.getValue().version() + " (inside " + entry.getValue().jar() + ")");
+        if (found.isEmpty()) return null;
+        return found.size() + " librar" + (found.size() == 1 ? "y" : "ies") + " in use from inside other jars (" + String.join(", ", found.subList(0, Math.min(5, found.size()))) + ")";
+    }
+
+    static Map<String, PackMods.Provider> bundled(PackMods.Scan scan) {
+        Map<String, PackMods.Provider> out = new TreeMap<>();
+        for (String id : scan.providers.keySet()) {
+            PackMods.Provider used = scan.used(id);
+            if (used != null && used.bundled()) out.put(id, used);
+        }
+        return out;
     }
 
     /** A mod's own required dependency that no jar in the pack provides (a library its source no longer serves). */
@@ -135,6 +179,10 @@ final class PackRepairs {
 
     /** Every chosen repair as one change: its jars downloaded and checked against their SHA-512, and the pack's jars it takes out. */
     static Change change(PackCheck check, List<Map<String, Object>> fixes, PackMods.Scan scan) throws Exception {
+        return change(check, fixes, scan, null);
+    }
+
+    static Change change(PackCheck check, List<Map<String, Object>> fixes, PackMods.Scan scan, PackCheck.Pack pack) throws Exception {
         List<Path> add = new ArrayList<>();
         List<String> remove = new ArrayList<>();
         Map<String, Map<String, Object>> sources = new LinkedHashMap<>();
@@ -150,8 +198,38 @@ final class PackRepairs {
                 add.add(jar);
                 sources.put(jar.getFileName().toString(), action);
             }
+            if ((type.equals("replace-dependency") || type.equals("add-newer-bundled")) && pack != null) resolve(check, fix, scan, pack, add, remove, sources);
         }
         return new Change(add, remove, sources);
+    }
+
+    /** The general actions: the jar each needs is found now, for this pack's loader and game version (PackResolve). */
+    static void resolve(PackCheck check, Map<String, Object> fix, PackMods.Scan scan, PackCheck.Pack pack, List<Path> add, List<String> remove, Map<String, Map<String, Object>> sources) throws Exception {
+        String type = Json.text(Json.object(fix.get("action")), "type", "");
+        List<String> metadata = check.loader.metadata(pack.minecraft());
+        List<Path> jars = pack.mods().stream().map(PackCheck.Mod::jar).toList();
+        if (type.equals("replace-dependency")) {
+            Map<String, List<PackMods.Dependency>> byLibrary = new TreeMap<>();
+            for (var d : unmet(Json.object(fix.get("match")), scan)) byLibrary.computeIfAbsent(d.id(), k -> new ArrayList<>()).add(d);
+            for (var library : byLibrary.entrySet()) {
+                // Every dependant's range, not only the one that failed: the library must satisfy all of them.
+                List<PackMods.Dependency> ranges = new ArrayList<>();
+                for (var d : scan.dependencies) if (d.id().equals(library.getKey()) && d.kind().equals("required")) ranges.add(d);
+                Path jar = PackResolve.release(check, library.getKey(), metadata, check.loader.id(), pack.minecraft(), jars, version -> ranges.stream().allMatch(d -> PackMods.accepts(d, version)));
+                if (jar == null) continue;
+                for (var p : scan.providers.getOrDefault(library.getKey(), List.of())) if (!p.bundled() && !remove.contains(p.jar())) remove.add(p.jar());
+                add.add(jar);
+                sources.put(jar.getFileName().toString(), Json.map("type", type, "mod", library.getKey(), "from", "Modrinth, by the project of the pack's own jar for " + library.getKey()));
+            }
+        } else {
+            for (var library : bundled(scan).entrySet()) {
+                String bundledVersion = library.getValue().version();
+                Path jar = PackResolve.release(check, library.getKey(), metadata, check.loader.id(), pack.minecraft(), jars, version -> Versions.compare(version, bundledVersion) > 0);
+                if (jar == null) continue;
+                add.add(jar);
+                sources.put(jar.getFileName().toString(), Json.map("type", type, "mod", library.getKey(), "replaces", bundledVersion + " bundled in " + library.getValue().jar()));
+            }
+        }
     }
 
     static Path download(PackCheck check, Map<String, Object> action) throws Exception {
@@ -187,6 +265,13 @@ final class PackRepairs {
             if (!checks.contains(Json.text(fix, "check", ""))) throw new AssertionError(id + " names no known check: " + fix.get("check"));
             if (!ACTIONS.contains(Json.text(Json.object(fix.get("action")), "type", ""))) throw new AssertionError(id + " has an unknown action");
             String loaderId = Json.text(fix, "loader", ""), minecraft = String.valueOf(Json.array(fix.get("minecraft")).get(0));
+            boolean general = loaderId.equals("*");
+            if (general) {
+                loaderId = Json.text(test, "loader", "");
+                minecraft = Json.text(test, "minecraft", "");
+                if (loaderId.isEmpty() || minecraft.isEmpty()) throw new AssertionError(id + " is general: its test names the loader and minecraft it runs on");
+                if (fix.containsKey("mod") || fix.containsKey("file") || Json.object(fix.get("action")).containsKey("url")) throw new AssertionError(id + " is general: it may not name a mod or a file");
+            }
             PackLoaders.Loader loader = loaders.get(loaderId);
             if (loader == null) throw new AssertionError(id + " is for an unknown loader " + loaderId);
             String format = loader.metadata(minecraft).get(0);
@@ -195,19 +280,22 @@ final class PackRepairs {
             for (Object j : Json.array(test.get("jars"))) jars.add(testJar(mods, Json.object(j), format));
             PackMods.Scan before = PackMods.scan(jars, loader.metadata(minecraft));
             if (applies(fix, loaderId, minecraft, before) == null) throw new AssertionError(id + ": its test jars do not match it");
-            for (String other : loaders.keySet()) if (!other.equals(loaderId) && applies(fix, other, minecraft, before) != null) throw new AssertionError(
+            for (String other : loaders.keySet()) if (!general && !other.equals(loaderId) && applies(fix, other, minecraft, before) != null) throw new AssertionError(
                 id + " also matches on " + other
             );
             var action = Json.object(fix.get("action"));
             String type = Json.text(action, "type", "");
             List<PackCheck.Mod> after = new ArrayList<>(jars);
-            if (type.equals("remove-mod") || type.equals("replace-mod")) {
+            if (type.equals("remove-mod") || type.equals("replace-mod") || type.equals("replace-dependency")) {
                 Set<String> gone = new HashSet<>();
-                for (var p : before.providers.getOrDefault(Json.text(action, "mod", ""), List.of())) if (!p.bundled()) gone.add(p.jar());
+                Set<String> ids = new HashSet<>();
+                if (type.equals("replace-dependency")) for (var d : unmet(Json.object(fix.get("match")), before)) ids.add(d.id());
+                else ids.add(Json.text(action, "mod", ""));
+                for (String gid : ids) for (var p : before.providers.getOrDefault(gid, List.of())) if (!p.bundled()) gone.add(p.jar());
                 if (gone.isEmpty()) throw new AssertionError(id + ": its action removes nothing from its test jars");
                 after.removeIf(m -> gone.contains(m.file()));
             }
-            if (type.equals("add-jar") || type.equals("replace-mod")) {
+            if (!type.equals("remove-mod")) {
                 var added = Json.object(test.get("added"));
                 if (added.isEmpty()) throw new AssertionError(id + ": its test does not describe the jar it adds");
                 added.putIfAbsent("file", Json.text(action, "file", "added.jar"));

@@ -496,7 +496,7 @@ final class Target {
             if (Versions.compare(newest, current) <= 0) return;
             setup.replace(file, pin.group(0), pin.group(1) + newest + pin.group(3));
             // NeoGradle's other plugins (mixin, vanilla, ...) are published with userdev and only work at its version:
-            // Jade's mixin plugin left on 7.0.145 beside userdev 7.1 failed to apply (net/minecraftforge/gdi/BaseDSLElement).
+            // a mixin plugin left on 7.0.145 beside userdev 7.1 failed to apply (net/minecraftforge/gdi/BaseDSLElement).
             if (!file.equals(properties) && Versions.compare(newest, "7.1") >= 0) dropMixinPlugin(setup, build, file);
             if (!file.equals(properties)) {
                 Matcher sibling = Pattern.compile(
@@ -717,7 +717,7 @@ final class Target {
      * bootstrapped"; and on NeoForge 26.x the game can only be bootstrapped inside FancyModLoader (SharedConstants asks
      * FML whether it runs in production). NeoForge's userdev ships a junit run type for exactly this: the test task runs
      * on junit-fml, which starts FML, puts the mod and its tests in FML's class loader (MOD_CLASSES) and bootstraps the
-     * game. Zombie Apocalypse Addon 1.21.1 -> 26.3: 7 of 128 tests failed plain, all 128 pass this way. NeoGradle
+     * game. A NeoForge mod ported 1.21.1 -> 26.3: 7 of 128 tests failed plain, all 128 pass this way. NeoGradle
      * projects only (ModDevGradle has its own unitTest block), forward ports onto 26.1+, and only when there are tests.
      */
     static void unitTestsInFml(Setup setup, Build build, String to, String neoForge) throws Exception {

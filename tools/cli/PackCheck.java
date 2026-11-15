@@ -175,7 +175,7 @@ final class PackCheck {
         readDropped();
         // Every repair is a known fault's, so it is known now: the repaired pack's server starts beside the shipped one.
         List<Map<String, Object>> chosen = options.has("fix") ? fixes : List.of();
-        PackRepairs.Change change = PackRepairs.change(this, chosen, scan);
+        PackRepairs.Change change = PackRepairs.change(this, chosen, scan, pack);
         ServerLane shipped = new ServerLane(pack, new PackRepairs.Change(List.of(), List.of()), "", findings, context);
         shipped.prepare();
         ServerLane repaired = chosen.isEmpty() ? null : new ServerLane(pack, change, "repaired-", new ArrayList<>(), context);
