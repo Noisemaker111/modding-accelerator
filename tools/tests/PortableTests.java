@@ -1651,14 +1651,20 @@ public final class PortableTests {
         for (Object item : LoaderRules.list(rules.get("bridges"))) {
             var b = Json.object(item);
             boolean fromNeo = "neoforge".equals(b.get("from"));
+            // The tests written for one Minecraft version are files of one small mod, converted there and back once; a test
+            // marked alone (an @Mod class of its own, which the others' subscribers would join) gets a mod of its own.
+            Map<String, List<Map<String, Object>>> byGame = new LinkedHashMap<>();
             for (Object t : LoaderRules.list(b.get("tests"))) {
                 var test = Json.object(t);
-                String name = Json.text(test, "name", "Use");
-                Path dir = scratch.resolve("bridge-test-" + b.get("id") + "-" + bridgeTests);
+                String key = Json.text(test, "minecraft", "26.3") + (Boolean.TRUE.equals(test.get("alone")) ? "/" + Json.text(test, "name", "") : "");
+                byGame.computeIfAbsent(key, k -> new ArrayList<>()).add(test);
+            }
+            for (var group : byGame.entrySet()) {
+                String game = group.getKey().replaceAll("/.*$", "");
+                Path dir = scratch.resolve("bridge-test-" + b.get("id") + "-" + group.getKey().replace('/', '-'));
                 Map<String, String> mod = new LinkedHashMap<>();
                 mod.put("gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
                 mod.put("settings.gradle", "rootProject.name = 'demo'\n");
-                String game = Json.text(test, "minecraft", "26.3");
                 if (fromNeo) {
                     mod.put("gradle.properties", "minecraft_version=" + game + "\nneo_version=" + ("1.21.1".equals(game) ? "21.1.250" : "26.3.0.103") + "\nmod_id=demo\n");
                     mod.put("build.gradle", "plugins {\n\tid 'net.neoforged.moddev' version '2.0.148'\n}\n\nneoForge {\n\tversion = project.neo_version\n}\n\ndependencies {\n}\n");
@@ -1670,7 +1676,7 @@ public final class PortableTests {
                     mod.put("src/main/resources/fabric.mod.json", "{\n\t\"schemaVersion\": 1,\n\t\"id\": \"demo\",\n\t\"version\": \"1.0.0\",\n\t\"entrypoints\": {\n\t\t\"main\": [\"demo.Demo\"]\n\t}\n}\n");
                     mod.put("src/main/java/demo/Demo.java", "package demo;\n\nimport net.fabricmc.api.ModInitializer;\n\npublic class Demo implements ModInitializer {\n\t@Override\n\tpublic void onInitialize() {\n\t}\n}\n");
                 }
-                mod.put("src/main/java/demo/" + name + ".java", Json.text(test, "from", ""));
+                for (var test : group.getValue()) mod.put("src/main/java/demo/" + Json.text(test, "name", "Use") + ".java", Json.text(test, "from", ""));
                 for (var file : mod.entrySet()) {
                     Path path = dir.resolve(file.getKey());
                     Files.createDirectories(path.getParent());
@@ -1687,29 +1693,35 @@ public final class PortableTests {
                     new Modaccel.Options(new String[] { "convert", "--to", to }),
                     false
                 );
-                String converted = Files.readString(dir.resolve("src/main/java/demo/" + name + ".java"));
-                if (!converted.equals(Json.text(test, "to", ""))) throw new AssertionError(
-                    "bridge " + b.get("id") + " test " + name + " to " + to + " gave:\n" + converted + "\n" + forward.get("details")
-                );
-                for (String mixin : LoaderRules.strings(test.get("mixins"))) if (
-                    !String.valueOf(forward.get("details")).contains(mixin)
-                ) throw new AssertionError("bridge " + b.get("id") + " test " + name + " did not list the bridge mixin " + mixin + ":\n" + forward.get("details"));
-                // A bridge mixin that adds an interface to a game class: fabric.mod.json has Loom inject it for the compile.
-                for (String target : LoaderRules.strings(test.get("injects"))) {
-                    String meta = Files.readString(dir.resolve("src/main/resources/fabric.mod.json"));
-                    if (!meta.contains("\"loom:injected_interfaces\"") || !meta.contains("\"" + target + "\"")) throw new AssertionError(
-                        "bridge " + b.get("id") + " test " + name + " did not inject the bridge's interface into " + target + ":\n" + meta
+                for (var test : group.getValue()) {
+                    String name = Json.text(test, "name", "Use");
+                    String converted = Files.readString(dir.resolve("src/main/java/demo/" + name + ".java"));
+                    if (!converted.equals(Json.text(test, "to", ""))) throw new AssertionError(
+                        "bridge " + b.get("id") + " test " + name + " to " + to + " gave:\n" + converted + "\n" + forward.get("details")
                     );
+                    for (String mixin : LoaderRules.strings(test.get("mixins"))) if (
+                        !String.valueOf(forward.get("details")).contains(mixin)
+                    ) throw new AssertionError("bridge " + b.get("id") + " test " + name + " did not list the bridge mixin " + mixin + ":\n" + forward.get("details"));
+                    // A bridge mixin that adds an interface to a game class: fabric.mod.json has Loom inject it for the compile.
+                    for (String target : LoaderRules.strings(test.get("injects"))) {
+                        String meta = Files.readString(dir.resolve("src/main/resources/fabric.mod.json"));
+                        if (!meta.contains("\"loom:injected_interfaces\"") || !meta.contains("\"" + target + "\"")) throw new AssertionError(
+                            "bridge " + b.get("id") + " test " + name + " did not inject the bridge's interface into " + target + ":\n" + meta
+                        );
+                    }
                 }
                 Map<String, Object> returned = new Convert(new Build(model, home, "", new Modaccel.Report(dir, "convert"))).run(
                     new Modaccel.Options(new String[] { "convert", "--to", origin }),
                     false
                 );
-                String again = Files.readString(dir.resolve("src/main/java/demo/" + name + ".java"));
-                if (!again.equals(Json.text(test, "back", Json.text(test, "from", "")))) throw new AssertionError(
-                    "bridge " + b.get("id") + " test " + name + " back to " + origin + " gave:\n" + again + "\n" + returned.get("details")
-                );
-                bridgeTests++;
+                for (var test : group.getValue()) {
+                    String name = Json.text(test, "name", "Use");
+                    String again = Files.readString(dir.resolve("src/main/java/demo/" + name + ".java"));
+                    if (!again.equals(Json.text(test, "back", Json.text(test, "from", "")))) throw new AssertionError(
+                        "bridge " + b.get("id") + " test " + name + " back to " + origin + " gave:\n" + again + "\n" + returned.get("details")
+                    );
+                    bridgeTests++;
+                }
             }
         }
         check(bridgeTests >= 0, "every bridge test converts its source both ways (" + bridgeTests + " tests)");

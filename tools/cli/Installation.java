@@ -398,15 +398,10 @@ final class Installation {
     }
 
     /** One self-test suite: a class in tools/tests with a main, and what it is given beside the classpath. */
-    record Suite(String name, String main, boolean wantsHarness, boolean wantsScratch, int seconds) {
-        Suite(String name, String main, boolean wantsHarness, boolean wantsScratch) {
-            this(name, main, wantsHarness, wantsScratch, 120);
-        }
-    }
+    record Suite(String name, String main, boolean wantsHarness, boolean wantsScratch) {}
 
     static final List<Suite> SUITES = List.of(
-        // convert's bridge tests convert a small mod there and back once per test, each copying the whole bridge.
-        new Suite("portable", "PortableTests", true, true, 600),
+        new Suite("portable", "PortableTests", true, true),
         new Suite("perf", "PerfTest", true, true),
         new Suite("jdk", "JdkDownloadsTest", false, false),
         new Suite("dependency", "DependenciesTest", false, false),
@@ -465,7 +460,7 @@ final class Installation {
             );
             if (suite.wantsHarness()) command.add(harness.toString());
             if (suite.wantsScratch()) command.add(report.directory.resolve("fixtures").toString());
-            var run = Run.command(command, report.root, Map.of(), report.log(suite.name() + "-tests"), suite.seconds());
+            var run = Run.command(command, report.root, Map.of(), report.log(suite.name() + "-tests"), 120);
             report.stage(suite.name() + "-tests", run, Map.of());
             boolean ok = run.exit() == 0;
             results.add(
