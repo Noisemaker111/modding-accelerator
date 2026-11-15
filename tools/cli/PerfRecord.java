@@ -40,17 +40,32 @@ final class PerfRecord {
         record.put("rejection", null);
     }
 
+    /**
+     * The share of a step's time that is the session's own wall time: 0.5 while perf-optimize runs both arms of a
+     * pair at once, so phases still add up to the wall time; steps keep their full elapsed seconds.
+     */
+    volatile double share = 1;
+
     /** Adds wall time to a phase and keeps the step, so the slowest steps can be found later. */
-    void step(String phase, String name, double seconds) {
+    synchronized void step(String phase, String name, double seconds) {
         if (!PHASES.contains(phase)) phase = "other";
         if (!Double.isFinite(seconds) || seconds < 0) return;
-        phases.put(phase, ((Number) phases.get(phase)).doubleValue() + seconds);
-        steps.add(Json.map("phase", phase, "name", name, "seconds", seconds));
+        double counted = seconds * share;
+        phases.put(phase, ((Number) phases.get(phase)).doubleValue() + counted);
+        Map<String, Object> step = Json.map("phase", phase, "name", name, "seconds", seconds);
+        if (share != 1) step.put("share", share);
+        steps.add(step);
     }
 
     /** Samples machine load now: whole-system CPU over about a second, and how many other JVMs run. */
     void sampleLoad(String when) {
-        load.add(Json.map("when", when, "at", Instant.now().toString(), "systemCpu", systemCpu(), "javaProcesses", javaProcesses()));
+        double cpu = systemCpu();
+        long javas = javaProcesses();
+        addLoad(when, cpu, javas);
+    }
+
+    synchronized void addLoad(String when, double systemCpu, long javas) {
+        load.add(Json.map("when", when, "at", Instant.now().toString(), "systemCpu", systemCpu, "javaProcesses", javas));
         Map<String, Object> machine = Json.object(record.get("machine"));
         machine.put("load", load);
         double sum = 0;
@@ -93,7 +108,7 @@ final class PerfRecord {
         }).orElse(false)).count() - 1;
     }
 
-    void mod(String id, String version, String loader) {
+    synchronized void mod(String id, String version, String loader) {
         Map<String, Object> mod = Json.object(record.get("mod"));
         if (id != null && !id.isBlank()) mod.put("id", id);
         if (version != null && !version.isBlank()) mod.put("version", version);
@@ -185,9 +200,13 @@ final class PerfRecord {
         if (result.get("speedup") instanceof Map<?, ?> speedup) for (String phase : List.of("cold", "warm")) {
             Map<String, Object> s = Json.object(speedup.get(phase));
             if (s.get("low") instanceof Number low && low.doubleValue() <= 1) {
-                reasons.add(String.format(Locale.ROOT, "%s speedup %.3fx, 95%% interval %.3f-%.3f includes 1", phase,
-                    ((Number) s.get("geometricMean")).doubleValue(), low.doubleValue(), ((Number) s.get("high")).doubleValue()));
+                double high = ((Number) s.get("high")).doubleValue();
+                reasons.add(String.format(Locale.ROOT, "%s speedup %.3fx, 95%% interval %.3f-%.3f %s", phase,
+                    ((Number) s.get("geometricMean")).doubleValue(), low.doubleValue(), high, high < 1 ? "lies below 1 (slower)" : "includes 1"));
             }
+        }
+        if (result.get("stopped") instanceof Map<?, ?> stopped && "rejected".equals(stopped.get("decided")) && !reasons.isEmpty()) {
+            reasons.add("stopped after " + stopped.get("afterPairs") + " pair(s)");
         }
         return reasons.isEmpty() ? "not accepted" : String.join("; ", reasons);
     }
