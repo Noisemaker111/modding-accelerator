@@ -209,6 +209,346 @@
      ]
     }
    }
+  },
+  {
+   "id": "parse-identifiers-once",
+   "symptom": {
+    "text": "A position type stores its dimension as a string and parses it back into a registry key (ResourceLocation.tryParse, ResourceKey.create) on every capability or level lookup, and builds the string again for every offset position, thousands of times a tick.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.\\w*(Lookup|[Pp]arse|FromString|ByName|byName)\\w*\\(Ljava/lang/String;",
+      "minShare": 0.08
+     }
+    ]
+   },
+   "change": "Memoize the string-to-key and key-to-string conversions in static concurrent maps. ResourceKey.create interns its result, so the remembered key is the very object a fresh parse returns; still call server.getLevel(key) every time, so a level added or removed later is seen as before. Leave unparseable strings to the original path.",
+   "gain": {
+    "scope": "masterTick (inclusive ms per server tick of TileMain.tick, 315-node network, 256 storage barrels, 32 I/O cables)",
+    "cold": {
+     "geometricMean": 1.343,
+     "low": 1.225,
+     "high": 1.507,
+     "pairs": 5
+    },
+    "warm": {
+     "geometricMean": 1.307,
+     "low": 1.276,
+     "high": 1.338,
+     "pairs": 5
+    }
+   },
+   "gate": {
+    "name": "transfers + moving",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation"
+   },
+   "provenIn": {
+    "mod": "storagenetwork",
+    "version": "1.13.2",
+    "loader": "neoforge",
+    "scope": "masterTick",
+    "record": "2026-11-15T09-29-22.711441900Z-fd615af9",
+    "patch": "bench/storagenetwork/dimension-key-cache.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Pos.stringDimensionLookup(Ljava/lang/String;Lm/Server;)Lm/Level;",
+       "samples": 30
+      },
+      {
+       "name": "m.Net.tick()V",
+       "samples": 70
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Net.tick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "match-filters-in-place",
+   "symptom": {
+    "text": "A per-item check (is this stack filtered, which upgrades are installed) copies the handler's slots into a new list and maps each to a new matcher object through a stream, on every call, inside loops over thousands of slots.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(get\\w*Matchers|get\\w*Stacks|\\w*[Ff]iltered|lambda\\$\\w*[Mm]atchers\\$\\d+)\\(",
+      "minShare": 0.1
+     }
+    ]
+   },
+   "change": "Ask the slots directly, in slot order, with the matcher's rule as a static method of the same fields (stack, nbt flag): the same answers in the same order, with no list, stream or matcher made. Keep the allow-list/deny-list negation and the short-circuit exactly as anyMatch and noneMatch had them.",
+   "gain": {
+    "scope": "masterTick (inclusive ms per server tick of TileMain.tick, 315-node network, 256 storage barrels, 32 I/O cables)",
+    "cold": {
+     "geometricMean": 1.811,
+     "low": 1.758,
+     "high": 1.867,
+     "pairs": 3
+    },
+    "warm": {
+     "geometricMean": 1.818,
+     "low": 1.778,
+     "high": 1.864,
+     "pairs": 3
+    }
+   },
+   "gate": {
+    "name": "transfers + moving",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation"
+   },
+   "provenIn": {
+    "mod": "storagenetwork",
+    "version": "1.13.2",
+    "loader": "neoforge",
+    "scope": "masterTick",
+    "record": "2026-11-15T09-44-21.544872100Z-c3a5c47c",
+    "patch": "bench/storagenetwork/filter-check-without-matchers.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Filters.getStackMatchers()Ljava/util/List;",
+       "samples": 30
+      },
+      {
+       "name": "m.Net.tick()V",
+       "samples": 70
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Net.tick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "plan-network-walk-until-invalidated",
+   "symptom": {
+    "text": "A network controller re-resolves every node of its network each tick (a capability lookup per node per kind: node, importer, exporter, processor), though only a few nodes act and the set changes only when blocks do.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(getConnectables|\\w*[Cc]apability)\\(",
+      "minShare": 0.15
+     }
+    ]
+   },
+   "change": "Look the capabilities up through NeoForge BlockCapabilityCaches made with an invalidation listener, and keep the resolved node list (in the iteration order the per-tick HashSet gives) with each node's capabilities until the node set is replaced or a listener fires. Still check every position is loaded each tick (a chunk stops being loaded before its unload event), fall back to lookups for a node whose position moved, and to fresh lookups for the rest of a tick in which a cache is invalidated. A cache calls its listener only if it was queried since its last invalidation: query every cache a plan depends on when the plan is made.",
+   "gain": {
+    "scope": "masterTick (inclusive ms per server tick of TileMain.tick, 315-node network, 256 storage barrels, 32 I/O cables)",
+    "cold": {
+     "geometricMean": 1.461,
+     "low": 1.291,
+     "high": 1.703,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 1.416,
+     "low": 1.315,
+     "high": 1.577,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "transfers + moving",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation"
+   },
+   "provenIn": {
+    "mod": "storagenetwork",
+    "version": "1.13.2",
+    "loader": "neoforge",
+    "scope": "masterTick",
+    "record": "2026-11-15T10-23-42.306325Z-5020354d",
+    "patch": "bench/storagenetwork/tick-only-acting-nodes.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Pos.getCapability(Lm/Cap;Lm/Dir;)Ljava/lang/Object;",
+       "samples": 30
+      },
+      {
+       "name": "m.Net.tick()V",
+       "samples": 70
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Net.tick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "cache-each-cables-target-handler",
+   "symptom": {
+    "text": "Every cable method (insert, extract, count slots, list stacks) looks up its target inventory's item handler again, building a new wrapper each time, many times per transfer.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(getItemHandler|\\w*Capability)\\(",
+      "minShare": 0.1
+     }
+    ]
+   },
+   "change": "Keep one NeoForge BlockCapabilityCache of Capabilities.ItemHandler.BLOCK per cable for its target position and side, used only while the target is loaded (a fresh lookup would load the chunk), and remade when the target position, side or level differs. Vanilla providers are cache-safe (chests invalidate when they join or leave a double chest; the composter forwards to its current state); third-party providers must invalidate by contract.",
+   "gain": {
+    "scope": "masterTick (inclusive ms per server tick of TileMain.tick, 315-node network, 256 storage barrels, 32 I/O cables)",
+    "cold": {
+     "geometricMean": 1.08,
+     "low": 1.049,
+     "high": 1.105,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 1.117,
+     "low": 1.073,
+     "high": 1.168,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "transfers + moving",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation"
+   },
+   "provenIn": {
+    "mod": "storagenetwork",
+    "version": "1.13.2",
+    "loader": "neoforge",
+    "scope": "masterTick",
+    "record": "2026-11-15T10-42-25.332386800Z-f0080703",
+    "patch": "bench/storagenetwork/cache-target-item-handlers.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Pos.getItemHandler(Lm/Dir;)Lm/Handler;",
+       "samples": 30
+      },
+      {
+       "name": "m.Net.tick()V",
+       "samples": 70
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Net.tick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "scan-providers-until-requests-met",
+   "symptom": {
+    "text": "An export or request batch first lists every slot of every storage that could provide (a simulated extract and a filter check per slot of thousands), then serves the requests from the list, although they are usually met by the first few providers.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(addTo\\w*Batch|\\w*Provider\\w*|executeRequestBatch|extractStacks)\\(",
+      "minShare": 0.1
+     }
+    ]
+   },
+   "change": "Decide each provider just before it is used, in the same storage and slot order, and stop when every request for the item is met (count 0, after which each later provider would only simulate). Do it only when the answer cannot differ from the up-front list: every storage and export target is a plain vanilla barrel or chest (an exact InvWrapper, slots independent, no loot table left to unpack), no inventory is behind two storages and no export target is a storage; otherwise list everything first as before.",
+   "gain": {
+    "scope": "masterTick (inclusive ms per server tick of TileMain.tick, 315-node network, 256 storage barrels, 32 I/O cables)",
+    "cold": {
+     "geometricMean": 1.343,
+     "low": 1.204,
+     "high": 1.516,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 1.359,
+     "low": 1.319,
+     "high": 1.396,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "transfers + moving",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation"
+   },
+   "provenIn": {
+    "mod": "storagenetwork",
+    "version": "1.13.2",
+    "loader": "neoforge",
+    "scope": "masterTick",
+    "record": "2026-11-15T11-00-23.631737800Z-2726069f",
+    "patch": "bench/storagenetwork/scan-providers-until-requests-met.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Storage.addToStackProviderBatch(Lm/Batch;)V",
+       "samples": 30
+      },
+      {
+       "name": "m.Net.tick()V",
+       "samples": 70
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Net.tick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
   }
  ]
 }

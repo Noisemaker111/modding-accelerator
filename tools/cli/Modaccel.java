@@ -800,7 +800,7 @@ public final class Modaccel {
                 "and 1280x720 framebuffer captures compared pixel by pixel. Every gate must also agree baseline-to-baseline. Accepted only when all gates pass and the\n" +
                 "95% bootstrap interval of the speedup is above 1 for cold and warm; an accepted diff is then applied to SOURCE (not with --dry-run). See PERFORMANCE.md.\n" +
                 "--label TEXT names the candidate and --session NAME groups runs in record.json, which bench/perf_sessions.py summarises.\n" +
-                "Pairs stop at the first failed gate, or from --min-runs pairs (3) once 99% t intervals lie above 1 (cold and warm) or below --min-speedup (1).\n" +
+                "Pairs stop at the first failed gate, or from --min-runs pairs (3) once 99% t intervals lie above 1 (cold and warm) or below --min-speedup (1). Each pair prints a line; creating OUT/stop ends the run after the pair in progress.\n" +
                 "--arms auto|parallel|sequential: auto starts both arms of a pair together on 12 or more cores.\n" +
                 "--check-only checks the experiment (and --patch) offline, as every run does first. --replay OUT1,OUT2 decides finished runs again and prints their wall time.";
             case "perf-report" -> "Render an existing capture/JFR locally: modaccel perf-report --file FOLDER_OR_JFR [--out FOLDER]\nNo game or network is required. External JFR files may lack frame/tick events or code-origin metadata.";

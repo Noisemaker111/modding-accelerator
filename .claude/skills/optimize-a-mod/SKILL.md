@@ -35,6 +35,14 @@ The second session, Pipez (`bench/pipez`, session `pipez-optimize`), took 35 min
 (cold 1.30x, warm 1.20x): 8 pairs in 21.5 min with paired arms, a broken candidate rejected in 5.6 min, and about
 60 min of wall clock from clone to accepted change, a discarded first mod (Jade) included.
 
+The third, Simple Storage Network (`bench/storagenetwork`, session `storagenetwork-optimize`), stacked five accepted
+changes into cold 5.12x and warm 5.95x against the unmodified mod (one cumulative run, 3 pairs). It took 14 runs and
+173 min of run time; launching games was a third of it. The first accepted change came 36 min after the clone.
+It lost the most time to a candidate run that died on a tool bug (fixed: children write UTF-8), a gate edited
+during a run (fixed: runs read a snapshot of the experiment), a run aborted by hand that left no record (fixed:
+`OUT/stop`), and small candidates that ran all 8 pairs to be rejected near 1.0x: time each part of the remaining cost
+directly first, and skip a candidate worth a few percent.
+
 `modaccel perf-optimize --replay OUT1,OUT2` decides finished runs again under the current stopping rule and prints
 the wall time they would take, sequentially and with paired arms. Diorama's four `perf-optimize` runs replay to the
 same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with paired arms.
@@ -44,7 +52,11 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
 1. **Pin and build.** Clone into `.runs/<mod>` at a commit and note it. `modaccel compile --root .runs/<mod> --json`.
    Pick a mod whose cost is in **ticks or worker threads**: a hidden client presents about 8 frames per second, so
    per-frame work (overlays, HUDs, renderers) barely registers in it. Jade cost 0.3 ms/s hidden; Pipez's item pipes
-   cost about 1 ms of every server tick.
+   cost about 1 ms of every server tick; Simple Storage Network's master cost 3.2 ms of every tick in a 256-barrel base.
+   Make the launch a player's, in one local commit both arms share, and say so in the README: comment out the
+   build's optional `localRuntime` test mods (Storage Network loaded AE2, Refined Storage, JEI, Curios, Patchouli), and
+   set the run's `logLevel` to INFO. A mod's dev run often logs DEBUG to the console, where one line cost 15 µs; a
+   player's game writes DEBUG only to the buffered `debug.log` (0.7 µs), so the dev console inflates fixed costs.
 2. **Make a world once and reuse it.** Start the client with `ui-check --root R --jit full`, create a fixed-seed
    superflat world with an eval snippet (`bench/pipez/create-world.java`), build the scene a player would have
    (`bench/pipez/scene.java`: a base whose pipes keep moving items), then save (`saveEverything`), `game-stop`, and copy
@@ -71,7 +83,13 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
    - an `expect` gate asserts the live workload still did its job after the captures (`bench/pipez/count.java`: every
      item conserved and both sides of every row moving), so a candidate cannot win by doing less;
    - cover every branch the candidate touches (Pipez: NEAREST, FURTHEST and ROUND_ROBIN distribution, inverted and
-     plain filters, full destinations, an upgrade whose speed depends on the game time).
+     plain filters, full destinations, an upgrade whose speed depends on the game time). A candidate with a fast path
+     and a fallback needs both in the frozen input: Storage Network's trace runs two networks, one with a furnace (the
+     fallback) and one with only barrels and chests (the fast path), and changes the world mid-trace (a cable broken
+     and put back, a barrel replaced, a redstone link powered, a priority changed) so cached state must notice;
+   - a workload in steady state can look still: Storage Network's exports and imports move the same items into the
+     same slots in the same tick, so two snapshots agree. Perturb it reversibly and check it recovers
+     (`bench/storagenetwork/count.java` rotates the buffers' contents and requires each to hold its own item 2 s later).
    Run the exact gate in two separate launches and compare: it must return the same text. Then **break it once on
    purpose**: a candidate that changes behaviour slightly (Pipez: nearest-first sorted the other way) must fail the
    exact gate. `perf-optimize` stops at the second pair (an `expect` gate at the first), so this costs two pairs.
@@ -82,6 +100,12 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
    output identical: cache what is recomputed from unchanged inputs (key it on the identity of an input the code
    replaces rather than mutates), skip work whose result is discarded, replace streams in per-item loops. Save it:
    `git -C R diff > .runs/<mod>-cands/NAME.diff && git -C R checkout -- .`.
+   To stack candidates, write them as commits in a second worktree of the clone
+   (`git -C R worktree add ../<mod>-stack HEAD`), one commit per idea, and diff each against its parent; fast-forward
+   `R` to a candidate's commit when it is accepted, so the next one runs against it, and rebase the rest when one is
+   dropped. Once a sampled capture shows few samples for the mod (it is fast now), time each part of the remaining
+   cost directly before writing the next candidate: an eval snippet that calls each method a few thousand times on the
+   server thread (`ms per call`) shows what is left better than 20 ms samples do.
 8. **Run perf-optimize.**
    ```sh
    modaccel perf-optimize --root R --experiment bench/<mod>/experiment.json --patch NAME.diff \
@@ -90,7 +114,10 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
    Pairs run until the rule decides: the first failed gate stops the run; from `--min-runs` pairs, 99% t intervals
    entirely above 1 (cold and warm) or below `--min-speedup` (either) stop it; otherwise it goes to `--runs`. The
    verdict is always the 95% bootstrap rule over the pairs measured. Read `optimize.html`: verdict, intervals, scopes,
-   every gate value.
+   every gate value. Each pair prints a line (its speedups, the running means with 99% intervals, every gate); a
+   candidate near 1.0x runs all `--runs` pairs, so when its lines show it will not decide (or a later candidate makes
+   it moot), create `OUT/stop`: the run ends after the pair in progress and is decided and recorded like any other.
+   A run reads a copy of the experiment's files taken when it started, so editing gates while it runs is safe.
 9. **Record.** Keep every decided run, accepted or not: `python bench/record.py perf .runs/<mod>-opt/NAME/record.json`.
    Put the experiment, snippets, probes and accepted diff in `bench/<mod>/` with a README saying how to rerun it.
    `python bench/perf_sessions.py --session <mod>-optimize` gives the session's time by phase; compare it with
@@ -120,6 +147,18 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
   second pair, when two baseline launches show whether the gate is reproducible.
 - **Probe overhead.** A few hundred nanoseconds per timed call: time the caller of a method called thousands of times
   per tick.
+- **Timing probes are wall time.** On a machine at 90% CPU a probe includes the time its thread was descheduled; one
+  Storage Network capture put an insert at 24 µs a call when a direct timing gave 2 µs. Paired arms see the same load,
+  so ratios hold; absolute values do not.
+- **A mechanism is not a candidate.** Storage Network's capability caches alone measured 1.0x (a direct lookup was
+  already cheap after the first change); they were what let the next change keep a plan until NeoForge says something
+  changed, which measured 1.46x. Fold a mechanism into the change that needs it. Likewise a later candidate can make an
+  earlier one moot (planning the storage list made sorting its positions once per refresh redundant): stop that run.
+- **NeoForge capability-cache listeners.** `BlockCapabilityCache.create(..., isValid, listener)` calls the listener
+  only if the cache was queried since its last invalidation. Query every cache a plan depends on when making the plan,
+  or the plan never hears of a change (Storage Network's walk replay kept a broken cable until its trace gate failed).
+- **Patterns travel.** Pipez's `cache-sorted-copy-until-source-replaced` fired on Storage Network's first capture
+  (its storage list was sorted on every use); that was the candidate to write.
 
 ## Landing
 Tooling changes go on their own branch with the offline gate from AGENTS.md (`self-test`, `bench/test_*.py`). Kept

@@ -1,0 +1,20 @@
+diff --git a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
+index 3fba73a5..a6c47039 100644
+--- a/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
++++ b/src/main/java/com/lothrazar/storagenetwork/block/main/NetworkModuleDefault.java
+@@ -556,12 +556,9 @@ public class NetworkModuleDefault implements NetworkModule {
+       // extractStacks is a simulation that changes nothing, so the scan stops there.
+       for (Item item : batch.keySet()) {
+         java.util.function.BooleanSupplier met = () -> {
+-          for (com.lothrazar.storagenetwork.api.batch.Request request : batch.get(item)) {
+-            if (request.getCount() != 0) {
+-              return false;
+-            }
+-          }
+-          return true;
++          // Sabotage: only the first request counts, so a second request for the same item can be starved.
++          List<com.lothrazar.storagenetwork.api.batch.Request> requests = batch.get(item);
++          return requests.isEmpty() || requests.get(0).getCount() == 0;
+         };
+         for (CapabilityConnectable storage : storages) {
+           if (!((com.lothrazar.storagenetwork.api.capabilities.CapabilityConnectableDefault) storage).extractProviders(batch, item, met)) {
