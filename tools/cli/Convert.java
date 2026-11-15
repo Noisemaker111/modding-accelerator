@@ -2843,7 +2843,12 @@ final class Convert {
         if (!client.isEmpty()) config.put("client", client);
         config.put("injectors", Json.map("defaultRequire", 1));
         write("src/main/resources/" + name, pretty(config, "") + "\n");
-        notes.add("Bridge mixins (" + name + "): " + String.join(", ", common) + (client.isEmpty() ? "" : (common.isEmpty() ? "" : ", ") + "client " + String.join(", ", client)) + ", which fire the events the code listens to at the point the other loader fires them.");
+        List<String> listed = new ArrayList<>(common);
+        for (String mixin : client) listed.add("client " + mixin);
+        notes.add(
+            "Bridge mixins (" + name + "): " + String.join(", ", listed) +
+            ", which fire the events the code listens to at the point the other loader fires them."
+        );
         applied.computeIfAbsent("bridge-mixins", k -> new ArrayList<>()).add("src/main/resources/" + name);
         return name;
     }
