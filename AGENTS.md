@@ -29,8 +29,21 @@ python3 bench/test_sweeps.py &&
 python3 bench/test_session_cost.py &&
 python3 bench/test_perf_sessions.py &&
 python3 bench/test_utf8_output.py &&
+python3 bench/test_cloud_run.py &&
 python3 bench/diorama/test_prepare_world.py
 ```
+
+Heavy jobs run on GitHub's runners, never this PC: the pack sweep (one job per pack), the port board (one per case)
+and perf A/B timing (`perf-optimize`, arms in turn on one runner). Push the branch, then:
+
+```sh
+tools/cloud-run packs [-f packs=ID,ID] [-f fix=true] [-f focus=MODID]   # cloud-packs.yml
+tools/cloud-run ports [-f cases=ID,ID]                                  # cloud-ports.yml
+tools/cloud-run perf [-f patch=FILE.patch] [-f runs=N]                  # cloud-perf.yml
+```
+
+It waits (hard `--timeout`), prints each job and downloads the results to `.runs/cloud/`. One pack fault: `pack-check --focus MODID`
+starts only that mod and its required mods (`-f corpus=bench/pack-sweep/repro.json` holds packs with known faults).
 
 Commit and push your branch. Use `.github/pull_request_template.md`; land on `main`:
 
