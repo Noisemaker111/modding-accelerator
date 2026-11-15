@@ -27,6 +27,10 @@ final class Convert {
     final Set<String> accessTransformers = new LinkedHashSet<>();
     static final String AT_FILE = "src/main/resources/META-INF/accesstransformer.cfg";
     String modid = "", fabricId = "", unit = "\t";
+    /** --dry-run: files change here, never on disk; null is a removed file. */
+    boolean dryRun;
+    final Map<String, String> staged = new HashMap<>();
+    static final Pattern SOURCE = Pattern.compile("src/([^/]+)/java/.+\\.java");
 
     /** A Fabric mod id as NeoForge accepts it (^[a-z][a-z0-9_]{1,63}$): Fabric also allows "-". */
     static String neoforgeModId(String id) {
@@ -41,6 +45,11 @@ final class Convert {
     }
 
     Map<String, Object> run(Modaccel.Options options) throws Exception {
+        return run(options, true);
+    }
+
+    /** compile false writes the conversion without compiling it (self-test, which has no network). */
+    Map<String, Object> run(Modaccel.Options options, boolean compile) throws Exception {
         if (options.values.containsKey("undo")) return Port.undo(project, options.get("undo", ""), FOLDER);
         String to = options.get("to", "").toLowerCase(Locale.ROOT);
         String from = loader(project.root);
@@ -70,12 +79,15 @@ final class Convert {
         if (minecraft.isEmpty()) throw new IOException(
             "convert reads the Minecraft version from minecraft_version in gradle.properties; there is none."
         );
-        transaction = project.state().resolve(FOLDER).resolve(Instant.now().toString().replace(':', '-'));
-        Files.createDirectories(transaction.resolve("before"));
-        saveInProgress();
+        dryRun = options.has("dry-run");
+        if (!dryRun) {
+            transaction = project.state().resolve(FOLDER).resolve(Instant.now().toString().replace(':', '-'));
+            Files.createDirectories(transaction.resolve("before"));
+            saveInProgress();
+        }
         if (from.equals("fabric")) toNeoForge(minecraft);
         else toFabric(minecraft);
-        Port.finishTransaction(project, transaction, before, removed);
+        if (!dryRun) Port.finishTransaction(project, transaction, before, removed);
         Map<String, Object> result = Json.map(
             "from",
             from,
@@ -93,12 +105,14 @@ final class Convert {
             left,
             "notes",
             notes,
-            "undoConvert",
-            transaction.getFileName().toString(),
-            "transaction",
-            transaction.toString()
+            "dryRun",
+            dryRun
         );
-        if (options.has("dry-run")) {
+        if (!dryRun) {
+            result.put("undoConvert", transaction.getFileName().toString());
+            result.put("transaction", transaction.toString());
+        }
+        if (dryRun || !compile) {
             result.put("compiled", null);
             result.put("ok", left.isEmpty());
         } else compile(result);
@@ -155,19 +169,34 @@ final class Convert {
     final Set<String> crlf = new HashSet<>();
 
     String read(String relative) throws IOException {
-        Path file = project.root.resolve(relative);
-        if (!Files.isRegularFile(file)) return "";
-        String text = Files.readString(file, StandardCharsets.UTF_8);
+        String text = current(relative);
+        if (text == null) return "";
         if (text.contains("\r\n")) crlf.add(relative);
         return text.replace("\r\n", "\n");
     }
 
+    /** A file's text, with a dry run's changes; null when there is none. */
+    String current(String relative) throws IOException {
+        if (staged.containsKey(relative)) return staged.get(relative);
+        Path file = project.root.resolve(relative);
+        return Files.isRegularFile(file) ? Files.readString(file, StandardCharsets.UTF_8) : null;
+    }
+
+    boolean exists(String relative) throws IOException {
+        return current(relative) != null;
+    }
+
     void write(String relative, String text) throws Exception {
         Path file = project.root.resolve(relative);
-        if (crlf.contains(relative) || (!Files.isRegularFile(file) && !crlf.isEmpty())) text = text
+        if (crlf.contains(relative) || (!exists(relative) && !crlf.isEmpty())) text = text
             .replace("\r\n", "\n")
             .replace("\n", "\r\n");
-        if (Files.isRegularFile(file) && Files.readString(file, StandardCharsets.UTF_8).equals(text)) return;
+        if (text.equals(current(relative))) return;
+        if (dryRun) {
+            staged.put(relative, text);
+            if (!changed.contains(relative)) changed.add(relative);
+            return;
+        }
         track(file);
         Files.createDirectories(file.getParent());
         Files.writeString(file, text, StandardCharsets.UTF_8);
@@ -176,7 +205,13 @@ final class Convert {
 
     void delete(String relative) throws Exception {
         Path file = project.root.resolve(relative);
-        if (!Files.isRegularFile(file)) return;
+        if (!exists(relative)) return;
+        if (dryRun) {
+            staged.put(relative, null);
+            removed.add(relative);
+            changed.remove(relative);
+            return;
+        }
         track(file);
         removed.add(relative);
         saveInProgress();
@@ -201,20 +236,30 @@ final class Convert {
     // ---- sources -------------------------------------------------------------------------------------
 
     List<String> javaFiles() throws IOException {
-        List<String> out = new ArrayList<>();
-        Path src = project.root.resolve("src");
-        if (!Files.isDirectory(src)) return out;
-        try (var sets = Files.list(src)) {
-            for (Path set : sets.sorted().toList()) {
-                if (set.getFileName().toString().startsWith("test")) continue;
+        Path src = project.root.resolve("src").toAbsolutePath().normalize();
+        Map<Path, TreeSet<Path>> sets = new TreeMap<>();
+        if (Files.isDirectory(src)) try (var list = Files.list(src)) {
+            for (Path set : list.toList()) {
                 Path java = set.resolve("java");
                 if (!Files.isDirectory(java)) continue;
+                TreeSet<Path> files = sets.computeIfAbsent(set, k -> new TreeSet<>());
                 try (var walk = Files.walk(java)) {
-                    for (Path file : walk.filter(p -> p.toString().endsWith(".java")).sorted().toList()) out.add(
-                        relative(file)
-                    );
+                    walk.filter(p -> p.toString().endsWith(".java")).forEach(files::add);
                 }
             }
+        }
+        // A dry run's files, where the run that writes them would find them.
+        for (var entry : staged.entrySet()) {
+            Matcher source = SOURCE.matcher(entry.getKey());
+            if (!source.matches()) continue;
+            Path set = src.resolve(source.group(1));
+            Path file = project.root.resolve(entry.getKey()).toAbsolutePath().normalize();
+            if (entry.getValue() != null) sets.computeIfAbsent(set, k -> new TreeSet<>()).add(file);
+            else if (sets.containsKey(set)) sets.get(set).remove(file);
+        }
+        List<String> out = new ArrayList<>();
+        for (var set : sets.entrySet()) if (!set.getKey().getFileName().toString().startsWith("test")) {
+            for (Path file : set.getValue()) out.add(relative(file));
         }
         return out;
     }
@@ -1410,7 +1455,7 @@ final class Convert {
             if (made.find()) {
                 String target = file.substring(0, file.lastIndexOf('/') + 1) + made.group(1) + ".java";
                 if (
-                    !Files.isRegularFile(project.root.resolve(target)) ||
+                    !exists(target) ||
                     !text.contains("new " + made.group(1) + "()." + method + "()")
                 ) {
                     leave(
@@ -1461,7 +1506,7 @@ final class Convert {
             Json.object(rule).get("accessTransformers") instanceof Map<?, ?> at
         ) known.addAll(LoaderRules.strings(Json.object(at).get("neoforge")));
         boolean atLeft = false;
-        if (Files.isRegularFile(project.root.resolve(AT_FILE))) {
+        if (exists(AT_FILE)) {
             List<String> keep = new ArrayList<>();
             for (String line : read(AT_FILE).lines().toList()) if (!known.contains(line.strip())) keep.add(line);
             if (keep.stream().allMatch(l -> l.isBlank() || l.strip().startsWith("#"))) delete(AT_FILE);
@@ -1946,8 +1991,9 @@ final class Convert {
 
     static String text(Map<String, Object> result) {
         StringBuilder out = new StringBuilder();
+        boolean dryRun = Boolean.TRUE.equals(result.get("dryRun"));
         out
-            .append("Converted ")
+            .append(dryRun ? "Would convert " : "Converted ")
             .append(result.get("from"))
             .append(" to ")
             .append(result.get("to"))
@@ -1956,9 +2002,13 @@ final class Convert {
             .append("): ");
         out
             .append(Json.array(result.get("changed")).size())
-            .append(" file(s) changed, ")
+            .append(dryRun ? " file(s) would change, " : " file(s) changed, ")
             .append(Json.array(result.get("removed")).size())
-            .append(" removed.\n");
+            .append(dryRun ? " would be removed.\n" : " removed.\n");
+        if (dryRun) {
+            for (Object file : Json.array(result.get("changed"))) out.append("  change ").append(file).append('\n');
+            for (Object file : Json.array(result.get("removed"))) out.append("  remove ").append(file).append('\n');
+        }
         Map<String, Object> rulesApplied = Json.object(result.get("rulesApplied"));
         if (!rulesApplied.isEmpty()) out
             .append("Rules applied: ")
@@ -2002,7 +2052,8 @@ final class Convert {
             }
             out.append('\n');
         }
-        out.append("Undo: modaccel convert --undo ").append(result.get("undoConvert"));
+        if (dryRun) out.append("Dry run: nothing was written. Run it without --dry-run to convert and compile.");
+        else out.append("Undo: modaccel convert --undo ").append(result.get("undoConvert"));
         return out.toString();
     }
 }

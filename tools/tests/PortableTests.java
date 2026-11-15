@@ -1131,8 +1131,37 @@ public final class PortableTests {
         for (String name : files.keySet()) original.put(name, Files.readAllBytes(root.resolve(name)));
 
         Build build = new Build(project, home, "", new Modaccel.Report(root, "convert"));
-        Map<String, Object> toNeo = new Convert(build).run(
+        Map<String, Object> dry = new Convert(build).run(
             new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+        );
+        boolean untouched = true;
+        for (var file : original.entrySet()) if (
+            !Files.isRegularFile(root.resolve(file.getKey())) ||
+            !Arrays.equals(file.getValue(), Files.readAllBytes(root.resolve(file.getKey())))
+        ) untouched = false;
+        try (var all = Files.walk(root)) {
+            List<String> made = all
+                .filter(Files::isRegularFile)
+                .map(p -> root.relativize(p).toString().replace(File.separatorChar, '/'))
+                .filter(p -> !p.startsWith(".modaccel/") && !p.startsWith(".runs/") && !original.containsKey(p))
+                .toList();
+            check(
+                untouched && made.isEmpty() && !Files.exists(project.state().resolve(Convert.FOLDER)) && dry.get("undoConvert") == null,
+                "convert --dry-run writes nothing, not even an undo record: " + made
+            );
+        }
+        Map<String, Object> toNeo = new Convert(build).run(
+            new Modaccel.Options(new String[] { "convert", "--to", "neoforge" }),
+            false
+        );
+        check(
+            dry.get("changed").equals(toNeo.get("changed")) &&
+            dry.get("removed").equals(toNeo.get("removed")) &&
+            dry.get("left").equals(toNeo.get("left")) &&
+            dry.get("rulesApplied").equals(toNeo.get("rulesApplied")) &&
+            Json.array(dry.get("changed")).contains("src/main/resources/META-INF/neoforge.mods.toml") &&
+            Convert.text(dry).contains("  remove src/main/resources/fabric.mod.json"),
+            "convert --dry-run reports exactly what the conversion then changes: " + Convert.text(dry)
         );
         String demo = Files.readString(root.resolve("src/main/java/demo/Demo.java")), client = Files.readString(
             root.resolve("src/main/java/demo/DemoClient.java")
@@ -1191,7 +1220,8 @@ public final class PortableTests {
             "fabric.mod.json becomes neoforge.mods.toml:\n" + toml
         );
         Map<String, Object> back = new Convert(new Build(project, home, "", new Modaccel.Report(root, "convert"))).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "fabric", "--dry-run" })
+            new Modaccel.Options(new String[] { "convert", "--to", "fabric" }),
+            false
         );
         boolean javaSame = true;
         for (String name : files.keySet()) if (
@@ -1230,6 +1260,13 @@ public final class PortableTests {
             Files.createDirectories(Path.of(args[1])),
             "run-"
         );
+        List<String> unlisted = new ArrayList<>();
+        for (String command : new TreeSet<>(Modaccel.COMMANDS)) {
+            String word = "(?<![\\w-])" + java.util.regex.Pattern.quote(command) + "(?![\\w-])";
+            boolean listed = java.util.regex.Pattern.compile(word).matcher(Modaccel.help()).find();
+            if (!listed && !Modaccel.INTERNAL.contains(command)) unlisted.add(command);
+        }
+        check(unlisted.isEmpty(), "help lists every command modaccel runs; missing: " + unlisted);
         String restartTimes = ServerCheck.text(
             Json.map(
                 "ok",
@@ -1315,6 +1352,20 @@ public final class PortableTests {
             saved.stream().mapToInt(String::length).sum() < 8000 && saved.contains(launch.get(1)),
             "saved launches keep existing argument files at the top level"
         );
+        Map<String, Object> hiddenGames = Json.map("background", true, "quiet", true);
+        check(
+            Game.c1(hiddenGames, "ui-check") &&
+            !Game.c1(hiddenGames, "perf") &&
+            !Game.c1(Json.map("background", false, "quiet", true), "ui-check"),
+            "hidden test sessions compile with C1 alone; perf, hidden or not, and visible games use the full JIT"
+        );
+        List<String> recordedHidden = List.of("-Xmx2G", "-XX:TieredStopAtLevel=1", "-Dmodaccel.token=old", "Main");
+        check(
+            Game.savedArguments(recordedHidden, true, false, false, "new").equals(List.of("-Xmx2G", "-Dmodaccel.token=new", "Main")) &&
+            Game.savedArguments(List.of("-Xmx2G", "Main"), false, false, true, "new").equals(List.of("-XX:TieredStopAtLevel=1", "-Xmx2G", "Main")) &&
+            Game.savedArguments(recordedHidden, false, false, false, "new").contains("-XX:TieredStopAtLevel=1"),
+            "a saved launch takes this launch's compiler, not the recorded one, and keeps a build's own flag"
+        );
         Object json = Json.parse(
             Json.write(
                 Json.map("unicode", "mod 🧱", "path", "C:\\mods with spaces\\test", "rows", List.of(1, true, "\n\""))
@@ -1354,6 +1405,45 @@ public final class PortableTests {
             quiet.size() == 9,
             "seeding options.txt keeps every other key and its order"
         );
+        check(
+            Files.readAllLines(quietDir.resolve(QuietOptions.SAVED)).equals(
+                List.of(
+                    "narrator:2",
+                    "onboardAccessibility:true",
+                    "soundCategory_master:1.0",
+                    "tutorialStep",
+                    "skipMultiplayerWarning",
+                    "joinedFirstServer"
+                )
+            ),
+            "a quiet launch keeps the options it replaces: " + Files.readAllLines(quietDir.resolve(QuietOptions.SAVED))
+        );
+        // The game rewrites options.txt; in the quiet session the user turns the narrator back on and changes the GUI scale.
+        Files.writeString(
+            quietFile,
+            Files.readString(quietFile).replace("narrator:0", "narrator:1").replace("guiScale:2", "guiScale:3")
+        );
+        QuietOptions.launchArgs(new String[] { "--gameDir", quietDir.toAbsolutePath().toString() }, true);
+        Files.writeString(quietFile, Files.readString(quietFile).replace("narrator:0", "narrator:1"));
+        String[] quietDirArgs = new String[] { "--gameDir", quietDir.toAbsolutePath().toString() };
+        QuietOptions.launchArgs(quietDirArgs, false);
+        List<String> restored = Files.readAllLines(quietFile);
+        check(
+            restored.equals(
+                List.of(
+                    "version:5023",
+                    "narrator:1",
+                    "guiScale:3",
+                    "soundCategory_master:1.0",
+                    "onboardAccessibility:true",
+                    "key_key.jump:key.keyboard.space"
+                )
+            ) && !Files.exists(quietDir.resolve(QuietOptions.SAVED)),
+            "turning quiet off restores the sound and prompts the user had, keeps what they changed since and every other key: " +
+            restored
+        );
+        QuietOptions.launchArgs(quietDirArgs, false);
+        check(Files.readAllLines(quietFile).equals(restored), "a second launch that is not quiet changes nothing");
         Path freshQuiet = QuietOptions.seed(scratch.resolve("fresh quiet"));
         check(
             Files.readAllLines(freshQuiet).equals(
@@ -1367,6 +1457,12 @@ public final class PortableTests {
                 )
             ),
             "a first launch gets a quiet options.txt"
+        );
+        Files.writeString(freshQuiet, Files.readString(freshQuiet) + "fov:0.5\n");
+        QuietOptions.restore(freshQuiet.getParent());
+        check(
+            Files.readAllLines(freshQuiet).equals(List.of("fov:0.5")),
+            "options quiet added to a new game are removed for the game's defaults when quiet is off"
         );
         Path blockedQuiet = scratch.resolve("not a directory");
         Files.writeString(blockedQuiet, "file");

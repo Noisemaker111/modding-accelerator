@@ -5,7 +5,7 @@ client through `modaccel eval`. They target Diorama 0.10.1, commit
 `7aa1484cd5dfe4ec19d246a58fb23bbc48a8bc6e`, on Fabric / Minecraft 1.21.1.
 They require that source checkout and its JDK 25 build environment.
 
-Start a visible development client with `modaccel perf --root DIORAMA_SOURCE
+Start a development client with `modaccel perf --root DIORAMA_SOURCE
 --project :1.21.1`, enter a **disposable mapped world**, and allow initial mapping
 to settle. Then, from the Mod Accel checkout:
 

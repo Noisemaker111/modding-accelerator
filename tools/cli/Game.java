@@ -1011,12 +1011,38 @@ final class Game {
         );
     }
 
+    /**
+     * A hidden game is a test session, not someone playing: C1 alone halves the CPU a client spends starting
+     * (8 clients at once: 378 CPU-s instead of 819, bench/session_cost.py). perf measures the code players run,
+     * and C1 code gives JFR a seventh of the execution samples (ZAA siege: 9 against 65 per busy server-thread second).
+     */
+    static boolean c1(Map<String, Object> preferences, String command) {
+        return Boolean.TRUE.equals(preferences.get("background")) && !command.equals("perf");
+    }
+
+    /** A recorded launch's JVM and program arguments for this launch: its own token and compiler; a build's own flag stays. */
+    static List<String> savedArguments(List<String> recorded, boolean recordedC1, boolean jbr, boolean c1, String token) {
+        List<String> arguments = new ArrayList<>();
+        if (jbr) arguments.addAll(List.of("-XX:+AllowEnhancedClassRedefinition", "-XX:TieredStopAtLevel=1"));
+        else if (c1) arguments.add("-XX:TieredStopAtLevel=1");
+        boolean skip = recordedC1;
+        for (String argument : recorded) {
+            if (skip && argument.equals("-XX:TieredStopAtLevel=1")) {
+                skip = false;
+                continue;
+            }
+            arguments.add(argument.startsWith("-Dmodaccel.token=") ? "-Dmodaccel.token=" + token : argument);
+        }
+        return arguments;
+    }
+
     Map<String, Object> start(Modaccel.Options options, String fingerprint) throws Exception {
         Path agent = agent();
         String token = UUID.randomUUID().toString();
         Map<String, Object> preferences = Preferences.read(Preferences.file());
-        String background = "-Dmodaccel.background=" + (options.command.equals("perf") ? false : preferences.get("background")), quiet =
-            "-Dmodaccel.quiet=" + preferences.get("quiet");
+        boolean c1 = c1(preferences, options.command);
+        String background = "-Dmodaccel.background=" + preferences.get("background"), quiet =
+            "-Dmodaccel.quiet=" + preferences.get("quiet"), compiler = "-Dmodaccel.c1=" + c1;
         String task = clientTask(options);
         String missing = missingRuntime(model, LoadedMods.owner(task));
         if (missing != null) throw new IOException(missing);
@@ -1047,6 +1073,7 @@ final class Game {
                     "-Dmodaccel.jbr=" + jbr,
                     background,
                     quiet,
+                    compiler,
                     "-Dmodaccel.recordOnly=true",
                     task
                 ),
@@ -1072,10 +1099,8 @@ final class Game {
             var launch = Json.read(recipe);
             command = new ArrayList<>();
             command.add(java != null ? java.toString() : launch.get(jbr ? "jbrExecutable" : "executable").toString());
-            if (jbr) command.addAll(List.of("-XX:+AllowEnhancedClassRedefinition", "-XX:TieredStopAtLevel=1"));
-            for (String argument : ProjectModel.strings(launch.get("arguments"))) command.add(
-                argument.startsWith("-Dmodaccel.token=") ? "-Dmodaccel.token=" + token
-                    : options.command.equals("perf") && argument.startsWith("-Dmodaccel.background=") ? background : argument
+            command.addAll(
+                savedArguments(ProjectModel.strings(launch.get("arguments")), Boolean.TRUE.equals(launch.get("c1")), jbr, c1, token)
             );
             Json.object(launch.get("environment")).forEach((key, value) -> {
                 if (value != null) environment.put(key, value.toString());
@@ -1094,6 +1119,7 @@ final class Game {
                     "-Dmodaccel.jbr=" + jbr,
                     background,
                     quiet,
+                    compiler,
                     task
                 )
             );

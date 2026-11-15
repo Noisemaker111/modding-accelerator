@@ -399,6 +399,7 @@ public final class PerfAgent {
                 env.setProperty(key, System.getProperty(key, ""));
             }
             env.setProperty("processors", Integer.toString(Runtime.getRuntime().availableProcessors()));
+            env.setProperty("c1Only", Boolean.toString(ManagementFactory.getRuntimeMXBean().getInputArguments().contains("-XX:TieredStopAtLevel=1")));
             env.setProperty("maxHeap", Long.toString(Runtime.getRuntime().maxMemory()));
             save(out.resolve("environment.properties"), env);
             status.setProperty("state", "complete");

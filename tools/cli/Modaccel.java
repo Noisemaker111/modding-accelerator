@@ -210,6 +210,9 @@ public final class Modaccel {
         }
     }
 
+    /** Commands for modaccel's own tests, left out of help. */
+    static final Set<String> INTERNAL = Set.of("legacy-agent");
+
     static final Set<String> COMMANDS = Set.of(
         "perf", "perf-report", "perf-diff", "perf-template", "perf-optimize",
         "support",
@@ -765,9 +768,9 @@ public final class Modaccel {
     static String help(String command) {
         return switch (command) {
             case "perf" -> "Profile a running local Java 17+ game/server: modaccel perf [--attach PID | --instance FOLDER | --root SOURCE] [--duration 30] [--warmup 5] [--out FOLDER] [--json]\n" +
-                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root can launch a visible client.\n" +
+                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root launches the client as your preferences say (hidden with background on, so frame timing is not representative).\n" +
                 "Open report.html in the output folder. Frame/tick hooks depend on game mappings; missing metrics are explicit. GPU timing is not collected.\n" +
-                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden profiles a hidden, throttled source session (frame timing not representative); --no-heap skips the post-capture class histogram.\n" +
+                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden lets --attach profile a hidden, throttled game (frame timing not representative); --no-heap skips the post-capture class histogram.\n" +
                 "--no-hooks records JFR only. --prepare prints a startup -javaagent argument when dynamic attach is disabled. Requires JDK 17+ and same OS user.\n" +
                 "--scenario FILE --rcon-port 25575 [--rcon-password-env MODACCEL_RCON_PASSWORD] [--repeat 1] [--seed 0] drives explicit test-world commands.\n" +
                 "Scenarios edit the selected local server world: use a disposable world. Each command requires an expected response. Repeats share one JVM.";
@@ -788,7 +791,8 @@ public final class Modaccel {
             "A failed suite is reported first, with the end of its log; --only runs the named suites alone.";
             case "preferences" -> "See or save your game launch preferences: modaccel preferences [--background on|off] [--quiet on|off] [--json]\n" +
             "Background keeps the client hidden and prevents cursor capture (default off).\n" +
-            "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off.";
+            "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off,\n" +
+            "and the next game gets back the sound, narrator and first-launch options quiet changed in its folder.";
             case "port" -> "Port a Gradle mod source checkout (not a JAR):\n" +
             "  modaccel discover --root SOURCE\n" +
             "  modaccel dependencies --root SOURCE --to 1.21.6 --json\n" +
@@ -805,9 +809,10 @@ public final class Modaccel {
             "META-INF/neoforge.mods.toml), the entrypoints (ModInitializer <-> @Mod classes that run it in NeoForge's first registry event), and the\n" +
             "code with the rules in knowledge/loaders.json: loader calls, events, key mappings, Mod Menu's config screen. Every rule names classes checked\n" +
             "against the loaders' own published jars (python bench/loader_api.py verify) and has a before/after test. There is no AI step.\n" +
-            "Anything with no rule is listed with its file and line and left as it was, never dropped. Then the converted build is compiled\n" +
-            "(--dry-run skips that); exit 0 means it compiled and nothing was left. A compile is not proof: check the mod in the game with ui-check or\n" +
-            "world-check and --assert. Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
+            "Anything with no rule is listed with its file and line and left as it was, never dropped. Then the converted build is compiled;\n" +
+            "exit 0 means it compiled and nothing was left. --dry-run writes nothing: it lists each file that would change or be removed and what\n" +
+            "would be left, and compiles nothing. A compile is not proof: check the mod in the game with ui-check or world-check and --assert.\n" +
+            "Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
             case "explain" -> "Explain a port's compiler errors: modaccel explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n" +
             "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n" +
             "class, method or field it names as each project's jars have it: where a missing class lives, a member's signatures, or similar names.\n" +
@@ -913,6 +918,7 @@ public final class Modaccel {
             "  pack-check             a modpack on its real Forge/NeoForge/Fabric/Quilt server: crashes, conflicts, worlds that will not reopen\n" +
             "  preferences            show or change your game window and sound choices\n" +
             "  perf, perf-report      where a mod's CPU, memory, I/O and frame/tick time go\n" +
+            "  perf-diff              compare two captures    perf-template      scenario files for perf --scenario\n" +
             "  perf-optimize          accept or reject a candidate change with equivalence gates and measured speedup\n" +
             "  package, self-test     build or test modaccel itself\n" +
             "Run modaccel help COMMAND for one command (port, convert, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +

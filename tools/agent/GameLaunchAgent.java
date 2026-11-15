@@ -35,9 +35,10 @@ final class GameLaunchAgent {
                     }
                 }
                 try {
-                    if (!Boolean.getBoolean("modaccel.quiet") || !"net/minecraft/client/main/Main".equals(name)) return null;
+                    // Every launch, so one that is not quiet restores the options a quiet one replaced.
+                    if (!"net/minecraft/client/main/Main".equals(name)) return null;
                     System.getProperties().put("modaccel.launch.quiet", new Consumer<Object>() {
-                        public void accept(Object args) { QuietOptions.seedArgs((String[]) args); }
+                        public void accept(Object args) { QuietOptions.launchArgs((String[]) args, Boolean.getBoolean("modaccel.quiet")); }
                     });
                     ClassReader reader = new ClassReader(bytes);
                     ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
