@@ -50,6 +50,18 @@ Version tags build a standalone JAR and portable ZIP with SHA-256 files in a dra
 
 On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.jar`. `modaccel help` lists every command and `modaccel help COMMAND` explains one.
 
+## Desktop app
+
+The portable ZIP also holds Minecraft Modding Tools, a window over the same commands for people who don't use a terminal: `modaccel-desktop.exe` on Windows, `modaccel-desktop-linux` on Linux. Keep it in the extracted folder; it runs the launcher beside it, which finds or downloads Java as it does in a terminal.
+
+- **Bench:** open the mod's folder (or drop it on the window). It sits on the bench with a tag saying what `doctor` found (loader, Minecraft version) and a slip of what has been inspected so far.
+- **Checks:** an inspection sheet of stations, build, logic tests, game data, mixins, in the game, behaviour (`compile`, `fast`, `data-check`, `mixin-check`, `ui-check`), plus `world-check`, `mp-check`, `plugin-check` and `server-check`, with live output and Stop. A game check shows the game's own screenshot and is only tagged loaded until a behaviour check (`--assert`) passes; only then is it stamped works.
+- **Change version:** preview a `port`, apply it, and undo it; or `convert` the mod between Fabric and NeoForge on the same Minecraft version, with undo.
+- **Modpack:** `pack-check` on a CurseForge export, a Modrinth `.mrpack` or an instance folder (or drop it on the window), every mod laid out with the clashing ones flagged, then its repair and undo.
+- **Measure:** find the running game, measure it, and read frame rate, a frame-time chart, the cost of each mod and where the time went, then open the full HTML report.
+
+To build it from source, install Rust and run `cargo build --release` in `app/` (Linux also needs `libxkbcommon-dev` and `libwayland-dev`); `modaccel package` then adds it to the ZIP. It also renders without a window for checking: `app/target/release/modaccel-desktop --project . --screen checks --snap checks.png`, and `--script app/ui-tests/fast.json --realtime --out frames/` clicks through a real run, and `--list-scenes` names saved states to render.
+
 ## What works today
 
 ### 1 · Test a mod in seconds

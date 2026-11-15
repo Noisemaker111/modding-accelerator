@@ -34,11 +34,14 @@ public final class PackageAcceptanceTest {
             "GETTING_STARTED.txt",
             "bootstrap-jre.ps1"
         );
+        Set<String> desktop = Set.of("modaccel-desktop.exe", "modaccel-desktop-linux");
         Files.createDirectories(extracted);
         try (ZipFile archive = new ZipFile(zip.toFile())) {
             Set<String> actual = new HashSet<>();
             for (var entries = archive.entries(); entries.hasMoreElements();) {
                 ZipEntry entry = entries.nextElement();
+                // The desktop app is in the package when it was built (release builds it).
+                if (desktop.contains(entry.getName())) continue;
                 actual.add(entry.getName());
                 if (!expected.contains(entry.getName())) throw new AssertionError(
                     "unexpected package entry: " + entry.getName()

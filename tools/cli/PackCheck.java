@@ -146,6 +146,18 @@ final class PackCheck {
         List<Map<String, Object>> fixes = PackRepairs.match(harness, pack, scan, findings);
         report.stages.add(Json.map("name", "static-checks", "seconds", (System.nanoTime() - started) / 1e9));
         result.put("staticChecks", Json.map("modIds", scan.providers.size(), "findings", findings.size()));
+        // Each jar with the mod ids it provides, so a front end can draw the whole pack (the desktop app's grid).
+        Map<String, List<String>> idsByJar = new TreeMap<>();
+        for (var entry : scan.providers.entrySet()) {
+            for (PackMods.Provider provider : entry.getValue()) {
+                if (!provider.bundled()) idsByJar.computeIfAbsent(provider.jar(), k -> new ArrayList<>()).add(entry.getKey());
+            }
+        }
+        List<Object> modFiles = new ArrayList<>();
+        for (Mod mod : pack.mods()) modFiles.add(
+            Json.map("file", mod.file(), "side", mod.side(), "ids", idsByJar.getOrDefault(mod.file(), List.of()))
+        );
+        result.put("modFiles", modFiles);
         readDropped();
         // Every repair is a known fault's, so it is known now: the repaired pack's server starts beside the shipped one.
         List<Map<String, Object>> chosen = options.has("fix") ? fixes : List.of();
