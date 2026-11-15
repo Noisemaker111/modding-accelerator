@@ -243,7 +243,10 @@ final class FingerprintDiff {
             boolean across = options.has("across-versions") || !va.equals(vb);
             if (!across) return new Normaliser("exact", Set.of());
             Set<String> namespaces = new TreeSet<>();
-            for (Map<String, Object> side : List.of(a, b)) for (Object ns : Json.array(Json.object(side.getOrDefault("target", Map.of())).getOrDefault("namespaces", List.of()))) namespaces.add(ns.toString());
+            for (Map<String, Object> side : List.of(a, b)) {
+                Map<String, Object> target = Json.object(side.getOrDefault("target", Map.of()));
+                for (Object ns : Json.array(target.getOrDefault("namespaces", List.of()))) namespaces.add(ns.toString());
+            }
             if (options.values.containsKey("namespaces")) namespaces = new TreeSet<>(Arrays.asList(options.get("namespaces", "").split(",")));
             Path rules = options.values.containsKey("map") ? Path.of(options.get("map", "")) : home.resolve("knowledge/fingerprint-normalise.json");
             return across(Json.read(rules), namespaces, va + " -> " + vb);

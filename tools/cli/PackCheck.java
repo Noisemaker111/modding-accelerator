@@ -1003,7 +1003,9 @@ final class PackCheck {
             Map<String, Object> args = Json.map("out", dir.resolve("content.json").toString(), "ticks", Integer.parseInt(options.get("ticks", "100")),
                 "every", Integer.parseInt(options.get("every", "20")), "seed", Long.parseLong(options.get("seed", String.valueOf(Fingerprint.SEED))), "namespaces", new ArrayList<>(namespaces));
             Map<String, Object> made = start("fingerprint", "fingerprint-world", Map.of("modaccel.fingerprint.args", Json.write(args).replace("\"", "'")));
-            if (!Boolean.TRUE.equals(made.get("opened")) || !Files.isRegularFile(dir.resolve("content.json"))) return Json.map("ok", false, "error", "The fingerprint start wrote no record", "start", made);
+            if (!Boolean.TRUE.equals(made.get("opened")) || !Files.isRegularFile(dir.resolve("content.json"))) {
+                return Json.map("ok", false, "error", "The fingerprint start wrote no record", "start", made);
+            }
             Map<String, Object> content = Json.read(dir.resolve("content.json"));
             Map<String, Object> reloadArgs = Json.map("out", dir.resolve("reload.json").toString(), "area", content.get("area"));
             Map<String, Object> again = start("fingerprint-reload", "fingerprint-world", Map.of("modaccel.fingerprint.args", Json.write(reloadArgs).replace("\"", "'")));
@@ -1013,7 +1015,8 @@ final class PackCheck {
             Map<String, Object> fingerprint = Fingerprint.assemble(content, reload, logs);
             Set<String> ids = new TreeSet<>(namespaces);
             if (ids.isEmpty()) for (var entry : scan.providers.entrySet()) for (var p : entry.getValue()) if (!p.bundled()) ids.add(entry.getKey());
-            fingerprint.put("target", Json.map("minecraft", pack.minecraft(), "loaders", List.of(loader.id()), "namespaces", new ArrayList<>(ids), "environment", "dedicated server", "pack", pack.input().toString()));
+            fingerprint.put("target", Json.map("minecraft", pack.minecraft(), "loaders", List.of(loader.id()), "namespaces", new ArrayList<>(ids),
+                "environment", "dedicated server", "pack", pack.input().toString()));
             Path out = options.values.containsKey("out") ? Path.of(options.get("out", "")).toAbsolutePath() : dir.resolve("fingerprint.json");
             Json.save(out, fingerprint);
             return Json.map("ok", !fingerprint.containsKey("error"), "out", out.toString(), "hash", FingerprintDiff.hash(fingerprint));

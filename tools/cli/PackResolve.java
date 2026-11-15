@@ -60,7 +60,8 @@ final class PackResolve {
             if (Json.parse(new String(answer, StandardCharsets.UTF_8)) instanceof Map<?, ?> version && version.get("project_id") != null) return version.get("project_id").toString();
         }
         try {
-            if (Json.parse(new String(PackCheck.get(PackCheck.MODRINTH + "project/" + encode(id)), StandardCharsets.UTF_8)) instanceof Map<?, ?> found && found.get("id") != null) return found.get("id").toString();
+            Object found = Json.parse(new String(PackCheck.get(PackCheck.MODRINTH + "project/" + encode(id)), StandardCharsets.UTF_8));
+            if (found instanceof Map<?, ?> project && project.get("id") != null) return project.get("id").toString();
         } catch (IOException none) {
             // no project with that slug
         }

@@ -145,7 +145,9 @@ final class PerfOptimize {
                 continue;
             }
             if (!frame && Json.text(gate, "file", "").isBlank()) throw new IllegalArgumentException("Gate " + name + " needs file (an eval snippet) or frame: true");
-            if (!Set.of("exact", "expect", "tolerance", "pixels").contains(compare)) throw new IllegalArgumentException("Gate " + name + ": compare is exact, expect, tolerance, pixels or fingerprint");
+            if (!Set.of("exact", "expect", "tolerance", "pixels").contains(compare)) {
+                throw new IllegalArgumentException("Gate " + name + ": compare is exact, expect, tolerance, pixels or fingerprint");
+            }
             if (compare.equals("expect") && !gate.containsKey("expect")) throw new IllegalArgumentException("Gate " + name + " needs expect");
             if (compare.equals("tolerance") && !(gate.get("tolerance") instanceof Number)) throw new IllegalArgumentException("Gate " + name + " needs a numeric relative tolerance");
         }

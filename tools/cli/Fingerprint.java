@@ -107,7 +107,9 @@ final class Fingerprint {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("schema", 1);
         out.put("kind", "modaccel-fingerprint");
-        for (String key : List.of("loader", "mods", "freezes", "frozenAtStart", "seeded", "ticksRun", "targets", "registries", "placement", "spawned", "checkpoints", "ticketsDuringRun", "area", "error")) {
+        List<String> kept = List.of("loader", "mods", "freezes", "frozenAtStart", "seeded", "ticksRun", "targets", "registries", "placement",
+            "spawned", "checkpoints", "ticketsDuringRun", "area", "error");
+        for (String key : kept) {
             if (content.containsKey(key)) out.put(key, content.get(key));
         }
         List<Object> checkpoints = Json.array(content.getOrDefault("checkpoints", List.of()));
@@ -201,7 +203,10 @@ final class Fingerprint {
         Map<String, Object> done = child.run("eval", List.of("--code", "((java.util.concurrent.Future<?>) vars.get(" + key + ")).get()", "--thread", "control"), 300);
         if (!Boolean.TRUE.equals(done.get("ok"))) throw new IOException("The fingerprint " + entry + " failed in the game: " + done.get("error"));
         Path written = Path.of(args.get("out").toString());
-        if (!Files.isRegularFile(written)) throw new IOException("The fingerprint " + entry + " wrote nothing; it answered " + Json.object(done.get("result")).get("value") + " (started: " + started.get("result") + ")");
+        if (!Files.isRegularFile(written)) {
+            Object answer = Json.object(done.get("result")).get("value");
+            throw new IOException("The fingerprint " + entry + " wrote nothing; it answered " + answer + " (started: " + started.get("result") + ")");
+        }
         return Json.read(written);
     }
 
@@ -484,7 +489,9 @@ final class Fingerprint {
         out.put("ok", !fingerprint.containsKey("error") && !fingerprint.containsKey("reloadError"));
         out.put("seconds", seconds);
         if (fingerprint.get("targets") instanceof Map<?, ?> targets) out.put("targets", targets);
-        if (fingerprint.get("placement") instanceof Map<?, ?> placement) out.put("placement", Json.map("placed", placement.get("placed"), "unplaced", placement.get("unplaced"), "failed", placement.get("failed")));
+        if (fingerprint.get("placement") instanceof Map<?, ?> placement) {
+            out.put("placement", Json.map("placed", placement.get("placed"), "unplaced", placement.get("unplaced"), "failed", placement.get("failed")));
+        }
         out.put("checkpoints", Json.array(fingerprint.getOrDefault("checkpoints", List.of())).size());
         if (fingerprint.get("roundTrip") instanceof Map<?, ?> trip) out.put("roundTrip", Json.map("same", trip.get("same"), "differences", trip.get("differences")));
         if (fingerprint.get("log") instanceof Map<?, ?> log) out.put("log", Json.map("warnings", Json.object(log.get("warnings")).size(), "errors", Json.object(log.get("errors")).size()));

@@ -495,7 +495,8 @@ final class PackRepairs {
                         boolean newer = type.equals("add-newer-bundled");
                         Path jar = release(check, facts, target, newer);
                         if (jar == null) {
-                            notes.add(fix.get("id") + ": Modrinth has no " + (newer ? "newer" : "earlier") + " release of " + target.get("id") + " for this game version and loader, so nothing was changed for it");
+                            String which = newer ? "newer" : "earlier";
+                            notes.add(fix.get("id") + ": Modrinth has no " + which + " release of " + target.get("id") + " for this game version and loader, so nothing changed for it");
                             continue;
                         }
                         if (!newer && !remove.contains(Json.text(target, "jar", ""))) remove.add(Json.text(target, "jar", ""));
@@ -777,7 +778,7 @@ final class PackRepairs {
             if (fix.get("loader") instanceof String any && any.equals("*") && (fix.containsKey("mod") || fixed.containsKey("url") || fixed.containsKey("file"))) {
                 throw new AssertionError(id + " is general: it may not name a mod or a file");
             }
-            if (type.equals("add-jar") || type.equals("replace-mod") || type.equals("fetch-dependency") || type.equals("substitute-file") || type.equals("add-newer-bundled") || type.equals("previous-release")) {
+            if (Set.of("add-jar", "replace-mod", "fetch-dependency", "substitute-file", "add-newer-bundled", "previous-release").contains(type)) {
                 var added = Json.object(test.get("added"));
                 if (added.isEmpty()) throw new AssertionError(id + ": its test does not describe the jar it adds");
                 added.putIfAbsent("file", Json.text(action, "file", "added.jar"));

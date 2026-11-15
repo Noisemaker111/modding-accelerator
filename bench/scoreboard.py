@@ -64,6 +64,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--print", action="store_true")
     args = ap.parse_args()
+    for stream in (sys.stdout, sys.stderr):   # a Windows console is not UTF-8 by default
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     if args.print:
         data = json.loads(OUT.read_text(encoding="utf-8"))
     else:

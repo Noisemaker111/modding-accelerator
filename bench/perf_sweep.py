@@ -113,6 +113,9 @@ def main():
     run.add_argument("--record", action="store_true", help="write coverage/sweeps/perf.json after a partial (--only) run too")
     sub.add_parser("table")
     args = ap.parse_args()
+    for stream in (sys.stdout, sys.stderr):   # a Windows console is not UTF-8 by default
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     corpus = json.loads(CORPUS.read_text(encoding="utf-8"))["mods"]
     if args.cmd == "table":
         data = json.loads(OUT.read_text(encoding="utf-8"))
