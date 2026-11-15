@@ -199,16 +199,16 @@ public final class GameTests {
         );
         // The old name's folder (~/.modaccel) is copied into ~/.mmt once; preferences keep their exact bytes.
         Path oldHome = scratch.resolve("old home/.modaccel"), newHome = scratch.resolve("old home/.mmt");
-        byte[] saved = "{\n  \"background\": true,\n  \"quiet\": true\n}\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] savedPreferences = "{\n  \"background\": true,\n  \"quiet\": true\n}\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         Files.createDirectories(oldHome.resolve("jdks/temurin-21"));
-        Files.write(oldHome.resolve("preferences.json"), saved);
+        Files.write(oldHome.resolve("preferences.json"), savedPreferences);
         Files.write(oldHome.resolve("jdks/temurin-21/big.bin"), new byte[(int) UserState.LINK_FROM_BYTES + 7]);
         check(
             UserState.migrate(oldHome, newHome) != null &&
-            Arrays.equals(Files.readAllBytes(newHome.resolve("preferences.json")), saved) &&
+            Arrays.equals(Files.readAllBytes(newHome.resolve("preferences.json")), savedPreferences) &&
             Boolean.TRUE.equals(Preferences.read(newHome.resolve("preferences.json")).get("background")) &&
             Files.size(newHome.resolve("jdks/temurin-21/big.bin")) == UserState.LINK_FROM_BYTES + 7 &&
-            Arrays.equals(Files.readAllBytes(oldHome.resolve("preferences.json")), saved) &&
+            Arrays.equals(Files.readAllBytes(oldHome.resolve("preferences.json")), savedPreferences) &&
             Files.isRegularFile(newHome.resolve(UserState.MARKER)),
             "the first run copies ~/.modaccel into ~/.mmt, preferences byte for byte, keeping the old folder"
         );
