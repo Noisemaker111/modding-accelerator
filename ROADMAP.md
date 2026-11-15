@@ -122,7 +122,7 @@ An author changes code and gets an answer about the mod's real behaviour in seco
 One command moves a mod's source from any version to any other, forward or back, with no hand edits, and the result is checked in the real game. Every edit can be undone; what cannot be ported is named, never guessed or dropped. Commands: `port`, `explain`, `dependencies`.
 
 - **Today:** Fabric and NeoForge mods, any version from 1.14.4 to 26.3. Small jumps need no hand edits; big jumps stop with named errors.
-- **The number that says most:** Real mods with a port that works in the game is **4 mods**, target 6 mods by Dec 18, step 12
+- **The number that says most:** Real mods with a port that works in the game is **8 mods**, target 6 mods by Dec 18, step 12
 - **Also:** Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 26.3, warm is **0 errors**, target 0 errors by Jan 15, 2027, step 17
 
 ### Neighbouring versions (1.21.x), Fabric and NeoForge
@@ -224,7 +224,7 @@ One command moves a mod's source from any version to any other, forward or back,
 |---|---|---|---|---|
 | 1.21.x updates that work in the game, Fabric | 2 updates (Oct 24) | 7 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 25% of the way |
 | 1.21.x updates that work in the game, NeoForge | 3 updates (Oct 24) | 11 updates (Nov 8) | 22 updates by Jan 29, 2027, step 10 | 42% of the way |
-| Real mods with a port that works in the game | 3 mods (Oct 24) | 4 mods (Nov 8) | 6 mods by Dec 18, step 12 | 33% of the way |
+| Real mods with a port that works in the game | 3 mods (Oct 24) | 8 mods (Nov 15) | 6 mods by Dec 18, step 12 | Met |
 | Errors left: AppleSkin, Fabric 1.20.1 → 1.21.6, warm | 62 errors (Oct 24) | 0 errors (Nov 8) | 0 errors by Nov 20, step 7 | Met |
 | Errors left: Zombie Apocalypse, NeoForge 1.21.1 → 1.21.6, warm | 38 errors (Oct 24) | 0 errors (Nov 8) | 0 errors by Dec 4, step 10 | Met |
 | Errors left: Notes, NeoForge 1.21 → 1.21.6, warm | 14 errors (Oct 25) | 0 errors (Nov 8) | 0 errors by Dec 4, step 10 | Met |
