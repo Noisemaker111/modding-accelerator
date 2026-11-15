@@ -49,7 +49,8 @@ for diff in diffs:
     name = diff.relative_to(ROOT).as_posix()
     sha = hashlib.sha256(diff.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     gate_names = set()
-    for experiment in diff.parent.glob("experiment*.json"):
+    # Beside the diff or below it: Diorama's experiments are in bench/diorama/play/.
+    for experiment in diff.parent.rglob("experiment*.json"):
         gate_names |= {g["name"] for g in json.loads(experiment.read_text(encoding="utf-8")).get("gates", [])}
     rejected = [r for r in kept.get(sha, []) if r.get("verdict") == "rejected"
                 and any(g.get("passed") is False and g.get("name") in gate_names for g in r.get("gates") or [])]
