@@ -128,6 +128,8 @@ final class Target {
             // A multi-loader build keeps Fabric's versions beside NeoForge's: the sibling project must follow the same game.
             try {
                 fabricPins(setup, build, pins, to);
+                // The Fabric project's Loom follows the jars its Fabric API was built with, as in a Fabric port.
+                if (!setup.loomBuilt.isEmpty()) loomFollows(setup, build, to);
             } catch (IOException sibling) {
                 setup.unchecked.add(Json.map("artifact", "Fabric (sibling project)", "version", to, "reason", sibling.getMessage()));
             }

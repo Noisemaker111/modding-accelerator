@@ -221,6 +221,8 @@ final class Dependencies {
             setup.pins.get(key) != null
         ) from = setup.pins.get(key);
         if (from == null || from.equals(setup.to)) return false;
+        // Parchment, the loaders and the game itself have their own followers.
+        if (group.startsWith("org.parchmentmc") || group.startsWith("net.neoforged") || group.startsWith("net.minecraftforge") || group.startsWith("net.fabricmc")) return false;
         // The game in the artifact's name (JEI: jei-${minecraft_version}-neoforge-api): the build renames it with the
         // Minecraft property, and the version is the newest of the same shape that artifact publishes for the target.
         Matcher named = Pattern.compile("(?<![0-9.])" + Pattern.quote(from) + "(?![0-9])(?!\\.[0-9])").matcher(name);
