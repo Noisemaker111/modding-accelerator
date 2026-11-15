@@ -3,6 +3,9 @@ package ${package};
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import net.minecraft.network.Connection;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.loading.FMLEnvironment;
 
@@ -17,6 +20,7 @@ public final class FabricBridge {
 
     private static IEventBus modBus;
     private static final List<Consumer<IEventBus>> PENDING = new ArrayList<>();
+    private static volatile Function<Player, Connection> clientConnections = player -> null;
 
     private FabricBridge() {}
 
@@ -34,6 +38,15 @@ public final class FabricBridge {
     public static synchronized void onModBus(Consumer<IEventBus> hook) {
         if (modBus != null) hook.accept(modBus);
         else PENDING.add(hook);
+    }
+
+    /** The client's connection for its own player; ClientHooks sets how it is found on the physical client. */
+    public static Connection clientConnection(Player player) {
+        return player == null ? null : clientConnections.apply(player);
+    }
+
+    static void clientConnections(Function<Player, Connection> lookup) {
+        clientConnections = lookup;
     }
 
     /** The mod's id on NeoForge. */

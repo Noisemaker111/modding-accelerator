@@ -982,6 +982,13 @@ final class Convert {
         "(?m)^([ \\t]*)((?:public\\s+|final\\s+|abstract\\s+)*)class\\s+(\\w+)([^{]*)\\{"
     );
 
+    /** True when the file imports a ModContainer that is not NeoForge's (the Fabric bridge mirrors Fabric Loader's under that name). */
+    static boolean otherModContainer(String text) {
+        Matcher m = Pattern.compile("(?m)^import\\s+([\\w.]+\\.ModContainer)\\s*;").matcher(text);
+        while (m.find()) if (!m.group(1).equals("net.neoforged.fml.ModContainer")) return true;
+        return false;
+    }
+
     /** Makes a Fabric entrypoint class a NeoForge @Mod class whose constructor runs the entrypoint where NeoForge lets mods register. */
     void entryToNeoForge(String name, String api, String method, String dist, String extra) throws Exception {
         String file = classFile(name);
@@ -1057,7 +1064,8 @@ final class Convert {
             .append("public ")
             .append(modClass)
             .append("(IEventBus modBus")
-            .append(dist == null ? "" : ", ModContainer container")
+            // The file may import another ModContainer (the Fabric bridge's mirror of Fabric Loader's): NeoForge's is then written in full.
+            .append(dist == null ? "" : otherModContainer(text) ? ", net.neoforged.fml.ModContainer container" : ", ModContainer container")
             .append(") {\n");
         if (noArgs) ctor.append(inner).append(unit).append("this();\n");
         // The Fabric bridge listens on the mod's bus for the events its Fabric API classes are posted from.
@@ -2676,7 +2684,8 @@ final class Convert {
 
     /** A bridge template with the mod's own names written in. */
     String fillBridge(String template, String pkg) {
-        return template.replace("${package}", pkg).replace("${modid}", modid == null ? "" : modid);
+        // Line ends as the bridge's files are written (a Windows checkout may give the templates CRLF).
+        return template.replace("\r\n", "\n").replace("${package}", pkg).replace("${modid}", modid == null ? "" : modid);
     }
 
     /**
@@ -2801,7 +2810,7 @@ final class Convert {
         Matcher ctor = Pattern.compile(
             "(?s)\\n[ \\t]*/\\*\\* Runs the Fabric (?:client )?entrypoint[^\\n]*\\n[ \\t]*public " +
             simple +
-            "\\(IEventBus modBus(?:, ModContainer container)?\\) \\{\\n(.*?)\\n[ \\t]*}\\n"
+            "\\(IEventBus modBus(?:, (?:net\\.neoforged\\.fml\\.)?ModContainer container)?\\) \\{\\n(.*?)\\n[ \\t]*}\\n"
         ).matcher(text);
         if (!ctor.find() || !ctor.group(1).contains(method + "()")) {
             if (bridgePackage != null) return bridgeEntry(file, text, annotation, simple, api, method);

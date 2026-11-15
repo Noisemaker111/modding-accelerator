@@ -93,7 +93,8 @@ for kind, rule in L.rules_of(rules):
             raise AssertionError(f"{rule['id']} cites {borrowed}: rules come from the loaders' own APIs, not other mods")
 checks += 3
 for key, entry in rules["published"].items():
-    check(entry.get("manifest") or entry.get("maven", "").startswith("https://maven."), f"{key} is read from its owner's own Maven repository or Mojang's manifest")
+    # A library whose author publishes it only in a repository of their own says so (ownRepository).
+    check(entry.get("manifest") or entry.get("maven", "").startswith("https://maven.") or entry.get("ownRepository"), f"{key} is read from its owner's own Maven repository or Mojang's manifest")
 
 # ---- the record verify wrote ------------------------------------------------------------------------
 

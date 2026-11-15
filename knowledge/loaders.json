@@ -71,6 +71,12 @@
    "maven": "https://maven.fabricmc.net",
    "coordinate": "teamreborn:energy:5.0.0",
    "docs": "https://github.com/TechReborn/Energy"
+  },
+  "forgeconfigapiport-fabric": {
+   "maven": "https://raw.githubusercontent.com/Fuzss/modresources/main/maven",
+   "coordinate": "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:26.3.1",
+   "ownRepository": "Forge Config API Port is published only in its author's own Maven repository",
+   "docs": "https://modrinth.com/mod/forge-config-api-port"
   }
  },
  "buses": {
@@ -438,6 +444,367 @@
    "test": {
     "fabric": "import net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder;\nimport net.minecraft.world.level.gamerules.GameRule;\nclass A {\n    static final GameRule<Boolean> CALM = GameRuleBuilder.forBoolean(true).category(GameRuleCategory.MOBS).buildAndRegister(Identifier.fromNamespaceAndPath(\"demo\", \"calm\"));\n}",
     "neoforge": "import com.mojang.brigadier.arguments.BoolArgumentType;\nimport com.mojang.serialization.Codec;\nimport net.minecraft.core.Registry;\nimport net.minecraft.core.registries.BuiltInRegistries;\nimport net.minecraft.world.flag.FeatureFlagSet;\nimport net.minecraft.world.level.gamerules.GameRule;\nimport net.minecraft.world.level.gamerules.GameRuleType;\nimport net.minecraft.world.level.gamerules.GameRuleTypeVisitor;\nclass A {\n    static final GameRule<Boolean> CALM = Registry.register(BuiltInRegistries.GAME_RULE, Identifier.fromNamespaceAndPath(\"demo\", \"calm\"), new GameRule<>(GameRuleCategory.MOBS, GameRuleType.BOOL, BoolArgumentType.bool(), GameRuleTypeVisitor::visitBoolean, Codec.BOOL, value -> value ? 1 : 0, true, FeatureFlagSet.of()));\n}"
+   }
+  },
+  {
+   "id": "attachment-get",
+   "about": "Fabric adds its attachment methods to the game's entities, block entities, chunks and levels (an interface injected into them); on NeoForge those are attachment holders, so the call is written on the Fabric bridge's AttachmentTarget, which reads and writes the NeoForge attachment holding the type's values (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "$target.getAttached($type)",
+   "neoforge": "AttachmentTarget.getAttached($target, $type)",
+   "imports": {
+    "fabric": [],
+    "neoforge": [
+     "net.fabricmc.fabric.api.attachment.v1.AttachmentTarget"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttached"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull"
+    ]
+   },
+   "test": {
+    "fabric": "class A { void a(ServerPlayer player) {\n    Boolean seen = player.getAttached(NOTE);\n} }",
+    "neoforge": "import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;\nclass A { void a(ServerPlayer player) {\n    Boolean seen = AttachmentTarget.getAttached(player, NOTE);\n} }"
+   }
+  },
+  {
+   "id": "attachment-get-or-throw",
+   "about": "Fabric adds its attachment methods to the game's entities, block entities, chunks and levels (an interface injected into them); on NeoForge those are attachment holders, so the call is written on the Fabric bridge's AttachmentTarget, which reads and writes the NeoForge attachment holding the type's values (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "$target.getAttachedOrThrow($type)",
+   "neoforge": "AttachmentTarget.getAttachedOrThrow($target, $type)",
+   "imports": {
+    "fabric": [],
+    "neoforge": [
+     "net.fabricmc.fabric.api.attachment.v1.AttachmentTarget"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrThrow"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull"
+    ]
+   },
+   "test": {
+    "fabric": "class A { void a(ServerPlayer player) {\n    Boolean seen = player.getAttachedOrThrow(NOTE);\n} }",
+    "neoforge": "import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;\nclass A { void a(ServerPlayer player) {\n    Boolean seen = AttachmentTarget.getAttachedOrThrow(player, NOTE);\n} }"
+   }
+  },
+  {
+   "id": "attachment-get-or-set",
+   "about": "Fabric adds its attachment methods to the game's entities, block entities, chunks and levels (an interface injected into them); on NeoForge those are attachment holders, so the call is written on the Fabric bridge's AttachmentTarget, which reads and writes the NeoForge attachment holding the type's values (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "$target.getAttachedOrSet($type, $value)",
+   "neoforge": "AttachmentTarget.getAttachedOrSet($target, $type, $value)",
+   "imports": {
+    "fabric": [],
+    "neoforge": [
+     "net.fabricmc.fabric.api.attachment.v1.AttachmentTarget"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrSet"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData"
+    ]
+   },
+   "test": {
+    "fabric": "class A { void a(ServerPlayer player) {\n    Boolean seen = player.getAttachedOrSet(NOTE, false);\n} }",
+    "neoforge": "import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;\nclass A { void a(ServerPlayer player) {\n    Boolean seen = AttachmentTarget.getAttachedOrSet(player, NOTE, false);\n} }"
+   }
+  },
+  {
+   "id": "attachment-get-or-create-with",
+   "about": "Fabric adds its attachment methods to the game's entities, block entities, chunks and levels (an interface injected into them); on NeoForge those are attachment holders, so the call is written on the Fabric bridge's AttachmentTarget, which reads and writes the NeoForge attachment holding the type's values (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "$target.getAttachedOrCreate($type, $initializer)",
+   "neoforge": "AttachmentTarget.getAttachedOrCreate($target, $type, $initializer)",
+   "imports": {
+    "fabric": [],
+    "neoforge": [
+     "net.fabricmc.fabric.api.attachment.v1.AttachmentTarget"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData"
+    ]
+   },
+   "test": {
+    "fabric": "class A { void a(ServerPlayer player) {\n    Boolean seen = player.getAttachedOrCreate(NOTE, () -> false);\n} }",
+    "neoforge": "import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;\nclass A { void a(ServerPlayer player) {\n    Boolean seen = AttachmentTarget.getAttachedOrCreate(player, NOTE, () -> false);\n} }"
+   }
+  },
+  {
+   "id": "attachment-get-or-create",
+   "about": "Fabric adds its attachment methods to the game's entities, block entities, chunks and levels (an interface injected into them); on NeoForge those are attachment holders, so the call is written on the Fabric bridge's AttachmentTarget, which reads and writes the NeoForge attachment holding the type's values (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "$target.getAttachedOrCreate($type)",
+   "neoforge": "AttachmentTarget.getAttachedOrCreate($target, $type)",
+   "imports": {
+    "fabric": [],
+    "neoforge": [
+     "net.fabricmc.fabric.api.attachment.v1.AttachmentTarget"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData"
+    ]
+   },
+   "test": {
+    "fabric": "class A { void a(ServerPlayer player) {\n    if (ready && !player.getAttachedOrCreate(NOTE)) give(player);\n} }",
+    "neoforge": "import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;\nclass A { void a(ServerPlayer player) {\n    if (ready && !AttachmentTarget.getAttachedOrCreate(player, NOTE)) give(player);\n} }"
+   }
+  },
+  {
+   "id": "attachment-get-or-else",
+   "about": "Fabric adds its attachment methods to the game's entities, block entities, chunks and levels (an interface injected into them); on NeoForge those are attachment holders, so the call is written on the Fabric bridge's AttachmentTarget, which reads and writes the NeoForge attachment holding the type's values (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "$target.getAttachedOrElse($type, $default)",
+   "neoforge": "AttachmentTarget.getAttachedOrElse($target, $type, $default)",
+   "imports": {
+    "fabric": [],
+    "neoforge": [
+     "net.fabricmc.fabric.api.attachment.v1.AttachmentTarget"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrElse"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull"
+    ]
+   },
+   "test": {
+    "fabric": "class A { void a(ServerPlayer player) {\n    Boolean seen = player.getAttachedOrElse(NOTE, false);\n} }",
+    "neoforge": "import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;\nclass A { void a(ServerPlayer player) {\n    Boolean seen = AttachmentTarget.getAttachedOrElse(player, NOTE, false);\n} }"
+   }
+  },
+  {
+   "id": "attachment-get-or-get",
+   "about": "Fabric adds its attachment methods to the game's entities, block entities, chunks and levels (an interface injected into them); on NeoForge those are attachment holders, so the call is written on the Fabric bridge's AttachmentTarget, which reads and writes the NeoForge attachment holding the type's values (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "$target.getAttachedOrGet($type, $default)",
+   "neoforge": "AttachmentTarget.getAttachedOrGet($target, $type, $default)",
+   "imports": {
+    "fabric": [],
+    "neoforge": [
+     "net.fabricmc.fabric.api.attachment.v1.AttachmentTarget"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrGet"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull"
+    ]
+   },
+   "test": {
+    "fabric": "class A { void a(ServerPlayer player) {\n    Boolean seen = player.getAttachedOrGet(NOTE, () -> false);\n} }",
+    "neoforge": "import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;\nclass A { void a(ServerPlayer player) {\n    Boolean seen = AttachmentTarget.getAttachedOrGet(player, NOTE, () -> false);\n} }"
+   }
+  },
+  {
+   "id": "attachment-set",
+   "about": "Fabric adds its attachment methods to the game's entities, block entities, chunks and levels (an interface injected into them); on NeoForge those are attachment holders, so the call is written on the Fabric bridge's AttachmentTarget, which reads and writes the NeoForge attachment holding the type's values (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "$target.setAttached($type, $value)",
+   "neoforge": "AttachmentTarget.setAttached($target, $type, $value)",
+   "imports": {
+    "fabric": [],
+    "neoforge": [
+     "net.fabricmc.fabric.api.attachment.v1.AttachmentTarget"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#setAttached"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData"
+    ]
+   },
+   "test": {
+    "fabric": "class A { void a(ServerPlayer player) {\n    player.level().getPlayerByUUID(id).setAttached(NOTE, true);\n} }",
+    "neoforge": "import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;\nclass A { void a(ServerPlayer player) {\n    AttachmentTarget.setAttached(player.level().getPlayerByUUID(id), NOTE, true);\n} }"
+   }
+  },
+  {
+   "id": "attachment-has",
+   "about": "Fabric adds its attachment methods to the game's entities, block entities, chunks and levels (an interface injected into them); on NeoForge those are attachment holders, so the call is written on the Fabric bridge's AttachmentTarget, which reads and writes the NeoForge attachment holding the type's values (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "$target.hasAttached($type)",
+   "neoforge": "AttachmentTarget.hasAttached($target, $type)",
+   "imports": {
+    "fabric": [],
+    "neoforge": [
+     "net.fabricmc.fabric.api.attachment.v1.AttachmentTarget"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#hasAttached"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#hasData"
+    ]
+   },
+   "test": {
+    "fabric": "class A { void a(ServerPlayer player) {\n    boolean seen = ready && player.hasAttached(NOTE);\n} }",
+    "neoforge": "import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;\nclass A { void a(ServerPlayer player) {\n    boolean seen = ready && AttachmentTarget.hasAttached(player, NOTE);\n} }"
+   }
+  },
+  {
+   "id": "attachment-remove",
+   "about": "Fabric adds its attachment methods to the game's entities, block entities, chunks and levels (an interface injected into them); on NeoForge those are attachment holders, so the call is written on the Fabric bridge's AttachmentTarget, which reads and writes the NeoForge attachment holding the type's values (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "$target.removeAttached($type)",
+   "neoforge": "AttachmentTarget.removeAttached($target, $type)",
+   "imports": {
+    "fabric": [],
+    "neoforge": [
+     "net.fabricmc.fabric.api.attachment.v1.AttachmentTarget"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#removeAttached"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#removeData"
+    ]
+   },
+   "test": {
+    "fabric": "class A { void a(ServerPlayer player) {\n    ((Entity) player).removeAttached(NOTE);\n} }",
+    "neoforge": "import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;\nclass A { void a(ServerPlayer player) {\n    AttachmentTarget.removeAttached(((Entity) player), NOTE);\n} }"
+   }
+  },
+  {
+   "id": "attachment-modify",
+   "about": "Fabric adds its attachment methods to the game's entities, block entities, chunks and levels (an interface injected into them); on NeoForge those are attachment holders, so the call is written on the Fabric bridge's AttachmentTarget, which reads and writes the NeoForge attachment holding the type's values (convert then points the import at the bridge).",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "$target.modifyAttached($type, $modifier)",
+   "neoforge": "AttachmentTarget.modifyAttached($target, $type, $modifier)",
+   "imports": {
+    "fabric": [],
+    "neoforge": [
+     "net.fabricmc.fabric.api.attachment.v1.AttachmentTarget"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#modifyAttached"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData"
+    ]
+   },
+   "test": {
+    "fabric": "class A { void a(ServerPlayer player) {\n    player.modifyAttached(NOTE, seen -> !seen);\n} }",
+    "neoforge": "import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;\nclass A { void a(ServerPlayer player) {\n    AttachmentTarget.modifyAttached(player, NOTE, seen -> !seen);\n} }"
+   }
+  },
+  {
+   "id": "config-type-common",
+   "about": "Forge Config API Port's Fabric API (its ConfigRegistry, which the Fabric bridge mirrors on NeoForge) keeps the config types NeoForge had before 26.1; FancyModLoader 12 renamed them: COMMON, loaded on both sides from the config folder and never synced, is NeoForge's LOCAL. The rule applies where the file registers configs through ConfigRegistry, so a NeoForge mod's own LOCAL configs keep their type on the way to Fabric.",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "ModConfig.Type.COMMON",
+   "neoforge": "ModConfig.Type.LOCAL",
+   "imports": {
+    "fabric": [
+     "net.neoforged.fml.config.ModConfig",
+     "fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry"
+    ],
+    "neoforge": [
+     "net.neoforged.fml.config.ModConfig",
+     "fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "forgeconfigapiport-fabric|net.neoforged.fml.config.ModConfig$Type#COMMON",
+     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry#register"
+    ],
+    "neoforge": [
+     "fml|net.neoforged.fml.config.ModConfig$Type#LOCAL"
+    ]
+   },
+   "test": {
+    "fabric": "import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;\nimport net.neoforged.fml.config.ModConfig;\nclass A { void a() { ConfigRegistry.INSTANCE.register(\"demo\", ModConfig.Type.COMMON, SPEC); } }",
+    "neoforge": "import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;\nimport net.neoforged.fml.config.ModConfig;\nclass A { void a() { ConfigRegistry.INSTANCE.register(\"demo\", ModConfig.Type.LOCAL, SPEC); } }"
+   }
+  },
+  {
+   "id": "config-type-server",
+   "about": "Forge Config API Port's Fabric API (its ConfigRegistry, which the Fabric bridge mirrors on NeoForge) keeps the config types NeoForge had before 26.1; FancyModLoader 12 renamed them: SERVER, loaded with each world and synced to its players, is NeoForge's SYNCED. The rule applies where the file registers configs through ConfigRegistry, so a NeoForge mod's own LOCAL configs keep their type on the way to Fabric.",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "ModConfig.Type.SERVER",
+   "neoforge": "ModConfig.Type.SYNCED",
+   "imports": {
+    "fabric": [
+     "net.neoforged.fml.config.ModConfig",
+     "fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry"
+    ],
+    "neoforge": [
+     "net.neoforged.fml.config.ModConfig",
+     "fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "forgeconfigapiport-fabric|net.neoforged.fml.config.ModConfig$Type#SERVER",
+     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry#register"
+    ],
+    "neoforge": [
+     "fml|net.neoforged.fml.config.ModConfig$Type#SYNCED"
+    ]
+   },
+   "test": {
+    "fabric": "import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;\nimport net.neoforged.fml.config.ModConfig;\nclass A { void a() { ConfigRegistry.INSTANCE.register(\"demo\", ModConfig.Type.SERVER, SPEC); } }",
+    "neoforge": "import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;\nimport net.neoforged.fml.config.ModConfig;\nclass A { void a() { ConfigRegistry.INSTANCE.register(\"demo\", ModConfig.Type.SYNCED, SPEC); } }"
    }
   }
  ],
@@ -2653,7 +3020,187 @@
      "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#supportsExtraction",
      "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#extract",
      "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#getAmount",
-     "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#getCapacity"
+     "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#getCapacity",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#register",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#registerLarge",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#serverboundPlay",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#clientboundPlay",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#registerGlobalReceiver",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#unregisterGlobalReceiver",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#getGlobalReceivers",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#canSend",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#createClientboundPacket",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#getSender",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#send",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking$PlayPayloadHandler#receive",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking$Context#server",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking$Context#player",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking$Context#responseSender",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking$Context#packetContext",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PacketSender#createPacket",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PacketSender#sendPacket",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PacketSender#disconnect",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PlayerLookup#all",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PlayerLookup#level",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PlayerLookup#tracking",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.PlayerLookup#around",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#SERVER_INSTANCE",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#REGISTRY_ACCESS",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#GAME_PROFILE",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#CONNECTION",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#get",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#orElseThrow",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#orElse",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#set",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#runWithContext",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#supplyWithContext",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#runWithoutContext",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#supplyWithoutContext",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#key",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext$ReadKey",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext$Key",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#registerGlobalReceiver",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#unregisterGlobalReceiver",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#getGlobalReceivers",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#canSend",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#createServerboundPacket",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#getSender",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#send",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking$PlayPayloadHandler#receive",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking$Context#client",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking$Context#player",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking$Context#responseSender",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking$Context#packetContext",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#INIT",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#JOIN",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#DISCONNECT",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents$Init#onPlayInit",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents$Join#onPlayReady",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents$Disconnect#onPlayDisconnect",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback#EVENT",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback#register",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#getActiveDispatcher",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#refreshCommandCompletions",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#literal",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#argument",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#sendFeedback",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#sendError",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getClient",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getPlayer",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getEntity",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getPosition",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getRotation",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getLevel",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getMeta",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#attended",
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents#TAGS_LOADED",
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents$TagsLoaded#onTagsLoaded",
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STARTED",
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STOPPING",
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents$ClientStarted#onClientStarted",
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents$ClientStopping#onClientStopping",
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents#ENTITY_LOAD",
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents#ENTITY_UNLOAD",
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents$Load#onLoad",
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents$Unload#onUnload",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#BEFORE_INIT",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#AFTER_INIT",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#remove",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#beforeExtract",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#afterBackground",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#afterForeground",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#afterExtract",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#beforeTick",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#afterTick",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$BeforeInit#beforeInit",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$AfterInit#afterInit",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$Remove#onRemove",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$BeforeExtract#beforeExtract",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$AfterBackground#afterBackground",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$AfterForeground#afterForeground",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$AfterExtract#afterExtract",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$BeforeTick#beforeTick",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$AfterTick#afterTick",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#addFirst",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#addLast",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#attachElementBefore",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#attachElementAfter",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#removeElement",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#replaceElement",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement#extractRenderState",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MISC_OVERLAYS",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#CROSSHAIR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SPECTATOR_MENU",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HOTBAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#ARMOR_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HEALTH_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#FOOD_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#AIR_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MOUNT_HEALTH",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#INFO_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#EXPERIENCE_LEVEL",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HELD_ITEM_TOOLTIP",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SPECTATOR_TOOLTIP",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MOB_EFFECTS",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#BOSS_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SLEEP",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#DEMO_TIMER",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SCOREBOARD",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#OVERLAY_MESSAGE",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#TITLE_AND_SUBTITLE",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#CHAT",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#PLAYER_LIST",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SUBTITLES",
+     "fabric-api|net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#registerKeyMapping",
+     "fabric-api|net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#getBoundKeyOf",
+     "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#REGISTRY_LOOKUP_KEY",
+     "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#FEATURE_FLAG_SET_KEY",
+     "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#get",
+     "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#registerReloadListener",
+     "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#addListenerOrdering",
+     "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#BOSSES",
+     "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#MINECARTS",
+     "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#BOATS",
+     "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#ITEM_FRAMES",
+     "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#CAPTURING_NOT_SUPPORTED",
+     "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#TELEPORTING_NOT_SUPPORTED",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#create",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#createDefaulted",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#createPersistent",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#builder",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#persistent",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#copyOnDeath",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#initializer",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#syncWith",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#buildAndRegister",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#identifier",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#persistenceCodec",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#isPersistent",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#initializer",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#isSynced",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#copyOnDeath",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate#all",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate#targetOnly",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate#allButTarget",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#NBT_ATTACHMENT_KEY",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttached",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrThrow",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrSet",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrElse",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrGet",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#setAttached",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#hasAttached",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#removeAttached",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#modifyAttached",
+     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry#INSTANCE",
+     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry#register",
+     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents#loading",
+     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents#reloading",
+     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents#unloading",
+     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Loading#onModConfigLoading",
+     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Reloading#onModConfigReloading",
+     "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Unloading#onModConfigUnloading"
     ],
     "neoforge": [
      "fml|net.neoforged.fml.ModList#getMods",
@@ -2740,7 +3287,130 @@
      "minecraft|net.minecraft.client.resources.model.ModelManager#getFluidStateModelSet",
      "minecraft|net.minecraft.world.level.material.Fluid#getPickupSound",
      "minecraft|net.minecraft.world.level.material.Fluid#isSource",
-     "minecraft|net.minecraft.world.level.material.FlowingFluid#getSource"
+     "minecraft|net.minecraft.world.level.material.FlowingFluid#getSource",
+     "neoforge|net.neoforged.neoforge.common.NeoForge#EVENT_BUS",
+     "neoforge|net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent#registrar",
+     "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#optional",
+     "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playToServer",
+     "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playToClient",
+     "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playBidirectional",
+     "neoforge|net.neoforged.neoforge.network.handling.IPayloadContext#player",
+     "neoforge|net.neoforged.neoforge.network.handling.IPayloadHandler#handle",
+     "neoforge|net.neoforged.neoforge.network.PacketDistributor#sendToPlayer",
+     "neoforge|net.neoforged.neoforge.client.network.ClientPacketDistributor#sendToServer",
+     "neoforge|net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent#register",
+     "neoforge|net.neoforged.neoforge.common.extensions.ICommonPacketListener#hasChannel",
+     "neoforge|net.neoforged.neoforge.common.extensions.ICommonPacketListener#getConnection",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getPlayer",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingIn",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingOut#getPlayer",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getDispatcher",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getBuildContext",
+     "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent#getRegistries",
+     "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent$ClientPacketReceived",
+     "neoforge|net.neoforged.neoforge.client.event.RenderFrameEvent$Pre",
+     "neoforge|net.neoforged.neoforge.event.GameShuttingDownEvent",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityEvent#getEntity",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityJoinLevelEvent#getLevel",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent#getLevel",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent#getScreen",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getGuiGraphics",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseX",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseY",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getPartialTick",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Background",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Foreground",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Closing",
+     "neoforge|net.neoforged.neoforge.client.event.ClientTickEvent$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ClientTickEvent$Post",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelowAll",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAboveAll",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelow",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAbove",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#replaceLayer",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#wrapLayer",
+     "neoforge|net.neoforged.neoforge.client.gui.GuiLayer#render",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CAMERA_OVERLAYS",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CROSSHAIR",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#HOTBAR",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#ARMOR_LEVEL",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#PLAYER_HEALTH",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#FOOD_LEVEL",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#AIR_LEVEL",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#VEHICLE_HEALTH",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CONTEXTUAL_INFO_BAR",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EXPERIENCE_LEVEL",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SELECTED_ITEM_NAME",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SPECTATOR_TOOLTIP",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EFFECTS",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#BOSS_OVERLAY",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SLEEP_OVERLAY",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#DEMO_OVERLAY",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SCOREBOARD_SIDEBAR",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#OVERLAY_MESSAGE",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TITLE",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CHAT",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TAB_LIST",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SUBTITLE_OVERLAY",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent#register",
+     "neoforge|net.neoforged.neoforge.client.extensions.IKeyMappingExtension#getKey",
+     "neoforge|net.neoforged.neoforge.event.AddServerReloadListenersEvent#getServerResources",
+     "neoforge|net.neoforged.neoforge.client.event.AddClientReloadListenersEvent",
+     "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#addListener",
+     "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#addDependency",
+     "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#getRegistry",
+     "neoforge|net.neoforged.neoforge.attachment.AttachmentType#builder",
+     "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#serialize",
+     "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#copyOnDeath",
+     "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#sync",
+     "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#build",
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull",
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData",
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#removeData",
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#hasData",
+     "neoforge|net.neoforged.neoforge.registries.NeoForgeRegistries#ATTACHMENT_TYPES",
+     "neoforge|net.neoforged.neoforge.registries.NeoForgeRegistries$Keys#ATTACHMENT_TYPES",
+     "neoforge|net.neoforged.neoforge.registries.RegisterEvent#register",
+     "neoforge|net.neoforged.neoforge.registries.RegisterEvent#getRegistryKey",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$Clone#getOriginal",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$Clone#isWasDeath",
+     "fml|net.neoforged.fml.ModContainer#registerConfig",
+     "fml|net.neoforged.fml.ModContainer#getEventBus",
+     "fml|net.neoforged.fml.config.ModConfig$Type",
+     "fml|net.neoforged.fml.config.IConfigSpec",
+     "fml|net.neoforged.fml.event.config.ModConfigEvent#getConfig",
+     "fml|net.neoforged.fml.event.config.ModConfigEvent$Loading",
+     "fml|net.neoforged.fml.event.config.ModConfigEvent$Reloading",
+     "fml|net.neoforged.fml.event.config.ModConfigEvent$Unloading",
+     "bus|net.neoforged.bus.api.EventPriority#HIGHEST",
+     "minecraft|net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket",
+     "minecraft|net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket",
+     "minecraft|net.minecraft.network.protocol.common.custom.CustomPacketPayload$TypeAndCodec",
+     "minecraft|net.minecraft.network.Connection#send",
+     "minecraft|net.minecraft.network.Connection#disconnect",
+     "minecraft|net.minecraft.server.network.ServerCommonPacketListenerImpl#send",
+     "minecraft|net.minecraft.server.network.ServerCommonPacketListenerImpl#disconnect",
+     "minecraft|net.minecraft.server.level.ChunkMap#getPlayers",
+     "minecraft|net.minecraft.client.player.LocalPlayer#connection",
+     "minecraft|net.minecraft.client.multiplayer.ClientPacketListener#getSuggestionsProvider",
+     "minecraft|net.minecraft.client.multiplayer.ClientSuggestionProvider#customSuggestion",
+     "minecraft|net.minecraft.client.multiplayer.ClientSuggestionProvider#suggestRegistryElements",
+     "minecraft|net.minecraft.client.multiplayer.ClientSuggestionProvider#permissions",
+     "minecraft|net.minecraft.client.gui.Gui#screen",
+     "minecraft|net.minecraft.client.gui.Gui#hud",
+     "minecraft|net.minecraft.client.gui.Hud#getChat",
+     "minecraft|net.minecraft.server.ReloadableServerResources#fullRegistries",
+     "minecraft|net.minecraft.server.ReloadableServerRegistries$Holder#lookup",
+     "minecraft|net.minecraft.server.packs.resources.PreparableReloadListener#prepareSharedState",
+     "minecraft|net.minecraft.server.packs.resources.PreparableReloadListener$SharedState#set",
+     "minecraft|net.minecraft.server.packs.resources.PreparableReloadListener$StateKey",
+     "minecraft|net.minecraft.server.packs.resources.PreparableReloadListener$PreparationBarrier#wait",
+     "minecraft|net.minecraft.server.packs.resources.ReloadableResourceManager#registerReloadListener",
+     "minecraft|net.minecraft.tags.TagKey#create"
     ]
    },
    "test": {
@@ -2767,10 +3437,46 @@
      "name": "Meter",
      "from": "package demo;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.world.level.Level;\nimport team.reborn.energy.api.EnergyStorage;\nimport team.reborn.energy.api.base.SimpleEnergyStorage;\n\npublic final class Meter {\n\tpublic static final SimpleEnergyStorage BUFFER = new SimpleEnergyStorage(10000, 100, 100);\n\n\tpublic static long stored(Level level, BlockPos pos) {\n\t\tEnergyStorage storage = EnergyStorage.SIDED.find(level, pos, null);\n\t\treturn storage == null ? 0 : storage.getAmount();\n\t}\n}\n",
      "to": "package demo;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.world.level.Level;\nimport demo.fabricbridge.team.reborn.energy.api.EnergyStorage;\nimport demo.fabricbridge.team.reborn.energy.api.base.SimpleEnergyStorage;\n\npublic final class Meter {\n\tpublic static final SimpleEnergyStorage BUFFER = new SimpleEnergyStorage(10000, 100, 100);\n\n\tpublic static long stored(Level level, BlockPos pos) {\n\t\tEnergyStorage storage = EnergyStorage.SIDED.find(level, pos, null);\n\t\treturn storage == null ? 0 : storage.getAmount();\n\t}\n}\n"
+    },
+    {
+     "name": "Network",
+     "from": "package demo;\n\nimport net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;\nimport net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;\nimport net.fabricmc.fabric.api.networking.v1.context.PacketContext;\nimport net.minecraft.network.RegistryFriendlyByteBuf;\nimport net.minecraft.network.codec.StreamCodec;\nimport net.minecraft.network.protocol.common.custom.CustomPacketPayload;\nimport net.minecraft.resources.Identifier;\n\npublic class Network {\n\tpublic record Ping(int value) implements CustomPacketPayload {\n\t\tpublic static final Type<Ping> TYPE = new Type<>(Identifier.fromNamespaceAndPath(\"demo\", \"ping\"));\n\t\tpublic static final StreamCodec<RegistryFriendlyByteBuf, Ping> CODEC = StreamCodec.unit(new Ping(0));\n\n\t\t@Override\n\t\tpublic Type<Ping> type() {\n\t\t\treturn TYPE;\n\t\t}\n\t}\n\n\tpublic static void init() {\n\t\tPayloadTypeRegistry.serverboundPlay().register(Ping.TYPE, Ping.CODEC);\n\t\tPayloadTypeRegistry.clientboundPlay().register(Ping.TYPE, Ping.CODEC);\n\t\tServerPlayNetworking.registerGlobalReceiver(Ping.TYPE, (payload, context) -> {\n\t\t\tPacketContext.runWithContext(context.player(), () -> ServerPlayNetworking.send(context.player(), new Ping(payload.value() + 1)));\n\t\t});\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.fabricbridge.fabric.api.networking.v1.PayloadTypeRegistry;\nimport demo.fabricbridge.fabric.api.networking.v1.ServerPlayNetworking;\nimport demo.fabricbridge.fabric.api.networking.v1.context.PacketContext;\nimport net.minecraft.network.RegistryFriendlyByteBuf;\nimport net.minecraft.network.codec.StreamCodec;\nimport net.minecraft.network.protocol.common.custom.CustomPacketPayload;\nimport net.minecraft.resources.Identifier;\n\npublic class Network {\n\tpublic record Ping(int value) implements CustomPacketPayload {\n\t\tpublic static final Type<Ping> TYPE = new Type<>(Identifier.fromNamespaceAndPath(\"demo\", \"ping\"));\n\t\tpublic static final StreamCodec<RegistryFriendlyByteBuf, Ping> CODEC = StreamCodec.unit(new Ping(0));\n\n\t\t@Override\n\t\tpublic Type<Ping> type() {\n\t\t\treturn TYPE;\n\t\t}\n\t}\n\n\tpublic static void init() {\n\t\tPayloadTypeRegistry.serverboundPlay().register(Ping.TYPE, Ping.CODEC);\n\t\tPayloadTypeRegistry.clientboundPlay().register(Ping.TYPE, Ping.CODEC);\n\t\tServerPlayNetworking.registerGlobalReceiver(Ping.TYPE, (payload, context) -> {\n\t\t\tPacketContext.runWithContext(context.player(), () -> ServerPlayNetworking.send(context.player(), new Ping(payload.value() + 1)));\n\t\t});\n\t}\n}\n"
+    },
+    {
+     "name": "ClientNetwork",
+     "from": "package demo;\n\nimport net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;\nimport net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;\n\npublic class ClientNetwork {\n\tpublic static void init() {\n\t\tClientPlayNetworking.registerGlobalReceiver(Network.Ping.TYPE, (payload, context) -> context.client().gui.setScreen(null));\n\t\tClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> handler.getConnection().setReadOnly());\n\t}\n\n\tstatic void ping() {\n\t\tif (ClientPlayNetworking.canSend(Network.Ping.TYPE)) ClientPlayNetworking.send(new Network.Ping(1));\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.fabricbridge.fabric.api.client.networking.v1.ClientPlayConnectionEvents;\nimport demo.fabricbridge.fabric.api.client.networking.v1.ClientPlayNetworking;\n\npublic class ClientNetwork {\n\tpublic static void init() {\n\t\tClientPlayNetworking.registerGlobalReceiver(Network.Ping.TYPE, (payload, context) -> context.client().gui.setScreen(null));\n\t\tClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> handler.getConnection().setReadOnly());\n\t}\n\n\tstatic void ping() {\n\t\tif (ClientPlayNetworking.canSend(Network.Ping.TYPE)) ClientPlayNetworking.send(new Network.Ping(1));\n\t}\n}\n"
+    },
+    {
+     "name": "Commands",
+     "from": "package demo;\n\nimport net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;\nimport net.fabricmc.fabric.api.client.command.v2.ClientCommands;\nimport net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;\nimport net.minecraft.network.chat.Component;\n\npublic class Commands {\n\tpublic static void init() {\n\t\tClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> dispatcher.register(ClientCommands.literal(\"demo\").executes(c -> tell(c.getSource()))));\n\t}\n\n\tstatic int tell(FabricClientCommandSource source) {\n\t\tsource.sendFeedback(Component.literal(\"demo\"));\n\t\treturn 1;\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.fabricbridge.fabric.api.client.command.v2.ClientCommandRegistrationCallback;\nimport demo.fabricbridge.fabric.api.client.command.v2.ClientCommands;\nimport demo.fabricbridge.fabric.api.client.command.v2.FabricClientCommandSource;\nimport net.minecraft.network.chat.Component;\n\npublic class Commands {\n\tpublic static void init() {\n\t\tClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> dispatcher.register(ClientCommands.literal(\"demo\").executes(c -> tell(c.getSource()))));\n\t}\n\n\tstatic int tell(FabricClientCommandSource source) {\n\t\tsource.sendFeedback(Component.literal(\"demo\"));\n\t\treturn 1;\n\t}\n}\n"
+    },
+    {
+     "name": "Events",
+     "from": "package demo;\n\nimport net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;\nimport net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;\nimport net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;\nimport net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;\nimport net.minecraft.client.gui.screens.Screen;\n\npublic class Events {\n\tstatic int seen;\n\n\tpublic static void init() {\n\t\tClientLifecycleEvents.CLIENT_STARTED.register(client -> seen = 0);\n\t\tClientEntityEvents.ENTITY_LOAD.register((entity, level) -> seen++);\n\t\tCommonLifecycleEvents.TAGS_LOADED.register((registries, client) -> seen = 0);\n\t}\n\n\tstatic void watch(Screen screen) {\n\t\tScreenEvents.afterExtract(screen).register((shown, graphics, mouseX, mouseY, tickDelta) -> seen++);\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.fabricbridge.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;\nimport demo.fabricbridge.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;\nimport demo.fabricbridge.fabric.api.client.screen.v1.ScreenEvents;\nimport demo.fabricbridge.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;\nimport net.minecraft.client.gui.screens.Screen;\n\npublic class Events {\n\tstatic int seen;\n\n\tpublic static void init() {\n\t\tClientLifecycleEvents.CLIENT_STARTED.register(client -> seen = 0);\n\t\tClientEntityEvents.ENTITY_LOAD.register((entity, level) -> seen++);\n\t\tCommonLifecycleEvents.TAGS_LOADED.register((registries, client) -> seen = 0);\n\t}\n\n\tstatic void watch(Screen screen) {\n\t\tScreenEvents.afterExtract(screen).register((shown, graphics, mouseX, mouseY, tickDelta) -> seen++);\n\t}\n}\n"
+    },
+    {
+     "name": "Hud",
+     "from": "package demo;\n\nimport net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nimport net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;\nimport net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;\nimport net.minecraft.client.KeyMapping;\nimport net.minecraft.resources.Identifier;\n\npublic class Hud {\n\tstatic final KeyMapping TOGGLE = new KeyMapping(\"key.demo.toggle\", 0, KeyMapping.Category.MISC);\n\n\tpublic static void init() {\n\t\tKeyMappingHelper.registerKeyMapping(TOGGLE);\n\t\tHudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Identifier.fromNamespaceAndPath(\"demo\", \"overlay\"), (graphics, deltaTracker) -> {});\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.fabricbridge.fabric.api.client.keymapping.v1.KeyMappingHelper;\nimport demo.fabricbridge.fabric.api.client.rendering.v1.hud.HudElementRegistry;\nimport demo.fabricbridge.fabric.api.client.rendering.v1.hud.VanillaHudElements;\nimport net.minecraft.client.KeyMapping;\nimport net.minecraft.resources.Identifier;\n\npublic class Hud {\n\tstatic final KeyMapping TOGGLE = new KeyMapping(\"key.demo.toggle\", 0, KeyMapping.Category.MISC);\n\n\tpublic static void init() {\n\t\tKeyMappingHelper.registerKeyMapping(TOGGLE);\n\t\tHudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Identifier.fromNamespaceAndPath(\"demo\", \"overlay\"), (graphics, deltaTracker) -> {});\n\t}\n}\n"
+    },
+    {
+     "name": "Resources",
+     "from": "package demo;\n\nimport net.fabricmc.fabric.api.resource.v1.ResourceLoader;\nimport net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.server.packs.PackType;\nimport net.minecraft.server.packs.resources.PreparableReloadListener;\nimport net.minecraft.world.entity.Entity;\n\npublic class Resources {\n\tpublic static void init(PreparableReloadListener listener) {\n\t\tResourceLoader.get(PackType.SERVER_DATA).registerReloadListener(Identifier.fromNamespaceAndPath(\"demo\", \"data\"), listener);\n\t}\n\n\tstatic boolean boss(Entity entity) {\n\t\treturn entity.is(ConventionalEntityTypeTags.BOSSES);\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.fabricbridge.fabric.api.resource.v1.ResourceLoader;\nimport demo.fabricbridge.fabric.api.tag.convention.v2.ConventionalEntityTypeTags;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.server.packs.PackType;\nimport net.minecraft.server.packs.resources.PreparableReloadListener;\nimport net.minecraft.world.entity.Entity;\n\npublic class Resources {\n\tpublic static void init(PreparableReloadListener listener) {\n\t\tResourceLoader.get(PackType.SERVER_DATA).registerReloadListener(Identifier.fromNamespaceAndPath(\"demo\", \"data\"), listener);\n\t}\n\n\tstatic boolean boss(Entity entity) {\n\t\treturn entity.is(ConventionalEntityTypeTags.BOSSES);\n\t}\n}\n"
+    },
+    {
+     "name": "Notes",
+     "from": "package demo;\n\nimport com.mojang.serialization.Codec;\nimport fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;\nimport fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;\nimport net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;\nimport net.fabricmc.fabric.api.attachment.v1.AttachmentType;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.neoforged.fml.config.ModConfig;\nimport net.neoforged.neoforge.common.ModConfigSpec;\n\npublic class Notes {\n\tpublic static final AttachmentType<Boolean> GOT_NOTE = AttachmentRegistry.create(\n\t\tIdentifier.fromNamespaceAndPath(\"demo\", \"got_note\"),\n\t\tbuilder -> builder.initializer(() -> false).persistent(Codec.BOOL).copyOnDeath()\n\t);\n\n\tpublic static void init(ModConfigSpec spec) {\n\t\tModConfigEvents.loading(\"demo\").register(config -> spec.afterReload());\n\t\tConfigRegistry.INSTANCE.register(\"demo\", ModConfig.Type.COMMON, spec);\n\t}\n\n\tstatic void join(ServerPlayer player) {\n\t\tif (!player.getAttachedOrCreate(GOT_NOTE)) {\n\t\t\tplayer.setAttached(GOT_NOTE, true);\n\t\t}\n\t}\n}\n",
+     "to": "package demo;\n\nimport com.mojang.serialization.Codec;\nimport demo.fabricbridge.fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;\nimport demo.fabricbridge.fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;\nimport demo.fabricbridge.fabric.api.attachment.v1.AttachmentRegistry;\nimport demo.fabricbridge.fabric.api.attachment.v1.AttachmentTarget;\nimport demo.fabricbridge.fabric.api.attachment.v1.AttachmentType;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.server.level.ServerPlayer;\nimport net.neoforged.fml.config.ModConfig;\nimport net.neoforged.neoforge.common.ModConfigSpec;\n\npublic class Notes {\n\tpublic static final AttachmentType<Boolean> GOT_NOTE = AttachmentRegistry.create(\n\t\tIdentifier.fromNamespaceAndPath(\"demo\", \"got_note\"),\n\t\tbuilder -> builder.initializer(() -> false).persistent(Codec.BOOL).copyOnDeath()\n\t);\n\n\tpublic static void init(ModConfigSpec spec) {\n\t\tModConfigEvents.loading(\"demo\").register(config -> spec.afterReload());\n\t\tConfigRegistry.INSTANCE.register(\"demo\", ModConfig.Type.LOCAL, spec);\n\t}\n\n\tstatic void join(ServerPlayer player) {\n\t\tif (!AttachmentTarget.getAttachedOrCreate(player, GOT_NOTE)) {\n\t\t\tAttachmentTarget.setAttached(player, GOT_NOTE, true);\n\t\t}\n\t}\n}\n"
     }
    ],
    "replaces": {
-    "teamreborn:energy": "Team Reborn Energy's EnergyStorage, as NeoForge's Capabilities.Energy.BLOCK"
+    "teamreborn:energy": "Team Reborn Energy's EnergyStorage, as NeoForge's Capabilities.Energy.BLOCK",
+    "fuzs.forgeconfigapiport:forgeconfigapiport-fabric": "Forge Config API Port's Fabric API: ConfigRegistry and ModConfigEvents, which port NeoForge's own config system to Fabric"
    }
   }
  ]
