@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "2fa2630271e0f241841d52c2e3cb788af153de525d9c41f8011f832c74abc1ba",
+ "rules_sha256": "e7ffd6374b40aebfdd176d5069c2dfcbe5c9521bbfea0804196d980a2417998a",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -31,6 +31,11 @@
    "coordinate": "minecraft:client:26.3",
    "url": "https://piston-data.mojang.com/v1/objects/e877b6a07acd633fb3bb475002175cec036e7b87/client.jar",
    "sha256": "4508d006323f24fa02876310c192d739af56516eb259000ac50f0909a68c9a2d"
+  },
+  "minecraft-26.2": {
+   "coordinate": "minecraft:client:26.2",
+   "url": "https://piston-data.mojang.com/v1/objects/2dc72797acbc1b63fc16a11c4ac393605f453754/client.jar",
+   "sha256": "40896ee9f1e2bec3c934daac7e93d41e9e3d9c2f8ae0ca366d52ffbfd1afa290"
   },
   "neoforge": {
    "coordinate": "net.neoforged:neoforge:26.3.0.103:universal",
@@ -104,6 +109,76 @@
    },
    {
     "symbol": "fml|net.neoforged.fml.loading.moddiscovery.ModInfo#getModId",
+    "found": true
+   }
+  ],
+  "datagen": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint#onInitializeDataGenerator",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator#createPack",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator$Pack#addProvider",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider#generateBlockStateModels",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider#generateItemModels",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootSubProvider#generate",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.datagen.v1.provider.FabricAdvancementProvider#generateAdvancement",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.data.event.GatherDataEvent$Client",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.data.event.GatherDataEvent#createProvider",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-26.2|net.minecraft.client.data.models.ModelProvider",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-26.2|net.minecraft.data.loot.BlockLootSubProvider",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-26.2|net.minecraft.data.loot.LootTableProvider$SubProviderEntry",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-26.2|net.minecraft.world.level.storage.loot.parameters.LootContextParamSets#BLOCK",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-26.2|net.minecraft.data.recipes.RecipeProvider$Runner",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-26.2|net.minecraft.data.advancements.AdvancementSubProvider#generate",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-26.2|net.minecraft.data.advancements.AdvancementProvider",
     "found": true
    }
   ],
@@ -184,6 +259,16 @@
    },
    {
     "symbol": "minecraft|net.minecraft.world.level.block.Blocks#FIRE",
+    "found": true
+   }
+  ],
+  "creative-tab-builder": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab#builder",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.CreativeModeTab$Builder",
     "found": true
    }
   ],
@@ -351,6 +436,234 @@
     "found": true
    }
   ],
+  "server-level-tick-end": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#END_LEVEL_TICK",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerLevel",
+    "found": true
+   }
+  ],
+  "server-level-tick-start": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#START_LEVEL_TICK",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerLevel",
+    "found": true
+   }
+  ],
+  "client-level-tick-end": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#END_LEVEL_TICK",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientLevel",
+    "found": true
+   }
+  ],
+  "client-level-tick-start": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#START_LEVEL_TICK",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientLevel",
+    "found": true
+   }
+  ],
+  "server-entity-load": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#ENTITY_LOAD",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityJoinLevelEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityEvent#getEntity",
+    "found": true
+   }
+  ],
+  "server-entity-unload": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#ENTITY_UNLOAD",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityEvent#getEntity",
+    "found": true
+   }
+  ],
+  "server-level-load": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents#LOAD",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.LevelEvent$Load",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.LevelEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerLevel#getServer",
+    "found": true
+   }
+  ],
+  "server-level-unload": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents#UNLOAD",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.LevelEvent$Unload",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.LevelEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerLevel#getServer",
+    "found": true
+   }
+  ],
+  "player-join": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents#JOIN",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$PlayerLoggedInEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent#getEntity",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerPlayer#level",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.network.ServerGamePacketListenerImpl#getPlayer",
+    "found": true
+   }
+  ],
+  "player-leave": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents#DISCONNECT",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$PlayerLoggedOutEvent",
+    "found": true
+   }
+  ],
+  "client-join": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#JOIN",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingIn",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getPlayer",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.player.LocalPlayer#connection",
+    "found": true
+   }
+  ],
+  "client-leave": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#DISCONNECT",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingOut",
+    "found": true
+   }
+  ],
+  "item-tooltip": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback#EVENT",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getItemStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getContext",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getFlags",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getToolTip",
+    "found": true
+   }
+  ],
+  "screen-after-init": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#AFTER_INIT",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent#getScreen",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.Screen#width",
+    "found": true
+   }
+  ],
   "key-mapping": [
    {
     "symbol": "fabric-api|net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#registerKeyMapping",
@@ -358,6 +671,20 @@
    },
    {
     "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent#register",
+    "found": true
+   }
+  ],
+  "entity-attributes": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry#register",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent#put",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.ai.attributes.AttributeSupplier$Builder#build",
     "found": true
    }
   ],

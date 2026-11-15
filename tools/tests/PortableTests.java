@@ -923,6 +923,23 @@ public final class PortableTests {
             "Fabric version predicates and Maven ranges convert both ways"
         );
 
+        LoaderRules.Provider models = LoaderRules.datagenProvider("package d;\n\nimport net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;\nimport net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;\n\npublic class Models extends FabricModelProvider {\n\tpublic Models(FabricPackOutput output) {\n\t\tsuper(output);\n\t}\n\n\t@Override\n\tpublic void generateBlockStateModels(BlockModelGenerators blocks) {\n\t}\n\n\t@Override\n\tpublic void generateItemModels(ItemModelGenerators items) {\n\t}\n}\n", "demo");
+        check(
+            models.kind().equals("model") && models.text().contains("public class Models extends ModelProvider {") && models.text().contains("super(output, \"demo\");") &&
+            models.text().contains("protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {\n\t\tgenerateBlockStateModels(blockModels);") &&
+            !models.text().contains("fabricmc") && models.text().contains("\tpublic void generateItemModels(ItemModelGenerators items) {"),
+            "a Fabric model provider becomes NeoForge's ModelProvider for the mod, one registerModels calling both Fabric methods:\n" + models.text()
+        );
+        LoaderRules.Provider loot = LoaderRules.datagenProvider("package d;\n\nimport java.util.concurrent.CompletableFuture;\nimport net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;\nimport net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootSubProvider;\n\npublic class Loot extends FabricBlockLootSubProvider {\n\tpublic Loot(FabricPackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {\n\t\tsuper(output, lookup);\n\t}\n\n\t@Override\n\tpublic void generate() {\n\t\tdropSelf(GEM_BLOCK);\n\t}\n}\n", "demo");
+        String entry = LoaderRules.datagenEntry("package d;\n\nimport net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;\nimport net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;\n\npublic class Gen implements DataGeneratorEntrypoint {\n\t@Override\n\tpublic void onInitializeDataGenerator(FabricDataGenerator generator) {\n\t\tFabricDataGenerator.Pack pack = generator.createPack();\n\t\tpack.addProvider(Models::new);\n\t\tpack.addProvider(Loot::new);\n\t}\n}\n", Map.of("Models", "model", "Loot", "blockLoot"), new ArrayList<>());
+        check(
+            loot.kind().equals("blockLoot") && loot.text().contains("public Loot(HolderLookup.Provider lookup) {\n\t\tsuper(Set.of(), FeatureFlags.REGISTRY.allFlags(), lookup);") &&
+            loot.text().contains("getNamespace().equals(\"demo\")") && !loot.text().contains("CompletableFuture") &&
+            entry.contains("public void onInitializeDataGenerator(GatherDataEvent generator) {\n\t\tgenerator.createProvider(Models::new);\n\t\tgenerator.createProvider((output, lookup) -> new LootTableProvider(output, Set.of(), List.of(new LootTableProvider.SubProviderEntry(Loot::new, LootContextParamSets.BLOCK)), lookup));") &&
+            !entry.contains("fabricmc") && !entry.contains("@Override"),
+            "a block loot provider covers the mod's own blocks, and the datagen entrypoint registers each provider with GatherDataEvent:\n" + loot.text() + "\n" + entry
+        );
+
         Path root = scratch.resolve("convert-mod");
         Map<String, String> files = new LinkedHashMap<>();
         files.put("gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
@@ -949,7 +966,7 @@ public final class PortableTests {
             "https://maven.fabricmc.net/net/fabricmc/fabric-loom/1.18.4/fabric-loom-1.18.4.module", "{\"variants\": [{\"attributes\": {\"org.gradle.plugin.api-version\": \"9.7.0\"}}]}",
             "https://meta.fabricmc.net/v2/versions/loader", "[{\"version\": \"0.20.2-beta\", \"stable\": false}, {\"version\": \"0.20.1\", \"stable\": true}]",
             "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml", "<metadata><versioning><versions><version>0.161.0+26.3</version><version>0.166.2+26.3</version><version>0.150.0+26.1.2</version></versions></versioning></metadata>",
-            "https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/maven-metadata.xml", "<metadata><versioning><versions><version>21.0.0</version><version>21.1.0</version></versions></versioning></metadata>"
+            "https://api.modrinth.com/v2/project/modmenu/version?game_versions=%5B%2226.3%22%5D&loaders=%5B%22fabric%22%5D", "[{\"version_number\": \"21.0.1\"}, {\"version_number\": \"21.0.0\"}, {\"version_number\": \"21.1.0-beta.1\"}]"
         );
         for (var answer : answers.entrySet()) {
             Path cache = project.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
@@ -998,6 +1015,7 @@ public final class PortableTests {
         check(
             Boolean.TRUE.equals(back.get("ok")) && javaSame && !Files.exists(root.resolve("src/main/resources/META-INF")) &&
             fabricGradle.contains("id 'net.fabricmc.fabric-loom' version '1.18.4'") && fabricGradle.contains("vmArg \"-Ddemo.selftest=true\"") &&
+            fabricGradle.contains("localRuntime \"com.terraformersmc:modmenu:${project.modmenu_version}\"") && Files.readString(root.resolve("gradle.properties")).contains("modmenu_version=21.0.1") &&
             Files.readString(root.resolve("src/main/resources/fabric.mod.json")).contains("\"modmenu\": [\n\t\t\t\"demo.Menu\"\n\t\t]"),
             "converted back to Fabric, every Java file is byte for byte the original (Loom: newest stable on this Gradle): " + back.get("details")
         );

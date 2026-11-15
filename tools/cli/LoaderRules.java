@@ -692,11 +692,7 @@ final class LoaderRules {
                 self.put("$self", callback.params().get(index));
                 String joined = String.join("\n", lines);
                 String before = render(Json.text(rewrite, "fabric", ""), self);
-                for (Match inner : find(joined, before)) {
-                    Map<String, String> all = new LinkedHashMap<>(self);
-                    all.putAll(inner.holes());
-                    joined = joined.substring(0, inner.start()) + render(Json.text(rewrite, "neoforge", ""), all) + joined.substring(inner.end());
-                }
+                joined = replace(joined, before, Json.text(rewrite, "neoforge", ""), self);
                 lines = new ArrayList<>(joined.lines().toList());
             }
             List<String> prelude = new ArrayList<>();
@@ -784,7 +780,7 @@ final class LoaderRules {
                 List<Match> guard = find(first, "if (!(" + render(filter, holes) + ")) return;");
                 if (guard.isEmpty()) guard = find(first, "if (!" + render(filter, holes) + ") return;");
                 if (guard.isEmpty()) {
-                    result.left.add(new Left(line(text, start), ref + " listener", "Fabric's " + ownerSimple + " event needs " + filter.replace("$event", "the event") + " checked first; the listener does not"));
+                    if (!shared(eventClass)) result.left.add(new Left(line(text, start), ref + " listener", "Fabric's " + ownerSimple + " event needs " + filter.replace("$event", "the event") + " checked first; the listener does not"));
                     continue;
                 }
                 holes.putAll(guard.get(0).holes());
@@ -811,11 +807,7 @@ final class LoaderRules {
                 self.put("$self", names.get(index));
                 String joined = String.join("\n", lines);
                 String pattern = render(Json.text(rewrite, "neoforge", ""), self);
-                for (Match inner : find(joined, pattern)) {
-                    Map<String, String> all = new LinkedHashMap<>(self);
-                    all.putAll(inner.holes());
-                    joined = joined.substring(0, inner.start()) + render(Json.text(rewrite, "fabric", ""), all) + joined.substring(inner.end());
-                }
+                joined = replace(joined, pattern, Json.text(rewrite, "fabric", ""), self);
                 lines = new ArrayList<>(joined.lines().toList());
             }
             // NeoForge code written by hand reads the event's getters in place: each becomes the parameter.
@@ -869,6 +861,26 @@ final class LoaderRules {
         return s.endsWith(";") && !s.contains("\n") && !STATEMENT_KEYWORD.matcher(s).find() && !DECLARATION.matcher(s).find() && !s.startsWith("{");
     }
 
+    /** Every match of pattern in text replaced by template, left to right, each with its own holes and the shared ones. */
+    static String replace(String text, String pattern, String template, Map<String, String> shared) {
+        StringBuilder out = new StringBuilder();
+        int last = 0;
+        for (Match match : find(text, pattern)) {
+            Map<String, String> all = new LinkedHashMap<>(shared);
+            all.putAll(match.holes());
+            out.append(text, last, match.start()).append(render(template, all));
+            last = match.end();
+        }
+        return out.append(text.substring(last)).toString();
+    }
+
+    /** True when more than one event rule turns into this NeoForge event, told apart by their checks. */
+    boolean shared(String eventClass) {
+        int count = 0;
+        for (Object rule : list(rules.get("events"))) if (eventClass.equals(Json.text(Json.object(Json.object(rule).get("neoforge")), "event", ""))) count++;
+        return count > 1;
+    }
+
     /** Splits an argument list at its top-level commas. */
     static List<String> split(String arguments) {
         boolean[] code = code(arguments);
@@ -919,6 +931,118 @@ final class LoaderRules {
             }
             return i;
         }
+    }
+
+    // ---- data generation (Fabric datagen API -> the vanilla providers NeoForge's GatherDataEvent runs) ------------
+
+    /** Fabric's datagen provider bases, the vanilla class each wraps, and the kind that decides how GatherDataEvent registers it. */
+    static final Map<String, String[]> DATAGEN = Map.of(
+        "FabricModelProvider", new String[] {"model", "net.minecraft.client.data.models.ModelProvider"},
+        "FabricBlockLootSubProvider", new String[] {"blockLoot", "net.minecraft.data.loot.BlockLootSubProvider"},
+        "FabricRecipeProvider", new String[] {"recipe", "net.minecraft.data.recipes.RecipeProvider"},
+        "FabricAdvancementProvider", new String[] {"advancement", "net.minecraft.data.advancements.AdvancementSubProvider"}
+    );
+
+    /** A converted provider: its kind, and its new text. */
+    record Provider(String kind, String text) {}
+
+    /**
+     * One Fabric datagen provider class rewritten onto the vanilla provider it wraps: a model provider gets
+     * NeoForge's ModelProvider(output, modId) and one registerModels that calls the two Fabric methods; a block loot
+     * provider becomes a BlockLootSubProvider for the mod's own blocks; a recipe provider a RecipeProvider.Runner; an
+     * advancement provider an AdvancementSubProvider. Null when the file extends none of Fabric's datagen bases.
+     */
+    static Provider datagenProvider(String text, String modid) {
+        Matcher base = Pattern.compile("\\bextends\\s+(Fabric\\w+Provider)\\b").matcher(text);
+        if (!base.find()) return null;
+        String[] kind = DATAGEN.get(base.group(1));
+        if (kind == null) return new Provider("", text);
+        String unit = unit(text);
+        text = text.replaceAll("\\bFabricPackOutput\\b", "PackOutput");
+        text = Pattern.compile("(?m)^import\\s+net\\.fabricmc\\.fabric\\.api\\.(?:client\\.)?datagen\\.v1\\.[\\w.]+\\s*;[^\\n]*\\n?").matcher(text).replaceAll("");
+        text = addImport(text, "net.minecraft.data.PackOutput");
+        String simple = kind[1].substring(kind[1].lastIndexOf('.') + 1);
+        switch (kind[0]) {
+            case "model" -> {
+                text = text.replaceFirst("\\bextends\\s+FabricModelProvider\\b", "extends ModelProvider");
+                text = text.replaceFirst("\\bsuper\\(\\s*(\\w+)\\s*\\)\\s*;", "super($1, " + Matcher.quoteReplacement(quote(modid)) + ");");
+                text = text.replaceAll("(?m)^([ \\t]*)@Override[ \\t]*\\n[ \\t]*(public\\s+void\\s+generate(?:BlockStateModels|ItemModels)\\s*\\()", "$1$2");
+                text = beforeLastBrace(text, unit + "@Override\n" + unit + "protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {\n" + unit + unit + "generateBlockStateModels(blockModels);\n" + unit + unit + "generateItemModels(itemModels);\n" + unit + "}\n");
+                text = addImport(text, "net.minecraft.client.data.models.BlockModelGenerators");
+                text = addImport(text, "net.minecraft.client.data.models.ItemModelGenerators");
+            }
+            case "blockLoot" -> {
+                text = text.replaceFirst("\\bextends\\s+FabricBlockLootSubProvider\\b", "extends BlockLootSubProvider");
+                text = text.replaceFirst("\\(\\s*PackOutput\\s+\\w+\\s*,\\s*CompletableFuture<\\s*HolderLookup\\.Provider\\s*>\\s+(\\w+)\\s*\\)(\\s*\\{\\s*)super\\(\\s*\\w+\\s*,\\s*\\w+\\s*\\)\\s*;", "(HolderLookup.Provider $1)$2super(Set.of(), FeatureFlags.REGISTRY.allFlags(), $1);");
+                text = beforeLastBrace(text, unit + "/** The mod's own blocks: Fabric checks only those for a missing loot table. */\n" + unit + "@Override\n" + unit + "protected Iterable<Block> getKnownBlocks() {\n" + unit + unit + "return BuiltInRegistries.BLOCK.stream().filter(block -> BuiltInRegistries.BLOCK.getKey(block).getNamespace().equals(" + quote(modid) + ")).toList();\n" + unit + "}\n");
+                for (String name : List.of("java.util.Set", "net.minecraft.world.flag.FeatureFlags", "net.minecraft.core.registries.BuiltInRegistries", "net.minecraft.world.level.block.Block")) text = addImport(text, name);
+                text = dropImport(text, "java.util.concurrent.CompletableFuture");
+            }
+            case "recipe" -> {
+                text = text.replaceFirst("\\bextends\\s+FabricRecipeProvider\\b", "extends RecipeProvider.Runner");
+                if (!Pattern.compile("public\\s+String\\s+getName\\s*\\(").matcher(text).find()) text = beforeLastBrace(text, unit + "@Override\n" + unit + "public String getName() {\n" + unit + unit + "return \"Recipes\";\n" + unit + "}\n");
+            }
+            default -> {
+                text = text.replaceFirst("\\bextends\\s+FabricAdvancementProvider\\b", "implements AdvancementSubProvider");
+                text = text.replaceFirst("(?m)^[ \\t]*super\\(\\s*\\w+\\s*,\\s*\\w+\\s*\\)\\s*;[ \\t]*\\n", "");
+                text = text.replaceAll("\\bvoid\\s+generateAdvancement\\s*\\(", "void generate(");
+            }
+        }
+        text = addImport(text, kind[1]);
+        return new Provider(kind[0], tidy(text));
+    }
+
+    static String beforeLastBrace(String text, String member) {
+        int last = text.lastIndexOf('}');
+        String head = text.substring(0, last).replaceAll("\\s+$", "");
+        return head + "\n\n" + member + text.substring(last);
+    }
+
+    /**
+     * The fabric-datagen entrypoint: onInitializeDataGenerator now takes NeoForge's GatherDataEvent, and each
+     * pack.addProvider(X::new) becomes event.createProvider with the vanilla provider X needs around it.
+     * Returns null when a provider's kind is not known (it is named instead).
+     */
+    static String datagenEntry(String text, Map<String, String> kinds, List<String> unknown) {
+        text = text.replaceAll("\\s+implements\\s+DataGeneratorEntrypoint\\s*(?=\\{)", " ");
+        text = text.replaceAll("(?m)^([ \\t]*)@Override[ \\t]*\\n[ \\t]*(public\\s+void\\s+onInitializeDataGenerator\\s*\\()", "$1$2");
+        Matcher param = Pattern.compile("onInitializeDataGenerator\\s*\\(\\s*FabricDataGenerator\\s+(\\w+)\\s*\\)").matcher(text);
+        if (!param.find()) return null;
+        String event = param.group(1);
+        text = text.replace(param.group(), "onInitializeDataGenerator(GatherDataEvent " + event + ")");
+        Matcher pack = Pattern.compile("(?m)^[ \\t]*(?:final\\s+)?(?:FabricDataGenerator\\.Pack|var)\\s+(\\w+)\\s*=\\s*" + Pattern.quote(event) + "\\.createPack\\(\\)\\s*;[ \\t]*\\n\\s*").matcher(text);
+        List<String> receivers = new ArrayList<>(List.of(Pattern.quote(event) + "\\.createPack\\(\\)"));
+        if (pack.find()) {
+            receivers.add(Pattern.quote(pack.group(1)));
+            text = text.substring(0, pack.start()) + LoaderRules.indent(text, pack.start()) + text.substring(pack.end());
+        }
+        for (String receiver : receivers) {
+            Matcher add = Pattern.compile(receiver + "\\.addProvider\\(\\s*(\\w+)::new\\s*\\)").matcher(text);
+            StringBuilder out = new StringBuilder();
+            int last = 0;
+            while (add.find()) {
+                String provider = add.group(1), kind = kinds.get(provider);
+                String call = kind == null ? null : switch (kind) {
+                    case "model", "recipe" -> event + ".createProvider(" + provider + "::new)";
+                    case "blockLoot" -> event + ".createProvider((output, lookup) -> new LootTableProvider(output, Set.of(), List.of(new LootTableProvider.SubProviderEntry(" + provider + "::new, LootContextParamSets.BLOCK)), lookup))";
+                    case "advancement" -> event + ".createProvider((output, lookup) -> new AdvancementProvider(output, lookup, List.of(new " + provider + "(output, lookup))))";
+                    default -> null;
+                };
+                if (call == null) {
+                    unknown.add(provider);
+                    continue;
+                }
+                out.append(text, last, add.start()).append(call);
+                last = add.end();
+            }
+            out.append(text.substring(last));
+            text = out.toString();
+        }
+        text = Pattern.compile("(?m)^import\\s+net\\.fabricmc\\.fabric\\.api\\.datagen\\.v1\\.[\\w.]+\\s*;[^\\n]*\\n?").matcher(text).replaceAll("");
+        text = addImport(text, "net.neoforged.neoforge.data.event.GatherDataEvent");
+        if (kinds.containsValue("blockLoot")) for (String name : List.of("java.util.List", "java.util.Set", "net.minecraft.data.loot.LootTableProvider", "net.minecraft.world.level.storage.loot.parameters.LootContextParamSets")) if (text.contains("LootTableProvider")) text = addImport(text, name);
+        if (text.contains("new AdvancementProvider(")) for (String name : List.of("java.util.List", "net.minecraft.data.advancements.AdvancementProvider")) text = addImport(text, name);
+        return tidy(text);
     }
 
     // ---- integrations ------------------------------------------------------------------------------------

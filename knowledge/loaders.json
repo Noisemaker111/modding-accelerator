@@ -35,6 +35,11 @@
    "maven": "https://maven.neoforged.net/releases",
    "coordinate": "net.neoforged:mergetool:2.0.7:api",
    "docs": "https://docs.neoforged.net/docs/concepts/sides"
+  },
+  "minecraft-26.2": {
+   "manifest": true,
+   "version": "26.2",
+   "docs": "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
   }
  },
  "buses": {
@@ -104,6 +109,33 @@
     ],
     "neoforge": [
      "fml|net.neoforged.fml.loading.moddiscovery.ModInfo#getModId"
+    ]
+   }
+  },
+  {
+   "id": "datagen",
+   "about": "fabric-datagen entrypoint (DataGeneratorEntrypoint.onInitializeDataGenerator(FabricDataGenerator)) <-> a method taking NeoForge's GatherDataEvent, called from a GatherDataEvent.Client listener the main @Mod class adds; pack.addProvider(X::new) <-> event.createProvider. Fabric's datagen bases wrap vanilla providers, so each provider class moves onto the vanilla one: FabricModelProvider -> ModelProvider(output, modId) with one registerModels calling generateBlockStateModels and generateItemModels; FabricBlockLootSubProvider -> BlockLootSubProvider over the mod's own blocks, inside a LootTableProvider; FabricRecipeProvider -> RecipeProvider.Runner; FabricAdvancementProvider -> AdvancementSubProvider inside an AdvancementProvider. The Loom datagen run becomes ModDevGradle's clientData run writing to the same folder. For Minecraft 1.21.4 to 26.2, where these providers take a PackOutput; 26.3 changed their constructors.",
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint#onInitializeDataGenerator",
+     "fabric-api|net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator#createPack",
+     "fabric-api|net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator$Pack#addProvider",
+     "fabric-api|net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider#generateBlockStateModels",
+     "fabric-api|net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider#generateItemModels",
+     "fabric-api|net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootSubProvider#generate",
+     "fabric-api|net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider",
+     "fabric-api|net.fabricmc.fabric.api.datagen.v1.provider.FabricAdvancementProvider#generateAdvancement"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.data.event.GatherDataEvent$Client",
+     "neoforge|net.neoforged.neoforge.data.event.GatherDataEvent#createProvider",
+     "minecraft-26.2|net.minecraft.client.data.models.ModelProvider",
+     "minecraft-26.2|net.minecraft.data.loot.BlockLootSubProvider",
+     "minecraft-26.2|net.minecraft.data.loot.LootTableProvider$SubProviderEntry",
+     "minecraft-26.2|net.minecraft.world.level.storage.loot.parameters.LootContextParamSets#BLOCK",
+     "minecraft-26.2|net.minecraft.data.recipes.RecipeProvider$Runner",
+     "minecraft-26.2|net.minecraft.data.advancements.AdvancementSubProvider#generate",
+     "minecraft-26.2|net.minecraft.data.advancements.AdvancementProvider"
     ]
    }
   }
@@ -276,6 +308,32 @@
     "fabric": "import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;\nclass A {\n    void init() {\n        FlammableBlockRegistry registry = FlammableBlockRegistry.getDefaultInstance();\n        registry.add(FLAG, 30, 60);\n        registry.add(BANNER, 5, 20);\n    }\n}",
     "neoforge": "import net.minecraft.world.level.block.Blocks;\nimport net.minecraft.world.level.block.FireBlock;\nclass A {\n    void init() {\n        ((FireBlock) Blocks.FIRE).setFlammable(FLAG, 30, 60);\n        ((FireBlock) Blocks.FIRE).setFlammable(BANNER, 5, 20);\n    }\n}",
     "back": "import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;\nclass A {\n    void init() {\n        FlammableBlockRegistry.getDefaultInstance().add(FLAG, 30, 60);\n        FlammableBlockRegistry.getDefaultInstance().add(BANNER, 5, 20);\n    }\n}"
+   }
+  },
+  {
+   "id": "creative-tab-builder",
+   "about": "Fabric's FabricCreativeModeTab.builder() is the builder NeoForge adds to CreativeModeTab itself (a no-argument CreativeModeTab.builder(), placing the tab after the vanilla ones).",
+   "fabric": "FabricCreativeModeTab.builder()",
+   "neoforge": "CreativeModeTab.builder()",
+   "imports": {
+    "fabric": [
+     "net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab"
+    ],
+    "neoforge": [
+     "net.minecraft.world.item.CreativeModeTab"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab#builder"
+    ],
+    "neoforge": [
+     "minecraft|net.minecraft.world.item.CreativeModeTab$Builder"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;\nimport net.minecraft.world.item.CreativeModeTab;\nclass A { CreativeModeTab TAB = FabricCreativeModeTab.builder().title(NAME).build(); }",
+    "neoforge": "import net.minecraft.world.item.CreativeModeTab;\nclass A { CreativeModeTab TAB = CreativeModeTab.builder().title(NAME).build(); }"
    }
   }
  ],
@@ -646,8 +704,534 @@
     ]
    },
    "test": {
-    "fabric": "import net.fabricmc.fabric.api.loot.v3.LootTableEvents;\nclass A { void init() { LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {\n    if (key == CHEST) tableBuilder.withPool(pool());\n}); } }",
-    "neoforge": "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.LootTableLoadEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(LootTableLoadEvent.class, event -> {\n    var key = event.getKey();\n    if (key == CHEST) event.getTable().addPool(pool().build());\n}); } }"
+    "fabric": "import net.fabricmc.fabric.api.loot.v3.LootTableEvents;\nclass A { void init() { LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {\n    if (key == CHEST) tableBuilder.withPool(pool());\n    for (var extra : EXTRA) tableBuilder.withPool(extra.pool());\n}); } }",
+    "neoforge": "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.LootTableLoadEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(LootTableLoadEvent.class, event -> {\n    var key = event.getKey();\n    if (key == CHEST) event.getTable().addPool(pool().build());\n    for (var extra : EXTRA) event.getTable().addPool(extra.pool().build());\n}); } }"
+   }
+  },
+  {
+   "id": "server-level-tick-end",
+   "about": "Fabric fires this for server levels only; NeoForge's event fires on both sides, so the listener first checks the level is a ServerLevel.",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#END_LEVEL_TICK",
+    "params": [
+     "level"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.tick.LevelTickEvent.Post",
+    "bus": "game",
+    "args": [
+     "(ServerLevel) $event.getLevel()"
+    ],
+    "filter": "$event.getLevel() instanceof ServerLevel",
+    "imports": [
+     "net.minecraft.server.level.ServerLevel"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#END_LEVEL_TICK"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent$Post",
+     "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent#getLevel",
+     "minecraft|net.minecraft.server.level.ServerLevel"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;\nclass A { void init() { ServerTickEvents.END_LEVEL_TICK.register(level -> grow(level)); } }",
+    "neoforge": "import net.minecraft.server.level.ServerLevel;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.tick.LevelTickEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, event -> {\n    if (!(event.getLevel() instanceof ServerLevel)) return;\n    var level = (ServerLevel) event.getLevel();\n    grow(level);\n}); } }"
+   }
+  },
+  {
+   "id": "server-level-tick-start",
+   "about": "Fabric fires this for server levels only; NeoForge's event fires on both sides, so the listener first checks the level is a ServerLevel.",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#START_LEVEL_TICK",
+    "params": [
+     "level"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.tick.LevelTickEvent.Pre",
+    "bus": "game",
+    "args": [
+     "(ServerLevel) $event.getLevel()"
+    ],
+    "filter": "$event.getLevel() instanceof ServerLevel",
+    "imports": [
+     "net.minecraft.server.level.ServerLevel"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents#START_LEVEL_TICK"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent$Pre",
+     "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent#getLevel",
+     "minecraft|net.minecraft.server.level.ServerLevel"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;\nclass A { void init() { ServerTickEvents.START_LEVEL_TICK.register(level -> grow(level)); } }",
+    "neoforge": "import net.minecraft.server.level.ServerLevel;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.tick.LevelTickEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(LevelTickEvent.Pre.class, event -> {\n    if (!(event.getLevel() instanceof ServerLevel)) return;\n    var level = (ServerLevel) event.getLevel();\n    grow(level);\n}); } }"
+   }
+  },
+  {
+   "id": "client-level-tick-end",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#END_LEVEL_TICK",
+    "params": [
+     "level"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.tick.LevelTickEvent.Post",
+    "bus": "game",
+    "args": [
+     "(ClientLevel) $event.getLevel()"
+    ],
+    "filter": "$event.getLevel() instanceof ClientLevel",
+    "imports": [
+     "net.minecraft.client.multiplayer.ClientLevel"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#END_LEVEL_TICK"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent$Post",
+     "minecraft|net.minecraft.client.multiplayer.ClientLevel"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;\nclass A { void init() { ClientTickEvents.END_LEVEL_TICK.register(level -> animate(level)); } }",
+    "neoforge": "import net.minecraft.client.multiplayer.ClientLevel;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.tick.LevelTickEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, event -> {\n    if (!(event.getLevel() instanceof ClientLevel)) return;\n    var level = (ClientLevel) event.getLevel();\n    animate(level);\n}); } }"
+   }
+  },
+  {
+   "id": "client-level-tick-start",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#START_LEVEL_TICK",
+    "params": [
+     "level"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.tick.LevelTickEvent.Pre",
+    "bus": "game",
+    "args": [
+     "(ClientLevel) $event.getLevel()"
+    ],
+    "filter": "$event.getLevel() instanceof ClientLevel",
+    "imports": [
+     "net.minecraft.client.multiplayer.ClientLevel"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#START_LEVEL_TICK"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.tick.LevelTickEvent$Pre",
+     "minecraft|net.minecraft.client.multiplayer.ClientLevel"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;\nclass A { void init() { ClientTickEvents.START_LEVEL_TICK.register(level -> animate(level)); } }",
+    "neoforge": "import net.minecraft.client.multiplayer.ClientLevel;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.tick.LevelTickEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(LevelTickEvent.Pre.class, event -> {\n    if (!(event.getLevel() instanceof ClientLevel)) return;\n    var level = (ClientLevel) event.getLevel();\n    animate(level);\n}); } }"
+   }
+  },
+  {
+   "id": "server-entity-load",
+   "about": "Fabric fires this for server levels only; NeoForge's event fires on both sides, so the listener first checks the level is a ServerLevel.",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#ENTITY_LOAD",
+    "params": [
+     "entity",
+     "level"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.entity.EntityJoinLevelEvent",
+    "bus": "game",
+    "args": [
+     "$event.getEntity()",
+     "(ServerLevel) $event.getLevel()"
+    ],
+    "filter": "$event.getLevel() instanceof ServerLevel",
+    "imports": [
+     "net.minecraft.server.level.ServerLevel"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#ENTITY_LOAD"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.entity.EntityJoinLevelEvent#getLevel",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityEvent#getEntity"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;\nclass A { void init() { ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> track(entity, level)); } }",
+    "neoforge": "import net.minecraft.server.level.ServerLevel;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(EntityJoinLevelEvent.class, event -> {\n    if (!(event.getLevel() instanceof ServerLevel)) return;\n    var entity = event.getEntity();\n    var level = (ServerLevel) event.getLevel();\n    track(entity, level);\n}); } }"
+   }
+  },
+  {
+   "id": "server-entity-unload",
+   "about": "Fabric fires this for server levels only; NeoForge's event fires on both sides, so the listener first checks the level is a ServerLevel.",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#ENTITY_UNLOAD",
+    "params": [
+     "entity",
+     "level"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent",
+    "bus": "game",
+    "args": [
+     "$event.getEntity()",
+     "(ServerLevel) $event.getLevel()"
+    ],
+    "filter": "$event.getLevel() instanceof ServerLevel",
+    "imports": [
+     "net.minecraft.server.level.ServerLevel"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#ENTITY_UNLOAD"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent#getLevel",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityEvent#getEntity"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;\nclass A { void init() { ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> track(entity, level)); } }",
+    "neoforge": "import net.minecraft.server.level.ServerLevel;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(EntityLeaveLevelEvent.class, event -> {\n    if (!(event.getLevel() instanceof ServerLevel)) return;\n    var entity = event.getEntity();\n    var level = (ServerLevel) event.getLevel();\n    track(entity, level);\n}); } }"
+   }
+  },
+  {
+   "id": "server-level-load",
+   "about": "Fabric fires this for server levels only; NeoForge's event fires on both sides, so the listener first checks the level is a ServerLevel.",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents#LOAD",
+    "params": [
+     "server",
+     "level"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.level.LevelEvent.Load",
+    "bus": "game",
+    "args": [
+     "((ServerLevel) $event.getLevel()).getServer()",
+     "(ServerLevel) $event.getLevel()"
+    ],
+    "filter": "$event.getLevel() instanceof ServerLevel",
+    "imports": [
+     "net.minecraft.server.level.ServerLevel"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents#LOAD"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.level.LevelEvent$Load",
+     "neoforge|net.neoforged.neoforge.event.level.LevelEvent#getLevel",
+     "minecraft|net.minecraft.server.level.ServerLevel#getServer"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;\nclass A { void init() { ServerLevelEvents.LOAD.register((server, level) -> open(server, level)); } }",
+    "neoforge": "import net.minecraft.server.level.ServerLevel;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.level.LevelEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(LevelEvent.Load.class, event -> {\n    if (!(event.getLevel() instanceof ServerLevel)) return;\n    var server = ((ServerLevel) event.getLevel()).getServer();\n    var level = (ServerLevel) event.getLevel();\n    open(server, level);\n}); } }"
+   }
+  },
+  {
+   "id": "server-level-unload",
+   "about": "Fabric fires this for server levels only; NeoForge's event fires on both sides, so the listener first checks the level is a ServerLevel.",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents#UNLOAD",
+    "params": [
+     "server",
+     "level"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.level.LevelEvent.Unload",
+    "bus": "game",
+    "args": [
+     "((ServerLevel) $event.getLevel()).getServer()",
+     "(ServerLevel) $event.getLevel()"
+    ],
+    "filter": "$event.getLevel() instanceof ServerLevel",
+    "imports": [
+     "net.minecraft.server.level.ServerLevel"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents#UNLOAD"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.level.LevelEvent$Unload",
+     "neoforge|net.neoforged.neoforge.event.level.LevelEvent#getLevel",
+     "minecraft|net.minecraft.server.level.ServerLevel#getServer"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;\nclass A { void init() { ServerLevelEvents.UNLOAD.register((server, level) -> open(server, level)); } }",
+    "neoforge": "import net.minecraft.server.level.ServerLevel;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.level.LevelEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(LevelEvent.Unload.class, event -> {\n    if (!(event.getLevel() instanceof ServerLevel)) return;\n    var server = ((ServerLevel) event.getLevel()).getServer();\n    var level = (ServerLevel) event.getLevel();\n    open(server, level);\n}); } }"
+   }
+  },
+  {
+   "id": "player-join",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents#JOIN",
+    "params": [
+     "handler",
+     "sender",
+     "server"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent",
+    "bus": "game",
+    "args": [
+     null,
+     null,
+     "((ServerPlayer) $event.getEntity()).level().getServer()"
+    ],
+    "imports": [
+     "net.minecraft.server.level.ServerPlayer"
+    ],
+    "rewrite": [
+     {
+      "param": 0,
+      "fabric": "$self.getPlayer()",
+      "neoforge": "((ServerPlayer) $event.getEntity())"
+     },
+     {
+      "param": 0,
+      "fabric": "$self.player",
+      "neoforge": "((ServerPlayer) $event.getEntity())"
+     }
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents#JOIN"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$PlayerLoggedInEvent",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent#getEntity",
+     "minecraft|net.minecraft.server.level.ServerPlayer#level",
+     "minecraft|net.minecraft.server.network.ServerGamePacketListenerImpl#getPlayer"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;\nclass A { void init() { ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> greet(handler.player, server)); } }",
+    "neoforge": "import net.minecraft.server.level.ServerPlayer;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.entity.player.PlayerEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, event -> {\n    var server = ((ServerPlayer) event.getEntity()).level().getServer();\n    greet(((ServerPlayer) event.getEntity()), server);\n}); } }",
+    "back": "import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;\nclass A { void init() { ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> greet(handler.getPlayer(), server)); } }"
+   }
+  },
+  {
+   "id": "player-leave",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents#DISCONNECT",
+    "params": [
+     "handler",
+     "server"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent",
+    "bus": "game",
+    "args": [
+     null,
+     "((ServerPlayer) $event.getEntity()).level().getServer()"
+    ],
+    "imports": [
+     "net.minecraft.server.level.ServerPlayer"
+    ],
+    "rewrite": [
+     {
+      "param": 0,
+      "fabric": "$self.getPlayer()",
+      "neoforge": "((ServerPlayer) $event.getEntity())"
+     },
+     {
+      "param": 0,
+      "fabric": "$self.player",
+      "neoforge": "((ServerPlayer) $event.getEntity())"
+     }
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents#DISCONNECT"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$PlayerLoggedOutEvent"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;\nclass A { void init() { ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> forget(handler.getPlayer())); } }",
+    "neoforge": "import net.minecraft.server.level.ServerPlayer;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.entity.player.PlayerEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedOutEvent.class, event -> {\n    forget(((ServerPlayer) event.getEntity()));\n}); } }"
+   }
+  },
+  {
+   "id": "client-join",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#JOIN",
+    "params": [
+     "handler",
+     "sender",
+     "client"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn",
+    "bus": "game",
+    "args": [
+     "$event.getPlayer().connection",
+     null,
+     "Minecraft.getInstance()"
+    ],
+    "imports": [
+     "net.minecraft.client.Minecraft"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#JOIN"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingIn",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getPlayer",
+     "minecraft|net.minecraft.client.player.LocalPlayer#connection"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;\nclass A { void init() { ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> joined(client)); } }",
+    "neoforge": "import net.minecraft.client.Minecraft;\nimport net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;\nimport net.neoforged.neoforge.common.NeoForge;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingIn.class, event -> {\n    var client = Minecraft.getInstance();\n    joined(client);\n}); } }"
+   }
+  },
+  {
+   "id": "client-leave",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#DISCONNECT",
+    "params": [
+     "handler",
+     "client"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut",
+    "bus": "game",
+    "args": [
+     null,
+     "Minecraft.getInstance()"
+    ],
+    "imports": [
+     "net.minecraft.client.Minecraft"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#DISCONNECT"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingOut"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;\nclass A { void init() { ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> left(client)); } }",
+    "neoforge": "import net.minecraft.client.Minecraft;\nimport net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;\nimport net.neoforged.neoforge.common.NeoForge;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> {\n    var client = Minecraft.getInstance();\n    left(client);\n}); } }"
+   }
+  },
+  {
+   "id": "item-tooltip",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback#EVENT",
+    "params": [
+     "stack",
+     "context",
+     "flag",
+     "lines"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.event.entity.player.ItemTooltipEvent",
+    "bus": "game",
+    "args": [
+     "$event.getItemStack()",
+     "$event.getContext()",
+     "$event.getFlags()",
+     "$event.getToolTip()"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback#EVENT"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getItemStack",
+     "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getContext",
+     "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getFlags",
+     "neoforge|net.neoforged.neoforge.event.entity.player.ItemTooltipEvent#getToolTip"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;\nclass A { void init() { ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> {\n    if (stack.is(GEM)) lines.add(Component.literal(\"shiny\"));\n}); } }",
+    "neoforge": "import net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ItemTooltipEvent.class, event -> {\n    var stack = event.getItemStack();\n    var lines = event.getToolTip();\n    if (stack.is(GEM)) lines.add(Component.literal(\"shiny\"));\n}); } }",
+    "back": "import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;\nclass A { void init() { ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> {\n    if (stack.is(GEM)) lines.add(Component.literal(\"shiny\"));\n}); } }"
+   }
+  },
+  {
+   "id": "screen-after-init",
+   "fabric": {
+    "event": "net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#AFTER_INIT",
+    "params": [
+     "client",
+     "screen",
+     "width",
+     "height"
+    ]
+   },
+   "neoforge": {
+    "event": "net.neoforged.neoforge.client.event.ScreenEvent.Init.Post",
+    "bus": "game",
+    "args": [
+     "Minecraft.getInstance()",
+     "$event.getScreen()",
+     "$event.getScreen().width",
+     "$event.getScreen().height"
+    ],
+    "imports": [
+     "net.minecraft.client.Minecraft"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#AFTER_INIT"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent#getScreen",
+     "minecraft|net.minecraft.client.gui.screens.Screen#width"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;\nclass A { void init() { ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> decorate(screen, width)); } }",
+    "neoforge": "import net.minecraft.client.Minecraft;\nimport net.neoforged.neoforge.client.event.ScreenEvent;\nimport net.neoforged.neoforge.common.NeoForge;\nclass A { void init() { NeoForge.EVENT_BUS.addListener(ScreenEvent.Init.Post.class, event -> {\n    var screen = event.getScreen();\n    var width = event.getScreen().width;\n    decorate(screen, width);\n}); } }",
+    "back": "import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;\nclass A { void init() { ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> decorate(screen, width)); } }"
    }
   }
  ],
@@ -676,6 +1260,34 @@
    "test": {
     "fabric": "import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nclass A { static KeyMapping toggle; void init() {\n    toggle = KeyMappingHelper.registerKeyMapping(new KeyMapping(\"key.demo\", 0, CATEGORY));\n} }",
     "neoforge": "import net.neoforged.fml.ModList;\nimport net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;\nclass A { static KeyMapping toggle; void init() {\n    toggle = new KeyMapping(\"key.demo\", 0, CATEGORY);\n    ModList.get().getModContainerById(\"demo\").orElseThrow().getEventBus().addListener(RegisterKeyMappingsEvent.class, event -> event.register(toggle));\n} }"
+   }
+  },
+  {
+   "id": "entity-attributes",
+   "about": "Fabric registers default attributes at once; NeoForge collects them in EntityAttributeCreationEvent on the mod bus, which fires after registration.",
+   "fabric": "FabricDefaultAttributeRegistry.register($type, $attributes);",
+   "neoforge": "$modbus.addListener(EntityAttributeCreationEvent.class, event -> event.put($type, $attributes.build()));",
+   "imports": {
+    "fabric": [
+     "net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry"
+    ],
+    "neoforge": [
+     "net.neoforged.fml.ModList",
+     "net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry#register"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent#put",
+     "minecraft|net.minecraft.world.entity.ai.attributes.AttributeSupplier$Builder#build"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;\nclass A { void init() {\n    FabricDefaultAttributeRegistry.register(GOLEM, Golem.createAttributes());\n} }",
+    "neoforge": "import net.neoforged.fml.ModList;\nimport net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;\nclass A { void init() {\n    ModList.get().getModContainerById(\"demo\").orElseThrow().getEventBus().addListener(EntityAttributeCreationEvent.class, event -> event.put(GOLEM, Golem.createAttributes().build()));\n} }"
    }
   }
  ],

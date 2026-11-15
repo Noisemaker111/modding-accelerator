@@ -221,6 +221,7 @@ final class Convert {
         if (modid.isEmpty()) throw new IOException("fabric.mod.json has no id.");
         rewriteSources("fabric", "neoforge");
         Map<String, Object> entrypoints = meta.get("entrypoints") instanceof Map<?, ?> ? Json.object(meta.get("entrypoints")) : Map.of();
+        String datagen = datagenToNeoForge(entrypoints, minecraft);
         String menu = null;
         for (var entry : entrypoints.entrySet()) {
             List<String> classes = new ArrayList<>();
@@ -234,11 +235,14 @@ final class Convert {
                     continue;
                 }
                 switch (entry.getKey()) {
-                    case "main" -> entryToNeoForge(name, "ModInitializer", "onInitialize", null, null);
+                    case "main" -> entryToNeoForge(name, "ModInitializer", "onInitialize", null, datagen);
                     case "client" -> entryToNeoForge(name, "ClientModInitializer", "onInitializeClient", "CLIENT", null);
                     case "server" -> entryToNeoForge(name, "DedicatedServerModInitializer", "onInitializeServer", "DEDICATED_SERVER", null);
                     case "modmenu" -> menu = name;
-                    case "fabric-datagen" -> leave(metaFile, 0, "entrypoint fabric-datagen: " + name, "Fabric's data generation API has no NeoForge counterpart in the rules; its generated files are what ship");
+                    case "fabric-datagen" -> {
+                        if (datagen == null) leave(metaFile, 0, "entrypoint fabric-datagen: " + name, "Fabric's data generation is converted for Minecraft 1.21.4 to 26.2 (the PackOutput providers); this one was not");
+                        else if (!entrypoints.containsKey("main")) leave(metaFile, 0, "entrypoint fabric-datagen: " + name, "NeoForge runs data generation from the mod's @Mod class, and this mod has no main entrypoint to become one");
+                    }
                     default -> leave(metaFile, 0, "entrypoint " + entry.getKey() + ": " + name, "an entrypoint another mod reads; NeoForge has no counterpart");
                 }
             }
@@ -325,9 +329,54 @@ final class Convert {
         if (client) needed.add("net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent");
         else needed.addAll(List.of("net.neoforged.neoforge.registries.RegisterEvent", "net.minecraft.core.registries.Registries"));
         if (dist != null) needed.addAll(List.of("net.neoforged.api.distmarker.Dist", "net.neoforged.fml.ModContainer", "net.neoforged.bus.api.EventPriority"));
+        if (extra != null && extra.contains("GatherDataEvent")) needed.add("net.neoforged.neoforge.data.event.GatherDataEvent");
         for (String name2 : needed) out = LoaderRules.addImport(out, name2);
         write(file, out);
         applied.computeIfAbsent("entrypoint-" + api, k -> new ArrayList<>()).add(file);
+    }
+
+    /** Where Fabric data generation writes: the datagen run's fabric-api.datagen.output-dir, else Loom's src/main/generated. */
+    String datagenOutput = null;
+
+    /**
+     * Fabric data generation onto NeoForge's: each provider class onto the vanilla provider it wraps, the
+     * fabric-datagen entrypoint onto a GatherDataEvent.Client listener the main @Mod class adds. Returns that
+     * listener's line for the main constructor, or null when the mod has no datagen or it cannot be converted.
+     */
+    String datagenToNeoForge(Map<String, Object> entrypoints, String minecraft) throws Exception {
+        List<String> names = new ArrayList<>();
+        for (Object item : Json.array(entrypoints.getOrDefault("fabric-datagen", List.of()))) names.add(item instanceof String s ? s : Json.text(Json.object(item), "value", ""));
+        if (names.size() != 1 || !entrypoints.containsKey("main")) return null;
+        // The providers' PackOutput shape is Minecraft's from 1.21.4 to 26.2; 26.3 changed the vanilla provider constructors.
+        if (Versions.compare(minecraft, "1.21.4") < 0 || Versions.compare(minecraft, "26.3") >= 0) return null;
+        Map<String, String> kinds = new HashMap<>();
+        boolean complete = true;
+        for (String file : javaFiles()) {
+            LoaderRules.Provider provider = LoaderRules.datagenProvider(read(file), modid);
+            if (provider == null) continue;
+            if (provider.kind().isEmpty()) {
+                leave(file, 0, "data provider " + file.substring(file.lastIndexOf('/') + 1), "it extends a Fabric datagen base with no rule yet (models, block loot, recipes and advancements have one)");
+                complete = false;
+                continue;
+            }
+            write(file, provider.text());
+            kinds.put(file.substring(file.lastIndexOf('/') + 1).replace(".java", ""), provider.kind());
+            applied.computeIfAbsent("datagen-" + provider.kind(), k -> new ArrayList<>()).add(file);
+        }
+        String file = classFile(names.get(0));
+        if (file == null) return null;
+        List<String> unknown = new ArrayList<>();
+        String entry = LoaderRules.datagenEntry(read(file), kinds, unknown);
+        if (entry == null) {
+            leave(file, 0, "entrypoint fabric-datagen", "onInitializeDataGenerator(FabricDataGenerator) was not found");
+            return null;
+        }
+        for (String provider : unknown) leave(file, 0, "data provider " + provider, "its kind has no rule, so it is not registered with GatherDataEvent");
+        write(file, entry);
+        applied.computeIfAbsent("datagen-entrypoint", k -> new ArrayList<>()).add(file);
+        datagenOutput = "src/main/generated";
+        if (complete && unknown.isEmpty()) notes.add("Data generation: modaccel compile --task :runClientData writes the generated files to the folder the Fabric datagen used.");
+        return "modBus.addListener(GatherDataEvent.Client.class, event -> new " + names.get(0) + "().onInitializeDataGenerator(event));";
     }
 
     /** Mod Menu's config screen becomes NeoForge's IConfigScreenFactory, registered by the client entrypoint. */
@@ -628,7 +677,9 @@ final class Convert {
                 if (part.getKey().equals("runs")) {
                     for (var run : children(part.getValue()).entrySet()) {
                         if (run.getValue().contains("fabric-api.datagen")) {
-                            leave("build.gradle", 0, "loom run " + run.getKey(), "it runs Fabric data generation, which has no NeoForge counterpart in the rules");
+                            Matcher dir = Pattern.compile("fabric-api\\.datagen\\.output-dir=([^\"'\\s]+)").matcher(run.getValue());
+                            if (datagenOutput != null && dir.find()) datagenOutput = dir.group(1).replaceFirst("^\\$\\{(?:project\\.)?projectDir}/", "");
+                            if (datagenOutput == null) leave("build.gradle", 0, "loom run " + run.getKey(), "it runs Fabric data generation, which was not converted");
                             continue;
                         }
                         if (Set.of("client", "server").contains(run.getKey())) continue;
@@ -653,13 +704,19 @@ final class Convert {
         }
         int[] fabricApi = block(gradle, "fabricApi");
         if (fabricApi != null) {
-            if (gradle.substring(fabricApi[0], fabricApi[1]).contains("DataGeneration")) leave("build.gradle", 0, "fabricApi { configureDataGeneration }", "Fabric data generation has no NeoForge counterpart in the rules");
+            if (gradle.substring(fabricApi[0], fabricApi[1]).contains("DataGeneration") && datagenOutput == null) leave("build.gradle", 0, "fabricApi { configureDataGeneration }", "Fabric data generation was not converted");
             if (fabricApi[0] < insertAt) insertAt -= fabricApi[1] - fabricApi[0];
             gradle = gradle.substring(0, fabricApi[0]) + gradle.substring(fabricApi[1]);
+        }
+        if (datagenOutput != null) {
+            runs.append(unit).append(unit).append("clientData {\n").append(unit).append(unit).append(unit).append("clientData()\n");
+            runs.append(unit).append(unit).append(unit).append("programArguments.addAll('--mod', '").append(modid).append("', '--all', '--output', file('").append(datagenOutput).append("').absolutePath, '--existing', file('src/main/resources').absolutePath)\n");
+            runs.append(unit).append(unit).append("}\n");
         }
         StringBuilder neoForge = new StringBuilder("neoForge {\n");
         neoForge.append(unit).append("version = project.neo_version\n\n").append(unit).append("runs {\n").append(runs).append(unit).append("}\n\n");
         neoForge.append(unit).append("mods {\n").append(unit).append(unit).append(LoaderRules.quote(modid)).append(" {\n").append(unit).append(unit).append(unit).append("sourceSet sourceSets.main\n").append(unit).append(unit).append("}\n").append(unit).append("}\n}\n");
+        if (datagenOutput != null) neoForge.append("\n// Generated data (runClientData) ships with the mod's own resources.\nsourceSets.main.resources {\n").append(unit).append("srcDir '").append(datagenOutput).append("'\n").append(unit).append("exclude '.cache'\n}\n");
         if (split) neoForge.append("\n// NeoForge has no split client source set: the client sources build with the rest.\nsourceSets.main.java.srcDir 'src/client/java'\nsourceSets.main.resources.srcDir 'src/client/resources'\n");
         gradle = gradle.substring(0, insertAt) + neoForge + (insertAt < gradle.length() && gradle.charAt(insertAt) != '\n' ? "\n" : "") + gradle.substring(insertAt);
         int[] deps = block(gradle, "dependencies");
@@ -963,7 +1020,7 @@ final class Convert {
         }
         gradle = gradle.replaceAll("(?m)^// NeoForge has no split client source set[^\\n]*\\n", "");
         int[] deps = block(gradle, "dependencies");
-        String add = unit + "minecraft \"com.mojang:minecraft:${project.minecraft_version}\"\n" + unit + "implementation \"net.fabricmc:fabric-loader:${project.loader_version}\"\n" + unit + "implementation \"net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}\"\n" + (menu ? unit + "compileOnly \"com.terraformersmc:modmenu:${project.modmenu_version}\"\n" : "");
+        String add = unit + "minecraft \"com.mojang:minecraft:${project.minecraft_version}\"\n" + unit + "implementation \"net.fabricmc:fabric-loader:${project.loader_version}\"\n" + unit + "implementation \"net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}\"\n" + (menu ? unit + "compileOnly \"com.terraformersmc:modmenu:${project.modmenu_version}\"\n" + unit + "localRuntime \"com.terraformersmc:modmenu:${project.modmenu_version}\"\n" : "");
         if (deps != null) {
             StringBuilder body = new StringBuilder();
             for (String raw : gradle.substring(deps[2] + 1, deps[3] - 1).lines().toList()) {
@@ -989,7 +1046,13 @@ final class Convert {
         props.put("loader_version", fabricLoader);
         props.put("fabric_api_version", api);
         if (menu) {
-            String modmenu = newest(metadataVersions(Target.fetch(build, "https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/maven-metadata.xml")).stream().filter(v -> !v.contains("-")).toList());
+            // The newest stable Mod Menu that Modrinth, where Mod Menu publishes, lists for this Minecraft version on Fabric.
+            String modmenu = null;
+            for (Object version : Json.array(Json.parse(Target.fetch(build, "https://api.modrinth.com/v2/project/modmenu/version?game_versions=%5B%22" + minecraft + "%22%5D&loaders=%5B%22fabric%22%5D")))) {
+                String number = Json.text(Json.object(version), "version_number", "");
+                if (!number.contains("-") && (modmenu == null || Versions.compare(number, modmenu) > 0)) modmenu = number;
+            }
+            if (modmenu == null) throw new IOException("Mod Menu has no release for Minecraft " + minecraft + " on Modrinth, so the config screen cannot move back to it.");
             props.put("modmenu_version", modmenu);
         }
         write("gradle.properties", setProperties(read("gradle.properties"), props));
