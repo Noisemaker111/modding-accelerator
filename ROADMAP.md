@@ -6,7 +6,7 @@
 
 **The goal:** a mod or plugin author never launches Minecraft, and a modpack user never diagnoses a conflict by hand. Four goals: test a mod in seconds, port it to any Minecraft version automatically, make modpacks work together, and move a project between loaders and platforms. Every result is proven in the real game or on a real server.
 
-**25 of 43 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
+**26 of 43 steps done.** A step is 🟢 done only when it ran and was checked; the others are 🔵 doing, ⚪ next or ⚫ later, each with a target date. Targets were set on Nov 6, and one that moves keeps its old date.
 
 ## Where each goal stands
 
@@ -15,7 +15,7 @@
 | **[1. Test a mod in seconds](#goal-1--test-a-mod-in-seconds)** | `██████░░░░`&nbsp;7&nbsp;of&nbsp;11 | ⚪ 27 · The bot joins a modded server<br>⚪ 26 · The bot on older Paper versions, on demand |
 | **[2. Port a mod to any Minecraft version](#goal-2--port-a-mod-to-any-minecraft-version)** | `███████░░░`&nbsp;16&nbsp;of&nbsp;23 | 🔵 14 · Yarn to the game's own names, whole tree<br>🔵 15 · The build switches with the version (26.x)<br>⚪ 16 · Name what moved in 26.3 |
 | **[3. Make modpacks work together](#goal-3--make-modpacks-work-together)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;4 | 🔵 29 · Reproduce Sismeel's Forge 1.20.1 pack problems<br>🔵 30 · Detect and repair the failure, checked in the game<br>🔵 31 · Any installed pack or export as input |
-| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `██░░░░░░░░`&nbsp;1&nbsp;of&nbsp;5 | Not started |
+| **[4. Change loader or platform](#goal-4--change-loader-or-platform)** | `████░░░░░░`&nbsp;2&nbsp;of&nbsp;5 | Not started |
 
 ## Goal 1 — Test a mod in seconds
 
@@ -284,15 +284,15 @@ A pack user points modaccel at an installed pack or an export and gets its confl
 
 The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separate job from a version port, with separate claims.
 
-- **Today:** No command yet. What exists is a catalogue of which loader call stands in for which, read from mods that ship for several loaders.
-- **The number that says most:** Loader or platform changes that work in the game is **0 pairs**, target 1 pair by Jan 29, 2027, step 18
+- **Today:** modaccel convert moves a mod's source between Fabric and NeoForge on one Minecraft version, with undo. Two real Fabric mods run on NeoForge with no hand edits; Forge, Quilt and Paper are not converted yet.
+- **The number that says most:** Loader or platform changes that work in the game is **2 pairs**, target 1 pair by Jan 29, 2027, step 18
 
 ### Loader pairs
 
 | # | Step | Status | When |
 |---|---|---|---|
-| 40 | Which loader call stands in for which | 🟢 done | Nov 10 |
-| 18 | Fabric → NeoForge on one mod | ⚫ later | Jan 4, 2027 → Jan 29, 2027 |
+| 40 | Loader rules from the loaders' own APIs | 🟢 done | Nov 14 |
+| 18 | Fabric → NeoForge on one mod | 🟢 done | Nov 14 |
 | 19 | Forge → NeoForge and Fabric → Quilt | ⚫ later | Feb 1, 2027 → Feb 26, 2027 |
 
 ### Mods and plugins
@@ -309,9 +309,9 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 <details><summary>What each step is, and how far it got</summary>
 
-**40 · Which loader call stands in for which** (done). Before any project is moved between loaders, read what mods that ship for several loaders already wrote down: the same job done once per loader. python bench/loader_api.py records each pair of loader calls that one switch or one method proves (FabricLoader.isModLoaded on Fabric is ModList.isLoaded on NeoForge), where it was seen and in how many mods, and lists the calls mods use most that have no known counterpart yet. That list is the work for steps 18 and 19. *So far:* python bench/loader_api.py extract read 34 mined Stonecutter mods and Architectury API at their pinned commits and wrote coverage/loader/api.json: 112 pairs of loader calls, each proven at a switch or a method where each loader's side makes that one call, or by a shared class name and member. Fabric to NeoForge has 21 pairs, 5 of them written the same way in two or more mods; the rest are Forge to NeoForge and Fabric to Forge. No project was moved between loaders with it. python bench/test_loader_api.py checks the pairing on a made-up mod and fails when a side with two calls is accepted.
+**40 · Loader rules from the loaders' own APIs** (done). Write each loader-change rule here, from Fabric's and NeoForge's own published APIs and docs, with a before/after test, and check every class and member it names in the loaders' published jars (python bench/loader_api.py verify). No rule is read from other people's mods. *So far:* knowledge/loaders.json holds 41 rules (entrypoints, metadata, loader calls, events, key mappings, flammability, Mod Menu, data generation); bench/loader_api.py verify found all 143 symbols they name in Fabric Loader, Fabric API, NeoForge, FancyModLoader, NeoForge's event bus, its distmarker jar and Minecraft 26.2 and 26.3 (coverage/loader/api.json). It replaces the earlier catalogue mined from 35 multi-loader mods. modaccel self-test runs every rule both ways.
 
-**18 · Fabric → NeoForge on one mod** (later). Fabric → NeoForge on one small mod, measured end to end.
+**18 · Fabric → NeoForge on one mod** (done). Fabric → NeoForge on one small mod, measured end to end. *So far:* modaccel convert moved Auto Omen (Fabric 26.3) to NeoForge with no hand edits, and its own in-game raid self test passed 23 of 23 checks there, the same as on Fabric. Pride Flags (Fabric 26.1.2, with Fabric data generation) moved too: on NeoForge its blocks, items, flammability, loot, recipes and rendered flags were checked in the game. The NeoForge Auto Omen converted back to Fabric passed the same self test.
 
 **19 · Forge → NeoForge and Fabric → Quilt** (later). Forge → NeoForge and Fabric → Quilt, which are close pairs.
 
@@ -325,8 +325,8 @@ The same project moved between Fabric, NeoForge, Forge, Quilt and Paper. A separ
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Loader or platform changes that work in the game | — | 0 pairs (Nov 9) | 1 pair by Jan 29, 2027, step 18 | Baseline |
-| Fabric calls that two or more mods make, with a known NeoForge counterpart | — | 15 calls (Nov 10) | — | Fact |
+| Loader or platform changes that work in the game | 0 pairs (Nov 9) | 2 pairs (Nov 14) | 1 pair by Jan 29, 2027, step 18 | Met |
+| Loader-change rules, each with every class and member it names found in the loaders' published jars | — | 41 rules (Nov 14) | — | Fact |
 
 </details>
 
@@ -338,7 +338,7 @@ The same table for a PR or a report: `python bench/measures.py table [ID ...] [-
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
-| Roadmap steps done | 5 steps (Oct 24) | 25 steps (Nov 10) | 43 steps by Mar 26, 2027 | 53% of the way |
+| Roadmap steps done | 5 steps (Oct 24) | 26 steps (Nov 14) | 43 steps by Mar 26, 2027 | 55% of the way |
 | PR checks, start to finish | 2.0 min (Oct 27) | 3.9 min (Nov 5) | 5.0 min (hold) by Nov 5 | Met |
 | Multi-version Stonecutter run, start to finish (nightly until Nov 7, on demand since) | 45.9 min (Oct 28) | 41.7 min (Nov 6) | — | Fact |
 
