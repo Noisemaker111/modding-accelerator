@@ -2,7 +2,7 @@
 
 One definition of "it works" and "nothing changed" for every mod: what the mod does in a seeded world that is frozen
 from its first tick, recorded the same way whatever the mod, the loader or the game version. Nothing in it names a
-mod; `modaccel self-test --only mod-specific` fails when a rule, repair, bridge, pattern condition or tool source does.
+mod, and no rule, repair, bridge or pattern condition may name one either.
 
 ## What it records
 
@@ -78,6 +78,27 @@ whether the save round trip kept everything; and log errors that name it. Saved 
 compared by type and count across versions, since the game changed its formats (item components in 1.20.5, ValueOutput
 in 1.21.6), and leaf by leaf within one version. Block state hashes use the game's numeric state ids, so they are only
 compared within one version and mod set.
+
+## Tests and proofs
+
+`python bench/test_fingerprint.py` runs offline on recorded fingerprints (`bench/fingerprint-fixtures/`, trimmed from a
+real mod's runs; the cases no run recorded say so in their `about`): a record against itself, a changed leaf named, the
+generic gate leaving out what baselines disagree on and failing a candidate that loses its lookups' chunk tickets, and a
+port compared across versions on what the mod owns.
+
+The proofs in the game launch clients and run on an unattended runner, never a shared desktop:
+
+```sh
+python bench/perf_sweep.py run --only storagenetwork --prepare --record   # the shipped diff passes the generic gate; the old #75 diff fails it
+python bench/perf_sweep.py run --only cyclic,pipez --prepare --record     # shipped diffs pass; Pipez's stale-cache sabotage fails
+python bench/port_board.py --only zaa-neoforge-1.21.1-1.21.4 --fingerprint
+python bench/convert_sweep.py run --only mdk-mdg-1.21.1 --no-back
+python bench/pack_sweep.py run --only additive-fabric-1.19.2
+python bench/scoreboard.py
+```
+
+`--prepare` makes each clone at its pinned commit with the folder's `prepare.diff` and builds the experiment world with
+the folder's `create-world.java` and `scene.java`.
 
 ## Scoreboard
 

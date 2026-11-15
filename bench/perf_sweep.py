@@ -1,8 +1,12 @@
 """The perf corpus through perf-optimize's built-in fingerprint gate alone: does the generic gate decide each diff as the
 hand-written gates did? Shipped diffs (accepted with the hand gates) must pass it; known-wrong diffs must fail it.
 
-    python bench/perf_sweep.py run [--only ID,ID] [--clones .runs] [--runs 2] [--record]
+    python bench/perf_sweep.py run [--only ID,ID] [--clones .runs] [--runs 2] [--prepare] [--record]
     python bench/perf_sweep.py table
+
+The proofs queued for the cloud runner (each launches games; do not run them on a shared desktop):
+    python bench/perf_sweep.py run --only storagenetwork --prepare --record   # #79 must pass; the old #75 diff must fail
+    python bench/perf_sweep.py run --only cyclic,pipez --prepare --record     # shipped diffs pass; Pipez's stale cache fails
 
 Each mod's clone and its experiment world are prepared as its bench/<mod>/README.md says (a clone at the pinned commit
 with the bench commits, the world under .runs/<world folder>); --clones names the folder that holds the clones, by corpus
@@ -17,6 +21,7 @@ import datetime
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -75,9 +80,58 @@ def run_diff(mod, root, spec, expect, args):
             "differingSections": (gate or {}).get("differingSections"), "error": optimize.get("error"), "seconds": seconds, "out": str(out)}
 
 
+def step(args, timeout=3600):
+    """One modaccel command; raises with its output when it fails."""
+    r = subprocess.run(MODACCEL + args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
+    if r.returncode != 0:
+        raise RuntimeError(f"modaccel {' '.join(args[:3])} failed: {(r.stdout + r.stderr)[-1500:]}")
+    return r.stdout
+
+
+def prepare(mod, clones):
+    """
+    The mod's clone and experiment world, as its bench/<mod>/README.md makes them, for an unattended runner: the pinned
+    commit, the folder's prepare.diff committed on it (launch only the mod and its libraries, log at INFO), then a hidden
+    client makes the world with the folder's create-world.java and scene.java, saves it, and it is copied to worldSource.
+    """
+    folder = ROOT / Path(mod["experiment"]).parent
+    experiment = json.loads((ROOT / mod["experiment"]).read_text(encoding="utf-8"))
+    root = Path(clones) / mod["id"]
+    if not root.is_dir():
+        subprocess.run(["git", "-c", "core.longpaths=true", "clone", mod["repo"], str(root)], check=True)
+        subprocess.run(["git", "-C", str(root), "checkout", "-q", mod["commit"]], check=True)
+        if (folder / "prepare.diff").is_file():
+            subprocess.run(["git", "-C", str(root), "apply", str(folder / "prepare.diff")], check=True)
+            subprocess.run(["git", "-C", str(root), "-c", "user.name=bench", "-c", "user.email=bench@localhost", "commit", "-qam", "bench: launch only the mod and its libraries, log at INFO"], check=True)
+    world = (folder / experiment["worldSource"]).resolve()
+    if world.is_dir():
+        return root
+    save = WORK / "save-world.java"
+    save.parent.mkdir(parents=True, exist_ok=True)
+    save.write_text("var server = mc.getSingleplayerServer();\nreturn server.submit(() -> server.saveEverything(true, true, true)).join();\n", encoding="utf-8")
+    base = ["--root", str(root), "--json"]
+    try:
+        step(["ui-check", *base, "--jit", "full"])
+        step(["eval", *base, "--file", str(folder / "create-world.java")])
+        step(["eval", *base, "--until", "mc.player != null", "--timeout", "120"])
+        step(["eval", *base, "--file", str(folder / "scene.java"), "--thread", "control"])
+        step(["eval", *base, "--file", str(save), "--thread", "control"])
+    finally:
+        subprocess.run(MODACCEL + ["game-stop", *base], capture_output=True, timeout=600)
+    game = root / experiment.get("gameDirectory", "run") / "saves" / experiment["world"]
+    shutil.copytree(game, world, ignore=shutil.ignore_patterns("session.lock"))
+    return root
+
+
 def run_mod(mod, args):
     root = Path(args.clones) / mod["id"]
     record = {"id": mod["id"], "name": mod["name"], "experiment": mod["experiment"], "date": datetime.date.today().isoformat(), "diffs": []}
+    if args.prepare:
+        try:
+            prepare(mod, args.clones)
+        except Exception as failed:
+            record["error"] = f"prepare failed: {failed}"
+            return record
     if not root.is_dir():
         record["error"] = f"no prepared clone at {root} (see {Path(mod['experiment']).parent}/README.md)"
         return record
@@ -111,6 +165,7 @@ def main():
     run.add_argument("--runs", type=int, default=2)
     run.add_argument("--timeout", type=int, default=7200)
     run.add_argument("--record", action="store_true", help="write coverage/sweeps/perf.json after a partial (--only) run too")
+    run.add_argument("--prepare", action="store_true", help="make each missing clone and experiment world first (prepare), for an unattended runner")
     sub.add_parser("table")
     args = ap.parse_args()
     for stream in (sys.stdout, sys.stderr):   # a Windows console is not UTF-8 by default

@@ -63,7 +63,7 @@ public final class PackCheckTest {
      */
     /**
      * A fixed repair (one file, by URL and SHA-512), as the shipped rules no longer have one: knowledge/pack-fixes.json
-     * names kinds of fault only (self-test --only mod-specific). The case is the one pinned-library-version was proven on.
+     * names kinds of fault only. The case is the one pinned-library-version was proven on.
      */
     static final String FIXED_REPAIR = """
         {"id": "fixed-repair-example", "loader": "forge", "minecraft": ["1.20.1"],

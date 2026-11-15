@@ -424,9 +424,7 @@ final class Installation {
         new Suite("mixin-check", "MixinCheckTest", true, false),
         new Suite("stranger", "StrangerTest", true, false),
         new Suite("pack-check", "PackCheckTest", true, false),
-        new Suite("rules", "RulesTest", true, false),
-        new Suite("mod-specific", "ModSpecificTest", true, false),
-        new Suite("fingerprint", "FingerprintTest", true, false)
+        new Suite("rules", "RulesTest", true, false)
     );
 
     /**

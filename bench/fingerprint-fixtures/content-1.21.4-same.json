@@ -1,0 +1,351 @@
+{
+ "schema": 1,
+ "kind": "modaccel-fingerprint",
+ "freezes": true,
+ "frozenAtStart": true,
+ "seeded": 8,
+ "ticksRun": 100,
+ "targets": {
+  "blockItems": 16,
+  "entityTypes": 0,
+  "namespaces": [
+   "storagenetwork"
+  ]
+ },
+ "placement": {
+  "blockItems": 16,
+  "landedAsExpected": 16,
+  "placed": 16,
+  "different": 0,
+  "unplaced": 0,
+  "failed": 0,
+  "containersFilled": 0,
+  "byItem": {
+   "storagenetwork:request": "Block{storagenetwork:request}",
+   "storagenetwork:kabel": "Block{storagenetwork:kabel}[down=none,east=none,has_facade=false,north=none,south=none,up=none,waterlogged=false,west=none]",
+   "storagenetwork:inventory": "Block{storagenetwork:inventory}",
+   "storagenetwork:request_expanded": "Block{storagenetwork:request_expanded}",
+   "storagenetwork:master": "Block{storagenetwork:master}",
+   "storagenetwork:storage_kabel": "Block{storagenetwork:storage_kabel}[down=none,east=none,has_facade=false,north=none,south=none,up=none,waterlogged=false,west=none]",
+   "storagenetwork:import_kabel": "Block{storagenetwork:import_kabel}[down=none,east=none,has_facade=false,north=none,south=none,up=none,waterlogged=false,west=none]",
+   "storagenetwork:import_filter_kabel": "Block{storagenetwork:import_filter_kabel}[down=none,east=none,has_facade=false,north=none,south=none,up=none,waterlogged=false,west=none]",
+   "storagenetwork:filter_kabel": "Block{storagenetwork:filter_kabel}[down=none,east=none,has_facade=false,north=none,south=none,up=none,waterlogged=false,west=none]",
+   "storagenetwork:export_kabel": "Block{storagenetwork:export_kabel}[down=none,east=none,has_facade=false,north=none,south=none,up=none,waterlogged=false,west=none]",
+   "storagenetwork:process_kabel": "Block{storagenetwork:process_kabel}[down=none,east=none,has_facade=false,north=none,south=none,up=none,waterlogged=false,west=none]",
+   "storagenetwork:exchange": "Block{storagenetwork:exchange}",
+   "storagenetwork:collector": "Block{storagenetwork:collector}",
+   "storagenetwork:cradle": "Block{storagenetwork:cradle}",
+   "storagenetwork:drawer": "Block{storagenetwork:drawer}[facing=south]",
+   "storagenetwork:receiver": "Block{storagenetwork:receiver}"
+  }
+ },
+ "spawned": [],
+ "roundTrip": {
+  "same": false,
+  "differences": 15
+ },
+ "registries": {
+  "loot_tables": [
+   "storagenetwork:blocks/collector",
+   "storagenetwork:blocks/cradle",
+   "storagenetwork:blocks/drawer",
+   "storagenetwork:blocks/exchange",
+   "storagenetwork:blocks/export_kabel",
+   "storagenetwork:blocks/filter_kabel",
+   "storagenetwork:blocks/import_filter_kabel",
+   "storagenetwork:blocks/import_kabel",
+   "storagenetwork:blocks/inventory",
+   "storagenetwork:blocks/kabel",
+   "storagenetwork:blocks/master",
+   "storagenetwork:blocks/process_kabel",
+   "storagenetwork:blocks/receiver",
+   "storagenetwork:blocks/request",
+   "storagenetwork:blocks/request_expanded",
+   "storagenetwork:blocks/storage_kabel",
+   "minecraft:archaeology/desert_pyramid",
+   "minecraft:archaeology/desert_well",
+   "minecraft:archaeology/ocean_ruin_cold",
+   "minecraft:archaeology/ocean_ruin_warm",
+   "minecraft:archaeology/trail_ruins_common"
+  ],
+  "minecraft:block": [
+   "storagenetwork:collector",
+   "storagenetwork:cradle",
+   "storagenetwork:drawer",
+   "storagenetwork:exchange",
+   "storagenetwork:export_kabel",
+   "storagenetwork:filter_kabel",
+   "storagenetwork:import_filter_kabel",
+   "storagenetwork:import_kabel",
+   "storagenetwork:inventory",
+   "storagenetwork:kabel",
+   "storagenetwork:master",
+   "storagenetwork:process_kabel",
+   "storagenetwork:receiver",
+   "storagenetwork:request",
+   "storagenetwork:request_expanded",
+   "storagenetwork:storage_kabel",
+   "minecraft:acacia_button",
+   "minecraft:acacia_door",
+   "minecraft:acacia_fence",
+   "minecraft:acacia_fence_gate",
+   "minecraft:acacia_hanging_sign"
+  ],
+  "minecraft:block_entity_type": [
+   "storagenetwork:collector",
+   "storagenetwork:cradle",
+   "storagenetwork:drawer",
+   "storagenetwork:exchange",
+   "storagenetwork:export_kabel",
+   "storagenetwork:filter_kabel",
+   "storagenetwork:import_filter_kabel",
+   "storagenetwork:import_kabel",
+   "storagenetwork:inventory",
+   "storagenetwork:kabel",
+   "storagenetwork:master",
+   "storagenetwork:process_kabel",
+   "storagenetwork:receiver",
+   "storagenetwork:request",
+   "storagenetwork:request_expanded",
+   "storagenetwork:storage_kabel",
+   "minecraft:banner",
+   "minecraft:barrel",
+   "minecraft:beacon",
+   "minecraft:bed",
+   "minecraft:beehive"
+  ],
+  "minecraft:creative_mode_tab": [
+   "storagenetwork:tab",
+   "minecraft:building_blocks",
+   "minecraft:colored_blocks",
+   "minecraft:combat",
+   "minecraft:food_and_drinks",
+   "minecraft:functional_blocks"
+  ],
+  "minecraft:item": [
+   "storagenetwork:builder_remote",
+   "storagenetwork:chunkload_upgrade",
+   "storagenetwork:collector",
+   "storagenetwork:collector_remote",
+   "storagenetwork:cradle",
+   "storagenetwork:crafting_remote",
+   "storagenetwork:drawer",
+   "storagenetwork:exchange",
+   "storagenetwork:expanded_remote",
+   "storagenetwork:export_kabel",
+   "storagenetwork:filter_kabel",
+   "storagenetwork:import_filter_kabel",
+   "storagenetwork:import_kabel",
+   "storagenetwork:inventory",
+   "storagenetwork:inventory_remote",
+   "storagenetwork:kabel",
+   "storagenetwork:master",
+   "storagenetwork:operation_upgrade",
+   "storagenetwork:picker_remote",
+   "storagenetwork:process_kabel",
+   "storagenetwork:receiver",
+   "storagenetwork:request",
+   "storagenetwork:request_expanded",
+   "storagenetwork:single_upgrade",
+   "storagenetwork:slow_upgrade",
+   "storagenetwork:speed_upgrade",
+   "storagenetwork:stack_upgrade",
+   "storagenetwork:stock_upgrade",
+   "storagenetwork:storage_kabel",
+   "storagenetwork:void_upgrade",
+   "minecraft:acacia_boat",
+   "minecraft:acacia_button",
+   "minecraft:acacia_chest_boat",
+   "minecraft:acacia_door",
+   "minecraft:acacia_fence"
+  ],
+  "minecraft:menu": [
+   "storagenetwork:collector",
+   "storagenetwork:cradle",
+   "storagenetwork:crafting_remote",
+   "storagenetwork:expanded_remote",
+   "storagenetwork:export_kabel",
+   "storagenetwork:filter_kabel",
+   "storagenetwork:import_filter_kabel",
+   "storagenetwork:inventory",
+   "storagenetwork:inventory_remote",
+   "storagenetwork:process_kabel",
+   "storagenetwork:receiver",
+   "storagenetwork:request",
+   "storagenetwork:request_expanded",
+   "minecraft:anvil",
+   "minecraft:beacon",
+   "minecraft:blast_furnace",
+   "minecraft:brewing_stand",
+   "minecraft:cartography_table"
+  ],
+  "recipes": [
+   "storagenetwork:builder_remote minecraft:crafting",
+   "storagenetwork:chunkload_upgrade minecraft:crafting",
+   "storagenetwork:collector minecraft:crafting",
+   "storagenetwork:collector_remote minecraft:crafting",
+   "storagenetwork:cradle minecraft:crafting",
+   "storagenetwork:crafting_remote minecraft:crafting",
+   "storagenetwork:drawer minecraft:crafting",
+   "storagenetwork:exchange minecraft:crafting",
+   "storagenetwork:expanded_remote minecraft:crafting",
+   "storagenetwork:export_kabel minecraft:crafting",
+   "storagenetwork:filter_kabel minecraft:crafting",
+   "storagenetwork:import_filter_kabel minecraft:crafting",
+   "storagenetwork:import_kabel minecraft:crafting",
+   "storagenetwork:inventory minecraft:crafting",
+   "storagenetwork:inventory_remote minecraft:crafting",
+   "storagenetwork:kabel minecraft:crafting",
+   "storagenetwork:master minecraft:crafting",
+   "storagenetwork:operation_upgrade minecraft:crafting",
+   "storagenetwork:picker_remote minecraft:crafting",
+   "storagenetwork:process_kabel minecraft:crafting",
+   "storagenetwork:receiver minecraft:crafting",
+   "storagenetwork:request minecraft:crafting",
+   "storagenetwork:request_expanded minecraft:crafting",
+   "storagenetwork:single_upgrade minecraft:crafting",
+   "storagenetwork:slow_upgrade minecraft:crafting",
+   "storagenetwork:speed_upgrade minecraft:crafting",
+   "storagenetwork:stack_upgrade minecraft:crafting",
+   "storagenetwork:stock_upgrade minecraft:crafting",
+   "storagenetwork:storage_kabel minecraft:crafting",
+   "storagenetwork:void_upgrade minecraft:crafting",
+   "minecraft:acacia_boat minecraft:crafting",
+   "minecraft:acacia_button minecraft:crafting",
+   "minecraft:acacia_chest_boat minecraft:crafting",
+   "minecraft:acacia_door minecraft:crafting",
+   "minecraft:acacia_fence minecraft:crafting"
+  ],
+  "tags/minecraft:item": [
+   "curios:charm=storagenetwork:collector_remote,storagenetwork:crafting_remote,storagenetwork:expanded_remote,storagenetwork:inventory_remote",
+   "minecraft:acacia_logs=minecraft:acacia_log,minecraft:acacia_wood,minecraft:stripped_acacia_log,minecraft:stripped_acacia_wood",
+   "minecraft:anvil=minecraft:anvil,minecraft:chipped_anvil,minecraft:damaged_anvil",
+   "minecraft:armadillo_food=minecraft:spider_eye",
+   "minecraft:arrows=minecraft:arrow,minecraft:spectral_arrow,minecraft:tipped_arrow",
+   "minecraft:axes=minecraft:diamond_axe,minecraft:golden_axe,minecraft:iron_axe,minecraft:netherite_axe,minecraft:stone_axe,minecraft:wooden_axe"
+  ]
+ },
+ "checkpoints": [
+  {
+   "tick": 0,
+   "levels": {
+    "minecraft:overworld": {
+     "blockCounts": {
+      "minecraft:air": 294880,
+      "storagenetwork:collector": 1,
+      "storagenetwork:cradle": 1,
+      "storagenetwork:drawer": 1,
+      "storagenetwork:exchange": 1,
+      "storagenetwork:export_kabel": 1,
+      "storagenetwork:filter_kabel": 1,
+      "storagenetwork:import_filter_kabel": 1,
+      "storagenetwork:import_kabel": 1,
+      "storagenetwork:inventory": 1,
+      "storagenetwork:kabel": 1,
+      "storagenetwork:master": 1,
+      "storagenetwork:process_kabel": 1,
+      "storagenetwork:receiver": 1,
+      "storagenetwork:request": 1,
+      "storagenetwork:request_expanded": 1,
+      "storagenetwork:storage_kabel": 1
+     },
+     "blockEntities": {
+      "-96,312,-96": "{DataVersion:4189,autoFocus:1b,chunkTicketHeld:0b,connectable:{},id:\"storagenetwork:request\",storagenetworkdir:0b,storagenetworkfullstack:1b,storagenetworkjei:0b,storagenetworksort:1,x:-96,y:312,z:-96}",
+      "-93,312,-96": "{DataVersion:4189,chunkTicketHeld:0b,connectable:{},facade:{},id:\"storagenetwork:kabel\",x:-93,y:312,z:-96}",
+      "-90,312,-96": "{DataVersion:4189,autoFocus:1b,chunkTicketHeld:0b,connectable:{},dir:0b,id:\"storagenetwork:inventory\",sort:1,storagenetworkjei:0b,x:-90,y:312,z:-96}",
+      "-87,312,-96": "{DataVersion:4189,autoFocus:1b,chunkTicketHeld:0b,connectable:{},dir:0b,id:\"storagenetwork:request_expanded\",sort:1,storagenetworkjei:0b,x:-87,y:312,z:-96}"
+     },
+     "entityCounts": {},
+     "items": {}
+    }
+   }
+  },
+  {
+   "tick": 100,
+   "levels": {
+    "minecraft:overworld": {
+     "blockCounts": {
+      "minecraft:air": 294880,
+      "storagenetwork:collector": 1,
+      "storagenetwork:cradle": 1,
+      "storagenetwork:drawer": 1,
+      "storagenetwork:exchange": 1,
+      "storagenetwork:export_kabel": 1,
+      "storagenetwork:filter_kabel": 1,
+      "storagenetwork:import_filter_kabel": 1,
+      "storagenetwork:import_kabel": 1,
+      "storagenetwork:inventory": 1,
+      "storagenetwork:kabel": 1,
+      "storagenetwork:master": 1,
+      "storagenetwork:process_kabel": 1,
+      "storagenetwork:receiver": 1,
+      "storagenetwork:request": 1,
+      "storagenetwork:request_expanded": 1,
+      "storagenetwork:storage_kabel": 1
+     },
+     "blockEntities": {
+      "-96,312,-96": "{DataVersion:4189,autoFocus:1b,chunkTicketHeld:0b,connectable:{},id:\"storagenetwork:request\",storagenetworkdir:0b,storagenetworkfullstack:1b,storagenetworkjei:0b,storagenetworksort:1,x:-96,y:312,z:-96}",
+      "-93,312,-96": "{DataVersion:4189,chunkTicketHeld:0b,connectable:{},facade:{},id:\"storagenetwork:kabel\",x:-93,y:312,z:-96}",
+      "-90,312,-96": "{DataVersion:4189,autoFocus:1b,chunkTicketHeld:0b,connectable:{},dir:0b,id:\"storagenetwork:inventory\",sort:1,storagenetworkjei:0b,x:-90,y:312,z:-96}",
+      "-87,312,-96": "{DataVersion:4189,autoFocus:1b,chunkTicketHeld:0b,connectable:{},dir:0b,id:\"storagenetwork:request_expanded\",sort:1,storagenetworkjei:0b,x:-87,y:312,z:-96}"
+     },
+     "entityCounts": {},
+     "items": {}
+    }
+   }
+  },
+  {
+   "tick": 100,
+   "levels": {
+    "minecraft:overworld": {
+     "blockCounts": {
+      "minecraft:air": 294880,
+      "storagenetwork:collector": 1,
+      "storagenetwork:cradle": 1,
+      "storagenetwork:drawer": 1,
+      "storagenetwork:exchange": 1,
+      "storagenetwork:export_kabel": 1,
+      "storagenetwork:filter_kabel": 1,
+      "storagenetwork:import_filter_kabel": 1,
+      "storagenetwork:import_kabel": 1,
+      "storagenetwork:inventory": 1,
+      "storagenetwork:kabel": 1,
+      "storagenetwork:master": 1,
+      "storagenetwork:process_kabel": 1,
+      "storagenetwork:receiver": 1,
+      "storagenetwork:request": 1,
+      "storagenetwork:request_expanded": 1,
+      "storagenetwork:storage_kabel": 1
+     },
+     "blockEntities": {
+      "-96,312,-96": "{DataVersion:4189,autoFocus:1b,chunkTicketHeld:0b,connectable:{},id:\"storagenetwork:request\",storagenetworkdir:0b,storagenetworkfullstack:1b,storagenetworkjei:0b,storagenetworksort:1,x:-96,y:312,z:-96}",
+      "-93,312,-96": "{DataVersion:4189,chunkTicketHeld:0b,connectable:{},facade:{},id:\"storagenetwork:kabel\",x:-93,y:312,z:-96}",
+      "-90,312,-96": "{DataVersion:4189,autoFocus:1b,chunkTicketHeld:0b,connectable:{},dir:0b,id:\"storagenetwork:inventory\",sort:1,storagenetworkjei:0b,x:-90,y:312,z:-96}",
+      "-87,312,-96": "{DataVersion:4189,autoFocus:1b,chunkTicketHeld:0b,connectable:{},dir:0b,id:\"storagenetwork:request_expanded\",sort:1,storagenetworkjei:0b,x:-87,y:312,z:-96}"
+     },
+     "entityCounts": {},
+     "items": {}
+    }
+   }
+  }
+ ],
+ "log": {
+  "warnings": {},
+  "errors": {
+   "EMI/: [EMI] Untranslated tag #curios:charm": 2
+  }
+ },
+ "target": {
+  "root": "(the mod)",
+  "minecraft": "1.21.4",
+  "loaders": [
+   "forge",
+   "neoforge"
+  ],
+  "namespaces": [
+   "storagenetwork"
+  ],
+  "environment": "client"
+ },
+ "about": "Trimmed from a recorded fingerprint --root of Storage Network on NeoForge 1.21.1 (16 block items placed, 100 frozen ticks, saved and read back). Synthetic edit: the same mod after a port to 1.21.4, whose saved data carries the new version's format."
+}

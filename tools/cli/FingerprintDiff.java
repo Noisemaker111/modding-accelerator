@@ -27,6 +27,19 @@ final class FingerprintDiff {
     static Map<String, Object> run(Path home, Modaccel.Options options) throws Exception {
         String a = options.get("baseline", options.get("a", "")), b = options.get("candidate", options.get("b", ""));
         if (a.isBlank() || b.isBlank()) throw new IllegalArgumentException("fingerprint-diff needs two fingerprints: modaccel fingerprint-diff A.json B.json");
+        if (a.contains(",") || b.contains(",")) {
+            // perf-optimize's gate on recorded launches: paired baselines and candidates, in order.
+            List<Path> base = Arrays.stream(a.split(",")).map(String::strip).map(Path::of).toList();
+            List<Path> cand = Arrays.stream(b.split(",")).map(String::strip).map(Path::of).toList();
+            if (base.size() != cand.size()) throw new IllegalArgumentException("--baseline and --candidate pair launch by launch: give as many of each");
+            Map<String, Object> verdict = gate(base, cand);
+            verdict.put("same", verdict.get("passed"));
+            verdict.put("details", (Boolean.TRUE.equals(verdict.get("passed")) ? "Gate passed: " : "Gate failed: " + verdict.get("failures") + "; ")
+                + verdict.get("compared") + " leaves compared, " + verdict.get("unstable") + " left out because the baselines disagree on them "
+                + verdict.get("unstableSections") + (verdict.get("differingSections") instanceof Map<?, ?> d && !d.isEmpty() ? "; differing: " + d : ""));
+            if (options.values.containsKey("out")) Json.save(Path.of(options.get("out", "")), verdict);
+            return verdict;
+        }
         Map<String, Object> left = Json.read(Path.of(a)), right = Json.read(Path.of(b));
         Normaliser normaliser = Normaliser.choose(home, options, left, right);
         Map<String, Object> diff = compare(left, right, normaliser);

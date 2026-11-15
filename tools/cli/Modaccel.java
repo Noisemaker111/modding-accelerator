@@ -1007,7 +1007,9 @@ public final class Modaccel {
             "What cannot be frozen is in FINGERPRINT.md. Compare two with fingerprint-diff.";
             case "fingerprint-diff" -> "Compare two behaviour fingerprints: modaccel fingerprint-diff A.json B.json [--across-versions] [--map NORMALISE.json] [--namespaces ID,ID] [--out DIFF.json] --json\n" +
             "Exits 0 when they match. Records of the same game version compare leaf by leaf; across versions (a port) only what the mod owns is\n" +
-            "compared, after the game's renames (knowledge/fingerprint-normalise.json, or --map). Prints each differing section and the first leaves.";
+            "compared, after the game's renames (knowledge/fingerprint-normalise.json, or --map). Prints each differing section and the first leaves.\n" +
+            "--baseline B1.json,B2.json --candidate C1.json,C2.json decides perf-optimize's fingerprint gate on recorded launches: leaves the baselines\n" +
+            "disagree on are left out and named, and every other leaf of each candidate must equal its paired baseline's.";
             case "pack-check" -> "Check a modpack the way its players run it: modaccel pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--fix] [--json]\n" +
             "--pack is a CurseForge export (.zip or folder), a Modrinth .mrpack (or folder), a CurseForge app, Prism/MultiMC or vanilla launcher\n" +
             "instance, or any folder with mods/. --minecraft 1.21.1 and --loader neoforge[-21.1.77] override what the pack says; with no loader\n" +
