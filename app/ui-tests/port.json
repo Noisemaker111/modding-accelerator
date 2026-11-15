@@ -1,0 +1,8 @@
+{"events": [
+  {"t": 0.5, "type": "tap", "key": "nav-port"},
+  {"t": 18.0, "type": "tap", "key": "to-26.2"},
+  {"t": 18.5, "type": "tap", "key": "port-preview"},
+  {"t": 55.0, "type": "tap", "key": "port-apply"},
+  {"t": 125.0, "type": "tap", "key": "port-undo"},
+  {"t": 150.0, "type": "mark", "name": "end"}
+]}

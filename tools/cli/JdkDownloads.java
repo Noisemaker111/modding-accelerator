@@ -40,6 +40,7 @@ final class JdkDownloads {
             Path archive = Files.createTempFile(cache, "jdk-", asset.zip ? ".zip" : ".tar.gz");
             Path staging = Files.createTempDirectory(cache, "jdk-extract-");
             try {
+                Run.progress("download Java " + feature, null);
                 download(asset.url, archive);
                 verifyHash(archive, asset.sha256);
                 extract(archive, staging, asset.zip);

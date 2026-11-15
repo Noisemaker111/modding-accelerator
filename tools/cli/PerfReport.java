@@ -18,11 +18,13 @@ final class PerfReport {
     final PerfFunctions functions = new PerfFunctions();
     final PerfAttribution attribution;
     Instant start, end;
-    boolean hidden;
+    boolean hidden, c1Only;
     final Map<String, Long> allocationSites = new HashMap<>(), allocationClasses = new HashMap<>();
     final Map<String, Double> lockSites = new HashMap<>();
     final Map<String, Long> probeCalls = new TreeMap<>();
     final Map<String, double[]> timingTotals = new TreeMap<>();
+    /** Threads whose first allocation sample has been seen; that sample only starts the thread's count. */
+    final Set<Long> allocationThreads = new HashSet<>();
     long executionSamples, truncated;
     long readBytes, writeBytes, socketRead, socketWrite, allocationWeight;
     double gcPauseMs, blockedMs;
@@ -54,6 +56,7 @@ final class PerfReport {
         Properties status = Performance.properties(directory.resolve("status.properties"));
         Properties environment = Performance.properties(directory.resolve("environment.properties"));
         report.hidden = Boolean.parseBoolean(environment.getProperty("modaccel.background", "false"));
+        report.c1Only = Boolean.parseBoolean(environment.getProperty("c1Only", "false"));
         Map<String, Object> result = report.finish(status);
         result.put("environment", new TreeMap<>(environment));
         result.put("recording", recording.toAbsolutePath().toString());
@@ -120,6 +123,11 @@ final class PerfReport {
             }
             case "jdk.ExecutionSample" -> sample(event);
             case "jdk.ObjectAllocationSample" -> {
+                // JFR weighs a sample by what its thread allocated since that thread's previous sample, so a
+                // thread's first sample also carries everything before the capture: 6 GB on a server thread
+                // charged to whatever it happened to be running. It starts the count instead.
+                RecordedThread allocating = event.getThread();
+                if (allocationThreads.add(allocating == null ? -1 : allocating.getJavaThreadId())) return;
                 long weight = event.getLong("weight");
                 allocationWeight += weight;
                 RecordedClass type = event.getClass("objectClass");
@@ -282,14 +290,17 @@ final class PerfReport {
         warnings.add("Observation of this session, including menus/loading/pauses. Not a controlled benchmark or a causal mod ranking.");
         warnings.add("Frame intervals measure CPU-side frame completion pacing, not GPU duration or displayed-frame presentation.");
         if (hidden) {
-            warnings.add("This client was hidden and throttled by Mod Accel (--allow-hidden): FPS and frame intervals are not representative. "
+            warnings.add("This client was hidden and throttled by Mod Accel: FPS and frame intervals are not representative. "
                 + "Server ticks and timed methods still run normally.");
         }
         warnings.add("1% low FPS = 1000 / mean duration of the slowest ceil(1% of captured frame intervals).");
         warnings.add("Execution samples are statistical hotspots, not exact CPU milliseconds. Per-mod costs charge each stack to its innermost mod frame; "
             + "a mod that only calls game code still owns that work, and the mod that triggered it (for example through a shared event) may differ.");
         warnings.add("Mixin handlers are charged to a mod only when their merged method name names it; overwrites and unnamed handlers remain game code.");
-        warnings.add("JFR allocation weights are estimates; I/O and lock events may be thresholded and are observed lower bounds, not complete totals.");
+        warnings.add("JFR allocation weights are estimates; each thread's first allocation sample only starts its count (it also covers time before the capture). "
+            + "I/O and lock events may be thresholded and are observed lower bounds, not complete totals.");
+        if (c1Only) warnings.add("This JVM compiled with C1 only (-XX:TieredStopAtLevel=1, as hidden modaccel test sessions and JBR reload sessions do): "
+            + "its code is slower than players' and JFR gets far fewer execution samples from it. perf --root launches a new game with the full JIT; stop this one first.");
         warnings.add("Explicit probes count method entries (including failed/simulated operations), not delivered items. Their overhead can be substantial.");
         warnings.add("Instrumentation overhead is not calibrated. Compare with --no-hooks and external baseline measurements before performance claims.");
         warnings.add("Raw JFR and class-origin files may contain local paths, JVM arguments and server addresses. Reports stay local.");

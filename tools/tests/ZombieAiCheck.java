@@ -15,6 +15,9 @@ public final class ZombieAiCheck {
 
     record Run(int exit, String output, double seconds) {}
 
+    /** How the snippets' game reads the open screen. */
+    static String SCREEN = "mc.screen";
+
     static final String BREAK_FILE = "src/main/java/com/rique/zombieapocalypse/EventHandler.java", BREAK_FIND =
         "ZombieHunt.injectGoals(huntZombie);", BREAK_REPLACE = "/* broken on purpose */";
     /** spawn.java leaves this check in vars; the condition has no quotes, so it passes through any shell or command line. */
@@ -28,7 +31,10 @@ public final class ZombieAiCheck {
         Path home = Path.of(args[0]).toRealPath(), jar = Path.of(args[1]).toAbsolutePath().normalize(), root = Path.of(
             args[2]
         ).toRealPath();
-        Path snippets = home.resolve("tools/tests/za-ai");
+        // 26.x renamed what the snippets touch (Entity.entityTags, game rule ids, the screen on mc.gui): its own set.
+        boolean modern = Files.readString(root.resolve("gradle.properties")).matches("(?s).*\\bminecraft_version=26\\..*");
+        Path snippets = home.resolve(modern ? "tools/tests/za-ai-26" : "tools/tests/za-ai");
+        SCREEN = modern ? "mc.gui.screen()" : "mc.screen";
         long start = System.nanoTime();
         String passed = check(home, jar, root, snippets);
         if (passed == null) throw new AssertionError("Zombie AI check failed on the ported mod; see the output above.");
@@ -71,7 +77,7 @@ public final class ZombieAiCheck {
                     root,
                     "eval",
                     "--until",
-                    "mc.screen instanceof net.minecraft.client.gui.screens.worldselection.CreateWorldScreen",
+                    SCREEN + " instanceof net.minecraft.client.gui.screens.worldselection.CreateWorldScreen",
                     "--timeout",
                     "30"
                 );
@@ -82,7 +88,7 @@ public final class ZombieAiCheck {
                     root,
                     "eval",
                     "--until",
-                    "mc.player != null && mc.level != null && mc.screen == null && mc.getSingleplayerServer() != null",
+                    "mc.player != null && mc.level != null && " + SCREEN + " == null && mc.getSingleplayerServer() != null",
                     "--timeout",
                     "120"
                 );

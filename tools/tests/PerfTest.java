@@ -160,6 +160,13 @@ public final class PerfTest {
             process.destroy();
             if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) process.destroyForcibly();
         }
+        allocationCharges(scratch, jdk, agent);
+        Path rooted = scratch.resolve("rooted");
+        Files.createDirectories(rooted);
+        Path rootRequest = Performance.request(rooted, 1, 0, false);
+        Performance.attribution(rootRequest, new Modaccel.Options(new String[]{"perf", "--root", scratch.toString()}));
+        check(Performance.properties(rootRequest).getProperty("allowHidden", "").equals("true"),
+            "perf --root profiles the game it started the way the background preference says, hidden or not");
         check(PerfReport.percentile(List.of(1.0, 2.0, 3.0, 4.0), .5) == 2.5, "linear percentile");
         check(Performance.candidate("net.fabricmc.loader.impl.launch.knot.KnotClient"), "recognize Fabric");
         check(Performance.candidate("cpw.mods.bootstraplauncher.BootstrapLauncher"), "recognize Forge bootstrap launcher");
@@ -176,6 +183,61 @@ public final class PerfTest {
         rconProtocol();
         System.out.println(checks + " performance checks passed (synthetic JVM fixture; no Minecraft claims)");
     }
+    /**
+     * The game thread allocates 3 GB before the capture, then a mod allocates about 20 MB/s and has a cheap method under a
+     * timing probe. JFR's first allocation sample on that thread carries the 3 GB, and the probe's own bookkeeping allocates
+     * inside the mod's method: neither is the mod's.
+     */
+    static void allocationCharges(Path scratch, Path jdk, Path agent) throws Exception {
+        Path classes = scratch.resolve("allocation"), mod = scratch.resolve("allocation-mod");
+        List<Path> sources = List.of(
+            fixture(classes, "net/minecraft/server/Warm.java", "package net.minecraft.server; public class Warm { static volatile Object sink; "
+                + "public static void fill() { for (int i = 0; i < 3000; i++) sink = new byte[1 << 20]; } "
+                + "public static void main(String[] args) throws Exception { Thread server = new Thread(() -> { fill(); System.out.println(\"READY\"); long sum = 0; "
+                + "while (true) { com.example.alloc.Spawner.tick(); for (int i = 0; i < 2000; i++) sum += com.example.alloc.Spawner.tiny(i); "
+                + "try { Thread.sleep(12); } catch (InterruptedException stop) { return; } } }, \"Server thread\"); server.start(); server.join(); } }"),
+            fixture(classes, "com/example/alloc/Spawner.java", "package com.example.alloc; public class Spawner { static volatile Object sink; "
+                + "public static void tick() { sink = new byte[256 * 1024]; } public static int tiny(int x) { return x + 1; } }"));
+        List<String> javac = new ArrayList<>(List.of(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
+            "--release", "17", "-d", classes.toString()));
+        for (Path file : sources) javac.add(file.toString());
+        Run.Result compilation = Run.command(javac, classes, Map.of(), classes.resolve("compile.log"), 30);
+        check(compilation.exit() == 0, "allocation fixture compilation: " + Run.tail(compilation.log()));
+        Files.createDirectories(mod.resolve("com/example"));
+        Files.move(classes.resolve("com/example/alloc"), mod.resolve("com/example/alloc"));
+        Files.writeString(mod.resolve("fabric.mod.json"), "{\"schemaVersion\":1,\"id\":\"allocmod\",\"name\":\"Alloc Mod\",\"version\":\"1\"}");
+        Path log = scratch.resolve("allocation.log");
+        Process process = new ProcessBuilder(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "java.exe" : "java")).toString(), "-Xmx256m",
+            "-cp", classes + File.pathSeparator + mod, "net.minecraft.server.Warm").redirectErrorStream(true).redirectOutput(log.toFile()).start();
+        try {
+            long deadline = System.nanoTime() + 60_000_000_000L;
+            while (!Files.readString(log).contains("READY")) {
+                check(process.isAlive() && System.nanoTime() < deadline, "allocation fixture starts: " + Files.readString(log));
+                Thread.sleep(100);
+            }
+            Path out = scratch.resolve("allocation-capture");
+            Files.createDirectories(out);
+            Path request = Performance.request(out, 2, 0, false);
+            Path probes = scratch.resolve("allocation-probes.json");
+            Json.save(probes, Json.map("probes", List.of(Json.map("class", "com.example.alloc.Spawner", "method", "tiny", "descriptor", "(I)I",
+                "label", "tiny", "mode", "timing"))));
+            Performance.probes(request, new Modaccel.Options(new String[]{"perf", "--probes", probes.toString()}));
+            Performance.capture(Long.toString(process.pid()), agent, request, out, 2, 0, false);
+            PerfReport.write(out, out);
+            Map<String, Object> attribution = Json.object(Json.read(out.resolve("report.json")).get("attribution"));
+            Map<String, Object> charged = Json.array(attribution.get("mods")).stream().map(Json::object)
+                .filter(m -> m.get("id").equals("allocmod")).findFirst().orElseThrow(() -> new AssertionError("allocation fixture mod identified"));
+            double modRate = ((Number) charged.get("allocationBytesPerSecond")).doubleValue();
+            check(modRate > 1e6 && modRate < 200e6,
+                "a mod is charged what it allocates in the capture (about 20 MB/s), not the 3 GB its thread allocated before it: " + Math.round(modRate / 1e6) + " MB/s");
+            double profilerRate = ((Number) Json.object(attribution.get("profilerOverhead")).get("allocationBytesPerSecond")).doubleValue();
+            check(profilerRate > 1e6, "a timing probe's own allocation is profiler overhead, not the mod's: " + Math.round(profilerRate / 1e6) + " MB/s");
+        } finally {
+            process.destroy();
+            if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) process.destroyForcibly();
+        }
+    }
+
     static Path fixture(Path scratch, String name, String text) throws IOException {
         Path file = scratch.resolve(name);
         Files.createDirectories(file.getParent());

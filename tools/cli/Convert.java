@@ -27,6 +27,197 @@ final class Convert {
     final Set<String> accessTransformers = new LinkedHashSet<>();
     static final String AT_FILE = "src/main/resources/META-INF/accesstransformer.cfg";
     String modid = "", fabricId = "", unit = "\t";
+    /** --dry-run: files change here, never on disk; null is a removed file. */
+    boolean dryRun;
+    final Map<String, String> staged = new HashMap<>();
+    static final Pattern SOURCE = Pattern.compile("src/([^/]+)/java/.+\\.java");
+
+    /**
+     * A Fabric access widener (or class tweaker) as NeoForge access transformer lines, by the two loaders' own formats:
+     * accessible is public; extendable is public and not final for a class, protected and not final for a method;
+     * mutable is not final. Entries for one target merge. inject-interface has no transformer counterpart and goes to
+     * unconverted, as does every entry when the file is not in Mojang's names.
+     */
+    static List<String> widenerToTransformer(String text, boolean mojangNames, List<String> unconverted) {
+        Map<String, Set<String>> targets = new LinkedHashMap<>();
+        boolean header = false;
+        for (String raw : text.lines().toList()) {
+            String line = raw.replaceAll("#.*$", "").strip();
+            if (line.isEmpty()) continue;
+            String[] t = line.split("\\s+");
+            if (!header) {
+                header = true;
+                if (t[0].equals("accessWidener") || t[0].equals("classTweaker")) continue;
+            }
+            if (!mojangNames) {
+                unconverted.add(line + " (not in Mojang's names)");
+                continue;
+            }
+            String access = t[0].replaceFirst("^transitive-", "");
+            if (t.length < 3 || !Set.of("accessible", "extendable", "mutable").contains(access)) {
+                unconverted.add(line);
+                continue;
+            }
+            String kind = t[1], owner = t[2].replace('/', '.');
+            String key = switch (kind) {
+                case "class" -> owner;
+                case "method" -> t.length >= 5 ? owner + " " + t[3] + t[4] : null;
+                case "field" -> t.length >= 4 ? owner + " " + t[3] : null;
+                default -> null;
+            };
+            if (key == null) {
+                unconverted.add(line);
+                continue;
+            }
+            targets.computeIfAbsent(kind + "|" + key, k -> new LinkedHashSet<>()).add(access);
+        }
+        List<String> out = new ArrayList<>();
+        for (var entry : targets.entrySet()) {
+            String kind = entry.getKey().substring(0, entry.getKey().indexOf('|'));
+            String target = entry.getKey().substring(kind.length() + 1);
+            Set<String> a = entry.getValue();
+            String modifier = switch (kind) {
+                case "class" -> a.contains("extendable") ? "public-f" : "public";
+                case "method" -> (a.contains("accessible") ? "public" : "protected") + (a.contains("extendable") ? "-f" : "");
+                default -> "public" + (a.contains("mutable") ? "-f" : "");
+            };
+            out.add(modifier + " " + target);
+        }
+        return out;
+    }
+
+    /**
+     * NeoForge access transformer lines as a Fabric access widener (v2), the reverse of widenerToTransformer. A field
+     * line names no field type, which an access widener needs: fieldTypes gives it from the game (owner/name to
+     * descriptor), and a field it does not know goes to unconverted with wildcards and +f.
+     */
+    static String transformerToWidener(String text, boolean official, List<String> unconverted) {
+        return transformerToWidener(text, official, unconverted, (owner, field) -> null);
+    }
+
+    static String transformerToWidener(
+        String text,
+        boolean official,
+        List<String> unconverted,
+        java.util.function.BiFunction<String, String, String> fieldTypes
+    ) {
+        StringBuilder out = new StringBuilder("accessWidener v2 " + (official ? "official" : "named") + "\n");
+        for (String raw : text.lines().toList()) {
+            String line = raw.replaceAll("#.*$", "").strip();
+            if (line.isEmpty()) continue;
+            String[] t = line.split("\\s+");
+            Matcher m = Pattern.compile("^(public|protected|default|private)(-f|\\+f)?$").matcher(t[0]);
+            if (!m.find() || "+f".equals(m.group(2)) || t.length < 2 || line.contains("*")) {
+                unconverted.add(line);
+                continue;
+            }
+            boolean definal = "-f".equals(m.group(2));
+            String owner = t[1].replace('.', '/');
+            if (t.length == 2) {
+                out.append(definal ? "extendable" : "accessible").append(" class ").append(owner).append('\n');
+                continue;
+            }
+            int paren = t[2].indexOf('(');
+            if (paren < 0) {
+                String type = fieldTypes.apply(owner, t[2]);
+                if (type == null) {
+                    unconverted.add(line + " (an access widener names the field's type, which the transformer line does not)");
+                    continue;
+                }
+                out.append("accessible field ").append(owner).append(' ').append(t[2]).append(' ').append(type).append('\n');
+                if (definal) out.append("mutable field ").append(owner).append(' ').append(t[2]).append(' ').append(type).append('\n');
+                continue;
+            }
+            String name = t[2].substring(0, paren), desc = t[2].substring(paren);
+            out.append("accessible method ").append(owner).append(' ').append(name).append(' ').append(desc).append('\n');
+            if (definal) out.append("extendable method ").append(owner).append(' ').append(name).append(' ').append(desc).append('\n');
+        }
+        return out.toString();
+    }
+
+    /**
+     * The game's field types (owner in slash form, field name, to its descriptor), in Mojang's names, read only when a
+     * field line asks: before 26.1 from Mojang's client mappings, which give every field's type; from 26.1 from the class
+     * files of Mojang's client jar, which is no longer obfuscated. Null for a field the game does not have, or offline.
+     */
+    java.util.function.BiFunction<String, String, String> gameFieldTypes(String minecraft) {
+        Map<String, String> known = new HashMap<>();
+        Map<String, java.util.zip.ZipFile> jar = new HashMap<>();
+        boolean[] loaded = { false };
+        return (owner, field) -> {
+            try {
+                if (!loaded[0]) {
+                    loaded[0] = true;
+                    var version = Json.object(Json.parse(Target.fetch(build, gameVersionUrl(minecraft))));
+                    var downloads = Json.object(version.get("downloads"));
+                    if (downloads.get("client_mappings") instanceof Map<?, ?> mappings) known.putAll(
+                        mappingFieldTypes(Target.fetch(build, Json.text(Json.object(mappings), "url", "")))
+                    );
+                    else {
+                        var client = Json.object(downloads.get("client"));
+                        Path file = Path.of(System.getProperty("user.home"), ".modaccel", "minecraft", minecraft, "client.jar");
+                        if (!Files.isRegularFile(file)) {
+                            Files.createDirectories(file.getParent());
+                            PackCheck.download(Json.text(client, "url", ""), file, Json.text(client, "sha1", ""));
+                        }
+                        jar.put("client", new java.util.zip.ZipFile(file.toFile()));
+                    }
+                }
+                String key = owner + " " + field;
+                if (known.containsKey(key)) return known.get(key);
+                var zip = jar.get("client");
+                if (zip == null) return null;
+                var entry = zip.getEntry(owner + ".class");
+                if (entry == null) return null;
+                try (var in = zip.getInputStream(entry)) {
+                    for (var member : Explain.Index.parse(in.readAllBytes()).members()) if (!member.method()) known.put(owner + " " + member.name(), member.descriptor());
+                }
+                return known.get(key);
+            } catch (Exception offline) {
+                return null;
+            }
+        };
+    }
+
+    String gameVersionUrl(String minecraft) throws Exception {
+        for (Object v : Json.array(Json.object(Json.parse(Target.fetch(build, "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"))).get("versions"))) {
+            if (minecraft.equals(Json.object(v).get("id"))) return Json.text(Json.object(v), "url", "");
+        }
+        throw new IOException("Mojang lists no Minecraft " + minecraft);
+    }
+
+    /** Every field of Mojang's ProGuard mappings: "owner/Class name" to its descriptor. */
+    static Map<String, String> mappingFieldTypes(String mappings) {
+        Map<String, String> out = new HashMap<>();
+        String owner = null;
+        for (String line : mappings.split("\n")) {
+            if (line.startsWith("#") || line.isBlank()) continue;
+            if (!line.startsWith(" ")) {
+                owner = line.substring(0, line.indexOf(" -> ")).replace('.', '/');
+                continue;
+            }
+            Matcher field = Pattern.compile("^\\s+([\\w.$\\[\\]]+) ([\\w$]+) -> [\\w$]+\\s*$").matcher(line);
+            if (owner != null && field.find()) out.put(owner + " " + field.group(2), descriptor(field.group(1)));
+        }
+        return out;
+    }
+
+    /** A Java type as written in Mojang's mappings (int, java.util.List, a.B[]) as a JVM descriptor. */
+    static String descriptor(String type) {
+        if (type.endsWith("[]")) return "[" + descriptor(type.substring(0, type.length() - 2));
+        return switch (type) {
+            case "boolean" -> "Z";
+            case "byte" -> "B";
+            case "char" -> "C";
+            case "short" -> "S";
+            case "int" -> "I";
+            case "long" -> "J";
+            case "float" -> "F";
+            case "double" -> "D";
+            case "void" -> "V";
+            default -> "L" + type.replace('.', '/') + ";";
+        };
+    }
 
     /** A Fabric mod id as NeoForge accepts it (^[a-z][a-z0-9_]{1,63}$): Fabric also allows "-". */
     static String neoforgeModId(String id) {
@@ -41,6 +232,11 @@ final class Convert {
     }
 
     Map<String, Object> run(Modaccel.Options options) throws Exception {
+        return run(options, true);
+    }
+
+    /** compile false writes the conversion without compiling it (self-test, which has no network). */
+    Map<String, Object> run(Modaccel.Options options, boolean compile) throws Exception {
         if (options.values.containsKey("undo")) return Port.undo(project, options.get("undo", ""), FOLDER);
         String to = options.get("to", "").toLowerCase(Locale.ROOT);
         String from = loader(project.root);
@@ -70,12 +266,19 @@ final class Convert {
         if (minecraft.isEmpty()) throw new IOException(
             "convert reads the Minecraft version from minecraft_version in gradle.properties; there is none."
         );
-        transaction = project.state().resolve(FOLDER).resolve(Instant.now().toString().replace(':', '-'));
-        Files.createDirectories(transaction.resolve("before"));
-        saveInProgress();
+        dryRun = options.has("dry-run");
+        if (!dryRun) {
+            transaction = project.state().resolve(FOLDER).resolve(Instant.now().toString().replace(':', '-'));
+            Files.createDirectories(transaction.resolve("before"));
+            saveInProgress();
+        }
         if (from.equals("fabric")) toNeoForge(minecraft);
         else toFabric(minecraft);
-        Port.finishTransaction(project, transaction, before, removed);
+        if (!neutralDependencies.isEmpty()) notes.add(
+            "Dependencies kept as they are, since they name no loader (libraries, or a mod's loader-neutral API): " +
+            String.join(", ", neutralDependencies)
+        );
+        if (!dryRun) Port.finishTransaction(project, transaction, before, removed);
         Map<String, Object> result = Json.map(
             "from",
             from,
@@ -93,12 +296,14 @@ final class Convert {
             left,
             "notes",
             notes,
-            "undoConvert",
-            transaction.getFileName().toString(),
-            "transaction",
-            transaction.toString()
+            "dryRun",
+            dryRun
         );
-        if (options.has("dry-run")) {
+        if (!dryRun) {
+            result.put("undoConvert", transaction.getFileName().toString());
+            result.put("transaction", transaction.toString());
+        }
+        if (dryRun || !compile) {
             result.put("compiled", null);
             result.put("ok", left.isEmpty());
         } else compile(result);
@@ -109,8 +314,29 @@ final class Convert {
     /** The project's loader by its metadata file; null when it has neither. */
     static String loader(Path root) {
         if (Files.isRegularFile(root.resolve("src/main/resources/fabric.mod.json"))) return "fabric";
-        if (Files.isRegularFile(root.resolve("src/main/resources/META-INF/neoforge.mods.toml"))) return "neoforge";
+        if (Files.isRegularFile(root.resolve(NEO_META))) return "neoforge";
+        if (Files.isRegularFile(root.resolve(NEO_TEMPLATE))) return "neoforge";
         return null;
+    }
+
+    static final String NEO_META = "src/main/resources/META-INF/neoforge.mods.toml";
+    /** NeoForge's MDK keeps neoforge.mods.toml as a template its build expands with gradle.properties (generateModMetadata). */
+    static final String NEO_TEMPLATE = "src/main/templates/META-INF/neoforge.mods.toml";
+
+    /**
+     * Metadata with Gradle's ${property} placeholders, as the build's own expand would write it: each one gradle.properties
+     * defines is replaced; the rest stay as they are.
+     */
+    String expandProperties(String text) throws IOException {
+        Map<String, String> props = properties(read("gradle.properties"));
+        Matcher m = Pattern.compile("\\$\\{(?:project\\.)?([\\w.]+)}").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) m.appendReplacement(
+            out,
+            Matcher.quoteReplacement(props.getOrDefault(m.group(1), m.group()))
+        );
+        m.appendTail(out);
+        return out.toString();
     }
 
     // ---- the transaction ----------------------------------------------------------------------------
@@ -155,19 +381,34 @@ final class Convert {
     final Set<String> crlf = new HashSet<>();
 
     String read(String relative) throws IOException {
-        Path file = project.root.resolve(relative);
-        if (!Files.isRegularFile(file)) return "";
-        String text = Files.readString(file, StandardCharsets.UTF_8);
+        String text = current(relative);
+        if (text == null) return "";
         if (text.contains("\r\n")) crlf.add(relative);
         return text.replace("\r\n", "\n");
     }
 
+    /** A file's text, with a dry run's changes; null when there is none. */
+    String current(String relative) throws IOException {
+        if (staged.containsKey(relative)) return staged.get(relative);
+        Path file = project.root.resolve(relative);
+        return Files.isRegularFile(file) ? Files.readString(file, StandardCharsets.UTF_8) : null;
+    }
+
+    boolean exists(String relative) throws IOException {
+        return current(relative) != null;
+    }
+
     void write(String relative, String text) throws Exception {
         Path file = project.root.resolve(relative);
-        if (crlf.contains(relative) || (!Files.isRegularFile(file) && !crlf.isEmpty())) text = text
+        if (crlf.contains(relative) || (!exists(relative) && !crlf.isEmpty())) text = text
             .replace("\r\n", "\n")
             .replace("\n", "\r\n");
-        if (Files.isRegularFile(file) && Files.readString(file, StandardCharsets.UTF_8).equals(text)) return;
+        if (text.equals(current(relative))) return;
+        if (dryRun) {
+            staged.put(relative, text);
+            if (!changed.contains(relative)) changed.add(relative);
+            return;
+        }
         track(file);
         Files.createDirectories(file.getParent());
         Files.writeString(file, text, StandardCharsets.UTF_8);
@@ -176,7 +417,13 @@ final class Convert {
 
     void delete(String relative) throws Exception {
         Path file = project.root.resolve(relative);
-        if (!Files.isRegularFile(file)) return;
+        if (!exists(relative)) return;
+        if (dryRun) {
+            staged.put(relative, null);
+            removed.add(relative);
+            changed.remove(relative);
+            return;
+        }
         track(file);
         removed.add(relative);
         saveInProgress();
@@ -201,20 +448,30 @@ final class Convert {
     // ---- sources -------------------------------------------------------------------------------------
 
     List<String> javaFiles() throws IOException {
-        List<String> out = new ArrayList<>();
-        Path src = project.root.resolve("src");
-        if (!Files.isDirectory(src)) return out;
-        try (var sets = Files.list(src)) {
-            for (Path set : sets.sorted().toList()) {
-                if (set.getFileName().toString().startsWith("test")) continue;
+        Path src = project.root.resolve("src").toAbsolutePath().normalize();
+        Map<Path, TreeSet<Path>> sets = new TreeMap<>();
+        if (Files.isDirectory(src)) try (var list = Files.list(src)) {
+            for (Path set : list.toList()) {
                 Path java = set.resolve("java");
                 if (!Files.isDirectory(java)) continue;
+                TreeSet<Path> files = sets.computeIfAbsent(set, k -> new TreeSet<>());
                 try (var walk = Files.walk(java)) {
-                    for (Path file : walk.filter(p -> p.toString().endsWith(".java")).sorted().toList()) out.add(
-                        relative(file)
-                    );
+                    walk.filter(p -> p.toString().endsWith(".java")).forEach(files::add);
                 }
             }
+        }
+        // A dry run's files, where the run that writes them would find them.
+        for (var entry : staged.entrySet()) {
+            Matcher source = SOURCE.matcher(entry.getKey());
+            if (!source.matches()) continue;
+            Path set = src.resolve(source.group(1));
+            Path file = project.root.resolve(entry.getKey()).toAbsolutePath().normalize();
+            if (entry.getValue() != null) sets.computeIfAbsent(set, k -> new TreeSet<>()).add(file);
+            else if (sets.containsKey(set)) sets.get(set).remove(file);
+        }
+        List<String> out = new ArrayList<>();
+        for (var set : sets.entrySet()) if (!set.getKey().getFileName().toString().startsWith("test")) {
+            for (Path file : set.getValue()) out.add(relative(file));
         }
         return out;
     }
@@ -240,7 +497,8 @@ final class Convert {
     /** Names every use of the old loader that no rule changed: the class and where. */
     void leftovers(List<String> prefixes) throws Exception {
         for (String file : javaFiles()) {
-            String text = read(file);
+            String text = dropUnusedImports(read(file), prefixes);
+            write(file, text);
             Matcher m = Pattern.compile("(?m)^import\\s+(?:static\\s+)?([\\w.]+)").matcher(text);
             while (m.find()) for (String prefix : prefixes) if (m.group(1).startsWith(prefix)) leave(
                 file,
@@ -249,6 +507,29 @@ final class Convert {
                 "no rule in knowledge/loaders.json moves this to the other loader yet"
             );
         }
+    }
+
+    /** Imports of the old loader's classes that nothing in the file uses any more: they go, since nothing needs them moved. */
+    static String dropUnusedImports(String text, List<String> prefixes) {
+        boolean[] code = LoaderRules.code(text);
+        Matcher m = Pattern.compile("(?m)^import\\s+([\\w.]+)\\s*;[ \\t]*\\n?").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) {
+            String name = m.group(1);
+            String simple = name.substring(name.lastIndexOf('.') + 1);
+            boolean old = prefixes.stream().anyMatch(name::startsWith);
+            boolean used = false;
+            if (old) {
+                Matcher use = Pattern.compile("(?<![\\w$.])" + Pattern.quote(simple) + "(?![\\w$])").matcher(text);
+                while (use.find()) if (code[use.start()] && (use.start() < m.start() || use.start() >= m.end())) {
+                    used = true;
+                    break;
+                }
+            }
+            m.appendReplacement(out, Matcher.quoteReplacement(old && !used ? "" : m.group()));
+        }
+        m.appendTail(out);
+        return out.toString();
     }
 
     // ---- Fabric to NeoForge ----------------------------------------------------------------------------
@@ -326,6 +607,22 @@ final class Convert {
             }
         }
         if (menu != null) menuToNeoForge(menu, entrypoints);
+        if (meta.get("accessWidener") instanceof String widener) {
+            String path = "src/main/resources/" + widener;
+            String text = read(path);
+            if (text.isEmpty()) leave(metaFile, 0, "accessWidener " + widener, "the file is not in src/main/resources");
+            else {
+                // An access widener in yarn's names cannot become a transformer in Mojang's names.
+                boolean yarn = properties(read("gradle.properties")).keySet().stream().anyMatch(k -> k.startsWith("yarn_"));
+                List<String> unconverted = new ArrayList<>();
+                List<String> lines = widenerToTransformer(text, !yarn, unconverted);
+                accessTransformers.addAll(lines);
+                for (String u : unconverted) leave(path, 0, u, "an access widener entry with no access transformer counterpart");
+                delete(path);
+                widenerConverted = true;
+                applied.computeIfAbsent("access-widener", k -> new ArrayList<>()).add(path);
+            }
+        }
         if (!accessTransformers.isEmpty()) {
             // NeoForge applies a mod's access transformers when its mods.toml names the file (modsToml adds that).
             String existing = read(AT_FILE);
@@ -842,7 +1139,7 @@ final class Convert {
             String config = m instanceof Map<?, ?> ? Json.text(Json.object(m), "config", "") : String.valueOf(m);
             out.append("\n[[mixins]]\nconfig = ").append(tomlString(config)).append('\n');
         }
-        if (meta.get("accessWidener") != null) leave(
+        if (meta.get("accessWidener") != null && !widenerConverted) leave(
             "src/main/resources/fabric.mod.json",
             0,
             "accessWidener " + meta.get("accessWidener"),
@@ -907,7 +1204,7 @@ final class Convert {
                 .toList()
         );
         stable.sort((a, b) -> Versions.compare(b, a));
-        String gradle = project.wrapperVersion();
+        String gradle = project.wrapperVersion(), newestNeeds = null;
         for (String version : stable.subList(0, Math.min(12, stable.size()))) {
             String needs = null;
             try {
@@ -928,18 +1225,48 @@ final class Convert {
                 // No Gradle module metadata: nothing says which Gradle it needs.
             }
             if (needs == null || gradle == null || Versions.compare(gradle, needs) >= 0) return version;
+            if (newestNeeds == null) newestNeeds = needs;
         }
-        throw new IOException(
-            "No stable " +
-            group +
-            ":" +
-            artifact +
-            " release in " +
-            repository +
-            " runs on this project's Gradle " +
-            gradle +
-            "."
-        );
+        if (stable.isEmpty()) throw new IOException("No stable " + group + ":" + artifact + " release in " + repository + ".");
+        // None runs on this Gradle: the newest release, and the wrapper moves to the Gradle its own metadata asks for.
+        upgradeWrapper(newestNeeds, group + ":" + artifact + " " + stable.get(0));
+        return stable.get(0);
+    }
+
+    /**
+     * Points the Gradle wrapper at the newest final Gradle release of the line a plugin's metadata asks for (at least
+     * that version), with the SHA-256 Gradle publishes beside it when the wrapper pins one.
+     */
+    void upgradeWrapper(String needs, String why) throws Exception {
+        String file = "gradle/wrapper/gradle-wrapper.properties";
+        String text = read(file);
+        String line = needs.replaceAll("^(\\d+\\.\\d+).*", "$1");
+        String best = null;
+        for (Object item : Json.array(Json.parse(Target.fetch(build, "https://services.gradle.org/versions/all")))) {
+            var v = Json.object(item);
+            String version = Json.text(v, "version", "");
+            if (
+                Boolean.TRUE.equals(v.get("snapshot")) ||
+                Boolean.TRUE.equals(v.get("broken")) ||
+                !Json.text(v, "rcFor", "").isEmpty() ||
+                !Json.text(v, "milestoneFor", "").isEmpty() ||
+                version.contains("-")
+            ) continue;
+            if (!(version.equals(line) || version.startsWith(line + "."))) continue;
+            if (Versions.compare(version, needs) < 0) continue;
+            if (best == null || Versions.compare(version, best) > 0) best = version;
+        }
+        if (best == null) throw new IOException("Gradle has no final release " + needs + " or later in the " + line + " line, which " + why + " needs.");
+        String kind = text.contains("-all.zip") ? "all" : "bin";
+        String url = "https\\://services.gradle.org/distributions/gradle-" + best + "-" + kind + ".zip";
+        String out = text.replaceAll("(?m)^distributionUrl=.*$", Matcher.quoteReplacement("distributionUrl=" + url));
+        if (Pattern.compile("(?m)^distributionSha256Sum=").matcher(out).find()) {
+            String sum = Target.fetch(build, "https://services.gradle.org/distributions/gradle-" + best + "-" + kind + ".zip.sha256").strip();
+            out = out.replaceAll("(?m)^distributionSha256Sum=.*$", "distributionSha256Sum=" + sum);
+        }
+        String old = project.wrapperVersion();
+        write(file, out);
+        notes.add("Gradle wrapper: " + old + " to " + best + ", the Gradle " + why + " asks for in its published metadata (" + needs + " or later).");
     }
 
     static Map<String, String> properties(String text) {
@@ -973,8 +1300,14 @@ final class Convert {
 
     /** The span of a top-level block "name {" ... "}" in a build script, or null. */
     static int[] block(String text, String name) {
+        // A top-level block first: buildscript { dependencies { ... } } is not the build's own dependencies.
+        int[] top = block(text, name, "(?m)^");
+        return top != null ? top : block(text, name, "(?m)^[ \\t]*");
+    }
+
+    static int[] block(String text, String name, String indent) {
         boolean[] code = LoaderRules.code(text);
-        Matcher m = Pattern.compile("(?m)^[ \\t]*" + Pattern.quote(name) + "\\s*\\{").matcher(text);
+        Matcher m = Pattern.compile(indent + Pattern.quote(name) + "\\s*\\{").matcher(text);
         while (m.find()) {
             if (!code[m.start() + m.group().indexOf(name.charAt(0))]) continue;
             int open = m.end() - 1, end = LoaderRules.close(text, code, open);
@@ -1054,11 +1387,11 @@ final class Convert {
     }
 
     static final Pattern LOOM_PLUGIN = Pattern.compile(
-        "(?m)^([ \\t]*)id\\s*\\(?\\s*['\"](?:net\\.fabricmc\\.)?fabric-loom['\"]\\s*\\)?(?:\\s*version\\s*\\(?\\s*['\"][^'\"]*['\"]\\s*\\)?)?[ \\t]*$"
+        "(?m)^([ \\t]*)id\\s*\\(?\\s*['\"](?:net\\.fabricmc\\.)?fabric-loom(?:-remap)?['\"]\\s*\\)?(?:\\s*version\\s*\\(?\\s*['\"][^'\"]*['\"]\\s*\\)?)?[ \\t]*$"
     );
 
     void buildToNeoForge(String minecraft) throws Exception {
-        String gradle = read("build.gradle");
+        String gradle = dropLoomTypes(read("build.gradle"));
         Matcher plugin = LOOM_PLUGIN.matcher(gradle);
         if (!plugin.find()) throw new IOException(
             "build.gradle does not apply the Fabric Loom plugin with id 'fabric-loom' or 'net.fabricmc.fabric-loom' in its plugins block."
@@ -1143,6 +1476,7 @@ final class Convert {
                 String line = raw.strip().replaceAll("[\\w\"'${}]+\\s*\\{\\s*\\}", "").strip();
                 if (line.isEmpty() || line.startsWith("//") || line.equals("}")) continue;
                 if (line.startsWith("splitEnvironmentSourceSets")) split = true;
+                else if (line.startsWith("accessWidenerPath") && widenerConverted) continue;
                 else if (line.startsWith("accessWidenerPath")) leave(
                     "build.gradle",
                     0,
@@ -1233,18 +1567,20 @@ final class Convert {
             gradle.substring(insertAt);
         int[] deps = block(gradle, "dependencies");
         if (deps != null) {
+            // Whole statements, not lines: a dependency with a closure ({ exclude ... }) is one statement.
             List<String> kept = new ArrayList<>();
             boolean dropping = false;
-            for (String raw : gradle.substring(deps[2] + 1, deps[3] - 1).lines().toList()) {
-                String line = raw.strip();
+            for (String raw : statements(gradle.substring(deps[2] + 1, deps[3] - 1))) {
+                // What the statement depends on is in its first line; its closure (exclude(group: "net.fabricmc.fabric-api")) is not.
+                String line = raw.strip().lines().findFirst().orElse("");
                 boolean drop =
-                    line.matches("(?:minecraft|mappings)\\b.*") ||
+                    line.matches("(?s)(?:minecraft|mappings)\\b.*") ||
                     line.contains("net.fabricmc:fabric-loader") ||
                     line.contains("net.fabricmc.fabric-api") ||
                     line.contains("fabricApi.module") ||
                     line.contains("com.terraformersmc:modmenu");
                 if (drop) {
-                    // A comment that only introduced the dropped lines goes with them.
+                    // A comment that only introduced the dropped statements goes with them.
                     while (
                         !dropping &&
                         kept.size() >= 2 &&
@@ -1255,29 +1591,35 @@ final class Convert {
                     continue;
                 }
                 dropping = false;
-                Matcher mod = Pattern.compile(
-                    "^(mod(?:Implementation|Api|CompileOnly|CompileOnlyApi|RuntimeOnly|LocalRuntime)|include|localRuntime)\\b"
-                ).matcher(line);
-                if (mod.find()) {
-                    String config =
-                        switch (mod.group(1)) {
-                            case "modImplementation" -> "implementation";
-                            case "modApi" -> "api";
-                            case "modCompileOnly", "modCompileOnlyApi" -> "compileOnly";
-                            case "modRuntimeOnly", "modLocalRuntime", "localRuntime" -> "runtimeOnly";
-                            default -> "jarJar";
-                        };
-                    leave(
-                        "build.gradle",
-                        0,
-                        "dependency " + line,
-                        "another mod or library on the Fabric classpath: it needs its NeoForge build, which convert cannot choose"
-                    );
-                    raw = raw.replaceFirst(Pattern.quote(mod.group(1)), config);
+                if (line.startsWith("//") || line.startsWith("/*")) {
+                    kept.add(raw);
+                    continue;
                 }
-                kept.add(raw);
+                // A Fabric build of another mod moves to its NeoForge build; Loom's own configurations are renamed after.
+                raw = dependencyLine(raw, "fabric", "neoforge", repositories(gradle), false);
+                // Loom's configurations, wherever they are in the statement (implementation include("x") nests one in another).
+                Matcher mod = Pattern.compile(
+                    "\\b(mod(?:Implementation|Api|CompileOnly|CompileOnlyApi|RuntimeOnly|LocalRuntime)|client(?:Implementation|Api|CompileOnly|RuntimeOnly)|include|localRuntime)(?=\\s*[(\"'\\w])"
+                ).matcher(raw);
+                StringBuilder renamed = new StringBuilder();
+                while (mod.find()) mod.appendReplacement(
+                    renamed,
+                    switch (mod.group(1)) {
+                        case "modImplementation" -> "implementation";
+                        case "modApi" -> "api";
+                        case "modCompileOnly", "modCompileOnlyApi" -> "compileOnly";
+                        case "modRuntimeOnly", "modLocalRuntime", "localRuntime", "clientRuntimeOnly" -> "runtimeOnly";
+                        case "clientImplementation" -> "implementation";
+                        case "clientApi" -> "api";
+                        case "clientCompileOnly" -> "compileOnly";
+                        default -> "jarJar";
+                    }
+                );
+                mod.appendTail(renamed);
+                kept.add(renamed.toString());
             }
-            String inner = String.join("\n", kept) + "\n";
+            String inner = String.join("", kept);
+            if (!inner.endsWith("\n")) inner += "\n";
             gradle =
                 gradle.substring(0, deps[2] + 1) + "\n" + inner.replaceAll("^\\n+", "") + gradle.substring(deps[3] - 1);
         }
@@ -1285,9 +1627,12 @@ final class Convert {
             .replace("filesMatching(\"fabric.mod.json\")", "filesMatching(\"META-INF/neoforge.mods.toml\")")
             .replace("filesMatching('fabric.mod.json')", "filesMatching('META-INF/neoforge.mods.toml')");
         gradle = gradle.replaceAll("\\bremapJar\\b", "jar").replaceAll("\\bremapSourcesJar\\b", "sourcesJar");
-        if (gradle.contains("modmenu") || gradle.contains("fabricmc")) for (String line : gradle.lines().toList()) if (
-            line.contains("fabricmc") && !line.strip().startsWith("//")
-        ) leave("build.gradle", 0, line.strip(), "still names Fabric; no rule changes it");
+        // A line of code (not a comment) that still names Fabric.
+        boolean[] gradleCode = LoaderRules.code(gradle);
+        for (Matcher named = Pattern.compile("(?m)^.*fabricmc.*$").matcher(gradle); named.find(); ) {
+            int at = gradle.indexOf("fabricmc", named.start());
+            if (gradleCode[at]) leave("build.gradle", 0, named.group().strip(), "still names Fabric; no rule changes it");
+        }
         write("build.gradle", gradle.replaceAll("\\n{3,}", "\n\n"));
         Map<String, String> props = new LinkedHashMap<>();
         for (String key : List.of(
@@ -1370,8 +1715,15 @@ final class Convert {
     }
 
     void toFabric(String minecraft) throws Exception {
-        String metaFile = "src/main/resources/META-INF/neoforge.mods.toml";
-        Map<String, Object> toml = toml(read(metaFile));
+        String metaFile = Files.isRegularFile(project.root.resolve(NEO_META)) ? NEO_META : NEO_TEMPLATE;
+        String metaText = read(metaFile);
+        String expanded = expandProperties(metaText);
+        metadataExpanded = !expanded.equals(metaText);
+        if (metadataExpanded) notes.add(
+            metaFile +
+            " is expanded by the build from gradle.properties; fabric.mod.json gets the expanded values, and the build's expand step for it is removed."
+        );
+        Map<String, Object> toml = toml(expanded);
         List<Object> mods = toml.get("[[mods]]") instanceof List<?> l ? Json.array(l) : List.of();
         if (mods.size() != 1) throw new IOException(
             "neoforge.mods.toml declares " + mods.size() + " mods; convert moves a jar with one mod."
@@ -1382,6 +1734,7 @@ final class Convert {
         // The @Mod classes first: their annotation names Dist, which the source rules would otherwise rename.
         Map<String, List<String>> entrypoints = new LinkedHashMap<>();
         String menu = null;
+        prepareBridge(minecraft);
         for (String file : javaFiles()) {
             String text = read(file);
             Matcher annotation = Pattern.compile(
@@ -1410,7 +1763,7 @@ final class Convert {
             if (made.find()) {
                 String target = file.substring(0, file.lastIndexOf('/') + 1) + made.group(1) + ".java";
                 if (
-                    !Files.isRegularFile(project.root.resolve(target)) ||
+                    !exists(target) ||
                     !text.contains("new " + made.group(1) + "()." + method + "()")
                 ) {
                     leave(
@@ -1441,7 +1794,26 @@ final class Convert {
                 .add(name);
             applied.computeIfAbsent("entrypoint-" + api, k -> new ArrayList<>()).add(file);
         }
+        if (bridgeUsed && !clientEntry) {
+            // NeoForge posts FMLClientSetupEvent and runs client subscribers without a client @Mod class; Fabric needs an entrypoint for that.
+            String name = bridgePackage + ".ClientEntrypoint";
+            StringBuilder body = new StringBuilder();
+            for (Subscriber s : subscribers) if (s.client()) body.append("\t\tBridge.subscribe(").append(s.type()).append(".class);\n");
+            write(
+                bridgeFolder() + "/ClientEntrypoint.java",
+                "package " +
+                bridgePackage +
+                ";\n\n/** The client entrypoint modaccel convert added: NeoForge's client subscribers and FMLClientSetupEvent. */\npublic final class ClientEntrypoint implements net.fabricmc.api.ClientModInitializer {\n\n\t@Override\n\tpublic void onInitializeClient() {\n" +
+                body +
+                "\t\tClientBridge.client(" +
+                LoaderRules.quote(modid) +
+                ");\n\t}\n}\n"
+            );
+            entrypoints.computeIfAbsent("client", k -> new ArrayList<>()).add(name);
+        }
         rewriteSources("neoforge", "fabric");
+        dropNeoForgeTabOrder();
+        if (bridgeUsed) applyBridge();
         if (menu != null) {
             String file = classFile(menu);
             if (file != null) {
@@ -1454,26 +1826,287 @@ final class Convert {
                 applied.computeIfAbsent("modmenu-config-screen", k -> new ArrayList<>()).add(file);
             }
         }
-        buildToFabric(minecraft, menu != null);
-        // Access transformer lines a rule added for NeoForge go away with the code that needed them.
+        // Access transformer lines a rule added for NeoForge go away with the code that needed them; the mod's own
+        // lines become a Fabric access widener.
         Set<String> known = new HashSet<>();
         for (Object rule : LoaderRules.list(rules.get("expressions"))) if (
             Json.object(rule).get("accessTransformers") instanceof Map<?, ?> at
         ) known.addAll(LoaderRules.strings(Json.object(at).get("neoforge")));
-        boolean atLeft = false;
-        if (Files.isRegularFile(project.root.resolve(AT_FILE))) {
+        if (exists(AT_FILE)) {
             List<String> keep = new ArrayList<>();
             for (String line : read(AT_FILE).lines().toList()) if (!known.contains(line.strip())) keep.add(line);
-            if (keep.stream().allMatch(l -> l.isBlank() || l.strip().startsWith("#"))) delete(AT_FILE);
-            else {
-                write(AT_FILE, String.join("\n", keep) + "\n");
-                atLeft = true;
+            if (!keep.stream().allMatch(l -> l.isBlank() || l.strip().startsWith("#"))) {
+                List<String> unconverted = new ArrayList<>();
+                String widener = transformerToWidener(
+                    String.join("\n", keep),
+                    Versions.compare(minecraft, Route.FIRST_UNOBFUSCATED) >= 0,
+                    unconverted,
+                    gameFieldTypes(minecraft)
+                );
+                for (String u : unconverted) leave(AT_FILE, 0, u, "an access transformer line with no access widener counterpart");
+                fabricWidener = fabricId + ".accesswidener";
+                write("src/main/resources/" + fabricWidener, widener);
+                widenerConverted = true;
+                applied.computeIfAbsent("access-widener", k -> new ArrayList<>()).add(AT_FILE);
             }
+            delete(AT_FILE);
         }
-        if (!atLeft) toml.remove("[[accessTransformers]]");
+        toml.remove("[[accessTransformers]]");
+        buildToFabric(minecraft, menu != null);
         write("src/main/resources/fabric.mod.json", fabricJson(toml, mod, entrypoints, minecraft, menu != null));
         delete(metaFile);
         leftovers(List.of("net.neoforged."));
+    }
+
+    /**
+     * NeoForge adds withTabsBefore and withTabsAfter to the game's creative tab builder to order tabs; Fabric's builder has
+     * neither, so the calls go (the tab keeps its items and title, and takes the next free place) and a note says so.
+     */
+    void dropNeoForgeTabOrder() throws Exception {
+        int dropped = 0;
+        for (String file : javaFiles()) {
+            String text = read(file);
+            String out = dropCalls(text, List.of("withTabsBefore", "withTabsAfter"));
+            if (!out.equals(text)) {
+                write(file, out);
+                dropped++;
+                applied.computeIfAbsent("creative-tab-order", k -> new ArrayList<>()).add(file);
+            }
+        }
+        if (dropped > 0) notes.add(
+            "Creative tab order: NeoForge's withTabsBefore and withTabsAfter have no Fabric counterpart, so the converted tabs take the next free place (" +
+            dropped +
+            " file(s))."
+        );
+    }
+
+    /** Removes chained calls .name(...) (balanced arguments, code only) from a text. */
+    static String dropCalls(String text, List<String> names) {
+        boolean[] code = LoaderRules.code(text);
+        Matcher m = Pattern.compile("\\s*\\.\\s*(?:" + String.join("|", names) + ")\\s*\\(").matcher(text);
+        StringBuilder out = new StringBuilder();
+        int last = 0;
+        while (m.find()) {
+            int open = m.end() - 1;
+            if (!code[open] || open < last) continue;
+            int end = LoaderRules.close(text, code, open);
+            if (end < 0) continue;
+            out.append(text, last, m.start());
+            last = end;
+        }
+        out.append(text, last, text.length());
+        return out.toString();
+    }
+
+    // ---- the NeoForge bridge on Fabric ---------------------------------------------------------------------
+
+    /** A class NeoForge finds by its @EventBusSubscriber annotation: its name in source and whether only the client has it. */
+    record Subscriber(String type, boolean client) {}
+
+    /** The package the bridge goes in (beside the mod's first @Mod class), or null when there is no bridge for this game. */
+    String bridgePackage;
+    boolean bridgeUsed, clientEntry;
+    final List<Subscriber> subscribers = new ArrayList<>();
+    Map<String, Object> bridge;
+
+    String bridgeFolder() {
+        return "src/main/java/" + bridgePackage.replace('.', '/');
+    }
+
+    /**
+     * The NeoForge bridge (knowledge/loaders.json "bridges"): NeoForge's registration, event bus, mod container, config
+     * and the commonest lifecycle events written on Fabric's API, for the Minecraft versions it is written for. A mod
+     * written for NeoForge first keeps its own code; its entrypoints get what NeoForge passed their constructors from it.
+     */
+    void prepareBridge(String minecraft) throws Exception {
+        for (Object item : LoaderRules.list(rules.get("bridges"))) {
+            var b = Json.object(item);
+            if (!"neoforge".equals(b.get("from")) || !"fabric".equals(b.get("to"))) continue;
+            if (Versions.compare(minecraft, Json.text(b, "minecraft", "99")) < 0) continue;
+            bridge = b;
+        }
+        if (bridge == null) return;
+        for (String file : javaFiles()) {
+            String text = read(file);
+            Matcher mod = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(text);
+            if (bridgePackage == null && text.contains("@Mod(") && mod.find()) bridgePackage = mod.group(1) + ".loaderbridge";
+            Matcher s = Pattern.compile(
+                "@EventBusSubscriber\\b(\\s*\\([^)]*\\))?\\s*(?:@[\\w.]+(?:\\([^)]*\\))?\\s*)*(?:(?:public|protected|private|static|final|abstract)\\s+)*(?:class|interface|enum|record)\\s+(\\w+)"
+            ).matcher(text);
+            String pkg = mod.reset().find() ? mod.group(1) + "." : "";
+            String top = file.substring(file.lastIndexOf('/') + 1).replace(".java", "");
+            while (s.find()) {
+                String args = s.group(1) == null ? "" : s.group(1);
+                boolean client = args.contains("Dist.CLIENT") && !args.contains("DEDICATED_SERVER");
+                String type = pkg + (s.group(2).equals(top) ? top : top + "." + s.group(2));
+                subscribers.add(new Subscriber(type, client));
+            }
+        }
+    }
+
+    /**
+     * A NeoForge @Mod class as a Fabric entrypoint through the bridge: its constructor's body runs in the entrypoint
+     * method, with the constructor's IEventBus and ModContainer parameters as locals the bridge supplies; the
+     * entrypoint then registers the @EventBusSubscriber classes of its side and ends as NeoForge's start-up does.
+     */
+    String bridgeEntry(String file, String text, Matcher annotation, String simple, String api, String method) {
+        boolean client = api.equals("ClientModInitializer");
+        String id = annotation.group(1).strip();
+        unit = LoaderRules.unit(text);
+        boolean[] code = LoaderRules.code(text);
+        Matcher ctor = Pattern.compile(
+            "(?m)^([ \\t]*)(?:(?:public|protected|private)\\s+)?" + simple + "\\s*\\(([^)]*)\\)\\s*\\{"
+        ).matcher(text);
+        int start = -1, open = -1, end = -1;
+        String indent = unit, params = "";
+        int found = 0;
+        while (ctor.find()) if (code[ctor.start(2) - 1]) {
+            found++;
+            start = ctor.start();
+            open = ctor.end() - 1;
+            indent = ctor.group(1);
+            params = ctor.group(2).strip();
+        }
+        if (found > 1) {
+            leave(file, LoaderRules.line(text, annotation.start()), "@Mod class " + simple, "it has more than one constructor; Fabric makes an entrypoint with none");
+            return null;
+        }
+        StringBuilder locals = new StringBuilder();
+        String in = indent + unit;
+        if (!params.isEmpty()) for (String param : params.split(",")) {
+            String[] p = param.strip().replaceAll("^final\\s+", "").split("\\s+");
+            if (p.length != 2) return leaveEntry(file, text, annotation, simple, "parameter " + param.strip());
+            switch (p[0]) {
+                case "IEventBus" -> locals.append(in).append("IEventBus ").append(p[1]).append(" = Bridge.bus();\n");
+                case "ModContainer" -> locals.append(in).append("ModContainer ").append(p[1]).append(" = Bridge.container(").append(id).append(");\n");
+                case "Dist" -> locals.append(in).append("Dist ").append(p[1]).append(" = Dist.").append(client ? "CLIENT" : "DEDICATED_SERVER").append(";\n");
+                default -> {
+                    return leaveEntry(file, text, annotation, simple, "parameter " + param.strip());
+                }
+            }
+        }
+        String body = "";
+        String before = text, after = "";
+        if (start >= 0) {
+            end = LoaderRules.close(text, code, open);
+            body = text.substring(open + 1, end - 1).replaceAll("^\\s*\\n", "").replaceAll("\\s+$", "");
+            before = text.substring(0, start);
+            after = text.substring(end);
+        } else {
+            // No constructor: the entrypoint method goes at the end of the class.
+            int last = text.lastIndexOf('}');
+            before = text.substring(0, last).replaceAll("\\s+$", "") + "\n";
+            after = "\n" + text.substring(last);
+            indent = unit;
+            in = indent + unit;
+        }
+        StringBuilder entry = new StringBuilder();
+        entry.append(indent).append("/** NeoForge's constructor of this @Mod class, run as Fabric's entrypoint (modaccel convert, NeoForge bridge). */\n");
+        entry.append(indent).append("public void ").append(method).append("() {\n").append(locals);
+        if (!body.isEmpty()) entry.append(body.replaceAll("(?m)^" + Pattern.quote(indent + unit), in)).append('\n');
+        for (Subscriber s : subscribers) if (s.client() == client) entry.append(in).append("Bridge.subscribe(").append(s.type()).append(".class);\n");
+        entry.append(in).append(client ? "ClientBridge.client(" : "Bridge.common(").append(id).append(");\n");
+        entry.append(indent).append("}");
+        String out = before + entry + after;
+        int lineStart = out.lastIndexOf('\n', out.indexOf(annotation.group())) + 1;
+        int lineEnd = out.indexOf('\n', out.indexOf(annotation.group())) + 1;
+        out = out.substring(0, lineStart) + out.substring(lineEnd);
+        out = implementFabric(out, simple, api, method);
+        out = LoaderRules.dropImport(out, "net.neoforged.fml.common.Mod");
+        out = LoaderRules.addImport(out, bridgePackage + ".Bridge");
+        if (client) {
+            out = LoaderRules.addImport(out, bridgePackage + ".ClientBridge");
+            clientEntry = true;
+        }
+        bridgeUsed = true;
+        applied.computeIfAbsent("neoforge-bridge-entrypoint", k -> new ArrayList<>()).add(file);
+        return out;
+    }
+
+    String leaveEntry(String file, String text, Matcher annotation, String simple, String what) {
+        leave(file, LoaderRules.line(text, annotation.start()), "@Mod class " + simple, "its constructor takes " + what + ", which the NeoForge bridge does not supply");
+        return null;
+    }
+
+    /**
+     * The bridge's own files, and every import of a NeoForge class it mirrors pointed at it. Listeners added by method
+     * reference or typed lambda get their event class written in (NeoForge reads it from the generic signature).
+     */
+    void applyBridge() throws Exception {
+        Map<String, Object> classes = Json.object(bridge.get("classes"));
+        Path templates = build.harness.resolve(Json.text(bridge, "folder", ""));
+        for (String file : javaFiles()) {
+            String text = read(file);
+            String out = text;
+            for (var c : classes.entrySet()) out = out.replaceAll(
+                "(?m)^import\\s+" + Pattern.quote(c.getKey()) + "\\s*;",
+                Matcher.quoteReplacement("import " + bridgePackage + "." + c.getValue() + ";")
+            );
+            out = eventClassesInListeners(file, out);
+            if (!out.equals(text)) {
+                write(file, out);
+                applied.computeIfAbsent("neoforge-bridge", k -> new ArrayList<>()).add(file);
+            }
+        }
+        try (var list = Files.list(templates)) {
+            for (Path template : list.filter(p -> p.toString().endsWith(".java")).sorted().toList()) write(
+                bridgeFolder() + "/" + template.getFileName(),
+                Files.readString(template, StandardCharsets.UTF_8).replace("${package}", bridgePackage)
+            );
+        }
+        notes.add(
+            "NeoForge bridge: " +
+            bridgePackage +
+            " holds NeoForge's registration, event bus, mod container, config and lifecycle events written on Fabric's API, for the code that uses them."
+        );
+    }
+
+    /** addListener(this::method) and addListener((Type event) -> ...) with the event class written in, as the bridge's IEventBus takes it. */
+    String eventClassesInListeners(String file, String text) throws IOException {
+        boolean[] code = LoaderRules.code(text);
+        Matcher m = Pattern.compile(
+            "\\.addListener\\(\\s*((?:EventPriority\\.\\w+\\s*,\\s*)?(?:(?:true|false)\\s*,\\s*)?)(?:(this|[A-Z]\\w*(?:\\.[A-Z]\\w*)*)::(\\w+)|\\(\\s*(?:final\\s+)?([A-Z][\\w.]*)(?:<[^>]*>)?\\s+\\w+\\s*\\)\\s*->)"
+        ).matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) {
+            if (!code[m.start()]) {
+                m.appendReplacement(out, Matcher.quoteReplacement(m.group()));
+                continue;
+            }
+            String type = m.group(4);
+            if (type == null) {
+                String owner = m.group(2).equals("this") ? text : classSource(text, m.group(2));
+                Matcher method = owner == null
+                    ? null
+                    : Pattern.compile(
+                        "\\b" + Pattern.quote(m.group(3)) + "\\s*\\(\\s*(?:(?:final|@[\\w.]+(?:\\([^)]*\\))?)\\s+)*([A-Z][\\w.]*)(?:<[^>]*>)?\\s+\\w+\\s*\\)"
+                    ).matcher(owner);
+                if (method != null && method.find()) type = method.group(1);
+            }
+            if (type == null) {
+                leave(file, LoaderRules.line(text, m.start()), "addListener" + m.group().substring(m.group().indexOf('(')), "the listener's event type could not be read from its method");
+                m.appendReplacement(out, Matcher.quoteReplacement(m.group()));
+                continue;
+            }
+            int at = m.end(1) - m.start();
+            m.appendReplacement(out, Matcher.quoteReplacement(m.group().substring(0, at) + type + ".class, " + m.group().substring(at)));
+        }
+        m.appendTail(out);
+        return out.toString();
+    }
+
+    /** The source of a class named in a file (its own package or an import), or null. */
+    String classSource(String text, String name) throws IOException {
+        String simple = name.contains(".") ? name.substring(0, name.indexOf('.')) : name;
+        Matcher imported = Pattern.compile("(?m)^import\\s+([\\w.]+\\." + Pattern.quote(simple) + ")\\s*;").matcher(text);
+        Matcher pkg = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(text);
+        String full = imported.find() ? imported.group(1) : pkg.find() ? pkg.group(1) + "." + simple : simple;
+        String file = classFile(full);
+        // A class reached through a wildcard import (import a.b.*;).
+        for (Matcher wild = Pattern.compile("(?m)^import\\s+([\\w.]+)\\.\\*\\s*;").matcher(text); file == null && wild.find(); ) file = classFile(
+            wild.group(1) + "." + simple
+        );
+        return file == null ? null : read(file);
     }
 
     /** A NeoForge @Mod class back as a Fabric entrypoint: the constructor convert wrote is removed; any other constructor is named. */
@@ -1485,6 +2118,7 @@ final class Convert {
             "\\(IEventBus modBus(?:, ModContainer container)?\\) \\{\\n(.*?)\\n[ \\t]*}\\n"
         ).matcher(text);
         if (!ctor.find() || !ctor.group(1).contains(method + "()")) {
+            if (bridgePackage != null) return bridgeEntry(file, text, annotation, simple, api, method);
             leave(
                 file,
                 LoaderRules.line(text, annotation.start()),
@@ -1493,7 +2127,9 @@ final class Convert {
                 method +
                 "() of a Fabric " +
                 api +
-                " by hand"
+                " by hand (the NeoForge bridge is written for Minecraft " +
+                Route.FIRST_UNOBFUSCATED +
+                " and later)"
             );
             return null;
         }
@@ -1624,12 +2260,7 @@ final class Convert {
         if (!suggests.isEmpty()) out.put("suggests", suggests);
         if (!breaks.isEmpty()) out.put("breaks", breaks);
         if (!conflicts.isEmpty()) out.put("conflicts", conflicts);
-        if (toml.get("[[accessTransformers]]") != null) leave(
-            "src/main/resources/META-INF/neoforge.mods.toml",
-            0,
-            "accessTransformers",
-            "access transformers are not converted to Fabric access wideners yet"
-        );
+        if (fabricWidener != null) out.put("accessWidener", fabricWidener);
         return pretty(out, "") + "\n";
     }
 
@@ -1685,20 +2316,286 @@ final class Convert {
         "(?m)^([ \\t]*)id\\s*\\(?\\s*['\"]net\\.neoforged\\.moddev['\"]\\s*\\)?(?:\\s*version\\s*\\(?\\s*['\"][^'\"]*['\"]\\s*\\)?)?[ \\t]*$"
     );
 
-    void buildToFabric(String minecraft, boolean menu) throws Exception {
-        if (Versions.compare(minecraft, Route.FIRST_UNOBFUSCATED) < 0) throw new IOException(
-            "NeoForge to Fabric is converted for Minecraft " +
-            Route.FIRST_UNOBFUSCATED +
-            " and later, where both loaders use Mojang's names; " +
-            minecraft +
-            " would need Fabric mappings."
+    static final Pattern NEOGRADLE_PLUGIN = Pattern.compile(
+        "(?m)^([ \\t]*)id\\s*\\(?\\s*['\"]net\\.neoforged\\.gradle\\.userdev['\"]\\s*\\)?(?:\\s*version\\s*\\(?\\s*['\"][^'\"]*['\"]\\s*\\)?)?[ \\t]*$"
+    );
+
+    boolean parchmentRepository;
+    /** The Fabric access widener became NeoForge access transformer lines (or, going back, the reverse). */
+    boolean widenerConverted;
+    /** The access widener file (in src/main/resources) a NeoForge mod's transformers became, or null. */
+    String fabricWidener;
+    /** True when neoforge.mods.toml had ${property} placeholders the build expanded: fabric.mod.json gets the values. */
+    boolean metadataExpanded;
+
+    /** A Groovy value as text inside a GString: 'x' or "x" is x, anything else (project.v, v) is ${...}. */
+    static String groovyValue(String expression) {
+        String e = expression.strip().replaceAll("\\s*//.*$", "");
+        if (e.matches("'[^']*'|\"[^\"$]*\"")) return e.substring(1, e.length() - 1);
+        return "${" + e + "}";
+    }
+
+    String addRepository(String gradle, String url) {
+        int[] repos = block(gradle, "repositories");
+        String repo = unit + "maven { url = \"" + url + "\" }\n";
+        if (repos != null) return gradle.substring(0, repos[2] + 1) + "\n" + repo + gradle.substring(repos[2] + 1).replaceFirst("^\\n", "");
+        return gradle.replaceFirst("(?m)^dependencies\\s*\\{", Matcher.quoteReplacement("repositories {\n" + repo + "}\n\ndependencies {"));
+    }
+
+    /**
+     * Removes the top-level build statements that only served NeoForge's metadata: NeoForge's MDK template expansion
+     * (generateModMetadata, src/main/templates), the neoForge extension's own calls (neoForge.ideSyncTask ...), and, when
+     * fabric.mod.json was written with the expanded values, a processResources expand of neoforge.mods.toml.
+     */
+    String dropMetadataExpansion(String gradle) {
+        return dropStatements(
+            gradle,
+            statement ->
+                statement.contains("generateModMetadata") ||
+                statement.contains("src/main/templates") ||
+                statement.strip().startsWith("neoForge.") ||
+                (metadataExpanded && statement.contains("neoforge.mods.toml") && statement.contains("expand")),
+            "NeoForge metadata or ModDevGradle only"
         );
+    }
+
+    /**
+     * Fabric Loom's own types imported into the build script (net.fabricmc.loom...): the imports go, and so does every
+     * top-level statement that names one of them (a task of a Loom type has no ModDevGradle counterpart).
+     */
+    String dropLoomTypes(String gradle) {
+        List<String> removed = new ArrayList<>();
+        String out = dropLoomTypes(gradle, removed);
+        for (String r : removed) notes.add("Build: removed `" + r + "` (Fabric Loom's own types).");
+        return out;
+    }
+
+    static String dropLoomTypes(String gradle, List<String> removed) {
+        Matcher imports = Pattern.compile("(?m)^import\\s+net\\.fabricmc\\.loom\\.[\\w.]*?(\\w+)\\s*;?[ \\t]*$").matcher(gradle);
+        List<String> types = new ArrayList<>();
+        while (imports.find()) types.add(imports.group(1));
+        if (types.isEmpty()) return gradle;
+        Pattern named = Pattern.compile("\\b(?:" + String.join("|", types) + ")\\b");
+        return dropStatements(gradle, statement -> named.matcher(statement).find(), removed);
+    }
+
+    String dropStatements(String gradle, java.util.function.Predicate<String> drop, String why) {
+        List<String> removed = new ArrayList<>();
+        String out = dropStatements(gradle, drop, removed);
+        for (String r : removed) notes.add("Build: removed `" + r + "` (" + why + ").");
+        return out;
+    }
+
+    // ---- dependencies ------------------------------------------------------------------------------------
+
+    static final Pattern COORDINATE = Pattern.compile("([\"'])([\\w.\\-${}]+):([\\w.\\-${}]+):([^\"':]+)((?::[^\"']*)?)\\1");
+    static final Map<String, String[]> LOADER_WORDS = Map.of(
+        "fabric",
+        new String[] { "fabric", "Fabric", "FABRIC" },
+        "neoforge",
+        new String[] { "neoforge", "NeoForge", "NEOFORGE" }
+    );
+
+    /** The Maven repositories a build script declares, then Maven Central. */
+    static List<String> repositories(String gradle) {
+        List<String> out = new ArrayList<>();
+        Matcher m = Pattern.compile("\\burl\\s*=?\\s*\\(?\\s*(?:uri\\s*\\(\\s*)?[\"'](https?://[^\"'$]+?)/?[\"']").matcher(gradle);
+        while (m.find()) if (!out.contains(m.group(1))) out.add(m.group(1));
+        out.add("https://repo.maven.apache.org/maven2");
+        return out;
+    }
+
+    /** An artifact name with the loader's word, as a whole part between - _ or ., changed to the other loader's; null when it has none. */
+    static String swapLoaderWord(String artifact, String from, String to) {
+        String[] a = LOADER_WORDS.get(from), b = LOADER_WORDS.get(to);
+        for (int i = 0; i < a.length; i++) {
+            Matcher m = Pattern.compile("(?<=^|[-_.])" + a[i] + "(?=$|[-_.])").matcher(artifact);
+            if (m.find()) return artifact.substring(0, m.start()) + b[i] + artifact.substring(m.end());
+        }
+        return null;
+    }
+
+    /** Whether an artifact names no loader at all (a library, or a mod's loader-neutral API). */
+    static boolean loaderNeutral(String artifact) {
+        return !Pattern.compile("(?i)(?:^|[-_.])(?:fabric|neoforge|forge|quilt)(?:$|[-_.])").matcher(artifact).find();
+    }
+
+    String resolveProperties(String text) throws IOException {
+        Map<String, String> props = properties(read("gradle.properties"));
+        Matcher m = Pattern.compile("\\$\\{?(?:project\\.)?(\\w+)}?").matcher(text);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) m.appendReplacement(out, Matcher.quoteReplacement(props.getOrDefault(m.group(1), m.group())));
+        m.appendTail(out);
+        return out.toString();
+    }
+
+    /**
+     * A dependency line moved to the other loader's build of the same project: the coordinate's artifact with its loader
+     * word changed (jei-26.1.2-neoforge to jei-26.1.2-fabric), only when one of the build's own repositories publishes that
+     * artifact at that version. Null when none does; the line is then named, never guessed.
+     */
+    String otherLoaderDependency(String line, String from, String to, List<String> repos) throws IOException {
+        Matcher c = COORDINATE.matcher(line);
+        if (!c.find()) return null;
+        String artifact = c.group(3), swapped = swapLoaderWord(artifact, from, to);
+        if (swapped == null) return null;
+        String group = resolveProperties(c.group(2)), name = resolveProperties(swapped), version = resolveProperties(c.group(4));
+        if (group.contains("$") || name.contains("$")) return null;
+        for (String repo : repos) {
+            try {
+                List<String> versions = metadataVersions(
+                    Target.fetch(build, repo + "/" + group.replace('.', '/') + "/" + name + "/maven-metadata.xml")
+                );
+                if (version.contains("$") ? versions.isEmpty() : !versions.contains(version)) continue;
+                return line.substring(0, c.start(3)) + swapped + line.substring(c.end(3));
+            } catch (Exception notThere) {
+                // The next repository.
+            }
+        }
+        return null;
+    }
+
+    /**
+     * One dependency line of the source loader's build, for the target build: a loader-specific artifact moves to the
+     * other loader's build of the same project when a repository publishes it; a loader-neutral library stays and is
+     * not named; anything else is named with the reason.
+     */
+    String dependencyLine(String raw, String from, String to, List<String> repos, boolean remapMods) throws IOException {
+        // A statement over several lines ({ exclude ... }) is named by its first line.
+        String line = raw.strip().lines().findFirst().orElse("");
+        Matcher c = COORDINATE.matcher(line);
+        if (!c.find()) return raw;
+        if (c.group(2).startsWith("curse.maven") || c.group(2).startsWith("maven.modrinth")) {
+            leave("build.gradle", 0, "dependency " + line, "a file of one loader's build on CurseForge or Modrinth: the other loader's file has another id, which convert cannot choose");
+            return raw;
+        }
+        if (loaderNeutral(c.group(3))) {
+            neutralDependencies.add(c.group(2) + ":" + c.group(3));
+            return raw;
+        }
+        String moved = otherLoaderDependency(raw, from, to, repos);
+        if (moved == null) {
+            leave("build.gradle", 0, "dependency " + line, "a " + from + " build of another mod: no " + to + " build of it at this version in the build's repositories");
+            return raw;
+        }
+        if (remapMods) moved = remapConfiguration(moved);
+        Matcher now = COORDINATE.matcher(moved);
+        String coordinate = now.find() ? now.group(2) + ":" + now.group(3) : moved.strip();
+        applied.computeIfAbsent("dependency-other-loader-build", k -> new ArrayList<>()).add("build.gradle: " + coordinate);
+        return moved;
+    }
+
+    /** Loom's remapping configurations for a mod dependency (before 26.1): implementation becomes modImplementation and so on. */
+    static String remapConfiguration(String line) {
+        Matcher m = Pattern.compile("\\b(implementation|compileOnly|runtimeOnly|localRuntime|api)(?=\\s*[(\"'])").matcher(line);
+        if (!m.find()) return line;
+        String config = m.group(1);
+        return line.substring(0, m.start()) + "mod" + Character.toUpperCase(config.charAt(0)) + config.substring(1) + line.substring(m.end());
+    }
+
+    final Set<String> neutralDependencies = new TreeSet<>();
+
+    /** Removes each top-level statement of a build script (balanced brackets; comments are kept) that matches. */
+    static String dropStatements(String gradle, java.util.function.Predicate<String> drop, List<String> removed) {
+        StringBuilder out = new StringBuilder();
+        for (String statement : statements(gradle)) {
+            String s = statement.strip();
+            boolean comment = s.startsWith("//") || s.startsWith("/*") || s.startsWith("*");
+            if (!comment && drop.test(statement)) removed.add(s.lines().findFirst().orElse(""));
+            else out.append(statement);
+        }
+        return out.toString();
+    }
+
+    /**
+     * A build script (or a block's body) as its statements, each with its line ends: a statement runs to the end of the
+     * line where its brackets balance, so implementation("x") { exclude(...) } is one statement over three lines.
+     */
+    static List<String> statements(String gradle) {
+        boolean[] code = LoaderRules.code(gradle);
+        List<String> out = new ArrayList<>();
+        int i = 0;
+        while (i < gradle.length()) {
+            int depth = 0, end = i;
+            while (end < gradle.length()) {
+                char c = gradle.charAt(end);
+                if (code[end] && (c == '{' || c == '(' || c == '[')) depth++;
+                else if (code[end] && (c == '}' || c == ')' || c == ']')) depth--;
+                end++;
+                if (c == '\n' && depth <= 0) break;
+            }
+            out.add(gradle.substring(i, end));
+            i = end;
+        }
+        return out;
+    }
+
+    void buildToFabric(String minecraft, boolean menu) throws Exception {
+        // Before 26.1 the game is obfuscated: Fabric's own template builds those versions with the remapping Loom
+        // (net.fabricmc.fabric-loom-remap) on Mojang's names (loom.officialMojangMappings()), the names NeoForge mods use.
+        boolean remap = Versions.compare(minecraft, Route.FIRST_UNOBFUSCATED) < 0;
         String gradle = read("build.gradle");
         Matcher plugin = MDG_PLUGIN.matcher(gradle);
-        if (!plugin.find()) throw new IOException(
-            "build.gradle does not apply ModDevGradle (id 'net.neoforged.moddev') in its plugins block."
-        );
+        boolean neoGradle = false;
+        if (!plugin.find()) {
+            plugin = NEOGRADLE_PLUGIN.matcher(gradle);
+            neoGradle = plugin.find();
+            if (!neoGradle) throw new IOException(
+                "build.gradle applies neither ModDevGradle (id 'net.neoforged.moddev') nor NeoGradle (id 'net.neoforged.gradle.userdev') in its plugins block."
+            );
+        }
         String loom = stablePlugin("https://maven.fabricmc.net", "net.fabricmc", "fabric-loom");
+        String parchment = null;
+        if (neoGradle) {
+            // NeoGradle's top-level blocks: runs and minecraft go (Loom makes its own client and server runs), and its
+            // parchment subsystem becomes a Loom mappings layer.
+            for (String name : List.of("subsystems", "runs", "minecraft", "jarJar")) {
+                int[] b = block(gradle, name);
+                if (b == null) continue;
+                String body = gradle.substring(b[2] + 1, b[3] - 1);
+                if (name.equals("subsystems")) parchment = children(body).get("parchment");
+                else if (name.equals("runs")) notes.add("NeoGradle's runs block is replaced by Loom's own client and server runs.");
+                else if (name.equals("minecraft") && body.contains("accessTransformers")) leave(
+                    "build.gradle",
+                    0,
+                    "minecraft accessTransformers",
+                    "access transformers are not converted to Fabric access wideners yet"
+                );
+                gradle = gradle.substring(0, b[0]) + gradle.substring(b[1]);
+            }
+        } else {
+            int[] neoBlock = block(gradle, "neoForge");
+            if (neoBlock != null) parchment = children(gradle.substring(neoBlock[2] + 1, neoBlock[3] - 1)).get("parchment");
+        }
+        String mappings = null;
+        if (remap) {
+            mappings = "mappings loom.officialMojangMappings()";
+            if (parchment != null) {
+                Matcher mc = Pattern.compile("minecraftVersion\\s*=?\\s*(.+)").matcher(parchment);
+                Matcher mv = Pattern.compile("mappingsVersion\\s*=?\\s*(.+)").matcher(parchment);
+                if (mc.find() && mv.find()) {
+                    String a = groovyValue(mc.group(1)), b = groovyValue(mv.group(1));
+                    mappings =
+                        "mappings loom.layered() {\n" +
+                        unit +
+                        unit +
+                        "officialMojangMappings()\n" +
+                        unit +
+                        unit +
+                        "parchment(\"org.parchmentmc.data:parchment-" +
+                        a +
+                        ":" +
+                        b +
+                        "@zip\")\n" +
+                        unit +
+                        "}";
+                    parchmentRepository = true;
+                }
+            }
+        } else if (parchment != null) notes.add(
+            "Parchment only adds parameter names; Loom on Minecraft 26.1 and later builds on the game's own names, so it is dropped."
+        );
+        gradle = dropMetadataExpansion(gradle);
         fabricLoader = Json.text(
             Json.object(
                 Json.array(Json.parse(Target.fetch(build, "https://meta.fabricmc.net/v2/versions/loader")))
@@ -1713,16 +2610,22 @@ final class Convert {
         List<String> apis = new ArrayList<>();
         for (String v : metadataVersions(
             Target.fetch(build, "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml")
-        )) if (v.endsWith("+" + minecraft)) apis.add(v);
+        )) if (v.endsWith("+" + minecraft) || v.endsWith("+" + minecraft.replaceFirst("\\.0$", ""))) apis.add(v);
         if (apis.isEmpty()) throw new IOException("Fabric API has no release for Minecraft " + minecraft + ".");
         String api = newest(apis);
         gradle =
             gradle.substring(0, plugin.start()) +
             plugin.group(1) +
-            "id 'net.fabricmc.fabric-loom' version '" +
+            (remap ? "id 'net.fabricmc.fabric-loom-remap' version '" : "id 'net.fabricmc.fabric-loom' version '") +
             loom +
             "'" +
+            (neoGradle && block(gradle, "idea") != null && !gradle.matches("(?s).*id\\s*\\(?\\s*['\"]idea['\"].*")
+                    ? "\n" + plugin.group(1) + "id 'idea'"
+                    : "") +
             gradle.substring(plugin.end());
+        if (neoGradle && gradle.contains("\n" + plugin.group(1) + "id 'idea'")) notes.add(
+            "Build: NeoGradle applies Gradle's idea plugin itself and Loom does not, so the build's idea block gets it from its plugins block."
+        );
         int[] neo = block(gradle, "neoForge");
         StringBuilder loomBlock = new StringBuilder();
         if (neo != null) {
@@ -1733,6 +2636,19 @@ final class Convert {
                     Set.of("client", "server").contains(run.getKey()) &&
                     run.getValue().strip().matches("client\\(\\)|server\\(\\)")
                 ) continue;
+                // A Loom run needs an environment (client() or server()); a game test or data run has none on Fabric.
+                if (
+                    !run.getKey().equals("configureEach") &&
+                    !run.getValue().matches("(?s).*\\b(?:client|server)\\(\\).*")
+                ) {
+                    leave(
+                        "build.gradle",
+                        0,
+                        "neoForge run " + run.getKey(),
+                        "a run with no client() or server(): Loom has no counterpart for its type"
+                    );
+                    continue;
+                }
                 runs
                     .append(unit)
                     .append(unit)
@@ -1750,7 +2666,7 @@ final class Convert {
                 .append(runs)
                 .append(unit)
                 .append("}\n}\n");
-            for (String key : parts.keySet()) if (!Set.of("runs", "mods").contains(key)) leave(
+            for (String key : parts.keySet()) if (!Set.of("runs", "mods", "parchment").contains(key)) leave(
                 "build.gradle",
                 0,
                 "neoForge " + key + " block",
@@ -1758,35 +2674,51 @@ final class Convert {
             );
             gradle = gradle.substring(0, neo[0]) + loomBlock + gradle.substring(neo[1]);
         }
+        if (fabricWidener != null) {
+            int[] dependencies = block(gradle, "dependencies");
+            int at = dependencies == null ? gradle.length() : dependencies[0];
+            gradle =
+                gradle.substring(0, at) +
+                "loom {\n" +
+                unit +
+                "accessWidenerPath = file(\"src/main/resources/" +
+                fabricWidener +
+                "\")\n}\n\n" +
+                gradle.substring(at);
+        }
         gradle = gradle.replaceAll("(?m)^// NeoForge has no split client source set[^\\n]*\\n", "");
         int[] deps = block(gradle, "dependencies");
         String add =
             unit +
             "minecraft \"com.mojang:minecraft:${project.minecraft_version}\"\n" +
+            (mappings == null ? "" : unit + mappings + "\n") +
             unit +
-            "implementation \"net.fabricmc:fabric-loader:${project.loader_version}\"\n" +
+            (remap ? "modImplementation" : "implementation") +
+            " \"net.fabricmc:fabric-loader:${project.loader_version}\"\n" +
             unit +
-            "implementation \"net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}\"\n" +
+            (remap ? "modImplementation" : "implementation") +
+            " \"net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}\"\n" +
             (menu
                     ? unit +
                     "compileOnly \"com.terraformersmc:modmenu:${project.modmenu_version}\"\n" +
                     unit +
                     "localRuntime \"com.terraformersmc:modmenu:${project.modmenu_version}\"\n"
                     : "");
+        List<String> mavens = repositories(gradle);
         if (deps != null) {
             StringBuilder body = new StringBuilder();
-            for (String raw : gradle.substring(deps[2] + 1, deps[3] - 1).lines().toList()) {
+            // Whole statements, not lines: a dependency with a closure ({ exclude ... }) is one statement.
+            for (String raw : statements(gradle.substring(deps[2] + 1, deps[3] - 1))) {
                 String line = raw.strip();
                 Matcher jar = Pattern.compile("^jarJar\\b").matcher(line);
                 if (jar.find()) raw = raw.replaceFirst("jarJar", "include");
-                if (!line.isEmpty()) leave(
-                    "build.gradle",
-                    0,
-                    "dependency " + line,
-                    "another mod or library on the NeoForge classpath: it needs its Fabric build, which convert cannot choose"
-                );
-                body.append(raw).append('\n');
+                // NeoGradle names NeoForge itself as a dependency; the Loom lines above replace it.
+                if (line.matches("(?s)\\w+\\s*\\(?\\s*[\"']net\\.neoforged:neoforge:.*")) continue;
+                boolean comment = line.startsWith("//") || line.startsWith("/*") || line.startsWith("*");
+                if (!line.isEmpty() && !comment) raw = dependencyLine(raw, "neoforge", "fabric", mavens, remap);
+                body.append(raw);
             }
+            if (body.length() > 0 && body.charAt(body.length() - 1) != '\n') body.append('\n');
             gradle =
                 gradle.substring(0, deps[2] + 1) +
                 "\n" +
@@ -1794,6 +2726,24 @@ final class Convert {
                 body.toString().replaceAll("^\\n+", "") +
                 gradle.substring(deps[3] - 1);
         } else gradle += "\ndependencies {\n" + add + "}\n";
+        // NeoForge's development classpath carries the JSR 305 annotations (javax.annotation.Nullable ...); Loom's does not.
+        boolean jsr305 = false;
+        for (String file : javaFiles()) if (read(file).contains("import javax.annotation.")) jsr305 = true;
+        if (jsr305 && !gradle.contains("jsr305")) {
+            int[] dependencies = block(gradle, "dependencies");
+            if (dependencies != null) {
+                gradle =
+                    gradle.substring(0, dependencies[3] - 1) +
+                    unit +
+                    "compileOnly \"com.google.code.findbugs:jsr305:3.0.2\"\n" +
+                    gradle.substring(dependencies[3] - 1);
+                notes.add("Build: the JSR 305 annotations (javax.annotation) the code uses, which NeoForge's classpath carried, as a compile-only dependency.");
+            }
+        }
+        if (parchmentRepository && !gradle.contains("maven.parchmentmc.org")) gradle = addRepository(
+            gradle,
+            "https://maven.parchmentmc.org"
+        );
         if (menu && !gradle.contains("maven.terraformersmc.com")) {
             int[] repos = block(gradle, "repositories");
             String repo = unit + "maven { url \"https://maven.terraformersmc.com/releases/\" }\n";
@@ -1816,6 +2766,8 @@ final class Convert {
         props.put("neoforge_version", null);
         props.put("loader_version", fabricLoader);
         props.put("fabric_api_version", api);
+        // Loom asks Mojang for the game by its version id: 26.2, not the 26.2.0 a NeoForge build may write.
+        if (minecraft.matches("\\d+\\.\\d+\\.0")) props.put("minecraft_version", minecraft.replaceFirst("\\.0$", ""));
         if (menu) {
             // The newest stable Mod Menu that Modrinth, where Mod Menu publishes, lists for this Minecraft version on Fabric.
             String modmenu = null;
@@ -1946,8 +2898,9 @@ final class Convert {
 
     static String text(Map<String, Object> result) {
         StringBuilder out = new StringBuilder();
+        boolean dryRun = Boolean.TRUE.equals(result.get("dryRun"));
         out
-            .append("Converted ")
+            .append(dryRun ? "Would convert " : "Converted ")
             .append(result.get("from"))
             .append(" to ")
             .append(result.get("to"))
@@ -1956,9 +2909,13 @@ final class Convert {
             .append("): ");
         out
             .append(Json.array(result.get("changed")).size())
-            .append(" file(s) changed, ")
+            .append(dryRun ? " file(s) would change, " : " file(s) changed, ")
             .append(Json.array(result.get("removed")).size())
-            .append(" removed.\n");
+            .append(dryRun ? " would be removed.\n" : " removed.\n");
+        if (dryRun) {
+            for (Object file : Json.array(result.get("changed"))) out.append("  change ").append(file).append('\n');
+            for (Object file : Json.array(result.get("removed"))) out.append("  remove ").append(file).append('\n');
+        }
         Map<String, Object> rulesApplied = Json.object(result.get("rulesApplied"));
         if (!rulesApplied.isEmpty()) out
             .append("Rules applied: ")
@@ -2002,7 +2959,8 @@ final class Convert {
             }
             out.append('\n');
         }
-        out.append("Undo: modaccel convert --undo ").append(result.get("undoConvert"));
+        if (dryRun) out.append("Dry run: nothing was written. Run it without --dry-run to convert and compile.");
+        else out.append("Undo: modaccel convert --undo ").append(result.get("undoConvert"));
         return out.toString();
     }
 }

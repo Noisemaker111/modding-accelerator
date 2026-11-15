@@ -1,0 +1,28 @@
+[package]
+name = "modaccel-desktop"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Minecraft Modding Tools: a desktop app that drives the modaccel CLI"
+publish = false
+
+[[bin]]
+name = "modaccel-desktop"
+path = "src/main.rs"
+
+[dependencies]
+# Rune is pre-release: pin one rev of its dev branch, and patch every crate its own [patch.crates-io] patches, at that same rev.
+# `tooling` keeps the headless --snap/--tree/--script runs in the release build: the UI checks drive the shipped exe.
+rune = { git = "https://github.com/anomalyco/rune", rev = "30c564251a9c0e2687720a5b12c903af04d5f2b1", features = ["tooling", "native-file-dialog"] }
+rune-kit = { git = "https://github.com/anomalyco/rune", rev = "30c564251a9c0e2687720a5b12c903af04d5f2b1" }
+serde_json = "1"
+
+[patch.crates-io]
+winit = { git = "https://github.com/anomalyco/rune", rev = "30c564251a9c0e2687720a5b12c903af04d5f2b1" }
+parley_engine = { git = "https://github.com/anomalyco/rune", rev = "30c564251a9c0e2687720a5b12c903af04d5f2b1" }
+wgpu-hal = { git = "https://github.com/anomalyco/rune", rev = "30c564251a9c0e2687720a5b12c903af04d5f2b1" }
+accesskit_windows = { git = "https://github.com/anomalyco/rune", rev = "30c564251a9c0e2687720a5b12c903af04d5f2b1" }
+accesskit_macos = { git = "https://github.com/anomalyco/rune", rev = "30c564251a9c0e2687720a5b12c903af04d5f2b1" }
+
+[profile.release]
+codegen-units = 16

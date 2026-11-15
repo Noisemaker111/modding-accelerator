@@ -44,6 +44,7 @@ gh pr merge --squash
 - Porter/rules: `tools/cli/Port.java`, `knowledge/fixes.json`, `coverage/changes/`. Run `python3 bench/port_board.py` when changing them; each rule needs a `test {error,before,after}`. Writer: `python3 bench/rule_test.py --help`.
 - Optimizing a mod: `perf` then `perf-optimize` (PERFORMANCE.md); each run writes record.json. Keep runs with `python3 bench/record.py perf`, summarise with `python3 bench/perf_sessions.py`; accepted changes become `knowledge/perf-patterns.json` entries, each citing its kept run.
 - Port receipts and measures: `coverage/{ledger,measures}.json`; recording commands in `bench/README.md`. Plans, dated status and findings belong in PRs/issues, never docs or memory notes.
+- Desktop app: `app/` (Rust, Rune pinned in `app/Cargo.toml`) runs the CLI with `--json` and `MODACCEL_PROGRESS=1`; headless UI scripts are in `app/ui-tests/`.
 - Website: `bench/bench_page.py`, `bench/page_style.py`; map uses `bench/porting_map.py`. `docs/` is generated on main; change its generators. Keep docs about current use, not history or plans.
 
 ## Gotchas

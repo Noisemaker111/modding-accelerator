@@ -678,6 +678,7 @@ public final class PortableTests {
             "a build without Parchment is left alone and nothing is looked up"
         );
         neoGradleChecks(home, scratch);
+        unitTestsInFmlChecks(home, scratch);
     }
 
     /** NeoGradle follows a forward port (Notes 1.21 -> 1.21.6 stopped at launch on NeoGradle 7.0.145's ASM 9.5) to one version for every mod, and Gradle follows NeoGradle. */
@@ -691,9 +692,14 @@ public final class PortableTests {
             );
             Files.writeString(
                 root.resolve("build.gradle"),
-                "plugins {\n    id 'net.neoforged.gradle.userdev' version '7.0.145'\n}\n"
+                "plugins {\n    id 'net.neoforged.gradle.userdev' version '7.0.145'\n    id 'net.neoforged.gradle.mixin' version '7.0.145'\n}\n\nmixin {\n    config \"${mod_id}.mixins.json\"\n}\n"
             );
-            Files.writeString(root.resolve("gradle.properties"), "minecraft_version=1.21\n");
+            Files.writeString(root.resolve("gradle.properties"), "minecraft_version=1.21\nmod_id=demo\n");
+            Files.createDirectories(root.resolve("src/main/resources/META-INF"));
+            Files.writeString(
+                root.resolve("src/main/resources/META-INF/neoforge.mods.toml"),
+                "[[mods]]\nmodId=\"${mod_id}\"\n"
+            );
             Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
             // The two lookups NeoGradle's planning makes, answered from the metadata cache Target.fetch reads first.
             Map<String, String> answers = Map.of(
@@ -720,13 +726,66 @@ public final class PortableTests {
                 root.resolve("gradle/wrapper/gradle-wrapper.properties")
             );
             if (to.equals("1.21.6")) check(
-                plugin.contains("version '7.1.38'") && wrapper.contains("gradle-8.14-bin.zip"),
-                "a forward port moves NeoGradle to the newest 7.x, the same for every mod so they share one game setup (7.0.145 -> 7.1.38), and Gradle to what it requires (8.9 -> 8.14): " +
+                plugin.contains("userdev' version '7.1.38'") &&
+                !plugin.contains("gradle.mixin") &&
+                !plugin.contains("mixin {") &&
+                setup
+                    .text(root.resolve("src/main/resources/META-INF/neoforge.mods.toml"))
+                    .contains("[[mixins]]\nconfig = \"${mod_id}.mixins.json\"") &&
+                wrapper.contains("gradle-8.14-bin.zip"),
+                "a forward port moves NeoGradle to the newest 7.x, the same for every mod so they share one game setup (7.0.145 -> 7.1.38), drops the mixin plugin 7.1 no longer has (Jade's failed to apply) with its config declared in the mods.toml instead, and moves Gradle to what it requires (8.9 -> 8.14): " +
                 plugin.strip() +
                 " / " +
                 wrapper.strip()
             );
             else check(setup.edits().isEmpty(), "a backport keeps its NeoGradle and Gradle");
+        }
+    }
+
+    /**
+     * A NeoGradle mod's JUnit tests move onto junit-fml on a port into 26.x (its Commands class needs the game
+     * bootstrapped, which only FancyModLoader can do there), with FML's version read from NeoForge's published pom.
+     */
+    static void unitTestsInFmlChecks(Path home, Path scratch) throws Exception {
+        for (String to : List.of("26.3", "1.21.6")) {
+            Path root = scratch.resolve("junit-fml-" + to);
+            Files.createDirectories(root.resolve("gradle/wrapper"));
+            Files.writeString(
+                root.resolve("gradle/wrapper/gradle-wrapper.properties"),
+                "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.6.1-bin.zip\n"
+            );
+            Files.writeString(root.resolve("build.gradle"), "plugins {\n    id 'net.neoforged.gradle.userdev' version '7.1.39'\n}\n");
+            Files.writeString(root.resolve("gradle.properties"), "minecraft_version=1.21.1\nmod_id=demo\n");
+            Files.createDirectories(root.resolve("src/main/resources/META-INF"));
+            Files.writeString(root.resolve("src/main/resources/META-INF/neoforge.mods.toml"), "[[mods]]\nmodId=\"${mod_id}\"\n");
+            Files.createDirectories(root.resolve("src/test/java/demo"));
+            Files.writeString(
+                root.resolve("src/test/java/demo/CommandsTest.java"),
+                "package demo;\n\nimport org.junit.jupiter.api.Test;\n\nclass CommandsTest {\n    @Test\n    void tree() {}\n}\n"
+            );
+            Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
+            String pom = "https://maven.neoforged.net/releases/net/neoforged/neoforge/26.3.0.103/neoforge-26.3.0.103.pom";
+            Path cached = build.project
+                .state()
+                .resolve("metadata/" + Fingerprints.bytes(pom.getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+            Files.createDirectories(cached.getParent());
+            Files.writeString(
+                cached,
+                "<project><dependencies><dependency><groupId>net.neoforged.fancymodloader</groupId><artifactId>loader</artifactId><version>12.0.12</version></dependency></dependencies></project>"
+            );
+            Target.Setup setup = new Target.Setup(build, Json.map(), to, List.of());
+            setup.pins.put("minecraft_version", "1.21.1");
+            Target.unitTestsInFml(setup, build, to, "26.3.0.103");
+            String script = setup.text(root.resolve("build.gradle"));
+            if (to.equals("26.3")) check(
+                script.contains("testRuntimeOnly 'net.neoforged.fancymodloader:junit-fml:12.0.12'") &&
+                script.contains("unitTestSource sourceSets.test") &&
+                script.contains("demo%%${it}") &&
+                script.contains("java.base/java.lang.invoke=ALL-UNNAMED"),
+                "a port into 26.x runs a NeoGradle mod's JUnit tests on junit-fml (FML 12.0.12 from NeoForge's pom), the mod and its tests in FML's class loader: " +
+                script
+            );
+            else check(setup.edits().isEmpty(), "a port that stays before 26.1 leaves the tests where they run");
         }
     }
 
@@ -946,6 +1005,119 @@ public final class PortableTests {
             Convert.neoforgeModId("2fast").equals("mod_2fast"),
             "a Fabric mod id with a hyphen becomes one NeoForge accepts"
         );
+        List<String> unconverted = new ArrayList<>();
+        List<String> transformers = Convert.widenerToTransformer(
+            "classTweaker v1 official\n# comment\naccessible class net/minecraft/A$B\nextendable class net/minecraft/C\n" +
+            "accessible method net/minecraft/D run (I)V\nextendable method net/minecraft/D run (I)V\n" +
+            "accessible field net/minecraft/E size I\nmutable field net/minecraft/E size I\n" +
+            "transitive-accessible method net/minecraft/F <init> ()V\ninject-interface net/minecraft/G demo/Extra\n",
+            true,
+            unconverted
+        );
+        check(
+            transformers.equals(
+                List.of(
+                    "public net.minecraft.A$B",
+                    "public-f net.minecraft.C",
+                    "public-f net.minecraft.D run(I)V",
+                    "public-f net.minecraft.E size",
+                    "public net.minecraft.F <init>()V"
+                )
+            ) &&
+            unconverted.equals(List.of("inject-interface net/minecraft/G demo/Extra")),
+            "a Fabric access widener becomes NeoForge access transformer lines, entries for one target merged: " +
+            transformers +
+            " " +
+            unconverted
+        );
+        List<String> yarnLeft = new ArrayList<>();
+        check(
+            Convert.widenerToTransformer("accessWidener v2 named\naccessible class net/minecraft/a\n", false, yarnLeft).isEmpty() &&
+            yarnLeft.size() == 1,
+            "an access widener in yarn's names is named, not converted"
+        );
+        List<String> widenerLeft = new ArrayList<>();
+        String widener = Convert.transformerToWidener(
+            "# opens\npublic net.minecraft.A$B\npublic-f net.minecraft.C\nprotected-f net.minecraft.D run(I)V\npublic net.minecraft.E size\npublic net.minecraft.H *()\n",
+            true,
+            widenerLeft
+        );
+        check(
+            widener.equals(
+                "accessWidener v2 official\naccessible class net/minecraft/A$B\nextendable class net/minecraft/C\n" +
+                "accessible method net/minecraft/D run (I)V\nextendable method net/minecraft/D run (I)V\n"
+            ) &&
+            widenerLeft.size() == 2 &&
+            widenerLeft.get(0).startsWith("public net.minecraft.E size") &&
+            widenerLeft.get(1).equals("public net.minecraft.H *()") &&
+            Convert.transformerToWidener("public net.minecraft.A\n", false, new ArrayList<>()).startsWith("accessWidener v2 named\n"),
+            "NeoForge access transformer lines become a Fabric access widener; a field (no type) and a wildcard are named:\n" +
+            widener +
+            widenerLeft
+        );
+        Map<String, String> fieldTypes = Convert.mappingFieldTypes(
+            "# {\"fileName\":\"client.txt\"}\nnet.minecraft.client.renderer.block.ModelBlockRenderer -> fxx:\n" +
+            "    net.minecraft.client.color.block.BlockColors blockColors -> b\n    int[][] grid -> c\n" +
+            "    15:20:void <init>(net.minecraft.client.color.block.BlockColors) -> <init>\n"
+        );
+        List<String> typedLeft = new ArrayList<>();
+        String typed = Convert.transformerToWidener(
+            "public-f net.minecraft.client.renderer.block.ModelBlockRenderer blockColors\npublic net.minecraft.client.renderer.block.ModelBlockRenderer missing\n",
+            false,
+            typedLeft,
+            (owner, field) -> fieldTypes.get(owner + " " + field)
+        );
+        check(
+            fieldTypes.get("net/minecraft/client/renderer/block/ModelBlockRenderer grid").equals("[[I") &&
+            fieldTypes.size() == 2 &&
+            typed.equals(
+                "accessWidener v2 named\naccessible field net/minecraft/client/renderer/block/ModelBlockRenderer blockColors Lnet/minecraft/client/color/block/BlockColors;\n" +
+                "mutable field net/minecraft/client/renderer/block/ModelBlockRenderer blockColors Lnet/minecraft/client/color/block/BlockColors;\n"
+            ) &&
+            typedLeft.size() == 1,
+            "an access transformer field line becomes an access widener field with its type from Mojang's mappings:\n" + typed + typedLeft
+        );
+        String cleaned = Convert.dropUnusedImports(
+            "import net.fabricmc.loader.api.FabricLoader;\nimport net.fabricmc.api.EnvType;\nimport java.util.List;\n\n// FabricLoader is only named here\nclass A {\n\tEnvType side;\n\tString s = \"FabricLoader\";\n}\n",
+            List.of("net.fabricmc.")
+        );
+        check(
+            cleaned.equals("import net.fabricmc.api.EnvType;\nimport java.util.List;\n\n// FabricLoader is only named here\nclass A {\n\tEnvType side;\n\tString s = \"FabricLoader\";\n}\n"),
+            "an import of the old loader that no code uses is dropped, not reported:\n" + cleaned
+        );
+        check(
+            "jei-26.1.2-fabric".equals(Convert.swapLoaderWord("jei-26.1.2-neoforge", "neoforge", "fabric")) &&
+            "Ponder-Fabric-26.1".equals(Convert.swapLoaderWord("Ponder-NeoForge-26.1", "neoforge", "fabric")) &&
+            "curios-neoforge".equals(Convert.swapLoaderWord("curios-fabric", "fabric", "neoforge")) &&
+            Convert.swapLoaderWord("fabricator", "fabric", "neoforge") == null &&
+            Convert.loaderNeutral("jei-26.1.2-common-api") &&
+            !Convert.loaderNeutral("betterconfig-fabric") &&
+            Convert.remapConfiguration("\tcompileOnly \"a:b-fabric:1\"").equals("\tmodCompileOnly \"a:b-fabric:1\"") &&
+            Convert.repositories("repositories {\n\tmaven { url = 'https://maven.blamejared.com/' }\n\tmaven { url \"https://maven.example.org/releases\" }\n}\n").equals(
+                List.of("https://maven.blamejared.com", "https://maven.example.org/releases", "https://repo.maven.apache.org/maven2")
+            ),
+            "a dependency's loader word changes only as a whole part of its artifact name; loader-neutral artifacts are told apart"
+        );
+        check(
+            Convert.dropCalls(
+                "CreativeModeTab.builder()\n\t.title(t)\n\t.withTabsBefore(CreativeModeTabs.COMBAT)\n\t.icon(() -> f(\".withTabsAfter(\"))\n\t.build()",
+                List.of("withTabsBefore", "withTabsAfter")
+            ).equals("CreativeModeTab.builder()\n\t.title(t)\n\t.icon(() -> f(\".withTabsAfter(\"))\n\t.build()"),
+            "NeoForge's tab order calls leave a builder chain whole, and a string that names one is kept"
+        );
+        List<String> removed = new ArrayList<>();
+        String script = Convert.dropLoomTypes(
+            "import net.fabricmc.loom.task.prod.ClientProductionRunTask\nimport java.util.List\n\nplugins {\n\tid 'java'\n}\n\n" +
+            "// a ClientProductionRunTask comment stays\ntasks.register('prod', ClientProductionRunTask) {\n\tjvmArgs.add('-Xmx2G')\n}\n\nversion = '1'\n",
+            removed
+        );
+        check(
+            script.equals(
+                "import java.util.List\n\nplugins {\n\tid 'java'\n}\n\n// a ClientProductionRunTask comment stays\n\nversion = '1'\n"
+            ) &&
+            removed.size() == 2,
+            "a build script's Loom imports and the statements that use their types are removed:\n" + script
+        );
 
         LoaderRules.Provider models = LoaderRules.datagenProvider(
             "package d;\n\nimport net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;\nimport net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;\n\npublic class Models extends FabricModelProvider {\n\tpublic Models(FabricPackOutput output) {\n\t\tsuper(output);\n\t}\n\n\t@Override\n\tpublic void generateBlockStateModels(BlockModelGenerators blocks) {\n\t}\n\n\t@Override\n\tpublic void generateItemModels(ItemModelGenerators items) {\n\t}\n}\n",
@@ -1072,8 +1244,37 @@ public final class PortableTests {
         for (String name : files.keySet()) original.put(name, Files.readAllBytes(root.resolve(name)));
 
         Build build = new Build(project, home, "", new Modaccel.Report(root, "convert"));
-        Map<String, Object> toNeo = new Convert(build).run(
+        Map<String, Object> dry = new Convert(build).run(
             new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+        );
+        boolean untouched = true;
+        for (var file : original.entrySet()) if (
+            !Files.isRegularFile(root.resolve(file.getKey())) ||
+            !Arrays.equals(file.getValue(), Files.readAllBytes(root.resolve(file.getKey())))
+        ) untouched = false;
+        try (var all = Files.walk(root)) {
+            List<String> made = all
+                .filter(Files::isRegularFile)
+                .map(p -> root.relativize(p).toString().replace(File.separatorChar, '/'))
+                .filter(p -> !p.startsWith(".modaccel/") && !p.startsWith(".runs/") && !original.containsKey(p))
+                .toList();
+            check(
+                untouched && made.isEmpty() && !Files.exists(project.state().resolve(Convert.FOLDER)) && dry.get("undoConvert") == null,
+                "convert --dry-run writes nothing, not even an undo record: " + made
+            );
+        }
+        Map<String, Object> toNeo = new Convert(build).run(
+            new Modaccel.Options(new String[] { "convert", "--to", "neoforge" }),
+            false
+        );
+        check(
+            dry.get("changed").equals(toNeo.get("changed")) &&
+            dry.get("removed").equals(toNeo.get("removed")) &&
+            dry.get("left").equals(toNeo.get("left")) &&
+            dry.get("rulesApplied").equals(toNeo.get("rulesApplied")) &&
+            Json.array(dry.get("changed")).contains("src/main/resources/META-INF/neoforge.mods.toml") &&
+            Convert.text(dry).contains("  remove src/main/resources/fabric.mod.json"),
+            "convert --dry-run reports exactly what the conversion then changes: " + Convert.text(dry)
         );
         String demo = Files.readString(root.resolve("src/main/java/demo/Demo.java")), client = Files.readString(
             root.resolve("src/main/java/demo/DemoClient.java")
@@ -1132,7 +1333,8 @@ public final class PortableTests {
             "fabric.mod.json becomes neoforge.mods.toml:\n" + toml
         );
         Map<String, Object> back = new Convert(new Build(project, home, "", new Modaccel.Report(root, "convert"))).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "fabric", "--dry-run" })
+            new Modaccel.Options(new String[] { "convert", "--to", "fabric" }),
+            false
         );
         boolean javaSame = true;
         for (String name : files.keySet()) if (
@@ -1163,6 +1365,109 @@ public final class PortableTests {
             restored && !Files.exists(root.resolve("src/main/resources/META-INF/neoforge.mods.toml")),
             "undoing both conversions restores every file byte for byte and removes the files they made"
         );
+
+        // Found by an independent check on FastQuit (contariaa/FastQuit 8efed17): dependencies with an exclude block are whole
+        // statements. Mod Menu goes with its block, and Cloth Config moves to its NeoForge build, which its repository has.
+        Path quit = scratch.resolve("convert-exclude-mod");
+        Map<String, String> quitFiles = new LinkedHashMap<>();
+        quitFiles.put("gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+        quitFiles.put("settings.gradle", "rootProject.name = 'quit'\n");
+        quitFiles.put("gradle.properties", "minecraft_version=26.3\nloader_version=0.19.5\nfabric_api_version=0.161.0+26.3\nmodmenu_version=21.0.0\ncloth_config_version=26.3.1\n");
+        quitFiles.put(
+            "build.gradle",
+            "plugins {\n\tid 'net.fabricmc.fabric-loom' version '1.18.2'\n}\n\nrepositories {\n\tmaven { url \"https://maven.shedaniel.me/\" }\n}\n\ndependencies {\n" +
+            "\tminecraft \"com.mojang:minecraft:${project.minecraft_version}\"\n\timplementation \"net.fabricmc:fabric-loader:${project.loader_version}\"\n" +
+            "\timplementation \"net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}\"\n\n\t// ModMenu\n" +
+            "\timplementation(\"com.terraformersmc:modmenu:${project.modmenu_version}\"){\n\t\texclude(group: \"eu.pb4\")\n\t}\n\n\t// Cloth Config\n" +
+            "\timplementation(\"me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}\") {\n\t\texclude(group: \"net.fabricmc.fabric-api\")\n\t}\n}\n"
+        );
+        quitFiles.put(
+            "src/main/resources/fabric.mod.json",
+            "{\n\t\"schemaVersion\": 1,\n\t\"id\": \"quit\",\n\t\"version\": \"1.0.0\",\n\t\"entrypoints\": {\n\t\t\"main\": [\"quit.Quit\"]\n\t},\n\t\"depends\": {\n\t\t\"minecraft\": \"~26.3\"\n\t}\n}\n"
+        );
+        quitFiles.put(
+            "src/main/java/quit/Quit.java",
+            "package quit;\n\nimport net.fabricmc.api.ModInitializer;\n\npublic class Quit implements ModInitializer {\n\t@Override\n\tpublic void onInitialize() {\n\t}\n}\n"
+        );
+        for (var file : quitFiles.entrySet()) {
+            Path path = quit.resolve(file.getKey());
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, file.getValue());
+        }
+        ProjectModel quitProject = new ProjectModel(quit);
+        Map<String, String> quitAnswers = new LinkedHashMap<>(answers);
+        quitAnswers.put(
+            "https://maven.shedaniel.me/me/shedaniel/cloth/cloth-config-neoforge/maven-metadata.xml",
+            "<metadata><versioning><versions><version>26.3.1</version></versions></versioning></metadata>"
+        );
+        for (var answer : quitAnswers.entrySet()) {
+            Path cache = quitProject.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+            Files.createDirectories(cache.getParent());
+            Files.writeString(cache, answer.getValue());
+        }
+        Convert quitConvert = new Convert(new Build(quitProject, home, "", new Modaccel.Report(quit, "convert")));
+        quitConvert.run(new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" }));
+        // A dry run writes nothing; the converted text is what it staged.
+        String quitGradle = quitConvert.current("build.gradle");
+        check(
+            quitGradle.chars().filter(c -> c == '{').count() == quitGradle.chars().filter(c -> c == '}').count() &&
+            !quitGradle.contains("modmenu") &&
+            !quitGradle.contains("eu.pb4") &&
+            quitGradle.contains("\timplementation(\"me.shedaniel.cloth:cloth-config-neoforge:${project.cloth_config_version}\") {\n\t\texclude(group: \"net.fabricmc.fabric-api\")\n\t}\n") &&
+            !quitGradle.contains("cloth-config-fabric"),
+            "a dependency with an exclude block is removed or moved whole; Cloth Config moves to its NeoForge build:\n" + quitGradle
+        );
+
+        // A mod written for NeoForge first goes to Fabric through the NeoForge bridge (knowledge/loaders.json "bridges").
+        Map<String, Object> bridgeRule = null;
+        for (Object b : LoaderRules.list(rules.get("bridges"))) if ("neoforge-on-fabric".equals(Json.object(b).get("id"))) bridgeRule = Json.object(b);
+        check(bridgeRule != null, "knowledge/loaders.json has the NeoForge bridge");
+        Map<String, Object> bridgeTest = Json.object(bridgeRule.get("test"));
+        Path neo = scratch.resolve("convert-neoforge-mod");
+        Map<String, String> neoFiles = new LinkedHashMap<>();
+        neoFiles.put("gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+        neoFiles.put("settings.gradle", "rootProject.name = 'demo'\n");
+        neoFiles.put("gradle.properties", "minecraft_version=26.3\nneo_version=26.3.0.103\nmod_id=demo\n");
+        neoFiles.put(
+            "build.gradle",
+            "plugins {\n\tid 'net.neoforged.moddev' version '2.0.148'\n}\n\nneoForge {\n\tversion = project.neo_version\n\truns {\n\t\tclient {\n\t\t\tclient()\n\t\t}\n\t}\n\tmods {\n\t\t\"demo\" {\n\t\t\tsourceSet(sourceSets.main)\n\t\t}\n\t}\n}\n\ndependencies {\n}\n"
+        );
+        neoFiles.put(
+            "src/main/resources/META-INF/neoforge.mods.toml",
+            "modLoader=\"javafml\"\nloaderVersion=\"[1,)\"\nlicense=\"MIT\"\n\n[[mods]]\nmodId=\"${mod_id}\"\nversion=\"1.0.0\"\ndisplayName=\"Demo\"\n"
+        );
+        neoFiles.put("src/main/java/demo/Demo.java", Json.text(bridgeTest, "neoforge", ""));
+        for (var file : neoFiles.entrySet()) {
+            Path path = neo.resolve(file.getKey());
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, file.getValue());
+        }
+        ProjectModel neoProject = new ProjectModel(neo);
+        for (var answer : answers.entrySet()) {
+            Path cache = neoProject.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+            Files.createDirectories(cache.getParent());
+            Files.writeString(cache, answer.getValue());
+        }
+        Convert neoConvert = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert")));
+        Map<String, Object> bridged = neoConvert.run(
+            new Modaccel.Options(new String[] { "convert", "--to", "fabric", "--dry-run" })
+        );
+        // A dry run writes nothing; the converted text is what it staged.
+        String bridgedEntry = neoConvert.current("src/main/java/demo/Demo.java");
+        String fabricJson = neoConvert.current("src/main/resources/fabric.mod.json");
+        String bridgedRegister = neoConvert.current("src/main/java/demo/loaderbridge/DeferredRegister.java");
+        check(
+            bridgedEntry.equals(Json.text(bridgeTest, "fabric", "")) &&
+            bridgedRegister != null &&
+            bridgedRegister.startsWith("package demo.loaderbridge;") &&
+            neoConvert.current("src/main/java/demo/loaderbridge/ClientEntrypoint.java") != null &&
+            fabricJson.contains("\"demo.Demo\"") &&
+            fabricJson.contains("\"demo.loaderbridge.ClientEntrypoint\"") &&
+            Json.array(bridged.get("left")).isEmpty(),
+            "a NeoForge @Mod class becomes a Fabric entrypoint through the NeoForge bridge, its listeners typed and its imports on the bridge:\n" +
+            bridgedEntry +
+            bridged.get("details")
+        );
     }
 
     public static void main(String[] args) throws Exception {
@@ -1171,6 +1476,13 @@ public final class PortableTests {
             Files.createDirectories(Path.of(args[1])),
             "run-"
         );
+        List<String> unlisted = new ArrayList<>();
+        for (String command : new TreeSet<>(Modaccel.COMMANDS)) {
+            String word = "(?<![\\w-])" + java.util.regex.Pattern.quote(command) + "(?![\\w-])";
+            boolean listed = java.util.regex.Pattern.compile(word).matcher(Modaccel.help()).find();
+            if (!listed && !Modaccel.INTERNAL.contains(command)) unlisted.add(command);
+        }
+        check(unlisted.isEmpty(), "help lists every command modaccel runs; missing: " + unlisted);
         String restartTimes = ServerCheck.text(
             Json.map(
                 "ok",
@@ -1256,6 +1568,20 @@ public final class PortableTests {
             saved.stream().mapToInt(String::length).sum() < 8000 && saved.contains(launch.get(1)),
             "saved launches keep existing argument files at the top level"
         );
+        Map<String, Object> hiddenGames = Json.map("background", true, "quiet", true);
+        check(
+            Game.c1(hiddenGames, "ui-check") &&
+            !Game.c1(hiddenGames, "perf") &&
+            !Game.c1(Json.map("background", false, "quiet", true), "ui-check"),
+            "hidden test sessions compile with C1 alone; perf, hidden or not, and visible games use the full JIT"
+        );
+        List<String> recordedHidden = List.of("-Xmx2G", "-XX:TieredStopAtLevel=1", "-Dmodaccel.token=old", "Main");
+        check(
+            Game.savedArguments(recordedHidden, true, false, false, "new").equals(List.of("-Xmx2G", "-Dmodaccel.token=new", "Main")) &&
+            Game.savedArguments(List.of("-Xmx2G", "Main"), false, false, true, "new").equals(List.of("-XX:TieredStopAtLevel=1", "-Xmx2G", "Main")) &&
+            Game.savedArguments(recordedHidden, false, false, false, "new").contains("-XX:TieredStopAtLevel=1"),
+            "a saved launch takes this launch's compiler, not the recorded one, and keeps a build's own flag"
+        );
         Object json = Json.parse(
             Json.write(
                 Json.map("unicode", "mod 🧱", "path", "C:\\mods with spaces\\test", "rows", List.of(1, true, "\n\""))
@@ -1295,6 +1621,45 @@ public final class PortableTests {
             quiet.size() == 9,
             "seeding options.txt keeps every other key and its order"
         );
+        check(
+            Files.readAllLines(quietDir.resolve(QuietOptions.SAVED)).equals(
+                List.of(
+                    "narrator:2",
+                    "onboardAccessibility:true",
+                    "soundCategory_master:1.0",
+                    "tutorialStep",
+                    "skipMultiplayerWarning",
+                    "joinedFirstServer"
+                )
+            ),
+            "a quiet launch keeps the options it replaces: " + Files.readAllLines(quietDir.resolve(QuietOptions.SAVED))
+        );
+        // The game rewrites options.txt; in the quiet session the user turns the narrator back on and changes the GUI scale.
+        Files.writeString(
+            quietFile,
+            Files.readString(quietFile).replace("narrator:0", "narrator:1").replace("guiScale:2", "guiScale:3")
+        );
+        QuietOptions.launchArgs(new String[] { "--gameDir", quietDir.toAbsolutePath().toString() }, true);
+        Files.writeString(quietFile, Files.readString(quietFile).replace("narrator:0", "narrator:1"));
+        String[] quietDirArgs = new String[] { "--gameDir", quietDir.toAbsolutePath().toString() };
+        QuietOptions.launchArgs(quietDirArgs, false);
+        List<String> restored = Files.readAllLines(quietFile);
+        check(
+            restored.equals(
+                List.of(
+                    "version:5023",
+                    "narrator:1",
+                    "guiScale:3",
+                    "soundCategory_master:1.0",
+                    "onboardAccessibility:true",
+                    "key_key.jump:key.keyboard.space"
+                )
+            ) && !Files.exists(quietDir.resolve(QuietOptions.SAVED)),
+            "turning quiet off restores the sound and prompts the user had, keeps what they changed since and every other key: " +
+            restored
+        );
+        QuietOptions.launchArgs(quietDirArgs, false);
+        check(Files.readAllLines(quietFile).equals(restored), "a second launch that is not quiet changes nothing");
         Path freshQuiet = QuietOptions.seed(scratch.resolve("fresh quiet"));
         check(
             Files.readAllLines(freshQuiet).equals(
@@ -1308,6 +1673,12 @@ public final class PortableTests {
                 )
             ),
             "a first launch gets a quiet options.txt"
+        );
+        Files.writeString(freshQuiet, Files.readString(freshQuiet) + "fov:0.5\n");
+        QuietOptions.restore(freshQuiet.getParent());
+        check(
+            Files.readAllLines(freshQuiet).equals(List.of("fov:0.5")),
+            "options quiet added to a new game are removed for the game's defaults when quiet is off"
         );
         Path blockedQuiet = scratch.resolve("not a directory");
         Files.writeString(blockedQuiet, "file");

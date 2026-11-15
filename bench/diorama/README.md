@@ -79,7 +79,7 @@ Hidden clients present about 8 frames a second whatever `maxFps` and vsync say, 
 work (minimap drawing, GPU tile readback) runs less often than in a visible game; the per-call
 render scopes stay comparable, totals per second do not. Measure frames visibly with `perf`.
 
-Start a visible development client with `modaccel perf --root DIORAMA_SOURCE
+Start a development client with `modaccel perf --root DIORAMA_SOURCE
 --project :1.21.1`, enter a **disposable mapped world**, and allow initial mapping
 to settle. Then, from the Mod Accel checkout:
 

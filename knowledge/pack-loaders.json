@@ -33,7 +33,7 @@
       "builtIn": ["forge", "javafml", "lowcodefml", "mixin"],
       "failed": ["Mod Loading has failed", "Failed to complete lifecycle event"],
       "modNamed": ["Failed to [^.]+\\. ModID: ([a-z0-9_.\\-]+)", "Mod ([a-z0-9_.\\-]+) requires "],
-      "clientOnly": ["for invalid dist DEDICATED_SERVER"]
+      "clientOnly": ["for invalid dist DEDICATED_SERVER", "NoClassDefFoundError: net/minecraft/client/", "ClassNotFoundException: net.minecraft.client."]
     },
     "neoforge": {
       "style": "args-file",
@@ -63,7 +63,7 @@
         "\\(([a-z0-9_.\\-]+)\\) has failed to load correctly",
         "mod ([a-z0-9_.\\-]+) failed to"
       ],
-      "clientOnly": ["for invalid dist DEDICATED_SERVER"]
+      "clientOnly": ["for invalid dist DEDICATED_SERVER", "NoClassDefFoundError: net/minecraft/client/", "ClassNotFoundException: net.minecraft.client."]
     },
     "fabric": {
       "style": "launch-jar",
@@ -83,7 +83,7 @@
         "Mod '[^']*' \\(([a-z0-9_\\-]+)\\)",
         "from mod ([a-z0-9_\\-]+)\\]"
       ],
-      "clientOnly": ["in environment type SERVER"]
+      "clientOnly": ["in environment type SERVER", "NoClassDefFoundError: net/minecraft/client/", "ClassNotFoundException: net.minecraft.client.", "NoClassDefFoundError: net/fabricmc/fabric/api/client/"]
     },
     "quilt": {
       "style": "launch-jar",
@@ -103,7 +103,7 @@
         "Mod '[^']*' \\(([a-z0-9_\\-]+)\\)",
         "from mod ([a-z0-9_\\-]+)\\]"
       ],
-      "clientOnly": ["in environment type SERVER"]
+      "clientOnly": ["in environment type SERVER", "NoClassDefFoundError: net/minecraft/client/", "ClassNotFoundException: net.minecraft.client.", "NoClassDefFoundError: net/fabricmc/fabric/api/client/"]
     }
   }
 }
