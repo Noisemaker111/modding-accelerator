@@ -30,9 +30,11 @@ Check, in this order, and only then ask:
 
 Do whatever the licences and terms of service allow, and nothing past them.
 
-- **Other people's work is downloaded and derived on the user's machine; it is never committed or shipped.** That
-  covers Mojang's game jars and mappings, the loaders' jars and mappings (Fabric, NeoForge, Forge, MCP names), and the
-  mods or plugins we test. What is committed is our own: rules, tests, tooling and measurements.
+- **Don't add third-party files to the repo.** That means Mojang's game jars and mappings, the loaders' jars and
+  mapping files (Fabric, NeoForge, Forge, MCP names), and the mods or plugins we test. mmt downloads them from their
+  publisher onto the user's machine, and doesn't put them in the repo or the release ZIP. You can commit data we derive
+  from them (such as the name lists in `coverage/changes/`) if it says where it came from and keeps any notice the
+  licence requires. Your own pull requests are always welcome; this only covers files that belong to someone else.
 - **Don't copy code from the mods we test into rules or fixtures.** Rules are written here, each with its own
   before/after test. A mod may be used as a fixture only if its licence lets us.
 - **Download through a source's published interface** (Maven, its API, its release files) and within its terms.
