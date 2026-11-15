@@ -1,0 +1,625 @@
+{
+ "schema": 1,
+ "kind": "observation",
+ "seconds": 15.000603,
+ "started": "2026-11-15T01:36:38.410836Z",
+ "eventSpanSeconds": 15.1600459,
+ "metrics": {
+  "frame_ms": {
+   "n": 446,
+   "mean": 33.433559865470855,
+   "p50": 33.33625,
+   "p95": 33.62775,
+   "p99": 34.272825,
+   "max": 62.6384
+  },
+  "gc_pause_ms": {
+   "n": 1,
+   "mean": 2.4694,
+   "p50": 2.4694,
+   "p95": 2.4694,
+   "p99": 2.4694,
+   "max": 2.4694
+  },
+  "heap_at_gc_boundary_bytes": {
+   "n": 2,
+   "mean": 416442696.0,
+   "p50": 416442696.0,
+   "p95": 569778712.8,
+   "p99": 583408580.96,
+   "max": 586816048.0
+  },
+  "heap_used_bytes": {
+   "n": 16,
+   "mean": 468274079.0,
+   "p50": 561650224.0,
+   "p95": 578427440.0,
+   "p99": 578427440.0,
+   "max": 578427440.0
+  },
+  "jvm_cpu_percent_of_machine": {
+   "n": 14,
+   "mean": 1.0792577181543623,
+   "p50": 0.5028465539216995,
+   "p95": 3.2248614549636834,
+   "p99": 4.311951889991759,
+   "max": 4.583724498748779
+  },
+  "monitor_blocked_ms": {
+   "n": 1,
+   "mean": 12.6262,
+   "p50": 12.6262,
+   "p95": 12.6262,
+   "p99": 12.6262,
+   "max": 12.6262
+  }
+ },
+ "timeline": [
+  {
+   "epochSecond": 1794706598,
+   "frameCount": 11,
+   "frameMaxMs": 62.6384,
+   "heapMiB": 527.6313934326172
+  },
+  {
+   "epochSecond": 1794706599,
+   "cpuPercent": 4.583724498748779,
+   "frameCount": 30,
+   "frameMaxMs": 34.2346,
+   "heapMiB": 535.6313934326172
+  },
+  {
+   "epochSecond": 1794706600,
+   "cpuPercent": 2.493165969848633,
+   "frameCount": 30,
+   "frameMaxMs": 33.8653,
+   "heapMiB": 535.6313934326172
+  },
+  {
+   "epochSecond": 1794706601,
+   "cpuPercent": 1.9371919631958008,
+   "frameCount": 30,
+   "frameMaxMs": 33.5964,
+   "heapMiB": 535.6313934326172
+  },
+  {
+   "epochSecond": 1794706602,
+   "cpuPercent": 0.37436217069625854,
+   "frameCount": 30,
+   "frameMaxMs": 34.0457,
+   "heapMiB": 535.6313934326172
+  },
+  {
+   "epochSecond": 1794706603,
+   "cpuPercent": 0.6150399446487427,
+   "frameCount": 30,
+   "frameMaxMs": 34.6005,
+   "heapMiB": 543.6313934326172
+  },
+  {
+   "epochSecond": 1794706604,
+   "cpuPercent": 0.37458959221839905,
+   "frameCount": 30,
+   "frameMaxMs": 33.778,
+   "heapMiB": 543.6313934326172
+  },
+  {
+   "epochSecond": 1794706605,
+   "cpuPercent": 0.43901941180229187,
+   "frameCount": 30,
+   "frameMaxMs": 33.627,
+   "heapMiB": 543.6313934326172
+  },
+  {
+   "epochSecond": 1794706606,
+   "cpuPercent": 0.4398902356624603,
+   "frameCount": 30,
+   "frameMaxMs": 34.1824,
+   "heapMiB": 551.6313934326172
+  },
+  {
+   "epochSecond": 1794706607,
+   "cpuPercent": 0.5666195750236511,
+   "frameCount": 30,
+   "frameMaxMs": 34.3774,
+   "heapMiB": 551.6313934326172
+  },
+  {
+   "epochSecond": 1794706608,
+   "cpuPercent": 0.3773747682571411,
+   "frameCount": 30,
+   "frameMaxMs": 33.6716,
+   "heapMiB": 551.6313934326172,
+   "gcPauseMs": 2.4694
+  },
+  {
+   "epochSecond": 1794706609,
+   "cpuPercent": 1.4692233800888062,
+   "frameCount": 30,
+   "frameMaxMs": 33.4543,
+   "heapMiB": 234.67001342773438
+  },
+  {
+   "epochSecond": 1794706610,
+   "cpuPercent": 0.5658028721809387,
+   "frameCount": 30,
+   "frameMaxMs": 33.624,
+   "heapMiB": 234.67001342773438
+  },
+  {
+   "epochSecond": 1794706611,
+   "cpuPercent": 0.43706586956977844,
+   "frameCount": 29,
+   "frameMaxMs": 34.4382,
+   "heapMiB": 234.67001342773438
+  },
+  {
+   "epochSecond": 1794706612,
+   "cpuPercent": 0.43653780221939087,
+   "frameCount": 30,
+   "frameMaxMs": 33.7898,
+   "heapMiB": 242.67001342773438
+  },
+  {
+   "epochSecond": 1794706613,
+   "frameCount": 16,
+   "frameMaxMs": 33.4344,
+   "heapMiB": 242.67001342773438
+  }
+ ],
+ "hotMethods": [
+  {
+   "name": "net.minecraft.client.FramerateLimiter.limitDisplayFPS(I)V",
+   "samples": 18,
+   "percent": 43.90243902439025
+  },
+  {
+   "name": "net.minecraft.client.Minecraft.renderFrame(Z)V",
+   "samples": 2,
+   "percent": 4.878048780487805
+  },
+  {
+   "name": "jdk.jfr.internal.EventInstrumentation.<init>(Ljdk/jfr/internal/ClassInspector;JZ)V",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "java.util.Comparator.lambda$comparing$77a9974f$1(Ljava/util/function/Function;Ljava/lang/Object;Ljava/lang/Object;)I",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "java.util.AbstractCollection.toArray()[Ljava/lang/Object;",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "java.util.Objects.equals(Ljava/lang/Object;Ljava/lang/Object;)Z",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "com.jcraft.jorbis.Mapping0.inverse(Lcom/jcraft/jorbis/Block;Ljava/lang/Object;)I",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "net.minecraft.client.gui.render.GuiRenderer.addElementToMesh(Lnet/minecraft/client/renderer/state/gui/GuiElementRenderState;)V",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "jdk.internal.constant.MethodTypeDescImpl.paramTypes(Ljava/lang/String;II)[Ljava/lang/constant/ClassDesc;",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap.get(Ljava/lang/Object;)Ljava/lang/Object;",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "java.util.ArrayList.clear()V",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "com.jcraft.jorbis.Residue0._2inverse(Lcom/jcraft/jorbis/Block;Ljava/lang/Object;[[FI)I",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "net.minecraft.client.gui.screens.Screen.extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "net.minecraft.client.renderer.StagedVertexBuffer.upload()V",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "jdk.internal.event.Event.<init>()V",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "java.util.concurrent.locks.LockSupport.parkNanos(J)V",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "java.util.Arrays.copyOf([BI)[B",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "java.util.ArrayList.grow(I)[Ljava/lang/Object;",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "java.lang.reflect.Field.getOverrideFieldAccessor()Ljdk/internal/reflect/FieldAccessor;",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "com.jcraft.jorbis.CodeBook.decodevv_add([[FIILcom/jcraft/jogg/Buffer;I)I",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "com.jcraft.jorbis.Floor1.inverse1(Lcom/jcraft/jorbis/Block;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "com.jcraft.jorbis.Mdct.backward([F[F)V",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  },
+  {
+   "name": "jdk.internal.classfile.impl.DirectCodeBuilder.writeLocalVar(Ljava/lang/classfile/Opcode;I)V",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  }
+ ],
+ "allocationSites": [
+  {
+   "name": "net.minecraft.client.gui.navigation.ScreenRectangle.<init>(IIII)V",
+   "amount": 3755476512,
+   "unit": "estimated bytes",
+   "percent": 98.64543273922476
+  },
+  {
+   "name": "com.mojang.renderpearl.api.buffers.GpuBuffer.slice(JJ)Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;",
+   "amount": 22345344,
+   "unit": "estimated bytes",
+   "percent": 0.5869471215020182
+  },
+  {
+   "name": "jdk.internal.classfile.impl.EntryMap.<init>(IF)V",
+   "amount": 21170960,
+   "unit": "estimated bytes",
+   "percent": 0.5560994734041403
+  },
+  {
+   "name": "java.util.IdentityHashMap$KeySet.iterator()Ljava/util/Iterator;",
+   "amount": 4335944,
+   "unit": "estimated bytes",
+   "percent": 0.11389262343841951
+  },
+  {
+   "name": "java.util.ArrayList.iterator()Ljava/util/Iterator;",
+   "amount": 1638464,
+   "unit": "estimated bytes",
+   "percent": 0.0430376783854696
+  },
+  {
+   "name": "jdk.jfr.internal.MetadataDescriptor$Element.addAttribute(Ljava/lang/String;Ljava/lang/Object;)V",
+   "amount": 1374592,
+   "unit": "estimated bytes",
+   "percent": 0.03610652929038381
+  },
+  {
+   "name": "java.lang.invoke.DirectMethodHandle.allocateInstance(Ljava/lang/Object;)Ljava/lang/Object;",
+   "amount": 703688,
+   "unit": "estimated bytes",
+   "percent": 0.018483834754815687
+  }
+ ],
+ "allocationClasses": [
+  {
+   "name": "net.minecraft.client.gui.navigation.ScreenPosition",
+   "amount": 3755476512,
+   "unit": "estimated bytes",
+   "percent": 98.64543273922476
+  },
+  {
+   "name": "com.mojang.renderpearl.api.buffers.GpuBufferSlice",
+   "amount": 22345344,
+   "unit": "estimated bytes",
+   "percent": 0.5869471215020182
+  },
+  {
+   "name": "[I",
+   "amount": 21170960,
+   "unit": "estimated bytes",
+   "percent": 0.5560994734041403
+  },
+  {
+   "name": "java.util.IdentityHashMap$KeyIterator",
+   "amount": 4335944,
+   "unit": "estimated bytes",
+   "percent": 0.11389262343841951
+  },
+  {
+   "name": "java.util.ArrayList$Itr",
+   "amount": 1638464,
+   "unit": "estimated bytes",
+   "percent": 0.0430376783854696
+  },
+  {
+   "name": "jdk.jfr.internal.MetadataDescriptor$Attribute",
+   "amount": 1374592,
+   "unit": "estimated bytes",
+   "percent": 0.03610652929038381
+  },
+  {
+   "name": "jdk.jfr.internal.EventInstrumentation$$Lambda.0x00000000284c3f08",
+   "amount": 703688,
+   "unit": "estimated bytes",
+   "percent": 0.018483834754815687
+  }
+ ],
+ "lockSites": [
+  {
+   "name": "jdk.jfr.internal.PlatformRecorder.periodicTask()V",
+   "amount": 12.6262,
+   "unit": "observed blocked ms",
+   "percent": 100.0
+  }
+ ],
+ "selfSamplesByOrigin": [
+  {
+   "name": "Minecraft / transformed game code",
+   "samples": 23,
+   "percent": 56.09756097560975
+  },
+  {
+   "name": "JVM / shared library",
+   "samples": 12,
+   "percent": 29.26829268292683
+  },
+  {
+   "name": "jorbis-0.0.17.jar [bc9fd733]",
+   "samples": 5,
+   "percent": 12.195121951219512
+  },
+  {
+   "name": "fastutil-8.5.18.jar [d9565df9]",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  }
+ ],
+ "samplesByThread": [
+  {
+   "name": "Render thread",
+   "samples": 31,
+   "percent": 75.60975609756098
+  },
+  {
+   "name": "Sound engine",
+   "samples": 5,
+   "percent": 12.195121951219512
+  },
+  {
+   "name": "modaccel-perf-capture",
+   "samples": 4,
+   "percent": 9.75609756097561
+  },
+  {
+   "name": "JFR Periodic Tasks",
+   "samples": 1,
+   "percent": 2.4390243902439024
+  }
+ ],
+ "executionSamples": 41,
+ "agentBuild": "5c3be623524a4019dbee5df5b08d01359094c727c196ad2368c7e8cbe45db6b0",
+ "probeCalls": {},
+ "hookErrors": "",
+ "fps": 29.91006653266286,
+ "onePercentLowFps": 24.955255227377314,
+ "framesOver50ms": 1,
+ "framesOver100ms": 0,
+ "gcPauseTotalMs": 2.4694,
+ "observedMonitorBlockedMs": 12.6262,
+ "estimatedAllocationBytesPerSecond": 253792831.12818864,
+ "averageCpuCoresUsed": 0.26982568198205065,
+ "attribution": {
+  "mods": [
+   {
+    "id": "fabric-screen-api-v1",
+    "name": "Fabric Screen API (v1) (fabric-screen-api-v1)",
+    "yourMod": false,
+    "samples": 2,
+    "selfSamples": 0,
+    "inclusiveSamples": 2,
+    "percentOfSamples": 4.878048780487805,
+    "perFrameShare": 0.06451612903225806,
+    "perFrameMs": 2.157003862288442,
+    "perFrameMsLow": 0.0,
+    "perFrameMsHigh": 5.048416988724152,
+    "allocationBytesPerSecond": 250355036.5275316,
+    "blockedMs": 0.0,
+    "ioBytes": 0.0,
+    "threads": [
+     {
+      "name": "Render thread",
+      "samples": 2
+     }
+    ],
+    "methods": [
+     {
+      "name": "net.minecraft.client.gui.Gui.wrapOperation$zio000$fabric-screen-api-v1$onExtractGui(Lnet/minecraft/client/gui/screens/Screen;Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIFLcom/llamalad7/mixinextras/injector/wrapoperation/Operation;)V",
+      "samples": 2
+     }
+    ],
+    "features": [
+     {
+      "name": "mixin \u00b7 Gui \u2190 onExtractGui",
+      "kind": "mixin",
+      "samples": 2,
+      "selfSamples": 0,
+      "percentOfSamples": 4.878048780487805,
+      "allocationBytesPerSecond": 250355036.5275316,
+      "blockedMs": 0.0,
+      "ioBytes": 0.0,
+      "methods": [
+       {
+        "name": "net.minecraft.client.gui.Gui.wrapOperation$zio000$fabric-screen-api-v1$onExtractGui(Lnet/minecraft/client/gui/screens/Screen;Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIFLcom/llamalad7/mixinextras/injector/wrapoperation/Operation;)V",
+        "samples": 2
+       }
+      ],
+      "threads": [
+       {
+        "name": "Render thread",
+        "samples": 2
+       }
+      ],
+      "perFrameShare": 0.06451612903225806,
+      "perFrameMs": 2.157003862288442,
+      "perFrameMsLow": 0.0,
+      "perFrameMsHigh": 5.048416988724152
+     }
+    ],
+    "exact": []
+   }
+  ],
+  "threads": [
+   {
+    "thread": "C2 CompilerThread2",
+    "meanCpuPercentOfMachine": 1.6315418295562267,
+    "intervals": 2,
+    "samples": 0
+   },
+   {
+    "thread": "C2 CompilerThread1",
+    "meanCpuPercentOfMachine": 0.9451667545363307,
+    "intervals": 2,
+    "samples": 0
+   },
+   {
+    "thread": "C2 CompilerThread3",
+    "meanCpuPercentOfMachine": 0.5422683898359537,
+    "intervals": 1,
+    "samples": 0
+   },
+   {
+    "thread": "Render thread",
+    "meanCpuPercentOfMachine": 0.4159072879701853,
+    "intervals": 1,
+    "samples": 31
+   },
+   {
+    "thread": "JFR Periodic Tasks",
+    "meanCpuPercentOfMachine": 0.37634558975696564,
+    "intervals": 1,
+    "samples": 1
+   },
+   {
+    "thread": "C2 CompilerThread4",
+    "meanCpuPercentOfMachine": 0.3726586000993848,
+    "intervals": 1,
+    "samples": 0
+   },
+   {
+    "thread": "C2 CompilerThread5",
+    "meanCpuPercentOfMachine": 0.1934116706252098,
+    "intervals": 1,
+    "samples": 0
+   },
+   {
+    "thread": "C2 CompilerThread0",
+    "meanCpuPercentOfMachine": 0.09141458431258798,
+    "intervals": 1,
+    "samples": 0
+   },
+   {
+    "thread": "modaccel-perf-capture",
+    "meanCpuPercentOfMachine": 0.0675361545290798,
+    "intervals": 1,
+    "samples": 4
+   },
+   {
+    "thread": "C1 CompilerThread1",
+    "meanCpuPercentOfMachine": 0.040628574788570404,
+    "intervals": 1,
+    "samples": 0
+   },
+   {
+    "thread": "Sound engine",
+    "meanCpuPercentOfMachine": 0.013019182370044291,
+    "intervals": 1,
+    "samples": 5
+   },
+   {
+    "thread": "C1 CompilerThread0",
+    "meanCpuPercentOfMachine": 0.011141945287818089,
+    "intervals": 1,
+    "samples": 0
+   },
+   {
+    "thread": "JFR Recorder Thread",
+    "meanCpuPercentOfMachine": 0.005207130016060546,
+    "intervals": 1,
+    "samples": 0
+   },
+   {
+    "thread": "Minecraft Services Discovery",
+    "meanCpuPercentOfMachine": 0.0016875734218047,
+    "intervals": 1,
+    "samples": 0
+   },
+   {
+    "thread": "Service Thread",
+    "meanCpuPercentOfMachine": 0.0006330648830044083,
+    "intervals": 1,
+    "samples": 0
+   },
+   {
+    "thread": "Attach Listener",
+    "meanCpuPercentOfMachine": 0.0002532259259169223,
+    "intervals": 1,
+    "samples": 0
+   },
+   {
+    "thread": "JNA Cleaner",
+    "meanCpuPercentOfMachine": 0.00012827275668314542,
+    "intervals": 1,
+    "samples": 0
+   },
+   {
+    "thread": "Monitor Deflation Thread",
+    "meanCpuPercentOfMachine": 0.00012661298569582868,
+    "intervals": 1,
+    "samples": 0
+   }
+  ],
+  "executionSamples": 41,
+  "attributedSamples": 2,
+  "samplePeriodMs": 0,
+  "unattributed": [],
+  "basis": {
+   "sampled": "Execution samples, allocation samples, lock and I/O events are charged to the innermost mod frame on their stack; game, JVM, loader and library frames above it count as that mod's work. Feature = how the game entered that mod (event bus \u2192 event handler, mixin handler name, or the block/entity/renderer/goal/screen class on the stack). Sampled values are estimates.",
+   "perTick": "Share of server-thread samples \u00d7 mean measured tick duration. Interval is a binomial 95% range on that share; samples are autocorrelated, so treat it as approximate. Waits inside a tick are not sampled.",
+   "perFrame": "Share of render-thread samples \u00d7 mean measured frame interval. GPU work, vsync and driver waits are not sampled, so this is CPU-side only.",
+   "exact": "Timing probes measure every completed call of the selected method: exact call counts and wall time, including profiler overhead.",
+   "heap": "Shallow bytes of live instances of each mod's own classes after a full GC at the end of the capture; objects of game or JDK classes that a mod holds are not included (not a retained-size analysis).",
+   "threads": "Per-thread CPU load reported by the operating system through JFR (exact per interval, not sampled).",
+   "mixins": "Mixin handlers merged into game classes are charged to the mod named in the handler (Fabric). Overwrites, unnamed handlers and @Unique helpers cannot be traced to a mod."
+  }
+ },
+ "recording": "C:\\mods\\prism-lab\\.runs\\desktop\\perf-sample\\capture.jfr",
+ "sha256": "7245434bf1e4f36ed3c6990c627a1fb1ae606116a90d5d1e60eb524d5248d7ff"
+}

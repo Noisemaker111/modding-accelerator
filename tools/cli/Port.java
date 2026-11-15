@@ -199,6 +199,8 @@ final class Port {
             true,
             "tier",
             "target-preview",
+            "route",
+            route == null ? null : route.record(),
             "sourcesChanged",
             false,
             "edits",

@@ -21,7 +21,9 @@ public final class Modaccel {
         }
 
         Path log(String name) {
-            return directory.resolve(stages.size() + "-" + name + ".log");
+            Path log = directory.resolve(stages.size() + "-" + name + ".log");
+            Run.progress(name, log);
+            return log;
         }
 
         void stage(String name, Run.Result result, Map<String, Object> extra) {
