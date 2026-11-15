@@ -60,7 +60,7 @@ The portable ZIP also holds Minecraft Modding Tools, a window over the same comm
 - **Modpack:** `pack-check` on a CurseForge export, a Modrinth `.mrpack` or an instance folder (or drop it on the window), every mod laid out with the clashing ones flagged, then its repair and undo.
 - **Measure:** find the running game, measure it, and read frame rate, a frame-time chart, the cost of each mod and where the time went, then open the full HTML report.
 
-To build it from source, install Rust and run `cargo build --release` in `app/` (Linux also needs `libxkbcommon-dev` and `libwayland-dev`); `modaccel package` then adds it to the ZIP. It also renders without a window for checking: `app/target/release/modaccel-desktop --project . --screen checks --snap checks.png`, and `--script app/ui-tests/fast.json --realtime --out frames/` clicks through a real run, and `--list-scenes` names saved states to render.
+To build it from source, install Rust and run `cargo build --release` in `app/` (Linux also needs `libxkbcommon-dev` and `libwayland-dev`); `modaccel package` then adds it to the ZIP. It also renders without a window for checking: `app/target/release/modaccel-desktop --project . --screen checks --snap checks.png`, and `--list-scenes` names saved states to render.
 
 ## What works today
 

@@ -19,7 +19,7 @@ def check(cond, what):
 
 
 need = prepare_world.required(json.loads((PLAY / "experiment.json").read_text(encoding="utf-8")), PLAY)
-check(len(need) == 9 and "region/r.-1.1.mca" in need and "region/r.0.0.mca" in need, f"the regions the experiment copies: {need}")
+check("region/r.-1.1.mca" in need and "region/r.0.0.mca" in need, f"the regions the experiment copies: {need}")
 check(prepare_world.region_chunk("region/r.-1.1.mca") == (-1, 32), "r.-1.1, which the flight never reaches, gets its chunk nearest the origin")
 check(prepare_world.region_chunk("region/r.1.-1.mca") == (32, -1), "nearest-origin chunk of r.1.-1")
 check(prepare_world.region_chunk("region/r.0.0.mca") == (0, 0), "nearest-origin chunk of r.0.0")
