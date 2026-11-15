@@ -766,7 +766,8 @@ public final class Modaccel {
             ". Each is a class in tools/tests.\n" +
             "A failed suite is reported first, with the end of its log; --only runs the named suites alone.";
             case "preferences" -> "See or save your game launch preferences: modaccel preferences [--background on|off] [--quiet on|off] [--json]\n" +
-            "Background keeps the client hidden and prevents cursor capture; quiet saves sound and narrator off in the client's game settings. Both default to off.";
+            "Background keeps the client hidden and prevents cursor capture (default off).\n" +
+            "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off.";
             case "port" -> "Port a Gradle mod source checkout (not a JAR):\n" +
             "  modaccel discover --root SOURCE\n" +
             "  modaccel dependencies --root SOURCE --to 1.21.6 --json\n" +
