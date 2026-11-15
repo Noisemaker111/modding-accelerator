@@ -1,0 +1,120 @@
+diff --git a/src/main/java/dev/diorama/bake/GpuMesher.java b/src/main/java/dev/diorama/bake/GpuMesher.java
+index 3aebb1e3..c0e5231a 100644
+--- a/src/main/java/dev/diorama/bake/GpuMesher.java
++++ b/src/main/java/dev/diorama/bake/GpuMesher.java
+@@ -2136,7 +2156,40 @@ public final class GpuMesher {
+ 	}
+ 
+ 	/** Corner occlusion on a top face, from the eight blocks around the cell {@code (x, y, z)} above it: nw, ne, sw, se. */
++	/**
++	 * Whether faces take their corner occlusion from {@link VoxelReader#ringXZ} and {@link VoxelReader#ringXY}
++	 * and {@link #AO}. Only for checking that meshes come out the same either way.
++	 */
++	public static boolean RINGS = true;
++
++	/**
++	 * {@link #aoTop}'s and {@link #aoSouth}'s result for every ring of nine cells as the readers' rings
++	 * give them: the first row (north, or above) in bits 0 to 2, the middle in 3 to 5, the last in 6 to 8.
++	 */
++	private static final int[] AO = new int[512];
++
++	static {
++		for (int ring = 0; ring < 512; ring++) {
++			boolean firstW = (ring & 1) != 0;
++			boolean first = (ring & 2) != 0;
++			boolean firstE = (ring & 4) != 0;
++			boolean w = (ring & 8) != 0;
++			boolean e = (ring & 32) != 0;
++			boolean lastW = (ring & 64) != 0;
++			boolean last = (ring & 128) != 0;
++			boolean lastE = (ring & 256) != 0;
++			AO[ring] = pack(TileBaker.corner(w, first, firstW), TileBaker.corner(e, first, firstE), TileBaker.corner(w, last, lastW),
++				TileBaker.corner(e, last, lastE));
++		}
++	}
++
+ 	private static int aoTop(TileBaker h, int x, int y, int z) {
++		if (RINGS) {
++			int ring = h.reader.ringXZ(x, y, z);
++			if (ring >= 0) {
++				return AO[ring];
++			}
++		}
+ 		boolean n = h.occludes(x, y, z - 1);
+ 		boolean s = h.occludes(x, y, z + 1);
+ 		boolean w = h.occludes(x - 1, y, z);
+@@ -2151,6 +2204,12 @@ public final class GpuMesher {
+ 
+ 	/** Same for a south face; {@code z} is the open layer in front of it: top west, top east, bottom west, bottom east. */
+ 	private static int aoSouth(TileBaker h, int x, int y, int z) {
++		if (RINGS) {
++			int ring = h.reader.ringXY(x, y, z);
++			if (ring >= 0) {
++				return AO[ring];
++			}
++		}
+ 		boolean up = h.occludes(x, y + 1, z);
+ 		boolean down = h.occludes(x, y - 1, z);
+ 		boolean w = h.occludes(x - 1, y, z);
+diff --git a/src/main/java/dev/diorama/bake/VoxelReader.java b/src/main/java/dev/diorama/bake/VoxelReader.java
+index c83f14b9..f315dcaf 100644
+--- a/src/main/java/dev/diorama/bake/VoxelReader.java
++++ b/src/main/java/dev/diorama/bake/VoxelReader.java
+@@ -169,6 +169,57 @@ public final class VoxelReader {
+ 		return 1 + ((int) (this.partialMask[i >> 6] >>> i) & 1);
+ 	}
+ 
++	/**
++	 * {@link #solid} above 0 for the nine cells around {@code (x, y, z)} in its layer of y, a bit
++	 * each: the row at z - 1 in bits 0 to 2, z in 3 to 5, z + 1 in 6 to 8, each from x - 1 up. Read
++	 * from the section's bits in one go; -1 where the nine aren't all in one section, which
++	 * {@link #solid} answers one at a time.
++	 */
++	int ringXZ(int x, int y, int z) {
++		int lx = x & 15;
++		int lz = z & 15;
++		if (lx == 0 || lx == 15 || lz == 0 || lz == 15 || y < this.minY || y >= this.maxY) {
++			return -1;
++		}
++		long[] mask = this.solidMaskAt(x >> 4, y >> 4, z >> 4);
++		if (mask == null) {
++			return 0;
++		}
++		int i = ((y & 15) << 8) | (lz << 4) | lx;
++		return three(mask, i - 17) | three(mask, i - 1) << 3 | three(mask, i + 15) << 6;
++	}
++
++	/**
++	 * The same for the nine cells around {@code (x, y, z)} in its layer of z: the row at y + 1 in
++	 * bits 0 to 2, y in 3 to 5, y - 1 in 6 to 8.
++	 */
++	int ringXY(int x, int y, int z) {
++		int lx = x & 15;
++		int ly = y & 15;
++		if (lx == 0 || lx == 15 || ly == 0 || ly == 15 || y < this.minY || y >= this.maxY) {
++			return -1;
++		}
++		long[] mask = this.solidMaskAt(x >> 4, y >> 4, z >> 4);
++		if (mask == null) {
++			return 0;
++		}
++		int i = (ly << 8) | ((z & 15) << 4) | lx;
++		return three(mask, i + 255) | three(mask, i - 1) << 3 | three(mask, i - 257) << 6;
++	}
++
++	/** Bits {@code i} to {@code i + 2} of a mask, which lie in one word. */
++	private static int three(long[] mask, int i) {
++		return (int) (mask[i >> 6] >>> i) & 7;
++	}
++
++	/** The solid mask of a section, as {@link #solid} reads it: null where the chunk is missing. */
++	private long @Nullable [] solidMaskAt(int sx, int sy, int sz) {
++		if (sx != this.solidX || sy != this.solidY || sz != this.solidZ) {
++			this.enterSolidSection(sx, sy, sz);
++		}
++		return this.solidMask;
++	}
++
+ 	/**
+ 	 * Whether an open cell is a pocket one block tall, with solid blocks right above and below it:
+ 	 * a lone air bubble, a buried lava spring or a crawlspace. Under a roof, rays skipping rock

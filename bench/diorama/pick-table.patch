@@ -1,0 +1,183 @@
+diff --git a/src/main/java/dev/diorama/bake/MapPick.java b/src/main/java/dev/diorama/bake/MapPick.java
+index f3ad98f5..cab46a63 100644
+--- a/src/main/java/dev/diorama/bake/MapPick.java
++++ b/src/main/java/dev/diorama/bake/MapPick.java
+@@ -121,6 +121,165 @@ public final class MapPick {
+ 		return this;
+ 	}
+ 
++	/**
++	 * Whether sky-view picks read their rays' steps from {@link RowSteps}. Only for checking that
++	 * picks come out the same either way.
++	 */
++	public static boolean ROW_STEPS = true;
++	/**
++	 * Whether those picks take cells at or above their column's {@link VoxelReader#openFrom} as air
++	 * without reading them. Only for checking that picks come out the same either way.
++	 */
++	public static boolean OPEN_AIR = true;
++
++	/**
++	 * The cells a ray steps through, per pixel row of one pick's tile: a ray's steps depend only on
++	 * the height it starts from and its map v, never on its x, so every ray of a row steps through
++	 * the same cells. Worked out with the same arithmetic as a lone ray's, as far as a ray has
++	 * needed, in arrays indexed by row that each baker thread keeps and the next pick starts over.
++	 */
++	private static final class RowSteps {
++		@Nullable MapPick owner;
++		final int[][] y = new int[TileSpots.ROWS][];
++		final int[][] z = new int[TileSpots.ROWS][];
++		final int[] length = new int[TileSpots.ROWS];
++		final int[] by = new int[TileSpots.ROWS];
++		final int[] bz = new int[TileSpots.ROWS];
++		final double[] tMaxY = new double[TileSpots.ROWS];
++		final double[] tMaxZ = new double[TileSpots.ROWS];
++
++		RowSteps() {
++			for (int row = 0; row < TileSpots.ROWS; row++) {
++				this.y[row] = new int[64];
++				this.z[row] = new int[64];
++			}
++		}
++
++		/** The row's first cell, as {@link #pick} starts a ray. */
++		void start(int row, int top, double v, double sin, double cos) {
++			double z0 = (v + top * cos) / sin;
++			this.by[row] = top - 1;
++			this.bz[row] = (int) Math.floor(z0);
++			this.tMaxY[row] = 1 / sin;
++			this.tMaxZ[row] = (z0 - this.bz[row]) / cos;
++			this.y[row][0] = this.by[row];
++			this.z[row][0] = this.bz[row];
++			this.length[row] = 1;
++		}
++
++		/** Works out the row's next 64 cells, as {@link #pick} steps. */
++		void extend(int row, double sin, double cos) {
++			int n = this.length[row];
++			int need = n + 64;
++			if (need > this.y[row].length) {
++				int size = Math.max(need, this.y[row].length * 2);
++				this.y[row] = java.util.Arrays.copyOf(this.y[row], size);
++				this.z[row] = java.util.Arrays.copyOf(this.z[row], size);
++			}
++			int[] ys = this.y[row];
++			int[] zs = this.z[row];
++			int by = this.by[row];
++			int bz = this.bz[row];
++			double tMaxY = this.tMaxY[row];
++			double tMaxZ = this.tMaxZ[row];
++			while (n < need) {
++				if (tMaxY < tMaxZ) {
++					by--;
++					tMaxY += 1 / sin;
++				} else {
++					bz--;
++					tMaxZ += 1 / cos;
++				}
++				ys[n] = by;
++				zs[n] = bz;
++				n++;
++			}
++			this.by[row] = by;
++			this.bz[row] = bz;
++			this.tMaxY[row] = tMaxY;
++			this.tMaxZ[row] = tMaxZ;
++			this.length[row] = n;
++		}
++	}
++
++	private static final ThreadLocal<RowSteps> ROWS = ThreadLocal.withInitial(RowSteps::new);
++
++	/** This pick's projection when it first used {@link #ROWS}. */
++	private double rowsSin = Double.NaN;
++	private double rowsCos = Double.NaN;
++
++	/**
++	 * {@link #pick} for pixel row {@code row} of this pick's tile, {@code v} being that row's
++	 * middle: the same answer, from the row's {@link RowSteps} where the pick reads only its own
++	 * column from one height.
++	 */
++	int pick(double u, double v, int row) {
++		if (!ROW_STEPS || !this.columnOnly()) {
++			return this.pick(u, v);
++		}
++		double sin = Projection.sin();
++		double cos = Projection.cos();
++		RowSteps steps = ROWS.get();
++		if (steps.owner != this || sin != this.rowsSin || cos != this.rowsCos) {
++			// Another pick's, or another projection's: start over.
++			steps.owner = this;
++			this.rowsSin = sin;
++			this.rowsCos = cos;
++			java.util.Arrays.fill(steps.length, 0);
++		}
++		if (steps.length[row] == 0) {
++			steps.start(row, this.startY, v, sin, cos);
++		}
++		int x = (int) Math.floor(u);
++		int[] ys = steps.y[row];
++		int[] zs = steps.z[row];
++		this.firstZ = zs[0];
++		this.lastZ = zs[0];
++		this.readUnknown = false;
++		boolean openAir = OPEN_AIR;
++		int openChunk = Integer.MIN_VALUE;
++		int[] open = null;
++		int column = x & 15;
++		for (int step = 0; ; step++) {
++			if (step == steps.length[row]) {
++				steps.extend(row, sin, cos);
++				ys = steps.y[row];
++				zs = steps.z[row];
++			}
++			int by = ys[step];
++			if (by < this.limitY) {
++				return NOTHING;
++			}
++			int bz = zs[step];
++			if (openAir) {
++				if (bz >> 4 != openChunk) {
++					openChunk = bz >> 4;
++					open = this.reader.openFrom(x >> 4, openChunk);
++				}
++				if (open != null && by >= open[((bz & 15) << 4) | column]) {
++					// Air from here up, as the chunk was read.
++					this.lastZ = bz;
++					continue;
++				}
++			}
++			int id = this.reader.state(x, by, bz);
++			this.lastZ = bz;
++			if (id == VoxelReader.UNKNOWN) {
++				this.readUnknown = true;
++				if (!TileSpots.passedWhenSaved(this.tile, this.savedSpots, x, by, bz)) {
++					return UNKNOWN;
++				}
++				id = VoxelReader.AIR_ID;
++			}
++			byte kind = this.looks.kind[id];
++			if (kind == BlockLooks.SOLID || kind == BlockLooks.LAVA || kind == BlockLooks.WATER) {
++				this.y = by + 1;
++				this.z = bz;
++				return FOUND;
++			}
++		}
++	}
++
+ 	/**
+ 	 * The position just above the first solid block or water surface the ray through map point
+ 	 * {@code (u, v)} reaches, or null where the map has no data.
+diff --git a/src/main/java/dev/diorama/bake/TileSpots.java b/src/main/java/dev/diorama/bake/TileSpots.java
+index 07935544..5a8887e2 100644
+--- a/src/main/java/dev/diorama/bake/TileSpots.java
++++ b/src/main/java/dev/diorama/bake/TileSpots.java
+@@ -157,7 +157,7 @@ public final class TileSpots {
+ 			for (int row = row0; row < row0 + rows; row++) {
+ 				double v = v(key, row);
+ 				int i = row * COLUMNS + column;
+-				spots[i] = switch (pick.pick(key.minU() + column + 0.5, v)) {
++				spots[i] = switch (pick.pick(key.minU() + column + 0.5, v, row)) {
+ 					case MapPick.FOUND -> encode(pick.y, pick.z, v);
+ 					case MapPick.NOTHING -> NOTHING;
+ 					default -> saved == null ? UNKNOWN : saved[i];
