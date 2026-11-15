@@ -49,7 +49,7 @@ import java.util.zip.*;
  *        linking scored against VersionMap's intermediary diff; --all includes private members)
  *
  * Compile with tools/VersionMap.java, JDK 25 (java.lang.classfile). Downloads are cached in
- * VersionMap.cache (~/.modaccel/mappings). Exit: 0 ok, 2 usage or I/O error.
+ * VersionMap.cache (~/.mmt/mappings). Exit: 0 ok, 2 usage or I/O error.
  */
 public final class GameDiff {
 

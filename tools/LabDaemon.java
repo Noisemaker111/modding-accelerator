@@ -232,11 +232,11 @@ public final class LabDaemon {
 	}
 
 	/**
-	 * A multi-project repo lists every subproject's source folders in .modaccel/sources.txt (written
+	 * A multi-project repo lists every subproject's source folders in .mmt/sources.txt (written
 	 * by its labClasspath task); a single-project repo uses the three folders under src/.
 	 */
 	private static List<Path> sourceRoots(Path root) {
-		Path listed = root.resolve(".modaccel/sources.txt");
+		Path listed = root.resolve(".mmt/sources.txt");
 		if (Files.exists(listed)) {
 			try {
 				List<Path> dirs = new ArrayList<>();

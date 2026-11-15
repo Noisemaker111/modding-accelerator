@@ -9,9 +9,9 @@ import java.util.concurrent.TimeUnit;
  * server-check merge gate: each pinned plugin in bench/server-plugins/manifest.json with a serverCheck entry is cloned
  * fresh and its scenario must pass through the packaged command on a real Paper server with the bot, cold then warm,
  * with every expect line passing. The bot's own scenario (tools/tests/server-check-bot.scenario) must pass with its
- * secret from .modaccel/secrets.properties, leave that secret nowhere in receipts, logs or server files, and fail with
+ * secret from .mmt/secrets.properties, leave that secret nowhere in receipts, logs or server files, and fail with
  * "needs secret" without it. Then each break made on purpose must fail at the step the manifest names.
- * Usage: java ServerCheckFixtures.java <checkout> <modaccel.jar> [scenario|bot|breaks]
+ * Usage: java ServerCheckFixtures.java <checkout> <mmt.jar> [scenario|bot|breaks]
  * With a part named, only that part runs, so CI runs the parts side by side; with none, all of them run.
  */
 public final class ServerCheckFixtures {
@@ -20,7 +20,7 @@ public final class ServerCheckFixtures {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 2 || args.length > 3) throw new IllegalArgumentException(
-            "Usage: java ServerCheckFixtures.java <checkout> <modaccel.jar> [scenario|bot|breaks]"
+            "Usage: java ServerCheckFixtures.java <checkout> <mmt.jar> [scenario|bot|breaks]"
         );
         Set<String> parts = args.length == 3 ? Set.of(args[2]) : Set.of("scenario", "bot", "breaks");
         if (!Set.of("scenario", "bot", "breaks").containsAll(parts)) throw new IllegalArgumentException(
@@ -65,7 +65,7 @@ public final class ServerCheckFixtures {
             long expects = Files.readAllLines(scenario).stream().filter(l -> l.strip().startsWith("expect-")).count();
 
             if (parts.contains("scenario")) {
-                Run run = modaccel(home, jar, root, Map.of(), "server-check", "--file", scenario.toString());
+                Run run = mmt(home, jar, root, Map.of(), "server-check", "--file", scenario.toString());
                 long passed = count(run.output(), "\"status\":\"pass\"");
                 if (
                     run.exit() != 0 || !run.output().contains("server-check passed") || passed != expects
@@ -98,7 +98,7 @@ public final class ServerCheckFixtures {
                         .stream()
                         .filter(l -> l.strip().startsWith("expect-"))
                         .count();
-                    Run extraRun = modaccel(home, jar, root, env, "server-check", "--file", file.toString());
+                    Run extraRun = mmt(home, jar, root, env, "server-check", "--file", file.toString());
                     long extraPassed = count(extraRun.output(), "\"status\":\"pass\"");
                     if (
                         extraRun.exit() != 0 ||
@@ -130,11 +130,11 @@ public final class ServerCheckFixtures {
             Path bot = home.resolve("tools/tests/server-check-bot.scenario");
             if (parts.contains("bot")) {
                 long botExpects = Files.readAllLines(bot).stream().filter(l -> l.strip().startsWith("expect-")).count();
-                String secret = "modaccel-" + UUID.randomUUID();
-                Path secrets = root.resolve(".modaccel/secrets.properties");
+                String secret = "mmt-" + UUID.randomUUID();
+                Path secrets = root.resolve(".mmt/secrets.properties");
                 Files.createDirectories(secrets.getParent());
                 Files.writeString(secrets, "BOT_SECRET=" + secret + "\n");
-                Run withSecret = modaccel(home, jar, root, Map.of(), "server-check", "--file", bot.toString());
+                Run withSecret = mmt(home, jar, root, Map.of(), "server-check", "--file", bot.toString());
                 if (
                     withSecret.exit() != 0 || count(withSecret.output(), "\"status\":\"pass\"") != botExpects
                 ) throw new AssertionError(
@@ -150,7 +150,7 @@ public final class ServerCheckFixtures {
                     "The secret was printed by server-check:\n" + withSecret.output()
                 );
                 List<Path> leaks = new ArrayList<>();
-                for (Path dir : List.of(root.resolve(".runs"), root.resolve(".modaccel"))) if (
+                for (Path dir : List.of(root.resolve(".runs"), root.resolve(".mmt"))) if (
                     Files.isDirectory(dir)
                 ) try (var walk = Files.walk(dir)) {
                     for (Path f : walk.filter(Files::isRegularFile).filter(f -> !f.equals(secrets)).toList()) if (
@@ -166,7 +166,7 @@ public final class ServerCheckFixtures {
                     withSecret.seconds()
                 );
                 Path negativeRcon = home.resolve("tools/tests/server-check-negative-rcon.scenario");
-                Run forbidden = modaccel(home, jar, root, Map.of(), "server-check", "--file", negativeRcon.toString());
+                Run forbidden = mmt(home, jar, root, Map.of(), "server-check", "--file", negativeRcon.toString());
                 if (
                     forbidden.exit() != 1 ||
                     !"expect-no-rcon list ~players online~ for 0s".equals(failedStep(forbidden.output()))
@@ -175,7 +175,7 @@ public final class ServerCheckFixtures {
                 );
                 System.out.println("PASS expect-no-rcon rejects a matching response");
                 Path externalFailure = home.resolve("tools/tests/server-check-external-failure.scenario");
-                Run external = modaccel(
+                Run external = mmt(
                     home,
                     jar,
                     root,
@@ -191,7 +191,7 @@ public final class ServerCheckFixtures {
                 );
                 System.out.println("PASS external test rejects a nonzero exit despite matching output");
                 Files.delete(secrets);
-                Run without = modaccel(home, jar, root, Map.of(), "server-check", "--file", bot.toString());
+                Run without = mmt(home, jar, root, Map.of(), "server-check", "--file", bot.toString());
                 if (
                     without.exit() != 1 ||
                     !without.output().contains("needs secret BOT_SECRET") ||
@@ -229,7 +229,7 @@ public final class ServerCheckFixtures {
                         original.replace(find, brk.get("replace").toString()),
                         StandardCharsets.UTF_8
                     );
-                    Run run = modaccel(home, jar, copy, Map.of(), "server-check", "--file", scenario.toString());
+                    Run run = mmt(home, jar, copy, Map.of(), "server-check", "--file", scenario.toString());
                     String failsAt = brk.get("failsAt").toString();
                     String failed = failedStep(run.output());
                     if (run.exit() != 1 || failed == null || !failed.contains(failsAt)) throw new AssertionError(
@@ -293,7 +293,7 @@ public final class ServerCheckFixtures {
                 Path rel = from.relativize(p);
                 if (
                     rel.getNameCount() > 0 &&
-                    Set.of(".git", ".gradle", "build", ".modaccel", ".runs").contains(rel.getName(0).toString())
+                    Set.of(".git", ".gradle", "build", ".mmt", ".runs").contains(rel.getName(0).toString())
                 ) continue;
                 Path target = to.resolve(rel.toString());
                 if (Files.isDirectory(p)) Files.createDirectories(target);
@@ -302,20 +302,20 @@ public final class ServerCheckFixtures {
         }
     }
 
-    static Run modaccel(Path home, Path jar, Path root, Map<String, String> env, String... args) throws Exception {
+    static Run mmt(Path home, Path jar, Path root, Map<String, String> env, String... args) throws Exception {
         String java = Path.of(
             System.getProperty("java.home"),
             "bin",
             System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows") ? "java.exe" : "java"
         ).toString();
-        List<String> command = new ArrayList<>(List.of(java, "-Dmodaccel.home=" + home, "-jar", jar.toString()));
+        List<String> command = new ArrayList<>(List.of(java, "-Dmmt.home=" + home, "-jar", jar.toString()));
         command.addAll(List.of(args));
         command.addAll(List.of("--root", root.toString(), "--json"));
         return process(command, home, env, 10);
     }
 
     static Run process(List<String> command, Path directory, Map<String, String> env, int minutes) throws Exception {
-        Path output = Files.createTempFile("modaccel-server-check-", ".log");
+        Path output = Files.createTempFile("mmt-server-check-", ".log");
         long start = System.nanoTime();
         ProcessBuilder builder = new ProcessBuilder(command)
             .directory(directory.toFile())

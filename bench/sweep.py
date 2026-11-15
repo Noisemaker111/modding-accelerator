@@ -8,13 +8,13 @@
 The corpus is bench/sweep/corpus.json: open-source mods pinned to a commit, used only as test subjects. Each mod
 is ported from its pinned version over the jumps of plan(): the adjacent release, and the common long jumps
 (older releases -> 1.20.1, 1.20.x -> 1.21.1, 1.21.x -> 1.21.6 and -> 26.3, 26.x one release either way). Every
-port is `modaccel port --fix` on a fresh reset of the pinned source; nothing is written by hand.
+port is `mmt port --fix` on a fresh reset of the pinned source; nothing is written by hand.
 
 Per run, .runs/sweep/runs/TAG/ID__FROM__TO.json records the build result, the errors before and after, every error
 left with its class and the API it is about, wall times, and, when it built, a hidden real-game load check (ui-check,
 then the loader's own mod list asked through eval) and a behaviour check: every block and item the mod's own assets
 name must be in the running game's registries (and any per-mod check the corpus entry adds). Launches follow
-~/.modaccel/preferences.json (hidden and muted); at most --jobs ports or games run at once.
+~/.mmt/preferences.json (hidden and muted); at most --jobs ports or games run at once.
 
 Error classes: missing-mapping (the route's map knows a rename the port did not apply, or there is no map for the
 route), signature-change, semantic-api-change (removed or redesigned), dependency-unavailable, build-tooling,
@@ -38,8 +38,8 @@ RESULTS = ROOT / "bench" / "sweep" / "results"
 WORK = ROOT / ".runs" / "sweep"
 INDEX = ROOT / "coverage" / "changes" / "index.json"
 WINDOWS = os.name == "nt"
-MODACCEL = [str(ROOT / ("modaccel.cmd" if WINDOWS else "modaccel"))]
-KEEP = (".gradle", "build", ".modaccel", ".runs", "run", "runs")
+MMT = [str(ROOT / ("mmt.cmd" if WINDOWS else "mmt"))]
+KEEP = (".gradle", "build", ".mmt", ".runs", "run", "runs")
 CLASSES = ("missing-mapping", "signature-change", "semantic-api-change", "dependency-unavailable", "build-tooling",
            "mixin-target-change", "access-transformer", "resource-format", "tool-crash", "other")
 GAME_PACKAGES = ("net.minecraft", "com.mojang", "net.fabricmc", "net.neoforged", "net.minecraftforge", "org.lwjgl",
@@ -99,8 +99,8 @@ def load_corpus(only=None):
 
 
 # ---- running ------------------------------------------------------------------------------------
-# A cold NeoForge setup of a new game version can pass modaccel's 900 s per-step limit on a busy shared machine.
-ENV = dict(os.environ, MODACCEL_GRADLE_TIMEOUT=os.environ.get("MODACCEL_GRADLE_TIMEOUT", "3600"))
+# A cold NeoForge setup of a new game version can pass mmt's 900 s per-step limit on a busy shared machine.
+ENV = dict(os.environ, MMT_GRADLE_TIMEOUT=os.environ.get("MMT_GRADLE_TIMEOUT", "3600"))
 
 
 def sh(cmd, cwd=None, timeout=None):
@@ -139,7 +139,7 @@ def checkout(mod):
         sh(["git", "config", "core.longpaths", "true"], cwd=work)
         sh(["git", "remote", "add", "origin", mod["repo"]], cwd=work)
     else:
-        sh(MODACCEL + ["port", "--root", work, "--undo"], timeout=600)
+        sh(MMT + ["port", "--root", work, "--undo"], timeout=600)
     if sh(["git", "cat-file", "-e", mod["commit"] + "^{commit}"], cwd=work)[0]:
         code, _, err = sh(["git", "fetch", "-q", "--depth", "1", "origin", mod["commit"]], cwd=work, timeout=1800)
         if code:
@@ -154,7 +154,7 @@ def checkout(mod):
 def java_lines(work):
     files = lines = 0
     for p in work.rglob("*.java"):
-        if any(part in ("build", ".gradle", ".modaccel") for part in p.relative_to(work).parts):
+        if any(part in ("build", ".gradle", ".mmt") for part in p.relative_to(work).parts):
             continue
         try:
             lines += len(p.read_bytes().splitlines())
@@ -175,7 +175,7 @@ def baseline(mod, tag, timeout, jobs):
     try:
         with jobs:
             work = checkout(mod)
-            cmd = MODACCEL + ["compile", "--root", work, "--json"] + (["--project", mod["project"]] if mod.get("project") else [])
+            cmd = MMT + ["compile", "--root", work, "--json"] + (["--project", mod["project"]] if mod.get("project") else [])
             code, out, err = sh(cmd, timeout=timeout)
         res = last_json(out) or {}
         r = res.get("result", res)
@@ -204,7 +204,7 @@ def port_run(mod, to, kind, tag, timeout, game, jobs, base=None):
         with jobs:
             work = checkout(mod)
             rec["javaFiles"], rec["javaLines"] = java_lines(work)
-            cmd = MODACCEL + ["port", "--root", work, "--from", mod["from"], "--to", to, "--fix", "--json"]
+            cmd = MMT + ["port", "--root", work, "--from", mod["from"], "--to", to, "--fix", "--json"]
             if mod.get("project"):
                 cmd += ["--project", mod["project"]]
             code, out, err = sh(cmd, timeout=timeout)
@@ -218,7 +218,7 @@ def port_run(mod, to, kind, tag, timeout, game, jobs, base=None):
             if code is None:
                 rec["crash"] = f"no answer in {timeout} s"
             elif receipt is None:
-                rec["crash"] = "modaccel port printed no JSON: " + " ".join((err or out).split())[-600:]
+                rec["crash"] = "mmt port printed no JSON: " + " ".join((err or out).split())[-600:]
             else:
                 rec["receipt"] = receipt.get("receipt")
                 rec["result"] = slim(receipt)
@@ -238,7 +238,7 @@ def port_run(mod, to, kind, tag, timeout, game, jobs, base=None):
 
 
 def slim(receipt):
-    """The parts of a port receipt the sweep reads (the whole receipt stays where modaccel wrote it)."""
+    """The parts of a port receipt the sweep reads (the whole receipt stays where mmt wrote it)."""
     r = receipt.get("result", receipt)
     keep = {k: r.get(k) for k in ("ok", "tier", "compiled", "built", "errorsBefore", "reason", "details", "error",
                                   "unresolved", "blocked", "mixinCheck", "modMetadata", "rulesApplied", "log", "stoppedSafely")
@@ -355,7 +355,7 @@ def error_class(e, rec):
 def gradle_class(text):
     """The class of a failure Gradle reported without a compiler error."""
     t = text or ""
-    if re.search(r"No such file or folder: .*\.modaccel|modaccel failed|Internal error", t):
+    if re.search(r"No such file or folder: .*\.mmt|mmt failed|Internal error", t):
         return "tool-crash"
     if re.search(r"Some of your mods are incompatible|Could not resolve|Could not find [\w.-]+:[\w.-]+|not found in any of the following|dependency-blockers|"
                  r"Could not GET|Could not HEAD|No matching variant|Received status code 40[134]", t):
@@ -516,12 +516,12 @@ def game_checks(mod, rec, work):
     """Hidden real-game load check and, where the mod has content, a registry behaviour check."""
     proj = ["--project", mod["project"]] if mod.get("project") else []
     t0 = time.time()
-    code, out, err = sh(MODACCEL + ["ui-check", "--root", work, "--json"] + proj, timeout=1800)
+    code, out, err = sh(MMT + ["ui-check", "--root", work, "--json"] + proj, timeout=1800)
     res = last_json(out) or {}
     if code != 0 and "Framebuffer was" in json.dumps(res):
         # The hidden window had not taken its 1280x720 size by the first capture (seen on 26.1.1); the game did start.
         rec["uiCheckRetried"] = " ".join(str((res.get("result") or res).get("error")).split())[:200]
-        code, out, err = sh(MODACCEL + ["ui-check", "--root", work, "--json"] + proj, timeout=1800)
+        code, out, err = sh(MMT + ["ui-check", "--root", work, "--json"] + proj, timeout=1800)
         res = last_json(out) or {}
     rec["load"] = {"ok": code == 0, "step": "ui-check", "detail": " ".join(str((res.get("result") or res).get("error") or (res.get("result") or res).get("details") or err[-400:] or "").split())[:400]}
     modid, wanted = mod_metadata(work, mod)
@@ -529,7 +529,7 @@ def game_checks(mod, rec, work):
     if code == 0 and modid:
         snippet = (f'net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("{modid}")' if mod["loader"] == "fabric"
                    else f'net.neoforged.fml.ModList.get().isLoaded("{modid}")')
-        code, out, err = sh(MODACCEL + ["eval", "--root", work, "--code", snippet, "--json"] + proj, timeout=600)
+        code, out, err = sh(MMT + ["eval", "--root", work, "--code", snippet, "--json"] + proj, timeout=600)
         res = last_json(out) or {}
         value = str((res.get("result") or res).get("value"))
         rec["load"] = {"ok": code == 0 and value.strip() == "true", "step": "mod list", "detail": f"{modid} loaded: {value}"}
@@ -542,18 +542,18 @@ def game_checks(mod, rec, work):
             f = WORK / "snippets" / f"{mod['id']}-registry.java"
             f.parent.mkdir(parents=True, exist_ok=True)
             f.write_text(snippet, encoding="utf-8")
-            code, out, err = sh(MODACCEL + ["eval", "--root", work, "--file", f, "--json"] + proj, timeout=600)
+            code, out, err = sh(MMT + ["eval", "--root", work, "--file", f, "--json"] + proj, timeout=600)
             res = last_json(out) or {}
             value = str((res.get("result") or res).get("value") or (res.get("result") or res).get("error") or err[-300:])
             checks.append({"check": f"{len(wanted)} blocks, items and entity types the mod's own assets name are in the game's registries", "ok": code == 0 and value.startswith("ok"), "detail": value[:400]})
         for b in mod.get("behaviour") or []:
-            code, out, err = sh(MODACCEL + ["eval", "--root", work, "--code", b["code"], "--json"] + proj, timeout=600)
+            code, out, err = sh(MMT + ["eval", "--root", work, "--code", b["code"], "--json"] + proj, timeout=600)
             res = last_json(out) or {}
             value = str((res.get("result") or res).get("value"))
             checks.append({"check": b["what"], "ok": code == 0 and value.strip() == str(b["expect"]), "detail": value[:300]})
         rec["behaviour"] = {"ok": bool(checks) and all(c["ok"] for c in checks), "checks": checks} if checks else None
         rec["seconds"]["behaviour"] = round(time.time() - t1, 1)
-    sh(MODACCEL + ["game-stop", "--root", work, "--json"] + proj, timeout=600)
+    sh(MMT + ["game-stop", "--root", work, "--json"] + proj, timeout=600)
 
 
 # ---- summary ------------------------------------------------------------------------------------
@@ -665,7 +665,7 @@ def main(argv=None):
     p.add_argument("--no-game", action="store_true")
     p.add_argument("--resume", action="store_true", help="skip runs this tag already has")
     p.add_argument("--timeout", type=int, default=5400)
-    p.add_argument("--modaccel", type=Path, help="the modaccel launcher to test (default: this checkout's); another worktree's to sweep a fixed tool while this one changes")
+    p.add_argument("--mmt", type=Path, help="the mmt launcher to test (default: this checkout's); another worktree's to sweep a fixed tool while this one changes")
     p = sub.add_parser("summary")
     p.add_argument("--tag", required=True)
     p.add_argument("--compare", help="other tags to show beside it, oldest first")
@@ -704,8 +704,8 @@ def main(argv=None):
             (RESULTS / f"{args.tag}.json").write_text(json.dumps(doc, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         return 0
 
-    if args.modaccel:
-        MODACCEL[:] = [str(args.modaccel.resolve())]
+    if args.mmt:
+        MMT[:] = [str(args.mmt.resolve())]
     mods = load_corpus(args.only)
     versions = releases()
     want_to = set(args.to.split(",")) if args.to else None
@@ -736,8 +736,8 @@ def main(argv=None):
 
     def stop(m):
         work = WORK / "clones" / m["id"]
-        if (work / ".modaccel").is_dir():
-            sh(MODACCEL + ["game-stop", "--root", work, "--json"], timeout=600)
+        if (work / ".mmt").is_dir():
+            sh(MMT + ["game-stop", "--root", work, "--json"], timeout=600)
 
     def run_mod(m, jumps):
         base = baseline(m, args.tag, args.timeout, jobs)

@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "kind": "modaccel-fingerprint",
+ "kind": "mmt-fingerprint",
  "freezes": true,
  "frozenAtStart": true,
  "seeded": 8,

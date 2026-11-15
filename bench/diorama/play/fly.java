@@ -38,7 +38,7 @@ Thread flight = new Thread(() -> {
     } catch (InterruptedException stopped) {
     }
     vars.put("fly.done", true);
-}, "modaccel-fly");
+}, "mmt-fly");
 flight.setDaemon(true);
 vars.put("fly.done", false);
 vars.put("fly.thread", flight);

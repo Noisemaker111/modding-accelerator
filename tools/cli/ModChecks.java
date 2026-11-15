@@ -519,7 +519,7 @@ final class ModChecks {
     Optional<Path> elsewhere(String entry) throws IOException {
         if (root == null || !Files.isDirectory(root)) return Optional.empty();
         if (checkout == null) {
-            Set<String> skip = Set.of(".git", ".gradle", ".modaccel", ".runs", "node_modules", "run", "runs", ".idea");
+            Set<String> skip = Set.of(".git", ".gradle", ".mmt", ".runs", "node_modules", "run", "runs", ".idea");
             List<String> files = new ArrayList<>();
             Files.walkFileTree(
                 root,

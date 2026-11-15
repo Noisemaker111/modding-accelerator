@@ -14,7 +14,7 @@ final class Server implements AutoCloseable {
     final int port;
     final String task;
 
-    Server(Build build, Map<String, Object> model, Modaccel.Options options) throws Exception {
+    Server(Build build, Map<String, Object> model, Mmt.Options options) throws Exception {
         this.build = build;
         String selected = options.get("server-task", "");
         List<String> available = new ArrayList<>();
@@ -69,9 +69,9 @@ final class Server implements AutoCloseable {
         Path recipe = build.project.state().resolve("server-launch.json");
         List<String> command = build.command(
             List.of(
-                "-Dmodaccel.recompile=true",
-                "-Dmodaccel.captureTask=" + task,
-                "-Dmodaccel.launchFile=" + recipe,
+                "-Dmmt.recompile=true",
+                "-Dmmt.captureTask=" + task,
+                "-Dmmt.launchFile=" + recipe,
                 task
             )
         );
@@ -130,7 +130,7 @@ final class Server implements AutoCloseable {
 
     public void close() {
         if (!process.isAlive()) {
-            // It died before modaccel stopped it: say how, next to the result.
+            // It died before mmt stopped it: say how, next to the result.
             build.report.stages.add(
                 Json.map(
                     "name",
@@ -140,7 +140,7 @@ final class Server implements AutoCloseable {
                     "log",
                     log.toString(),
                     "details",
-                    "The dedicated server exited on its own before modaccel stopped it" +
+                    "The dedicated server exited on its own before mmt stopped it" +
                     death(process.exitValue(), log)
                 )
             );

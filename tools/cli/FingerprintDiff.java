@@ -24,9 +24,9 @@ final class FingerprintDiff {
 
     private FingerprintDiff() {}
 
-    static Map<String, Object> run(Path home, Modaccel.Options options) throws Exception {
+    static Map<String, Object> run(Path home, Mmt.Options options) throws Exception {
         String a = options.get("baseline", options.get("a", "")), b = options.get("candidate", options.get("b", ""));
-        if (a.isBlank() || b.isBlank()) throw new IllegalArgumentException("fingerprint-diff needs two fingerprints: modaccel fingerprint-diff A.json B.json");
+        if (a.isBlank() || b.isBlank()) throw new IllegalArgumentException("fingerprint-diff needs two fingerprints: mmt fingerprint-diff A.json B.json");
         if (a.contains(",") || b.contains(",")) {
             // perf-optimize's gate on recorded launches: paired baselines and candidates, in order.
             List<Path> base = Arrays.stream(a.split(",")).map(String::strip).map(Path::of).toList();
@@ -307,7 +307,7 @@ final class FingerprintDiff {
             this.namespaces = namespaces;
         }
 
-        static Normaliser choose(Path home, Modaccel.Options options, Map<String, Object> a, Map<String, Object> b) throws Exception {
+        static Normaliser choose(Path home, Mmt.Options options, Map<String, Object> a, Map<String, Object> b) throws Exception {
             String va = Json.text(Json.object(a.getOrDefault("target", Map.of())), "minecraft", ""), vb = Json.text(Json.object(b.getOrDefault("target", Map.of())), "minecraft", "");
             boolean across = options.has("across-versions") || !va.equals(vb);
             if (!across) return new Normaliser("exact", Set.of());

@@ -567,7 +567,7 @@ final class PackRepairs {
      * pack's mods require its ids in; when Modrinth has a file with its SHA-1, that is said too. null: none passes.
      */
     static Map<String, Object> substitute(PackCheck check, Facts facts, Map<String, Object> target) throws Exception {
-        if (Boolean.getBoolean("modaccel.pack.offline")) return null;
+        if (Boolean.getBoolean("mmt.pack.offline")) return null;
         int project = ((Number) target.get("project")).intValue(), missing = ((Number) target.get("file")).intValue();
         List<Map<String, Object>> files = PackCheck.curseforgeFiles(project);
         List<String> loaders = curseforgeLoaders(facts.pack().loader());
@@ -637,7 +637,7 @@ final class PackRepairs {
      * checked against Modrinth's SHA-512 and must provide the id by its own metadata. null: none passes.
      */
     static Map<String, Object> fetchDependency(PackCheck check, Facts facts, Map<String, Object> target) throws Exception {
-        if (Boolean.getBoolean("modaccel.pack.offline")) return null;
+        if (Boolean.getBoolean("mmt.pack.offline")) return null;
         String id = Json.text(target, "id", "");
         List<Map<String, Object>> candidates = new ArrayList<>();
         Set<String> projects = new LinkedHashSet<>();

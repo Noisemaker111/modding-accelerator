@@ -19,26 +19,26 @@ if not d.get("ok") and not r.get("details"):
     print(json.dumps(d)[:3000])
 EOF
 }
-java -jar build/distributions/modaccel.jar data-check --root . --json >/tmp/clean.json 2>/tmp/clean.err; clean=$?
+java -jar build/distributions/mmt.jar data-check --root . --json >/tmp/clean.json 2>/tmp/clean.err; clean=$?
 echo "== clean run, exit $clean"; summary /tmp/clean.json || tail -40 /tmp/clean.err
 R=src/main/resources/data/prismlab/recipe/broken_probe.json
 echo '{"type":"minecraft:crafting_shaped","pattern":["#"],"key":{"#":"prismlab:no_such_item"},"result":{"id":"prismlab:prism_shard"}}' > $R
-java -jar build/distributions/modaccel.jar data-check --root . --json >/tmp/broken.json 2>/tmp/broken.err; broken=$?
+java -jar build/distributions/mmt.jar data-check --root . --json >/tmp/broken.json 2>/tmp/broken.err; broken=$?
 echo "== broken recipe under src, exit $broken"; summary /tmp/broken.json || tail -40 /tmp/broken.err
 python3 -c "import json;print('stages:', [s['name'] for s in json.load(open('/tmp/broken.json'))['stages']])"
 rm $R
-java -jar build/distributions/modaccel.jar data-check --root . --json >/tmp/fixed.json 2>/tmp/fixed.err; fixed=$?
+java -jar build/distributions/mmt.jar data-check --root . --json >/tmp/fixed.json 2>/tmp/fixed.err; fixed=$?
 echo "== recipe removed, exit $fixed"; summary /tmp/fixed.json || tail -40 /tmp/fixed.err
 # The spare starts behind the loaded game; a class it has not read yet is code it can take.
-for i in $(seq 1 120); do [ -f .modaccel/portable/data-check-spare.json ] && break; sleep 1; done
-echo "== spare ready after about $i s: $(cat .modaccel/portable/data-check-spare.json 2>/dev/null)"
-mkdir -p /tmp/junk && printf 'package com.prismlab;\nfinal class ModaccelJunk { }\n' > /tmp/junk/ModaccelJunk.java
-javac --release 21 -d build/classes/java/main /tmp/junk/ModaccelJunk.java
-java -jar build/distributions/modaccel.jar data-check --root . --json >/tmp/code.json 2>/tmp/code.err; code=$?
+for i in $(seq 1 120); do [ -f .mmt/portable/data-check-spare.json ] && break; sleep 1; done
+echo "== spare ready after about $i s: $(cat .mmt/portable/data-check-spare.json 2>/dev/null)"
+mkdir -p /tmp/junk && printf 'package com.prismlab;\nfinal class MmtJunk { }\n' > /tmp/junk/MmtJunk.java
+javac --release 21 -d build/classes/java/main /tmp/junk/MmtJunk.java
+java -jar build/distributions/mmt.jar data-check --root . --json >/tmp/code.json 2>/tmp/code.err; code=$?
 echo "== new class, exit $code"; summary /tmp/code.json || tail -40 /tmp/code.err
 grep -q 'loaded in advance' /tmp/code.json; spare=$?
-rm -f build/classes/java/main/com/prismlab/ModaccelJunk.class
-java -jar build/distributions/modaccel.jar game-stop --root . --json >/dev/null 2>&1
-java tools/tests/DataCheckOnceTest.java . build/distributions/modaccel.jar >/tmp/once.log 2>&1; once=$?
+rm -f build/classes/java/main/com/prismlab/MmtJunk.class
+java -jar build/distributions/mmt.jar game-stop --root . --json >/dev/null 2>&1
+java tools/tests/DataCheckOnceTest.java . build/distributions/mmt.jar >/tmp/once.log 2>&1; once=$?
 echo "== --once on a copy, exit $once"; tail -5 /tmp/once.log
 [ "$clean" = 0 ] && [ "$broken" = 1 ] && [ "$fixed" = 0 ] && [ "$code" = 0 ] && [ "$spare" = 0 ] && [ "$once" = 0 ]

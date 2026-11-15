@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
- * The first-use moments an outside modder hit with modaccel on Diorama and F3Nope, each one from the
+ * The first-use moments an outside modder hit with mmt on Diorama and F3Nope, each one from the
  * stranger playthrough: a message that hid the cause, or a pass that should have failed. Every case
  * runs the real code path on real files (or real tool output) and checks what a person would read.
  */
@@ -21,7 +21,7 @@ public final class StrangerTest {
             Thread.sleep(6000);
             return;
         }
-        Path scratch = Files.createTempDirectory("modaccel stranger");
+        Path scratch = Files.createTempDirectory("mmt stranger");
         try {
             invalidJson();
             modChecks(scratch);
@@ -610,7 +610,7 @@ public final class StrangerTest {
         require(Run.compilerErrors(List.of("BUILD SUCCESSFUL"), null).isEmpty(), "no errors, no text");
     }
 
-    /** No network: modaccel said "add the repository that publishes it" while the cause was "No such host is known". */
+    /** No network: mmt said "add the repository that publishes it" while the cause was "No such host is known". */
     static void unreachableRepository() throws Exception {
         List<String> log = List.of(
             "* What went wrong:",
@@ -674,7 +674,7 @@ public final class StrangerTest {
 
     /** fast printed raw counts; a failing test's name and message were only in the XML. */
     static void testCounts(Path scratch) throws Exception {
-        Path project = scratch.resolve("counts"), results = project.resolve("build/modaccel/test-results/run1/test");
+        Path project = scratch.resolve("counts"), results = project.resolve("build/mmt/test-results/run1/test");
         write(
             results.resolve("TEST-dev.PinMathTest.xml"),
             """
@@ -721,7 +721,7 @@ public final class StrangerTest {
         write(tests.resolve("dev/PinTest.java"), "class PinTest { @org.junit.jupiter.api.Test void t() {} }");
         String untagged = FastLane.noTests(model, true);
         require(
-            untagged.contains("none is tagged @Tag(\"pure\")") && untagged.contains("modaccel test"),
+            untagged.contains("none is tagged @Tag(\"pure\")") && untagged.contains("mmt test"),
             "untagged tests are named as the reason, with the way out: " + untagged
         );
         require(!FastLane.noTests(model, false).contains("pure"), "test (all tests) does not talk about pure tags");
@@ -735,7 +735,7 @@ public final class StrangerTest {
         try (ProjectLock held = ProjectLock.acquire(project, "compile")) {
             String other = child("lock", project.root.toString());
             require(
-                other.contains("Another modaccel command (compile, process " + ProcessHandle.current().pid()) &&
+                other.contains("Another mmt command (compile, process " + ProcessHandle.current().pid()) &&
                 other.contains("this one did nothing"),
                 "a second command is refused and names the first: " + other
             );
@@ -806,7 +806,7 @@ public final class StrangerTest {
             "the next command warns about the half-finished port: " + warning
         );
         require(
-            new Modaccel.Options(new String[] { "port", "--root", ".", "--undo" }).get("undo", "").equals("latest"),
+            new Mmt.Options(new String[] { "port", "--root", ".", "--undo" }).get("undo", "").equals("latest"),
             "--undo alone means the newest port"
         );
         Map<String, Object> undone = Port.undo(project, "latest");
@@ -856,7 +856,7 @@ public final class StrangerTest {
             );
         }
         require(Files.readString(file).equals("minecraft_version=1.21.5\n"), "nothing was written");
-        String plain = Modaccel.plainError(
+        String plain = Mmt.plainError(
             new java.io.IOException("Port failed", new java.nio.file.AccessDeniedException(file.toString()))
         );
         require(
@@ -865,27 +865,27 @@ public final class StrangerTest {
         );
     }
 
-    /** --project 26.3 (no colon) failed with "Task with name 'modaccelProjectMetadata' not found". */
+    /** --project 26.3 (no colon) failed with "Task with name 'mmtProjectMetadata' not found". */
     static void options() {
-        var options = new Modaccel.Options(new String[] { "explain", "--project", "26.3", "--against", "26.2, :26.1" });
+        var options = new Mmt.Options(new String[] { "explain", "--project", "26.3", "--against", "26.2, :26.1" });
         require(
             options.get("project", "").equals(":26.3") && options.get("against", "").equals(":26.2,:26.1"),
             "project paths get their leading colon: " + options.values
         );
         require(
-            new Modaccel.Options(new String[] { "fast", "--project", ":" }).get("project", "").equals(":"),
+            new Mmt.Options(new String[] { "fast", "--project", ":" }).get("project", "").equals(":"),
             "the root project stays ':'"
         );
         require(
-            Modaccel.unknownCommand("complie").startsWith("Unknown command complie. Did you mean compile?"),
+            Mmt.unknownCommand("complie").startsWith("Unknown command complie. Did you mean compile?"),
             "a typed command slip gets the real one"
         );
-        require(!Modaccel.unknownCommand("xyzzy").contains("Did you mean"), "no guess for nonsense");
+        require(!Mmt.unknownCommand("xyzzy").contains("Did you mean"), "no guess for nonsense");
         // Gradle's message for --project :26.4, as Diorama's build printed it.
-        String noProject = Modaccel.plainError(
+        String noProject = Mmt.plainError(
             new java.io.IOException(
                 Build.discoveryHeadline("A problem") +
-                "\nA problem occurred configuring root project 'diorama'.\n> Could not create task ':modaccelMetadata'.\n   > No project :26.4; available projects: [:, :26.2, :26.3, :26.3-neoforge]\nLog: x"
+                "\nA problem occurred configuring root project 'diorama'.\n> Could not create task ':mmtMetadata'.\n   > No project :26.4; available projects: [:, :26.2, :26.3, :26.3-neoforge]\nLog: x"
             )
         );
         require(
@@ -893,11 +893,11 @@ public final class StrangerTest {
             "a wrong --project lists the real ones plainly: " + noProject
         );
         try {
-            new Modaccel.Options(new String[] { "fast", "--nope", "x" });
+            new Mmt.Options(new String[] { "fast", "--nope", "x" });
             throw new AssertionError("an unknown option passed");
         } catch (IllegalArgumentException expected) {
             require(
-                expected.getMessage().contains("modaccel help fast"),
+                expected.getMessage().contains("mmt help fast"),
                 "an unknown option points to the command's help: " + expected.getMessage()
             );
         }
@@ -938,7 +938,7 @@ public final class StrangerTest {
                 )
             )
         );
-        String text = Modaccel.setupText(Modaccel.summary(model, project), project);
+        String text = Mmt.setupText(Mmt.summary(model, project), project);
         require(
             text.contains("2 mod projects:") &&
             text.contains(":26.3  fabric, Minecraft 26.3") &&
@@ -1050,7 +1050,7 @@ public final class StrangerTest {
 
     /** A require = 0 injection on a misspelt method passed mixin-check as "9 applied": Mixin skips it without a word. The line is MixinAudit's own, from Diorama. */
     static void optionalInjections() {
-        String text = Modaccel.optionalInjections(
+        String text = Mmt.optionalInjections(
             List.of(
                 "# 9 mixins, 9 targets, 20 members checked, 0 dead",
                 "note: src/main/java/dev/diorama/mixin/PauseScreenTitleMixin.java:12 optional (require = 0): @Inject method 'inti' not found in net.minecraft.client.gui.screens.TitleScreen (methods: init, <init>, tick, <clinit>, added)"
@@ -1065,7 +1065,7 @@ public final class StrangerTest {
             "an optional injection with no target is named: " + text
         );
         require(
-            Modaccel.optionalInjections(List.of("# 9 mixins, 9 targets, 21 members checked, 0 dead")).isEmpty(),
+            Mmt.optionalInjections(List.of("# 9 mixins, 9 targets, 21 members checked, 0 dead")).isEmpty(),
             "nothing optional, nothing said"
         );
     }
@@ -1075,7 +1075,7 @@ public final class StrangerTest {
         List<String> similar = Explain.jdkSimilar("java.lang.Math", "rond");
         require(similar != null && similar.contains("round"), "a misspelt JDK member gets the real name: " + similar);
         require(Explain.jdkSimilar("java.lang.Math", "round") == null, "a real JDK member is not a typo");
-        // A build compiling for a newer Java than modaccel runs on: its own JDK's modules image is read.
+        // A build compiling for a newer Java than mmt runs on: its own JDK's modules image is read.
         Path home = Path.of(System.getProperty("java.home"));
         List<String> fromImage = Explain.jdkSimilar("java.lang.Math", "rond", home);
         require(
@@ -1156,12 +1156,12 @@ public final class StrangerTest {
             entry.endsWith(".jar") && Files.isRegularFile(Path.of(entry))
         ) {
             try (var jar = new java.util.jar.JarFile(entry)) {
-                if (jar.getEntry("Modaccel.class") == null) continue;
+                if (jar.getEntry("Mmt.class") == null) continue;
                 require(
-                    "ModaccelLauncher".equals(jar.getManifest().getMainAttributes().getValue("Main-Class")),
+                    "MmtLauncher".equals(jar.getManifest().getMainAttributes().getValue("Main-Class")),
                     "the jar starts at the Java 8 launcher"
                 );
-                byte[] header = jar.getInputStream(jar.getEntry("ModaccelLauncher.class")).readNBytes(8);
+                byte[] header = jar.getInputStream(jar.getEntry("MmtLauncher.class")).readNBytes(8);
                 require(
                     (((header[6] & 255) << 8) | (header[7] & 255)) == 52,
                     "the launcher class is Java 8 (class version 52)"

@@ -13,7 +13,7 @@ import org.objectweb.asm.*;
 /** Loader-independent dev-client control. All game operations run after a rendered frame. */
 public final class PortableAgent {
     private static final Queue<Runnable> pending = new ConcurrentLinkedQueue<Runnable>();
-    private static final String token = System.getProperty("modaccel.token", "");
+    private static final String token = System.getProperty("mmt.token", "");
     private static Object client; private static boolean started;
     private static Object pauseOptions; private static Field pauseField; private static boolean originalPauseOnLostFocus;
     private static String pauseControlError;
@@ -36,7 +36,7 @@ public final class PortableAgent {
         // Only JDK classes are referenced by transformed game code. Isolated loaders
         // need neither our jar on their mod path nor access to our implementation classes.
         HotReload.install(instrumentation);
-        System.getProperties().put("modaccel.frame", new Consumer<Object>() { public void accept(Object game) { frame(game); } });
+        System.getProperties().put("mmt.frame", new Consumer<Object>() { public void accept(Object game) { frame(game); } });
         instrumentation.addTransformer(new ClassFileTransformer() {
             public byte[] transform(ClassLoader loader, String name, Class<?> type, ProtectionDomain domain, byte[] bytes) {
                 if (name == null || (!name.equals("net/minecraft/client/Minecraft") && !name.equals("net/minecraft/client/MinecraftClient"))) return null;
@@ -52,7 +52,7 @@ public final class PortableAgent {
                                     @Override public void visitInsn(int opcode) {
                                         if (opcode == Opcodes.RETURN) {
                                             super.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "getProperties", "()Ljava/util/Properties;", false);
-                                            super.visitLdcInsn("modaccel.frame");
+                                            super.visitLdcInsn("mmt.frame");
                                             super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Properties", "get", "(Ljava/lang/Object;)Ljava/lang/Object;", false);
                                             super.visitTypeInsn(Opcodes.CHECKCAST, "java/util/function/Consumer");
                                             // Not ALOAD 0: the shipped game's stack frames mark `this` dead before some
@@ -68,9 +68,9 @@ public final class PortableAgent {
                             return delegate;
                         }
                     }, 0);
-                    if (hooks[0] == 0) { System.err.println("MODACCEL_AGENT_UNSUPPORTED no render hook in " + name); return null; }
+                    if (hooks[0] == 0) { System.err.println("MMT_AGENT_UNSUPPORTED no render hook in " + name); return null; }
                     return writer.toByteArray();
-                } catch (Throwable error) { System.err.println("MODACCEL_AGENT_ERROR " + error); return null; }
+                } catch (Throwable error) { System.err.println("MMT_AGENT_ERROR " + error); return null; }
             }
         });
     }
@@ -82,14 +82,14 @@ public final class PortableAgent {
                 pauseField = pauseOptions.getClass().getField("pauseOnLostFocus");
                 originalPauseOnLostFocus = pauseField.getBoolean(pauseOptions);
                 pauseField.setBoolean(pauseOptions, false);
-            } catch (Exception error) { pauseControlError = cause(error); System.err.println("MODACCEL_PAUSE_CONTROL_ERROR " + pauseControlError); }
+            } catch (Exception error) { pauseControlError = cause(error); System.err.println("MMT_PAUSE_CONTROL_ERROR " + pauseControlError); }
             HotReload.baseline();
-            Thread server = new Thread(new Runnable() { public void run() { serve(); } }, "modaccel-control");
+            Thread server = new Thread(new Runnable() { public void run() { serve(); } }, "mmt-control");
             server.setDaemon(true); server.start();
         }
         try { Object current = screen(); if (current != lastScreen) { lastScreen = current; screenSince = System.nanoTime(); } } catch (Exception ignored) {}
         if (serving || !pending.isEmpty()) lastRequest = System.nanoTime();
-        else if (answered && Boolean.getBoolean("modaccel.background") && System.nanoTime() - lastRequest > IDLE_AFTER)
+        else if (answered && Boolean.getBoolean("mmt.background") && System.nanoTime() - lastRequest > IDLE_AFTER)
             synchronized (wake) { try { wake.wait(1000 / IDLE_FPS); } catch (InterruptedException stop) { Thread.currentThread().interrupt(); } }
         int count = pending.size();
         for (int i = 0; i < count; i++) { Runnable action = pending.poll(); if (action != null) action.run(); }
@@ -97,11 +97,11 @@ public final class PortableAgent {
     private static void serve() {
         try (ServerSocket server = new ServerSocket(0, 16, InetAddress.getByName("127.0.0.1"))) {
             String runtime = java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
-            identity.putAll(Json.map("schema", 1, "root", System.getProperty("modaccel.root"), "fingerprint", System.getProperty("modaccel.fingerprint"),
+            identity.putAll(Json.map("schema", 1, "root", System.getProperty("mmt.root"), "fingerprint", System.getProperty("mmt.fingerprint"),
                     "token", token, "pid", Long.parseLong(runtime), "port", server.getLocalPort(), "clientClass", client.getClass().getName(), "started", System.currentTimeMillis(),
-                    "background", Boolean.getBoolean("modaccel.background"), "quiet", Boolean.getBoolean("modaccel.quiet")));
-            Json.save(Paths.get(System.getProperty("modaccel.state"), "agent.json"), identity);
-            System.out.println("MODACCEL_READY " + Json.write(identity)); System.out.flush();
+                    "background", Boolean.getBoolean("mmt.background"), "quiet", Boolean.getBoolean("mmt.quiet")));
+            Json.save(Paths.get(System.getProperty("mmt.state"), "agent.json"), identity);
+            System.out.println("MMT_READY " + Json.write(identity)); System.out.flush();
             while (true) {
                 try (Socket socket = server.accept()) {
                     socket.setSoTimeout(135000);
@@ -116,10 +116,10 @@ public final class PortableAgent {
                     pending.add(new Runnable() { public void run() { try { perform(request, result); } catch (Throwable e) { result.complete(Json.map("ok", false, "error", cause(e))); } } });
                     try { output.println(Json.write(result.get(130, TimeUnit.SECONDS))); }
                     catch (Exception error) { result.cancel(false); output.println(Json.write(Json.map("ok", false, "error", "Game did not finish the requested action: " + cause(error)))); }
-                } catch (Throwable error) { System.err.println("MODACCEL_CONTROL_ERROR " + cause(error)); }
+                } catch (Throwable error) { System.err.println("MMT_CONTROL_ERROR " + cause(error)); }
                 finally { if (serving) { lastRequest = System.nanoTime(); serving = false; answered = true; } }
             }
-        } catch (Throwable error) { System.err.println("MODACCEL_AGENT_ERROR " + cause(error)); }
+        } catch (Throwable error) { System.err.println("MMT_AGENT_ERROR " + cause(error)); }
     }
     /**
      * Compiles off the game thread, then runs on it unless the snippet asked for the control thread.
@@ -179,7 +179,7 @@ public final class PortableAgent {
                     "integratedServer", singleplayer != null, "level", hasLevel, "worldPath", singleplayer == null ? "" : worldPath(singleplayer),
                     "pauseOnLostFocus", pauseField.getBoolean(pauseOptions), "debugInput", debugInput,
                     "gameDirectory", gameDirectory(), "narrator", narrator(), "masterVolume", masterVolume(),
-                    "backgroundApplied", System.getProperty("modaccel.background.applied", ""), "backgroundError", System.getProperty("modaccel.background.error", ""), "frozen", System.getProperty("modaccel.frozen", "")));
+                    "backgroundApplied", System.getProperty("mmt.background.applied", ""), "backgroundError", System.getProperty("mmt.background.error", ""), "frozen", System.getProperty("mmt.frozen", "")));
         } else if (command.equals("resize")) {
             int width = number(request, "width"), height = number(request, "height");
             if (width < 320 || width > 7680 || height < 240 || height > 4320) throw new IllegalArgumentException("Unsupported frame size");
@@ -203,7 +203,7 @@ public final class PortableAgent {
             for (Constructor<?> constructor : dataType.getConstructors()) {
                 Class<?>[] parameters = constructor.getParameterTypes();
                 if (parameters.length != 3 || parameters[0] != String.class || parameters[1] != String.class || !parameters[2].isEnum()) continue;
-                data = constructor.newInstance("modaccel", address, parameters[2].getEnumConstants()[0]); break;
+                data = constructor.newInstance("mmt", address, parameters[2].getEnumConstants()[0]); break;
             }
             if (data == null) throw new IllegalStateException("Unsupported server data constructor");
             Object title = load("net.minecraft.client.gui.screens.TitleScreen", "net.minecraft.client.gui.screen.TitleScreen").getDeclaredConstructor().newInstance();
@@ -253,7 +253,7 @@ public final class PortableAgent {
             }
             if (command.equals("ready")) { done.complete(Json.map("ok", true, "screen", screenName)); return; }
             final Path file = Paths.get(Json.text(request, "path", "")).toAbsolutePath().normalize();
-            Path allowed = Paths.get(System.getProperty("modaccel.root"), "build/modaccel/shots").toAbsolutePath().normalize();
+            Path allowed = Paths.get(System.getProperty("mmt.root"), "build/mmt/shots").toAbsolutePath().normalize();
             if (!file.startsWith(allowed)) throw new IllegalArgumentException("Captures must be inside " + allowed);
             final int width = number(request, "width"), height = number(request, "height");
             Object target;
@@ -524,16 +524,16 @@ public final class PortableAgent {
                                 invoke(call(running, "tickRateManager", "getTickManager"), new String[]{"setFrozen"}, true);
                                 String time = "";
                                 try { time = ", game time " + call(call(running, "overworld", "getOverworld"), "getGameTime", "getTime"); } catch (Exception noLevelYet) { }
-                                System.setProperty("modaccel.frozen", "at load" + time);
-                            } catch (Exception none) { System.setProperty("modaccel.frozen", "no tick freeze in this game: " + cause(none)); }
+                                System.setProperty("mmt.frozen", "at load" + time);
+                            } catch (Exception none) { System.setProperty("mmt.frozen", "no tick freeze in this game: " + cause(none)); }
                         });
                         return;
                     }
                     Thread.sleep(2);
                 }
-                System.setProperty("modaccel.frozen", "the world's server never started");
-            } catch (Exception failure) { System.setProperty("modaccel.frozen", "failed: " + cause(failure)); }
-        }, "modaccel-freeze");
+                System.setProperty("mmt.frozen", "the world's server never started");
+            } catch (Exception failure) { System.setProperty("mmt.frozen", "failed: " + cause(failure)); }
+        }, "mmt-freeze");
         watcher.setDaemon(true);
         watcher.start();
     }

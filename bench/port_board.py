@@ -6,7 +6,7 @@
     python bench/port_board.py --record           also write a ledger row and a measure point for each result that changed
 
 Each case is a mod's source at a pinned commit, cloned once into .runs/port-board/<id>, put back to that
-commit before every run, and ported with `modaccel port --fix`: nothing is written by hand. The table says,
+commit before every run, and ported with `mmt port --fix`: nothing is written by hand. The table says,
 for each port, what the measures and the ledger have recorded, what the last board run got, and what this
 run got. Below it, the errors still left across every mod are grouped by the game update that caused them,
 biggest first: that is the next rule to write.
@@ -31,7 +31,7 @@ import record  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 CASES = ROOT / "bench" / "port-cases.json"
 CACHE = ROOT / ".runs" / "port-board"
-KEEP = (".modaccel", ".gradle", "build", "run")   # a mod's own caches survive the reset, so the next port is warm
+KEEP = (".mmt", ".gradle", "build", "run")   # a mod's own caches survive the reset, so the next port is warm
 RANK = {"stop": 0, "build": 1, "load": 2, "behaviour": 3}
 
 
@@ -39,16 +39,16 @@ def sh(cmd, cwd=None, timeout=None):
     return subprocess.run([str(c) for c in cmd], cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
 
 
-def modaccel_cmd(path):
+def mmt_cmd(path):
     path = Path(path)
     return [sys.executable, str(path)] if path.suffix == ".py" else [str(path)]
 
 
-def default_modaccel():
-    return ROOT / ("modaccel.cmd" if os.name == "nt" else "modaccel")
+def default_mmt():
+    return ROOT / ("mmt.cmd" if os.name == "nt" else "mmt")
 
 
-def checkout(case, cache, modaccel):
+def checkout(case, cache, mmt):
     """The case's source at its pinned commit, with whatever the last port wrote taken back."""
     work = cache / case["id"]
     if not (work / ".git").exists():
@@ -57,7 +57,7 @@ def checkout(case, cache, modaccel):
         if r.returncode:
             raise RuntimeError(f"git clone {case['repo']} failed: {r.stderr.strip()[-300:]}")
     else:
-        sh(modaccel + ["port", "--root", work, "--undo"])   # let modaccel close its own transaction first; none is fine
+        sh(mmt + ["port", "--root", work, "--undo"])   # let mmt close its own transaction first; none is fine
     if sh(["git", "cat-file", "-e", case["commit"] + "^{commit}"], cwd=work).returncode:
         r = sh(["git", "fetch", "--quiet", "origin", case["commit"]], cwd=work)
         if r.returncode:
@@ -82,15 +82,15 @@ def source_version(work):
     return None
 
 
-def run_case(case, cache, modaccel, timeout, fingerprint=False):
+def run_case(case, cache, mmt, timeout, fingerprint=False):
     """Port one case and return what it reached. Never raises: a port that cannot run is a result too."""
     started = time.time()
     try:
-        work = checkout(case, cache, modaccel)
+        work = checkout(case, cache, mmt)
         pinned = source_version(work)
         if pinned and pinned != case["from"]:
             raise RuntimeError(f"the pinned source is on Minecraft {pinned}, but the case ports from {case['from']}: fix its commit or its from in bench/port-cases.json")
-        cmd = modaccel + ["port", "--root", work, "--from", case["from"], "--to", case["to"], "--fix", "--json"]
+        cmd = mmt + ["port", "--root", work, "--from", case["from"], "--to", case["to"], "--fix", "--json"]
         if fingerprint:
             cmd += ["--check", "fingerprint"]
         if case.get("project"):
@@ -98,7 +98,7 @@ def run_case(case, cache, modaccel, timeout, fingerprint=False):
         r = sh(cmd, timeout=timeout)
         line = next((l for l in reversed(r.stdout.splitlines()) if l.startswith("{")), None)
         if not line:
-            raise RuntimeError("modaccel port printed no result: " + " ".join((r.stderr or r.stdout).split())[-300:])
+            raise RuntimeError("mmt port printed no result: " + " ".join((r.stderr or r.stdout).split())[-300:])
         out = json.loads(line)
         (cache / f"{case['id']}.json").write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
         run = record.read_port(out)
@@ -136,7 +136,7 @@ def write_sweep(cases, results, path):
                              "date": time.strftime("%Y-%m-%d")}
     rows = list(runs.values())
     same = sum(bool((r.get("fingerprint") or {}).get("same")) for r in rows)
-    data = {"about": "modaccel port --fix --check fingerprint on the cases in bench/port-cases.json, by python bench/port_board.py --fingerprint. "
+    data = {"about": "mmt port --fix --check fingerprint on the cases in bench/port-cases.json, by python bench/port_board.py --fingerprint. "
                      "A port counts when the mod's fingerprint after it matches the one before, on what the mod owns (FINGERPRINT.md).",
             "corpus": len(json.loads(CASES.read_text(encoding="utf-8"))["cases"]),
             "latest": {"date": time.strftime("%Y-%m-%d"), "runs": len(rows), "built": sum(bool(r.get("built")) for r in rows),
@@ -224,7 +224,7 @@ def main(argv=None, book=None, ledger=None):
     ap.add_argument("--only", help="comma-separated case ids")
     ap.add_argument("--list", action="store_true", help="print the cases and what is recorded, run nothing")
     ap.add_argument("--record", action="store_true", help="write a ledger row and a measure point for each result that differs from the record")
-    ap.add_argument("--modaccel", type=Path, default=default_modaccel(), help="the modaccel to test (default: this checkout's); another worktree's for an A/B run")
+    ap.add_argument("--mmt", type=Path, default=default_mmt(), help="the mmt to test (default: this checkout's); another worktree's for an A/B run")
     ap.add_argument("--cases", type=Path, default=CASES)
     ap.add_argument("--cache", type=Path, default=CACHE, help="where the clones and the last results live")
     ap.add_argument("--timeout", type=int, default=7200, help="seconds one port may take (a cold NeoForge setup decompiles the game)")
@@ -256,10 +256,10 @@ def main(argv=None, book=None, ledger=None):
         return 0
 
     results = {}
-    modaccel = modaccel_cmd(args.modaccel)
+    mmt = mmt_cmd(args.mmt)
     for i, c in enumerate(cases, 1):
         print(f"[{i}/{len(cases)}] {c['id']} ...", file=sys.stderr, flush=True)
-        results[c["id"]] = run_case(c, args.cache, modaccel, args.timeout, args.fingerprint)
+        results[c["id"]] = run_case(c, args.cache, mmt, args.timeout, args.fingerprint)
         print(f"         {words(results[c['id']])} in {results[c['id']]['seconds']:.0f} s", file=sys.stderr, flush=True)
     print(board(cases, results, book, ledger, previous))
     causes = left_by_cause(cases, results)

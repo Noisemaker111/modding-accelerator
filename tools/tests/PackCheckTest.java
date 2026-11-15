@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.zip.*;
 
 /**
- * pack-check's parts that need no game, on jars built here, with no network (modaccel.pack.offline; mod sides are
+ * pack-check's parts that need no game, on jars built here, with no network (mmt.pack.offline; mod sides are
  * pre-cached). Inputs: a CurseForge export unpacked once, a CurseForge app instance, a Modrinth .mrpack, a Prism
  * instance, the vanilla launcher's folder and a bare mods folder whose loader is read from its jars. Metadata: Forge's
  * mods.toml with a bundled jar, Fabric's fabric.mod.json and Quilt's quilt.mod.json. Checks: duplicates, missing and
@@ -23,10 +23,10 @@ public final class PackCheckTest {
     static int count;
 
     public static void main(String[] args) throws Exception {
-        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("modaccel-pack");
+        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("mmt-pack");
         String home = System.getProperty("user.home");
         System.setProperty("user.home", scratch.resolve("home").toString());
-        System.setProperty("modaccel.pack.offline", "true");
+        System.setProperty("mmt.pack.offline", "true");
         try {
             forge(harness, scratch);
             inputs(harness, scratch);
@@ -355,7 +355,7 @@ public final class PackCheckTest {
 
     // ------------------------------------------------------------------ the shapes a pack arrives in
     static void inputs(Path harness, Path scratch) throws Exception {
-        Path modrinth = Files.createDirectories(scratch.resolve("home/.modaccel/packs/modrinth"));
+        Path modrinth = Files.createDirectories(scratch.resolve("home/.mmt/packs/modrinth"));
         // A CurseForge app instance lists each mod's project and file; their sides come from the (pre-cached) file API. A jar added by hand stays unknown.
         Path app = scratch.resolve("app"), appMods = Files.createDirectories(app.resolve("mods"));
         jar(appMods.resolve("blur-forge-3.1.1.jar"), Map.of("META-INF/mods.toml", toml("blur", "3.1.1", "")));
@@ -371,7 +371,7 @@ public final class PackCheckTest {
             new String[] { "11-111", "blur-forge-3.1.1.jar", "\"1.20.1\",\"Forge\",\"Client\"" },
             new String[] { "22-222", "traverse-forge-7.0.12.jar", "\"1.20.1\",\"Forge\",\"Client\",\"Server\"" }
         )) {
-            Path meta = Files.createDirectories(scratch.resolve("home/.modaccel/packs/curseforge/" + file[0])).resolve("file.json");
+            Path meta = Files.createDirectories(scratch.resolve("home/.mmt/packs/curseforge/" + file[0])).resolve("file.json");
             Files.writeString(meta, "{\"data\":{\"fileName\":\"" + file[1] + "\",\"fileLength\":1,\"gameVersions\":[" + file[2] + "]}}");
         }
         jar(appMods.resolve("zoomify.jar"), Map.of("fabric.mod.json", "{\"id\":\"zoomify\",\"version\":\"2\"}"));
@@ -403,8 +403,8 @@ public final class PackCheckTest {
         expect(
             unpacked.mods().size() == 1 &&
             unpacked.format().equals("curseforge-export") &&
-            unpackedAt.startsWith(scratch.resolve("home/.modaccel/packs/exports")) &&
-            Files.isRegularFile(unpackedAt.resolve(".modaccel-unpacked")),
+            unpackedAt.startsWith(scratch.resolve("home/.mmt/packs/exports")) &&
+            Files.isRegularFile(unpackedAt.resolve(".mmt-unpacked")),
             "an export is unpacked into the cache: " + unpackedAt
         );
         Files.writeString(unpackedAt.resolve("seen-before.txt"), "x");
@@ -415,7 +415,7 @@ public final class PackCheckTest {
         Path lithium = jar(scratch.resolve("lithium.jar"), Map.of("fabric.mod.json", "{\"id\":\"lithium\",\"version\":\"0.15\"}"));
         Path sodium = jar(scratch.resolve("sodium.jar"), Map.of("fabric.mod.json", "{\"id\":\"sodium\",\"version\":\"0.6\"}"));
         for (Path j : List.of(lithium, sodium)) {
-            Path cached = Files.createDirectories(scratch.resolve("home/.modaccel/packs/modrinth-files").resolve(PackCheck.sha1(j))).resolve(j.getFileName());
+            Path cached = Files.createDirectories(scratch.resolve("home/.mmt/packs/modrinth-files").resolve(PackCheck.sha1(j))).resolve(j.getFileName());
             Files.copy(j, cached);
         }
         String index = Json.write(
@@ -490,7 +490,7 @@ public final class PackCheckTest {
         var lithiumEntry = Json.array(Json.object(Json.parse(fixedIndex)).get("files")).stream().map(Json::object).filter(f -> f.get("path").equals("mods/lithium.jar")).findFirst().orElseThrow();
         expect(
             fromSpaced.mods().size() == 2 &&
-            fixedCopy.getFileName().toString().equals("Small Pack 1.0 (modaccel fixed).mrpack") &&
+            fixedCopy.getFileName().toString().equals("Small Pack 1.0 (mmt fixed).mrpack") &&
             Json.object(lithiumEntry.get("env")).get("server").equals("unsupported"),
             "a pack under a path with spaces is read, and its fixed copy marks a server-only jar: " + fixedCopy + " " + lithiumEntry
         );
@@ -749,7 +749,7 @@ public final class PackCheckTest {
         );
         var crashedAfter = PackChecks.suspects(startedLog + "\n" + mixinLog, List.of(), scan, fabric);
         expect(crashedAfter.size() == 1 && crashedAfter.get(0).get("mod").equals("iris"), "a failure after the start still names its mod: " + crashedAfter);
-        String probe = Files.readString(harness.resolve("tools/packcheck/ModaccelPackProbe.java"));
+        String probe = Files.readString(harness.resolve("tools/packcheck/MmtPackProbe.java"));
         expect(
             probe.contains("\"net.minecraftforge.fml.server.ServerLifecycleHooks\"") && probe.contains("for (String hooks : SERVER_HOOKS)"),
             "the probe looks for the server where Forge 1.16 keeps it (net.minecraftforge.fml.server.ServerLifecycleHooks)"
@@ -980,10 +980,10 @@ public final class PackCheckTest {
         Files.writeString(install.resolve("libraries/net/neoforged/neoforge/21.1.77/" + name), "-p libraries/a.jar\n-DlibraryDirectory=libraries\n--launchTarget forgeserver\n");
         Path instance = Files.createDirectories(scratch.resolve("loader-instance"));
         List<String> launch = neo.launch(install, instance, "1.21.1", "21.1.77");
-        String args = Files.readString(instance.resolve("modaccel-args.txt"));
+        String args = Files.readString(instance.resolve("mmt-args.txt"));
         String libraries = install.resolve("libraries").toString().replace('\\', '/');
         expect(
-            launch.equals(List.of("@" + instance.resolve("modaccel-args.txt"))) && args.contains("-p " + libraries + "/a.jar") && args.contains("-DlibraryDirectory=" + libraries),
+            launch.equals(List.of("@" + instance.resolve("mmt-args.txt"))) && args.contains("-p " + libraries + "/a.jar") && args.contains("-DlibraryDirectory=" + libraries),
             "the args file's library paths are made absolute: " + args
         );
         // The launch-jar style: the launcher is told where the vanilla server is.
@@ -1005,7 +1005,7 @@ public final class PackCheckTest {
     static PackCheck check(Path harness, Path scratch, String... options) {
         List<String> args = new ArrayList<>(List.of("pack-check"));
         args.addAll(List.of(options));
-        return new PackCheck(harness, new Modaccel.Options(args.toArray(String[]::new)), new Modaccel.Report(scratch, "pack-check"));
+        return new PackCheck(harness, new Mmt.Options(args.toArray(String[]::new)), new Mmt.Report(scratch, "pack-check"));
     }
 
     static String toml(String id, String version, String dependencies) {

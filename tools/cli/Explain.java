@@ -28,7 +28,7 @@ final class Explain {
 
     record ClassInfo(String name, String superName, List<String> interfaces, int access, List<Member> members) {}
 
-    Map<String, Object> run(Modaccel.Options options) throws Exception {
+    Map<String, Object> run(Mmt.Options options) throws Exception {
         String[] selected = build.selected.split(",");
         if (selected.length != 2) throw new IllegalArgumentException(
             "explain needs --project :failing-project --against :building-project"
@@ -150,7 +150,7 @@ final class Explain {
                 Matcher finding = Pattern.compile("^" + Port.FILE + ":(\\d+) (.*)$").matcher(line);
                 if (line.startsWith("note:") || !finding.matches()) continue;
                 if (hints++ == 0) out.append(
-                    "\nHand audit hints (modaccel reads the class files; a guess, not Mixin's verdict):\n"
+                    "\nHand audit hints (mmt reads the class files; a guess, not Mixin's verdict):\n"
                 );
                 String file = source(build.project.root.resolve(finding.group(1)).toString());
                 if (!file.equals(lastAudited)) {
@@ -618,7 +618,7 @@ final class Explain {
                 : Runtime.version().feature() >= release ? jdkSimilar(jdk, name) : null;
             String where = home != null
                 ? "the JDK this build compiles with (" + home + ")"
-                : "Java " + Runtime.version().feature() + " (this modaccel's runtime)";
+                : "Java " + Runtime.version().feature() + " (this mmt's runtime)";
             if (similar != null) return List.of(
                 "JDK  " +
                 jdk +

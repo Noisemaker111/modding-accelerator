@@ -20,21 +20,21 @@ public final class PackageAcceptanceTest {
             .resolve("portable package with spaces");
         String digest = sha256(zip);
         check(
-            Files.readString(sha).equals(digest + "  modaccel-portable.zip\n"),
+            Files.readString(sha).equals(digest + "  mmt-portable.zip\n"),
             "ZIP SHA-256 matches distribution checksum"
         );
         Set<String> expected = Set.of(
-            "modaccel.jar",
-            "modaccel.jar.sha256",
-            "modaccel",
-            "modaccel.cmd",
+            "mmt.jar",
+            "mmt.jar.sha256",
+            "mmt",
+            "mmt.cmd",
             "LICENSE",
             "NOTICE",
             "PERFORMANCE.md",
             "GETTING_STARTED.txt",
             "bootstrap-jre.ps1"
         );
-        Set<String> desktop = Set.of("modaccel-desktop.exe", "modaccel-desktop-linux");
+        Set<String> desktop = Set.of("mmt-desktop.exe", "mmt-desktop-linux");
         Files.createDirectories(extracted);
         try (ZipFile archive = new ZipFile(zip.toFile())) {
             Set<String> actual = new HashSet<>();
@@ -52,9 +52,9 @@ public final class PackageAcceptanceTest {
             }
             check(actual.equals(expected), "ZIP has complete self-contained file set");
         }
-        String jarDigest = sha256(extracted.resolve("modaccel.jar"));
+        String jarDigest = sha256(extracted.resolve("mmt.jar"));
         check(
-            Files.readString(extracted.resolve("modaccel.jar.sha256")).equals(jarDigest + "  modaccel.jar\n"),
+            Files.readString(extracted.resolve("mmt.jar.sha256")).equals(jarDigest + "  mmt.jar\n"),
             "extracted JAR matches bundled checksum"
         );
         byte[] bytes = Files.readAllBytes(zip);
@@ -72,18 +72,18 @@ public final class PackageAcceptanceTest {
             check(u32(bytes, pos) == 0x02014b50L, "ZIP central entry is valid");
             int length = u16(bytes, pos + 28), next = pos + 46 + length + u16(bytes, pos + 30) + u16(bytes, pos + 32);
             String name = new String(bytes, pos + 46, length, StandardCharsets.UTF_8);
-            if (name.equals("modaccel")) shellExecutable =
+            if (name.equals("mmt")) shellExecutable =
                 bytes[pos + 5] == 3 && ((u32(bytes, pos + 38) >>> 16) & 0111) == 0111;
             pos = next;
         }
         check(shellExecutable, "POSIX launcher is marked executable in ZIP");
         Path outside = Path.of(args[2]).toAbsolutePath();
         if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win")) {
-            Path launcher = extracted.resolve("modaccel.cmd");
+            Path launcher = extracted.resolve("mmt.cmd");
             String javaHome = System.getProperty("java.home");
             Outcome help = run(List.of(launcher.toString(), "help"), extracted, Map.of("JAVA_HOME", javaHome));
             check(
-                help.exit == 0 && help.output.contains("modaccel <"),
+                help.exit == 0 && help.output.contains("mmt <"),
                 "extracted Windows launcher starts JAR from path with spaces"
             );
             Outcome support = run(
@@ -96,7 +96,7 @@ public final class PackageAcceptanceTest {
                 "packaged support runs outside a project"
             );
             Outcome badRoot = run(
-                List.of(launcher.toString(), "discover", "--root", extracted.resolve("modaccel.jar").toString()),
+                List.of(launcher.toString(), "discover", "--root", extracted.resolve("mmt.jar").toString()),
                 outside,
                 Map.of("JAVA_HOME", javaHome)
             );
@@ -113,7 +113,7 @@ public final class PackageAcceptanceTest {
             missing.directory(extracted.toFile()).redirectErrorStream(true);
             missing.environment().remove("JAVA_HOME");
             missing.environment().put("PATH", System.getenv("SystemRoot") + "\\System32");
-            missing.environment().put("MODACCEL_NO_DOWNLOAD", "1");
+            missing.environment().put("MMT_NO_DOWNLOAD", "1");
             Process process = missing.start();
             String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             check(
@@ -121,7 +121,7 @@ public final class PackageAcceptanceTest {
                 "missing Java explains prerequisite"
             );
         } else {
-            Path launcher = extracted.resolve("modaccel");
+            Path launcher = extracted.resolve("mmt");
             Files.setPosixFilePermissions(
                 launcher,
                 Set.of(
@@ -137,7 +137,7 @@ public final class PackageAcceptanceTest {
             String javaHome = System.getProperty("java.home");
             Outcome help = run(List.of(launcher.toString(), "help"), outside, Map.of("JAVA_HOME", javaHome));
             check(
-                help.exit == 0 && help.output.contains("modaccel <"),
+                help.exit == 0 && help.output.contains("mmt <"),
                 "extracted POSIX launcher starts JAR from path with spaces"
             );
             Outcome support = run(
@@ -150,7 +150,7 @@ public final class PackageAcceptanceTest {
                 "packaged support runs outside a project"
             );
             Outcome badRoot = run(
-                List.of(launcher.toString(), "discover", "--root", extracted.resolve("modaccel.jar").toString()),
+                List.of(launcher.toString(), "discover", "--root", extracted.resolve("mmt.jar").toString()),
                 outside,
                 Map.of("JAVA_HOME", javaHome)
             );

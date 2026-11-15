@@ -4,7 +4,7 @@ import java.util.*;
 /** Source-only gates for the reviewed, mapping-backed precompile recipes. */
 public final class PortPreflightTest {
     public static void main(String[] args) throws Exception {
-        Path scratch = Files.createTempDirectory("modaccel-preflight-");
+        Path scratch = Files.createTempDirectory("mmt-preflight-");
         Path map = scratch.resolve("reverse.json");
         Files.writeString(map, """
             { "from": "1.21.6", "to": "1.21.5", "names": "yarn",

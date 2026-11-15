@@ -166,7 +166,7 @@ final class Support {
 
     static String text() {
         var data = features();
-        var text = new StringBuilder("Modding Accelerator " + VERSION + " (scoped beta)\n");
+        var text = new StringBuilder("Minecraft Modding Tools " + VERSION + " (scoped beta)\n");
         text.append("Input: ").append(data.get("input")).append('\n');
         for (Object item : Json.array(data.get("features"))) {
             var feature = Json.object(item);
@@ -194,8 +194,8 @@ final class Support {
             new TreeSet<>(loaders),
             "next",
             fabricOnly
-                ? "Run modaccel port --from OLD --to NEW --fix --root SOURCE"
-                : "Update this loader's target dependencies in the source build, then run modaccel port --from OLD --to NEW --fix --root SOURCE"
+                ? "Run mmt port --from OLD --to NEW --fix --root SOURCE"
+                : "Update this loader's target dependencies in the source build, then run mmt port --from OLD --to NEW --fix --root SOURCE"
         );
     }
 

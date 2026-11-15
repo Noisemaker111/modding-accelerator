@@ -134,7 +134,7 @@ function Test-GradleConfigures {
 	param([string]$Repo, [string]$Jdk, [int]$TimeoutSeconds = 240)
 	$launcher = Join-Path $Repo 'gradlew.bat'
 	if (-not (Test-Path $launcher)) { return [pscustomobject]@{ Ran = $false; Ok = $false; Seconds = 0; Reason = 'no gradlew.bat' } }
-	$logDir = Join-Path $Repo '.modaccel'
+	$logDir = Join-Path $Repo '.mmt'
 	New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 	$log = Join-Path $logDir 'toolchain-check.log'
 	$started = Get-Date
@@ -158,7 +158,7 @@ function Test-GradleConfigures {
 	if ($code -eq 0) { return [pscustomobject]@{ Ran = $true; Ok = $true; Seconds = $seconds; Reason = '' } }
 	$text = @(Get-Content $log -ErrorAction SilentlyContinue)
 	if (Test-Path "$log.err") { $text += @(Get-Content "$log.err" -ErrorAction SilentlyContinue) }
-	$reason = 'Gradle failed while configuring (see .modaccel\toolchain-check.log)'
+	$reason = 'Gradle failed while configuring (see .mmt\toolchain-check.log)'
 	$index = -1
 	for ($i = 0; $i -lt $text.Count; $i++) { if ($text[$i] -match 'What went wrong') { $index = $i; break } }
 	if ($index -ge 0) {
@@ -174,7 +174,7 @@ function Test-GradleDependencies {
 	param([string]$Repo, [string]$Jdk, [int]$TimeoutSeconds = 240, [string]$Prefix = '')
 	$launcher = Join-Path $Repo 'gradlew.bat'
 	if (-not (Test-Path $launcher)) { return [pscustomobject]@{ Ran = $false; Ok = $false; Reason = 'no gradlew.bat' } }
-	$logDir = Join-Path $Repo '.modaccel'
+	$logDir = Join-Path $Repo '.mmt'
 	New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 	$log = Join-Path $logDir 'toolchain-dependencies.log'
 	$oldHome = $env:JAVA_HOME
@@ -200,7 +200,7 @@ function Test-GradleDependencies {
 	}
 	$failed = @($text | Select-String -Pattern 'FAILED|Could not resolve ' | Select-Object -First 6 | ForEach-Object { $_.Line.Trim() })
 	if ($code -ne 0 -or $failed.Count -gt 0) {
-		$reason = if ($failed.Count -gt 0) { ($failed | Select-Object -First 2) -join ' / ' } else { 'dependencies task failed; see .modaccel\toolchain-dependencies.log' }
+		$reason = if ($failed.Count -gt 0) { ($failed | Select-Object -First 2) -join ' / ' } else { 'dependencies task failed; see .mmt\toolchain-dependencies.log' }
 		return [pscustomobject]@{ Ran = $true; Ok = $false; Reason = $reason }
 	}
 	return [pscustomobject]@{ Ran = $true; Ok = $true; Reason = '' }
@@ -697,7 +697,7 @@ function Get-SourceApiBreakage {
 	# Multi-loader repos keep sources under common/src, fabric/src, neoforge/src, so look for any
 	# src tree rather than only the repo root.
 	$files = @(Get-ChildItem $Repo -Recurse -Filter '*.java' -ErrorAction SilentlyContinue |
-		Where-Object { $_.FullName -match '\\src\\' -and $_.FullName -notmatch '\\build\\|\\\.gradle\\|\\generated\\|\\\.modaccel\\|\\run\\' })
+		Where-Object { $_.FullName -match '\\src\\' -and $_.FullName -notmatch '\\build\\|\\\.gradle\\|\\generated\\|\\\.mmt\\|\\run\\' })
 	if ($files.Count -eq 0) { return $null }
 	foreach ($file in $files) {
 		$text = Get-JavaSourceText -Path $file.FullName

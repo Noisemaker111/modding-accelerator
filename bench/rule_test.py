@@ -158,11 +158,11 @@ def pinned_sources(tmp, cache=CACHE):
 
 # ---- the porter's own rewrite ---------------------------------------------------------------------
 def run_examples(request, tmp):
-    """Package this checkout's modaccel, compile tools/tests/RuleExamples.java against it and run it on the request."""
+    """Package this checkout's mmt, compile tools/tests/RuleExamples.java against it and run it on the request."""
     boot = sh(["java", ROOT / "tools" / "cli" / "Bootstrap.java", ROOT, "package", "--json"])
-    jar = ROOT / "build" / "distributions" / "modaccel.jar"
+    jar = ROOT / "build" / "distributions" / "mmt.jar"
     if boot.returncode or not jar.is_file():
-        raise RuntimeError("could not package modaccel: " + " ".join((boot.stderr or boot.stdout).split())[-300:])
+        raise RuntimeError("could not package mmt: " + " ".join((boot.stderr or boot.stdout).split())[-300:])
     classes = tmp / "classes"
     classes.mkdir()
     c = sh(["javac", "-encoding", "UTF-8", "-cp", jar, "-d", classes, ROOT / "tools" / "tests" / "RuleExamples.java"])

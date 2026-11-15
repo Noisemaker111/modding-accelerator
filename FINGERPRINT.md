@@ -6,7 +6,7 @@ mod, and no rule, repair, bridge or pattern condition may name one either.
 
 ## What it records
 
-One probe, `tools/packcheck/ModaccelFingerprint.java`, written in Mojang names against the vanilla game. Every call that
+One probe, `tools/packcheck/MmtFingerprint.java`, written in Mojang names against the vanilla game. Every call that
 changed between versions is in a layer under `tools/packcheck/fingerprint/VERSION/` (1.16 to 26.x; the newest at or below
 the game's is used). It runs in the mod's hidden development client (loaded through `eval`, compiled inside the game
 against the game's own classes) or on the loader's real dedicated server (inside pack-check's probe jar).
@@ -27,7 +27,7 @@ against the game's own classes) or on the loader's real dedicated server (inside
 
 - The world: a flat world made by the vanilla server of the mod's Minecraft version, fixed seed (20261115), creative,
   easy, no structures, time fixed at noon and clear weather that stays, no mob, patrol, trader, phantom or warden
-  spawning. Kept per version and seed in `~/.modaccel/packs/fingerprint-worlds/`.
+  spawning. Kept per version and seed in `~/.mmt/packs/fingerprint-worlds/`.
 - Frozen from the first tick: `world-check --freeze` (and the server probe) queue the game's tick freeze the moment the
   server exists, so it runs while the spawn area loads, before any tick. Chunks load; blocks, entities, block entities
   and scheduled ticks stand still.
@@ -51,11 +51,11 @@ These show as leaves two baseline runs disagree on. A comparison leaves them out
 ## Commands
 
 ```sh
-./modaccel fingerprint --root my-mod --out before.json                    # the mod's hidden development client
-./modaccel fingerprint --jar my-mod.jar --minecraft 1.21.1 --loader neoforge   # the loader's real server
-./modaccel fingerprint-diff before.json after.json                        # exit 0 when they match
-./modaccel pack-check --pack my-pack.mrpack --fingerprint                 # the same probe on a whole pack
-./modaccel port --root my-mod --from 1.21.1 --to 1.21.4 --fix --check fingerprint
+./mmt fingerprint --root my-mod --out before.json                    # the mod's hidden development client
+./mmt fingerprint --jar my-mod.jar --minecraft 1.21.1 --loader neoforge   # the loader's real server
+./mmt fingerprint-diff before.json after.json                        # exit 0 when they match
+./mmt pack-check --pack my-pack.mrpack --fingerprint                 # the same probe on a whole pack
+./mmt port --root my-mod --from 1.21.1 --to 1.21.4 --fix --check fingerprint
 ```
 
 ## Where it is the definition

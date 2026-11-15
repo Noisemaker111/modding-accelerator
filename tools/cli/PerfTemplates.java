@@ -7,7 +7,7 @@ final class PerfTemplates {
     static final java.util.regex.Pattern SHARED_THREAD = java.util.regex.Pattern.compile(
         "^(Render thread|Server thread|main|Worker-Main|IO-Worker|Netty|ForkJoinPool|pool-|Download|Timer|Signal|Reference Handler|Finalizer|Common-Cleaner|JFR|Attach)");
 
-    static Map<String, Object> run(Modaccel.Options options) throws Exception {
+    static Map<String, Object> run(Mmt.Options options) throws Exception {
         String family = options.get("family", "transport");
         if (family.equals("experiment")) return experiment(options);
         List<Object> cases = new ArrayList<>();
@@ -54,7 +54,7 @@ final class PerfTemplates {
      * metric names its thread: a block entity that also ticks on the client would otherwise add its Render thread
      * calls to a server metric. Without --out the draft goes to .runs/ID-experiment, not bench/.
      */
-    static Map<String, Object> experiment(Modaccel.Options options) throws Exception {
+    static Map<String, Object> experiment(Mmt.Options options) throws Exception {
         Path capture = Path.of(options.get("from", "")).toAbsolutePath();
         if (!Files.isRegularFile(capture.resolve("report.json"))) throw new IllegalArgumentException("--from CAPTURE needs a perf capture folder with report.json");
         Map<String, Object> report = Json.read(capture.resolve("report.json"));
@@ -332,13 +332,13 @@ final class PerfTemplates {
         for (int i = 0; i < count; i++) {
             double x = 1 + (i % side) * spacing;
             double z = 1 + (i / side) * spacing;
-            setup.add(command(String.format(Locale.ROOT, "summon %s %.2f 64 %.2f {Tags:[\"modaccel_perf\"],PersistenceRequired:1b}", entity, x, z), "Summoned"));
+            setup.add(command(String.format(Locale.ROOT, "summon %s %.2f 64 %.2f {Tags:[\"mmt_perf\"],PersistenceRequired:1b}", entity, x, z), "Summoned"));
         }
-        Map<String, Object> present = command("execute if entity @e[tag=modaccel_perf]", "Test passed");
+        Map<String, Object> present = command("execute if entity @e[tag=mmt_perf]", "Test passed");
         return Json.map("id", entity.replace(':', '-') + "-" + count,
             "parameters", Json.map("entity", entity, "instances", count, "pen", "barrier box x=-1..33 y=63..70 z=-1..33"),
             "setup", setup, "before", List.of(present), "after", List.of(present),
-            "cleanup", List.of(Json.map("command", "kill @e[tag=modaccel_perf]", "expectAny", List.of("Killed", "No entity was found")),
+            "cleanup", List.of(Json.map("command", "kill @e[tag=mmt_perf]", "expectAny", List.of("Killed", "No entity was found")),
                 Json.map("command", "fill -1 63 -1 33 70 33 minecraft:air", "expectAny", List.of("Successfully filled", "No blocks were filled")),
                 command("forceload remove 0 0 32 32", "force load")));
     }

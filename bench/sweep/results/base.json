@@ -57,7 +57,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.fabricmc:fabric-loom:1.18.4. Add the repository that publishes it, or a version that exists, then rerun. A problem occurred configuring roo"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: net.fabricmc:fabric-loom:1.18.4. Add the repository that publishes it, or a version that exists, then rerun. A problem occurred configuring roo"
    },
    "seconds": {
     "port": 25.9
@@ -257,7 +257,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "There is no project :neoforge in this build. It has 4: :Common, :Fabric, :Forge, :NeoForge. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+    "detail": "There is no project :neoforge in this build. It has 4: :Common, :Fabric, :Forge, :NeoForge. Pick one with --project (mmt setup lists them with their loader and Minecraft version)."
    },
    "seconds": {
     "port": 32.5
@@ -291,7 +291,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "There is no project :neoforge in this build. It has 4: :Common, :Fabric, :Forge, :NeoForge. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+    "detail": "There is no project :neoforge in this build. It has 4: :Common, :Fabric, :Forge, :NeoForge. Pick one with --project (mmt setup lists them with their loader and Minecraft version)."
    },
    "seconds": {
     "port": 25.0
@@ -325,7 +325,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "There is no project :neoforge in this build. It has 4: :Common, :Fabric, :Forge, :NeoForge. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+    "detail": "There is no project :neoforge in this build. It has 4: :Common, :Fabric, :Forge, :NeoForge. Pick one with --project (mmt setup lists them with their loader and Minecraft version)."
    },
    "seconds": {
     "port": 29.1
@@ -588,7 +588,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.minecraftforge:forge:1.21.5-54.0.16. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://maven.minecraftforge.ne"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: net.minecraftforge:forge:1.21.5-54.0.16. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://maven.minecraftforge.ne"
    },
    "seconds": {
     "port": 65.6
@@ -620,7 +620,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.minecraftforge:forge:1.21.6-54.0.16. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://maven.minecraftforge.ne"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: net.minecraftforge:forge:1.21.6-54.0.16. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://maven.minecraftforge.ne"
    },
    "seconds": {
     "port": 82.2
@@ -910,7 +910,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
    },
    "seconds": {
     "port": 37.2
@@ -943,7 +943,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
    },
    "seconds": {
     "port": 29.7
@@ -976,7 +976,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
    },
    "seconds": {
     "port": 22.6
@@ -1042,7 +1042,7 @@
    },
    "blocker": {
     "class": "access-transformer",
-    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Execution failed for task ':createMinecraftArtifacts' (registered in build file 'build.gradle'). > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with n"
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Execution failed for task ':createMinecraftArtifacts' (registered in build file 'build.gradle'). > Process 'command 'C:\\Users\\Jk101\\.mmt\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with n"
    },
    "seconds": {
     "port": 337.3
@@ -1141,7 +1141,7 @@
    },
    "blocker": {
     "class": "access-transformer",
-    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Execution failed for task ':createMinecraftArtifacts'. > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\."
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Execution failed for task ':createMinecraftArtifacts'. > Process 'command 'C:\\Users\\Jk101\\.mmt\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\."
    },
    "seconds": {
     "port": 243.7
@@ -1267,7 +1267,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Could not determine the dependencies of task ':modaccelMetadata'. > A problem occurred configuring project ':1.21.1'. > Failed to setup Minecraft, java.lang.RuntimeException: Failed to find official m"
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Could not determine the dependencies of task ':mmtMetadata'. > A problem occurred configuring project ':1.21.1'. > Failed to setup Minecraft, java.lang.RuntimeException: Failed to find official m"
    },
    "seconds": {
     "port": 87.7
@@ -1568,7 +1568,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing build plugin: this project's build uses the Gradle plugin net.neoforged.gradle.mixin 7.1.39, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle). Plugi"
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin net.neoforged.gradle.mixin 7.1.39, and none of its plugin repositories has it, so mmt could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle). Plugi"
    },
    "seconds": {
     "port": 69.1
@@ -1601,7 +1601,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing build plugin: this project's build uses the Gradle plugin net.neoforged.gradle.mixin 7.1.39, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle). Plugi"
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin net.neoforged.gradle.mixin 7.1.39, and none of its plugin repositories has it, so mmt could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle). Plugi"
    },
    "seconds": {
     "port": 36.9
@@ -2225,7 +2225,7 @@
    },
    "blocker": {
     "class": "access-transformer",
-    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Execution failed for task ':createMinecraftArtifacts'. > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\."
+    "detail": "The build failed without compiler errors, so this is not a source migration and no rule can fix it: Execution failed for task ':createMinecraftArtifacts'. > Process 'command 'C:\\Users\\Jk101\\.mmt\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\."
    },
    "seconds": {
     "port": 135.2
@@ -2856,7 +2856,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "There is no project :neoforge in this build. It has 2: :annotation-processor, :annotations. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+    "detail": "There is no project :neoforge in this build. It has 2: :annotation-processor, :annotations. Pick one with --project (mmt setup lists them with their loader and Minecraft version)."
    },
    "seconds": {
     "port": 9.9
@@ -2889,7 +2889,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "There is no project :neoforge in this build. It has 2: :annotation-processor, :annotations. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+    "detail": "There is no project :neoforge in this build. It has 2: :annotation-processor, :annotations. Pick one with --project (mmt setup lists them with their loader and Minecraft version)."
    },
    "seconds": {
     "port": 4.6
@@ -2922,7 +2922,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "There is no project :neoforge in this build. It has 2: :annotation-processor, :annotations. Pick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+    "detail": "There is no project :neoforge in this build. It has 2: :annotation-processor, :annotations. Pick one with --project (mmt setup lists them with their loader and Minecraft version)."
    },
    "seconds": {
     "port": 4.2
@@ -2954,7 +2954,7 @@
    },
    "blocker": {
     "class": "tool-crash",
-    "detail": "No such file or folder: C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\modmenu-1.16.5\\.modaccel\\portable\\plan-model.json."
+    "detail": "No such file or folder: C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\modmenu-1.16.5\\.mmt\\portable\\plan-model.json."
    },
    "seconds": {
     "port": 10.6
@@ -2986,7 +2986,7 @@
    },
    "blocker": {
     "class": "tool-crash",
-    "detail": "No such file or folder: C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\modmenu-1.16.5\\.modaccel\\portable\\plan-model.json."
+    "detail": "No such file or folder: C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\modmenu-1.16.5\\.mmt\\portable\\plan-model.json."
    },
    "seconds": {
     "port": 9.6
@@ -3018,7 +3018,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: org.ajoberstar.grgit:grgit-core:4.1.0. Searched: https://plugins.gradle.org. Add the repository that publishes it, or a version that exists, th"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: org.ajoberstar.grgit:grgit-core:4.1.0. Searched: https://plugins.gradle.org. Add the repository that publishes it, or a version that exists, th"
    },
    "seconds": {
     "port": 6.8
@@ -3050,7 +3050,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: org.ajoberstar.grgit:grgit-core:4.1.0. Searched: https://plugins.gradle.org. Add the repository that publishes it, or a version that exists, th"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: org.ajoberstar.grgit:grgit-core:4.1.0. Searched: https://plugins.gradle.org. Add the repository that publishes it, or a version that exists, th"
    },
    "seconds": {
     "port": 6.7
@@ -3319,7 +3319,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so mmt could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
    },
    "seconds": {
     "port": 9.8
@@ -3353,7 +3353,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so mmt could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
    },
    "seconds": {
     "port": 8.4
@@ -3386,7 +3386,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.3.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.3.0, and none of its plugin repositories has it, so mmt could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
    },
    "seconds": {
     "port": 6.9
@@ -3419,7 +3419,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.3.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.3.0, and none of its plugin repositories has it, so mmt could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
    },
    "seconds": {
     "port": 7.5
@@ -3513,7 +3513,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so mmt could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
    },
    "seconds": {
     "port": 12.6
@@ -3545,7 +3545,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+    "detail": "Missing build plugin: this project's build uses the Gradle plugin io.github.juuxel.loom-quiltflower 1.6.0, and none of its plugin repositories has it, so mmt could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
    },
    "seconds": {
     "port": 8.5
@@ -3577,7 +3577,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Execution failed for task ':modaccelProjectMetadata'. > Could not create task ':modrinth'. > 'void com.modrinth.minotaur.TaskModrinthUpload.notCompatibleWithConfigurationCache(java.lang.String)' Log: "
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Execution failed for task ':mmtProjectMetadata'. > Could not create task ':modrinth'. > 'void com.modrinth.minotaur.TaskModrinthUpload.notCompatibleWithConfigurationCache(java.lang.String)' Log: "
    },
    "seconds": {
     "port": 39.5
@@ -3609,7 +3609,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Execution failed for task ':modaccelProjectMetadata'. > Could not create task ':modrinth'. > 'void com.modrinth.minotaur.TaskModrinthUpload.notCompatibleWithConfigurationCache(java.lang.String)' Log: "
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Execution failed for task ':mmtProjectMetadata'. > Could not create task ':modrinth'. > 'void com.modrinth.minotaur.TaskModrinthUpload.notCompatibleWithConfigurationCache(java.lang.String)' Log: "
    },
    "seconds": {
     "port": 33.2
@@ -4309,7 +4309,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':forge'. > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\.t3\\wor"
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':forge'. > Process 'command 'C:\\Users\\Jk101\\.mmt\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\.t3\\wor"
    },
    "seconds": {
     "port": 122.7
@@ -4343,7 +4343,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':forge'. > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\.t3\\wor"
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':forge'. > Process 'command 'C:\\Users\\Jk101\\.mmt\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\.t3\\wor"
    },
    "seconds": {
     "port": 141.1

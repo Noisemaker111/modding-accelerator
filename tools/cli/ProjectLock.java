@@ -14,9 +14,9 @@ final class ProjectLock implements AutoCloseable {
 
     /**
      * Set for a child a lock holder runs as one of its own steps (port --check fingerprint starts the game through
-     * modaccel commands): the lock file's path. The child does not wait for the lock its parent holds for it.
+     * mmt commands): the lock file's path. The child does not wait for the lock its parent holds for it.
      */
-    static final String HELD = "MODACCEL_HOLDS_LOCK";
+    static final String HELD = "MMT_HOLDS_LOCK";
     private static volatile String heldHere;
 
     private final FileChannel channel;
@@ -60,7 +60,7 @@ final class ProjectLock implements AutoCloseable {
                     ")";
             } catch (Exception unreadable) {}
             throw new IOException(
-                "Another modaccel command" +
+                "Another mmt command" +
                 who +
                 " is already working on this project. Two at once would overwrite each other's build files, " +
                 "so this one did nothing. Wait for that one to finish, or stop it, then rerun."

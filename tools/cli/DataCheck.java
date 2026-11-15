@@ -6,7 +6,7 @@ import java.util.*;
 /**
  * data-check: what the game loads for the mod, read from the game's own code without launching the
  * game (no window, no world, no network). The mod's dev launch is recorded once (shared with
- * mixin-check) and started with tools/datacheck/ModaccelDataCheck in place of the game: Knot on the
+ * mixin-check) and started with tools/datacheck/MmtDataCheck in place of the game: Knot on the
  * dedicated-server side, Bootstrap, every mod's main and server entrypoints, the registries frozen,
  * then the data packs a new world enables loaded by the game's own WorldLoader. It reports what the
  * mod registered, each item as a real stack (its components bind only once data loads), and every
@@ -27,14 +27,14 @@ import java.util.*;
 final class DataCheck {
 
     static final List<String> SOURCES = List.of(
-        "tools/datacheck/ModaccelDataCheck.java",
-        "tools/datacheck/ModaccelDataProbe.java"
+        "tools/datacheck/MmtDataCheck.java",
+        "tools/datacheck/MmtDataProbe.java"
     );
     /** A mod only data-check's game loads (fabric.addMods): it skips start-up work a data check never reads. */
     static final List<String> MOD = List.of(
         "tools/datacheck/mod/SkipShapeCache.java",
         "tools/datacheck/mod/fabric.mod.json",
-        "tools/datacheck/mod/modaccel_datacheck.mixins.json"
+        "tools/datacheck/mod/mmt_datacheck.mixins.json"
     );
     static final int TIMEOUT_SECONDS = 600;
 
@@ -46,7 +46,7 @@ final class DataCheck {
         this.model = model;
     }
 
-    Map<String, Object> run(Modaccel.Options options) throws Exception {
+    Map<String, Object> run(Mmt.Options options) throws Exception {
         long begin = System.nanoTime();
         String loader = MixinCheck.loader(model);
         if (!loader.equals("fabric")) return unchecked(
@@ -144,10 +144,10 @@ final class DataCheck {
                 !keep
                     ? List.of()
                     : List.of(
-                        "-Dmodaccel.datacheck.serve=true",
-                        "-Dmodaccel.datacheck.state=" + state(build),
-                        "-Dmodaccel.datacheck.token=" + token,
-                        "-Dmodaccel.datacheck.fingerprint=" + fingerprint
+                        "-Dmmt.datacheck.serve=true",
+                        "-Dmmt.datacheck.state=" + state(build),
+                        "-Dmmt.datacheck.token=" + token,
+                        "-Dmmt.datacheck.fingerprint=" + fingerprint
                     )
             );
             if (!keep) {
@@ -407,9 +407,9 @@ final class DataCheck {
             folder.resolve("data-check-spare.jsonl"),
             folder.resolve("data-check-spare.args"),
             List.of(
-                "-Dmodaccel.datacheck.spare=true",
-                "-Dmodaccel.datacheck.state=" + spareState(build),
-                "-Dmodaccel.datacheck.token=" + token
+                "-Dmmt.datacheck.spare=true",
+                "-Dmmt.datacheck.state=" + spareState(build),
+                "-Dmmt.datacheck.token=" + token
             )
         );
         Files.deleteIfExists(spareState(build));
@@ -472,8 +472,8 @@ final class DataCheck {
         List<String> command = MixinCheck.options(launch, "server");
         command.addAll(
             List.of(
-                "-Dmodaccel.datacheck.out=" + out,
-                "-Dmodaccel.datacheck.outputs=" + String.join(File.pathSeparator, outputs())
+                "-Dmmt.datacheck.out=" + out,
+                "-Dmmt.datacheck.outputs=" + String.join(File.pathSeparator, outputs())
             )
         );
         // A JVM that runs for seconds spends more on C2 compiling than it gets back: C1 only halves its CPU, as for hidden games.
@@ -499,7 +499,7 @@ final class DataCheck {
             else command.set(existing, command.get(existing) + File.pathSeparator + mod);
         }
         command.addAll(properties);
-        String main = MixinCheck.fabricMain(launch, "ModaccelDataCheck", command);
+        String main = MixinCheck.fabricMain(launch, "MmtDataCheck", command);
         MixinCheck.classPath(command, argfile, classes, launch);
         command.add(main);
         command.addAll(launch.arguments());
@@ -608,7 +608,7 @@ final class DataCheck {
             Fingerprints.files(keyed).substring(0, 12) +
             "-" +
             Fingerprints.bytes(launch.classPath().getBytes(StandardCharsets.UTF_8)).substring(0, 12);
-        Path classes = build.harness.resolve(".modaccel/data-check/" + key);
+        Path classes = build.harness.resolve(".mmt/data-check/" + key);
         if (Files.exists(classes.resolve("ready"))) return classes;
         Files.createDirectories(classes);
         // The game's classes are as new as the Java it runs on, so compile with that Java's compiler when it has one.

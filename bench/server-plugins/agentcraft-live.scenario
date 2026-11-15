@@ -1,8 +1,8 @@
-# AgentCraft against the real Capy backend, with your own key. NOT run by modaccel or CI: a real run uses your
+# AgentCraft against the real Capy backend, with your own key. NOT run by mmt or CI: a real run uses your
 # Capy account and its credits. To run it, give the key one of two ways (never in a scenario or in git):
 #   environment:   set CAPY_API_KEY=capy_...          (PowerShell: $env:CAPY_API_KEY = "capy_...")
-#   or a line      CAPY_API_KEY=capy_...   in <plugin checkout>/.modaccel/secrets.properties (gitignored)
-# then: modaccel server-check --root <agentcraft checkout> --file bench/server-plugins/agentcraft-live.scenario
+#   or a line      CAPY_API_KEY=capy_...   in <plugin checkout>/.mmt/secrets.properties (gitignored)
+# then: mmt server-check --root <agentcraft checkout> --file bench/server-plugins/agentcraft-live.scenario
 # The key is passed to the server as ${secret:CAPY_API_KEY} and shows only in that masked form in receipts and logs.
 # Without it, the run fails at once with "needs secret CAPY_API_KEY" and nothing passes.
 server-env AGENTCRAFT_BACKEND=capy

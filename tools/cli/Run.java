@@ -27,13 +27,13 @@ final class Run {
     }
 
     /**
-     * With MODACCEL_PROGRESS set (the desktop app sets it), one stderr line per step while --json keeps its answer
-     * for the end: modaccel-progress {"step": what is running, "log": the file that step writes, or null}.
+     * With MMT_PROGRESS set (the desktop app sets it), one stderr line per step while --json keeps its answer
+     * for the end: mmt-progress {"step": what is running, "log": the file that step writes, or null}.
      */
     static void progress(String step, Path log) {
-        if (System.getenv("MODACCEL_PROGRESS") == null) return;
+        if (System.getenv("MMT_PROGRESS") == null) return;
         String file = log == null ? null : log.toAbsolutePath().toString();
-        System.err.println("modaccel-progress " + Json.write(Json.map("step", step, "log", file)));
+        System.err.println("mmt-progress " + Json.write(Json.map("step", step, "log", file)));
         System.err.flush();
     }
 

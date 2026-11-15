@@ -1,6 +1,6 @@
 #requires -Version 7.0
 <#
-  install.ps1 - put Modding Accelerator into an existing Fabric mod repo.
+  install.ps1 - put Minecraft Modding Tools into an existing Fabric mod repo.
 
   Usage (from the lab folder):
     .\install.ps1 -Target C:\path\to\your\mod
@@ -23,7 +23,7 @@ function Fail([string]$message) {
 
 function Copy-HarnessTools {
 	# Every loader uses the same port commands. Ship their Java tools and knowledge together;
-	# learned rules belong to the target's .modaccel cache and must never be copied between mods.
+	# learned rules belong to the target's .mmt cache and must never be copied between mods.
 	$tools = Join-Path $root 'tools'
 	$knowledge = Join-Path $root 'knowledge'
 	New-Item -ItemType Directory -Force $tools, $knowledge | Out-Null
@@ -58,7 +58,7 @@ if ($neoBuild) {
 	$neoKotlin = $neoBuild.EndsWith('.kts')
 	$neoName = Split-Path -Leaf $neoBuild
 	$neoText = Get-Content $neoBuild -Raw
-	if ($neoText -match 'Modding Accelerator \(NeoForge lane\)') {
+	if ($neoText -match 'Minecraft Modding Tools \(NeoForge lane\)') {
 		Write-Host 'install: NeoForge lane block already present, leaving it alone' -ForegroundColor DarkGray
 	}
 	else {
@@ -66,7 +66,7 @@ if ($neoBuild) {
 @'
 tasks.register("labClasspath") {
 	val cp = sourceSets["main"].runtimeClasspath
-	val out = rootProject.file(".modaccel/classpath.txt")
+	val out = rootProject.file(".mmt/classpath.txt")
 	doLast {
 		out.parentFile.mkdirs()
 		out.writeText(cp.asPath)
@@ -78,7 +78,7 @@ tasks.register("labClasspath") {
 @'
 tasks.register("labClasspath") {
 	def cp = sourceSets.main.runtimeClasspath
-	def out = rootProject.file(".modaccel/classpath.txt")
+	def out = rootProject.file(".mmt/classpath.txt")
 	doLast {
 		out.parentFile.mkdirs()
 		out.text = cp.asPath
@@ -126,9 +126,9 @@ neoForge {
 		}
 		$block = @"
 
-// Added by Modding Accelerator (NeoForge lane). Safe to delete as one block.
+// Added by Minecraft Modding Tools (NeoForge lane). Safe to delete as one block.
 // ModDevGradle builds the game jar and the mappings, so a compile classpath is one property away.
-// .modaccel/classpath.txt is the same list the client's own -cp has, which the warm client's
+// .mmt/classpath.txt is the same list the client's own -cp has, which the warm client's
 // one-time capture starts from.
 $labClasspath$runBlock
 // === end modding accelerator ===
@@ -139,22 +139,22 @@ $labClasspath$runBlock
 		Write-Host "install: added the NeoForge lane block ($what) to $neoName" -ForegroundColor DarkGray
 	}
 	New-Item -ItemType Directory -Force (Join-Path $root 'tools') | Out-Null
-	New-Item -ItemType Directory -Force (Join-Path $root '.modaccel') | Out-Null
-	Copy-Item (Join-Path $here 'modaccel.ps1') $root -Force
-	if (Test-Path (Join-Path $here 'modaccel.cmd')) { Copy-Item (Join-Path $here 'modaccel.cmd') $root -Force }
+	New-Item -ItemType Directory -Force (Join-Path $root '.mmt') | Out-Null
+	Copy-Item (Join-Path $here 'mmt.ps1') $root -Force
+	if (Test-Path (Join-Path $here 'mmt.cmd')) { Copy-Item (Join-Path $here 'mmt.cmd') $root -Force }
 	Copy-HarnessTools
-	Write-Host 'install: harness copied (modaccel.ps1, modaccel.cmd, tools/)'
+	Write-Host 'install: harness copied (mmt.ps1, mmt.cmd, tools/)'
 
 	# 3. the bridge jar: screenshots and scripted clicks for a client whose own mod has no control
 	#    socket. It is one more mod on the -Dfml.modFolders list, so this repo's sources, build
-	#    files and launch scripts stay exactly as they are; modaccel appends the entry at launch.
-	$bridgeDest = Join-Path $root '.modaccel\bridge.jar'
+	#    files and launch scripts stay exactly as they are; mmt appends the entry at launch.
+	$bridgeDest = Join-Path $root '.mmt\bridge.jar'
 	$bridgeLib = Join-Path $here 'bench\bridge\build\libs'
 	$bridgeSource = Get-ChildItem $bridgeLib -Filter 'modlabbridge-*.jar' -ErrorAction SilentlyContinue |
 		Sort-Object LastWriteTime -Descending | Select-Object -First 1
 	if (-not $bridgeSource -and (Test-Path (Join-Path $here 'bench\bridge\gradlew.bat'))) {
 		Write-Host 'install: building the bridge jar once (about 15s)...' -ForegroundColor DarkGray
-		& (Join-Path $here 'bench\bridge\gradlew.bat') jar --console=plain *> (Join-Path $root '.modaccel\bridge-build.log')
+		& (Join-Path $here 'bench\bridge\gradlew.bat') jar --console=plain *> (Join-Path $root '.mmt\bridge-build.log')
 		$bridgeSource = Get-ChildItem $bridgeLib -Filter 'modlabbridge-*.jar' -ErrorAction SilentlyContinue |
 			Sort-Object LastWriteTime -Descending | Select-Object -First 1
 	}
@@ -165,15 +165,15 @@ $labClasspath$runBlock
 			"-Dfml.modFolders=`"<the entries this run already has>;modlabbridge%%$bridgeDest`"",
 			'   (each %% above is written %%%% inside a .cmd)',
 			'-Dmodlabbridge.port=27699',
-			"   (modaccel keeps 27699 unless something holds it, then the next free one)",
+			"   (mmt keeps 27699 unless something holds it, then the next free one)",
 			"-Dmodlabbridge.shots=$shots",
 			"-Dmodlab.root=$root",
 			'-Dprismlab.lab.port=',
 			'   (only when this repo has no dev\modlab client of its own)'
 		)
-		Set-Content (Join-Path $root '.modaccel\bridge-launch.txt') ($launch -join "`r`n")
-		Write-Host "install: bridge jar copied to .modaccel\bridge.jar ($($bridgeSource.Name))"
-		Write-Host 'install: modaccel adds this to the warm client launch itself, no flags by hand:'
+		Set-Content (Join-Path $root '.mmt\bridge-launch.txt') ($launch -join "`r`n")
+		Write-Host "install: bridge jar copied to .mmt\bridge.jar ($($bridgeSource.Name))"
+		Write-Host 'install: mmt adds this to the warm client launch itself, no flags by hand:'
 		$launch | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
 	}
 	else {
@@ -181,14 +181,14 @@ $labClasspath$runBlock
 	}
 	Write-Host ''
 	Write-Host 'install: done. Next:' -ForegroundColor Green
-	Write-Host '  1. .\gradlew labClasspath          (writes .modaccel\classpath.txt; first run fetches the game)'
-	Write-Host '  2. .\modaccel fast                 compile + pure tests, no Gradle'
+	Write-Host '  1. .\gradlew labClasspath          (writes .mmt\classpath.txt; first run fetches the game)'
+	Write-Host '  2. .\mmt fast                 compile + pure tests, no Gradle'
 	Write-Host ''
 	Write-Host 'install: the warm client runs from ModDevGradle''s recipe; one Gradle pass writes it (about 90s, once):' -ForegroundColor Green
 	Write-Host '  a. .\gradlew prepareClientWarmRun   writes build\moddev\clientWarmRunVmArgs.txt and clientWarmRunProgramArgs.txt'
-	Write-Host '     (.\modaccel ui does this pass itself when the recipe is missing, then launches)'
-	Write-Host '  b. .\modaccel ui                    launches java from that recipe (no Gradle), adds the bridge and takes a screenshot'
-	Write-Host '     The classpath it replays is .modaccel\classpath.txt (written in step 1); no hand capture is needed.'
+	Write-Host '     (.\mmt ui does this pass itself when the recipe is missing, then launches)'
+	Write-Host '  b. .\mmt ui                    launches java from that recipe (no Gradle), adds the bridge and takes a screenshot'
+	Write-Host '     The classpath it replays is .mmt\classpath.txt (written in step 1); no hand capture is needed.'
 	Write-Host '     Re-run .\gradlew prepareClientWarmRun after changing dependencies so the recipe matches the build.'
 	exit 0
 }
@@ -209,24 +209,24 @@ $rootJava = @(Get-ChildItem (Join-Path $root 'src/main/java') -Recurse -Filter '
 if ((-not $rootModFile -or $rootJava -eq 0) -and $includes -gt 0 -and -not (Test-Path (Join-Path $root 'stonecutter.gradle.kts'))) {
 	$groovy = Join-Path $root 'build.gradle'
 	if (-not (Test-Path $groovy)) { Fail 'multi-project repo without a Groovy root build.gradle; Kotlin-DSL roots are not wired yet' }
-	if (Select-String -Path $groovy -Pattern 'Modding Accelerator \(multi-project lane\)' -Quiet) {
+	if (Select-String -Path $groovy -Pattern 'Minecraft Modding Tools \(multi-project lane\)' -Quiet) {
 		Write-Host 'install: multi-project lane block already present' -ForegroundColor DarkGray
 	}
 	else {
 		@'
 
-// === Added by Modding Accelerator (multi-project lane). Safe to delete as one block. ===
+// === Added by Minecraft Modding Tools (multi-project lane). Safe to delete as one block. ===
 // Every Java subproject writes its source folders and compile classpath; labClasspath merges
-// them into .modaccel\classpath.txt and .modaccel\sources.txt for the fast lane.
-def modaccelSkip = { p -> rootProject.findProject(':fabric') != null && p.name in ['neoforge', 'forge'] }
+// them into .mmt\classpath.txt and .mmt\sources.txt for the fast lane.
+def mmtSkip = { p -> rootProject.findProject(':fabric') != null && p.name in ['neoforge', 'forge'] }
 allprojects { p ->
     p.plugins.withId('java') {
-        if (modaccelSkip(p)) return
+        if (mmtSkip(p)) return
         p.tasks.register('labClasspathPart') { t ->
             def sets = p.sourceSets.matching { it.name in ['main', 'client', 'test'] }
             def cp = p.files({ sets.collect { it.compileClasspath } })
             def src = p.files({ sets.collect { it.java.srcDirs } })
-            def out = p.file('build/modaccel-part.txt')
+            def out = p.file('build/mmt-part.txt')
             // Merge order, highest first: a subproject with an access widener compiles against its own
             // widened Minecraft jar, and one that depends on other subprojects (fabric on common)
             // resolves the dependency versions that actually ship.
@@ -245,9 +245,9 @@ allprojects { p ->
 }
 tasks.register('labClasspath') { t ->
     t.dependsOn { allprojects.collect { it.tasks.findByName('labClasspathPart') }.findAll { it != null } }
-    def parts = allprojects.findAll { !modaccelSkip(it) }.collect { it.file('build/modaccel-part.txt') }
+    def parts = allprojects.findAll { !mmtSkip(it) }.collect { it.file('build/mmt-part.txt') }
     def repo = rootProject.projectDir.absolutePath
-    def lab = rootProject.file('.modaccel')
+    def lab = rootProject.file('.mmt')
     t.doLast {
         def src = new LinkedHashSet<String>()
         def cp = new LinkedHashSet<String>()
@@ -263,7 +263,7 @@ tasks.register('labClasspath') { t ->
         // A subproject's own build output is compiled from source here, so it stays off the classpath.
         def sep = File.separator
         cp.removeAll { it.startsWith(repo) && it.contains("${sep}build${sep}") }
-        def own = rootProject.file('modaccel-tests/java')
+        def own = rootProject.file('mmt-tests/java')
         if (own.isDirectory()) { src << own.absolutePath }
         lab.mkdirs()
         new File(lab, 'classpath.txt').text = cp.findAll { new File(it).exists() }.join(File.pathSeparator)
@@ -275,13 +275,13 @@ tasks.register('labClasspath') { t ->
 		Write-Host 'install: added the multi-project lane block (labClasspath) to build.gradle'
 	}
 	New-Item -ItemType Directory -Force (Join-Path $root 'tools') | Out-Null
-	New-Item -ItemType Directory -Force (Join-Path $root '.modaccel') | Out-Null
-	Copy-Item (Join-Path $here 'modaccel.ps1') $root -Force
-	if (Test-Path (Join-Path $here 'modaccel.cmd')) { Copy-Item (Join-Path $here 'modaccel.cmd') $root -Force }
+	New-Item -ItemType Directory -Force (Join-Path $root '.mmt') | Out-Null
+	Copy-Item (Join-Path $here 'mmt.ps1') $root -Force
+	if (Test-Path (Join-Path $here 'mmt.cmd')) { Copy-Item (Join-Path $here 'mmt.cmd') $root -Force }
 	Copy-HarnessTools
 	# The lane brings its own JUnit, so a starter pure test compiles even when no subproject has one.
 	# It lives outside every Gradle source set, so the mod's own build never sees it.
-	$pureDir = Join-Path $root 'modaccel-tests/java/dev/modlab'
+	$pureDir = Join-Path $root 'mmt-tests/java/dev/modlab'
 	if (-not (Test-Path (Join-Path $pureDir 'StarterTest.java'))) {
 		New-Item -ItemType Directory -Force $pureDir | Out-Null
 		@'
@@ -304,12 +304,12 @@ public class StarterTest {
 	}
 	$ignore = Join-Path $root '.gitignore'
 	$current = if (Test-Path $ignore) { Get-Content $ignore -Raw } else { '' }
-	$add = @('.modaccel/', '.runs/', '.tools/', '.lab/') | Where-Object { $current -notmatch [regex]::Escape($_) }
+	$add = @('.mmt/', '.runs/', '.tools/', '.lab/') | Where-Object { $current -notmatch [regex]::Escape($_) }
 	if ($add) { Add-Content $ignore ("`n# modding accelerator`n" + ($add -join "`n")) }
-	Write-Host 'install: harness copied (modaccel.ps1, tools/), starter pure test in modaccel-tests/java/dev/modlab'
+	Write-Host 'install: harness copied (mmt.ps1, tools/), starter pure test in mmt-tests/java/dev/modlab'
 	Write-Host ''
 	Write-Host 'install: done. Next:' -ForegroundColor Green
-	Write-Host '  .\modaccel fast    first run asks Gradle once for every subproject''s sources and classpath, then compiles without Gradle'
+	Write-Host '  .\mmt fast    first run asks Gradle once for every subproject''s sources and classpath, then compiles without Gradle'
 	Write-Host 'Multi-project repos get the fast lane and port tooling; the warm client is single-project only for now.'
 	exit 0
 }
@@ -325,8 +325,8 @@ if (-not (Test-Path $modJsonPath) -and $modsToml) {
 	if (-not (Test-Path $groovy)) {
 		Fail "Forge repo without a Groovy build.gradle; Kotlin-DSL Forge repos are not wired yet"
 	}
-	$marker = '// Added by Modding Accelerator (Forge lane)'
-	if (-not (Select-String -Path $groovy -Pattern 'Modding Accelerator \(Forge lane\)' -Quiet)) {
+	$marker = '// Added by Minecraft Modding Tools (Forge lane)'
+	if (-not (Select-String -Path $groovy -Pattern 'Minecraft Modding Tools \(Forge lane\)' -Quiet)) {
 		@"
 
 $marker
@@ -334,10 +334,10 @@ $marker
 // and the source patterns this project excludes (another loader's sources).
 tasks.register("labClasspath") {
     doLast {
-        def out = file(".modaccel/classpath.txt")
+        def out = file(".mmt/classpath.txt")
         out.parentFile.mkdirs()
         out.text = (sourceSets.main.compileClasspath + sourceSets.test.runtimeClasspath).asPath
-        def ex = file(".modaccel/excludes.txt")
+        def ex = file(".mmt/excludes.txt")
         ex.text = sourceSets.main.java.excludes.join("\n")
     }
 }
@@ -346,38 +346,38 @@ tasks.register("labClasspath") {
 	}
 	else { Write-Host 'install: Forge lane block already present' }
 	New-Item -ItemType Directory -Force (Join-Path $root 'tools') | Out-Null
-	New-Item -ItemType Directory -Force (Join-Path $root '.modaccel') | Out-Null
-	Copy-Item (Join-Path $here 'modaccel.ps1') $root -Force
+	New-Item -ItemType Directory -Force (Join-Path $root '.mmt') | Out-Null
+	Copy-Item (Join-Path $here 'mmt.ps1') $root -Force
 	Copy-HarnessTools
-	Write-Host 'install: harness copied (modaccel.ps1, tools/)'
+	Write-Host 'install: harness copied (mmt.ps1, tools/)'
 	# The Forge twin of the bridge: a mod jar the client loads from its own game folder (the
 	# ForgeGradle game dir is the repo root), so the first launch copies it into <repo>\mods.
 	$forgeBridgeLib = Join-Path $here 'bench\forgebridge\build\libs'
 	$forgeBridgeSource = Get-ChildItem $forgeBridgeLib -Filter 'modlabbridge-forge-*.jar' -ErrorAction SilentlyContinue |
 		Sort-Object LastWriteTime -Descending | Select-Object -First 1
 	if ($forgeBridgeSource) {
-		Copy-Item $forgeBridgeSource.FullName (Join-Path $root '.modaccel\bridge-forge.jar') -Force
-		Write-Host "install: Forge bridge jar copied to .modaccel\bridge-forge.jar ($($forgeBridgeSource.Name))"
+		Copy-Item $forgeBridgeSource.FullName (Join-Path $root '.mmt\bridge-forge.jar') -Force
+		Write-Host "install: Forge bridge jar copied to .mmt\bridge-forge.jar ($($forgeBridgeSource.Name))"
 	}
 	else {
 		Write-Host 'install: no Forge bridge jar yet. Build it once in the harness: bench\forgebridge\build.ps1 (needs an earlier gradlew classes here).' -ForegroundColor Yellow
 	}
-	$forgeCapture = Join-Path $root '.modaccel\forge.args'
+	$forgeCapture = Join-Path $root '.mmt\forge.args'
 	Write-Host ''
 	Write-Host 'install: done. Next:'
 	Write-Host '  1. .\gradlew labClasspath      (once, or let the first run do it)'
-	Write-Host '     .\modaccel fast             compile + pure tests, no Gradle'
+	Write-Host '     .\mmt fast             compile + pure tests, no Gradle'
 	if (Test-Path $forgeCapture) {
-		Write-Host '  2. .\modaccel ui               replays the captured launch (no Gradle), bridge takes the screenshot'
+		Write-Host '  2. .\mmt ui               replays the captured launch (no Gradle), bridge takes the screenshot'
 	}
 	else {
 		Write-Host '  2. one-time capture of the launch line (ForgeGradle writes no recipe, so you need a running client):'
 		Write-Host '       a. .\gradlew runClient      (leave it on the title screen)'
-		Write-Host '       b. .\tools\capture-launch.ps1 -Match forgeclientuserdev -Out .modaccel\forge.args'
-		Write-Host '       c. close that client, then .\modaccel ui (about 45s to a warm client, then a PNG)'
+		Write-Host '       b. .\tools\capture-launch.ps1 -Match forgeclientuserdev -Out .mmt\forge.args'
+		Write-Host '       c. close that client, then .\mmt ui (about 45s to a warm client, then a PNG)'
 	}
 	Write-Host ''
-	Write-Host 'Fast lane, port tooling and .\modaccel ui work on Forge: the client comes from the captured'
+	Write-Host 'Fast lane, port tooling and .\mmt ui work on Forge: the client comes from the captured'
 	Write-Host 'launch line plus a bridge jar in mods\. No hot reload: an edit means stop and start again.'
 	exit 0
 }
@@ -474,7 +474,7 @@ $jbr = Get-ChildItem (Join-Path $here '.tools') -Directory -Filter 'jbr-*' -Erro
 Write-Host "install: mod '$modId' package $package (Minecraft $mc$(if ($node) { ", node $node" }))" -ForegroundColor DarkGray
 
 # 1. harness files
-foreach ($file in @('modaccel.ps1', 'modaccel.cmd')) {
+foreach ($file in @('mmt.ps1', 'mmt.cmd')) {
 	$dest = Join-Path $root $file
 	if (Test-Path $dest) {
 		Write-Host "install: $file already present, leaving it" -ForegroundColor DarkGray
@@ -548,8 +548,8 @@ else {
 	}
 	Write-Host ''
 	Write-Host "install: Minecraft $mc is not 26.x, so the client bridge is NOT installed here: its sources call 26.x client classes and would not compile in this repo." -ForegroundColor Yellow
-	Write-Host 'install: you still get the fast lane (.\modaccel fast: compile + pure tests) and the world tier (.\modaccel world: a real server).'
-	Write-Host 'install: you do NOT get screenshots or scripted clicks. .\modaccel ui, node, look, suite and mp all need that bridge socket, so they will not work until this repo is on 26.x.'
+	Write-Host 'install: you still get the fast lane (.\mmt fast: compile + pure tests) and the world tier (.\mmt world: a real server).'
+	Write-Host 'install: you do NOT get screenshots or scripted clicks. .\mmt ui, node, look, suite and mp all need that bridge socket, so they will not work until this repo is on 26.x.'
 	Write-Host ''
 }
 
@@ -563,7 +563,7 @@ if ($gradle.Contains($marker)) {
 	Write-Host "install: Gradle wiring already present, leaving it alone" -ForegroundColor DarkGray
 }
 elseif ($kotlinDsl) {
-	$agentPath = (Join-Path $root '.modaccel/agent.jar') -replace '\\', '/'
+	$agentPath = (Join-Path $root '.mmt/agent.jar') -replace '\\', '/'
 	$rootSlash = $root -replace '\\', '/'
 	# A repo that already configures fabric-api's test source set (Diorama does) keeps its own modId;
 	# a second configureTests block would replace it.
@@ -588,11 +588,11 @@ fabricApi {
 	tasks.register(`"labClasspath`") {
 		val cp = sourceSets[`"main`"].compileClasspath + (sourceSets.findByName(`"client`")?.compileClasspath ?: files()) + sourceSets[`"test`"].runtimeClasspath
 		doLast {
-			val out = rootProject.file(`".modaccel/classpath.txt`")
+			val out = rootProject.file(`".mmt/classpath.txt`")
 			out.parentFile.mkdirs()
 			out.writeText(cp.asPath)
 			// Source patterns this node excludes (another loader's sources); the fast lane must skip them.
-			val ex = rootProject.file(`".modaccel/excludes.txt`")
+			val ex = rootProject.file(`".mmt/excludes.txt`")
 			ex.writeText(sourceSets[`"main`"].java.excludes.joinToString(`"\n`") {
 				it.replace(`"**/`", `"`").replace(`"/**`", `"`").replace(`"*`", `"`")
 			})
@@ -609,10 +609,10 @@ fabricApi {
 		'tasks.register("labClasspath") {
 	val cp = sourceSets["main"].compileClasspath + (sourceSets.findByName("client")?.compileClasspath ?: files()) + sourceSets["test"].runtimeClasspath
 	doLast {
-		val out = rootProject.file(".modaccel/classpath.txt")
+		val out = rootProject.file(".mmt/classpath.txt")
 		out.parentFile.mkdirs()
 		out.writeText(cp.asPath)
-		val ex = rootProject.file(".modaccel/excludes.txt")
+		val ex = rootProject.file(".mmt/excludes.txt")
 		ex.writeText(sourceSets["main"].java.excludes.joinToString("\n") {
 			it.replace("**/", "").replace("/**", "").replace("*", "")
 		})
@@ -624,7 +624,7 @@ fabricApi {
 		$block = @"
 
 $marker
-// Added by Modding Accelerator. Safe to delete as one block.
+// Added by Minecraft Modding Tools. Safe to delete as one block.
 // Loom 1.18 API: run settings are Gradle properties. property(), vmArg() and ideConfigGenerated()
 // are deprecated there, and Gradle's Kotlin DSL fails the build script on deprecated calls.
 loom {
@@ -632,7 +632,7 @@ loom {
 		create("clientWarm") {
 			client()
 			// The game folder is the repo's build/run/warm even in a Stonecutter node
-			// (versions/<node>), so the lab world, the shots and the root sit where modaccel looks.
+			// (versions/<node>), so the lab world, the shots and the root sit where mmt looks.
 			runDir = rootProject.file("build/run/warm").relativeTo(projectDir).path
 			systemProperties.put("prismlab.lab.port", "27399")
 			jvmArguments.addAll(
@@ -674,7 +674,7 @@ $labClasspath
 		$block = @"
 
 $marker
-// Added by Modding Accelerator. Safe to delete as one block.
+// Added by Minecraft Modding Tools. Safe to delete as one block.
 loom {
 	runs {
 		create("clientWarm") {
@@ -726,11 +726,11 @@ $labClasspath
 	}
 }
 else {
-	$agentPath = (Join-Path $root '.modaccel/agent.jar') -replace '\\', '/'
+	$agentPath = (Join-Path $root '.mmt/agent.jar') -replace '\\', '/'
 	$block = @"
 
 $marker
-// Added by Modding Accelerator. Safe to delete as one block.
+// Added by Minecraft Modding Tools. Safe to delete as one block.
 loom {
 	runs {
 		clientWarm {
@@ -773,7 +773,7 @@ test {
 // Writes the classpath once for the resident fast lane: every compile classpath (compile-only
 // compat APIs such as EMI or REI live only there) plus the test runtime.
 tasks.register("labClasspath") {
-	def out = rootProject.file(".modaccel/classpath.txt")
+	def out = rootProject.file(".mmt/classpath.txt")
 	def cp = files({ sourceSets.matching { it.name in ['main', 'client', 'test'] }.collect { it.compileClasspath } }) +
 		sourceSets["test"].runtimeClasspath
 	doLast {
@@ -843,7 +843,7 @@ public class StarterGameTest {
 "@ | Set-Content $starter
 }
 
-# 4. one real pure test, so a first `.\modaccel fast` answers "1 passed" instead of "0 passed".
+# 4. one real pure test, so a first `.\mmt fast` answers "1 passed" instead of "0 passed".
 #    The dependency block above already brings JUnit 5 and its launcher; a pure test touches no
 #    Minecraft class. An existing tests folder is never touched.
 $pureSrc = Join-Path $root 'src/test/java'
@@ -893,7 +893,7 @@ Copy-Item (Join-Path $here 'skills/modding-accelerator/SKILL.md') (Join-Path $sk
 
 # 5. ignore runtime state
 $ignore = Join-Path $root '.gitignore'
-$needed = @('.modaccel/', '.runs/', '.tools/')
+$needed = @('.mmt/', '.runs/', '.tools/')
 $current = if (Test-Path $ignore) { Get-Content $ignore -Raw } else { '' }
 $add = $needed | Where-Object { $current -notmatch [regex]::Escape($_) }
 if ($add) {
@@ -902,14 +902,14 @@ if ($add) {
 
 Write-Host ''
 Write-Host "install: done. Next:" -ForegroundColor Green
-Write-Host "  1. .\modaccel                 (first run downloads the JDKs, then lints + logic tests)"
-Write-Host "  2. .\modaccel world           (proves your registrations load in a real server)"
+Write-Host "  1. .\mmt                 (first run downloads the JDKs, then lints + logic tests)"
+Write-Host "  2. .\mmt world           (proves your registrations load in a real server)"
 if ($bridgeSupported) { Write-Host "  3. Read README.md section 'Using it for your own mod' for the UI and block tiers." }
 else { Write-Host "  3. Read README.md section 'Using it for your own mod' - the UI and block tiers are 26.x only." }
 Write-Host ''
 if ($jbr) { Write-Host "Note: this machine already has .tools\jbr, so the DJK download is skipped here." -ForegroundColor DarkGray }
 $wrapperProps = Join-Path $root 'gradle/wrapper/gradle-wrapper.properties'
 if ((Test-Path $wrapperProps) -and ((Get-Content $wrapperProps -Raw) -match 'gradle-8\.')) {
-	Write-Host "Note: Gradle 8.x cannot run on JDK 25 (class file major 69). modaccel switches to a JDK 21 when .tools or %USERPROFILE%\tools has one." -ForegroundColor Yellow
+	Write-Host "Note: Gradle 8.x cannot run on JDK 25 (class file major 69). mmt switches to a JDK 21 when .tools or %USERPROFILE%\tools has one." -ForegroundColor Yellow
 }
 

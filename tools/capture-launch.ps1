@@ -7,13 +7,13 @@
 
   Usage (start the client first, in another window):
     .\gradlew runClient
-    .\tools\capture-launch.ps1 -Match forgeclientuserdev -Out .modaccel\forge.args
+    .\tools\capture-launch.ps1 -Match forgeclientuserdev -Out .mmt\forge.args
 
   The first argument of the match must be the launch target, e.g. forgeclientuserdev, devlaunch.
 #>
 param(
 	[Parameter(Mandatory = $true)][string]$Match,
-	[string]$Out = '.modaccel\forge.args',
+	[string]$Out = '.mmt\forge.args',
 	[int]$TimeoutSeconds = 300
 )
 

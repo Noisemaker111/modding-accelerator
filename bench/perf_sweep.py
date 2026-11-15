@@ -32,7 +32,7 @@ CORPUS = ROOT / "bench" / "perf-corpus.json"
 OUT = ROOT / "coverage" / "sweeps" / "perf.json"
 WORK = ROOT / ".runs" / "perf-sweep"
 WINDOWS = os.name == "nt"
-MODACCEL = [str(ROOT / ("modaccel.cmd" if WINDOWS else "modaccel"))]
+MMT = [str(ROOT / ("mmt.cmd" if WINDOWS else "mmt"))]
 
 
 def diff_file(spec):
@@ -64,7 +64,7 @@ def decide(expect, gate):
 def run_diff(mod, root, spec, expect, args):
     label = re.sub(r"[^A-Za-z0-9_.-]", "_", Path(spec.split(":")[-1]).stem + ("-" + spec.split(":")[1] if spec.startswith("git:") else ""))
     out = WORK / mod["id"] / f"{label}-{int(time.time())}"
-    command = MODACCEL + ["perf-optimize", "--root", str(root), "--experiment", str(ROOT / mod["experiment"]), "--patch", str(diff_file(spec)),
+    command = MMT + ["perf-optimize", "--root", str(root), "--experiment", str(ROOT / mod["experiment"]), "--patch", str(diff_file(spec)),
                           "--runs", str(args.runs), "--min-runs", str(args.runs), "--arms", "sequential", "--dry-run", "--only", "fingerprint",
                           "--out", str(out), "--json"]
     started = time.monotonic()
@@ -81,10 +81,10 @@ def run_diff(mod, root, spec, expect, args):
 
 
 def step(args, timeout=3600):
-    """One modaccel command; raises with its output when it fails."""
-    r = subprocess.run(MODACCEL + args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
+    """One mmt command; raises with its output when it fails."""
+    r = subprocess.run(MMT + args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
     if r.returncode != 0:
-        raise RuntimeError(f"modaccel {' '.join(args[:3])} failed: {(r.stdout + r.stderr)[-1500:]}")
+        raise RuntimeError(f"mmt {' '.join(args[:3])} failed: {(r.stdout + r.stderr)[-1500:]}")
     return r.stdout
 
 
@@ -117,7 +117,7 @@ def prepare(mod, clones):
         step(["eval", *base, "--file", str(folder / "scene.java"), "--thread", "control"])
         step(["eval", *base, "--file", str(save), "--thread", "control"])
     finally:
-        subprocess.run(MODACCEL + ["game-stop", *base], capture_output=True, timeout=600)
+        subprocess.run(MMT + ["game-stop", *base], capture_output=True, timeout=600)
     game = root / experiment.get("gameDirectory", "run") / "saves" / experiment["world"]
     shutil.copytree(game, world, ignore=shutil.ignore_patterns("session.lock"))
     return root
@@ -165,7 +165,7 @@ def redecide(record):
             continue
         base = ",".join(str(runs / f"{n}-baseline" / "fingerprint.json") for n in pairs)
         cand = ",".join(str(runs / f"{n}-candidate" / "fingerprint.json") for n in pairs)
-        r = subprocess.run(MODACCEL + ["fingerprint-diff", "--baseline", base, "--candidate", cand, "--json"], capture_output=True, text=True,
+        r = subprocess.run(MMT + ["fingerprint-diff", "--baseline", base, "--candidate", cand, "--json"], capture_output=True, text=True,
                            encoding="utf-8", errors="replace", timeout=600)
         line = next((l for l in reversed(r.stdout.splitlines()) if l.startswith("{")), None)
         if line is None:

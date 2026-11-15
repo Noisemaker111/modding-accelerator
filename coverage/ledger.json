@@ -57,7 +57,7 @@
       "from": "1.21.5",
       "to": "1.21.6",
       "status": "behaviour",
-      "detail": "Port and backport. Behaviour asserted on 2026-10-26 by tools/tests/AppleSkinHudCheck.java in the real 1.21.6 client through modaccel eval: the health AppleSkin's HUD estimates a golden carrot restores (+12.000002) matched what natural regeneration really healed once the player ate it (+12.000001), within 0.01. With its slow-regeneration estimate broken on purpose (+1.5 instead of +1) the same check failed (+13.000002 against +12.000001). Re-marked to load earlier the same day because the inventory opening and save reload did not check AppleSkin; those are not counted.",
+      "detail": "Port and backport. Behaviour asserted on 2026-10-26 by tools/tests/AppleSkinHudCheck.java in the real 1.21.6 client through mmt eval: the health AppleSkin's HUD estimates a golden carrot restores (+12.000002) matched what natural regeneration really healed once the player ate it (+12.000001), within 0.01. With its slow-regeneration estimate broken on purpose (+1.5 instead of +1) the same check failed (+13.000002 against +12.000001). Re-marked to load earlier the same day because the inventory opening and save reload did not check AppleSkin; those are not counted.",
       "date": "2026-10-24",
       "remarked": {
         "was": "behaviour",
@@ -86,7 +86,7 @@
       "from": "1.21.1",
       "to": "1.21.4",
       "status": "behaviour",
-      "detail": "Fresh copy of upstream 1bb67d4 ported by modaccel port --fix with no manual edits (154s, packaged build). Behaviour asserted on 2026-10-26 by tools/tests/ZombieAiCheck.java in the real 1.21.4 client (NeoForge 21.4.161) through modaccel eval: a zombie summoned by a command got the mod's own goals (ZombieEatFoodGoal, ZombieMountZombieHorseGoal, target goal ZombieHuntGoal) and its zombieapocalypseaddon_scaled tag, and once the mod's /zhunt command turned hunting on it targeted and hit a pig three blocks away, which a vanilla zombie never does. With EventHandler's goal injection removed on purpose the same check failed (no goals, no target). The server-check bot was not used: MCProtocolLib has no 1.21.4 release.",
+      "detail": "Fresh copy of upstream 1bb67d4 ported by mmt port --fix with no manual edits (154s, packaged build). Behaviour asserted on 2026-10-26 by tools/tests/ZombieAiCheck.java in the real 1.21.4 client (NeoForge 21.4.161) through mmt eval: a zombie summoned by a command got the mod's own goals (ZombieEatFoodGoal, ZombieMountZombieHorseGoal, target goal ZombieHuntGoal) and its zombieapocalypseaddon_scaled tag, and once the mod's /zhunt command turned hunting on it targeted and hit a pig three blocks away, which a vanilla zombie never does. With EventHandler's goal injection removed on purpose the same check failed (no goals, no target). The server-check bot was not used: MCProtocolLib has no 1.21.4 release.",
       "date": "2026-10-26"
     },
     {
@@ -163,7 +163,7 @@
       "from": "1.20.1",
       "to": "1.21.6",
       "status": "behaviour",
-      "detail": "Upstream 1.20.1-fabric at c6751d6 ported by modaccel port --fix with nothing written by hand (590s, 28 rules, Loom 1.8 to 1.10.5, Gradle 8.10 to 8.12). The last four new-code changes became port features: an accessor mixin the port writes for the removed exhaustion getter and setter, helpers it adds for client game rules and for food effects on the consumable component, and the old channel-plus-buffer networking carried over as one payload type holding the same bytes (HungerManagerAccessor.java and ModaccelPacket.java are written by the port). Mixin then refused three mixins against 1.21.6; the port repaired them from Mixin's own messages (a moved class inside a target string, a target pinned to a gone descriptor, a handler missing the parameter its target gained) and Mixin applied all 8. Behaviour asserted on 2026-11-08 by tools/tests/AppleSkinHudCheck.java in the real 1.21.6 client: the health AppleSkin's HUD estimates a golden carrot restores (+12.000002) matched what natural regeneration really healed (+12.000001), within 0.01; with its slow-regeneration estimate broken on purpose the same check failed (+13.000002). The check first caught a wrong rule: getSaturationModifier() had been renamed to saturation(), which since 1.20.5 is the finished amount, and the estimate read +15.5.",
+      "detail": "Upstream 1.20.1-fabric at c6751d6 ported by mmt port --fix with nothing written by hand (590s, 28 rules, Loom 1.8 to 1.10.5, Gradle 8.10 to 8.12). The last four new-code changes became port features: an accessor mixin the port writes for the removed exhaustion getter and setter, helpers it adds for client game rules and for food effects on the consumable component, and the old channel-plus-buffer networking carried over as one payload type holding the same bytes (HungerManagerAccessor.java and MmtPacket.java are written by the port). Mixin then refused three mixins against 1.21.6; the port repaired them from Mixin's own messages (a moved class inside a target string, a target pinned to a gone descriptor, a handler missing the parameter its target gained) and Mixin applied all 8. Behaviour asserted on 2026-11-08 by tools/tests/AppleSkinHudCheck.java in the real 1.21.6 client: the health AppleSkin's HUD estimates a golden carrot restores (+12.000002) matched what natural regeneration really healed (+12.000001), within 0.01; with its slow-regeneration estimate broken on purpose the same check failed (+13.000002). The check first caught a wrong rule: getSaturationModifier() had been renamed to saturation(), which since 1.20.5 is the finished amount, and the estimate read +15.5.",
       "date": "2026-11-08"
     },
     {
@@ -235,7 +235,7 @@
       "from": "1.20.1",
       "to": "1.21.6",
       "status": "stop",
-      "detail": "Re-run with nothing done by hand, through modaccel port --fix (72s, warm caches). The build tools now follow the target: Loom 1.8-SNAPSHOT went to 1.10.5 because the target's Fabric API was built with Loom 1.10, and Gradle 8.10 to 8.12, the version Loom 1.10.5's published metadata asks for. The first build showed 69 errors; 22 rules took them to 11, including the whole render family (render type then pipeline first in drawTexture, shader colour into each draw call, blend and depth state, texture binds and views), the tooltip component's new size arguments, the empty text contents and canAlwaysEat. The 11 left are four changes that need new code, and the stopped port now names a repair guide for each: the removed hunger exhaustion getter (an accessor mixin), food effects moved to the consumable component, game rules only on the server world, and networking as payload records. Upstream's 1.21.6 also replaced the icons.png HUD textures with sprites, which a rule cannot restore.",
+      "detail": "Re-run with nothing done by hand, through mmt port --fix (72s, warm caches). The build tools now follow the target: Loom 1.8-SNAPSHOT went to 1.10.5 because the target's Fabric API was built with Loom 1.10, and Gradle 8.10 to 8.12, the version Loom 1.10.5's published metadata asks for. The first build showed 69 errors; 22 rules took them to 11, including the whole render family (render type then pipeline first in drawTexture, shader colour into each draw call, blend and depth state, texture binds and views), the tooltip component's new size arguments, the empty text contents and canAlwaysEat. The 11 left are four changes that need new code, and the stopped port now names a repair guide for each: the removed hunger exhaustion getter (an accessor mixin), food effects moved to the consumable component, game rules only on the server world, and networking as payload records. Upstream's 1.21.6 also replaced the icons.png HUD textures with sprites, which a rule cannot restore.",
       "date": "2026-11-07"
     },
     {
@@ -244,7 +244,7 @@
       "from": "1.21.6",
       "to": "26.3",
       "status": "behaviour",
-      "detail": "Ported by modaccel port --fix with nothing written by hand: 26 rules, the removed debug-text event now among them (it becomes a registered debug screen entry), and NeoForge 26.3.0.101 with Java 25. Behaviour asserted on 2026-11-08 by tools/tests/AppleSkinHudCheck.java in the real 26.3 client through modaccel eval: the health AppleSkin's HUD estimates a golden carrot restores (+12.000002) matched what natural regeneration really healed (+12.000001), within 0.01. With its slow-regeneration estimate broken on purpose (+1.5 instead of +1) the same check failed (+13.000002 against +12.000001). Getting there needed one port fix: the project's Parchment parameter names for 1.21.5 were applied to the 26.3 game, which compiled Minecraft's packet bundler wrong and left every singleplayer world on its loading screen; Parchment now follows the target and is removed when it publishes none. The game's NeoForm setup takes about an hour on this PC when it is busy.",
+      "detail": "Ported by mmt port --fix with nothing written by hand: 26 rules, the removed debug-text event now among them (it becomes a registered debug screen entry), and NeoForge 26.3.0.101 with Java 25. Behaviour asserted on 2026-11-08 by tools/tests/AppleSkinHudCheck.java in the real 26.3 client through mmt eval: the health AppleSkin's HUD estimates a golden carrot restores (+12.000002) matched what natural regeneration really healed (+12.000001), within 0.01. With its slow-regeneration estimate broken on purpose (+1.5 instead of +1) the same check failed (+13.000002 against +12.000001). Getting there needed one port fix: the project's Parchment parameter names for 1.21.5 were applied to the 26.3 game, which compiled Minecraft's packet bundler wrong and left every singleplayer world on its loading screen; Parchment now follows the target and is removed when it publishes none. The game's NeoForm setup takes about an hour on this PC when it is busy.",
       "date": "2026-11-08"
     },
     {
@@ -253,7 +253,7 @@
       "from": "1.21",
       "to": "1.21.6",
       "status": "behaviour",
-      "detail": "Upstream neoforge-1.21.1 branch at d1e9c39 ported by modaccel port --fix with nothing written by hand (165s cold on the boat Linux host, 37s with the game set up): 13 errors to 0 through eight new rules (NeoForge's GuiLayer for the removed LayeredDraw.Layer, scrollBarX, a widened override made public, the GUI_TEXT_HIGHLIGHT pipeline, RegistryAccess.lookup, and a helper for NeoForge's removed float drawString that keeps its end-x result) beside the 1.21.6 colour alpha rule. The build tools follow the target: NeoGradle 7.0.145 to 7.1.39 and Gradle 8.9 to 8.14; on 7.0.145 it compiled but stopped at launch with two ASM versions on the class path. Behaviour asserted on 2026-11-08 by tools/tests/NotesPinCheck.java in the real 1.21.6 client (NeoForge 21.6.20-beta, hidden on Xvfb with software OpenGL): holding Notes' key opened its notes screen, a note saved through its own code was read back from disk with the same text, and its pinned-note HUD layer drew that text in opaque white. With the pinned note drawn at alpha 0 on purpose the same check failed (the layer drew nothing).",
+      "detail": "Upstream neoforge-1.21.1 branch at d1e9c39 ported by mmt port --fix with nothing written by hand (165s cold on the boat Linux host, 37s with the game set up): 13 errors to 0 through eight new rules (NeoForge's GuiLayer for the removed LayeredDraw.Layer, scrollBarX, a widened override made public, the GUI_TEXT_HIGHLIGHT pipeline, RegistryAccess.lookup, and a helper for NeoForge's removed float drawString that keeps its end-x result) beside the 1.21.6 colour alpha rule. The build tools follow the target: NeoGradle 7.0.145 to 7.1.39 and Gradle 8.9 to 8.14; on 7.0.145 it compiled but stopped at launch with two ASM versions on the class path. Behaviour asserted on 2026-11-08 by tools/tests/NotesPinCheck.java in the real 1.21.6 client (NeoForge 21.6.20-beta, hidden on Xvfb with software OpenGL): holding Notes' key opened its notes screen, a note saved through its own code was read back from disk with the same text, and its pinned-note HUD layer drew that text in opaque white. With the pinned note drawn at alpha 0 on purpose the same check failed (the layer drew nothing).",
       "date": "2026-11-08",
       "test": "tools/tests/NotesPinCheck.java"
     },
@@ -263,7 +263,7 @@
       "from": "1.21.1",
       "to": "1.21.6",
       "status": "behaviour",
-      "detail": "Fresh copy of upstream 1bb67d4 ported by modaccel port --fix with nothing written by hand (30s; the game's NeoForm setup came from Notes' port, 0 steps run): the last 9 errors, all on update 1.21.4 -> 1.21.5, became rules and port features: SavedData.Factory to a SavedDataType whose codec wraps the mod's own NBT load and save, isInWaterOrBubble to isInWater, a helper that puts the saddle in its equipment slot with its equip sound, a helper for the owner's UUID from getOwnerReference, and an accessor mixin for the horse owner field that only setOwner(LivingEntity) sets. ZAA has no mixins, so the port adds zombieapocalypseaddon.modaccel.mixins.json and its [[mixins]] entry (undo removes both); Mixin applied the accessor against 1.21.6 (1 of 1) once its check reached NeoForge 21.6's renamed unit-test launch target. Behaviour asserted on 2026-11-08 by tools/tests/ZombieAiCheck.java in the real 1.21.6 client (hidden on Xvfb): a summoned zombie got the mod's goals (ZombieEatFoodGoal, ZombieMountZombieHorseGoal, ZombieHuntGoal) and scaling tag and targeted a pig; with EventHandler's goal injection removed on purpose the same check failed.",
+      "detail": "Fresh copy of upstream 1bb67d4 ported by mmt port --fix with nothing written by hand (30s; the game's NeoForm setup came from Notes' port, 0 steps run): the last 9 errors, all on update 1.21.4 -> 1.21.5, became rules and port features: SavedData.Factory to a SavedDataType whose codec wraps the mod's own NBT load and save, isInWaterOrBubble to isInWater, a helper that puts the saddle in its equipment slot with its equip sound, a helper for the owner's UUID from getOwnerReference, and an accessor mixin for the horse owner field that only setOwner(LivingEntity) sets. ZAA has no mixins, so the port adds zombieapocalypseaddon.mmt.mixins.json and its [[mixins]] entry (undo removes both); Mixin applied the accessor against 1.21.6 (1 of 1) once its check reached NeoForge 21.6's renamed unit-test launch target. Behaviour asserted on 2026-11-08 by tools/tests/ZombieAiCheck.java in the real 1.21.6 client (hidden on Xvfb): a summoned zombie got the mod's goals (ZombieEatFoodGoal, ZombieMountZombieHorseGoal, ZombieHuntGoal) and scaling tag and targeted a pig; with EventHandler's goal injection removed on purpose the same check failed.",
       "date": "2026-11-08",
       "test": "tools/tests/ZombieAiCheck.java"
     },
@@ -273,7 +273,7 @@
       "from": "1.21.1",
       "to": "26.3",
       "status": "behaviour",
-      "detail": "Upstream 1bb67d4 ported by modaccel port --fix with nothing written by hand (243 s warm; the game's 26.3 NeoForm setup was cold on the first run, 20.7 min). The route 1.21.1 -> 26.3 crosses 15 updates; its rename map is generated from the game itself by tools/GameDiff.java (Mojang's client jars and mappings for every release, linked release to release by their own bytecode, the game's data-fixer id renames for GameRules, NeoForge's own published classes), with no intermediary. 45 errors left on the first run of 2026-11-14 became 13 new rules and 4 corrected ones (26.1 world clocks for day time, SavedDataType keyed by Identifier with NeoForge's level factories, EntityType.is through its registry holder, entityTags, FancyModLoader 12 config types, EntityReference.of, Entity.getServer through its level, startRiding's third argument, needsSync; entity-snapto limited to reported lines, create/convertTo widened to 26.2's EntityTypes, convertTo given an empty after-conversion hook instead of null). Two port features: Mixin's check runs on FancyModLoader 12's new startup, and the mod's JUnit tests run on junit-fml (26.x's Commands needs the game bootstrapped): all 128 pass. Behaviour asserted on 2026-11-14 by tools/tests/ZombieAiCheck.java in the real 26.3 client (hidden, muted): a summoned zombie got ZombieEatFoodGoal, ZombieMountZombieHorseGoal and ZombieHuntGoal and the scaling tag, and targeted the pig; with EventHandler's goal injection removed on purpose the same check failed.",
+      "detail": "Upstream 1bb67d4 ported by mmt port --fix with nothing written by hand (243 s warm; the game's 26.3 NeoForm setup was cold on the first run, 20.7 min). The route 1.21.1 -> 26.3 crosses 15 updates; its rename map is generated from the game itself by tools/GameDiff.java (Mojang's client jars and mappings for every release, linked release to release by their own bytecode, the game's data-fixer id renames for GameRules, NeoForge's own published classes), with no intermediary. 45 errors left on the first run of 2026-11-14 became 13 new rules and 4 corrected ones (26.1 world clocks for day time, SavedDataType keyed by Identifier with NeoForge's level factories, EntityType.is through its registry holder, entityTags, FancyModLoader 12 config types, EntityReference.of, Entity.getServer through its level, startRiding's third argument, needsSync; entity-snapto limited to reported lines, create/convertTo widened to 26.2's EntityTypes, convertTo given an empty after-conversion hook instead of null). Two port features: Mixin's check runs on FancyModLoader 12's new startup, and the mod's JUnit tests run on junit-fml (26.x's Commands needs the game bootstrapped): all 128 pass. Behaviour asserted on 2026-11-14 by tools/tests/ZombieAiCheck.java in the real 26.3 client (hidden, muted): a summoned zombie got ZombieEatFoodGoal, ZombieMountZombieHorseGoal and ZombieHuntGoal and the scaling tag, and targeted the pig; with EventHandler's goal injection removed on purpose the same check failed.",
       "date": "2026-11-14"
     },
     {
@@ -282,7 +282,7 @@
       "from": "1.21.1",
       "to": "1.21.6",
       "status": "stop",
-      "detail": "Upstream 1.21-neoforge at 6701b1e ported by modaccel port --fix with nothing written by hand on the game-derived map: 30 compiler errors left (98 recorded before, with more hidden behind javac's 100-error cap). It now gets past its build: NeoGradle's mixin plugin, gone in NeoGradle 7.1, is dropped with its config declared in neoforge.mods.toml. 50 new rules for 1.21.2-1.21.6 cover the 2D GUI pose stack, sprite and tiled blits (blit offset dropped, render function then pipeline first, colour threaded from setColor), the void drawString end x, registry getValue, delta tracker, villager data, NBT keys, armour slots, JSON reload listeners, custom model data, picked and cloned items and more. A port step rewrites stale access-transformer entries for members the target made private again (6 here), and the typed fixer follows the game's unanimous renames on a mod's own subclasses. Left: Jade's raw-vertex DisplayHelper and its Font mixins (1.21.5-1.21.6 render rewrite), fog and darkness (FogRenderer rewrite), entity variants (VariantHolder became data components), tooltips for the next frame, the reload-listener event, and two Jade API types (RegistryAccess where NeoForge gives a HolderLookup.Provider).",
+      "detail": "Upstream 1.21-neoforge at 6701b1e ported by mmt port --fix with nothing written by hand on the game-derived map: 30 compiler errors left (98 recorded before, with more hidden behind javac's 100-error cap). It now gets past its build: NeoGradle's mixin plugin, gone in NeoGradle 7.1, is dropped with its config declared in neoforge.mods.toml. 50 new rules for 1.21.2-1.21.6 cover the 2D GUI pose stack, sprite and tiled blits (blit offset dropped, render function then pipeline first, colour threaded from setColor), the void drawString end x, registry getValue, delta tracker, villager data, NBT keys, armour slots, JSON reload listeners, custom model data, picked and cloned items and more. A port step rewrites stale access-transformer entries for members the target made private again (6 here), and the typed fixer follows the game's unanimous renames on a mod's own subclasses. Left: Jade's raw-vertex DisplayHelper and its Font mixins (1.21.5-1.21.6 render rewrite), fog and darkness (FogRenderer rewrite), entity variants (VariantHolder became data components), tooltips for the next frame, the reload-listener event, and two Jade API types (RegistryAccess where NeoForge gives a HolderLookup.Provider).",
       "date": "2026-11-14"
     },
     {
@@ -291,7 +291,7 @@
       "from": "26.1",
       "to": "26.1.1",
       "status": "build",
-      "detail": "Ported by modaccel port --fix with nothing written by hand: it builds and the mixin check passed. Not started in the game.",
+      "detail": "Ported by mmt port --fix with nothing written by hand: it builds and the mixin check passed. Not started in the game.",
       "date": "2026-11-15"
     },
     {
@@ -300,7 +300,7 @@
       "from": "1.17.1",
       "to": "1.18",
       "status": "load",
-      "detail": "Port sweep after2 (python bench/sweep.py, commit 0eaf29dd69): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with modid in the loader's own mod list (modaccel eval).",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 0eaf29dd69): mmt port --fix with nothing written by hand builds, and a hidden mmt ui-check reached the title screen with modid in the loader's own mod list (mmt eval).",
       "date": "2026-11-15"
     },
     {
@@ -309,7 +309,7 @@
       "from": "1.17.1",
       "to": "1.20.1",
       "status": "load",
-      "detail": "Port sweep after2 (python bench/sweep.py, commit 0eaf29dd69): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with modid in the loader's own mod list (modaccel eval).",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 0eaf29dd69): mmt port --fix with nothing written by hand builds, and a hidden mmt ui-check reached the title screen with modid in the loader's own mod list (mmt eval).",
       "date": "2026-11-15"
     },
     {
@@ -318,7 +318,7 @@
       "from": "26.1.2",
       "to": "26.1.1",
       "status": "build",
-      "detail": "Ported by modaccel port --fix with nothing written by hand: it builds and the mixin check passed. Not started in the game.",
+      "detail": "Ported by mmt port --fix with nothing written by hand: it builds and the mixin check passed. Not started in the game.",
       "date": "2026-11-15"
     },
     {
@@ -327,7 +327,7 @@
       "from": "26.3",
       "to": "26.2",
       "status": "load",
-      "detail": "Port sweep after2 (python bench/sweep.py, commit bc08466ff9): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with krypton in the loader's own mod list (modaccel eval).",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit bc08466ff9): mmt port --fix with nothing written by hand builds, and a hidden mmt ui-check reached the title screen with krypton in the loader's own mod list (mmt eval).",
       "date": "2026-11-15"
     },
     {
@@ -336,7 +336,7 @@
       "from": "1.21.1",
       "to": "1.21.2",
       "status": "load",
-      "detail": "Port sweep after2 (python bench/sweep.py, commit 0ba128f322): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with midnightlib in the loader's own mod list (modaccel eval). MidnightLib registered its own config with MidnightConfig at start (MidnightConfig.configClass has midnightlib): passed.",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 0ba128f322): mmt port --fix with nothing written by hand builds, and a hidden mmt ui-check reached the title screen with midnightlib in the loader's own mod list (mmt eval). MidnightLib registered its own config with MidnightConfig at start (MidnightConfig.configClass has midnightlib): passed.",
       "date": "2026-11-15"
     },
     {
@@ -345,7 +345,7 @@
       "from": "1.21.1",
       "to": "1.21.2",
       "status": "load",
-      "detail": "Port sweep after2 (python bench/sweep.py, commit 1bb67d4a48): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with zombieapocalypseaddon in the loader's own mod list (modaccel eval).",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 1bb67d4a48): mmt port --fix with nothing written by hand builds, and a hidden mmt ui-check reached the title screen with zombieapocalypseaddon in the loader's own mod list (mmt eval).",
       "date": "2026-11-15"
     },
     {
@@ -354,7 +354,7 @@
       "from": "1.21.1",
       "to": "1.21.6",
       "status": "load",
-      "detail": "Port sweep after2 (python bench/sweep.py, commit 1bb67d4a48): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with zombieapocalypseaddon in the loader's own mod list (modaccel eval).",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 1bb67d4a48): mmt port --fix with nothing written by hand builds, and a hidden mmt ui-check reached the title screen with zombieapocalypseaddon in the loader's own mod list (mmt eval).",
       "date": "2026-11-15"
     },
     {
@@ -363,7 +363,7 @@
       "from": "1.21.1",
       "to": "26.3",
       "status": "load",
-      "detail": "Port sweep after2 (python bench/sweep.py, commit 1bb67d4a48): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with zombieapocalypseaddon in the loader's own mod list (modaccel eval).",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 1bb67d4a48): mmt port --fix with nothing written by hand builds, and a hidden mmt ui-check reached the title screen with zombieapocalypseaddon in the loader's own mod list (mmt eval).",
       "date": "2026-11-15"
     },
     {
@@ -372,7 +372,7 @@
       "from": "1.21.4",
       "to": "1.21.5",
       "status": "load",
-      "detail": "Port sweep verify5 (python bench/sweep.py, commit 2e18da56a5): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with trashcans in the loader's own mod list (modaccel eval). 4 blocks, items and entity types the mod's own assets name are in the game's registries: passed.",
+      "detail": "Port sweep verify5 (python bench/sweep.py, commit 2e18da56a5): mmt port --fix with nothing written by hand builds, and a hidden mmt ui-check reached the title screen with trashcans in the loader's own mod list (mmt eval). 4 blocks, items and entity types the mod's own assets name are in the game's registries: passed.",
       "date": "2026-11-15"
     }
   ],
@@ -381,13 +381,13 @@
       "from": "fabric",
       "to": "neoforge",
       "status": "behaviour",
-      "detail": "modaccel convert, no hand edits. Auto Omen 0.1.0 (Fabric 26.3) to NeoForge 26.3.0.103 in 22 s including the compile; its own in-game raid self test passed 23 of 23 checks on NeoForge, the same 23 as on Fabric. Pride Flags 1.0.9 (Fabric 26.1.2) to NeoForge 26.1.2.126 in 182 s on a cold cache; its converted data generation wrote the same 189 files as Fabric's (block loot gains vanilla's random_sequence), and in the game its 13 blocks and 26 items registered, flags ignite 30 and burn 60, the village shepherd chest gained 26 loot pools, 48 recipes loaded and the flags rendered."
+      "detail": "mmt convert, no hand edits. Auto Omen 0.1.0 (Fabric 26.3) to NeoForge 26.3.0.103 in 22 s including the compile; its own in-game raid self test passed 23 of 23 checks on NeoForge, the same 23 as on Fabric. Pride Flags 1.0.9 (Fabric 26.1.2) to NeoForge 26.1.2.126 in 182 s on a cold cache; its converted data generation wrote the same 189 files as Fabric's (block loot gains vanilla's random_sequence), and in the game its 13 blocks and 26 items registered, flags ignite 30 and burn 60, the village shepherd chest gained 26 loot pools, 48 recipes loaded and the flags rendered."
     },
     {
       "from": "neoforge",
       "to": "fabric",
       "status": "behaviour",
-      "detail": "modaccel convert, no hand edits, Minecraft 26.1 and later only. The NeoForge Auto Omen made by the conversion above went back to Fabric (Loom 1.18.4, Fabric API 0.166.2+26.3) with every Java file byte for byte the original, and passed its own in-game raid self test, 23 of 23. No mod written for NeoForge first has been converted yet."
+      "detail": "mmt convert, no hand edits, Minecraft 26.1 and later only. The NeoForge Auto Omen made by the conversion above went back to Fabric (Loom 1.18.4, Fabric API 0.166.2+26.3) with every Java file byte for byte the original, and passed its own in-game raid self test, 23 of 23. No mod written for NeoForge first has been converted yet."
     },
     {
       "from": "fabric",

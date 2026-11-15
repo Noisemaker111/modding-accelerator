@@ -349,7 +349,7 @@ public final class PortableTests {
         );
         ProjectModel project = new ProjectModel(root);
         Port port = new Port(
-            new Build(project, home, "", new Modaccel.Report(root, "port")),
+            new Build(project, home, "", new Mmt.Report(root, "port")),
             Json.map("projects", List.of())
         );
         port.transaction = project.state().resolve("ports/accessor");
@@ -380,8 +380,8 @@ public final class PortableTests {
         check(
             source.contains("@Mixin(HungerManager.class)") &&
             source.contains("@Accessor(\"exhaustion\")") &&
-            source.contains("float modaccel$getExhaustion();") &&
-            !source.contains("modaccel$setExhaustion"),
+            source.contains("float mmt$getExhaustion();") &&
+            !source.contains("mmt$setExhaustion"),
             "the accessor mixin reads the field in the main mixin package, with no setter the mod never used"
         );
         check(
@@ -392,7 +392,7 @@ public final class PortableTests {
         );
         String repaired = Files.readString(hud);
         check(
-            repaired.contains("return ((HungerManagerAccessor) player.getHungerManager()).modaccel$getExhaustion();") &&
+            repaired.contains("return ((HungerManagerAccessor) player.getHungerManager()).mmt$getExhaustion();") &&
             repaired.contains("return payload.getExhaustion();") &&
             repaired.contains("import mod.mixin.HungerManagerAccessor;"),
             "only the call javac reported goes through the accessor; the mod's own getter of the same name is kept"
@@ -446,7 +446,7 @@ public final class PortableTests {
         Files.writeString(hunt, original);
         ProjectModel project = new ProjectModel(root);
         Port port = new Port(
-            new Build(project, home, "", new Modaccel.Report(root, "port")),
+            new Build(project, home, "", new Mmt.Report(root, "port")),
             Json.map("projects", List.of())
         );
         port.transaction = project.state().resolve("ports/accessor-no-mixins");
@@ -467,22 +467,22 @@ public final class PortableTests {
             "an accessor on a subclass's receiver (a ZombieHorse for AbstractHorse's field) runs in a mod with no mixins config"
         );
         port.flushImports();
-        Path config = root.resolve("src/main/resources/zombiemod.modaccel.mixins.json"), accessor = java.resolve(
+        Path config = root.resolve("src/main/resources/zombiemod.mmt.mixins.json"), accessor = java.resolve(
             "mixin/AbstractHorseAccessor.java"
         );
         check(
             Files.isRegularFile(config) &&
             Json.text(Json.read(config), "package", "").equals("mod.mixin") &&
             Files.readString(config).contains("\"AbstractHorseAccessor\"") &&
-            Files.readString(toml).contains("[[mixins]]\nconfig=\"zombiemod.modaccel.mixins.json\""),
+            Files.readString(toml).contains("[[mixins]]\nconfig=\"zombiemod.mmt.mixins.json\""),
             "the port adds a mixins config named for the mod id from its gradle.properties, lists it in neoforge.mods.toml and lists the accessor in it"
         );
         check(
             Files.readString(accessor).contains(
-                "void modaccel$setOwner(net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity> value);"
+                "void mmt$setOwner(net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity> value);"
             ) &&
             Files.readString(hunt).contains(
-                "((AbstractHorseAccessor) zombieHorse).modaccel$setOwner(java.util.Optional.ofNullable(owner).map("
+                "((AbstractHorseAccessor) zombieHorse).mmt$setOwner(java.util.Optional.ofNullable(owner).map("
             ),
             "the removed setter's UUID is passed as the field's EntityReference through the accessor's setter"
         );
@@ -529,7 +529,7 @@ public final class PortableTests {
         );
         check(
             handler.contains(
-                "private void getTooltipFromItem(Item.TooltipContext modaccel$tooltipContext0, PlayerEntity player, TooltipType context, CallbackInfoReturnable<List> info)"
+                "private void getTooltipFromItem(Item.TooltipContext mmt$tooltipContext0, PlayerEntity player, TooltipType context, CallbackInfoReturnable<List> info)"
             ) &&
             handler.startsWith("import net.minecraft.item.Item;\n"),
             "a handler gets the parameter its target gained, in Mixin's order, and keeps its own names: " +
@@ -569,7 +569,7 @@ public final class PortableTests {
                 project.loomVersion().equals("1.8-SNAPSHOT"),
                 "the Loom version is read from " + (property ? "the property the plugin line names" : "the plugin line")
             );
-            Build build = new Build(project, home, "", new Modaccel.Report(root, "port"));
+            Build build = new Build(project, home, "", new Mmt.Report(root, "port"));
             Target.Setup setup = new Target.Setup(build, Json.map(), "1.21.6", List.of());
             check(Target.loomEdit(setup, build, "1.8-SNAPSHOT", "1.10.5"), "a stated Loom version can be raised");
             Path changed = root.resolve(property ? "gradle.properties" : "build.gradle");
@@ -644,7 +644,7 @@ public final class PortableTests {
             );
             Files.writeString(root.resolve("gradle.properties"), c.props());
             Files.writeString(root.resolve("build.gradle"), c.build());
-            Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
+            Build build = new Build(new ProjectModel(root), home, "", new Mmt.Report(root, "port"));
             Target.Setup setup = new Target.Setup(
                 build,
                 Json.map(),
@@ -671,7 +671,7 @@ public final class PortableTests {
         );
         Files.writeString(plain.resolve("gradle.properties"), "other=1\n");
         Files.writeString(plain.resolve("build.gradle"), "plugins { }\n");
-        Build plainBuild = new Build(new ProjectModel(plain), home, "", new Modaccel.Report(plain, "port"));
+        Build plainBuild = new Build(new ProjectModel(plain), home, "", new Mmt.Report(plain, "port"));
         Target.Setup untouched = new Target.Setup(plainBuild, Json.map(), "26.3", List.of());
         check(
             !Target.parchmentEdit(untouched, plainBuild, "26.3", null) && untouched.edits().isEmpty(),
@@ -700,7 +700,7 @@ public final class PortableTests {
                 root.resolve("src/main/resources/META-INF/neoforge.mods.toml"),
                 "[[mods]]\nmodId=\"${mod_id}\"\n"
             );
-            Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
+            Build build = new Build(new ProjectModel(root), home, "", new Mmt.Report(root, "port"));
             // The two lookups NeoGradle's planning makes, answered from the metadata cache Target.fetch reads first.
             Map<String, String> answers = Map.of(
                 "https://maven.neoforged.net/releases/net/neoforged/gradle/userdev/maven-metadata.xml",
@@ -763,7 +763,7 @@ public final class PortableTests {
                 root.resolve("src/test/java/demo/CommandsTest.java"),
                 "package demo;\n\nimport org.junit.jupiter.api.Test;\n\nclass CommandsTest {\n    @Test\n    void tree() {}\n}\n"
             );
-            Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
+            Build build = new Build(new ProjectModel(root), home, "", new Mmt.Report(root, "port"));
             String pom = "https://maven.neoforged.net/releases/net/neoforged/neoforge/26.3.0.103/neoforge-26.3.0.103.pom";
             Path cached = build.project
                 .state()
@@ -1007,7 +1007,7 @@ public final class PortableTests {
             Convert.neoforgeModId("2fast").equals("mod_2fast"),
             "a Fabric mod id with a hyphen becomes one NeoForge accepts"
         );
-        // Found by an independent check: modaccel package copied whatever desktop app build was in app/target/release.
+        // Found by an independent check: mmt package copied whatever desktop app build was in app/target/release.
         Path app = scratch.resolve("stale-app/app");
         Files.createDirectories(app.resolve("src"));
         Files.createDirectories(app.resolve("target/release"));
@@ -1298,13 +1298,13 @@ public final class PortableTests {
         Map<String, byte[]> original = new LinkedHashMap<>();
         for (String name : files.keySet()) original.put(name, Files.readAllBytes(root.resolve(name)));
 
-        // Found by an independent check: the command line's --dry-run still left modaccel's state, its cached release lookups and
+        // Found by an independent check: the command line's --dry-run still left mmt's state, its cached release lookups and
         // a receipt in the mod folder, and exited 1 when items were left. Its preview runs on a copy outside the project.
         Map<String, String> beforePreview = new TreeMap<>();
         try (var walk = Files.walk(root)) {
             for (Path p : walk.filter(Files::isRegularFile).toList()) beforePreview.put(root.relativize(p).toString(), Fingerprints.bytes(Files.readAllBytes(p)));
         }
-        Map<String, Object> preview = Convert.preview(root, home, new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" }));
+        Map<String, Object> preview = Convert.preview(root, home, new Mmt.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" }));
         Map<String, String> afterPreview = new TreeMap<>();
         try (var walk = Files.walk(root)) {
             for (Path p : walk.filter(Files::isRegularFile).toList()) afterPreview.put(root.relativize(p).toString(), Fingerprints.bytes(Files.readAllBytes(p)));
@@ -1322,10 +1322,10 @@ public final class PortableTests {
         Process previewRun = new ProcessBuilder(
             ProcessHandle.current().info().command().orElse("java"),
             "-Djava.io.tmpdir=" + previewTemp,
-            "-Dmodaccel.home=" + home,
+            "-Dmmt.home=" + home,
             "-cp",
-            Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(),
-            "Modaccel",
+            Path.of(Mmt.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(),
+            "Mmt",
             "convert",
             "--root",
             root.toString(),
@@ -1346,9 +1346,9 @@ public final class PortableTests {
             previewText.substring(Math.max(0, previewText.length() - 400))
         );
 
-        Build build = new Build(project, home, "", new Modaccel.Report(root, "convert"));
+        Build build = new Build(project, home, "", new Mmt.Report(root, "convert"));
         Map<String, Object> dry = new Convert(build).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+            new Mmt.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
         );
         boolean untouched = true;
         for (var file : original.entrySet()) if (
@@ -1359,7 +1359,7 @@ public final class PortableTests {
             List<String> made = all
                 .filter(Files::isRegularFile)
                 .map(p -> root.relativize(p).toString().replace(File.separatorChar, '/'))
-                .filter(p -> !p.startsWith(".modaccel/") && !p.startsWith(".runs/") && !original.containsKey(p))
+                .filter(p -> !p.startsWith(".mmt/") && !p.startsWith(".runs/") && !original.containsKey(p))
                 .toList();
             check(
                 untouched && made.isEmpty() && !Files.exists(project.state().resolve(Convert.FOLDER)) && dry.get("undoConvert") == null,
@@ -1367,7 +1367,7 @@ public final class PortableTests {
             );
         }
         Map<String, Object> toNeo = new Convert(build).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "neoforge" }),
+            new Mmt.Options(new String[] { "convert", "--to", "neoforge" }),
             false
         );
         check(
@@ -1435,8 +1435,8 @@ public final class PortableTests {
             toml.contains("[[accessTransformers]]"),
             "fabric.mod.json becomes neoforge.mods.toml:\n" + toml
         );
-        Map<String, Object> back = new Convert(new Build(project, home, "", new Modaccel.Report(root, "convert"))).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "fabric" }),
+        Map<String, Object> back = new Convert(new Build(project, home, "", new Mmt.Report(root, "convert"))).run(
+            new Mmt.Options(new String[] { "convert", "--to", "fabric" }),
             false
         );
         boolean javaSame = true;
@@ -1508,8 +1508,8 @@ public final class PortableTests {
             Files.createDirectories(cache.getParent());
             Files.writeString(cache, answer.getValue());
         }
-        Convert quitConvert = new Convert(new Build(quitProject, home, "", new Modaccel.Report(quit, "convert")));
-        quitConvert.run(new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" }));
+        Convert quitConvert = new Convert(new Build(quitProject, home, "", new Mmt.Report(quit, "convert")));
+        quitConvert.run(new Mmt.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" }));
         // A dry run writes nothing; the converted text is what it staged.
         String quitGradle = quitConvert.current("build.gradle");
         check(
@@ -1551,9 +1551,9 @@ public final class PortableTests {
             Files.createDirectories(cache.getParent());
             Files.writeString(cache, answer.getValue());
         }
-        Convert neoConvert = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert")));
+        Convert neoConvert = new Convert(new Build(neoProject, home, "", new Mmt.Report(neo, "convert")));
         // Written, not a dry run: the way back and undo below start from the converted mod.
-        Map<String, Object> bridged = neoConvert.run(new Modaccel.Options(new String[] { "convert", "--to", "fabric" }), false);
+        Map<String, Object> bridged = neoConvert.run(new Mmt.Options(new String[] { "convert", "--to", "fabric" }), false);
         String bridgedEntry = neoConvert.current("src/main/java/demo/Demo.java");
         String fabricJson = neoConvert.current("src/main/resources/fabric.mod.json");
         String bridgedRegister = neoConvert.current("src/main/java/demo/loaderbridge/DeferredRegister.java");
@@ -1580,8 +1580,8 @@ public final class PortableTests {
             "the NeoForge bridge goes beside the common @Mod class, never in a client package"
         );
         // Found by the convert sweep: the NeoForge MDK converted to Fabric did not convert back. The way back takes the bridge out.
-        Map<String, Object> unbridged = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert"))).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--no-compile" })
+        Map<String, Object> unbridged = new Convert(new Build(neoProject, home, "", new Mmt.Report(neo, "convert"))).run(
+            new Mmt.Options(new String[] { "convert", "--to", "neoforge", "--no-compile" })
         );
         String backEntry = Files.readString(neo.resolve("src/main/java/demo/Demo.java"));
         String neoOriginal = Json.text(bridgeTest, "neoforge", "");
@@ -1765,12 +1765,12 @@ public final class PortableTests {
             "a Gradle major line's newest final release"
         );
         List<String> unlisted = new ArrayList<>();
-        for (String command : new TreeSet<>(Modaccel.COMMANDS)) {
+        for (String command : new TreeSet<>(Mmt.COMMANDS)) {
             String word = "(?<![\\w-])" + java.util.regex.Pattern.quote(command) + "(?![\\w-])";
-            boolean listed = java.util.regex.Pattern.compile(word).matcher(Modaccel.help()).find();
-            if (!listed && !Modaccel.INTERNAL.contains(command)) unlisted.add(command);
+            boolean listed = java.util.regex.Pattern.compile(word).matcher(Mmt.help()).find();
+            if (!listed && !Mmt.INTERNAL.contains(command)) unlisted.add(command);
         }
-        check(unlisted.isEmpty(), "help lists every command modaccel runs; missing: " + unlisted);
+        check(unlisted.isEmpty(), "help lists every command mmt runs; missing: " + unlisted);
         String restartTimes = ServerCheck.text(
             Json.map(
                 "ok",
@@ -1831,7 +1831,7 @@ public final class PortableTests {
             "individual absolute plugin jars, including commas in their paths, can be listed together"
         );
         Path existingArgs = scratch.resolve("existing loom args.txt");
-        Files.writeString(existingArgs, "-Dmodaccel.launchProbe=existing-file\n");
+        Files.writeString(existingArgs, "-Dmmt.launchProbe=existing-file\n");
         String classpath =
             System.getProperty("java.class.path") +
             (File.pathSeparator + scratch.resolve("nonexistent # ' path")).repeat(1100);
@@ -1863,9 +1863,9 @@ public final class PortableTests {
             !Game.c1(Json.map("background", false, "quiet", true), "ui-check"),
             "hidden test sessions compile with C1 alone; perf, hidden or not, and visible games use the full JIT"
         );
-        List<String> recordedHidden = List.of("-Xmx2G", "-XX:TieredStopAtLevel=1", "-Dmodaccel.token=old", "Main");
+        List<String> recordedHidden = List.of("-Xmx2G", "-XX:TieredStopAtLevel=1", "-Dmmt.token=old", "Main");
         check(
-            Game.savedArguments(recordedHidden, true, false, false, "new").equals(List.of("-Xmx2G", "-Dmodaccel.token=new", "Main")) &&
+            Game.savedArguments(recordedHidden, true, false, false, "new").equals(List.of("-Xmx2G", "-Dmmt.token=new", "Main")) &&
             Game.savedArguments(List.of("-Xmx2G", "Main"), false, false, true, "new").equals(List.of("-XX:TieredStopAtLevel=1", "-Xmx2G", "Main")) &&
             Game.savedArguments(recordedHidden, false, false, false, "new").contains("-XX:TieredStopAtLevel=1"),
             "a saved launch takes this launch's compiler, not the recorded one, and keeps a build's own flag"
@@ -1988,21 +1988,21 @@ public final class PortableTests {
         );
         Preferences.change(
             prefs,
-            new Modaccel.Options(new String[] { "preferences", "--background", "on", "--quiet", "on" })
+            new Mmt.Options(new String[] { "preferences", "--background", "on", "--quiet", "on" })
         );
         check(
             Boolean.TRUE.equals(Preferences.read(prefs).get("background")) &&
             Boolean.TRUE.equals(Preferences.read(prefs).get("quiet")),
             "personal background and quiet choices survive a reload"
         );
-        Preferences.change(prefs, new Modaccel.Options(new String[] { "preferences", "--background", "off" }));
+        Preferences.change(prefs, new Mmt.Options(new String[] { "preferences", "--background", "off" }));
         check(
             Boolean.FALSE.equals(Preferences.read(prefs).get("background")) &&
             Boolean.TRUE.equals(Preferences.read(prefs).get("quiet")),
             "each personal choice can change without changing the other"
         );
         try {
-            Preferences.change(prefs, new Modaccel.Options(new String[] { "preferences", "--quiet", "maybe" }));
+            Preferences.change(prefs, new Mmt.Options(new String[] { "preferences", "--quiet", "maybe" }));
             throw new AssertionError("invalid preference accepted");
         } catch (IllegalArgumentException expected) {
             check(
@@ -2010,7 +2010,7 @@ public final class PortableTests {
                 "an invalid choice leaves the saved preference intact"
             );
         }
-        Preferences.change(prefs, new Modaccel.Options(new String[] { "preferences", "--quiet", "off" }));
+        Preferences.change(prefs, new Mmt.Options(new String[] { "preferences", "--quiet", "off" }));
         check(
             Boolean.FALSE.equals(Preferences.read(prefs).get("quiet")),
             "a user can opt out of the muted game and the choice is kept"
@@ -2429,16 +2429,16 @@ public final class PortableTests {
             Fingerprints.changed(Map.of("x", "1"), Map.of("x", "2")).equals(List.of("x (changed)")),
             "a refused check names the file that changed"
         );
-        Path stale = root.resolve("build/test-results/modaccelPure/TEST-old.xml");
+        Path stale = root.resolve("build/test-results/mmtPure/TEST-old.xml");
         Files.createDirectories(stale.getParent());
         Files.writeString(stale, "<testsuite tests=\"8\" failures=\"0\" errors=\"0\" skipped=\"0\"/>");
         check(
-            ((Number) TestResults.read(model, "modaccelPure", "fresh-run").get("executed")).intValue() == 0,
+            ((Number) TestResults.read(model, "mmtPure", "fresh-run").get("executed")).intValue() == 0,
             "old successful XML cannot make an empty run pass"
         );
-        Build build = new Build(project, home, "", new Modaccel.Report(root, "test"));
+        Build build = new Build(project, home, "", new Mmt.Report(root, "test"));
         Port port = new Port(build, model);
-        Build portBuild = new Build(project, home, "", new Modaccel.Report(root, "port"));
+        Build portBuild = new Build(project, home, "", new Mmt.Report(root, "port"));
         routeChecks(home, new Port(portBuild, model), scratch);
         learnedRuleChecks(home);
         loomEditChecks(home, scratch);
@@ -2470,12 +2470,12 @@ public final class PortableTests {
         );
         check(
             !portBuild.command(List.of("help")).contains("--no-configure-on-demand"),
-            "modaccel's Gradle runs keep the build's configure-on-demand"
+            "mmt's Gradle runs keep the build's configure-on-demand"
         );
         Path missed = scratch.resolve("missed.log");
         Files.writeString(
             missed,
-            "* What went wrong:\nCannot locate tasks that match ':modaccelMetadata' as task 'modaccelMetadata' not found in root project 'diorama'.\n"
+            "* What went wrong:\nCannot locate tasks that match ':mmtMetadata' as task 'mmtMetadata' not found in root project 'diorama'.\n"
         );
         check(
             Build.selectionFailed(missed),
@@ -2654,10 +2654,10 @@ public final class PortableTests {
 
         public static void main(String[] args) {
             if (
-                !"existing-file".equals(System.getProperty("modaccel.launchProbe")) ||
+                !"existing-file".equals(System.getProperty("mmt.launchProbe")) ||
                 !Arrays.equals(args, new String[] { "@literal", "spaces and slash\\" })
             ) throw new AssertionError(
-                "launch arguments changed: " + System.getProperty("modaccel.launchProbe") + " " + Arrays.toString(args)
+                "launch arguments changed: " + System.getProperty("mmt.launchProbe") + " " + Arrays.toString(args)
             );
             System.out.println("LAUNCH_OK");
         }

@@ -10,7 +10,7 @@ final class Preferences {
     private Preferences() {}
 
     static Path file() {
-        return Path.of(System.getProperty("user.home"), ".modaccel", "preferences.json");
+        return Path.of(System.getProperty("user.home"), ".mmt", "preferences.json");
     }
 
     static Map<String, Object> read(Path path) throws IOException {
@@ -25,7 +25,7 @@ final class Preferences {
         return saved;
     }
 
-    static Map<String, Object> change(Path path, Modaccel.Options options) throws IOException {
+    static Map<String, Object> change(Path path, Mmt.Options options) throws IOException {
         Map<String, Object> values = read(path);
         for (String name : new String[] { "background", "quiet" }) {
             if (!options.values.containsKey(name)) continue;

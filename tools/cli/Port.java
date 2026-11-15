@@ -499,12 +499,12 @@ final class Port {
         return new TreeSet<>(paths).stream().toList();
     }
 
-    Map<String, Object> run(Modaccel.Options options) throws Exception {
+    Map<String, Object> run(Mmt.Options options) throws Exception {
         if (options.values.containsKey("undo")) return undo(options.get("undo", ""));
         String pending = interruptedText(build.project);
         if (pending != null) throw new IOException(
             pending +
-            "\nUndo it before porting again, so the next port starts from the original files: modaccel port --root \"" +
+            "\nUndo it before porting again, so the next port starts from the original files: mmt port --root \"" +
             build.project.root +
             "\" --undo"
         );
@@ -536,11 +536,11 @@ final class Port {
             "port does not move plugins between Paper versions yet. The move is usually config only: the " +
             plugin.kind() +
             " version in the build script, api-version in plugin.yml, " +
-            "and the Java version (Paper 1.21.x runs on Java 21, 26.x on Java 25). Then modaccel compile --task :jar and modaccel plugin-check show whether it builds and enables. Nothing was changed."
+            "and the Java version (Paper 1.21.x runs on Java 21, 26.x on Java 25). Then mmt compile --task :jar and mmt plugin-check show whether it builds and enables. Nothing was changed."
         );
         if (!actual.equals(Set.of(to)) && !actual.equals(Set.of(from))) {
             String builds = actual.isEmpty()
-                ? "no Minecraft version modaccel could read"
+                ? "no Minecraft version mmt could read"
                 : "Minecraft " + String.join(", ", actual);
             throw new IllegalArgumentException(
                 "--from " +
@@ -551,7 +551,7 @@ final class Port {
                 (actual.size() == 1 ? "Use --from " + actual.iterator().next() + ", or select" : "Select") +
                 " the project that builds " +
                 from +
-                " with --project (modaccel setup lists them). Nothing was changed."
+                " with --project (mmt setup lists them). Nothing was changed."
             );
         }
         Path selectionFile = selectionFile(options);
@@ -911,15 +911,15 @@ final class Port {
                     : "No evaluated build task; pass --task only for a compile-only port check."
             );
             excludeOtherTargets(tasks, model);
-            tasks.add(0, "-Dmodaccel.recompile=true");
+            tasks.add(0, "-Dmmt.recompile=true");
             // Every compile task whose inputs built reports its errors, not only the first one to fail.
             tasks.add(0, "--continue");
             // Repair rounds only need the compiler; the full build (tests, jar) runs once when the source is clean.
             List<String> repairTasks = new ArrayList<>(explicitTask ? tasks : build.tasks(model, "classes"));
             if (repairTasks.isEmpty()) repairTasks = tasks;
             else excludeOtherTargets(repairTasks, model);
-            repairTasks.removeIf(argument -> argument.equals("--continue") || argument.equals("-Dmodaccel.recompile=true"));
-            repairTasks.add(0, "-Dmodaccel.recompile=true");
+            repairTasks.removeIf(argument -> argument.equals("--continue") || argument.equals("-Dmmt.recompile=true"));
+            repairTasks.add(0, "-Dmmt.recompile=true");
             repairTasks.add(0, "--continue");
             applySilentRules(from, to);
             renameClassesInStrings(map);
@@ -1059,7 +1059,7 @@ final class Port {
                 "mixinHint",
                 Json.map(
                     "source",
-                    "modaccel's own bytecode audit (a guess: it reads class files, Mixin does not run)",
+                    "mmt's own bytecode audit (a guess: it reads class files, Mixin does not run)",
                     "summary",
                     auditSummary(audit.log()),
                     "log",
@@ -1169,7 +1169,7 @@ final class Port {
     }
 
     /** Report every target dependency as resolved, selected, or blocked without changing the project. */
-    Map<String, Object> dependencies(Modaccel.Options options) throws Exception {
+    Map<String, Object> dependencies(Mmt.Options options) throws Exception {
         String to = options.get("to", "");
         if (to.isBlank() || !to.matches("[A-Za-z0-9._+\\-]+")) throw new IllegalArgumentException(
             "dependencies needs --to <target Minecraft version>"
@@ -1215,9 +1215,9 @@ final class Port {
         );
     }
 
-    Path selectionFile(Modaccel.Options options) throws IOException {
+    Path selectionFile(Mmt.Options options) throws IOException {
         if (options.values.containsKey("selection")) return Path.of(options.get("selection", "")).toAbsolutePath();
-        Path file = build.project.root.resolve(".modaccel/dependencies.json");
+        Path file = build.project.root.resolve(".mmt/dependencies.json");
         return Files.isRegularFile(file) ? file : null;
     }
 
@@ -1269,7 +1269,7 @@ final class Port {
     }
 
     /** The real Mixin check for the ported tree; a check that cannot run is an unchecked result, never a pass. */
-    Map<String, Object> mixinCheck(Map<String, Object> model, Modaccel.Options options) {
+    Map<String, Object> mixinCheck(Map<String, Object> model, Mmt.Options options) {
         try {
             return new MixinCheck(build, model).run(options);
         } catch (Exception failure) {
@@ -1353,7 +1353,7 @@ final class Port {
             .append(blocker.get("version"))
             .append(": ")
             .append(blocker.get("reason"))
-            .append("\n    add to .modaccel/dependencies.json: ")
+            .append("\n    add to .mmt/dependencies.json: ")
             .append(Json.write(blocker.get("suggestion")));
         return text.toString();
     }
@@ -1679,8 +1679,8 @@ final class Port {
     }
 
     /**
-     * The mod's own game check, run on the ported project: a command (a modaccel eval/ui-check script, or a test program)
-     * started in the project with MODACCEL_PORTED_ROOT set to it. Its exit code is the verdict.
+     * The mod's own game check, run on the ported project: a command (a mmt eval/ui-check script, or a test program)
+     * started in the project with MMT_PORTED_ROOT set to it. Its exit code is the verdict.
      */
     /** The fingerprint taken before the port (--check fingerprint), or null. */
     Path behaviourBefore;
@@ -1719,7 +1719,7 @@ final class Port {
         Run.Result run = Run.command(
             shell,
             build.project.root,
-            Map.of("MODACCEL_PORTED_ROOT", build.project.root.toString()),
+            Map.of("MMT_PORTED_ROOT", build.project.root.toString()),
             build.report.log("port-game-check"),
             3600
         );
@@ -2047,7 +2047,7 @@ final class Port {
                 if (java == null) return text;
                 written.add(
                     java +
-                    " modaccel$" +
+                    " mmt$" +
                     Character.toLowerCase(simpleName(java).charAt(0)) +
                     simpleName(java).substring(1).replaceAll("\\W", "") +
                     written.size()
@@ -2165,7 +2165,7 @@ final class Port {
         track(at);
         String added =
             (text.endsWith("\n") ? "" : "\n") +
-            "\n# Written by modaccel port: members the target game made private again, as it has them now\n" +
+            "\n# Written by mmt port: members the target game made private again, as it has them now\n" +
             String.join("\n", lines) +
             "\n";
         Files.writeString(at, text + added, StandardCharsets.UTF_8);
@@ -2466,24 +2466,24 @@ final class Port {
                 String declared = "Client".equals(side)
                     ? " var " +
                     lambda.group(2) +
-                    " = modaccel$context.client(); var " +
+                    " = mmt$context.client(); var " +
                     lambda.group(3) +
-                    " = modaccel$context.client().getNetworkHandler(); var " +
+                    " = mmt$context.client().getNetworkHandler(); var " +
                     lambda.group(4) +
-                    " = modaccel$payload.buf(); var " +
+                    " = mmt$payload.buf(); var " +
                     lambda.group(5) +
-                    " = modaccel$context.responseSender();"
+                    " = mmt$context.responseSender();"
                     : " var " +
                     lambda.group(2) +
-                    " = modaccel$context.server(); var " +
+                    " = mmt$context.server(); var " +
                     lambda.group(3) +
-                    " = modaccel$context.player(); var " +
+                    " = mmt$context.player(); var " +
                     lambda.group(4) +
-                    " = modaccel$context.player().networkHandler; var " +
+                    " = mmt$context.player().networkHandler; var " +
                     lambda.group(5) +
-                    " = modaccel$payload.buf(); var " +
+                    " = mmt$payload.buf(); var " +
                     lambda.group(6) +
-                    " = modaccel$context.responseSender();";
+                    " = mmt$context.responseSender();";
                 from = args.get(0)[0];
                 to = args.get(1)[0] + lambda.end();
                 String channel = text.substring(from, args.get(0)[1]);
@@ -2496,7 +2496,7 @@ final class Port {
                     ")" +
                     text.substring(args.get(0)[1], args.get(1)[0]) +
                     lambda.group(1) +
-                    "(modaccel$payload, modaccel$context) -> {" +
+                    "(mmt$payload, mmt$context) -> {" +
                     declared;
             }
             out.append(text, copied, from).append(replacement);
@@ -2508,7 +2508,7 @@ final class Port {
     /** Runs a "payload-bytes" rule: writes its class beside the first file it changes and imports it where it is used. */
     boolean applyPayloadBytes(Map<String, Object> rule, String errors) throws Exception {
         var apply = Json.object(rule.get("apply"));
-        String name = Json.text(apply, "name", "ModaccelPacket");
+        String name = Json.text(apply, "name", "MmtPacket");
         Map<Path, String> rewritten = new LinkedHashMap<>();
         for (var site : reportedLines(errors, Pattern.compile(rule.get("match").toString())).entrySet()) {
             String original = Files.readString(site.getKey()), text = payloadCalls(
@@ -2579,7 +2579,7 @@ final class Port {
         );
         else if ("payload-bytes".equals(apply.get("transform"))) text = payloadCalls(
             text,
-            Json.text(apply, "name", "ModaccelPacket"),
+            Json.text(apply, "name", "MmtPacket"),
             null
         );
         else if (apply.containsKey("literal")) text = text.replace(
@@ -2705,15 +2705,15 @@ final class Port {
             : "import " + name + ";\n" + text;
     }
 
-    /** The accessor method that stands in for a removed getter or setter: modaccel$getExhaustion for the field exhaustion. */
+    /** The accessor method that stands in for a removed getter or setter: mmt$getExhaustion for the field exhaustion. */
     static String accessorMethod(String kind, String field) {
-        return "modaccel$" + kind + Character.toUpperCase(field.charAt(0)) + field.substring(1);
+        return "mmt$" + kind + Character.toUpperCase(field.charAt(0)) + field.substring(1);
     }
 
     /**
      * A getter or setter the game removed while keeping its private field (1.21.2's HungerManager.getExhaustion()): each
      * call on the given lines (every line when null) goes through the accessor mixin instead, as
-     * ((HungerManagerAccessor) receiver).modaccel$getExhaustion(). A call with no receiver is left for javac to report.
+     * ((HungerManagerAccessor) receiver).mmt$getExhaustion(). A call with no receiver is left for javac to report.
      */
     static String accessorCalls(String text, Map<String, Object> apply, String accessor, Set<Integer> lines) {
         String field = Json.text(apply, "field", ""), simple = simpleName(accessor);
@@ -2834,7 +2834,7 @@ final class Port {
             System.err.println(
                 "degraded: " +
                 Json.text(rule, "id", "accessor") +
-                " needs a mixins config and this mod has none modaccel can add (it adds one to NeoForge mods only)"
+                " needs a mixins config and this mod has none mmt can add (it adds one to NeoForge mods only)"
             );
             return false;
         }
@@ -2858,7 +2858,7 @@ final class Port {
         String simple = ownerSimple + "Accessor";
         Path file = folder.resolve(simple + ".java");
         if (Files.exists(file) && !Files.readString(file).contains(WRITTEN_MARK)) {
-            simple = ownerSimple + "ModaccelAccessor";
+            simple = ownerSimple + "MmtAccessor";
             file = folder.resolve(simple + ".java");
         }
         String existing = Files.exists(file) ? Files.readString(file) : "";
@@ -2884,7 +2884,7 @@ final class Port {
         return true;
     }
 
-    static final String WRITTEN_MARK = "Written by modaccel port";
+    static final String WRITTEN_MARK = "Written by mmt port";
 
     /** The accessor mixin's source: a getter and, when the mod wrote the value, a setter on the owner's private field. */
     static String accessorSource(String mixinPackage, String simple, Map<String, Object> apply, Set<String> kinds) {
@@ -2963,7 +2963,7 @@ final class Port {
 
     /**
      * A NeoForge mod with no mixins gets a mixins config of its own the first time a port needs an accessor (Zombie
-     * Apocalypse Addon's horse owner, 1.21.5): <mod id>.modaccel.mixins.json beside its mods.toml's resources, the
+     * Apocalypse Addon's horse owner, 1.21.5): <mod id>.mmt.mixins.json beside its mods.toml's resources, the
      * package <the @Mod class's package>.mixin, and a [[mixins]] entry in META-INF/neoforge.mods.toml. Every file is
      * tracked, so undo removes the config and the entry again. Null for other loaders or when the mod class is not found.
      */
@@ -2993,7 +2993,7 @@ final class Port {
                 : null;
             modId = value != null ? value.strip() : modPackage.substring(modPackage.lastIndexOf('.') + 1);
         }
-        String name = modId + ".modaccel.mixins.json";
+        String name = modId + ".mmt.mixins.json";
         Path config = toml.getParent().getParent().resolve(name);
         track(config);
         Files.writeString(

@@ -1,4 +1,4 @@
-"""The one way modaccel draws a number: measure cards, compact rows, sparklines, the roadmap timeline
+"""The one way mmt draws a number: measure cards, compact rows, sparklines, the roadmap timeline
 and the burn-up chart. Every function takes a measures.Book and returns HTML; the look comes from
 page_style.STYLE tokens plus VIZ_CSS here, and VIZ_JS adds tooltips, today's date and "late".
 

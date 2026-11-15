@@ -89,7 +89,7 @@ final class Console {
         forms.add(text);
         String firstErrors = null;
         for (String form : forms) {
-            String name = "ModaccelSnippet" + counter.incrementAndGet();
+            String name = "MmtSnippet" + counter.incrementAndGet();
             StringBuilder source = new StringBuilder();
             source.append("import java.util.*;\nimport java.util.stream.*;\n");
             if (minecraft) source.append("import net.minecraft.client.Minecraft;\n");

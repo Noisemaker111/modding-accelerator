@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Runs modaccel pack-check on a pinned corpus of public modpacks and ranks what it gets wrong or cannot do.
+"""Runs mmt pack-check on a pinned corpus of public modpacks and ranks what it gets wrong or cannot do.
 
-    python bench/pack_sweep.py run [--only ID,ID] [--jobs 1] [--fix] [--label NAME] [--modaccel CHECKOUT] [--record]
+    python bench/pack_sweep.py run [--only ID,ID] [--jobs 1] [--fix] [--label NAME] [--mmt CHECKOUT] [--record]
     python bench/pack_sweep.py table [--label NAME]
 
 bench/pack-sweep/corpus.json pins each pack: a Modrinth .mrpack by version and SHA-512, or a CurseForge export by
 project and file id and length (its SHA-256 is recorded in the corpus on first download). The runner downloads each
-into .runs/pack-sweep/packs/ID, runs modaccel pack-check --pack FILE --json (with --fix when asked), and records per
+into .runs/pack-sweep/packs/ID, runs mmt pack-check --pack FILE --json (with --fix when asked), and records per
 pack: whether it ran at all, the server start, the mod the start's failure was blamed on, the new world and the
 reopened world, client-only mods left out, every finding by kind and severity, and the stage timings.
 
@@ -35,8 +35,8 @@ CORPUS = ROOT / "bench" / "pack-sweep" / "corpus.json"
 OUT = ROOT / "coverage" / "sweeps" / "pack.json"
 WORK = ROOT / ".runs" / "pack-sweep"
 WINDOWS = os.name == "nt"
-MODACCEL = [str(ROOT / ("modaccel.cmd" if WINDOWS else "modaccel"))]
-UA = {"User-Agent": "modaccel-pack-sweep"}
+MMT = [str(ROOT / ("mmt.cmd" if WINDOWS else "mmt"))]
+UA = {"User-Agent": "mmt-pack-sweep"}
 
 
 def download(pack):
@@ -70,18 +70,18 @@ def leftover_servers(instance):
     """Stops any server JVM pack-check left running in this pack's instance folder (each runs with -Xmx6G)."""
     if not instance or not WINDOWS:
         return 0
-    script = ("Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" | Where-Object { $_.CommandLine -like '*modaccel.probe*' -and "
+    script = ("Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" | Where-Object { $_.CommandLine -like '*mmt.probe*' -and "
               "$_.CommandLine -like '*" + str(Path(instance).name) + "*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force; $_.ProcessId }")
     r = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True)
     return len([l for l in r.stdout.split() if l.strip().isdigit()])
 
 
 def pack_check(path, args):
-    command = MODACCEL + ["pack-check", "--pack", str(path), "--json"] + (["--fix"] if args.fix else []) + ([] if getattr(args, "no_fingerprint", False) else ["--fingerprint"])
+    command = MMT + ["pack-check", "--pack", str(path), "--json"] + (["--fix"] if args.fix else []) + ([] if getattr(args, "no_fingerprint", False) else ["--fingerprint"])
     started = time.monotonic()
-    # MODACCEL_TRACE: a pack-check that stops with an error prints its stack into the pack's log.
+    # MMT_TRACE: a pack-check that stops with an error prints its stack into the pack's log.
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
-                               env=dict(os.environ, MODACCEL_TRACE="1"))
+                               env=dict(os.environ, MMT_TRACE="1"))
     try:
         out, _ = process.communicate(timeout=args.timeout)
     except subprocess.TimeoutExpired:
@@ -105,7 +105,7 @@ def pack_check(path, args):
 
 def refusal_gap(text):
     rules = [
-        (r"probe-compile|ModaccelPackProbe\.java:\d+: error", "probe does not compile for this game version"),
+        (r"probe-compile|MmtPackProbe\.java:\d+: error", "probe does not compile for this game version"),
         (r"[Ii]nstaller|install", "loader server install failed"),
         (r"[Nn]o (?:pack|input)|not a pack|does not look like", "pack input not recognised"),
         (r"Java|JDK|runtime", "Java runtime for this game version"),
@@ -171,7 +171,7 @@ def analyse(pack, code, result, seconds):
     record["stages"] = [{"name": s.get("name"), "seconds": round(float(s.get("seconds") or 0), 1)} for s in result.get("_stages", [])]
     if not first.get("opened"):
         failure = str(first.get("failure") or "")
-        if re.search(r"probe|ModaccelPackProbe", failure):
+        if re.search(r"probe|MmtPackProbe", failure):
             record["gaps"].append("the probe failed on this game version")
         record["gaps"].append("server start failed, culprit named" if first.get("suspects") else "server start failed, no culprit named")
         record["outcome"] = "start failed"
@@ -240,7 +240,7 @@ def write(records, label):
     ranked, rates = summarize(records, label)
     previous = json.loads(OUT.read_text(encoding="utf-8")) if OUT.is_file() else {}
     history = [h for h in previous.get("history", []) if h.get("label") != label] + [rates]
-    data = {"about": "modaccel pack-check on the pinned packs in bench/pack-sweep/corpus.json, by python bench/pack_sweep.py. gaps ranks each gap by how many packs show it; history keeps each labelled sweep's pass rates.",
+    data = {"about": "mmt pack-check on the pinned packs in bench/pack-sweep/corpus.json, by python bench/pack_sweep.py. gaps ranks each gap by how many packs show it; history keeps each labelled sweep's pass rates.",
             "corpus": len(json.loads(CORPUS.read_text(encoding="utf-8"))["packs"]), "latest": rates, "history": history, "gaps": ranked,
             "runs": sorted(records, key=lambda r: r["id"])}
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -302,7 +302,7 @@ def main():
     run.add_argument("--no-fingerprint", action="store_true", help="skip pack-check --fingerprint (two more server starts)")
     run.add_argument("--label", default="latest")
     run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
-    run.add_argument("--modaccel", default="")
+    run.add_argument("--mmt", default="")
     run.add_argument("--record", action="store_true", help="write coverage/sweeps/pack.json after a partial (--only) run too")
     t = sub.add_parser("table")
     t.add_argument("--label", default="latest")
@@ -311,8 +311,8 @@ def main():
         ranked, rates = write(load_records(), args.label)
         print(table(ranked, rates))
         return 0
-    if args.modaccel:
-        MODACCEL[0] = str(Path(args.modaccel).resolve() / ("modaccel.cmd" if WINDOWS else "modaccel"))
+    if args.mmt:
+        MMT[0] = str(Path(args.mmt).resolve() / ("mmt.cmd" if WINDOWS else "mmt"))
     corpus = json.loads(CORPUS.read_text(encoding="utf-8"))
     packs = corpus["packs"]
     if args.only:

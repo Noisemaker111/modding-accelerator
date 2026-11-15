@@ -26,7 +26,7 @@ final class HotReload {
 
     /** Records what the game started with. Runs once, on the first frame. */
     static void baseline() {
-        String root = System.getProperty("modaccel.root", "");
+        String root = System.getProperty("mmt.root", "");
         if (root.isEmpty()) return;
         Path project = Paths.get(root).toAbsolutePath().normalize();
         for (String entry : System.getProperty("java.class.path", "").split(File.pathSeparator)) {
@@ -148,7 +148,7 @@ final class HotReload {
             reload.invoke(client);
             return true;
         } catch (Throwable error) {
-            System.err.println("MODACCEL_RELOAD_RESOURCES_ERROR " + error);
+            System.err.println("MMT_RELOAD_RESOURCES_ERROR " + error);
             return false;
         }
     }
@@ -212,7 +212,7 @@ final class HotReload {
                 }
             );
         } catch (Exception error) {
-            System.err.println("MODACCEL_RELOAD_SCAN_ERROR " + folder + " " + error);
+            System.err.println("MMT_RELOAD_SCAN_ERROR " + folder + " " + error);
         }
         return files;
     }

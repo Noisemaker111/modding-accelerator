@@ -4,7 +4,7 @@ import java.util.*;
 
 /** Descriptive comparison of observation captures, deliberately not a statistical regression gate. */
 final class PerfDiff {
-    static Map<String, Object> run(Modaccel.Options options) throws Exception {
+    static Map<String, Object> run(Mmt.Options options) throws Exception {
         Path left = reportPath(options.get("baseline", "")), right = reportPath(options.get("candidate", ""));
         Map<String, Object> a = Json.read(left), b = Json.read(right);
         if (!"observation".equals(a.get("kind")) || !"observation".equals(b.get("kind"))) {
@@ -36,7 +36,7 @@ final class PerfDiff {
             "warning", "Descriptive only. Matching environment fields do not establish equal workload/hardware or independent trials. No causal or regression verdict.");
         Path out = Performance.output(options);
         Json.save(out.resolve("diff.json"), result);
-        StringBuilder html = new StringBuilder("<!doctype html><meta charset=utf-8><title>Mod Accel comparison</title>");
+        StringBuilder html = new StringBuilder("<!doctype html><meta charset=utf-8><title>Minecraft Modding Tools comparison</title>");
         html.append("<style>body{font:16px system-ui;max-width:1100px;margin:40px auto;padding:20px}td,th{padding:10px;text-align:left;border-bottom:1px solid #ddd}</style>");
         html.append("<h1>Observed performance differences</h1><p>").append(result.get("warning")).append("</p>");
         html.append("<p>Changed environment fields: ").append(PerfScenario.escape(mismatches.toString())).append("</p>");

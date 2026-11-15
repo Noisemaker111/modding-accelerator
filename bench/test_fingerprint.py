@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FIX = ROOT / "bench" / "fingerprint-fixtures"
-MODACCEL = [str(ROOT / ("modaccel.cmd" if os.name == "nt" else "modaccel"))]
+MMT = [str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))]
 checks = 0
 
 
@@ -24,8 +24,8 @@ def check(ok, label):
 
 
 def diff(*args):
-    """modaccel fingerprint-diff with --json: (exit code, its result)."""
-    r = subprocess.run(MODACCEL + ["fingerprint-diff", *map(str, args), "--json"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
+    """mmt fingerprint-diff with --json: (exit code, its result)."""
+    r = subprocess.run(MMT + ["fingerprint-diff", *map(str, args), "--json"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
     line = next((l for l in reversed(r.stdout.splitlines()) if l.startswith("{")), None)
     if line is None:
         raise AssertionError(f"fingerprint-diff printed no result: {r.stdout[-800:]} {r.stderr[-800:]}")

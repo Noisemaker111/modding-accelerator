@@ -8,8 +8,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * modaccel fingerprint: what a mod does, recorded the same way for every mod (FINGERPRINT.md). One probe,
- * tools/packcheck/ModaccelFingerprint.java, runs in a seeded world frozen from its first tick:
+ * mmt fingerprint: what a mod does, recorded the same way for every mod (FINGERPRINT.md). One probe,
+ * tools/packcheck/MmtFingerprint.java, runs in a seeded world frozen from its first tick:
  *
  * --root SOURCE runs the mod's own development client hidden: a flat world made by the vanilla server of the mod's
  *   Minecraft version (fixed seed, time and weather) is opened frozen, the probe is compiled inside the game against the
@@ -21,15 +21,15 @@ import java.util.regex.Pattern;
  */
 final class Fingerprint {
     static final long SEED = 20261115L;
-    static final String WORLD = "modaccel-fingerprint";
+    static final String WORLD = "mmt-fingerprint";
     static final List<String> PROBE = List.of(
-        "tools/packcheck/ModaccelFingerprint.java",
-        "tools/packcheck/ModaccelPackProbe.java"
+        "tools/packcheck/MmtFingerprint.java",
+        "tools/packcheck/MmtPackProbe.java"
     );
 
     private Fingerprint() {}
 
-    static Map<String, Object> run(Path home, Modaccel.Options options, Modaccel.Report report) throws Exception {
+    static Map<String, Object> run(Path home, Mmt.Options options, Mmt.Report report) throws Exception {
         Path out = Path.of(options.get("out", report.directory.resolve("fingerprint.json").toString())).toAbsolutePath();
         Map<String, Object> result = options.values.containsKey("jar") ? jars(home, options, report, out) : source(home, options, report, out);
         result.put("out", out.toString());
@@ -38,7 +38,7 @@ final class Fingerprint {
 
     // ------------------------------------------------------------------------------------------ a mod's source
 
-    static Map<String, Object> source(Path home, Modaccel.Options options, Modaccel.Report report, Path out) throws Exception {
+    static Map<String, Object> source(Path home, Mmt.Options options, Mmt.Report report, Path out) throws Exception {
         Path root = Path.of(options.get("root", ".")).toAbsolutePath().normalize();
         ProjectModel model = new ProjectModel(root);
         model.requireGradleBuild();
@@ -53,7 +53,7 @@ final class Fingerprint {
 
     /** The source path's whole run, for fingerprint --root and port --check fingerprint (before and after a port). */
     static Map<String, Object> record(Path home, Path root, String project, String minecraft, Set<String> namespaces, Map<String, Object> args,
-        Modaccel.Report report, Path out, String name) throws Exception {
+        Mmt.Report report, Path out, String name) throws Exception {
         ProjectModel model = new ProjectModel(root);
         Path work = report.directory.resolve(name);
         Files.createDirectories(work);
@@ -93,7 +93,7 @@ final class Fingerprint {
     }
 
     /** The scenario's fixed numbers, from options or defaults. */
-    static Map<String, Object> scenario(Modaccel.Options options, Set<String> namespaces) {
+    static Map<String, Object> scenario(Mmt.Options options, Set<String> namespaces) {
         return Json.map(
             "ticks", Integer.parseInt(options.get("ticks", "100")),
             "every", Integer.parseInt(options.get("every", "20")),
@@ -106,7 +106,7 @@ final class Fingerprint {
     static Map<String, Object> assemble(Map<String, Object> content, Map<String, Object> reload, List<Object> logs) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("schema", 1);
-        out.put("kind", "modaccel-fingerprint");
+        out.put("kind", "mmt-fingerprint");
         List<String> kept = List.of("loader", "mods", "freezes", "frozenAtStart", "seeded", "ticksRun", "targets", "registries", "placement",
             "spawned", "checkpoints", "ticketsDuringRun", "area", "error");
         for (String key : kept) {
@@ -156,7 +156,7 @@ final class Fingerprint {
      * The jars on their loader's real server, through pack-check: a pack of only these jars, whose start makes the
      * fingerprint world with the same probe, then a second start reads it back.
      */
-    static Map<String, Object> jars(Path home, Modaccel.Options options, Modaccel.Report report, Path out) throws Exception {
+    static Map<String, Object> jars(Path home, Mmt.Options options, Mmt.Report report, Path out) throws Exception {
         if (options.get("minecraft", "").isBlank() || options.get("loader", "").isBlank()) throw new IllegalArgumentException(
             "fingerprint --jar needs --minecraft VERSION and --loader neoforge|forge|fabric|quilt"
         );
@@ -168,12 +168,12 @@ final class Fingerprint {
             Files.copy(file, pack.resolve("mods").resolve(file.getFileName()), StandardCopyOption.REPLACE_EXISTING);
         }
         List<String> argv = new ArrayList<>(List.of("pack-check", "--pack", pack.toString(), "--minecraft", options.get("minecraft", ""),
-            "--loader", options.get("loader", ""), "--fingerprint", "--only", "modaccel:none", "--out", out.toString()));
+            "--loader", options.get("loader", ""), "--fingerprint", "--only", "mmt:none", "--out", out.toString()));
         for (String key : List.of("ticks", "every", "seed", "namespaces", "memory")) if (options.values.containsKey(key)) {
             argv.add("--" + key);
             argv.add(options.get(key, ""));
         }
-        Modaccel.Options packOptions = new Modaccel.Options(argv.toArray(String[]::new));
+        Mmt.Options packOptions = new Mmt.Options(argv.toArray(String[]::new));
         long started = System.nanoTime();
         Map<String, Object> checked = new PackCheck(home, packOptions, report).run();
         if (!Files.isRegularFile(out)) throw new IOException("The server run wrote no fingerprint: " + checked.getOrDefault("details", checked));
@@ -191,7 +191,7 @@ final class Fingerprint {
         if (!Boolean.TRUE.equals(started.get("ok"))) throw new IOException("The fingerprint " + entry + " did not start: " + started.get("error"));
         // No quotes in a snippet passed as an argument: Windows' command line drops them. The key is spelled as chars.
         StringBuilder chars = new StringBuilder();
-        for (char c : "modaccelFingerprint".toCharArray()) chars.append(chars.length() == 0 ? "" : ",").append((int) c);
+        for (char c : "mmtFingerprint".toCharArray()) chars.append(chars.length() == 0 ? "" : ",").append((int) c);
         String key = "String.valueOf(new char[] {" + chars + "})";
         long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(60);
         while (true) {
@@ -224,10 +224,10 @@ final class Fingerprint {
             walk.filter(p -> p.toString().endsWith(".java")).sorted().forEach(p -> stubs.add(p.toString()));
         }
         return String.join("\n",
-            "// modaccel fingerprint: compiles the probe against this game's own classes once, then runs " + entry + " on its own thread.",
+            "// mmt fingerprint: compiles the probe against this game's own classes once, then runs " + entry + " on its own thread.",
             "java.nio.file.Path classes = java.nio.file.Paths.get(" + quote(classes.toString()) + ");",
             "java.nio.file.Path stubs = classes.resolveSibling(\"stubs\");",
-            "if (!java.nio.file.Files.isRegularFile(classes.resolve(\"modaccel/packprobe/ModaccelFingerprint.class\"))) {",
+            "if (!java.nio.file.Files.isRegularFile(classes.resolve(\"mmt/packprobe/MmtFingerprint.class\"))) {",
             "    javax.tools.JavaCompiler javac = javax.tools.ToolProvider.getSystemJavaCompiler();",
             "    if (javac == null) throw new IllegalStateException(\"The game runs on a JRE without a Java compiler\");",
             "    java.nio.file.Files.createDirectories(classes);",
@@ -239,13 +239,13 @@ final class Fingerprint {
             "    if (a != 0 || b != 0) throw new IllegalStateException(\"The fingerprint probe did not compile against this game:\\n\" + errors);",
             "}",
             "java.net.URLClassLoader loader = new java.net.URLClassLoader(new java.net.URL[] { classes.toUri().toURL() }, mc.getClass().getClassLoader());",
-            "Class<?> probe = Class.forName(\"modaccel.packprobe.ModaccelFingerprint\", true, loader);",
+            "Class<?> probe = Class.forName(\"mmt.packprobe.MmtFingerprint\", true, loader);",
             "Object server = mc.getSingleplayerServer();",
             "if (server == null) throw new IllegalStateException(\"No world is open\");",
             "String arguments = " + quote(Json.write(args)) + ";",
             "java.util.concurrent.FutureTask<Object> task = new java.util.concurrent.FutureTask<>(() -> probe.getMethod(" + quote(entry) + ", Object.class, String.class).invoke(null, server, arguments));",
-            "vars.put(\"modaccelFingerprint\", task);",
-            "Thread thread = new Thread(task, \"modaccel-fingerprint\");",
+            "vars.put(\"mmtFingerprint\", task);",
+            "Thread thread = new Thread(task, \"mmt-fingerprint\");",
             "thread.setDaemon(true);",
             "thread.start();",
             "return \"started " + entry + "\";"
@@ -283,7 +283,7 @@ final class Fingerprint {
         inputs.add(fingerprintLayer(home, minecraft));
         inputs.add(home.resolve("tools/packcheck/stubs"));
         String hash = Fingerprints.files(inputs).substring(0, 16);
-        return root.resolve("build/modaccel/fingerprint/" + hash + "/classes");
+        return root.resolve("build/mmt/fingerprint/" + hash + "/classes");
     }
 
     /** The fingerprint's version layer: tools/packcheck/fingerprint/VERSION with the newest VERSION at or below the game's. */
@@ -297,7 +297,7 @@ final class Fingerprint {
             }
         }
         if (best == null) throw new IOException("The fingerprint has no game layer for Minecraft " + minecraft + ": tools/packcheck/fingerprint has none at or below it.");
-        return root.resolve(best).resolve("ModaccelFingerprintGame.java");
+        return root.resolve(best).resolve("MmtFingerprintGame.java");
     }
 
     // ------------------------------------------------------------------------------------------ the world
@@ -307,7 +307,7 @@ final class Fingerprint {
      * creative, easy, no structures, no mob, patrol, trader, phantom or warden spawning, time fixed at noon and clear
      * weather that stays. Both game-rule spellings are sent (1.21.11 renamed them); the one the game lacks is refused.
      */
-    static Path template(Path home, String minecraft, long seed, Modaccel.Report report) throws Exception {
+    static Path template(Path home, String minecraft, long seed, Mmt.Report report) throws Exception {
         Path cache = PackCheck.receipts().resolve("fingerprint-worlds").resolve(minecraft + "-" + seed);
         Path world = cache.resolve("world");
         if (Files.isRegularFile(world.resolve("level.dat")) && Files.isRegularFile(cache.resolve("done"))) return world;
@@ -507,10 +507,10 @@ final class Fingerprint {
     // ------------------------------------------------------------------------------------------ child commands
 
     /**
-     * modaccel commands run as children, each with its own receipt. A child of a command that holds the project's lock
+     * mmt commands run as children, each with its own receipt. A child of a command that holds the project's lock
      * (port --check fingerprint) is told so, and does not wait for that lock.
      */
-    /** Runs one modaccel command for the project and returns its JSON answer. */
+    /** Runs one mmt command for the project and returns its JSON answer. */
     interface Runner {
         Map<String, Object> run(String command, List<String> args, int timeout) throws Exception;
     }
@@ -536,7 +536,7 @@ final class Fingerprint {
                 answer = run(command, args, timeout);
                 answer.put("startedAgain", true);
             }
-            if (!Boolean.TRUE.equals(answer.get("ok"))) throw new IOException("modaccel " + command + " " + String.join(" ", args) + " failed: " + answer.get("error"));
+            if (!Boolean.TRUE.equals(answer.get("ok"))) throw new IOException("mmt " + command + " " + String.join(" ", args) + " failed: " + answer.get("error"));
             return answer;
         }
 

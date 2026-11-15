@@ -6,7 +6,7 @@ var uuid = mc.player.getUUID();
 // For eval --until: whether the summoned zombie has picked a target yet.
 vars.put("hunting", (java.util.function.BooleanSupplier) () -> server.submit(() -> {
     for (var e : server.overworld().getAllEntities())
-        if (e.getTags().contains("modaccel_za") && e instanceof net.minecraft.world.entity.monster.Zombie z && z.getTarget() != null) return true;
+        if (e.getTags().contains("mmt_za") && e instanceof net.minecraft.world.entity.monster.Zombie z && z.getTarget() != null) return true;
     return false;
 }).join());
 return server.submit(() -> {
@@ -20,8 +20,8 @@ return server.submit(() -> {
             "gamerule doMobSpawning false", "kill @e[type=!player]",
             // Animal hunting is off by default; the mod's own command turns it on, berserker skips its hunger and cooldown gates.
             "zhunt on", "zhunt berserker on",
-            "summon minecraft:zombie " + x + " " + y + " " + z + " {Tags:[\"modaccel_za\"],PersistenceRequired:1b}",
-            "summon minecraft:pig " + (x + 3) + " " + y + " " + z + " {Tags:[\"modaccel_pig\"],NoAI:1b,PersistenceRequired:1b,Health:1000f,attributes:[{id:\"minecraft:max_health\",base:1000d}]}" })
+            "summon minecraft:zombie " + x + " " + y + " " + z + " {Tags:[\"mmt_za\"],PersistenceRequired:1b}",
+            "summon minecraft:pig " + (x + 3) + " " + y + " " + z + " {Tags:[\"mmt_pig\"],NoAI:1b,PersistenceRequired:1b,Health:1000f,attributes:[{id:\"minecraft:max_health\",base:1000d}]}" })
         commands.performPrefixedCommand(source, c);
     return "summoned a zombie and a pig at " + x + " " + y + " " + z;
 }).join();

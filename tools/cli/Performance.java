@@ -8,7 +8,7 @@ import com.sun.tools.attach.*;
 
 /** Local profiler entry point. Attaches only to the selected process and owns only its recording. */
 final class Performance {
-    static Map<String, Object> run(Path home, Modaccel.Options options, Modaccel.Report receipt) throws Exception {
+    static Map<String, Object> run(Path home, Mmt.Options options, Mmt.Report receipt) throws Exception {
         if (options.command.equals("perf-template")) return PerfTemplates.run(options);
         if (options.command.equals("perf-diff")) return PerfDiff.run(options);
         if (options.command.equals("perf-optimize")) return PerfOptimize.run(home, options);
@@ -97,7 +97,7 @@ final class Performance {
     static void stamp(Path request, Path agent) throws IOException {
         Properties properties = properties(request);
         properties.setProperty("agentBuild", agent.getParent().getFileName().toString());
-        try (Writer writer = Files.newBufferedWriter(request)) { properties.store(writer, "Mod Accel capture request"); }
+        try (Writer writer = Files.newBufferedWriter(request)) { properties.store(writer, "Minecraft Modding Tools capture request"); }
     }
 
     static String sha256(Path file) throws Exception {
@@ -110,7 +110,7 @@ final class Performance {
         return java.util.HexFormat.of().formatHex(digest.digest());
     }
 
-    static Path output(Modaccel.Options options) throws IOException {
+    static Path output(Mmt.Options options) throws IOException {
         Path path = options.values.containsKey("out") ? Path.of(options.get("out", ""))
             : Path.of(".runs/performance", Instant.now().toString().replace(':', '-') + "-" + UUID.randomUUID().toString().substring(0, 8));
         path = path.toAbsolutePath().normalize();
@@ -118,7 +118,7 @@ final class Performance {
         return path;
     }
 
-    static int integer(Modaccel.Options options, String name, int fallback, int min, int max) {
+    static int integer(Mmt.Options options, String name, int fallback, int min, int max) {
         int value = Integer.parseInt(options.get(name, Integer.toString(fallback)));
         if (value < min || value > max) throw new IllegalArgumentException("--" + name + " must be " + min + ".." + max);
         return value;
@@ -137,7 +137,7 @@ final class Performance {
             .stream().anyMatch(value::contains);
     }
 
-    static String select(Path home, Modaccel.Options options, Modaccel.Report receipt) throws Exception {
+    static String select(Path home, Mmt.Options options, Mmt.Report receipt) throws Exception {
         long selectors = List.of("attach", "root", "instance", "launch").stream().filter(options.values::containsKey).count();
         if (selectors > 1) throw new IllegalArgumentException("Choose just one of --attach, --root, --instance or --launch");
         if (options.values.containsKey("launch")) return launch(options, receipt);
@@ -169,7 +169,7 @@ final class Performance {
     }
 
     /** The source session for --root, started when none runs; hidden when the background preference is on. */
-    static Map<String, Object> rootSession(Path home, Modaccel.Options options, Modaccel.Report receipt) throws Exception {
+    static Map<String, Object> rootSession(Path home, Mmt.Options options, Mmt.Report receipt) throws Exception {
         ProjectModel project = new ProjectModel(Path.of(options.get("root", ".")));
         project.requireGradleBuild();
         try (ProjectLock ignored = ProjectLock.acquire(project, "perf")) {
@@ -184,7 +184,7 @@ final class Performance {
         }
     }
 
-    static String launch(Modaccel.Options options, Modaccel.Report receipt) throws Exception {
+    static String launch(Mmt.Options options, Mmt.Report receipt) throws Exception {
         Path file = Path.of(options.get("launch", "")).toAbsolutePath();
         Map<String, Object> config = Json.read(file);
         List<String> command = ProjectModel.strings(config.get("command"));
@@ -229,12 +229,12 @@ final class Performance {
         properties.setProperty("warmup", Integer.toString(warmup));
         properties.setProperty("hooks", noHooks ? "off" : "on");
         Path file = out.resolve("request.properties");
-        try (Writer writer = Files.newBufferedWriter(file)) { properties.store(writer, "Mod Accel capture request"); }
+        try (Writer writer = Files.newBufferedWriter(file)) { properties.store(writer, "Minecraft Modding Tools capture request"); }
         return file;
     }
 
     /** Which code is "your mod": the source checkout and its packages, or --mod-package; heap histogram on unless --no-heap. */
-    static void attribution(Path request, Modaccel.Options options) throws Exception {
+    static void attribution(Path request, Mmt.Options options) throws Exception {
         Properties properties = properties(request);
         String source = options.values.containsKey("root") ? options.get("root", ".") : options.get("mod-root", "");
         if (!source.isBlank()) {
@@ -248,9 +248,9 @@ final class Performance {
             properties.setProperty("modPackages", value);
         }
         properties.setProperty("heap", options.has("no-heap") ? "off" : "on");
-        // --root profiles the session modaccel started with the user's own window preference.
+        // --root profiles the session mmt started with the user's own window preference.
         if (options.has("allow-hidden") || options.values.containsKey("root")) properties.setProperty("allowHidden", "true");
-        try (Writer writer = Files.newBufferedWriter(request)) { properties.store(writer, "Mod Accel capture request"); }
+        try (Writer writer = Files.newBufferedWriter(request)) { properties.store(writer, "Minecraft Modding Tools capture request"); }
     }
 
     /** The smallest set of package prefixes covering a checkout's Java and Kotlin sources. */
@@ -274,7 +274,7 @@ final class Performance {
         return minimal.stream().limit(32).toList();
     }
 
-    static void probes(Path request, Modaccel.Options options) throws Exception {
+    static void probes(Path request, Mmt.Options options) throws Exception {
         if (!options.values.containsKey("probes")) return;
         if (options.has("no-hooks")) throw new IllegalArgumentException("--probes cannot be used with --no-hooks");
         List<Object> probes = Json.array(Json.read(Path.of(options.get("probes", ""))).get("probes"));
@@ -295,13 +295,13 @@ final class Performance {
                 throw new IllegalArgumentException("Only one timing label per method");
             }
             if (!owner.matches("[A-Za-z0-9_$/]+") || owner.startsWith("java/") || owner.startsWith("jdk/") ||
-                owner.startsWith("dev/modaccel/") || owner.startsWith("sun/") || owner.startsWith("com/sun/") || !method.matches("[A-Za-z0-9_$]+") ||
+                owner.startsWith("dev/mmt/") || owner.startsWith("sun/") || owner.startsWith("com/sun/") || !method.matches("[A-Za-z0-9_$]+") ||
                 !descriptor.startsWith("(") || descriptor.contains("|") || !label.matches("[A-Za-z0-9_.-]+") || !labels.add(label)) {
                 throw new IllegalArgumentException("Invalid probe; use exact class, method, JVM descriptor and unique plain label");
             }
             properties.setProperty("probe." + index++, owner + "|" + method + "|" + descriptor + "|" + label + "|" + mode);
         }
-        try (Writer writer = Files.newBufferedWriter(request)) { properties.store(writer, "Mod Accel capture request"); }
+        try (Writer writer = Files.newBufferedWriter(request)) { properties.store(writer, "Minecraft Modding Tools capture request"); }
     }
 
     static void capture(String pid, Path agent, Path request, Path out, int seconds, int warmup, boolean progress) throws Exception {
@@ -309,7 +309,7 @@ final class Performance {
         VirtualMachine vm = VirtualMachine.attach(pid);
         try {
             Properties props = vm.getSystemProperties();
-            if (Boolean.parseBoolean(props.getProperty("modaccel.background", "false"))
+            if (Boolean.parseBoolean(props.getProperty("mmt.background", "false"))
                 && !Boolean.parseBoolean(properties(request).getProperty("allowHidden", "false"))) {
                 throw new IOException("Refusing a throttled hidden game. Restart visibly for representative frame timing, "
                     + "or pass --allow-hidden when only server ticks or timed methods matter.");
@@ -368,15 +368,15 @@ final class Performance {
         return Json.map("jars", jars, "meaning", "Installed top-level jars; not proof that every jar loaded. Nested jars remain separate attribution limitations.");
     }
 
-    static Path agent(Path home, Modaccel.Report receipt) throws Exception {
+    static Path agent(Path home, Mmt.Report receipt) throws Exception {
         Path source = home.resolve("tools/perf/PerfAgent.java");
         Path asm = home.resolve("tools/perf/lib/asm-9.9.jar");
         if (!Fingerprints.bytes(Files.readAllBytes(asm)).equals("03d99a74ad1ee5c71334ef67437f4ef4fe3488caa7c96d8645abc73c8e2017d4")) {
             throw new IOException("Bundled ASM checksum mismatch");
         }
         String hash = Fingerprints.files(List.of(source, asm, home.resolve("tools/cli/Relocate.java")));
-        Path dir = home.resolve(".modaccel/perf-agent/" + hash);
-        Path target = dir.resolve("modaccel-perf-agent.jar");
+        Path dir = home.resolve(".mmt/perf-agent/" + hash);
+        Path target = dir.resolve("mmt-perf-agent.jar");
         if (Files.isRegularFile(target)) return target;
         Files.createDirectories(dir);
         Path classes = Files.createTempDirectory(dir, "classes-");
@@ -390,8 +390,8 @@ final class Performance {
         if (compile.exit() != 0) throw new IOException(Run.tail(compile.log()));
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().putValue("Manifest-Version", "1.0");
-        manifest.getMainAttributes().putValue("Agent-Class", "dev.modaccel.perf.PerfAgent");
-        manifest.getMainAttributes().putValue("Premain-Class", "dev.modaccel.perf.PerfAgent");
+        manifest.getMainAttributes().putValue("Agent-Class", "dev.mmt.perf.PerfAgent");
+        manifest.getMainAttributes().putValue("Premain-Class", "dev.mmt.perf.PerfAgent");
         manifest.getMainAttributes().putValue("Can-Retransform-Classes", "true");
         Path temp = Files.createTempFile(dir, "agent-", ".jar");
         try (JarOutputStream jar = new JarOutputStream(Files.newOutputStream(temp), manifest);

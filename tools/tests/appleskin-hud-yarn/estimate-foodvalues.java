@@ -18,4 +18,4 @@ server.execute(() -> {
     sp.getHungerManager().eat(food);
 });
 return "AppleSkin estimates +" + estimate + " health for a golden carrot (hunger " + values.hunger + ", saturation modifier " + values.saturationModifier
-    + ", AppleSkin exhaustion " + ((squeek.appleskin.mixin.HungerManagerAccessor) hunger).modaccel$getExhaustion() + "); the server player ate one";
+    + ", AppleSkin exhaustion " + ((squeek.appleskin.mixin.HungerManagerAccessor) hunger).mmt$getExhaustion() + "); the server player ate one";

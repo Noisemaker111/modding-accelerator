@@ -861,7 +861,7 @@ final class Dependencies {
             "No published " + displayLoader(loader) + " target for " + group + ":" + name + " on " + to
         );
         // Releases first: a beta or alpha is picked only when the project published nothing else for the
-        // target, and the record says so. A selection in .modaccel/dependencies.json can name any version.
+        // target, and the record says so. A selection in .mmt/dependencies.json can name any version.
         var releases = stableFirst(listed);
         boolean preRelease = !stable(Json.object(releases.get(0)));
         Map<String, Object> release = Json.object(releases.get(0));
@@ -1008,7 +1008,7 @@ final class Dependencies {
             built +
             " (its jar's Fabric-Loom-Version), newer than this project's Loom " +
             loom +
-            ". It was kept, and this build states its Loom version where modaccel cannot raise it: raise it by hand or select an older release in .modaccel/dependencies.json."
+            ". It was kept, and this build states its Loom version where mmt cannot raise it: raise it by hand or select an older release in .mmt/dependencies.json."
         );
     }
 
@@ -1357,7 +1357,7 @@ final class Dependencies {
         if (source.isEmpty()) throw new IOException(
             "Unindexed dependency has no direct source repository in contact.sources or contact.homepage: " +
             binary +
-            "; add a selection for it in .modaccel/dependencies.json"
+            "; add a selection for it in .mmt/dependencies.json"
         );
         return findPublishedProject(
             source,
@@ -1432,7 +1432,7 @@ final class Dependencies {
                 source +
                 " on " +
                 to +
-                "; add a selection for it in .modaccel/dependencies.json."
+                "; add a selection for it in .mmt/dependencies.json."
                 : "Multiple published " +
                 displayLoader(loader) +
                 " projects match source repository " +

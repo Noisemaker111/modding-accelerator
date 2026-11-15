@@ -19,8 +19,8 @@ final class PackLoaders {
 
     private PackLoaders() {}
 
-    /** What every adapter is given: where modaccel lives, the download cache, the receipt, and the Java the game needs. */
-    record Context(Path harness, Path cache, Modaccel.Report report, Runtimes.Jdk java) {}
+    /** What every adapter is given: where mmt lives, the download cache, the receipt, and the Java the game needs. */
+    record Context(Path harness, Path cache, Mmt.Report report, Runtimes.Jdk java) {}
 
     /** The game's run-time names: "mojang" (no renaming), or another kind with a mapping file from the official names. */
     record Names(String kind, Path mapping) {}
@@ -225,7 +225,7 @@ final class PackLoaders {
         }
 
         public Path install(Context context, String minecraft, String version) throws Exception {
-            Path dir = installed(context, minecraft, version), done = dir.resolve("modaccel-installed");
+            Path dir = installed(context, minecraft, version), done = dir.resolve("mmt-installed");
             if (Files.isRegularFile(done)) return dir;
             Files.createDirectories(dir);
             Path installer = dir.resolve("installer.jar");
@@ -262,7 +262,7 @@ final class PackLoaders {
             String text = Files.readString(source)
                 .replace("libraries/", libraries + "/")
                 .replace("-DlibraryDirectory=libraries", "-DlibraryDirectory=" + libraries);
-            Path target = instance.resolve("modaccel-args.txt");
+            Path target = instance.resolve("mmt-args.txt");
             Files.writeString(target, text);
             return List.of("@" + target);
         }
@@ -294,7 +294,7 @@ final class PackLoaders {
         }
 
         public Path install(Context context, String minecraft, String version) throws Exception {
-            Path dir = installed(context, minecraft, version), done = dir.resolve("modaccel-installed");
+            Path dir = installed(context, minecraft, version), done = dir.resolve("mmt-installed");
             if (Files.isRegularFile(done)) return dir;
             Files.createDirectories(dir);
             String installerUrl = "";
@@ -611,8 +611,8 @@ final class PackLoaders {
     // ------------------------------------------------------------------ the probe
     /** The probe's sources: one loader-neutral mod, its Fabric entrypoint, and the stand-ins it compiles against. */
     static final List<String> PROBE = List.of(
-        "tools/packcheck/ModaccelPackProbe.java",
-        "tools/packcheck/ModaccelPackProbeFabric.java",
+        "tools/packcheck/MmtPackProbe.java",
+        "tools/packcheck/MmtPackProbeFabric.java",
         "tools/packcheck/stubs/net/minecraftforge/fml/common/Mod.java",
         "tools/packcheck/stubs/net/neoforged/fml/common/Mod.java",
         "tools/packcheck/stubs/net/fabricmc/api/DedicatedServerModInitializer.java",
@@ -633,10 +633,10 @@ final class PackLoaders {
         for (String source : PROBE) hash.update(Files.readAllBytes(context.harness().resolve(source)));
         Path layer = gameLayer(context.harness(), minecraft);
         hash.update(Files.readAllBytes(layer));
-        // The behaviour fingerprint (ModaccelFingerprint) goes in the same jar when it has a layer for this version.
+        // The behaviour fingerprint (MmtFingerprint) goes in the same jar when it has a layer for this version.
         List<String> fingerprint = new ArrayList<>();
         try {
-            fingerprint.add(context.harness().resolve("tools/packcheck/ModaccelFingerprint.java").toString());
+            fingerprint.add(context.harness().resolve("tools/packcheck/MmtFingerprint.java").toString());
             fingerprint.add(Fingerprint.fingerprintLayer(context.harness(), minecraft).toString());
             for (String source : fingerprint) hash.update(Files.readAllBytes(Path.of(source)));
         } catch (IOException noLayer) {
@@ -674,8 +674,8 @@ final class PackLoaders {
                 String.join(File.pathSeparator, classpath),
                 "-d",
                 classes.toString(),
-                context.harness().resolve("tools/packcheck/ModaccelPackProbe.java").toString(),
-                context.harness().resolve("tools/packcheck/ModaccelPackProbeFabric.java").toString(),
+                context.harness().resolve("tools/packcheck/MmtPackProbe.java").toString(),
+                context.harness().resolve("tools/packcheck/MmtPackProbeFabric.java").toString(),
                 layer.toString()
             )
         );
@@ -720,7 +720,7 @@ final class PackLoaders {
     }
 
     /**
-     * The probe's version layer for one game version: tools/packcheck/game/VERSION/ModaccelPackGame.java with the newest
+     * The probe's version layer for one game version: tools/packcheck/game/VERSION/MmtPackGame.java with the newest
      * VERSION at or below the game's. Each layer has the same methods, written in that version's API.
      */
     static Path gameLayer(Path harness, String minecraft) throws IOException {
@@ -735,7 +735,7 @@ final class PackLoaders {
         if (best == null) throw new IOException(
             "pack-check's probe has no game layer for Minecraft " + minecraft + ": tools/packcheck/game has none at or below it."
         );
-        return root.resolve(best).resolve("ModaccelPackGame.java");
+        return root.resolve(best).resolve("MmtPackGame.java");
     }
 
     static String javac(Context context) {

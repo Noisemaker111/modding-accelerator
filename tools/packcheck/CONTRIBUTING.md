@@ -2,7 +2,7 @@
 
 `pack-check` runs a modpack on its own loader's real server and checks what happens. It is built from five registries;
 a new loader, input, check or repair goes into one of them, not into the core (`tools/cli/PackCheck.java`).
-`modaccel pack-check --list` prints what each registry holds.
+`mmt pack-check --list` prints what each registry holds.
 
 | Part | Where | What it decides |
 |---|---|---|
@@ -12,13 +12,13 @@ a new loader, input, check or repair goes into one of them, not into the core (`
 | Checks | `tools/cli/PackChecks.java` (`ALL`) | Findings, before the game (`static`) and from the server starts (`new-world`, `reopen`, `user-world`) |
 | Repairs | `knowledge/pack-fixes.json`, `tools/cli/PackRepairs.java` | Proven fixes: a match, an action and a test |
 
-The probe (`tools/packcheck/ModaccelPackProbe.java`) is one loader-neutral mod. It is written in Mojang names against
+The probe (`tools/packcheck/MmtPackProbe.java`) is one loader-neutral mod. It is written in Mojang names against
 the vanilla server and reaches the loader only by reflection. pack-check compiles it once per game version and gives
 it the metadata file the loader reads. It renames it to the loader's run-time names. Forge and NeoForge use SRG
 when the installed game jar has SRG method names (Forge 1.20.1 does), otherwise Mojang names. Fabric and Quilt use
 intermediary.
 
-Run `modaccel self-test --only pack-check` after any change; it needs no network and no game.
+Run `mmt self-test --only pack-check` after any change; it needs no network and no game.
 
 ## Add a game or loader version
 
@@ -28,7 +28,7 @@ If one game version is published under other coordinates (NeoForge for 1.20.1 is
 loader in `pack-loaders.json`.
 
 The probe compiles against the game API from 1.16 to 26.x, as Java 8 source (1.16 servers run on Java 8). Every game call that changed between versions is in a
-game layer, `tools/packcheck/game/VERSION/ModaccelPackGame.java`, and pack-check compiles the probe with the layer
+game layer, `tools/packcheck/game/VERSION/MmtPackGame.java`, and pack-check compiles the probe with the layer
 whose VERSION is the newest at or below the pack's. A version whose API moved again fails at `probe-compile` with
 javac's error: add a layer named after the first version with the new API, with the same methods as the others, and
 list it in `tools/cli/Installation.java`. Keep loader-specific code out of the layers.
@@ -53,7 +53,7 @@ lacks that member; the release is downloaded and must match both the vendor's AP
 
 A loader that fits neither style needs a `Style` subclass in `PackLoaders.java`, added to the `switch` in `all()`.
 If it reads a metadata format pack-check does not know, add a reader in `PackMods.read` and the probe's own file
-beside `ModaccelPackProbe.java`. If its server keeps the running game somewhere new, add that lookup to `findServer`
+beside `MmtPackProbe.java`. If its server keeps the running game somewhere new, add that lookup to `findServer`
 in the probe. If its run-time names differ, return them from `names()`. Add an alias and a launch test to
 `PackCheckTest.loaders`, then prove the loader on a real public pack (below).
 
@@ -152,7 +152,7 @@ scheduled tick, or could not survive where it stood, when the world saved, and c
 reload, is `settled-after-save`, a note, not `changed-by-save`. An item that puts down another mod's block of the same
 name (a pack unifying it), or the block its own block is built on, is a note, not a `placed-other-block` problem.
 
-To prove a repair, run `modaccel pack-check --pack PACK --fix`. pack-check starts the repaired pack's server beside
+To prove a repair, run `mmt pack-check --pack PACK --fix`. pack-check starts the repaired pack's server beside
 the shipped one, and compares them check by check (`fix.comparison`). It changes the user's pack only when the
 repaired one makes a world, opens it again, has no problem of the repair's `check` kind, and has no problem the
 shipped pack does not. An instance folder is changed in place (`--undo` restores it). An export or `.mrpack` gets a

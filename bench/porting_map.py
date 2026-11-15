@@ -341,7 +341,7 @@ function mineLine(hops) {
 
 // ---- commands ------------------------------------------------------------------------------
 let PLAT = /Win/.test(navigator.platform || navigator.userAgent) ? "win" : "nix";
-const cmd = h => `${PLAT === "win" ? "modaccel.cmd" : "./modaccel"} port --root <your mod folder> --from ${h.a} --to ${h.b} --fix`;
+const cmd = h => `${PLAT === "win" ? "mmt.cmd" : "./mmt"} port --root <your mod folder> --from ${h.a} --to ${h.b} --fix`;
 
 function render() {
   $("#detail").innerHTML = "";
@@ -358,14 +358,14 @@ function render() {
   const back = POS[y] < POS[x];
   let html = `<h2>${esc(x)} → ${esc(y)}${back ? " (backport)" : ""} on ${LOADERS[LOADER]}</h2>
   <p class="summary">${hops.length} hop${hops.length === 1 ? "" : "s"}: ${[["green", "work"], ["yellow", "being worked on"], ["red", "not working yet or blocked"]].filter(([c]) => n(c)).map(([c, w]) => `<span class="dot st-${c}"></span>${n(c)} ${w}`).join(" &nbsp; ")}</p>
-  ${blocked.length ? `<div class="notice"><b>Blocked: no official mappings for ${esc([...new Set(blocked.flatMap(h => [h.a, h.b]).filter(v => !MEASURED(v)))].slice(0, 4).join(", "))}${blocked.length > 0 ? "" : ""} yet.</b> Mojang's names start at 1.14.4. Those hops can't be measured or ported by modaccel today; they would need MCP or other legacy community mappings.</div>` : ""}
+  ${blocked.length ? `<div class="notice"><b>Blocked: no official mappings for ${esc([...new Set(blocked.flatMap(h => [h.a, h.b]).filter(v => !MEASURED(v)))].slice(0, 4).join(", "))}${blocked.length > 0 ? "" : ""} yet.</b> Mojang's names start at 1.14.4. Those hops can't be measured or ported by mmt today; they would need MCP or other legacy community mappings.</div>` : ""}
   ${(() => { const on = HUBS.filter(h => POS[h] >= Math.min(POS[x], POS[y]) && POS[h] <= Math.max(POS[x], POS[y])); return on.length > 2 ? `<p class="small">One <code>port</code> command does the whole trip from ${esc(back ? on[on.length - 1] : on[0])} to ${esc(back ? on[0] : on[on.length - 1])} (the thick line with no dots on the map), passing the ${hops.length} hops below. Each hop's colour says what has been seen working.</p>` : ""; })()}
   ${back ? `<p class="small">Backport: rules are written for forward ports, so only renames from the mappings count as handled. What the newer game added is missing on the way back.</p>` : ""}
   <div class="plat"><span class="small">Commands for</span><button type="button" data-plat="win" class="${PLAT === "win" ? "on" : ""}">Windows</button><button type="button" data-plat="nix" class="${PLAT === "nix" ? "on" : ""}">macOS / Linux</button></div>
   <p class="small">One command walks the whole route: it goes hub to hub, joins every update's renames into one map, runs only the rules for the updates it crosses, and names the update behind each error left. The rows below are the same route, hop by hop, if you would rather check each hop builds and loads before the next.</p>
   <div class="cmdline"><code>${esc(cmd({ a: x, b: y }))}</code><button type="button" data-copy="all">Copy</button></div>
   ${mineLine(hops)}
-  <table class="tbl stack"><thead><tr><th class="l">Hop</th><th class="l">Status</th><th>Size</th><th>Names that break</th><th class="hi">modaccel handles</th><th>Left for you</th></tr></thead><tbody>`;
+  <table class="tbl stack"><thead><tr><th class="l">Hop</th><th class="l">Status</th><th>Size</th><th>Names that break</th><th class="hi">mmt handles</th><th>Left for you</th></tr></thead><tbody>`;
   hops.forEach((h, i) => {
     h.ready = readiness(h);
     const num = v => h.measured ? fmt(v) : `<span class="small">not measured</span>`;
@@ -373,7 +373,7 @@ function render() {
       <td class="status" data-k="Status"><span class="dot st-${h.st.c}"></span>${h.st.word}<span class="why">${esc(h.st.why)}</span></td>
       <td data-k="Size">${h.size ? `<span class="size sz-${h.size}">${h.size}</span>` : `<span class="size sz-none">unknown</span>`}</td>
       <td data-k="Names that break">${num(h.broken)}</td>
-      <td class="hi" data-k="modaccel handles">${num(h.handled)}${h.measured && h.note ? `<span class="sub">+ ${fmt(h.note)} with a how-to</span>` : ""}</td>
+      <td class="hi" data-k="mmt handles">${num(h.handled)}${h.measured && h.note ? `<span class="sub">+ ${fmt(h.note)} with a how-to</span>` : ""}</td>
       <td data-k="Left for you">${num(h.left)}</td></tr>
       <tr class="cmd"><td colspan="6">${h.measured ? `<div class="ready ${h.ready.k}">${esc(h.ready.label)}</div><div class="cmdline"><code>${esc(cmd(h))}</code><button type="button" data-copy="${i}">Copy</button>${h.steps.length ? `<button type="button" data-open="${i}">Show ${h.steps.length === 1 ? "the update" : h.steps.length + " updates"}</button>` : ""}</div><div class="inner" id="in${i}" hidden></div>` : `<div class="ready blocked">Blocked: no command until there are mappings for this hop.</div>`}</td></tr>`;
   });

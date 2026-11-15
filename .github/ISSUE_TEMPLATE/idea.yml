@@ -1,5 +1,5 @@
 name: Idea or missing support
-description: A mod, version, loader or check modaccel should handle.
+description: A mod, version, loader or check mmt should handle.
 labels: [idea]
 body:
   - type: textarea

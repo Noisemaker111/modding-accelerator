@@ -1,4 +1,4 @@
-package dev.modaccel.perf;
+package dev.mmt.perf;
 
 import java.io.*;
 import java.lang.instrument.*;
@@ -22,7 +22,7 @@ public final class PerfAgent {
     private static final ThreadLocal<Long> frameGeneration = new ThreadLocal<>();
     private static volatile long generation;
     private static final ThreadLocal<Long> tick = new ThreadLocal<>();
-    private static final String KEY = "dev.modaccel.perf.pulse.v1";
+    private static final String KEY = "dev.mmt.perf.pulse.v1";
     private static final List<String> errors = new CopyOnWriteArrayList<>();
     private static volatile List<String[]> probes = List.of();
     private static final Map<String, java.util.concurrent.atomic.LongAdder> calls = new ConcurrentHashMap<>();
@@ -68,7 +68,7 @@ public final class PerfAgent {
         long started, children;
     }
 
-    @Name("modaccel.MethodTiming") @jdk.jfr.Label("Selected function wall time") @StackTrace(false)
+    @Name("mmt.MethodTiming") @jdk.jfr.Label("Selected function wall time") @StackTrace(false)
     public static final class MethodTiming extends Event {
         public String label;
         public String caller;
@@ -79,13 +79,13 @@ public final class PerfAgent {
         public boolean exceptional;
     }
 
-    @Name("modaccel.Pulse") @jdk.jfr.Label("Mod Accel timing") @StackTrace(false)
+    @Name("mmt.Pulse") @jdk.jfr.Label("Minecraft Modding Tools timing") @StackTrace(false)
     public static final class Pulse extends Event {
         public String kind;
         @Timespan(Timespan.NANOSECONDS) public long nanos;
     }
 
-    @Name("modaccel.Process") @jdk.jfr.Label("Mod Accel process") @StackTrace(false)
+    @Name("mmt.Process") @jdk.jfr.Label("Minecraft Modding Tools process") @StackTrace(false)
     public static final class ProcessSample extends Event {
         public long heapUsed;
         public long heapCommitted;
@@ -94,7 +94,7 @@ public final class PerfAgent {
     }
 
     /** Complete per-label totals; unlike per-call events these are never dropped at the event limit. */
-    @Name("modaccel.TimingTotals") @jdk.jfr.Label("Selected function totals") @StackTrace(false)
+    @Name("mmt.TimingTotals") @jdk.jfr.Label("Selected function totals") @StackTrace(false)
     public static final class TimingTotals extends Event {
         public String label;
         public long calls;
@@ -109,7 +109,7 @@ public final class PerfAgent {
      * time on a processor only, unlike execution samples, which also count a preempted thread that is in Java code.
      * {@code whole} is false for a thread that ended during the window (its last second may be missing).
      */
-    @Name("modaccel.ThreadCpuTime") @jdk.jfr.Label("Thread CPU time in the window") @StackTrace(false)
+    @Name("mmt.ThreadCpuTime") @jdk.jfr.Label("Thread CPU time in the window") @StackTrace(false)
     public static final class ThreadCpuTime extends Event {
         public String thread;
         public long threadId;
@@ -171,7 +171,7 @@ public final class PerfAgent {
         }
     }
 
-    @Name("modaccel.ProbeCalls") @jdk.jfr.Label("Selected method calls") @StackTrace(false)
+    @Name("mmt.ProbeCalls") @jdk.jfr.Label("Selected method calls") @StackTrace(false)
     public static final class ProbeCalls extends Event {
         public String label;
         public long calls;
@@ -182,7 +182,7 @@ public final class PerfAgent {
     }
 
     public static synchronized void agentmain(String args, Instrumentation inst) throws Exception {
-        if (busy) throw new IllegalStateException("A Mod Accel capture is already running");
+        if (busy) throw new IllegalStateException("A Minecraft Modding Tools capture is already running");
         Properties p = new Properties();
         try (Reader in = Files.newBufferedReader(Path.of(args))) { p.load(in); }
         if (!BUILD_ID.equals(p.getProperty("agentBuild"))) {
@@ -212,7 +212,7 @@ public final class PerfAgent {
         busy = true;
         errors.clear();
         hooks.clear();
-        Thread worker = new Thread(() -> capture(inst, out, seconds, warmup, p), "modaccel-perf-capture");
+        Thread worker = new Thread(() -> capture(inst, out, seconds, warmup, p), "mmt-perf-capture");
         worker.setDaemon(true);
         worker.start();
     }
@@ -399,7 +399,7 @@ public final class PerfAgent {
         boolean installed = false;
         Properties status = new Properties();
         try (Recording recording = new Recording(Configuration.getConfiguration("profile"))) {
-            recording.setName("Mod Accel " + out.getFileName());
+            recording.setName("Minecraft Modding Tools " + out.getFileName());
             recording.setMaxSize(512L * 1024 * 1024);
             recording.enable(Pulse.class).withoutStackTrace();
             recording.enable(ProcessSample.class).withoutStackTrace();
@@ -484,7 +484,7 @@ public final class PerfAgent {
             save(out.resolve("features.properties"), features(inst));
             if (request.getProperty("heap", "on").equals("on")) heapHistogram(out, status);
             Properties env = new Properties();
-            for (String key : List.of("java.version", "java.vendor", "os.name", "os.version", "os.arch", "user.dir", "modaccel.background")) {
+            for (String key : List.of("java.version", "java.vendor", "os.name", "os.version", "os.arch", "user.dir", "mmt.background")) {
                 env.setProperty(key, System.getProperty(key, ""));
             }
             env.setProperty("processors", Integer.toString(Runtime.getRuntime().availableProcessors()));
@@ -519,7 +519,7 @@ public final class PerfAgent {
             status.setProperty("hooks", String.join("\n", new TreeSet<>(hooks)));
             status.setProperty("errors", String.join("\n", errors));
             try { save(out.resolve("status.properties"), status); }
-            catch (IOException error) { System.err.println("Mod Accel capture status: " + error); }
+            catch (IOException error) { System.err.println("Minecraft Modding Tools capture status: " + error); }
             synchronized (PerfAgent.class) { busy = false; }
         }
     }
@@ -588,7 +588,7 @@ public final class PerfAgent {
 
     private static void save(Path path, Properties properties) throws IOException {
         Path temp = Files.createTempFile(path.getParent(), "perf-", ".tmp");
-        try (Writer writer = Files.newBufferedWriter(temp)) { properties.store(writer, "Mod Accel performance"); }
+        try (Writer writer = Files.newBufferedWriter(temp)) { properties.store(writer, "Minecraft Modding Tools performance"); }
         Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING);
     }
 }

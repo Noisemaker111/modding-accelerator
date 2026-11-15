@@ -20,7 +20,7 @@ final class PerfAttribution {
         "^(?:handler|redirect|modify|localvar|wrapOperation|wrapWithCondition|constant|args|modifyExpressionValue|modifyReturnValue)\\$[a-z0-9]+\\$(.+)$");
     static final List<String> TRANSPARENT = List.of("java.", "javax.", "jdk.", "sun.", "com.sun.", "net.minecraft.", "com.mojang.",
         "net.fabricmc.loader.", "net.neoforged.fml.", "net.neoforged.bus.", "net.minecraftforge.fml.", "net.minecraftforge.eventbus.",
-        "cpw.mods.", "org.spongepowered.", "com.llamalad7.mixinextras.", "org.objectweb.asm.", "dev.modaccel.");
+        "cpw.mods.", "org.spongepowered.", "com.llamalad7.mixinextras.", "org.objectweb.asm.", "dev.mmt.");
     static final List<String> EVENT_BUSES = List.of("net.neoforged.bus.", "net.minecraftforge.eventbus.", "net.fabricmc.fabric.api.event.",
         "net.fabricmc.fabric.impl.base.event.", "net.neoforged.neoforge.common.NeoForge", "net.minecraftforge.common.MinecraftForge");
     static final Set<String> PLATFORM = Set.of("minecraft", "java", "fabricloader", "neoforge", "forge", "mixinextras", "fml");
@@ -109,8 +109,8 @@ final class PerfAttribution {
     }
 
     Origin resolve(String location, boolean own) {
-        // Mod Accel's own control and profiling agents are never the mod being measured.
-        if (location.contains("/.modaccel/") || location.contains("modaccel-agent") || location.contains("modaccel-perf-agent")) return null;
+        // Minecraft Modding Tools' own control and profiling agents are never the mod being measured.
+        if (location.contains("/.mmt/") || location.contains("mmt-agent") || location.contains("mmt-perf-agent")) return null;
         Path path = path(location);
         String[] metadata = path == null ? null : metadata(path);
         boolean underRoot = underRoot(path, root);
@@ -278,7 +278,7 @@ final class PerfAttribution {
 
     /** Work the profiler's own hooks and timing probes did, often inside a mod's method: never the mod's cost. */
     static boolean profiler(List<RecordedFrame> frames) {
-        for (RecordedFrame frame : frames) if (typeName(frame).startsWith("dev.modaccel.")) return true;
+        for (RecordedFrame frame : frames) if (typeName(frame).startsWith("dev.mmt.")) return true;
         return false;
     }
 
@@ -504,7 +504,7 @@ final class PerfAttribution {
         return Json.map("mods", rows, "threads", threads.stream().limit(40).toList(),
             "executionSamples", samples, "attributedSamples", attributedSamples, "samplePeriodMs", period,
             "profilerOverhead", Json.map("samples", profilerSamples, "allocationBytesPerSecond", profilerAllocation / seconds,
-                "meaning", "Samples and allocation inside modaccel's own frame/tick hooks and timing probes; charged to no mod."),
+                "meaning", "Samples and allocation inside mmt's own frame/tick hooks and timing probes; charged to no mod."),
             "unattributed", exact.getOrDefault("[unattributed]", List.of()),
             "basis", Json.map(
                 "sampled", "Execution samples, allocation samples, lock and I/O events are charged to the innermost mod frame on their stack; "

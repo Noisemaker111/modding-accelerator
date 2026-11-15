@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Runs modaccel convert on a pinned corpus of real mods and ranks what it is missing.
+"""Runs mmt convert on a pinned corpus of real mods and ranks what it is missing.
 
     python bench/convert_sweep.py run [--only ID,ID] [--jobs 2] [--no-compile] [--no-game] [--no-back] [--label NAME] [--record]
     python bench/convert_sweep.py table [--label NAME]     rank the recorded runs again and print the gap table
 
 bench/convert-sweep/corpus.json pins each mod (repository and commit). For each one the runner:
   1. clones the pinned commit once into .runs/convert-sweep/src/ID and copies it to a fresh work folder;
-  2. runs modaccel convert --to the other loader --json (the compile included unless --dry-run);
+  2. runs mmt convert --to the other loader --json (the compile included unless --dry-run);
   3. classifies every refusal, every item convert names as not converted, and every compiler error
      (with its symbol and location from the compile log) by the loader concept it lacks, using
      bench/convert-sweep/concepts.json;
-  4. when the converted mod compiles: starts it in a hidden client (modaccel ui-check), reads every
+  4. when the converted mod compiles: starts it in a hidden client (mmt ui-check), reads every
      registry entry in the mod's namespace and the mixins Mixin applied from the mod's own mixin packages
-     (modaccel eval), stops the game, and does the same for the untouched original. The behaviour check is
+     (mmt eval), stops the game, and does the same for the untouched original. The behaviour check is
      "the converted mod registers what the original does" when the original registers anything, else "the
      same mixins apply to the same game classes"; a mod with neither is "loads, no registry entries to
      compare", never a pass;
@@ -21,8 +21,8 @@ bench/convert-sweep/corpus.json pins each mod (repository and commit). For each 
 
 Per-run records go to .runs/convert-sweep/runs/ID-to-LOADER.json. The ranked gap table and the pass rates
 go to coverage/sweeps/convert.json after a run of the whole corpus (or with --record); --label keeps each
-sweep's pass rates in its history, so a batch of rules shows its before and after. Launches follow ~/.modaccel/preferences.json (hidden and muted).
-After each mod, modaccel game-stop ends its games and Gradle daemons. The runner never calls a network model: convert's rules are plain data.
+sweep's pass rates in its history, so a batch of rules shows its before and after. Launches follow ~/.mmt/preferences.json (hidden and muted).
+After each mod, mmt game-stop ends its games and Gradle daemons. The runner never calls a network model: convert's rules are plain data.
 """
 import argparse
 import concurrent.futures
@@ -43,7 +43,7 @@ CONCEPTS = ROOT / "bench" / "convert-sweep" / "concepts.json"
 OUT = ROOT / "coverage" / "sweeps" / "convert.json"
 WORK = ROOT / ".runs" / "convert-sweep"
 WINDOWS = os.name == "nt"
-MODACCEL = [str(ROOT / ("modaccel.cmd" if WINDOWS else "modaccel"))]
+MMT = [str(ROOT / ("mmt.cmd" if WINDOWS else "mmt"))]
 OTHER = {"fabric": "neoforge", "neoforge": "fabric"}
 TIMEOUT = {"convert": 3600, "ui-check": 1500, "eval": 300, "game-stop": 300, "fingerprint": 3600}
 
@@ -118,7 +118,7 @@ def git(args, cwd=None, timeout=1800):
 def pristine(mod):
     """The pinned commit, cloned once (no history beyond it)."""
     src = WORK / "src" / mod["id"]
-    marker = src / ".modaccel-sweep-commit"
+    marker = src / ".mmt-sweep-commit"
     if marker.is_file() and marker.read_text().strip() == mod["commit"]:
         return src
     rmtree(src)
@@ -139,15 +139,15 @@ def fresh_copy(src, name):
     except OSError:
         # A Gradle daemon or a game from an earlier run can still hold files there: use a new folder.
         dest = WORK / "work" / f"{name}-{int(time.time())}"
-    shutil.copytree(extended(src), extended(dest), ignore=shutil.ignore_patterns(".git", ".gradle", "build", ".modaccel-sweep-commit"))
+    shutil.copytree(extended(src), extended(dest), ignore=shutil.ignore_patterns(".git", ".gradle", "build", ".mmt-sweep-commit"))
     return dest
 
 
-def modaccel(args, timeout):
-    """Runs modaccel and returns (exit code, the JSON object it printed last, seconds)."""
+def mmt(args, timeout):
+    """Runs mmt and returns (exit code, the JSON object it printed last, seconds)."""
     started = time.monotonic()
     try:
-        r = subprocess.run(MODACCEL + args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
+        r = subprocess.run(MMT + args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
         out, code = r.stdout, r.returncode
     except subprocess.TimeoutExpired as e:
         out = e.stdout.decode("utf-8", "replace") if isinstance(e.stdout, bytes) else (e.stdout or "")
@@ -162,7 +162,7 @@ def modaccel(args, timeout):
     if value is None:
         value = {"error": (out.strip() or r.stderr.strip())[-2000:]}
     elif isinstance(value.get("result"), dict):
-        value = value["result"]  # the receipt envelope modaccel prints with --json
+        value = value["result"]  # the receipt envelope mmt prints with --json
     return code, value, time.monotonic() - started
 
 
@@ -279,7 +279,7 @@ def evaluate(work, name, code_text):
     """Runs a snippet in the project's running game; (value, error)."""
     snippet = WORK / f"{Path(work).name}-{name}.java"
     snippet.write_text(code_text, encoding="utf-8")
-    code, ev, _ = modaccel(["eval", "--root", str(work), "--file", str(snippet), "--json"], TIMEOUT["eval"])
+    code, ev, _ = mmt(["eval", "--root", str(work), "--file", str(snippet), "--json"], TIMEOUT["eval"])
     if code != 0:
         return None, str(ev.get("error") or ev)[-1000:]
     return (ev.get("value") if isinstance(ev, dict) else None), None
@@ -293,7 +293,7 @@ def mixin_snippet(packages):
 def game_registries(work, namespace, packages=()):
     """Starts the project in a hidden client, reads its registry entries and its applied mixins, stops the game."""
     record = {}
-    code, ui, seconds = modaccel(["ui-check", "--root", str(work), "--json"], TIMEOUT["ui-check"])
+    code, ui, seconds = mmt(["ui-check", "--root", str(work), "--json"], TIMEOUT["ui-check"])
     record["loaded"] = code == 0
     record["loadSeconds"] = round(seconds, 1)
     if code != 0:
@@ -305,7 +305,7 @@ def game_registries(work, namespace, packages=()):
         record["mixins"], error = evaluate(work, "mixins", mixin_snippet(packages))
         if error:
             record["mixinError"] = error
-    modaccel(["game-stop", "--root", str(work), "--json"], TIMEOUT["game-stop"])
+    mmt(["game-stop", "--root", str(work), "--json"], TIMEOUT["game-stop"])
     return record
 
 
@@ -346,11 +346,11 @@ def fingerprint_behaviour(converted, original, name):
     a, b = folder / f"{name}-original.json", folder / f"{name}-converted.json"
     taken = {}
     for side, work, out in (("original", original, a), ("converted", converted, b)):
-        code, result, seconds = modaccel(["fingerprint", "--root", str(work), "--out", str(out), "--json"], TIMEOUT["fingerprint"])
+        code, result, seconds = mmt(["fingerprint", "--root", str(work), "--out", str(out), "--json"], TIMEOUT["fingerprint"])
         taken[side] = {"ok": code == 0 and out.is_file(), "seconds": round(seconds, 1), "error": None if code == 0 else str(result.get("error") or result)[-800:]}
     if not (taken["original"]["ok"] and taken["converted"]["ok"]):
         return {"check": "behaviour fingerprint", "signal": "fingerprint", "equal": None, "taken": taken}
-    code, diff, _ = modaccel(["fingerprint-diff", str(a), str(b), "--across-versions", "--json"], TIMEOUT["eval"])
+    code, diff, _ = mmt(["fingerprint-diff", str(a), str(b), "--across-versions", "--json"], TIMEOUT["eval"])
     return verdict_from_diff(diff, taken)
 
 
@@ -373,9 +373,9 @@ def parse_registries(text):
 
 
 def stop(work):
-    """Ends the game and the Gradle daemons modaccel started for one checkout, so nothing waits out its idle timeout."""
+    """Ends the game and the Gradle daemons mmt started for one checkout, so nothing waits out its idle timeout."""
     if work is not None and Path(work).is_dir():
-        modaccel(["game-stop", "--root", str(work), "--json"], TIMEOUT["game-stop"])
+        mmt(["game-stop", "--root", str(work), "--json"], TIMEOUT["game-stop"])
 
 
 def run_one(mod, args, concepts):
@@ -402,7 +402,7 @@ def run_mod(mod, args, concepts, started):
     yarn = bool(re.search(r"(?m)^\s*yarn_(?:mappings|version)\s*=", props)) and mod["loader"] == "fabric"
     record["yarn"] = yarn
     convert_args = ["convert", "--root", str(work), "--to", to, "--json"] + (["--no-compile"] if args.no_compile else [])
-    code, result, seconds = modaccel(convert_args, TIMEOUT["convert"])
+    code, result, seconds = mmt(convert_args, TIMEOUT["convert"])
     record["convertSeconds"] = round(seconds, 1)
     record["exit"] = code
     concepts_hit, items = {}, []
@@ -461,7 +461,7 @@ def run_mod(mod, args, concepts, started):
             else:
                 hit("game load failed after a clean compile", {"kind": "game", "text": record["game"].get("loadError", "")[:1500]})
         if result.get("compiled") and not args.no_back:
-            code2, back, seconds2 = modaccel(["convert", "--root", str(work), "--to", mod["loader"], "--json"], TIMEOUT["convert"])
+            code2, back, seconds2 = mmt(["convert", "--root", str(work), "--to", mod["loader"], "--json"], TIMEOUT["convert"])
             entry = {"exit": code2, "seconds": round(seconds2, 1)}
             if "error" in back and "from" not in back:
                 entry["refusal"] = str(back["error"])[:600]
@@ -582,7 +582,7 @@ def write(records, label):
     previous = json.loads(OUT.read_text(encoding="utf-8")) if OUT.is_file() else {}
     history = [h for h in previous.get("history", []) if h.get("label") != label] + [rates]
     data = {
-        "about": "modaccel convert on the pinned corpus in bench/convert-sweep/corpus.json, by python bench/convert_sweep.py. "
+        "about": "mmt convert on the pinned corpus in bench/convert-sweep/corpus.json, by python bench/convert_sweep.py. "
                  "gaps ranks each missing loader concept by how many mods it affects (blocking: refusals). history keeps each labelled sweep's pass rates.",
         "corpus": len(json.loads(CORPUS.read_text(encoding="utf-8"))["mods"]),
         "latest": rates, "history": history, "gaps": ranked, "runs": [compact(r) for r in sorted(records, key=lambda r: r["id"])],
@@ -622,7 +622,7 @@ def main():
     run.add_argument("--no-fingerprint", action="store_true", help="skip the behaviour fingerprints of the original and the converted mod")
     run.add_argument("--label", default="latest")
     run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
-    run.add_argument("--modaccel", default="", help="run another modaccel checkout (e.g. the baseline) instead of this one")
+    run.add_argument("--mmt", default="", help="run another mmt checkout (e.g. the baseline) instead of this one")
     run.add_argument("--record", action="store_true", help="write coverage/sweeps/convert.json after a partial (--only) run too")
     t = sub.add_parser("table")
     t.add_argument("--label", default="latest")
@@ -631,8 +631,8 @@ def main():
         ranked, rates = write(load_records(), args.label)
         print(table(ranked, rates))
         return 0
-    if args.modaccel:
-        MODACCEL[0] = str(Path(args.modaccel).resolve() / ("modaccel.cmd" if WINDOWS else "modaccel"))
+    if args.mmt:
+        MMT[0] = str(Path(args.mmt).resolve() / ("mmt.cmd" if WINDOWS else "mmt"))
     mods = json.loads(CORPUS.read_text(encoding="utf-8"))["mods"]
     if args.only:
         wanted = set(args.only.split(","))
