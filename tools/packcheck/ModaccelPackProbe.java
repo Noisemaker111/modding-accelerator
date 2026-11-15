@@ -2,15 +2,18 @@ package modaccel.packprobe;
 
 import com.google.gson.*;
 import java.io.*;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
@@ -21,107 +24,202 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.common.util.FakePlayerFactory;
-import net.minecraftforge.event.server.ServerStartedEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
- * pack-check's probe, loaded into a real modded server. Written in Mojang names; pack-check renames it to the
- * loader's runtime names before it goes in the mods folder.
+ * pack-check's probe, loaded into a real modded server on any loader. Written in Mojang names against the vanilla
+ * game only; pack-check renames it to the loader's runtime names (none, SRG or intermediary) before it goes in the
+ * mods folder. Nothing here names a loader class: the loader is reached by reflection, so one source serves Forge,
+ * NeoForge, Fabric and Quilt. Forge and NeoForge construct this class through @Mod; Fabric and Quilt call
+ * ModaccelPackProbeFabric, which calls start().
+ *
+ * A watcher thread waits for the server to finish starting, then runs the work on the server thread in slices of
+ * 40 ms, the way a tick handler would.
  *
  * place: every block item is used on a support block by a fake player through the same server path a real
  *   right-click takes (ServerPlayerGameMode.useItemOn, so other mods' events and mixins run), and the block that
  *   lands is compared with the block the item says it places. Placed blocks stay, and are listed.
  * verify: on the next start of the same world, each listed block is read back after the save and reload.
+ * open: the world opened; only its dimensions are written and read back.
  *
- * Properties: modaccel.probe.mode (place|verify), modaccel.probe.out (result JSON), modaccel.probe.placed
+ * Properties: modaccel.probe.mode (place|verify|open), modaccel.probe.out (result JSON), modaccel.probe.placed
  * (the place run's list, read by verify), modaccel.probe.only (comma-separated item ids; default every block item).
  */
-@Mod("modaccel_pack_probe")
+@net.minecraftforge.fml.common.Mod("modaccel_pack_probe")
+@net.neoforged.fml.common.Mod("modaccel_pack_probe")
 public final class ModaccelPackProbe {
     static final int COLUMNS = 64, SPACING = 3;
+    static Work running;
 
-    public ModaccelPackProbe() {
-        MinecraftForge.EVENT_BUS.addListener(this::started);
-        MinecraftForge.EVENT_BUS.addListener(this::tick);
-        // The opener is built only into the client probe; a server probe has no client classes to call.
-        if (net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient())
-            try { Class.forName("modaccel.packprobe.ModaccelPackOpener").getDeclaredMethod("register").invoke(null); }
-            catch (ReflectiveOperationException absent) { System.out.println("MODACCEL-PROBE-NO-OPENER"); }
+    public ModaccelPackProbe() { start(); }
+
+    /** Once per game, whichever loader calls first. */
+    static synchronized void start() {
+        if (running == null) running = new Work();
     }
 
-    final JsonObject result = new JsonObject();
-    MinecraftServer server;
-    Iterator<Item> items; Placement placement; Set<Long> area; long waitingSince;
-    boolean finished;
+    static final class Work {
+        final JsonObject result = new JsonObject();
+        MinecraftServer server;
+        Iterator<Item> items; Placement placement; Set<Long> area; long waitingSince;
+        volatile boolean finished;
 
-    void started(ServerStartedEvent event) {
-        server = event.getServer();
-        String mode = System.getProperty("modaccel.probe.mode", "place");
-        result.addProperty("mode", mode);
-        result.add("mods", mods());
-        result.add("dimensions", dimensions(server));
-        System.out.println("MODACCEL-PROBE-STARTED " + mode);
-        // The world opened. Load the test area through the normal chunk system before touching it, so no
-        // block update in the middle of a tick has to wait for chunk generation.
-        ServerLevel level = server.overworld();
-        BlockPos origin = origin(level);
-        area = new HashSet<>();
-        int rows = rows();
-        result.addProperty("gridRows", rows);
-        for (int x = (origin.getX() >> 4) - 1; x <= (origin.getX() + COLUMNS * SPACING >> 4) + 1; x++)
-            for (int z = (origin.getZ() >> 4) - 1; z <= (origin.getZ() + rows * SPACING >> 4) + 1; z++) {
-                level.setChunkForced(x, z, true); area.add(net.minecraft.world.level.ChunkPos.asLong(x, z));
-            }
-        waitingSince = System.nanoTime();
-    }
+        Work() {
+            Thread watcher = new Thread(this::watch, "modaccel-pack-probe");
+            watcher.setDaemon(true);
+            watcher.start();
+        }
 
-    void tick(net.minecraftforge.event.TickEvent.ServerTickEvent event) {
-        if (server == null || finished || event.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
-        ServerLevel level = server.overworld();
-        try {
-            if (area != null) {
-                for (long chunk : area) if (!level.hasChunk(net.minecraft.world.level.ChunkPos.getX(chunk), net.minecraft.world.level.ChunkPos.getZ(chunk))) {
-                    if (System.nanoTime() - waitingSince > 300_000_000_000L) throw new IllegalStateException("The test area's chunks did not load in 300 s");
-                    return;
+        void watch() {
+            try {
+                long since = System.nanoTime();
+                while ((server = findServer()) == null || !server.isReady() || server.getTickCount() < 1) {
+                    if (server != null && !server.isRunning() && server.getTickCount() > 0) return;
+                    Thread.sleep(250);
+                    if (System.nanoTime() - since > TimeUnit.MINUTES.toNanos(60)) return;
                 }
-                result.addProperty("areaLoadSeconds", (System.nanoTime() - waitingSince) / 1e9);
-                area = null;
-                if (System.getProperty("modaccel.probe.mode", "place").equals("verify")) { verify(server, result); finish(true); return; }
-                placement = new Placement(level, result);
-                items = BuiltInRegistries.ITEM.iterator();
+                CompletableFuture.runAsync(this::started, server).get(10, TimeUnit.MINUTES);
+                while (!finished) {
+                    if (!server.isRunning()) return;
+                    CompletableFuture.runAsync(this::step, server).get(10, TimeUnit.MINUTES);
+                    Thread.sleep(10);
+                }
+            } catch (Throwable failure) {
+                if (!finished) {
+                    result.addProperty("error", stack(failure));
+                    finish(false);
+                }
             }
-            long budget = System.nanoTime() + 40_000_000L;
-            while (items.hasNext() && System.nanoTime() < budget) placement.place(items.next());
-            if (!items.hasNext()) { placement.finish(); finish(true); }
-        } catch (Throwable failure) {
-            result.addProperty("error", stack(failure));
-            finish(false);
+        }
+
+        void started() {
+            String mode = System.getProperty("modaccel.probe.mode", "place");
+            result.addProperty("mode", mode);
+            result.addProperty("loader", loader());
+            result.add("mods", mods());
+            result.add("dimensions", dimensions(server));
+            System.out.println("MODACCEL-PROBE-STARTED " + mode);
+            if (mode.equals("open")) { finish(true); return; }
+            // The world opened. Load the test area through the normal chunk system before touching it, so no
+            // block update in the middle of a tick has to wait for chunk generation.
+            ServerLevel level = server.overworld();
+            BlockPos origin = origin(level);
+            area = new HashSet<>();
+            int rows = rows();
+            result.addProperty("gridRows", rows);
+            for (int x = (origin.getX() >> 4) - 1; x <= (origin.getX() + COLUMNS * SPACING >> 4) + 1; x++)
+                for (int z = (origin.getZ() >> 4) - 1; z <= (origin.getZ() + rows * SPACING >> 4) + 1; z++) {
+                    level.setChunkForced(x, z, true); area.add(net.minecraft.world.level.ChunkPos.asLong(x, z));
+                }
+            waitingSince = System.nanoTime();
+        }
+
+        void step() {
+            if (finished) return;
+            ServerLevel level = server.overworld();
+            try {
+                if (area != null) {
+                    for (long chunk : area) if (!level.hasChunk(net.minecraft.world.level.ChunkPos.getX(chunk), net.minecraft.world.level.ChunkPos.getZ(chunk))) {
+                        if (System.nanoTime() - waitingSince > 300_000_000_000L) throw new IllegalStateException("The test area's chunks did not load in 300 s");
+                        return;
+                    }
+                    result.addProperty("areaLoadSeconds", (System.nanoTime() - waitingSince) / 1e9);
+                    area = null;
+                    if (System.getProperty("modaccel.probe.mode", "place").equals("verify")) { verify(server, result); finish(true); return; }
+                    placement = new Placement(level, result);
+                    items = BuiltInRegistries.ITEM.iterator();
+                }
+                long budget = System.nanoTime() + 40_000_000L;
+                while (items.hasNext() && System.nanoTime() < budget) placement.place(items.next());
+                if (!items.hasNext()) { placement.finish(); finish(true); }
+            } catch (Throwable failure) {
+                result.addProperty("error", stack(failure));
+                finish(false);
+            }
+        }
+
+        synchronized void finish(boolean ok) {
+            if (finished) return;
+            finished = true;
+            result.addProperty("ok", ok);
+            try {
+                Path out = Path.of(System.getProperty("modaccel.probe.out", "modaccel-probe.json"));
+                Files.createDirectories(out.toAbsolutePath().getParent());
+                Files.writeString(out, new GsonBuilder().setPrettyPrinting().create().toJson(result), StandardCharsets.UTF_8);
+                System.out.println("MODACCEL-PROBE-DONE " + out.toAbsolutePath());
+            } catch (IOException unwritable) { unwritable.printStackTrace(); }
+            // A normal stop: the world is saved, so the next start can read it back. In singleplayer, halting the built-in
+            // server leaves the game on its saving screen, so the client closes itself, which saves and stops that server.
+            if (server != null && !server.isDedicatedServer())
+                try { Class.forName("modaccel.packprobe.ModaccelPackOpener").getDeclaredMethod("finished").invoke(null); return; }
+                catch (ReflectiveOperationException | LinkageError absent) { System.out.println("MODACCEL-PROBE-NO-OPENER"); }
+            if (server != null) server.halt(false);
         }
     }
 
-    void finish(boolean ok) {
-        finished = true;
-        result.addProperty("ok", ok);
-        try {
-            Path out = Path.of(System.getProperty("modaccel.probe.out", "modaccel-probe.json"));
-            Files.createDirectories(out.toAbsolutePath().getParent());
-            Files.writeString(out, new GsonBuilder().setPrettyPrinting().create().toJson(result), StandardCharsets.UTF_8);
-            System.out.println("MODACCEL-PROBE-DONE " + out.toAbsolutePath());
-        } catch (IOException unwritable) { unwritable.printStackTrace(); }
-        // A normal stop: the world is saved, so the next start can read it back. In singleplayer, halting the built-in
-        // server leaves the game on its saving screen, so the client closes itself, which saves and stops that server.
-        if (net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient())
-            try { Class.forName("modaccel.packprobe.ModaccelPackOpener").getDeclaredMethod("finished").invoke(null); return; }
-            catch (ReflectiveOperationException absent) { System.out.println("MODACCEL-PROBE-NO-OPENER"); }
-        server.halt(false);
+    /** The running server, from whichever loader is present: Forge and NeoForge keep it in ServerLifecycleHooks, Fabric and Quilt in FabricLoader. */
+    static MinecraftServer findServer() {
+        for (String hooks : List.of("net.neoforged.neoforge.server.ServerLifecycleHooks", "net.minecraftforge.server.ServerLifecycleHooks")) {
+            Object server = call(hooks, "getCurrentServer");
+            if (server instanceof MinecraftServer found) return found;
+        }
+        Object fabric = call("net.fabricmc.loader.api.FabricLoader", "getInstance");
+        if (fabric != null) try {
+            if (invoke(fabric, "getGameInstance") instanceof MinecraftServer found) return found;
+        } catch (ReflectiveOperationException | RuntimeException notYet) { /* the game instance is set once the server is built */ }
+        return null;
+    }
+
+    /** A no-argument method called through the public type that declares it: loaders hide their implementation classes. */
+    static Object invoke(Object target, String name) throws ReflectiveOperationException {
+        Deque<Class<?>> types = new ArrayDeque<>(List.of(target.getClass()));
+        while (!types.isEmpty()) {
+            Class<?> type = types.poll();
+            if (java.lang.reflect.Modifier.isPublic(type.getModifiers())) try { return type.getMethod(name).invoke(target); }
+            catch (NoSuchMethodException | IllegalAccessException notHere) { /* a supertype */ }
+            if (type.getSuperclass() != null) types.add(type.getSuperclass());
+            types.addAll(List.of(type.getInterfaces()));
+        }
+        throw new NoSuchMethodException(target.getClass().getName() + "." + name);
+    }
+
+    static Object call(String type, String method) {
+        try { return Class.forName(type, true, ModaccelPackProbe.class.getClassLoader()).getMethod(method).invoke(null); }
+        catch (ReflectiveOperationException | LinkageError | RuntimeException absent) { return null; }
+    }
+
+    static String loader() {
+        for (String[] known : new String[][] { { "net.neoforged.fml.ModList", "neoforge" }, { "net.minecraftforge.fml.ModList", "forge" }, { "org.quiltmc.loader.api.QuiltLoader", "quilt" }, { "net.fabricmc.loader.api.FabricLoader", "fabric" } })
+            try { Class.forName(known[0], false, ModaccelPackProbe.class.getClassLoader()); return known[1]; }
+            catch (ClassNotFoundException | LinkageError absent) { /* next */ }
+        return "unknown";
+    }
+
+    /** A player the server treats as real for placing blocks: the loader's own fake player where it has one. */
+    static ServerPlayer fakePlayer(ServerLevel level) throws ReflectiveOperationException {
+        for (String[] factory : new String[][] { { "net.neoforged.neoforge.common.util.FakePlayerFactory", "getMinecraft" }, { "net.minecraftforge.common.util.FakePlayerFactory", "getMinecraft" }, { "net.fabricmc.fabric.api.entity.FakePlayer", "get" } }) {
+            try {
+                Class<?> type = Class.forName(factory[0], true, ModaccelPackProbe.class.getClassLoader());
+                for (Method method : type.getMethods())
+                    if (method.getName().equals(factory[1]) && method.getParameterCount() == 1 && method.getParameterTypes()[0].isInstance(level))
+                        return (ServerPlayer) method.invoke(null, level);
+            } catch (ClassNotFoundException | LinkageError absent) { /* next */ }
+        }
+        // No loader fake player (a Fabric pack without Fabric API): a plain player that is never added to the world.
+        var profile = new com.mojang.authlib.GameProfile(UUID.fromString("41c82c87-7afb-4024-ba57-13d2c99cae77"), "[modaccel]");
+        for (var constructor : ServerPlayer.class.getConstructors()) {
+            Class<?>[] types = constructor.getParameterTypes();
+            if (types.length == 3) return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile);
+            if (types.length == 4) for (Method made : types[3].getMethods())
+                if (java.lang.reflect.Modifier.isStatic(made.getModifiers()) && made.getParameterCount() == 0 && made.getReturnType() == types[3])
+                    return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile, made.invoke(null));
+        }
+        throw new IllegalStateException("no way to make a player for placing blocks");
     }
 
     static BlockPos origin(ServerLevel level) {
         BlockPos spawn = level.getSharedSpawnPos();
-        return new BlockPos(spawn.getX() - COLUMNS * SPACING / 2, level.getMaxBuildHeight() - 8, spawn.getZ() - COLUMNS * SPACING / 2);
+        int top = level.dimensionType().minY() + level.dimensionType().height() - 1;
+        return new BlockPos(spawn.getX() - COLUMNS * SPACING / 2, top - 8, spawn.getZ() - COLUMNS * SPACING / 2);
     }
 
     static Set<String> only() {
@@ -139,15 +237,23 @@ public final class ModaccelPackProbe {
         return Math.max(1, (count + COLUMNS - 1) / COLUMNS);
     }
 
-    /** One block item at a time, a few per tick. */
+    /** One block item at a time, a few per slice. */
     static final class Placement {
-        final ServerLevel level; final JsonObject result; final FakePlayer player; final Set<String> only = only(); final BlockPos origin;
+        final ServerLevel level; final JsonObject result; final ServerPlayer player; final Set<String> only = only(); final BlockPos origin;
         final JsonArray different = new JsonArray(), unplaced = new JsonArray(), failed = new JsonArray(), placed = new JsonArray();
         int tried, same, cell;
         // Surfaces tried in order until the block lands: the top of stone (most blocks), grass (plants), farmland
         // (crops) and sand (cacti), then a wall face, a ceiling, and sand under water.
         static final String[] SURFACES = { "minecraft:stone", "minecraft:grass_block", "minecraft:farmland", "minecraft:sand", "wall", "ceiling", "water" };
-        Placement(ServerLevel level, JsonObject result) { this.level = level; this.result = result; player = FakePlayerFactory.getMinecraft(level); origin = origin(level); }
+        Placement(ServerLevel level, JsonObject result) throws ReflectiveOperationException { this.level = level; this.result = result; player = fakePlayer(level); origin = origin(level); }
+        static Block ground(String surface) {
+            return switch (surface) {
+                case "minecraft:grass_block" -> Blocks.GRASS_BLOCK;
+                case "minecraft:farmland" -> Blocks.FARMLAND;
+                case "minecraft:sand", "water" -> Blocks.SAND;
+                default -> Blocks.STONE;
+            };
+        }
         void place(Item item) {
             if (!chosen(item, only)) return;
             BlockItem blockItem = (BlockItem) item;
@@ -167,28 +273,25 @@ public final class ModaccelPackProbe {
                     // Each surface: what is built, which face the player right-clicks, and where the block should land.
                     BlockPos clicked = support, target = support.above(); Direction face = Direction.UP; Vec3 point;
                     float yaw = 180f, pitch = 45f; Vec3 standing = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 2.5);
-                    Block base;
+                    Block base = ground(surface);
                     switch (surface) {
                         case "wall" -> {   // the north face of a stone block: torches, ladders, wall signs, vines
-                            base = Blocks.STONE; target = support.north(); face = Direction.NORTH;
+                            target = support.north(); face = Direction.NORTH;
                             point = new Vec3(support.getX() + 0.5, support.getY() + 0.5, support.getZ());
                             standing = new Vec3(support.getX() + 0.5, support.getY(), support.getZ() - 1.5); yaw = 0f; pitch = 0f;
                         }
                         case "ceiling" -> {   // the underside of a stone block: hanging signs, spore blossoms, weeping vines
-                            base = Blocks.STONE; clicked = support.above(2); face = Direction.DOWN;
+                            clicked = support.above(2); face = Direction.DOWN;
                             point = new Vec3(support.getX() + 0.5, support.getY() + 2, support.getZ() + 0.5); pitch = -45f;
                             level.setBlock(clicked, Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
                         }
                         case "water" -> {   // sand under still water: seagrass, kelp, coral
-                            base = Blocks.SAND; point = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5);
+                            point = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5);
                             // Glass round the water, or a water plant (a water source itself) floods the neighbouring cells.
                             for (Direction side : Direction.Plane.HORIZONTAL) if (level.getBlockState(target.relative(side)).isAir()) level.setBlock(target.relative(side), Blocks.GLASS.defaultBlockState(), Block.UPDATE_ALL);
                             level.setBlock(target, Blocks.WATER.defaultBlockState(), Block.UPDATE_ALL);
                         }
-                        default -> {   // the top of a block: most blocks, then plants, crops and sand plants
-                            base = BuiltInRegistries.BLOCK.get(new net.minecraft.resources.ResourceLocation(surface));
-                            point = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5);
-                        }
+                        default -> point = new Vec3(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5);   // the top of a block
                     }
                     level.setBlock(support, base.defaultBlockState(), Block.UPDATE_ALL);
                     BlockState before = level.getBlockState(target);
@@ -350,9 +453,24 @@ public final class ModaccelPackProbe {
         for (Direction side : Direction.Plane.HORIZONTAL) level.setBlock(support.above().relative(side), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
     }
 
+    /** Every loaded mod and its version, from whichever loader is present. */
     static JsonArray mods() {
         JsonArray mods = new JsonArray();
-        net.minecraftforge.fml.ModList.get().forEachModFile(file -> file.getModInfos().forEach(info -> mods.add(info.getModId() + " " + info.getVersion())));
+        ClassLoader loader = ModaccelPackProbe.class.getClassLoader();
+        try {
+            for (String list : List.of("net.neoforged.fml.ModList", "net.minecraftforge.fml.ModList")) {
+                Class<?> type;
+                try { type = Class.forName(list, true, loader); } catch (ClassNotFoundException | LinkageError absent) { continue; }
+                Object all = type.getMethod("get").invoke(null);
+                for (Object info : (List<?>) invoke(all, "getMods")) mods.add(invoke(info, "getModId") + " " + invoke(info, "getVersion"));
+                return mods;
+            }
+            Object fabric = call("net.fabricmc.loader.api.FabricLoader", "getInstance");
+            if (fabric != null) for (Object container : (Collection<?>) invoke(fabric, "getAllMods")) {
+                Object meta = invoke(container, "getMetadata");
+                mods.add(invoke(meta, "getId") + " " + invoke(invoke(meta, "getVersion"), "getFriendlyString"));
+            }
+        } catch (ReflectiveOperationException | RuntimeException unreadable) { mods.add("(mod list unreadable: " + unreadable + ")"); }
         return mods;
     }
 

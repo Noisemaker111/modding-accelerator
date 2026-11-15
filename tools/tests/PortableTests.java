@@ -1323,9 +1323,9 @@ public final class PortableTests {
         Path prefs = scratch.resolve("user/preferences.json");
         check(
             Boolean.FALSE.equals(Preferences.read(prefs).get("background")) &&
-            Boolean.FALSE.equals(Preferences.read(prefs).get("quiet")) &&
+            Boolean.TRUE.equals(Preferences.read(prefs).get("quiet")) &&
             !Files.exists(prefs),
-            "a new user keeps normal window and sound settings without creating a preference file"
+            "a new user gets a normal window and a muted game without creating a preference file"
         );
         Preferences.change(
             prefs,
@@ -1351,6 +1351,11 @@ public final class PortableTests {
                 "an invalid choice leaves the saved preference intact"
             );
         }
+        Preferences.change(prefs, new Modaccel.Options(new String[] { "preferences", "--quiet", "off" }));
+        check(
+            Boolean.FALSE.equals(Preferences.read(prefs).get("quiet")),
+            "a user can opt out of the muted game and the choice is kept"
+        );
         Path dark = scratch.resolve("frame dark.png"), half = scratch.resolve("frame half.png");
         BufferedImage left = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB), right = new BufferedImage(
             10,

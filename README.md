@@ -31,7 +31,7 @@ Version tags build a standalone JAR and portable ZIP with SHA-256 files in a dra
 |:-:|---|---|---|
 | 1 | **Test a mod in seconds** | `fast` `data-check` `ui-check` `world-check` `mp-check` `server-check` | Works. Logic tests, the game's data and real-game checks all run with no game window |
 | 2 | **Port a mod to any Minecraft version** | `port` `explain` | Works for Fabric and NeoForge, 1.14.4 to 26.3. Small jumps need no hand edits |
-| 3 | **Make modpacks work together** | `pack-check` | Works for Forge 1.20.1 packs, with one proven repair so far |
+| 3 | **Make modpacks work together** | `pack-check` | Works for Forge, NeoForge, Fabric and Quilt packs on their real servers, with two proven repairs |
 | 4 | **Change loader or platform** | `convert` | Works for Fabric ↔ NeoForge on one Minecraft version: two real Fabric mods run on NeoForge with no hand edits. Forge, Quilt and Paper are not converted yet |
 
 ## Quick start
@@ -45,7 +45,7 @@ Version tags build a standalone JAR and portable ZIP with SHA-256 files in a dra
 ./modaccel fast --root my-mod            # compile and run your logic tests, no game
 ./modaccel ui-check --root my-mod        # your mod in the real client, no window on screen
 ./modaccel port --root my-mod --from 1.21.5 --to 1.21.6 --fix
-./modaccel pack-check --pack my-pack.zip --fix
+./modaccel pack-check --pack my-pack.mrpack --fix
 ```
 
 On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.jar`. `modaccel help` lists every command and `modaccel help COMMAND` explains one.
@@ -69,9 +69,11 @@ On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.ja
 
 ### 3 · Make modpacks work together
 
-- **`pack-check`** takes a CurseForge export or an instance folder and runs it on its own Forge server. It finds duplicate and missing mods, blocks that place as another block, and worlds that open once but not again.
-- **`--fix`** applies a proven repair, then starts the repaired pack beside the original to show it working.
-- **Not yet:** Forge 1.20.1 only in the game, and one known repair. Other loaders get the checks that need no game.
+- **`pack-check`** takes a CurseForge export, a Modrinth `.mrpack`, or a CurseForge app, Prism/MultiMC or vanilla launcher instance. It runs the pack on its own Forge, NeoForge, Fabric or Quilt server, installed by that loader's official installer, for any version the loader publishes.
+- **What it checks:** a new world is made, every block item is placed the way a player places it, and the same world is opened again with each block read back. Duplicate, missing and wrong-version mods, and mods for another game version or loader, are warnings until the server confirms or refutes them. When a start fails, the log, crash report, mixin configs and stack name the mod responsible.
+- **`--fix`** applies a proven repair and starts the repaired pack's server beside the original. Your pack changes only if the repaired one passes where the original failed. Repairs so far: Biolith's saved climate list (Forge 1.20.1) and Soulslike Weaponry's pinned Projectile Damage (Forge 1.20.1).
+- **Proven in the game** on real public packs: Forge 1.20.1, NeoForge 1.21.1, Fabric 1.21.1 and Quilt 1.21.1.
+- **Not yet:** checks run on a server, so client-only mods are left out of them. The probe's game code is built for 1.20.1 to 1.21.1. `tools/packcheck/CONTRIBUTING.md` explains how to add a loader, input, check or repair.
 
 ### Performance evidence for mods and packs
 
