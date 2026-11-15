@@ -46,7 +46,24 @@ public final class FabricLoader {
         return mods.isLoaded(neo) ? neo : id;
     }
 
+    /**
+     * Fabric-only libraries whose API this bridge carries in the converted mod (bridges[].replaces drops them from the
+     * build): a mod that asks whether one is loaded before using its API is told yes, since the API is there.
+     */
+    static final Map<String, String> PROVIDED = Map.of(
+        "team_reborn_energy", "${package}.team.reborn.energy.api.EnergyStorage",
+        "forgeconfigapiport", "${package}.fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry"
+    );
+
     public boolean isModLoaded(String id) {
+        if (PROVIDED.containsKey(id)) {
+            try {
+                Class.forName(PROVIDED.get(id), false, FabricLoader.class.getClassLoader());
+                return true;
+            } catch (ClassNotFoundException absent) {
+                // The bridge does not carry it; ask NeoForge's mod list.
+            }
+        }
         return ModList.get() != null && ModList.get().isLoaded(neoforgeId(id));
     }
 
