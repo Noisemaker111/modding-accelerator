@@ -147,7 +147,14 @@ final class Installation {
                     Files.createDirectories(file.getParent());
                     Path temporary = Files.createTempFile(file.getParent(), "resource-", ".tmp");
                     Files.write(temporary, bytes);
-                    Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
+                    try {
+                        Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
+                    } catch (IOException busy) {
+                        // Two commands from one package starting at once both unpack it; on Windows the second cannot
+                        // replace a file the first just wrote and holds open. Those bytes are the same ones.
+                        Files.deleteIfExists(temporary);
+                        if (!Files.isRegularFile(file) || !Arrays.equals(Files.readAllBytes(file), bytes)) throw busy;
+                    }
                 }
             }
         }

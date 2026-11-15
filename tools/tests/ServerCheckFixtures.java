@@ -11,8 +11,9 @@ import java.util.concurrent.TimeUnit;
  * with every expect line passing. The bot's own scenario (tools/tests/server-check-bot.scenario) must pass with its
  * secret from .modaccel/secrets.properties, leave that secret nowhere in receipts, logs or server files, and fail with
  * "needs secret" without it. Then each break made on purpose must fail at the step the manifest names.
- * Usage: java ServerCheckFixtures.java <checkout> <modaccel.jar> [scenario|bot|breaks]
- * With a part named, only that part runs, so CI runs the parts side by side; with none, all of them run.
+ * Usage: java ServerCheckFixtures.java <checkout> <modaccel.jar> [UNIT,...]
+ * A unit is a part (scenario, bot, breaks) or one piece of it: fresh, extra:N (the Nth additional scenario), bot-secret,
+ * bot-negatives, break:N. Each unit is its own server run, so CI runs them side by side; with none, all of them run.
  */
 public final class ServerCheckFixtures {
 
@@ -20,12 +21,15 @@ public final class ServerCheckFixtures {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 2 || args.length > 3) throw new IllegalArgumentException(
-            "Usage: java ServerCheckFixtures.java <checkout> <modaccel.jar> [scenario|bot|breaks]"
+            "Usage: java ServerCheckFixtures.java <checkout> <modaccel.jar> [UNIT,...]"
         );
-        Set<String> parts = args.length == 3 ? Set.of(args[2]) : Set.of("scenario", "bot", "breaks");
-        if (!Set.of("scenario", "bot", "breaks").containsAll(parts)) throw new IllegalArgumentException(
-            "Unknown part " + args[2] + "; use scenario, bot or breaks"
-        );
+        Set<String> parts = new TreeSet<>(args.length == 3 ? List.of(args[2].split(",")) : List.of("scenario", "bot", "breaks"));
+        for (String part : parts) if (!part.matches("scenario|bot|breaks|fresh|bot-secret|bot-negatives|(extra|break):[0-9]+")) {
+            throw new IllegalArgumentException(
+                "Unknown unit " + part + "; use scenario, bot, breaks, fresh, extra:N, bot-secret, bot-negatives or break:N"
+            );
+        }
+        int ran = 0;
         Path home = Path.of(args[0]).toRealPath(), jar = Path.of(args[1]).toAbsolutePath().normalize();
         if (!Files.isRegularFile(jar)) throw new IOException("Missing package: " + jar);
         @SuppressWarnings("unchecked")
@@ -64,7 +68,8 @@ public final class ServerCheckFixtures {
             Path scenario = home.resolve(check.get("scenario").toString());
             long expects = Files.readAllLines(scenario).stream().filter(l -> l.strip().startsWith("expect-")).count();
 
-            if (parts.contains("scenario")) {
+            if (parts.contains("scenario") || parts.contains("fresh")) {
+                ran++;
                 Run run = modaccel(home, jar, root, Map.of(), "server-check", "--file", scenario.toString());
                 long passed = count(run.output(), "\"status\":\"pass\"");
                 if (
@@ -88,7 +93,12 @@ public final class ServerCheckFixtures {
                     run.seconds(),
                     times(run.output())
                 );
-                for (Object extra : (List<?>) check.getOrDefault("additionalScenarios", List.of())) {
+            }
+            List<?> extras = (List<?>) check.getOrDefault("additionalScenarios", List.of());
+            for (int index = 0; index < extras.size(); index++) {
+                if (parts.contains("scenario") || parts.contains("extra:" + index)) {
+                    ran++;
+                    Object extra = extras.get(index);
                     @SuppressWarnings("unchecked")
                     Map<String, Object> entry = (Map<String, Object>) extra;
                     Path file = home.resolve(entry.get("scenario").toString());
@@ -128,7 +138,8 @@ public final class ServerCheckFixtures {
 
             // The bot itself, with a secret from the gitignored secrets file; then without it.
             Path bot = home.resolve("tools/tests/server-check-bot.scenario");
-            if (parts.contains("bot")) {
+            if (parts.contains("bot") || parts.contains("bot-secret")) {
+                ran++;
                 long botExpects = Files.readAllLines(bot).stream().filter(l -> l.strip().startsWith("expect-")).count();
                 String secret = "modaccel-" + UUID.randomUUID();
                 Path secrets = root.resolve(".modaccel/secrets.properties");
@@ -165,6 +176,28 @@ public final class ServerCheckFixtures {
                     botExpects,
                     withSecret.seconds()
                 );
+                Files.delete(secrets);
+                Run without = modaccel(home, jar, root, Map.of(), "server-check", "--file", bot.toString());
+                if (
+                    without.exit() != 1 ||
+                    !without.output().contains("needs secret BOT_SECRET") ||
+                    without.output().contains("\"status\":\"pass\"")
+                ) throw new AssertionError(
+                    id +
+                    " bot scenario without its secret: expected exit 1 with \"needs secret BOT_SECRET\" and nothing run; got exit " +
+                    without.exit() +
+                    "\n" +
+                    without.output()
+                );
+                System.out.printf(
+                    Locale.ROOT,
+                    "PASS %s bot scenario without BOT_SECRET fails: needs secret BOT_SECRET (%.1fs)%n",
+                    id,
+                    without.seconds()
+                );
+            }
+            if (parts.contains("bot") || parts.contains("bot-negatives")) {
+                ran++;
                 Path negativeRcon = home.resolve("tools/tests/server-check-negative-rcon.scenario");
                 Run forbidden = modaccel(home, jar, root, Map.of(), "server-check", "--file", negativeRcon.toString());
                 if (
@@ -190,32 +223,20 @@ public final class ServerCheckFixtures {
                     "A failing external test must not pass even with matching output: " + external.output()
                 );
                 System.out.println("PASS external test rejects a nonzero exit despite matching output");
-                Files.delete(secrets);
-                Run without = modaccel(home, jar, root, Map.of(), "server-check", "--file", bot.toString());
-                if (
-                    without.exit() != 1 ||
-                    !without.output().contains("needs secret BOT_SECRET") ||
-                    without.output().contains("\"status\":\"pass\"")
-                ) throw new AssertionError(
-                    id +
-                    " bot scenario without its secret: expected exit 1 with \"needs secret BOT_SECRET\" and nothing run; got exit " +
-                    without.exit() +
-                    "\n" +
-                    without.output()
-                );
-                System.out.printf(
-                    Locale.ROOT,
-                    "PASS %s bot scenario without BOT_SECRET fails: needs secret BOT_SECRET (%.1fs)%n",
-                    id,
-                    without.seconds()
-                );
             }
 
             // Each break made on purpose in a throwaway copy must fail at the step the manifest names.
-            if (parts.contains("breaks")) {
+            List<?> breaks = (List<?>) check.get("breaks");
+            List<Integer> chosen = new ArrayList<>();
+            for (int index = 0; index < breaks.size(); index++) {
+                if (parts.contains("breaks") || parts.contains("break:" + index)) chosen.add(index);
+            }
+            if (!chosen.isEmpty()) {
                 Path copy = Files.createTempDirectory(root.getParent(), id + "-broken-").resolve(id);
                 copyTree(root, copy);
-                for (Object b : (List<?>) check.get("breaks")) {
+                for (int index : chosen) {
+                    ran++;
+                    Object b = breaks.get(index);
                     @SuppressWarnings("unchecked")
                     Map<String, Object> brk = (Map<String, Object>) b;
                     Path file = copy.resolve(brk.get("file").toString());
@@ -261,6 +282,8 @@ public final class ServerCheckFixtures {
         if (checked == 0) throw new AssertionError(
             "bench/server-plugins/manifest.json has no plugin with a serverCheck entry"
         );
+        // A unit that names nothing (extra:9 when there are two) must not pass by running nothing.
+        if (ran == 0) throw new AssertionError("No server-check unit matched " + parts);
         System.out.println("PASS server-check fixtures: " + String.join(", ", new TreeSet<>(parts)));
     }
 
