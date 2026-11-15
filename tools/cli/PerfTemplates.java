@@ -174,6 +174,10 @@ final class PerfTemplates {
         Files.writeString(out.resolve("digest.java"), "// " + PerfCheck.TEMPLATE_MARK + ": delete this line once the snippet hashes the changed code's output.\n"
             + "// Exact gate: run the code the candidate changes on frozen inputs (an area far from the player, ticked by hand,\n"
             + "// a fixed game time, no randomness) and return a hash of all it produced. Two baseline launches must agree.\n"
+            + "// Change the cached input mid-run: after a few rounds, change what a cache would hold (add or break a block,\n"
+            + "// replace a container, change a setting), keep ticking and hashing. A gate on inputs that never change passes a\n"
+            + "// stale cache (Pipez's moving and transfers gates did; its rewire gate caught it). Prove it once with a\n"
+            + "// deliberately wrong candidate that fills the cache once and never again: this gate must fail it.\n"
             + "// Hot methods in the capture: " + hot + "\n"
             + "return \"\";\n");
         Files.writeString(out.resolve("chunks.java"), "// " + PerfCheck.TEMPLATE_MARK + ": delete this line once AREA and KEEP name your scene's chunks.\n" + CHUNKS_GATE);

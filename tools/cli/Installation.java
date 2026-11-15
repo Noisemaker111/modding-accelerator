@@ -23,10 +23,7 @@ final class Installation {
         "tools/agent/HotReload.java",
         "tools/runner/PureTests.java",
         "tools/plugincheck/MmtPluginCheck.java",
-        "knowledge/mockbukkit.json",
         "tools/servercheck/MmtServerCheck.java",
-        "knowledge/mcprotocollib.json",
-        "knowledge/viaproxy.json",
         "tools/packcheck/MmtPackProbe.java",
         "tools/packcheck/MmtPackProbeFabric.java",
         "tools/packcheck/MmtPackOpener.java",
@@ -44,8 +41,6 @@ final class Installation {
         "tools/packcheck/game/1.21.5/MmtPackGame.java",
         "tools/packcheck/game/1.21.11/MmtPackGame.java",
         "tools/packcheck/game/26.1/MmtPackGame.java",
-        "knowledge/pack-fixes.json",
-        "knowledge/pack-loaders.json",
         "tools/VersionMap.java",
         "tools/GameDiff.java",
         "tools/MixinAudit.java",
@@ -62,7 +57,12 @@ final class Installation {
         "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinInfo.java",
         "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinConfig.java",
         "tools/GamePrep.java",
-        "tools/tests/PortableTests.java",
+        "tools/tests/PortTests.java",
+        "tools/tests/PortRepairTests.java",
+        "tools/tests/ConvertTests.java",
+        "tools/tests/BuildScriptTests.java",
+        "tools/tests/CommandTests.java",
+        "tools/tests/GameTests.java",
         "tools/tests/PerfTest.java",
         "tools/tests/JdkDownloadsTest.java",
         "tools/tests/DependenciesTest.java",
@@ -70,59 +70,64 @@ final class Installation {
         "tools/tests/HardeningTest.java",
         "tools/tests/MixinCheckTest.java",
         "tools/tests/TrustTest.java",
-        "tools/tests/StrangerTest.java",
-        "tools/tests/PackCheckTest.java",
+        "tools/tests/ModFileTests.java",
+        "tools/tests/ErrorMessageTests.java",
+        "tools/tests/ProjectSafetyTests.java",
+        "tools/tests/PackCheckFixtures.java",
+        "tools/tests/PackMetadataTests.java",
+        "tools/tests/PackLogTests.java",
+        "tools/tests/PackServerTests.java",
+        "tools/tests/PackRepairTests.java",
         "tools/tests/RulesTest.java",
-        "knowledge/fixes.json",
-        "knowledge/loaders.json",
-        "knowledge/bridges/neoforge-on-fabric/Bridge.java",
-        "knowledge/bridges/neoforge-on-fabric/BuildCreativeModeTabContentsEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/Bus.java",
-        "knowledge/bridges/neoforge-on-fabric/ClientBridge.java",
-        "knowledge/bridges/neoforge-on-fabric/ClientTickEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ConfigurationScreen.java",
-        "knowledge/bridges/neoforge-on-fabric/DeferredBlock.java",
-        "knowledge/bridges/neoforge-on-fabric/DeferredHolder.java",
-        "knowledge/bridges/neoforge-on-fabric/DeferredItem.java",
-        "knowledge/bridges/neoforge-on-fabric/DeferredRegister.java",
-        "knowledge/bridges/neoforge-on-fabric/Event.java",
-        "knowledge/bridges/neoforge-on-fabric/EventBusSubscriber.java",
-        "knowledge/bridges/neoforge-on-fabric/EventPriority.java",
-        "knowledge/bridges/neoforge-on-fabric/FMLClientSetupEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/FMLCommonSetupEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ICancellableEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/IConfigScreenFactory.java",
-        "knowledge/bridges/neoforge-on-fabric/IEventBus.java",
-        "knowledge/bridges/neoforge-on-fabric/ModConfig.java",
-        "knowledge/bridges/neoforge-on-fabric/ModConfigEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ModConfigSpec.java",
-        "knowledge/bridges/neoforge-on-fabric/ModContainer.java",
-        "knowledge/bridges/neoforge-on-fabric/NeoForge.java",
-        "knowledge/bridges/neoforge-on-fabric/RegisterCommandsEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerLifecycleEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerStartedEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerStartingEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerStoppedEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerStoppingEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerTickEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/SubscribeEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ClientPacketDistributor.java",
-        "knowledge/bridges/neoforge-on-fabric/ClientPayloadContext.java",
-        "knowledge/bridges/neoforge-on-fabric/HandlerThread.java",
-        "knowledge/bridges/neoforge-on-fabric/IPayloadContext.java",
-        "knowledge/bridges/neoforge-on-fabric/IPayloadHandler.java",
-        "knowledge/bridges/neoforge-on-fabric/PacketDistributor.java",
-        "knowledge/bridges/neoforge-on-fabric/PayloadRegistrar.java",
-        "knowledge/bridges/neoforge-on-fabric/RegisterClientPayloadHandlersEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/RegisterPayloadHandlersEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerPayloadContext.java",
-        "knowledge/structural.json",
-        "knowledge/port-corpus.json",
+        "knowledge/",
         "coverage/changes/index.json"
     );
 
+    /** The jar entry listing every resource the package carries, so unpacking restores exactly what was packed. */
+    static final String RESOURCE_LIST = "mmt-resources.txt";
+
+    /**
+     * Every file a package carries: RESOURCES with each directory (an entry ending in /) expanded, and the change
+     * index's step files for updates into unobfuscated releases, which port's by-name lookups read (Port.byName).
+     * A hand-kept list once missed knowledge/meaning-changes.json and perf-patterns.json, so the shipped port and
+     * perf-optimize silently ran without them.
+     */
+    static List<String> resources(Path harness) throws IOException {
+        List<String> files = new ArrayList<>();
+        for (String name : RESOURCES) {
+            if (!name.endsWith("/")) {
+                files.add(name);
+                continue;
+            }
+            try (var walk = Files.walk(harness.resolve(name))) {
+                walk
+                    .filter(Files::isRegularFile)
+                    .map(p -> harness.relativize(p).toString().replace('\\', '/'))
+                    .sorted()
+                    .forEach(files::add);
+            }
+        }
+        try (var steps = Files.list(harness.resolve("coverage/changes"))) {
+            steps
+                .map(p -> p.getFileName().toString())
+                .filter(n -> n.endsWith(".json") && n.contains("__"))
+                .filter(n -> {
+                    String[] sides = n.substring(0, n.length() - 5).split("__");
+                    return Versions.compare(sides[1], Route.FIRST_UNOBFUSCATED) >= 0;
+                })
+                .sorted()
+                .forEach(n -> files.add("coverage/changes/" + n));
+        }
+        return files;
+    }
+
     static Path home() throws Exception {
         Path location = Path.of(Mmt.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        // A child started by perf-optimize (PerfOptimize.childJava) is handed its parent's resources; a test hands its own.
+        // Not mmt.home: the portable launchers set that to the ZIP's folder, which has no resources.
+        if (System.getProperty("mmt.resources") != null) return Path.of(System.getProperty("mmt.resources"))
+            .toAbsolutePath()
+            .normalize();
         if (!location.toString().endsWith(".jar")) return Path.of(System.getProperty("mmt.home", "."))
             .toAbsolutePath()
             .normalize();
@@ -132,7 +137,11 @@ final class Installation {
             Fingerprints.bytes(Files.readAllBytes(location))
         );
         try (var jar = new JarFile(location.toFile())) {
-            for (String name : RESOURCES) {
+            List<String> names;
+            try (var input = jar.getInputStream(jar.getJarEntry(RESOURCE_LIST))) {
+                names = new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).lines().toList();
+            }
+            for (String name : names) {
                 Path file = directory.resolve(name);
                 byte[] bytes;
                 try (var input = jar.getInputStream(jar.getJarEntry(name))) {
@@ -142,7 +151,14 @@ final class Installation {
                     Files.createDirectories(file.getParent());
                     Path temporary = Files.createTempFile(file.getParent(), "resource-", ".tmp");
                     Files.write(temporary, bytes);
-                    Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
+                    try {
+                        Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
+                    } catch (IOException busy) {
+                        // Two commands from one package starting at once both unpack it; on Windows the second cannot
+                        // replace a file the first just wrote and holds open. Those bytes are the same ones.
+                        Files.deleteIfExists(temporary);
+                        if (!Files.isRegularFile(file) || !Arrays.equals(Files.readAllBytes(file), bytes)) throw busy;
+                    }
                 }
             }
         }
@@ -210,13 +226,19 @@ final class Installation {
                 Files.copy(file, output);
                 output.closeEntry();
             }
-            for (String name : RESOURCES) {
+            List<String> resources = resources(harness);
+            for (String name : resources) {
                 var entry = new JarEntry(name);
                 entry.setTime(0);
                 output.putNextEntry(entry);
                 Files.copy(harness.resolve(name), output);
                 output.closeEntry();
             }
+            var list = new JarEntry(RESOURCE_LIST);
+            list.setTime(0);
+            output.putNextEntry(list);
+            output.write(String.join("\n", resources).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            output.closeEntry();
         }
         Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
         String sha = Fingerprints.bytes(Files.readAllBytes(target));
@@ -227,7 +249,8 @@ final class Installation {
         Map<String, byte[]> contents = new LinkedHashMap<>();
         contents.put("mmt.jar", Files.readAllBytes(target));
         contents.put("mmt.jar.sha256", Files.readAllBytes(directory.resolve("mmt.jar.sha256")));
-        for (String file : List.of("mmt", "mmt.cmd", "LICENSE", "NOTICE", "PERFORMANCE.md")) contents.put(
+        // modaccel and modaccel.cmd are the old names: they print a one-line note and forward to mmt.
+        for (String file : List.of("mmt", "mmt.cmd", "modaccel", "modaccel.cmd", "LICENSE", "NOTICE", "PERFORMANCE.md")) contents.put(
             file,
             Files.readAllBytes(harness.resolve(file))
         );
@@ -286,7 +309,7 @@ final class Installation {
                 p + 46 + nameLength + u16(archive, p + 30) + u16(archive, p + 32);
             if (next > limit) throw new IOException("Invalid ZIP central directory entry length");
             String name = new String(archive, p + 46, nameLength, java.nio.charset.StandardCharsets.UTF_8);
-            if (name.equals("mmt") || name.equals(DESKTOP_LINUX)) {
+            if (name.equals("mmt") || name.equals("modaccel") || name.equals(DESKTOP_LINUX)) {
                 archive[p + 5] = 3; // made by Unix
                 int mode = 0100755 << 16;
                 for (int i = 0; i < 4; i++) archive[p + 38 + i] = (byte) (mode >>> (i * 8));
@@ -401,7 +424,12 @@ final class Installation {
     record Suite(String name, String main, boolean wantsHarness, boolean wantsScratch) {}
 
     static final List<Suite> SUITES = List.of(
-        new Suite("portable", "PortableTests", true, true),
+        new Suite("port", "PortTests", true, true),
+        new Suite("port-repair", "PortRepairTests", true, true),
+        new Suite("convert", "ConvertTests", true, true),
+        new Suite("build-script", "BuildScriptTests", true, true),
+        new Suite("command", "CommandTests", true, true),
+        new Suite("game", "GameTests", true, true),
         new Suite("perf", "PerfTest", true, true),
         new Suite("jdk", "JdkDownloadsTest", false, false),
         new Suite("dependency", "DependenciesTest", false, false),
@@ -409,8 +437,13 @@ final class Installation {
         new Suite("hardening", "HardeningTest", false, false),
         new Suite("trust", "TrustTest", false, false),
         new Suite("mixin-check", "MixinCheckTest", true, false),
-        new Suite("stranger", "StrangerTest", true, false),
-        new Suite("pack-check", "PackCheckTest", true, false),
+        new Suite("mod-files", "ModFileTests", true, false),
+        new Suite("error-messages", "ErrorMessageTests", true, false),
+        new Suite("project-safety", "ProjectSafetyTests", true, false),
+        new Suite("pack-metadata", "PackMetadataTests", true, false),
+        new Suite("pack-logs", "PackLogTests", true, false),
+        new Suite("pack-server", "PackServerTests", true, false),
+        new Suite("pack-repairs", "PackRepairTests", true, false),
         new Suite("rules", "RulesTest", true, false)
     );
 
@@ -443,6 +476,9 @@ final class Installation {
                 "UTF-8",
                 "-cp",
                 own.toString(),
+                // A suite may use a shared fixture class beside it (PackCheckFixtures); javac compiles it on demand.
+                "-sourcepath",
+                harness.resolve("tools/tests").toString(),
                 "-d",
                 classes.toString()
             )

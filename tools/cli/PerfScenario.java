@@ -28,7 +28,11 @@ final class PerfScenario {
         Path agent = Performance.agent(home, receipt);
         // A source session's integrated server runs the commands directly; any other game needs RCON.
         boolean dev = options.values.containsKey("root") && !options.values.containsKey("rcon-port");
-        String password = dev ? "" : System.getenv(options.get("rcon-password-env", "MMT_RCON_PASSWORD"));
+        String password = dev
+            ? ""
+            : options.values.containsKey("rcon-password-env")
+                ? System.getenv(options.get("rcon-password-env", ""))
+                : UserState.env("RCON_PASSWORD");
         if (!dev && (password == null || password.isBlank())) throw new IllegalArgumentException("Set the RCON password environment variable first");
         int port = dev ? 0 : Performance.integer(options, "rcon-port", 25575, 1, 65535);
         List<Object> results = new ArrayList<>();

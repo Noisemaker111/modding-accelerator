@@ -13,6 +13,7 @@ public final class ProjectModel {
         ".git",
         ".gradle",
         ".mmt",
+        ".modaccel",
         ".runs",
         ".tools",
         "build",

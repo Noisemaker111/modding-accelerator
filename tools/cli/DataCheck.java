@@ -562,23 +562,25 @@ final class DataCheck {
             .redirectOutput(log.toFile());
         builder.environment().putAll(launch.environment());
         Process process = builder.start();
-        long deadline = System.nanoTime() + TIMEOUT_SECONDS * 1_000_000_000L;
-        while (System.nanoTime() < deadline) {
-            if (!process.isAlive()) return process.exitValue();
-            // Serving starts once the first check has been written: the state file carries this start's token.
-            Map<String, Object> session = Files.isRegularFile(state(build))
-                ? Json.object(Json.parse(Files.readString(state(build))))
-                : Map.of();
-            if (token.equals(session.get("token"))) {
-                session.put("log", log.toString());
-                session.put("since", since(process.pid()));
-                Json.save(state(build), session);
-                return 0;
+        // Until it serves, a failed, timed-out or interrupted data-check ends the game it started.
+        try (Run.Owned owned = new Run.Owned(process.toHandle(), null)) {
+            long deadline = System.nanoTime() + TIMEOUT_SECONDS * 1_000_000_000L;
+            while (System.nanoTime() < deadline) {
+                if (!process.isAlive()) return process.exitValue();
+                // Serving starts once the first check has been written: the state file carries this start's token.
+                Map<String, Object> session = Files.isRegularFile(state(build))
+                    ? Json.object(Json.parse(Files.readString(state(build))))
+                    : Map.of();
+                if (token.equals(session.get("token"))) {
+                    session.put("log", log.toString());
+                    session.put("since", since(process.pid()));
+                    Json.save(state(build), session);
+                    owned.handOff();
+                    return 0;
+                }
+                Thread.sleep(200);
             }
-            Thread.sleep(200);
         }
-        process.descendants().forEach(ProcessHandle::destroy);
-        process.destroyForcibly();
         throw new IOException("data-check's game did not finish loading in " + TIMEOUT_SECONDS + " s. Log: " + log);
     }
 

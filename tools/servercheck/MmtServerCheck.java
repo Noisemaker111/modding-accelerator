@@ -298,6 +298,9 @@ public final class MmtServerCheck {
             builder.environment().put("RCON_PASSWORD", server.rconPassword);
             builder.environment().put("MMT_RESTART_PORT", Integer.toString(control.getLocalPort()));
             builder.environment().put("MMT_RESTART_TOKEN", token);
+            // The names from before the rename (modaccel), for server scripts written against them.
+            builder.environment().put("MODACCEL_RESTART_PORT", Integer.toString(control.getLocalPort()));
+            builder.environment().put("MODACCEL_RESTART_TOKEN", token);
             Process process = builder.start();
             Thread output = pump(process.getInputStream(), log, lines);
             long deadline = System.nanoTime() + (long) (e.seconds() * 1e9);

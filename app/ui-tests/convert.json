@@ -1,6 +1,0 @@
-{"events": [
-  {"t": 1.0, "type": "tap", "key": "nav-port"},
-  {"t": 20.0, "type": "tap", "key": "convert-run"},
-  {"t": 420.0, "type": "tap", "key": "convert-undo"},
-  {"t": 450.0, "type": "mark", "name": "end"}
-]}

@@ -6,7 +6,7 @@ mmt_java=java
 if [ -n "${JAVA_HOME:-}" ] && { [ -f "$mmt_dir/mmt.jar" ] && [ -x "$JAVA_HOME/bin/java" ] || [ -x "$JAVA_HOME/bin/javac" ]; }; then
     mmt_java="$JAVA_HOME/bin/java"
 else
-    for mmt_jdk in "$mmt_dir"/.tools/jdk-* "$HOME"/.mmt/jdks/* "$HOME"/.jdks/*; do
+    for mmt_jdk in "$mmt_dir"/.tools/jdk-* "$HOME"/.mmt/jdks/* "$HOME"/.modaccel/jdks/* "$HOME"/.jdks/*; do
         if [ -x "$mmt_jdk/bin/javac" ]; then mmt_java="$mmt_jdk/bin/java"; break; fi
     done
 fi

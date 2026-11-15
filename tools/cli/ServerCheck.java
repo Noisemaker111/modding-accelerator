@@ -480,6 +480,14 @@ final class ServerCheck {
             "paper-" + minecraft
         ).toAbsolutePath();
         Files.createDirectories(cache);
+        try (var lock = CacheLock.hold(cache)) {
+            return paper(minecraft, jdk, refresh, names, requestedBuild, cache);
+        }
+    }
+
+    /** paper() with the version's cache held: two server-checks at once would download and patch into the same files. */
+    private Paper paper(String minecraft, Runtimes.Jdk jdk, boolean refresh, boolean names, String requestedBuild, Path cache)
+        throws Exception {
         Path pin = cache.resolve(requestedBuild.isEmpty() ? "build.json" : "build-" + requestedBuild + ".json");
         boolean downloaded = false;
         if (
@@ -621,6 +629,20 @@ final class ServerCheck {
             "viaproxy-" + version
         ).toAbsolutePath();
         Files.createDirectories(cache);
+        try (var lock = CacheLock.hold(cache)) {
+            return viaProxy(jdk, minecraft, pin, version, file, sha, cache);
+        }
+    }
+
+    private Map<String, Object> viaProxy(
+        Runtimes.Jdk jdk,
+        String minecraft,
+        Map<String, Object> pin,
+        String version,
+        String file,
+        String sha,
+        Path cache
+    ) throws Exception {
         Path jar = cache.resolve(file);
         if (!Files.isRegularFile(jar) || !sha256(jar).equals(sha)) {
             long begin = System.nanoTime();

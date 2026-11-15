@@ -52,8 +52,8 @@ param(
 	[switch]$Fix,
 	[string]$Task = 'compileJava',
 	[int]$Max = 5,
-	# The repo every verb works on. Unset means the folder this script lives in, so the harness run
-	# from its own repo behaves exactly as before. -Target is the same thing under another name.
+	# The repo every verb works on. Unset means the Prism Lab demo mod in fixtures\prism-lab.
+	# -Target is the same thing under another name.
 	[Alias('Target')][string]$Repo = '',
 	# Empty means this repo's own Minecraft version; otherwise versions\<name>\warm.ps1 drives it.
 	[string]$Version = '',
@@ -67,11 +67,12 @@ param(
 $ErrorActionPreference = 'Continue'
 # Two folders, kept apart on purpose. The harness (this script, tools\, knowledge\) stays where it
 # is installed; the repo is whatever -Repo names, and every repo path below - build\, src\, gradlew,
-# .mmt and .runs - belongs to it. With no -Repo the two are the same folder.
+# .mmt and .runs - belongs to it.
 $harness = $PSScriptRoot
 if (-not $harness) { $harness = Split-Path -Parent $MyInvocation.MyCommand.Path }
 $harness = $harness.TrimEnd('\')
-$root = $harness
+# With no -Repo the lane works on Prism Lab, the demo mod in fixtures\prism-lab.
+$root = Join-Path $harness 'fixtures\prism-lab'
 if ($Repo) {
 	# A relative -Repo is read from the folder you type it in first, then from the harness: the
 	# examples in the docs name repos relative to the harness, and this way they work from anywhere.

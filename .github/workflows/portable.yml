@@ -1,9 +1,10 @@
-name: Portable command
-# A PR runs once, newer pushes cancel older runs, and only the core runs on all three systems.
-# Server and Stonecutter checks run on Linux for a PR and on all three systems on main. No schedule:
-# every input is pinned, so a run of unchanged code repeats the last answer. On pull_request every job
-# has a 5-minute timeout against hangs; main keeps longer timeouts because its caches are cold on two
-# of the three systems.
+name: CI
+# The checks every pull request must pass (both are required on main): bench/run_tests.py on Linux and on Windows.
+# The list of checks lives in bench/run_tests.py, not here. Linux also holds the PR budget: the job fails past 180 s
+# (bench/test_budgets.py). Server, plugin and Stonecutter checks are in integration.yml; heavy jobs (pack sweep, port
+# board, perf A/B) are dispatched from cloud-*.yml with tools/cloud-run. No macOS: the code is not macOS-specific and
+# its JFR sampling flaked (29 of 69 runs). Caches are saved only from a passing main run, so a PR never evicts them
+# and a run whose downloads failed never saves a near-empty cache.
 on:
   push:
     branches: [main]
@@ -12,25 +13,72 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 jobs:
-  command:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: ${{ github.event_name == 'pull_request' && 5 || 15 }}
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v7
+      - run: echo "JOB_STARTED=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Gradle and JDK caches
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+            ~/.mmt/jdks
+          key: ci-${{ runner.os }}-${{ hashFiles('fixtures/prism-lab/build.gradle', 'fixtures/prism-lab/settings.gradle', 'fixtures/prism-lab/gradle.properties', 'fixtures/prism-lab/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: ci-${{ runner.os }}-
+      - name: Offline checks
+        run: python bench/run_tests.py
+      - name: Within the PR budget
+        run: python bench/test_budgets.py --job-started "$JOB_STARTED"
+      - name: Stop Gradle before the cache save
+        if: success() && github.event_name == 'push' && steps.cache.outputs.cache-hit != 'true'
+        run: pkill -f GradleDaemon || true
+      - name: Save caches (main only)
+        if: success() && github.event_name == 'push' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/jdks
+            ~/.mmt/jdks
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+      - name: Receipts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-runs
+          path: .runs
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # A space in the path: the Windows launcher broke on it before.
           path: portable workspace
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '25'
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Gradle and JDK caches
@@ -41,372 +89,32 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-          key: command-${{ runner.os }}-${{ hashFiles('portable workspace/build.gradle', 'portable workspace/settings.gradle', 'portable workspace/gradle.properties', 'portable workspace/gradle/wrapper/gradle-wrapper.properties') }}
-      # Downloaded JDKs live in ~/.mmt/jdks and have their own cache, so the Gradle cache keeps main's paths
-      # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
-      - name: Downloaded JDKs
-        id: jdks
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.mmt/jdks
-          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
-      - name: Map and bench colour per loader
+            ~/.mmt/jdks
+          key: ci-${{ runner.os }}-${{ hashFiles('portable workspace/fixtures/prism-lab/build.gradle', 'portable workspace/fixtures/prism-lab/settings.gradle', 'portable workspace/fixtures/prism-lab/gradle.properties', 'portable workspace/fixtures/prism-lab/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: ci-${{ runner.os }}-
+      - name: Offline checks
         working-directory: portable workspace
-        run: python bench/test_ledger_rule.py
-      - name: Roadmap and measures agree, and render
-        working-directory: portable workspace
-        run: python bench/test_measures.py
-      - name: The recorder and the port scoreboard
-        working-directory: portable workspace
-        run: python bench/test_record.py
-      - name: No overlong lines in tools/cli
-        working-directory: portable workspace
-        run: python bench/test_java_lines.py
-      - name: The loader catalogue pairs only what the code proves
-        working-directory: portable workspace
-        run: python bench/test_loader_api.py
-      - name: Performance evidence rejects incomparable runs
-        working-directory: portable workspace
-        run: python bench/test_performance.py
-      - name: Diorama budgets reject unsupported conclusions
-        working-directory: portable workspace
-        run: python bench/diorama/test_budget.py
-      - name: Diorama comparison isolates the original reader
-        working-directory: portable workspace
-        run: python bench/diorama/test_prepare_comparison.py
-      - name: Session cost meter reads processes on this system
-        working-directory: portable workspace
-        run: python bench/test_session_cost.py
-      - name: Package without PowerShell
-        working-directory: portable workspace
-        run: java tools/cli/Bootstrap.java . package --json
-      - name: Source launcher (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        working-directory: portable workspace
-        run: '& .\mmt.cmd doctor --json'
-      - name: Source launcher (POSIX)
-        if: runner.os != 'Windows'
-        working-directory: portable workspace
-        run: ./mmt doctor --json
-      - name: Standalone package
-        working-directory: portable workspace
-        run: java -jar build/distributions/mmt.jar self-test --root . --json
-      - name: Extracted portable ZIP acceptance
-        working-directory: portable workspace
-        run: java tools/tests/PackageAcceptanceTest.java build/distributions/mmt-portable.zip build/distributions/mmt-portable.zip.sha256 "${{ runner.temp }}"
-      - name: Fabric metadata and logic
-        working-directory: portable workspace
-        run: java -jar build/distributions/mmt.jar fast --json
-      - name: Hidden window stays hidden with the agent named twice
-        working-directory: portable workspace
-        run: java tools/tests/BackgroundWindowsTest.java . build/distributions/mmt.jar
-      - name: Legacy launch agent with Gradle
-        if: runner.os == 'Windows'
-        shell: pwsh
-        working-directory: portable workspace
-        run: |
-          $prepared = & java -jar build/distributions/mmt.jar legacy-agent --json | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0 -or -not $prepared.ok) { throw 'Could not build the legacy launch agent' }
-          $env:JAVA_TOOL_OPTIONS = '"-javaagent:' + $prepared.result.agent + '=legacy" -Dmmt.background=true -Dmmt.quiet=true'
-          & java tools/tests/LegacyAgentPropertiesTest.java
-          if ($LASTEXITCODE -ne 0) { throw 'Legacy launch agent corrupted system properties' }
-          & java -jar build/distributions/mmt.jar fast --refresh --json
-          if ($LASTEXITCODE -ne 0) { throw 'Gradle failed with the legacy launch agent enabled' }
-      - name: Multi-module FastLane isolation
-        working-directory: portable workspace
-        run: java tools/tests/FastLaneIsolationTest.java . build/distributions/mmt.jar
-      - name: Runtime-only file that does not download
-        working-directory: portable workspace
-        run: java tools/tests/RuntimeNativesTest.java . build/distributions/mmt.jar
-      - name: Port rewrites before compilation
-        working-directory: portable workspace
-        run: |
-          javac --release 21 -d .runs/preflight-tests tools/VersionMap.java tools/tests/PortPreflightTest.java tools/tests/ChainMapTest.java
-          java -cp .runs/preflight-tests PortPreflightTest
-          java -cp .runs/preflight-tests ChainMapTest
-      - name: Stop Gradle so Windows can read its cache locks
-        if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+        run: python bench/run_tests.py
+      - name: Stop Java so Windows can read its cache locks
+        if: success() && github.event_name == 'push' && steps.cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
-      - name: Anything downloaded worth caching
-        id: worth
-        if: always() && (steps.cache.outputs.cache-hit != 'true' || steps.jdks.outputs.cache-hit != 'true')
-        shell: bash
-        # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
-        # later run restored it and downloaded again, so a passing outage kept failing CI.
-        run: |
-          size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
-          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.mmt/servers ~/.mmt/tools)
-          jdk_kb=$(size ~/.mmt/jdks)
-          echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
-          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
-      - name: Save caches on a miss
-        if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
+      - name: Save caches (main only)
+        if: success() && github.event_name == 'push' && steps.cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-          key: command-${{ runner.os }}-${{ hashFiles('portable workspace/build.gradle', 'portable workspace/settings.gradle', 'portable workspace/gradle.properties', 'portable workspace/gradle/wrapper/gradle-wrapper.properties') }}
-      - name: Save downloaded JDKs on a miss
-        if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.mmt/jdks
-          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
-      - name: Outcome receipts on failure
+            ~/.mmt/jdks
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+      - name: Receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: portable-${{ runner.os }}-${{ runner.arch }}-outcomes
-          path: |
-            portable workspace/.runs
-            portable workspace/.mmt
+          name: windows-runs
+          path: portable workspace/.runs
           include-hidden-files: true
           if-no-files-found: ignore
-  server-plugins:
-    # Pinned server plugins (bench/server-plugins/manifest.json) on fresh clones through
-    # the packaged command: fast, the jar, and plugin-check on MockBukkit, including each break made on purpose.
-    # The Gradle home is cached: without it the plugin's first `fast` downloads Paper and MockBukkit on
-    # every run, which took 289 s on a slow runner (446 s for the job, the one PR run over budget).
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: ${{ github.event_name == 'pull_request' && 5 || 15 }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: '25'
-      - name: Gradle and JDK caches
-        id: cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ~/.gradle/jdks
-            .mmt/jdks
-          key: server-plugins-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json') }}
-      # Downloaded JDKs live in ~/.mmt/jdks and have their own cache, so the Gradle cache keeps main's paths
-      # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
-      - name: Downloaded JDKs
-        id: jdks
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.mmt/jdks
-          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
-      - name: Package without PowerShell
-        run: java tools/cli/Bootstrap.java . package --json
-      - name: Server plugins through mmt
-        run: java tools/tests/ServerPluginFixtures.java . build/distributions/mmt.jar
-      - name: Stop the plugin's Gradle daemon so Windows can read its cache locks
-        if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
-        shell: pwsh
-        run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
-      - name: Anything downloaded worth caching
-        id: worth
-        if: always() && (steps.cache.outputs.cache-hit != 'true' || steps.jdks.outputs.cache-hit != 'true')
-        shell: bash
-        # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
-        # later run restored it and downloaded again, so a passing outage kept failing CI.
-        run: |
-          size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
-          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.mmt/servers ~/.mmt/tools)
-          jdk_kb=$(size ~/.mmt/jdks)
-          echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
-          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
-      - name: Save caches on a miss, even when the check fails
-        if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ~/.gradle/jdks
-            .mmt/jdks
-          key: server-plugins-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json') }}
-      - name: Save downloaded JDKs on a miss
-        if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.mmt/jdks
-          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
-      - name: Outcome receipts on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: server-plugins-${{ runner.os }}-outcomes
-          path: |
-            .runs
-          include-hidden-files: true
-          if-no-files-found: ignore
-  server-check:
-    # Plugins on real headless Paper servers with a bot player (tools/tests/ServerCheckFixtures.java),
-    # one part per job so the parts run side by side: scenario: AgentCraft's scenario on a fresh world.
-    # bot: the bot's own scenario with a secret that must stay masked, and the missing-secret failure.
-    # breaks: each break made on purpose. The Paper jar and Gradle home are cached.
-    name: server-check (${{ matrix.part }}, ${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
-        part: [scenario, bot, breaks]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: ${{ github.event_name == 'pull_request' && 5 || 15 }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: '25'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Paper, Gradle and JDK caches
-        id: cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ~/.gradle/jdks
-            .mmt/jdks
-            ~/.mmt/servers
-            ~/.mmt/tools
-          key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
-      # Downloaded JDKs live in ~/.mmt/jdks and have their own cache, so the Gradle cache keeps main's paths
-      # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
-      - name: Downloaded JDKs
-        id: jdks
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.mmt/jdks
-          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
-      - name: Package without PowerShell
-        run: java tools/cli/Bootstrap.java . package --json
-      - name: Plugins on a real Paper server through mmt
-        run: java tools/tests/ServerCheckFixtures.java . build/distributions/mmt.jar "${{ matrix.part }}"
-      - name: Stop the plugin's Gradle daemon so Windows can read its cache locks
-        if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
-        shell: pwsh
-        run: Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
-      - name: Anything downloaded worth caching
-        id: worth
-        if: always() && (steps.cache.outputs.cache-hit != 'true' || steps.jdks.outputs.cache-hit != 'true')
-        shell: bash
-        # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
-        # later run restored it and downloaded again, so a passing outage kept failing CI.
-        run: |
-          size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
-          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.mmt/servers ~/.mmt/tools)
-          jdk_kb=$(size ~/.mmt/jdks)
-          echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
-          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
-      - name: Save caches on a miss, even when the check fails
-        if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ~/.gradle/jdks
-            .mmt/jdks
-            ~/.mmt/servers
-            ~/.mmt/tools
-          key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
-      - name: Save downloaded JDKs on a miss
-        if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.mmt/jdks
-          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
-      - name: Outcome receipts on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: server-check-${{ runner.os }}-${{ matrix.part }}-outcomes
-          path: |
-            .runs
-          include-hidden-files: true
-          if-no-files-found: ignore
-  stonecutter-sample:
-    # Three representative Stonecutter nodes, fresh pinned clones, setup and compile through
-    # mmt, one job per node. No game. Every node of both
-    # mods compiles on demand in stonecutter-nodes.yml (not a merge blocker).
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
-        mod: [diorama-26.3, diorama-1.21.1, ias-26.3-fabric]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: ${{ github.event_name == 'pull_request' && 5 || 20 }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: '25'
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-      - name: Gradle and JDK caches
-        id: cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ~/.gradle/jdks
-            .mmt/jdks
-          key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
-      # Downloaded JDKs live in ~/.mmt/jdks and have their own cache, so the Gradle cache keeps main's paths
-      # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
-      - name: Downloaded JDKs
-        id: jdks
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.mmt/jdks
-          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
-      - name: Setup and compile the node
-        run: python bench/real-mods/run.py --compile-nodes --only ${{ matrix.mod }} --cache "${{ runner.temp }}/real-mods" --out "${{ runner.temp }}/real-mods-results" --label ${{ matrix.mod }}
-      - name: Anything downloaded worth caching
-        id: worth
-        if: always() && (steps.cache.outputs.cache-hit != 'true' || steps.jdks.outputs.cache-hit != 'true')
-        shell: bash
-        # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
-        # later run restored it and downloaded again, so a passing outage kept failing CI.
-        run: |
-          size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
-          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.mmt/servers ~/.mmt/tools)
-          jdk_kb=$(size ~/.mmt/jdks)
-          echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
-          if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
-      - name: Save caches on a miss, even when the node fails
-        if: always() && steps.cache.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ~/.gradle/jdks
-            .mmt/jdks
-          key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
-      - name: Save downloaded JDKs on a miss
-        if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.mmt/jdks
-          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
-      - name: Node results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sample-${{ runner.os }}-${{ matrix.mod }}
-          path: ${{ runner.temp }}/real-mods-results
-          if-no-files-found: ignore
+          retention-days: 7
