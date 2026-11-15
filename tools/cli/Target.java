@@ -444,15 +444,21 @@ final class Target {
         Matcher api = Pattern.compile("\"org\\.gradle\\.plugin\\.api-version\"\\s*:\\s*\"([^\"]+)\"").matcher(
             fetch(build, moduleUrl)
         );
-        if (!api.find()) return;
+        String required = api.find() ? api.group(1) : null, source = " (org.gradle.plugin.api-version)";
+        // Loom before 1.x publishes no api-version; its own bootstrap class states the Gradle it needs.
+        if (required == null && moduleUrl.contains("/fabric-loom/")) {
+            required = loomMinimumGradle(build, download(build, moduleUrl.replaceFirst("\\.module$", ".jar")));
+            source = " or newer (its LoomGradlePluginBootstrap states the minimum; the newest release of that line is used)";
+        }
+        if (required == null) return;
         Path wrapper = build.project.root.resolve("gradle/wrapper/gradle-wrapper.properties");
         if (!Files.isRegularFile(wrapper)) return;
         String text = setup.text(wrapper);
         Matcher url = Pattern.compile(
             "(distributionUrl=[^\\r\\n]*?gradle-)([0-9][0-9.]*(?:-rc-?\\d+)?)(-(?:bin|all)\\.zip)"
         ).matcher(text);
-        if (!url.find() || Versions.compare(url.group(2), api.group(1)) >= 0) return;
-        String gradle = api.group(1);
+        if (!url.find() || Versions.compare(url.group(2), required) >= 0) return;
+        String gradle = required;
         setup.replace(wrapper, url.group(0), url.group(1) + gradle + url.group(3));
         Matcher sum = Pattern.compile("(?m)^distributionSha256Sum=\\S+").matcher(setup.text(wrapper));
         if (sum.find()) setup.replace(
@@ -468,7 +474,7 @@ final class Target {
                 "change",
                 "Gradle " + url.group(2) + " -> " + gradle + " for " + plugin,
                 "evidence",
-                evidence + " requires Gradle " + gradle + " (org.gradle.plugin.api-version)"
+                evidence + " requires Gradle " + gradle + source
             )
         );
     }
@@ -612,6 +618,83 @@ final class Target {
                 "net.neoforged.gradle.mixin's newest release on maven.neoforged.net is 7.0.192"
             )
         );
+    }
+
+    /**
+     * The Gradle a Loom jar says it needs, from its bootstrap class's constants: MIN_SUPPORTED_GRADLE_VERSION ("8.1") as
+     * stated, or MIN_SUPPORTED_MAJOR_GRADLE_VERSION (7) as that major line's newest release on services.gradle.org.
+     */
+    static String loomMinimumGradle(Build build, Path jar) throws Exception {
+        Map<String, Object> constants;
+        try (var zip = new java.util.zip.ZipFile(jar.toFile())) {
+            var entry = zip.getEntry("net/fabricmc/loom/bootstrap/LoomGradlePluginBootstrap.class");
+            if (entry == null) return null;
+            constants = classConstants(zip.getInputStream(entry).readAllBytes());
+        }
+        if (constants.get("MIN_SUPPORTED_GRADLE_VERSION") instanceof String version) return version;
+        if (!(constants.get("MIN_SUPPORTED_MAJOR_GRADLE_VERSION") instanceof Integer major)) return null;
+        return newestGradle(fetch(build, "https://services.gradle.org/versions/all"), major);
+    }
+
+    /** The newest final release of one Gradle major line in services.gradle.org/versions/all. */
+    static String newestGradle(String versionsJson, int major) {
+        String newest = null;
+        Matcher release = Pattern.compile("\"version\"\\s*:\\s*\"(" + major + "\\.[0-9]+(?:\\.[0-9]+)?)\"").matcher(versionsJson);
+        while (release.find()) if (newest == null || Versions.compare(release.group(1), newest) > 0) newest = release.group(1);
+        return newest;
+    }
+
+    /** The compile-time constants of a class file's fields (int and String ConstantValue attributes), by field name. */
+    static Map<String, Object> classConstants(byte[] bytes) throws IOException {
+        var in = new DataInputStream(new ByteArrayInputStream(bytes));
+        in.readInt();
+        in.readUnsignedShort();
+        in.readUnsignedShort();
+        int count = in.readUnsignedShort();
+        Object[] pool = new Object[count];
+        int[] strings = new int[count];
+        for (int i = 1; i < count; i++) {
+            int tag = in.readUnsignedByte();
+            switch (tag) {
+                case 1 -> pool[i] = in.readUTF();
+                case 3 -> pool[i] = in.readInt();
+                case 4 -> in.readFloat();
+                case 5, 6 -> {
+                    in.readLong();
+                    i++;
+                }
+                case 8 -> strings[i] = in.readUnsignedShort();
+                case 7, 16, 19, 20 -> in.readUnsignedShort();
+                case 9, 10, 11, 12, 17, 18 -> in.readInt();
+                case 15 -> {
+                    in.readUnsignedByte();
+                    in.readUnsignedShort();
+                }
+                default -> throw new IOException("Unknown constant pool tag " + tag);
+            }
+        }
+        in.readUnsignedShort();
+        in.readUnsignedShort();
+        in.readUnsignedShort();
+        int interfaces = in.readUnsignedShort();
+        for (int i = 0; i < interfaces; i++) in.readUnsignedShort();
+        Map<String, Object> constants = new LinkedHashMap<>();
+        int fields = in.readUnsignedShort();
+        for (int f = 0; f < fields; f++) {
+            in.readUnsignedShort();
+            String name = String.valueOf(pool[in.readUnsignedShort()]);
+            in.readUnsignedShort();
+            int attributes = in.readUnsignedShort();
+            for (int a = 0; a < attributes; a++) {
+                String attribute = String.valueOf(pool[in.readUnsignedShort()]);
+                int length = in.readInt();
+                if (attribute.equals("ConstantValue") && length == 2) {
+                    int index = in.readUnsignedShort();
+                    constants.put(name, strings[index] != 0 ? pool[strings[index]] : pool[index]);
+                } else in.skipNBytes(length);
+            }
+        }
+        return constants;
     }
 
     /** The newest release of one Loom line (e.g. 1.10 -> 1.10.5), read from maven.fabricmc.net. */

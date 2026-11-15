@@ -8,7 +8,7 @@ final class Build {
     final Path harness, init;
     final String selected;
     final Modaccel.Report report;
-    final Runtimes.Jdk jdk;
+    Runtimes.Jdk jdk;
 
     Build(ProjectModel project, Path harness, String selected, Modaccel.Report report) throws Exception {
         this.project = project;
@@ -35,6 +35,20 @@ final class Build {
                 jdk.home().toString()
             )
         );
+    }
+
+    /**
+     * Choose Gradle's JDK again after a port rewrote the wrapper: a JDK picked for Gradle 6.9 (Java 11) cannot load the
+     * Loom 0.10 that a port to 1.17 moves to. Returns true when the JDK changed.
+     */
+    boolean refreshJdk() throws Exception {
+        int required = project.javaRequirement();
+        if (required > 0) Runtimes.ensureAtLeast(harness, required);
+        Runtimes.Jdk chosen = Runtimes.ensureForGradle(harness, project.wrapperVersion());
+        if (chosen.home().equals(jdk.home())) return false;
+        report.stages.add(Json.map("name", "java-setup-after-target", "gradleJava", chosen.version(), "home", chosen.home().toString()));
+        jdk = chosen;
+        return true;
     }
 
     static final long DAEMON_IDLE_MS = 30 * 60 * 1000;

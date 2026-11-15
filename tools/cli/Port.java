@@ -435,7 +435,10 @@ final class Port {
         List<String> removed = new ArrayList<>();
         if (rounds < 1 || rounds > 20) throw new IllegalArgumentException("--rounds must be 1–20");
         try {
-            if (!target.isEmpty()) Target.apply(target);
+            if (!target.isEmpty()) {
+                Target.apply(target);
+                build.refreshJdk();
+            }
             for (Path file : excluded) {
                 Path owned = file.toRealPath();
                 if (!owned.startsWith(build.project.root)) throw new IOException(

@@ -1230,6 +1230,16 @@ public final class PortableTests {
             Files.createDirectories(Path.of(args[1])),
             "run-"
         );
+        // Old Loom states its minimum Gradle only as a constant of its bootstrap class: class constants are read from the
+        // class file itself (an int and a String constant of the JDK's own classes), and a major line becomes its newest release.
+        try (var integer = Object.class.getResourceAsStream("/java/lang/Integer.class"); var jar = Object.class.getResourceAsStream("/java/util/jar/JarFile.class")) {
+            check(Integer.valueOf(Integer.MAX_VALUE).equals(Target.classConstants(integer.readAllBytes()).get("MAX_VALUE")), "int class constant read from the class file");
+            check("META-INF/MANIFEST.MF".equals(Target.classConstants(jar.readAllBytes()).get("MANIFEST_NAME")), "String class constant read from the class file");
+        }
+        check(
+            "7.6.6".equals(Target.newestGradle("[{\"version\" : \"8.0\"}, {\"version\" : \"7.6.6\"}, {\"version\" : \"7.6\"}, {\"version\" : \"7.10-rc-1\"}, {\"version\":\"7.5.1\"}]", 7)),
+            "a Gradle major line's newest final release"
+        );
         String restartTimes = ServerCheck.text(
             Json.map(
                 "ok",
