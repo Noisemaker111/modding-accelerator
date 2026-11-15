@@ -56,6 +56,13 @@ public final class VersionMap {
                 case "--rules" -> rules = args[++i];
                 case "--learn" -> learn.add(args[++i]);
                 case "--chain" -> chain = args[++i];
+                case "--supers" -> {
+                    // "Type Super1 Super2 ..." per line, simple names: a member renamed on a supertype is the receiver's too.
+                    for (String line : Files.readAllLines(Path.of(args[++i]), StandardCharsets.UTF_8)) {
+                        String[] parts = line.trim().split("\\s+");
+                        if (parts.length > 1) SUPERS.put(parts[0], new HashSet<>(Arrays.asList(parts).subList(1, parts.length)));
+                    }
+                }
                 default -> pos.add(args[i]);
             }
         }
@@ -975,6 +982,9 @@ public final class VersionMap {
         return new ArrayList<>(seen.values());
     }
 
+    /** Supertypes of the receiver types a compiler log names (simple names), from --supers. */
+    static final Map<String, Set<String>> SUPERS = new HashMap<>();
+
     static String simple(String dotted) {
         String s = dotted.substring(dotted.lastIndexOf('.') + 1);
         return s.substring(s.lastIndexOf('$') + 1);
@@ -1079,6 +1089,15 @@ public final class VersionMap {
             for (String[] c : candidates) {
                 if (c[0].equals(type) || c[2].equals(type)) {
                     names.add(c[1]);
+                }
+            }
+            if (names.isEmpty() && SUPERS.containsKey(type)) {
+                // The receiver's static type inherits the member: LocalPlayer.getHungerManager is Player's (PlayerEntity in yarn).
+                Set<String> supers = SUPERS.get(type);
+                for (String[] c : candidates) {
+                    if (supers.contains(c[0]) || supers.contains(c[2])) {
+                        names.add(c[1]);
+                    }
                 }
             }
             return names.size() == 1 ? names.iterator().next() : null;

@@ -308,6 +308,45 @@ final class Port {
         Files.writeString(file, out.append("}\n").toString(), StandardCharsets.UTF_8);
     }
 
+    Explain.Index supertypeIndex;
+
+    /**
+     * The supertypes (simple names) of every receiver type the log names in a "location:" line, read from the target
+     * build's own classpath, one "Type Super1 Super2 ..." line each, for the typed fixer: a member renamed on Player is
+     * renamed where javac looked it up on LocalPlayer. Null when the log names none.
+     */
+    Path supertypes(Path log) throws IOException {
+        Matcher located = Pattern.compile("location: (?:variable \\w+ of type |class |interface )([\\w.$]+)").matcher(
+            Files.readString(log)
+        );
+        Set<String> types = new TreeSet<>();
+        while (located.find()) types.add(located.group(1).replaceAll("<.*", ""));
+        if (types.isEmpty()) return null;
+        if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
+        StringBuilder out = new StringBuilder();
+        for (String type : types) {
+            List<String> found = supertypeIndex.resolve(type, List.of());
+            if (found.isEmpty()) continue;
+            Set<String> supers = new LinkedHashSet<>();
+            Deque<String> queue = new ArrayDeque<>(List.of(found.get(0)));
+            while (!queue.isEmpty()) {
+                Explain.ClassInfo info = supertypeIndex.info(queue.poll());
+                if (info == null) continue;
+                List<String> next = new ArrayList<>(info.interfaces());
+                if (info.superName() != null && !info.superName().equals("java/lang/Object")) next.add(0, info.superName());
+                for (String parent : next) if (supers.add(parent)) queue.add(parent);
+            }
+            if (supers.isEmpty()) continue;
+            out.append(simpleName(type.replace('/', '.')));
+            for (String parent : supers) out.append(' ').append(simpleName(parent.replace('/', '.')));
+            out.append('\n');
+        }
+        if (out.length() == 0) return null;
+        Path file = log.resolveSibling(log.getFileName().toString().replaceFirst("\\.log$", "") + "-supertypes.txt");
+        Files.writeString(file, out.toString(), StandardCharsets.UTF_8);
+        return file;
+    }
+
     static List<Path> sources(ProjectModel project) throws IOException {
         List<Path> paths = new ArrayList<>(project.inputs());
         Files.walkFileTree(
@@ -486,6 +525,8 @@ final class Port {
             chain.size() >= 2 && (bridge || !(names.equals("yarn") && Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0));
         // A generated map is named after the tools that made it, so a changed generator makes a new one.
         String generator = own || bridge ? tools.classes.getFileName().toString() : "";
+        // A bridged source is in Mojang's names once the map has run, so the Mojang-named rules are the ones that fit it.
+        if (bridge) namespace = "mojmap";
         if (routed) map = build.project.state().resolve(
             "maps/" +
             (own
@@ -772,6 +813,8 @@ final class Port {
                     List.of("--map", map.toString(), "--fix", log.toString(), "--repo", build.project.root.toString())
                 );
                 if (learned != null) args.addAll(List.of("--rules", learned.toString()));
+                Path supers = supertypes(log);
+                if (supers != null) args.addAll(List.of("--supers", supers.toString()));
                 var fix = tools.run("VersionMap", args, "port-fix-" + (round + 1));
                 flushImports();
                 if (fix.exit() != 0) throw new IOException("Typed repair stopped: " + Run.tail(fix.log()));
