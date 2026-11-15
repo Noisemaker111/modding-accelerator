@@ -352,11 +352,36 @@ final class PackMods {
 
     /** Mod metadata is often written by hand: a JSON reader that fails would hide the mod, so a broken file reads as empty. */
     static Object lenient(String text) {
+        String plain = text.replaceFirst("^\uFEFF", "");
         try {
-            return Json.parse(text.replaceFirst("^\uFEFF", ""));
+            return Json.parse(plain);
         } catch (RuntimeException unreadable) {
-            return Map.of();
+            // Fabric's reader takes a raw line break or tab inside a string (Astral Vinery 1.2.0's description has them).
+            try {
+                return Json.parse(escapeInStrings(plain));
+            } catch (RuntimeException stillUnreadable) {
+                return Map.of();
+            }
         }
+    }
+
+    /** Raw line breaks and tabs inside JSON strings, escaped; everything outside strings is left as it is. */
+    static String escapeInStrings(String text) {
+        StringBuilder out = new StringBuilder(text.length());
+        boolean inString = false, escaped = false;
+        for (char c : text.toCharArray()) {
+            if (inString && !escaped && (c == '\n' || c == '\r' || c == '\t')) {
+                out.append(c == '\n' ? "\\n" : c == '\r' ? "\\r" : "\\t");
+                continue;
+            }
+            if (inString && !escaped && c == '\\') escaped = true;
+            else {
+                if (c == '"' && !escaped) inString = !inString;
+                escaped = false;
+            }
+            out.append(c);
+        }
+        return out.toString();
     }
 
     /**

@@ -426,6 +426,9 @@ final class PackLoaders {
      */
     record GameClasses(Set<String> server, Set<String> all) {
         boolean clientOnly(String type) {
+            // Fabric API's item-groups-v0 (to 1.19.2) keeps its builder under api/client, but it is common code that servers run:
+            // Drink Beer, MC Dungeons Weapons and Automobility build their item groups with it in their main entrypoints.
+            if (type.startsWith("net/fabricmc/fabric/api/client/itemgroup/")) return false;
             if (type.startsWith("net/fabricmc/fabric/api/client/")) return true;
             if (server.contains(type)) return false;
             if (all != null) return all.contains(type);

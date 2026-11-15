@@ -989,7 +989,8 @@ public final class Modaccel {
             "save. A start that fails names the mod its log, crash report, mixin configs or stack point at.\n" +
             "--fix runs the repaired pack's server beside the shipped one and compares them check by check; only when the repaired one passes\n" +
             "is your pack changed: an instance folder in place (undo with --undo), an export or .mrpack as a fixed copy.\n" +
-            "--memory 6G sets the server's heap; --timeout seconds (default 1200) bounds each start. How to add a loader, input, check or\n" +
+            "--memory 6G sets the server's heap. A start is judged by its log: --timeout SECONDS (default 600) stops one whose log stops growing,\n" +
+            "and a ceiling of 30 minutes plus 8 s per mod past 100 stops one that never finishes. How to add a loader, input, check or\n" +
             "repair: tools/packcheck/CONTRIBUTING.md.";
             default -> "modaccel <command> --root SOURCE [--project :module] [--json]\n" +
             "  support                what works today        discover, doctor   what kind of build this is\n" +
