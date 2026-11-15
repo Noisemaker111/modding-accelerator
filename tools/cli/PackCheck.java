@@ -217,6 +217,83 @@ final class PackCheck {
         return out;
     }
 
+    /**
+     * The jars a server of the pack starts with. kept: in the server's mods folder. leftOut: jar to why it is not.
+     * required: a client-side jar kept because a kept mod requires it, to the mod that does.
+     */
+    record ServerMods(Set<String> kept, Map<String, String> leftOut, Map<String, String> required) {}
+
+    /**
+     * Which of the pack's jars a server gets. A jar the pack's lists or its own metadata mark client-side is left out,
+     * unless a kept mod requires a mod id only it provides: then it is kept, and its loader decides (Fabric and Quilt
+     * keep a client-only jar out of the game and treat a dependency on it as met; Forge runs it, and a start that shows
+     * client-only code drops it). A jar a start showed to be client-only (shown) cannot run on a server, and neither can
+     * a mod that requires an id only such jars provide: that mod is left out too, and so on through its dependants.
+     */
+    static ServerMods serverMods(List<Mod> mods, PackMods.Scan scan, Set<String> shown, Collection<String> removed) {
+        Set<String> jars = new LinkedHashSet<>();
+        Map<String, Mod> byFile = new HashMap<>();
+        for (Mod mod : mods) if (mod.file().endsWith(".jar") && !removed.contains(mod.file())) {
+            jars.add(mod.file());
+            byFile.put(mod.file(), mod);
+        }
+        Map<String, String> hard = new LinkedHashMap<>();
+        for (String jar : jars) if (shown.contains(jar)) hard.put(jar, "a server start showed it reaches client-only code");
+        for (;;) {
+            Set<String> kept = new LinkedHashSet<>();
+            for (String jar : jars) if (!hard.containsKey(jar) && !byFile.get(jar).side().equals("client")) kept.add(jar);
+            Map<String, String> required = new LinkedHashMap<>();
+            for (boolean grew = true; grew;) {
+                grew = false;
+                for (var d : scan.dependencies) {
+                    if (!d.kind().equals("required") || !kept.contains(top(d.owner()))) continue;
+                    List<PackMods.Provider> providers = scan.providers.getOrDefault(d.id(), List.of());
+                    if (providers.stream().anyMatch(p -> kept.contains(top(p.jar())))) continue;
+                    for (PackMods.Provider p : providers) {
+                        String jar = top(p.jar());
+                        if (!jars.contains(jar) || hard.containsKey(jar)) continue;
+                        kept.add(jar);
+                        required.put(jar, mod(scan, d.owner()) + " requires " + d.id());
+                        grew = true;
+                        break;
+                    }
+                }
+            }
+            Map<String, String> more = new LinkedHashMap<>();
+            for (var d : scan.dependencies) {
+                String owner = top(d.owner());
+                if (!d.kind().equals("required") || !kept.contains(owner) || more.containsKey(owner)) continue;
+                List<PackMods.Provider> providers = scan.providers.getOrDefault(d.id(), List.of());
+                if (providers.stream().anyMatch(p -> kept.contains(top(p.jar())))) continue;
+                providers.stream()
+                    .map(p -> top(p.jar()))
+                    .filter(hard::containsKey)
+                    .findFirst()
+                    .ifPresent(jar -> more.put(owner, "it requires " + d.id() + ", and " + jar + " cannot run on a server"));
+            }
+            if (more.isEmpty()) {
+                Map<String, String> leftOut = new LinkedHashMap<>();
+                for (String jar : jars) if (!kept.contains(jar)) leftOut.put(
+                    jar,
+                    hard.getOrDefault(jar, "client-only (" + byFile.get(jar).source() + ")")
+                );
+                return new ServerMods(kept, leftOut, required);
+            }
+            hard.putAll(more);
+        }
+    }
+
+    static String top(String jar) {
+        int bang = jar.indexOf('!');
+        return bang < 0 ? jar : jar.substring(0, bang);
+    }
+
+    /** A jar's (or a bundled jar's) first mod id, with the pack's jar it is in. */
+    static String mod(PackMods.Scan scan, String jar) {
+        for (var entry : scan.providers.entrySet()) for (PackMods.Provider p : entry.getValue()) if (p.jar().equals(jar)) return entry.getKey() + " (" + top(jar) + ")";
+        return jar;
+    }
+
     // ------------------------------------------------------------------ the pack
     /** An archive is unpacked once per file (by its SHA-256) and only read after; then the first input adapter that knows the shape reads it. */
     Pack read(Path input) throws Exception {
@@ -482,6 +559,29 @@ final class PackCheck {
         Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
     }
 
+    /**
+     * The file with exactly this hash, from Modrinth: version_file names the version holding it, and the file is
+     * downloaded from Modrinth's CDN and checked against the hash. null when Modrinth has no file with this hash.
+     */
+    static byte[] modrinthByHash(String algorithm, String hash) throws Exception {
+        if (Boolean.getBoolean("modaccel.pack.offline") || !hash.matches("[0-9a-f]{40}|[0-9a-f]{128}")) return null;
+        byte[] answer;
+        try {
+            answer = get(MODRINTH + "version_file/" + hash + "?algorithm=" + algorithm);
+        } catch (IOException unknown) {
+            return null;
+        }
+        if (!(Json.parse(new String(answer, StandardCharsets.UTF_8)) instanceof Map<?, ?> version) || !(version.get("files") instanceof List<?> files)) return null;
+        for (Object f : files) {
+            if (!(f instanceof Map<?, ?> file) || !(file.get("hashes") instanceof Map<?, ?> hashes) || !hash.equals(hashes.get(algorithm))) continue;
+            String url = String.valueOf(file.get("url"));
+            if (!"cdn.modrinth.com".equals(URI.create(url).getHost())) return null;
+            byte[] bytes = get(url);
+            return hash(algorithm.equals("sha512") ? "SHA-512" : "SHA-1", bytes).equals(hash) ? bytes : null;
+        }
+        return null;
+    }
+
     static byte[] post(String url, String json) throws Exception {
         IOException last = null;
         for (int attempt = 0; attempt < 3; attempt++) {
@@ -544,6 +644,7 @@ final class PackCheck {
         final List<Object> found, known;
         final PackLoaders.Context context;
         Path install, instance, probe;
+        ServerMods selection;
 
         ServerLane(Pack pack, PackRepairs.Change change, String lane, List<Object> found, PackLoaders.Context context) {
             this.pack = pack;
@@ -562,6 +663,7 @@ final class PackCheck {
 
         Map<String, Object> check(String userWorld) throws Exception {
             instance = instance();
+            linkMods();
             var game = Json.map(
                 "ran",
                 true,
@@ -580,6 +682,43 @@ final class PackCheck {
             Map<String, Object> first = start("place", "world", Map.of());
             game.put("newWorld", first);
             List<String> left = pack.mods().stream().map(Mod::file).filter(dropped::contains).toList();
+            game.put("leftOut", selection.leftOut());
+            if (!selection.required().isEmpty()) {
+                game.put("keptForDependants", selection.required());
+                List<String> shown = new ArrayList<>();
+                for (var e : selection.required().entrySet()) shown.add(e.getKey() + " (" + e.getValue() + ")");
+                found.add(
+                    Json.map(
+                        "kind",
+                        "client-side-kept",
+                        "severity",
+                        "note",
+                        "summary",
+                        shown.size() + " mod(s) marked client-side were kept on the server because a server mod requires them; the loader decides whether they run there: " +
+                        PackChecks.examples(shown),
+                        "jars",
+                        new ArrayList<>(selection.required().keySet())
+                    )
+                );
+            }
+            Map<String, String> dependants = new LinkedHashMap<>(selection.leftOut());
+            dependants.keySet().removeIf(jar -> !dependants.get(jar).startsWith("it requires "));
+            if (!dependants.isEmpty()) {
+                List<String> shown = new ArrayList<>();
+                for (var e : dependants.entrySet()) shown.add(e.getKey() + " (" + e.getValue() + ")");
+                found.add(
+                    Json.map(
+                        "kind",
+                        "client-only-dependant",
+                        "severity",
+                        "note",
+                        "summary",
+                        shown.size() + " mod(s) were left out of the server because a mod they require cannot run on one, so they cannot either: " + PackChecks.examples(shown),
+                        "jars",
+                        new ArrayList<>(dependants.keySet())
+                    )
+                );
+            }
             if (!left.isEmpty()) {
                 game.put("clientOnly", left);
                 found.add(
@@ -697,10 +836,9 @@ final class PackCheck {
                 ) clientOnly.put(p.jar(), id);
                 clientOnly.keySet().removeIf(dropped::contains);
                 if (mode.equals("place") && !clientOnly.isEmpty() && round < 8) {
-                    for (var jar : clientOnly.entrySet()) {
-                        Files.deleteIfExists(instance.resolve("mods").resolve(jar.getKey()));
-                        drop(jar.getKey(), jar.getValue());
-                    }
+                    // Left out from now on, with every mod that requires one of them.
+                    for (var jar : clientOnly.entrySet()) drop(jar.getKey(), jar.getValue());
+                    linkMods();
                     deleteTree(instance.resolve(level));
                     continue;
                 }
@@ -803,9 +941,13 @@ final class PackCheck {
             try (var socket = new java.net.ServerSocket(0)) {
                 port = socket.getLocalPort();
             }
+            // max-tick-time of 5 minutes, not 60 s: the probe loads its test area in one tick, and a big pack's world generation
+            // on a busy machine took over 60 s (All the Mods 7 and 10 were stopped that way). A tick that hangs longer still
+            // gets the watchdog's crash report, whose stack names the mod.
             Files.writeString(
                 instance.resolve("server.properties"),
-                "server-ip=127.0.0.1\nserver-port=" + port + "\nonline-mode=false\nspawn-protection=0\nlevel-name=" + level + "\nmotd=modaccel pack-check\n"
+                "server-ip=127.0.0.1\nserver-port=" + port + "\nonline-mode=false\nspawn-protection=0\nmax-tick-time=300000\nlevel-name=" + level +
+                "\nmotd=modaccel pack-check\n"
             );
             voiceChatPort(instance);
         }
@@ -836,14 +978,7 @@ final class PackCheck {
             for (Path jar : change.add()) hash.update(("add " + jar.getFileName() + "\n").getBytes(StandardCharsets.UTF_8));
             for (String jar : change.remove()) hash.update(("remove " + jar + "\n").getBytes(StandardCharsets.UTF_8));
             Path dir = cache.resolve("instances").resolve(HexFormat.of().formatHex(hash.digest()).substring(0, 16));
-            Path mods = dir.resolve("mods");
-            deleteTree(mods);
-            Files.createDirectories(mods);
-            for (Mod mod : pack.mods()) if (
-                mod.file().endsWith(".jar") && !mod.side().equals("client") && !dropped.contains(mod.file()) && !change.remove().contains(mod.file())
-            ) link(mod.jar(), mods.resolve(mod.file()));
-            for (Path jar : change.add()) link(jar, mods.resolve(jar.getFileName().toString()));
-            link(probe, mods.resolve("zz-modaccel-pack-probe.jar"));
+            Files.createDirectories(dir);
             // The pack's own settings, fresh each run, layer by layer; its world, if any, is not a test world.
             for (String folder : List.of("config", "defaultconfigs", "kubejs", "scripts")) {
                 deleteTree(dir.resolve(folder));
@@ -852,6 +987,19 @@ final class PackCheck {
             deleteTree(dir.resolve("world"));
             deleteTree(dir.resolve("crash-reports"));
             return dir;
+        }
+
+        /** The server's mods folder, made again: the jars serverMods keeps, the repair's jars and the probe. */
+        ServerMods linkMods() throws IOException {
+            ServerMods chosen = serverMods(pack.mods(), scan, dropped, change.remove());
+            Path mods = instance.resolve("mods");
+            deleteTree(mods);
+            Files.createDirectories(mods);
+            for (Mod mod : pack.mods()) if (chosen.kept().contains(mod.file())) link(mod.jar(), mods.resolve(mod.file()));
+            for (Path jar : change.add()) link(jar, mods.resolve(jar.getFileName().toString()));
+            link(probe, mods.resolve("zz-modaccel-pack-probe.jar"));
+            selection = chosen;
+            return chosen;
         }
     }
 

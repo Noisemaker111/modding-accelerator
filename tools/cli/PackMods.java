@@ -137,9 +137,12 @@ final class PackMods {
             for (String file : FORMATS) if (zip.getEntry(file) != null) others.add(file);
             boolean plugin = !modType.equals("null") || zip.stream().anyMatch(PackMods::loaderService);
             if (plugin) {
-                // A loader plugin: its own mod, if it carries one, is a jar inside it (Connector's Embedded-Dependencies-Mod).
+                // A loader plugin or library: its own mod, if it carries one, is a jar inside it (Connector's
+                // Embedded-Dependencies-Mod, or Kotlin for Forge's kffmod in its jarjar list), and Forge loads it from there.
                 scan.plugins.add(owner);
-                if (!embedded.equals("null")) nestedRead(zip, owner, List.of(embedded), metadata, scan);
+                List<String> inside = new ArrayList<>(jarjar(zip));
+                if (!embedded.equals("null")) inside.add(embedded);
+                nestedRead(zip, owner, inside, metadata, scan);
             } else if (others.isEmpty()) scan.notMods.add(owner);
             else scan.foreign.put(owner, others);
             return;
@@ -149,11 +152,20 @@ final class PackMods {
         if (format.endsWith(".toml")) toml(text, owner, bundled, format, manifestVersion, scan);
         else if (format.equals("fabric.mod.json")) fabric(text, owner, bundled, scan, nested);
         else quilt(text, owner, bundled, scan, nested);
-        ZipEntry jarjar = zip.getEntry("META-INF/jarjar/metadata.json");
-        if (jarjar != null) for (Object j : Json.array(
-            Json.object(Json.parse(new String(zip.getInputStream(jarjar).readAllBytes(), StandardCharsets.UTF_8))).get("jars")
-        )) nested.add(Json.text(Json.object(j), "path", ""));
+        nested.addAll(jarjar(zip));
         nestedRead(zip, owner, nested, metadata, scan);
+    }
+
+    /** The jars Forge's and NeoForge's jar-in-jar list (META-INF/jarjar/metadata.json) names. */
+    static List<String> jarjar(ZipFile zip) throws IOException {
+        List<String> paths = new ArrayList<>();
+        ZipEntry list = zip.getEntry("META-INF/jarjar/metadata.json");
+        if (list == null) return paths;
+        try (var in = zip.getInputStream(list)) {
+            if (!(lenient(new String(in.readAllBytes(), StandardCharsets.UTF_8)) instanceof Map<?, ?> meta) || !(meta.get("jars") instanceof List<?> jars)) return paths;
+            for (Object j : jars) if (j instanceof Map<?, ?> entry && entry.get("path") != null) paths.add(String.valueOf(entry.get("path")));
+        }
+        return paths;
     }
 
     static void nestedRead(ZipFile zip, String owner, List<String> nested, List<String> metadata, Scan scan) throws IOException {
