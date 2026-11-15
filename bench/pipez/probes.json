@@ -1,0 +1,10 @@
+{"probes": [
+  {"class": "de.maxhenkel.pipez.blocks.tileentity.types.ItemPipeType", "method": "tick",
+   "descriptor": "(Lde/maxhenkel/pipez/blocks/tileentity/PipeLogicTileEntity;)V", "label": "itemPipeTick", "mode": "timing"},
+  {"class": "de.maxhenkel.pipez.blocks.tileentity.types.ItemPipeType", "method": "insertOrdered",
+   "descriptor": "(Lde/maxhenkel/pipez/blocks/tileentity/PipeLogicTileEntity;Lnet/minecraft/core/Direction;Ljava/util/List;Lnet/neoforged/neoforge/items/IItemHandler;)V",
+   "label": "insertOrdered", "mode": "timing"},
+  {"class": "de.maxhenkel.pipez.blocks.tileentity.UpgradeTileEntity", "method": "getSortedConnections",
+   "descriptor": "(Lnet/minecraft/core/Direction;Lde/maxhenkel/pipez/blocks/tileentity/types/PipeType;)Ljava/util/List;",
+   "label": "sortedConnections", "mode": "timing"}
+]}

@@ -1,0 +1,13 @@
+diff --git a/src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java b/src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java
+index a56902c..420f0c5 100644
+--- a/src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java
++++ b/src/main/java/de/maxhenkel/pipez/blocks/tileentity/UpgradeTileEntity.java
+@@ -156,7 +156,7 @@ public abstract class UpgradeTileEntity extends PipeTileEntity implements Cleara
+             case NEAREST:
+             case ROUND_ROBIN:
+             default:
+-                return getConnections().stream().sorted(Comparator.comparingInt(PipeTileEntity.Connection::getDistance)).collect(Collectors.toList());
++                return getConnections().stream().sorted(Comparator.comparingInt(PipeTileEntity.Connection::getDistance).reversed()).collect(Collectors.toList());
+         }
+     }
+ 

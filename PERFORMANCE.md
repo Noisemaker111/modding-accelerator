@@ -328,9 +328,10 @@ git -C my-mod diff > candidate.diff && git -C my-mod checkout -- .
 ./modaccel perf-optimize --root my-mod --experiment experiment.json --patch candidate.diff --runs 5
 ```
 
-It makes two git worktrees of the mod's `HEAD`: **baseline** and **candidate**
-(`HEAD` plus the diff). For each of `--runs` pairs it launches each arm in a fresh
-game, alternating which goes first, and in every launch:
+First it checks the experiment offline (below); a problem stops it before any worktree or
+launch. It makes two git worktrees of the mod's `HEAD`: **baseline** and **candidate**
+(`HEAD` plus the diff). For up to `--runs` pairs it launches each arm in a fresh game, and
+in every launch:
 
 1. copies the experiment's `files` (configs, `options.txt`) and a fresh copy of
    `worldSource` into the arm, then starts it (`world-check --world`, or `ui-check`
@@ -364,6 +365,27 @@ whose baseline launches disagree fails: it cannot tell a change from noise, so
 freeze or isolate what it reads. `"tests": true` also runs `fast` in both
 worktrees and requires the candidate to pass if the baseline does.
 
+With 12 or more logical cores the two arms of a pair start together, each in its own
+game (`--arms auto`; `--arms sequential` launches them one after the other, alternating
+which goes first). A pair then takes its slower arm's time, and a burst of load from
+elsewhere hits both arms of the pair alike. Phases in the run record count half of each
+arm's step time, so they still add up to wall time; each step keeps its elapsed seconds.
+
+Pairs stop as soon as the outcome is decided:
+
+- a failed gate cannot pass again, so it ends the run: an `expect` gate at the first pair
+  that fails it, a gate compared with the baseline (exact, tolerance, pixels) from the second
+  pair, once two baseline launches show whether the gate itself is reproducible;
+- from `--min-runs` pairs (default 3), a 99% Student-t interval of the mean log speedup is
+  computed for cold and warm after each pair: both entirely above 1, or either entirely
+  below `--min-speedup` (default 1), end the run.
+
+Otherwise it continues to `--runs` (default 5). The verdict always comes from the rule
+below over the pairs measured; `optimize.json` and the record name where and why a run
+stopped. The 99% interval is wider than the 95% bootstrap at every pair count, so stopping
+for speed is rare unless a change is large and consistent; it adds at most 0.5% one-sided
+error per look.
+
 The change is **accepted** only when every gate passes and both cold and warm
 intervals lie above 1. An accepted diff is applied to `--root` (not with
 `--dry-run`). `--keep` keeps both worktrees. `optimize.html` and `optimize.json`
@@ -386,13 +408,32 @@ hold every launch, capture, gate value and frame.
 }
 ```
 
+`modaccel perf-optimize --check-only --experiment E --root SOURCE [--patch P]` runs only the
+offline check. It refuses missing snippet, probe, file and world paths (a world needs
+`level.dat`), metrics and scopes naming a timing probe the probe file lacks, gate snippets
+still holding the template mark, a frame or FPS metric while launches are hidden (a hidden
+client presents about 8 frames per second), and a patch that does not apply to the
+checkout. It warns about exact gates that read clocks or randomness, the C1-only JIT and
+captures shorter than 15 s.
+
+`modaccel perf-template --family experiment --from CAPTURE --root SOURCE --out DIR` writes a
+starting experiment from a `perf --root` capture: the metric (the mod's top timing probe per
+tick when the server thread carries its cost, else its sampled CPU on its busiest threads),
+scopes, `probes.json` from the capture's suggestions, `options.txt`, `"jit": "full"`, and two
+gate snippets to write. The check refuses to launch until they are written.
+
+`modaccel perf-optimize --replay OUT1,OUT2` decides finished runs again with the current
+stopping rule from their `optimize.json`, and prints where each would have stopped, its
+verdict then, and the wall time sequentially and with paired arms (estimated as each
+pair's slower arm).
+
 Paths are relative to the experiment file. Measurements apply to that scenario,
 world and machine; other load on the machine widens the intervals, and a change too
 small to separate from that noise is rejected. If a run is interrupted, stop its
 games with `game-stop --root OUT/baseline` (and `candidate`) and run
 `git worktree prune` in the mod. Each arm builds in its own worktree, so the first run of an
 experiment includes two cold builds. [`bench/zombie-siege`](bench/zombie-siege/README.md)
-is a complete experiment for a real NeoForge mod.
+and [`bench/pipez`](bench/pipez/README.md) are complete experiments for real NeoForge mods.
 
 More experiment fields, for a mod whose cost is spread over threads:
 
