@@ -88,7 +88,7 @@
       "4,-60,-3": "0:minecraft:gravel*62",
       "5,-60,-3": "0:minecraft:gold_ingot*64",
       "6,-60,-3": "0:minecraft:coal*64",
-      "7,-60,-3": "0:minecraft:lapis_lazuli*20"
+      "7,-60,-3": "0:minecraft:lapis_lazuli*7"
      },
      "items": {
       "minecraft:andesite": 6731,
@@ -173,7 +173,7 @@
       "4,-60,-3": "0:minecraft:gravel*62",
       "5,-60,-3": "0:minecraft:gold_ingot*64",
       "6,-60,-3": "0:minecraft:coal*64",
-      "7,-60,-3": "0:minecraft:lapis_lazuli*20"
+      "7,-60,-3": "0:minecraft:lapis_lazuli*7"
      },
      "items": {
       "minecraft:andesite": 6731,
@@ -258,7 +258,7 @@
       "4,-60,-3": "0:minecraft:gravel*62",
       "5,-60,-3": "0:minecraft:gold_ingot*64",
       "6,-60,-3": "0:minecraft:coal*64",
-      "7,-60,-3": "0:minecraft:lapis_lazuli*20"
+      "7,-60,-3": "0:minecraft:lapis_lazuli*7"
      },
      "items": {
       "minecraft:andesite": 6731,
@@ -343,7 +343,7 @@
       "4,-60,-3": "0:minecraft:gravel*62",
       "5,-60,-3": "0:minecraft:gold_ingot*64",
       "6,-60,-3": "0:minecraft:coal*64",
-      "7,-60,-3": "0:minecraft:lapis_lazuli*20"
+      "7,-60,-3": "0:minecraft:lapis_lazuli*7"
      },
      "items": {
       "minecraft:andesite": 6731,
@@ -412,7 +412,7 @@
      },
      "blockEntities": {
       "0,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:0,y:-60,z:-4}",
-      "0,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:stone\"}],id:\"minecraft:barrel\",x:0,y:-60,z:-3}",
+      "0,-60,-3": "{Items:[{Slot:0b,count:32,id:\"minecraft:stone\"}],id:\"minecraft:barrel\",x:0,y:-60,z:-3}",
       "0,-60,-2": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:0,Y:-60,Z:-2,dimension:\"minecraft:overworld\"}},direction:2,facade:{},id:\"storagenetwork:export_kabel\",ioStorage:{filters:{Items:[{Slot:0,count:1,id:\"minecraft:stone\"}],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},inventoryFace:\"north\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4},x:0,y:-60,z:-2}",
       "1,-60,-4": "{chunkTicketHeld:0b,connectable:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:1b}},master:{X:-2,Y:-60,Z:0,dimension:\"minecraft:overworld\"},needsRedstone:0b,self:{X:1,Y:-60,Z:-4,dimension:\"minecraft:overworld\"}},direction:3,facade:{},id:\"storagenetwork:import_kabel\",ioStorage:{filters:{Items:[],Size:18,rules:{nbt:0b,tags:0b,whitelist:0b}},inventoryFace:\"south\",operation:{limit:0,operationType:1},prio:0,upgrades:{Items:[{Slot:0,count:1,id:\"storagenetwork:stack_upgrade\"},{Slot:1,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:2,count:1,id:\"storagenetwork:speed_upgrade\"},{Slot:3,count:1,id:\"storagenetwork:speed_upgrade\"}],Size:4}},x:1,y:-60,z:-4}",
       "1,-60,-3": "{Items:[{Slot:0b,count:64,id:\"minecraft:dirt\"}],id:\"minecraft:barrel\",x:1,y:-60,z:-3}",
@@ -428,7 +428,7 @@
       "4,-60,-3": "0:minecraft:gravel*62",
       "5,-60,-3": "0:minecraft:gold_ingot*64",
       "6,-60,-3": "0:minecraft:coal*64",
-      "7,-60,-3": "0:minecraft:lapis_lazuli*20"
+      "7,-60,-3": "0:minecraft:lapis_lazuli*7"
      },
      "items": {
       "minecraft:andesite": 6731,

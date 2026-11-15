@@ -203,13 +203,18 @@ final class FingerprintDiff {
                     + "): the world ran before it froze, so nothing after it decides the candidate");
             }
         }
+        // A leaf the baselines disagree on shows that kind of state is not deterministic in this mod (which container an
+        // item lands in when it orders equal targets by identity): its whole family is left to the conserved totals.
+        Set<String> families = new TreeSet<>();
+        for (String key : unstable) if (!loadResidue(key)) families.add(family(key, base.get(0).getOrDefault(key, base.get(1).get(key))));
         Map<String, Object> examples = new LinkedHashMap<>();
         Map<String, Integer> sections = new TreeMap<>();
         Set<String> compared = new TreeSet<>();
         for (int i = 0; i < Math.min(base.size(), cand.size()); i++) {
-            Set<String> differ = differing(base.get(i), cand.get(i));
-            compared.addAll(base.get(i).keySet());
-            differ.removeAll(unstable);
+            Map<String, String> b = base.get(i), c = cand.get(i);
+            Set<String> differ = differing(b, c);
+            for (String key : b.keySet()) if (!loadResidue(key) && !families.contains(family(key, b.get(key)))) compared.add(key);
+            differ.removeIf(key -> loadResidue(key) || families.contains(family(key, b.getOrDefault(key, c.get(key)))));
             if (differ.isEmpty()) continue;
             failures.add("run " + i + ": " + differ.size() + " leaves differ from the paired baseline (" + sectionsOf(differ) + ")");
             for (String key : differ) {
@@ -217,7 +222,6 @@ final class FingerprintDiff {
                 if (examples.size() < 40) examples.put("run " + i + " " + key, Json.map("baseline", clip(base.get(i).get(key)), "candidate", clip(cand.get(i).get(key))));
             }
         }
-        compared.removeAll(unstable);
         if (compared.isEmpty()) failures.add("no leaf is the same in every baseline launch; the fingerprint decides nothing for this mod");
         Map<String, Integer> unstableSections = new TreeMap<>();
         for (String key : unstable) unstableSections.merge(section(key), 1, Integer::sum);
@@ -226,13 +230,49 @@ final class FingerprintDiff {
             "failures", failures,
             "compared", compared.size(),
             "unstable", unstable.size(),
+            "unstableFamilies", new ArrayList<>(families),
             "unstableSections", unstableSections,
             "unstableExamples", first(new TreeMap<>(unstable.stream().collect(java.util.stream.Collectors.toMap(k -> k, k -> (Object) "baselines disagree"))), 20),
             "differingSections", sections,
             "examples", examples,
             "baselineLaunches", base.size(),
-            "rule", "Leaves two baseline launches disagree on are left out and named; every other leaf of each candidate equals its paired baseline's."
+            "rule", "Every launch starts from the saved state. A leaf two baseline launches disagree on makes its family (the same section and"
+                + " block-entity type, at any position and checkpoint) unstable, left to the conserved totals and named; chunk tickets at the first"
+                + " checkpoint are what loading left. Every other leaf of each candidate equals its paired baseline's."
         );
+    }
+
+    /** Chunk tickets at the first checkpoint: what asynchronous chunk loading left, before the scenario ran a tick. */
+    static boolean loadResidue(String key) {
+        return key.matches("checkpoints/0/levels/[^/]+/tickets/.*");
+    }
+
+    /**
+     * A leaf's family: its path with the checkpoint and the last part (a position, a chunk, an item id) left open, and
+     * for a block entity its own type, so a barrel's contents being unstable leaves a cable's data compared exactly.
+     */
+    static String family(String key, String value) {
+        String[] parts = key.split("/");
+        if (parts[0].equals("checkpoints") && parts.length > 1) parts[1] = "*";
+        parts[parts.length - 1] = "*";
+        String family = String.join("/", parts);
+        if (key.contains("/blockEntities/")) family += "#" + ownId(value == null ? "" : value);
+        return family;
+    }
+
+    /** The id at the top level of saved data ({...,id:"minecraft:barrel",...}), not one inside a nested item. */
+    static String ownId(String snbt) {
+        int depth = 0;
+        for (int i = 0; i < snbt.length(); i++) {
+            char c = snbt.charAt(i);
+            if (c == '{' || c == '[') depth++;
+            else if (c == '}' || c == ']') depth--;
+            else if (depth == 1 && snbt.startsWith("id:\"", i) && i > 0 && (snbt.charAt(i - 1) == '{' || snbt.charAt(i - 1) == ',')) {
+                int end = snbt.indexOf('"', i + 4);
+                return end < 0 ? "" : snbt.substring(i + 4, end);
+            }
+        }
+        return "";
     }
 
     static Set<String> differing(Map<String, String> a, Map<String, String> b) {

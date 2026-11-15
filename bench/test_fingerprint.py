@@ -66,6 +66,38 @@ record["checkpoints"][0]["levels"]["minecraft:overworld"]["gameTime"] += 11
 code, result = diff("--baseline", files("world-baseline-0", "world-baseline-1"), "--candidate", str(late / "late-freeze.json") + "," + files("world-candidate-same-1"))
 check(code == 1 and any("did not start from the same state" in f for f in result["failures"]), f"a late freeze fails the gate: {result.get('failures')}")
 
+# A mod that orders equal targets by identity puts items in other barrels in every launch. The baselines disagree on one
+# barrel, so every barrel is left to the conserved totals: a candidate whose items land in another barrel passes, while a
+# cable's changed data (a type the baselines agree on) and a lost item total still fail.
+def variant(name, edit):
+    record = json.loads((FIX / "world-candidate-same-1.json").read_text(encoding="utf-8"))
+    edit(record["checkpoints"][-1]["levels"]["minecraft:overworld"])
+    (late / f"{name}.json").write_text(json.dumps(record), encoding="utf-8")
+    return files("world-candidate-same-0") + "," + str(late / f"{name}.json")
+
+
+def other_barrel(level):
+    level["inventories"]["5,-60,-3"] = "0:minecraft:gold_ingot*12"
+    level["blockEntities"]["2,-60,-3"] = level["blockEntities"]["2,-60,-3"].replace("count:64", "count:12")
+
+
+def cable(level):
+    level["blockEntities"]["1,-60,-2"] = level["blockEntities"]["1,-60,-2"].replace("needsRedstone:0b", "needsRedstone:1b")
+
+
+def lost_total(level):
+    first = next(iter(level["items"]))
+    level["items"][first] -= 1
+
+
+BASE = files("world-baseline-0", "world-baseline-1")
+code, result = diff("--baseline", BASE, "--candidate", variant("other-barrel", other_barrel))
+check(code == 0 and any("#minecraft:barrel" in f for f in result["unstableFamilies"]), f"items in another barrel pass when barrels are unstable: {result.get('failures')}")
+code, result = diff("--baseline", BASE, "--candidate", variant("cable", cable))
+check(code == 1 and "checkpoints/blockEntities" in result["differingSections"], f"a cable's changed data still fails: {result.get('failures')}")
+code, result = diff("--baseline", BASE, "--candidate", variant("lost-total", lost_total))
+check(code == 1 and "checkpoints/items" in result["differingSections"], f"a lost item total still fails: {result.get('failures')}")
+
 # A port: across versions only what the mod owns counts, after the game's renames; saved-data formats do not.
 code, result = diff(FIX / "content-1.21.1.json", FIX / "content-1.21.4-same.json")
 check(code == 0 and result["same"] and result["normalisation"].startswith("across versions"), f"a port with only format changes keeps the mod's behaviour: {result.get('sections')}")

@@ -152,6 +152,31 @@ def summarize(records):
             "headline": {"name": "perf diffs the generic fingerprint gate decides as the hand gates did", "value": right, "of": total}}
 
 
+def redecide(record):
+    """
+    Each diff of a recorded run decided again by the current gate on the fingerprints its launches recorded
+    (fingerprint-diff --baseline --candidate): the gate is a function of those records, so no game is launched.
+    """
+    for d in record.get("diffs", []):
+        runs = Path(d["out"]) / "runs"
+        pairs = sorted({p.name.split("-")[0] for p in runs.glob("*-candidate") if (p / "fingerprint.json").is_file()}) if runs.is_dir() else []
+        pairs = [n for n in pairs if (runs / f"{n}-baseline" / "fingerprint.json").is_file()]
+        if not pairs:
+            continue
+        base = ",".join(str(runs / f"{n}-baseline" / "fingerprint.json") for n in pairs)
+        cand = ",".join(str(runs / f"{n}-candidate" / "fingerprint.json") for n in pairs)
+        r = subprocess.run(MODACCEL + ["fingerprint-diff", "--baseline", base, "--candidate", cand, "--json"], capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=600)
+        line = next((l for l in reversed(r.stdout.splitlines()) if l.startswith("{")), None)
+        if line is None:
+            continue
+        gate = json.loads(line)["result"]
+        d.update({"decidedRight": decide(d["expect"], gate), "gatePassed": gate.get("passed"), "failures": gate.get("failures", [])[:5],
+                  "unstable": gate.get("unstable"), "unstableFamilies": gate.get("unstableFamilies"), "compared": gate.get("compared"),
+                  "differingSections": gate.get("differingSections"), "pairs": len(pairs), "decidedFrom": "recorded launches"})
+    return record
+
+
 def records_coverage(args):
     return not args.only or args.record
 
@@ -167,11 +192,18 @@ def main():
     run.add_argument("--record", action="store_true", help="write coverage/sweeps/perf.json after a partial (--only) run too")
     run.add_argument("--prepare", action="store_true", help="make each missing clone and experiment world first (prepare), for an unattended runner")
     sub.add_parser("table")
+    sub.add_parser("decide", help="decide every recorded run again with the current gate, from its recorded fingerprints (no game)")
     args = ap.parse_args()
     for stream in (sys.stdout, sys.stderr):   # a Windows console is not UTF-8 by default
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8")
     corpus = json.loads(CORPUS.read_text(encoding="utf-8"))["mods"]
+    if args.cmd == "decide":
+        data = json.loads(OUT.read_text(encoding="utf-8"))
+        data["runs"] = [redecide(r) for r in data["runs"]]
+        data["latest"] = summarize(data["runs"])
+        OUT.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        args.cmd = "table"
     if args.cmd == "table":
         data = json.loads(OUT.read_text(encoding="utf-8"))
         for r in data["runs"]:
