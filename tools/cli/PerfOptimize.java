@@ -52,6 +52,9 @@ final class PerfOptimize {
         record.record.put("candidate", Json.map("label", label, "diffSha256", Performance.sha256(patch), "changedFiles", List.of()));
         record.record.put("metric", Json.object(experiment.get("measure")).get("metric"));
         Json.object(record.record.get("machine")).put("jit", "full".equals(experiment.get("jit")) ? "full" : "C1 only (hidden test client)");
+        if (experiment.get("frames") instanceof Number frames && frames.intValue() > 0) {
+            Json.object(record.record.get("machine")).put("framesPerSecond", frames.intValue());
+        }
         record.record.put("source", out.toString());
         record.record.put("arms", parallel ? "parallel" : "sequential");
     }
@@ -388,6 +391,14 @@ final class PerfOptimize {
                 long fingerprintStart = System.nanoTime();
                 gates.put(gate.get("name").toString(), fingerprint(arm, tree, dir, gate).toString());
                 record.step("gates", arm + "-fingerprint", (System.nanoTime() - fingerprintStart) / 1e9);
+            }
+            // "frames": a hidden game otherwise draws about 8 frames a second once idle, so per-frame costs and frame
+            // timing measure the throttle; held at a player's rate, they measure the frames a player's game draws.
+            if (experiment.get("frames") instanceof Number frames && frames.intValue() > 0) {
+                // As a file: quotes in an argument of a child process do not survive Windows' command line.
+                Path hold = dir.resolve("frames.java");
+                Files.writeString(hold, "System.setProperty(\"mmt.frames\", \"" + frames.intValue() + "\");\nreturn \"frames\";\n", StandardCharsets.UTF_8);
+                eval(tree, arm + "-frames", hold, "game");
             }
             for (Object step : Json.array(experiment.getOrDefault("setup", List.of()))) {
                 Map<String, Object> setup = Json.object(step);

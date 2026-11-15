@@ -153,10 +153,23 @@
     "name": "levelUpdateMs",
     "probe": "levelUpdate",
     "statistic": "meanInclusiveMs"
+   },
+   {
+    "name": "frameMs",
+    "report": "metrics.frame_ms.mean"
+   },
+   {
+    "name": "fps",
+    "report": "fps"
    }
   ],
   "before": {
    "cold": [
+    {
+     "file": "jit-warm.java",
+     "thread": "control",
+     "expect": "warm"
+    },
     {
      "file": "segment-east.java",
      "expect": "east"
@@ -214,5 +227,6 @@
    "expect": "true"
   }
  ],
- "jit": "full"
+ "jit": "full",
+ "frames": 60
 }

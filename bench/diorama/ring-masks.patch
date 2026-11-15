@@ -1,0 +1,297 @@
+diff --git a/src/main/java/dev/diorama/bake/ChunkBakeData.java b/src/main/java/dev/diorama/bake/ChunkBakeData.java
+index a8aa5683..a33442a7 100644
+--- a/src/main/java/dev/diorama/bake/ChunkBakeData.java
++++ b/src/main/java/dev/diorama/bake/ChunkBakeData.java
+@@ -22,14 +22,20 @@ final class ChunkBakeData {
+ 	final Looks looks;
+ 	final byte[] kinds;
+ 	final int @Nullable [] shapes;
+-	/** Per section: the solid mask and its smaller-than-a-cube mask, as {@link VoxelReader} builds them. */
+-	final AtomicReferenceArray<long @Nullable []> solid;
+-	final AtomicReferenceArray<long @Nullable []> partial;
++	/**
++	 * Per section: the solid mask and its smaller-than-a-cube mask, as {@link VoxelReader} builds them.
++	 * Either the pair, when both are masks every section of one kind shares, or a run of {@link Slabs}
++	 * holding the solid mask's longs as two ints each, high first, and the smaller mask's after them
++	 * when there is one. In the ring they are never copied by a young collection; a reader copies a
++	 * run out and checks it was still whole ({@link Slabs#valid}), else works the masks out again.
++	 */
++	final AtomicReferenceArray<@Nullable Object> masks;
+ 	/**
+ 	 * Per column {@code (z << 4) | x}: one above its highest block that isn't {@link Looks#AIR} to these
+-	 * looks, the world's bottom where there's none; null until worked out. Every cell from there up is air.
++	 * looks, the world's bottom where there's none: 256 ints in {@link Slabs}, null until worked out.
++	 * Every cell from there up is air.
+ 	 */
+-	volatile int @Nullable [] openFrom;
++	volatile Slabs.@Nullable Run openFrom;
+ 	/** The chunk's shadow caster faces, see {@link CasterChunk}; null until a bake needs them. */
+ 	volatile @Nullable CasterChunk casters;
+ 
+@@ -37,8 +43,7 @@ final class ChunkBakeData {
+ 		this.looks = looks;
+ 		this.kinds = kinds;
+ 		this.shapes = shapes;
+-		this.solid = new AtomicReferenceArray<>(sections);
+-		this.partial = new AtomicReferenceArray<>(sections);
++		this.masks = new AtomicReferenceArray<>(sections);
+ 	}
+ 
+ 	/**
+@@ -79,15 +84,19 @@ final class ChunkBakeData {
+ 
+ 	/**
+ 	 * The chunk's shadow caster faces, every column from the block above its top down to
+-	 * {@link #downTo}, in one array: column {@code (z << 4) | x} from {@code offsets[column]} to
+-	 * {@code offsets[column + 1]}, per block with faces from the top down, {@code (y - minY) << 4 | faces}
++	 * {@link #downTo}, in one run of {@link Slabs}: 257 offsets, then the faces, column
++	 * {@code (z << 4) | x} from offset {@code column} to offset {@code column + 1} counted from the
++	 * first face; per block with faces from the top down, {@code (y - minY) << 4 | faces}
+ 	 * with faces {@link #TOP}, {@link #WEST}, {@link #SOUTH}, or {@link #SHAPE} followed by the
+ 	 * block's id, whose shape's boxes each give all three. Columns on the chunk's west or south edge
+ 	 * read the neighbour there; when they did, its token is kept, and the faces hold only while the
+ 	 * neighbour does. One object a chunk: kept per column, they were half a million, which the
+-	 * collector had to trace.
++	 * collector had to trace; as one array a chunk, every young collection still copied them until
++	 * they were promoted. A reader reads the run in place and checks {@link Slabs#valid} after.
+ 	 */
+-	record CasterChunk(int downTo, int[] offsets, int[] faces, @Nullable Object west, @Nullable Object south) {
++	record CasterChunk(int downTo, Slabs.Run run, @Nullable Object west, @Nullable Object south) {
++		/** Ints before the first face: the offsets. */
++		static final int FACES = 257;
+ 	}
+ 
+ 	static final int TOP = 1;
+diff --git a/src/main/java/dev/diorama/bake/GpuMesher.java b/src/main/java/dev/diorama/bake/GpuMesher.java
+index c0e5231a..a25d3a4e 100644
+--- a/src/main/java/dev/diorama/bake/GpuMesher.java
++++ b/src/main/java/dev/diorama/bake/GpuMesher.java
+@@ -1948,10 +1948,25 @@ public final class GpuMesher {
+ 						casterChunk = reader.casterChunk(x >> 4, casterChunkZ, bottom);
+ 					}
+ 					if (casterChunk != null) {
++						// Read where the ring keeps it, then checked: if its array was written over
++						// meanwhile, what was added goes and the chunk is scanned instead.
++						Slabs.Run run = casterChunk.run();
++						int[] ints = run.ints();
+ 						int column = ((z & 15) << 4) | (x & 15);
+-						highest = casters(mesh, looks, casterChunk.faces(), casterChunk.offsets()[column], casterChunk.offsets()[column + 1], x, z, top, bottom,
+-							reader.minY(), highest);
+-						continue;
++						int from = ints[run.offset + column];
++						int to = ints[run.offset + column + 1];
++						int countBefore = mesh.casters.count;
++						int highestAtChunk = highest;
++						if (from >= 0 && from <= to && to <= run.length - ChunkBakeData.CasterChunk.FACES) {
++							int firstFace = run.offset + ChunkBakeData.CasterChunk.FACES;
++							highest = casters(mesh, looks, ints, firstFace + from, firstFace + to, x, z, top, bottom, reader.minY(), highest);
++							if (Slabs.valid(run)) {
++								continue;
++							}
++						}
++						mesh.casters.count = countBefore;
++						highest = highestAtChunk;
++						casterChunk = null;
+ 					}
+ 				}
+ 				long[] mayCast = null;
+@@ -2040,7 +2055,14 @@ public final class GpuMesher {
+ 				break;
+ 			}
+ 			if (bits == ChunkBakeData.SHAPE) {
++				if (k + 1 >= to) {
++					// Only where the ring wrote over the faces while they were read: the caller checks.
++					break;
++				}
+ 				int id = faces[++k];
++				if (id < 0 || id >= looks.shape.length) {
++					break;
++				}
+ 				if (y > top) {
+ 					continue;
+ 				}
+diff --git a/src/main/java/dev/diorama/bake/VoxelReader.java b/src/main/java/dev/diorama/bake/VoxelReader.java
+index f315dcaf..891694d2 100644
+--- a/src/main/java/dev/diorama/bake/VoxelReader.java
++++ b/src/main/java/dev/diorama/bake/VoxelReader.java
+@@ -48,6 +48,11 @@ public final class VoxelReader {
+ 		Arrays.fill(AIR_IDS, AIR_ID);
+ 	}
+ 
++	/** The masks sections of one kind of block share, as pairs of solid and smaller-than-a-cube masks. */
++	private static final long[][][] CONSTANT_MASKS = {
++		{NOTHING_SOLID, NOTHING_SOLID}, {NONE_OF_ONE, NOTHING_SOLID}, {ALL_SOLID, NOTHING_SOLID}, {ALL_SOLID, ALL_SOLID},
++	};
++
+ 	/**
+ 	 * The chunk table holds 2^TABLE_BITS chunks each way, by the low bits of their coordinates.
+ 	 * A bake's reach is narrower than that, so its chunks rarely share a slot; when they do, the
+@@ -370,17 +375,27 @@ public final class VoxelReader {
+ 		ChunkBakeData.CasterChunk known = chunk.shared.casters;
+ 		if (known != null && known.downTo() <= bottom && (known.west() == null || known.west() == this.blocksToken(cx - 1, cz))
+ 			&& (known.south() == null || known.south() == this.blocksToken(cx, cz + 1))) {
+-			return known;
++			// Copied forward when its array is about to leave the ring's window, if it is still whole.
++			Slabs.Run renewed = Slabs.renew(known.run());
++			if (renewed == known.run()) {
++				return known;
++			}
++			if (renewed != null) {
++				ChunkBakeData.CasterChunk moved = new ChunkBakeData.CasterChunk(known.downTo(), renewed, known.west(), known.south());
++				chunk.shared.casters = moved;
++				return moved;
++			}
++			// Written over: scanned again below.
+ 		}
+ 		// Tiles nearby reach down about as far: a little further now saves scanning it all again.
+ 		int downTo = Math.max(this.minY, Math.min(bottom, known == null ? bottom : known.downTo()) - 16);
+-		int[] offsets = new int[257];
+-		int[] faces = new int[1024];
+-		int length = 0;
++		// The offsets, then the faces: the run the ring keeps.
++		int[] faces = new int[1024 + ChunkBakeData.CasterChunk.FACES];
++		int length = ChunkBakeData.CasterChunk.FACES;
+ 		boolean west = false;
+ 		boolean south = false;
+ 		for (int column = 0; column < 256; column++) {
+-			offsets[column] = length;
++			faces[column] = length - ChunkBakeData.CasterChunk.FACES;
+ 			int x = (cx << 4) | (column & 15);
+ 			int z = (cz << 4) | (column >> 4);
+ 			long[] mayCast = null;
+@@ -432,8 +447,11 @@ public final class VoxelReader {
+ 				}
+ 			}
+ 		}
+-		offsets[256] = length;
+-		ChunkBakeData.CasterChunk made = new ChunkBakeData.CasterChunk(downTo, offsets, java.util.Arrays.copyOf(faces, length),
++		faces[256] = length - ChunkBakeData.CasterChunk.FACES;
++		if (length > Slabs.SLAB_INTS) {
++			return null;
++		}
++		ChunkBakeData.CasterChunk made = new ChunkBakeData.CasterChunk(downTo, Slabs.keep(faces, 0, length),
+ 			west ? this.blocksToken(cx - 1, cz) : null, south ? this.blocksToken(cx, cz + 1) : null);
+ 		chunk.shared.casters = made;
+ 		return made;
+@@ -449,7 +467,25 @@ public final class VoxelReader {
+ 		if (chunk == null || chunk.shared == null) {
+ 			return null;
+ 		}
+-		int[] open = chunk.shared.openFrom;
++		int[] open = chunk.openFrom;
++		if (open != null) {
++			return open;
++		}
++		Slabs.Run kept = chunk.shared.openFrom;
++		if (kept != null) {
++			// This job's own copy, if the ring still held it whole.
++			open = new int[256];
++			System.arraycopy(kept.ints(), kept.offset, open, 0, 256);
++			Slabs.Run renewed = Slabs.valid(kept) ? Slabs.renew(kept) : null;
++			if (renewed != null) {
++				if (renewed != kept) {
++					chunk.shared.openFrom = renewed;
++				}
++				chunk.openFrom = open;
++				return open;
++			}
++			open = null;
++		}
+ 		if (open == null) {
+ 			open = new int[256];
+ 			java.util.Arrays.fill(open, Integer.MIN_VALUE);
+@@ -480,7 +516,8 @@ public final class VoxelReader {
+ 					open[column] = this.minY;
+ 				}
+ 			}
+-			chunk.shared.openFrom = open;
++			chunk.shared.openFrom = Slabs.keep(open, 0, 256);
++			chunk.openFrom = open;
+ 		}
+ 		return open;
+ 	}
+@@ -624,6 +661,8 @@ public final class VoxelReader {
+ 		final long[][] partial;
+ 		/** See {@link VoxelReader#casterSection}; built when first read. */
+ 		final long[][] casters;
++		/** This job's copy of {@link ChunkBakeData#openFrom}; null until read. */
++		int @Nullable [] openFrom;
+ 		/** See {@link VoxelReader#solidTop}; {@code Integer.MAX_VALUE} until worked out. */
+ 		int solidTop = Integer.MAX_VALUE;
+ 
+@@ -647,10 +686,26 @@ public final class VoxelReader {
+ 				return NOTHING_SOLID;
+ 			}
+ 			long[] mask = this.solid[index];
+-			if (mask == null && this.shared != null && (mask = this.shared.solid.get(index)) != null) {
+-				// Published after its partial mask, so that is there too.
+-				this.partial[index] = this.shared.partial.get(index);
+-				this.solid[index] = mask;
++			if (mask == null && this.shared != null) {
++				Object kept = this.shared.masks.get(index);
++				if (kept instanceof long[][] pair) {
++					mask = pair[0];
++					this.partial[index] = pair[1];
++					this.solid[index] = mask;
++				} else if (kept instanceof Slabs.Run run) {
++					// This job's own copy, if the ring still held it whole.
++					long[] solid = unpackMask(run, 0);
++					long[] partial = run.length > 128 ? unpackMask(run, 128) : NOTHING_SOLID;
++					Slabs.Run renewed = Slabs.valid(run) ? Slabs.renew(run) : null;
++					if (renewed != null) {
++						if (renewed != run) {
++							this.shared.masks.compareAndSet(index, run, renewed);
++						}
++						mask = solid;
++						this.partial[index] = partial;
++						this.solid[index] = mask;
++					}
++				}
+ 			}
+ 			if (mask == null) {
+ 				long[] partial = NOTHING_SOLID;
+@@ -724,13 +779,42 @@ public final class VoxelReader {
+ 				this.partial[index] = partial;
+ 				this.solid[index] = mask;
+ 				if (this.shared != null) {
+-					this.shared.partial.set(index, partial);
+-					this.shared.solid.set(index, mask);
++					this.shared.masks.set(index, keptMasks(mask, partial));
+ 				}
+ 			}
+ 			return mask;
+ 		}
+ 
++		/** The shared form of a section's masks: see {@link ChunkBakeData#masks}. */
++		private static Object keptMasks(long[] solid, long[] partial) {
++			for (long[][] pair : CONSTANT_MASKS) {
++				if (pair[0] == solid && pair[1] == partial) {
++					return pair;
++				}
++			}
++			int[] ints = new int[partial == NOTHING_SOLID ? 128 : 256];
++			for (int w = 0; w < 64; w++) {
++				ints[2 * w] = (int) (solid[w] >>> 32);
++				ints[2 * w + 1] = (int) solid[w];
++				if (ints.length > 128) {
++					ints[128 + 2 * w] = (int) (partial[w] >>> 32);
++					ints[128 + 2 * w + 1] = (int) partial[w];
++				}
++			}
++			return Slabs.keep(ints, 0, ints.length);
++		}
++
++		/** A mask of a run, from {@code at} ints in; check {@link Slabs#valid} after. */
++		private static long[] unpackMask(Slabs.Run run, int at) {
++			int[] ints = run.ints();
++			int from = run.offset + at;
++			long[] mask = new long[64];
++			for (int w = 0; w < 64; w++) {
++				mask[w] = (long) ints[from + 2 * w] << 32 | ints[from + 2 * w + 1] & 0xFFFFFFFFL;
++			}
++			return mask;
++		}
++
+ 		private static byte solidFlags(int id, byte[] kinds, int @Nullable [] shapes) {
+ 			if (kinds[id] != BlockLooks.SOLID) {
+ 				return 0;

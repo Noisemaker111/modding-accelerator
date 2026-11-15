@@ -1,0 +1,75 @@
+diff --git a/src/main/java/dev/diorama/bake/GpuMesher.java b/src/main/java/dev/diorama/bake/GpuMesher.java
+index 00839a70..b3c33fa2 100644
+--- a/src/main/java/dev/diorama/bake/GpuMesher.java
++++ b/src/main/java/dev/diorama/bake/GpuMesher.java
+@@ -1174,7 +1174,7 @@ public final class GpuMesher {
+ 				column.z0 = cz0;
+ 				column.z1 = cz1;
+ 				if (dz0 <= dz1) {
+-					MeshColumns.depend(column, reader, x, dz0, dz1);
++					MeshColumns.depend(column, reader, x, dz0, dz1, MeshColumns.readsSky(mesh.overlays));
+ 				} else {
+ 					column.deps = new Object[0];
+ 				}
+@@ -1533,7 +1533,7 @@ public final class GpuMesher {
+ 					column.z0 = cz0;
+ 					column.z1 = cz1;
+ 					if (dz0 <= dz1) {
+-						MeshColumns.depend(column, reader, x, dz0, dz1);
++						MeshColumns.depend(column, reader, x, dz0, dz1, MeshColumns.readsSky(mesh.overlays));
+ 					} else {
+ 						column.deps = new Object[0];
+ 					}
+diff --git a/src/main/java/dev/diorama/bake/MeshColumns.java b/src/main/java/dev/diorama/bake/MeshColumns.java
+index 5cdf0dfc..f6223e5d 100644
+--- a/src/main/java/dev/diorama/bake/MeshColumns.java
++++ b/src/main/java/dev/diorama/bake/MeshColumns.java
+@@ -87,9 +87,18 @@ final class MeshColumns {
+ 		}
+ 	}
+ 
+-	/** Per chunk: its blocks, block light and sky light tokens, and its tints (null where none were blended). */
++	/**
++	 * Per chunk: its blocks, block light and sky light tokens, and its tints (null where none were
++	 * blended). The sky light token is null where the column doesn't depend on it: in the sky view
++	 * only the spawn-spot overlay reads sky light, and whether it is on is one of the tile's settings.
++	 */
+ 	static final int DEPS = 4;
+ 
++	/** Whether a kept column's faces read sky light: only the spawn-spot overlay does, in the views kept. */
++	static boolean readsSky(@Nullable Overlays overlays) {
++		return overlays != null && overlays.spawnSpots();
++	}
++
+ 	static final class Tile {
+ 		final Settings settings;
+ 		final int x0;
+@@ -263,7 +272,7 @@ final class MeshColumns {
+ 	}
+ 
+ 	/** Records which chunks a column reached and what they hold now, as the reader has them. */
+-	static void depend(Column column, VoxelReader reader, int x, int z0, int z1) {
++	static void depend(Column column, VoxelReader reader, int x, int z0, int z1, boolean sky) {
+ 		int cx0 = (x - 1) >> 4;
+ 		int cx1 = (x + 1) >> 4;
+ 		int cz0 = (z0 - 1) >> 4;
+@@ -282,7 +291,7 @@ final class MeshColumns {
+ 				} else {
+ 					deps[k] = chunk.blocksToken();
+ 					deps[k + 1] = chunk.blockLightToken();
+-					deps[k + 2] = chunk.skyLightToken();
++					deps[k + 2] = sky ? chunk.skyLightToken() : null;
+ 					deps[k + 3] = chunk.tints();
+ 				}
+ 				k += DEPS;
+@@ -349,8 +358,8 @@ final class MeshColumns {
+ 					if (deps[k] != ChunkBakeData.MISSING) {
+ 						return false;
+ 					}
+-				} else if (deps[k] != chunk.blocksToken() || deps[k + 1] != chunk.blockLightToken() || deps[k + 2] != chunk.skyLightToken()
+-					|| !sameTints((ChunkSnapshot.Tints) deps[k + 3], chunk)) {
++				} else if (deps[k] != chunk.blocksToken() || deps[k + 1] != chunk.blockLightToken()
++					|| deps[k + 2] != null && deps[k + 2] != chunk.skyLightToken() || !sameTints((ChunkSnapshot.Tints) deps[k + 3], chunk)) {
+ 					return false;
+ 				}
+ 				k += DEPS;

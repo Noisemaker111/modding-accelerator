@@ -28,6 +28,14 @@ python bench/diorama/play/prepare_world.py --root .runs/diorama
   (`"jit": "full"`) and turns server saving off (`save-off.java`). Right before the cold capture
   `fly.java` flies east for 30 s, right before the warm capture south for 30 s, at 16 blocks/s
   (`measure.before`), so each 60 s window holds its whole flight and 30 s of settling.
+- Before the cold flight, `jit-warm.java` runs the same fixed bake work in every launch (three
+  rounds of mesh, trace, partial re-bake, spot picks, merge, mipmaps and tint blends over eight
+  tiles of the gate's frozen chunks, which the live map never reads), waits 10 s for queued
+  compiles, then waits until Diorama's GPU self-check trusts the sky view, asking it again (as its
+  settings do) if it turned itself off as too slow. So "cold" is the first minute of new land with
+  the bake code compiled and GPU baking on (below, *The cold window*).
+- `"frames": 60` holds both hidden launches at a player's 60 frames a second; without it a hidden
+  client drew about 7.5, and per-frame costs (minimap, map screen) measured the throttle.
 - The metric is the bakers' CPU time: what the operating system counted on the
   `diorama-baker-*` threads over the window (`{"threadCpu": "^diorama-baker"}`, from
   ThreadMXBean at the window's start and end). It is exact, and a baker preempted by other load
@@ -303,24 +311,118 @@ traced check bakes and the first meshes run before C2 has compiled them. A chang
 hot code run less often can make the first minute slower. Count interpreted frames before reading
 a cold verdict, and expect a small change to show only in the warm window.
 
+Round 4 found a second cause, the GPU self-check. Until four sky tiles have been compared, every
+bake is traced on the CPU, and a check whose GPU bakes are slow (on a machine whose other games keep
+the card busy) turns GPU baking off for the launch. In the first round-4 run three of four baseline
+launches traced 370–530 ms a second in their cold window and built 4–64 GPU meshes, against 246–359
+in the candidate launches; the cold pairs read 1.16–4.24×. The experiment now warms up instead
+(`jit-warm.java`, above): with it, the next run's launches traced nothing in either window. The
+warm-up is the choice for the cold window because it keeps what a player meets in the first minute
+of new land (every chunk new to the bakes) and removes what depends on the machine (when C2
+compiles, whether the check finished); a longer flight first would also have warmed the map's own
+caches, which is what the warm window already measures.
+
+### First meshes: candidates ready to time
+
+Four exact candidates for the first mesh of a new tile and for the collector, applied in order after
+the four accepted patches. Each is one idea and keeps a switch the gates turn off for the fresh
+side. They are not yet decided: the machine they were written on was saturated by other work, so
+their paired timing waits for a quiet runner (below). Exactness is proved: in one launch of all
+eight patches after both flights, `bake-digest.java` returned `ac6a8694c066e75d4679ee5bd26d8d79`, as
+every baseline launch did, and `mapped`, `tints-live`, `reuse-live` and `slabs-ring` returned true.
+
+```sh
+git -C DIORAMA_SOURCE apply bench/diorama/bit-walk.patch
+git -C DIORAMA_SOURCE apply bench/diorama/occlusion-rings.patch
+git -C DIORAMA_SOURCE apply bench/diorama/open-air-picks.patch
+git -C DIORAMA_SOURCE apply bench/diorama/ring-masks.patch
+```
+
+- `bit-walk.patch` (`GpuMesher.BITS`): in the sky view there is no rock, fog or lifted lid, so a
+  reached cell of air (at or above its column's `openFrom`) does nothing but let rays on. Each row of
+  a column is kept as bits: until a cell is reached from the south, the walk jumps to the next open
+  bit of the row above (`numberOfLeadingZeros`); a reached cell of air opens the whole run of air
+  north of it in one step; only reached cells that are not air are visited one at a time, in the
+  order and with the code the walk had. The extents are taken once per row, and the per-row clearing
+  covers the row's own words and the water cells written. First meshes 1.35× faster (same JVM, 16
+  tiles of the frozen save, `walk-bench`), 1.22× with the other candidates on.
+- `occlusion-rings.patch` (`GpuMesher.RINGS`): a face's corner occlusion reads its eight neighbours
+  from the section's solid bits in one go where all nine cells are in one section, and the four
+  packed corners from a table of the 512 neighbourhoods; at a section's edge it asks block by block
+  as before. First meshes 1.09×.
+- `open-air-picks.patch` (`MapPick.OPEN_AIR`): a sky-view spawn-spot ray reads only its own column,
+  so it steps through cells at or above the column's open height in their chunk without reading
+  them. First picks 1.12–1.19×.
+- `ring-masks.patch` (for the collector, not speed): the solid and smaller-than-a-cube masks, open
+  heights and caster faces bakes share per chunk (`ChunkBakeData`) live in the slab ring instead of
+  small arrays a young collection copies until it promotes them. A job copies masks and open heights
+  out and checks the slab's serial after, and reads caster faces in place and drops what it added if
+  the slab was written over; a section whose masks every section of one kind shares keeps the shared
+  pair. Round 3's captures show where the young pauses' extra time was: each young collection copied
+  97–108 MB in unmodified Diorama and 110–118 MB with the four patches, nearly all of it data one
+  collection old (42–45 against 50–52 MB).
+
+Measured and dropped:
+
+- `pick-table.patch`, `pick-rows` again with a primitive table: per row, the cells a ray steps
+  through in `int` arrays kept per baker thread, no boxing. First picks took 1085 ms where the
+  ray's own floating-point steps took 435 ms (same JVM, 16 tiles): reading the steps back costs more
+  than working them out. Every gain round 3 and this round saw in picks is from not reading air.
+- Writing a face's 14 ints straight to native memory instead of through the `IntBuffer`: 1.01×.
+
+Gates for these: `reuse-live.java` and `slabs-ring.java` turn every switch off for their fresh side,
+`VoxelReader.SHARED` included, so a stale shared mask shows as a difference instead of on both sides.
+Two deliberately wrong candidates, each applied on all eight patches and run through every gate in
+one launch, fail them:
+
+| Sabotage | `bake-digest` | `mapped` | `reuse-live` | `slabs-ring` |
+|---|---|---|---|---|
+| `sabotage-stale-ring.diff`: reads ring runs without checking the serial | `483900ac…` | true | 27 of 27 tiles differ | 27 of 27 differ |
+| `sabotage-walk-short-run.diff`: opens one cell too few of each run of air | mesh `c63ab6b3` | false | 24 of 24 differ | 24 of 24 differ |
+
+The stale ring changes even the frozen digest: the gate's own bakes go round the ring. Diorama's
+own GPU self-check also turned the short-run walk away (`NO_MATCH`).
+
+Two more, ready to prove and time on the patches above:
+
+- `occlusion-ring-edges.patch` (`VoxelReader.EDGE_RINGS`): a face at a section's edge, a quarter of
+  them, asked its eight neighbours block by block, and `solid`'s one-section cache went back and
+  forth between the sections they span. It now reads each cell from its own section's bits. In a
+  profile of first meshes with the patches above, occlusion asked block by block was 11% of a mesh.
+  It compiles; it has not run in a launch yet.
+- `sky-free-round4.patch`: `sky-free.patch` on all eight, the column walk's dependencies included.
+  In one launch every gate passed (`bake-digest` `ac6a8694…`).
+
+### Timing the candidates
+
+Each candidate is decided against the patches before it, in this order: `bit-walk`,
+`occlusion-rings`, `occlusion-ring-edges`, `open-air-picks`, `ring-masks` (for the collector:
+accepted only if young pauses and heap are no worse), `sky-free-round4`; then all of them against
+unmodified Diorama, and `experiment-screen.json` for the render thread. On a machine that runs
+nothing else:
+
+```sh
+./mmt perf-optimize --root DIORAMA_SOURCE --project :1.21.1 --experiment bench/diorama/play/experiment.json \
+  --patch bench/diorama/bit-walk.patch --runs 8 --min-runs 3 --dry-run --session diorama-round4 --label bit-walk
+```
+
+with `DIORAMA_SOURCE` at the pinned commit plus the four accepted patches (then plus each candidate
+accepted before it). `experiment-screen.json` measures the render thread with the full map screen
+open (`open-map.java`; `mapScreenMs` is `MapScreen.render` per frame at 60 frames a second). On the
+saturated machine, one pair of `bit-walk.patch` with the warmed experiment read cold 0.98× and
+warm 1.26× before the run was stopped (`bit-walk-4`, not decided); its launches drew 57–59 frames a
+second, the minimap cost 0.71–0.93 ms a frame, and neither window traced on the CPU.
+
 ### What is left
 
-Per mesh, the bakers spend about 55% in the column walk, 18–26% in spawn-spot picks, 10% in shadow
-casters, 7% blending tints of new chunks and 5% each in the GPU image merge and traced bakes. What
-has been tried makes re-meshes cheap; the first mesh of a new tile is untouched:
-
-- the collector: `ChunkBakeData`'s per-chunk arrays (solid masks, caster faces, open heights) in
-  the ring too, with validated reads, would take the last 6–7% off young pauses;
-
-- the column walk visits every cell rays reach one at a time, with per-cell rock, water and fog
-  bookkeeping the sky view never needs and twelve extent updates. Rows of air and whole cubes could
-  be walked as bit masks, 64 cells at a time (reach propagates north along a row as a carry does),
-  leaving only faces to visit one at a time;
-- picks: the same per-row steps, kept in a primitive table indexed by row rather than a map;
-- the per-row clearing of five arrays over the whole span and the extent updates could be per row
-  (about 5% of the walk, exact);
-- reuse that tolerates a chunk's sky light, decided per cell rather than per chunk, once the cold
-  window's JIT effect is understood (or warmed: run the cold capture after a short flight).
+- Per mesh, after these: occlusion and colour of the faces the walk emits (`solidFace`), section
+  decoding per job (`VoxelReader$Decoded.ids`, 8% of a first mesh's samples and the largest Diorama allocation),
+  shadow casters (15%); in a same-JVM profile of first meshes with the bit walk, faces' `solidFace`
+  was 47% and the walk itself 9%.
+- The saved-chunk import: 561 ms a tile in one launch's log, on its own thread.
+- The render thread: the minimap and the full map screen at 60 frames a second
+  (`experiment-screen.json`), and the session tick and map update per call.
+- Reuse that tolerates a chunk's sky light (`sky-free.patch`), to retry with the warmed cold window.
 
 ### Time to safepoint on a busy machine
 

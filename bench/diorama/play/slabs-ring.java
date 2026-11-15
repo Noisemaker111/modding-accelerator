@@ -7,7 +7,8 @@ import dev.diorama.data.*;
 // 1. The flight must have gone round the ring at least once, so reuse-live (run before this) compared
 //    tiles while arrays were being written over under them.
 // 2. Going round the ring once more, a run kept before must read as stale, and every live surface tile,
-//    meshed and its spots picked with the reuse switches on, must come out as with them off.
+//    meshed and its spots picked with the reuse switches on, must come out as with them all off: kept
+//    columns, and what bakes share per chunk where a build keeps that in the ring, are all stale then.
 // A build without the ring returns "true". Returns "true", or what went wrong, for compare: expect.
 class Pinned implements ChunkSource {
     final ChunkSource from;
@@ -74,8 +75,18 @@ for (Object k : ((Map<?, ?>) field(map, "tiles")).keySet()) {
 keys.sort(Comparator.comparingInt(TileKey::tileU).thenComparingInt(TileKey::tileV));
 var source = new Pinned(map);
 var store = (TileStore) field(map, "store");
-// By reflection: the switch exists only in builds that reuse work, and this snippet compiles against unmodified ones too.
-java.lang.reflect.Field reuse = GpuMesher.class.getField("REUSE");
+// By reflection: the switches exist only in builds that reuse work, and this snippet compiles against unmodified
+// ones too. Every one is off for the fresh mesh, VoxelReader.SHARED included: what bakes share per chunk is kept in
+// the ring too, and a stale read there would otherwise show on both sides.
+List<java.lang.reflect.Field> switches = new ArrayList<>();
+for (String name : List.of("dev.diorama.bake.VoxelReader.SHARED", "dev.diorama.bake.GpuMesher.REUSE", "dev.diorama.bake.GpuMesher.AIR_ROWS", "dev.diorama.bake.GpuMesher.BITS",
+    "dev.diorama.bake.GpuMesher.RINGS", "dev.diorama.bake.VoxelReader.EDGE_RINGS", "dev.diorama.bake.MapPick.OPEN_AIR")) {
+    int dot = name.lastIndexOf('.');
+    try {
+        switches.add(Class.forName(name.substring(0, dot)).getField(name.substring(dot + 1)));
+    } catch (ReflectiveOperationException absent) {
+    }
+}
 int differ = 0;
 StringBuilder where = new StringBuilder();
 for (TileKey key : keys) {
@@ -84,7 +95,7 @@ for (TileKey key : keys) {
     int[] saved = store == null ? null : store.spots(key);
     var image = TileImage.full(key, new int[][] {new int[0]}, new byte[0]);
     for (int r = 0; r < 2; r++) {
-        reuse.setBoolean(null, r == 1);
+        for (var s : switches) s.setBoolean(null, r == 1);
         var m = GpuMesher.build(key, source, looks, false, null, null);
         digests[r] = MeshDigest.of(m);
         m.freeFaces();
@@ -95,5 +106,5 @@ for (TileKey key : keys) {
         where.append(" ").append(key.tileU()).append(",").append(key.tileV());
     }
 }
-reuse.setBoolean(null, true);
+for (var s : switches) s.setBoolean(null, true);
 return differ == 0 && keys.size() >= 10 ? "true" : "tiles " + keys.size() + ", differ " + differ + where;

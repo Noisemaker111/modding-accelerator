@@ -1,0 +1,82 @@
+diff --git a/src/main/java/dev/diorama/bake/VoxelReader.java b/src/main/java/dev/diorama/bake/VoxelReader.java
+index 891694d2..a590bed9 100644
+--- a/src/main/java/dev/diorama/bake/VoxelReader.java
++++ b/src/main/java/dev/diorama/bake/VoxelReader.java
+@@ -177,13 +177,28 @@ public final class VoxelReader {
+ 	/**
+ 	 * {@link #solid} above 0 for the nine cells around {@code (x, y, z)} in its layer of y, a bit
+ 	 * each: the row at z - 1 in bits 0 to 2, z in 3 to 5, z + 1 in 6 to 8, each from x - 1 up. Read
+-	 * from the section's bits in one go; -1 where the nine aren't all in one section, which
+-	 * {@link #solid} answers one at a time.
++	 * from the section's bits in one go, or where the nine span sections, from each section's bits:
++	 * {@link #solid} one cell at a time went back and forth between them, entering each anew.
+ 	 */
+ 	int ringXZ(int x, int y, int z) {
++		if (y < this.minY || y >= this.maxY) {
++			return 0;
++		}
+ 		int lx = x & 15;
+ 		int lz = z & 15;
+-		if (lx == 0 || lx == 15 || lz == 0 || lz == 15 || y < this.minY || y >= this.maxY) {
++		if (EDGE_RINGS && (lx == 0 || lx == 15 || lz == 0 || lz == 15)) {
++			int sy = y >> 4;
++			int ring = 0;
++			for (int dz = -1; dz <= 1; dz++) {
++				for (int dx = -1; dx <= 1; dx++) {
++					if (this.solidBit(x + dx, sy, y, z + dz)) {
++						ring |= 1 << ((dz + 1) * 3 + dx + 1);
++					}
++				}
++			}
++			return ring;
++		}
++		if (lx == 0 || lx == 15 || lz == 0 || lz == 15) {
+ 			return -1;
+ 		}
+ 		long[] mask = this.solidMaskAt(x >> 4, y >> 4, z >> 4);
+@@ -201,6 +216,22 @@ public final class VoxelReader {
+ 	int ringXY(int x, int y, int z) {
+ 		int lx = x & 15;
+ 		int ly = y & 15;
++		if (EDGE_RINGS && (lx == 0 || lx == 15 || ly == 0 || ly == 15 || y < this.minY || y >= this.maxY)) {
++			int ring = 0;
++			for (int dy = 1; dy >= -1; dy--) {
++				int cy = y + dy;
++				// Outside the world nothing is solid, as solid has it.
++				if (cy < this.minY || cy >= this.maxY) {
++					continue;
++				}
++				for (int dx = -1; dx <= 1; dx++) {
++					if (this.solidBit(x + dx, cy >> 4, cy, z)) {
++						ring |= 1 << ((1 - dy) * 3 + dx + 1);
++					}
++				}
++			}
++			return ring;
++		}
+ 		if (lx == 0 || lx == 15 || ly == 0 || ly == 15 || y < this.minY || y >= this.maxY) {
+ 			return -1;
+ 		}
+@@ -212,6 +243,22 @@ public final class VoxelReader {
+ 		return three(mask, i + 255) | three(mask, i - 1) << 3 | three(mask, i - 257) << 6;
+ 	}
+ 
++	/**
++	 * Whether {@link #ringXZ} and {@link #ringXY} read rings that span sections from each section's
++	 * bits. Only for checking that meshes come out the same either way.
++	 */
++	public static boolean EDGE_RINGS = true;
++
++	/**
++	 * {@link #solid} above 0 for a cell in the world's height, from its section's bits as
++	 * {@link #solidSection} has them: the same chunks read, without moving {@link #solid}'s section.
++	 */
++	private boolean solidBit(int x, int sy, int y, int z) {
++		long[] mask = this.solidSection(x >> 4, sy, z >> 4);
++		int i = ((y & 15) << 8) | ((z & 15) << 4) | (x & 15);
++		return mask != null && (mask[i >> 6] >>> i & 1) != 0;
++	}
++
+ 	/** Bits {@code i} to {@code i + 2} of a mask, which lie in one word. */
+ 	private static int three(long[] mask, int i) {
+ 		return (int) (mask[i >> 6] >>> i) & 7;

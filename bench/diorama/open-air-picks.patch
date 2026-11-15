@@ -1,0 +1,48 @@
+diff --git a/src/main/java/dev/diorama/bake/MapPick.java b/src/main/java/dev/diorama/bake/MapPick.java
+index f3ad98f5..f256df8a 100644
+--- a/src/main/java/dev/diorama/bake/MapPick.java
++++ b/src/main/java/dev/diorama/bake/MapPick.java
+@@ -121,6 +121,12 @@ public final class MapPick {
+ 		return this;
+ 	}
+ 
++	/**
++	 * Whether sky-view picks take cells at or above their column's {@link VoxelReader#openFrom} as air
++	 * without reading them. Only for checking that picks come out the same either way.
++	 */
++	public static boolean OPEN_AIR = true;
++
+ 	/**
+ 	 * The position just above the first solid block or water surface the ray through map point
+ 	 * {@code (u, v)} reaches, or null where the map has no data.
+@@ -151,7 +157,30 @@ public final class MapPick {
+ 		this.readUnknown = false;
+ 		boolean skippingRock = this.cave || this.roofless;
+ 		CaveCut cut = this.raised ? new CaveCut(this.reader, this.base, x, (int) Math.floor((v + this.limitY * cos) / sin) - 2, x, bz + 1) : null;
++		// In the sky view a ray reads only its own column: cells at or above the column's open height
++		// in their chunk are air, as the chunk was read, and the ray steps through them unread.
++		boolean openAir = OPEN_AIR && this.columnOnly();
++		int openChunk = Integer.MIN_VALUE;
++		int[] open = null;
++		int column = x & 15;
+ 		while (by >= this.limitY && !(skippingRock && by < this.rockLimit)) {
++			if (openAir) {
++				if (bz >> 4 != openChunk) {
++					openChunk = bz >> 4;
++					open = this.reader.openFrom(x >> 4, openChunk);
++				}
++				if (open != null && by >= open[((bz & 15) << 4) | column]) {
++					this.lastZ = bz;
++					if (tMaxY < tMaxZ) {
++						by--;
++						tMaxY += 1 / sin;
++					} else {
++						bz--;
++						tMaxZ += 1 / cos;
++					}
++					continue;
++				}
++			}
+ 			if (cut != null && by >= cut.at(x, bz)) {
+ 				// Cut away: rock, as the baker has it.
+ 				skippingRock = true;

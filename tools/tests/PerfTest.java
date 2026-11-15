@@ -579,6 +579,13 @@ public final class PerfTest {
         check(warnings.contains("currentTimeMillis") && warnings.contains("C1"), "clock reads in exact gates and the C1-only JIT are warned about: " + warnings);
         Map<String, Object> visible = PerfCheck.check(dir.resolve("experiment.json"), experiment, null, null, Json.map("background", false));
         check(!Json.array(visible.get("problems")).toString().contains("frames per second"), "a visible client may measure frames");
+        Map<String, Object> heldExperiment = new LinkedHashMap<>(experiment);
+        heldExperiment.put("frames", 60);
+        Map<String, Object> held = PerfCheck.check(dir.resolve("experiment.json"), heldExperiment, null, null, Json.map("background", true));
+        check(!Json.array(held.get("problems")).toString().contains("8 frames per second"), "a hidden client held at a player's rate may measure frames");
+        heldExperiment.put("frames", 0.5);
+        Map<String, Object> badRate = PerfCheck.check(dir.resolve("experiment.json"), heldExperiment, null, null, Json.map("background", true));
+        check(Json.array(badRate.get("problems")).toString().contains("frames is 0.5"), "frames must be a whole rate");
         Path capture = dir.resolve("capture");
         fixture(capture, "report.json", Json.write(Json.map("attribution", Json.map("mods", List.of(Json.map("id", "pipes", "yourMod", true,
             "threads", List.of(Json.map("name", "Server thread", "samples", 20))))))));
