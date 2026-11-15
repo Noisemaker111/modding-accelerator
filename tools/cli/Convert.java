@@ -1349,7 +1349,8 @@ final class Convert {
             .append(" = [")
             .append(String.join(", ", e.getValue().stream().map(Convert::tomlString).toList()))
             .append("]\n");
-        if (meta.get("custom") instanceof Map<?, ?> custom && !custom.isEmpty()) properties
+        Map<String, Object> custom = meta.get("custom") instanceof Map<?, ?> values ? withoutBridgeInterfaces(Json.object(values)) : Map.of();
+        if (!custom.isEmpty()) properties
             .append(tomlString("fabric.custom"))
             .append(" = ")
             .append(tomlString(Json.write(custom)))
@@ -2517,6 +2518,20 @@ final class Convert {
 
     /** Interfaces the bridge's mixins add to game classes, by class (fabric.mod.json loom:injected_interfaces). */
     final Map<String, List<String>> bridgeInjected = new LinkedHashMap<>();
+
+    /** fabric.mod.json's custom values without the NeoForge bridge's injected interfaces, which go with the bridge. */
+    static Map<String, Object> withoutBridgeInterfaces(Map<String, Object> custom) {
+        if (!(custom.get("loom:injected_interfaces") instanceof Map<?, ?> injected)) return custom;
+        Map<String, Object> out = new LinkedHashMap<>(custom), kept = new LinkedHashMap<>();
+        for (var e : Json.object(injected).entrySet()) {
+            List<Object> names = new ArrayList<>();
+            for (Object name : e.getValue() instanceof List<?> list ? Json.array(list) : List.of()) if (!String.valueOf(name).contains("/loaderbridge/")) names.add(name);
+            if (!names.isEmpty()) kept.put(e.getKey(), names);
+        }
+        if (kept.isEmpty()) out.remove("loom:injected_interfaces");
+        else out.put("loom:injected_interfaces", kept);
+        return out;
+    }
 
     /** A bridge template with the mod's own names written in. */
     String fillBridge(String template, String pkg) {
