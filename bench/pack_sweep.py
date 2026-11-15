@@ -142,6 +142,9 @@ def analyse(pack, code, result, seconds):
     probe = first.get("probe") or {}
     # Counts, not the probe's own lists: one pack's placements run to megabytes.
     record["probe"] = {k: len(v) if isinstance(v, list) else v for k, v in probe.items() if k in ("placed", "blocks", "items", "dimensions", "errors", "failed")}
+    if probe.get("error"):
+        record["probe"]["error"] = str(probe["error"]).split("\n")[0][:300]
+        record["gaps"].append("the probe stopped before it checked the world")
     findings = result.get("findings") or []
     kinds = {}
     for f in findings:

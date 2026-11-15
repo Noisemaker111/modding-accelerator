@@ -1434,7 +1434,10 @@ final class PackCheck {
         }
         boolean opened = Boolean.TRUE.equals(Json.object(again.getOrDefault("newWorld", Json.map())).get("opened"));
         boolean reopened = Boolean.TRUE.equals(Json.object(again.getOrDefault("reopen", Json.map())).get("opened"));
-        boolean proven = opened && reopened && introduced.isEmpty();
+        // A start whose probe stopped before it placed and read back the blocks proves nothing about them.
+        boolean checked = Json.object(again.getOrDefault("newWorld", Json.map())).get("probe") instanceof Map<?, ?> placed && placed.get("error") == null &&
+            Json.object(again.getOrDefault("reopen", Json.map())).get("probe") instanceof Map<?, ?> read && read.get("error") == null;
+        boolean proven = opened && reopened && checked && introduced.isEmpty();
         result.put("comparison", compare(shipped.found, lane.found, targets));
         result.put("recheck", again);
         result.put("recheckFindings", lane.found);

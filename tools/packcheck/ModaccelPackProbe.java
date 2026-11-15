@@ -78,10 +78,10 @@ public final class ModaccelPackProbe {
                     Thread.sleep(250);
                     if (System.nanoTime() - since > TimeUnit.MINUTES.toNanos(60)) return;
                 }
-                CompletableFuture.runAsync(this::started, server).get(10, TimeUnit.MINUTES);
+                onServer(this::started);
                 while (!finished) {
                     if (!server.isRunning()) return;
-                    CompletableFuture.runAsync(this::step, server).get(10, TimeUnit.MINUTES);
+                    onServer(this::step);
                     Thread.sleep(10);
                 }
             } catch (Throwable failure) {
@@ -89,6 +89,19 @@ public final class ModaccelPackProbe {
                     result.addProperty("error", stack(failure));
                     finish(false);
                 }
+            }
+        }
+
+        /**
+         * Runs work on the server thread and waits for it as long as the server runs: a big pack on a busy machine can hold
+         * its server thread for many minutes (chunk after chunk loaded in one tick), and that is pack-check's to judge from
+         * the log, not the probe's to give up on.
+         */
+        void onServer(Runnable work) throws Exception {
+            CompletableFuture<Void> done = CompletableFuture.runAsync(work, server);
+            while (true) {
+                try { done.get(1, TimeUnit.MINUTES); return; }
+                catch (java.util.concurrent.TimeoutException busy) { if (!server.isRunning()) return; }
             }
         }
 
@@ -427,6 +440,7 @@ public final class ModaccelPackProbe {
         JsonObject before = new JsonParser().parse(new String(Files.readAllBytes(Paths.get(System.getProperty("modaccel.probe.placed"))), StandardCharsets.UTF_8)).getAsJsonObject();
         JsonArray changed = new JsonArray(), settled = new JsonArray();
         int read = 0, kept = 0;
+        if (!before.has("placed")) throw new IllegalStateException("the first start placed nothing to read back" + (before.has("error") ? ": " + before.get("error").getAsString().split("\n")[0] : ""));
         for (JsonElement element : before.getAsJsonArray("placed")) {
             JsonObject row = element.getAsJsonObject();
             BlockPos at = new BlockPos(row.get("x").getAsInt(), row.get("y").getAsInt(), row.get("z").getAsInt());

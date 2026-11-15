@@ -7,14 +7,13 @@
     "packs": 24,
     "ran": 24,
     "started": 21,
-    "world made and reopened": 20,
+    "world made and reopened": 21,
     "repaired": 3,
-    "passing with repairs": 23,
-    "repairs proven": 4,
+    "passing with repairs": 24,
+    "repairs proven": 5,
     "failed start with a named culprit": 0,
     "outcomes": {
-      "world made and reopened": 20,
-      "reopen failed": 1,
+      "world made and reopened": 21,
       "repaired: world made and reopened": 3
     }
   },
@@ -80,14 +79,13 @@
       "packs": 24,
       "ran": 24,
       "started": 21,
-      "world made and reopened": 20,
+      "world made and reopened": 21,
       "repaired": 3,
-      "passing with repairs": 23,
-      "repairs proven": 4,
+      "passing with repairs": 24,
+      "repairs proven": 5,
       "failed start with a named culprit": 0,
       "outcomes": {
-        "world made and reopened": 20,
-        "reopen failed": 1,
+        "world made and reopened": 21,
         "repaired: world made and reopened": 3
       }
     }
@@ -118,20 +116,6 @@
         "prominence-2-fabric-1.20.1"
       ],
       "rank": 3
-    },
-    {
-      "gap": "problem with no proven repair: world-reopen",
-      "packs": [
-        "atm10-neoforge-1.21.1"
-      ],
-      "rank": 4
-    },
-    {
-      "gap": "world did not reopen, culprit named",
-      "packs": [
-        "atm10-neoforge-1.21.1"
-      ],
-      "rank": 5
     }
   ],
   "runs": [
@@ -250,145 +234,32 @@
       "format": "curseforge-export",
       "loader": "neoforge",
       "minecraft": "1.21.1",
-      "exit": 1,
-      "seconds": 1042.2,
-      "gaps": [
-        "world did not reopen, culprit named",
-        "problem with no proven repair: world-reopen"
-      ],
+      "exit": 0,
+      "seconds": 2384.8,
+      "gaps": [],
       "mods": 499,
       "loaderUsed": "neoforge 21.1.266",
       "staticChecks": {
         "modIds": 531,
-        "findings": 36
+        "findings": 37
       },
       "start": {
         "opened": true,
-        "seconds": 732.8596864,
+        "seconds": 1308.9915828,
         "failure": null,
         "suspects": null
       },
       "reopen": {
-        "opened": false,
-        "seconds": 290.3736222,
-        "failure": "[09:42:20] [Server thread/ERROR] [minecraft/MinecraftServer]: Encountered an unexpected exception\n[09:42:20] [Server thread/FATAL] [ne.ne.ne.co.NeoForgeMod/]: Preparing crash report with UUID c455597f-cfa6-4d6a-ac2b-2930460b4ffd\nDescription: Exception in server tick loop",
-        "suspects": [
-          {
-            "mod": "aether",
-            "jar": "aether-1.21.1-1.5.10-neoforge.jar",
-            "why": [
-              "its mixin config aether.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "modernfix",
-            "jar": "modernfix-neoforge-5.27.27+mc1.21.1.jar",
-            "why": [
-              "its mixin config modernfix-modernfix.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "bcc",
-            "jar": "better-compatability-checker-neoforge-21.1.8.jar",
-            "why": [
-              "its mixin config bcc.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "rechiseled",
-            "jar": "rechiseled-1.2.6-neoforge-mc1.21.jar",
-            "why": [
-              "its mixin config rechiseled.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "alltheleaks",
-            "jar": "alltheleaks-1.1.16-1.21.1-neoforge.jar",
-            "why": [
-              "its mixin config alltheleaks.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "lootr",
-            "jar": "lootr-neoforge-1.21.1-1.11.38.127.jar",
-            "why": [
-              "its mixin config lootr-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "balm",
-            "jar": "balm-neoforge-1.21.1-21.0.67.jar",
-            "why": [
-              "its mixin config balm.neoforge.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "lmft",
-            "jar": "lmft-1.1.1+1.21.9-neoforge.jar",
-            "why": [
-              "its mixin config lmft-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "uranus",
-            "jar": "uranus-2.4.1-bugfix-1.21.1-neoforge.jar",
-            "why": [
-              "its mixin config uranus.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "kubejs",
-            "jar": "kubejs-neoforge-2101.7.2-build.381.jar",
-            "why": [
-              "its mixin config kubejs.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "moonlight",
-            "jar": "moonlight-1.21.1-3.8.3-neoforge.jar",
-            "why": [
-              "its mixin config moonlight.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "regions_unexplored",
-            "jar": "regions_unexplored-neoforge-1.21.1-0.5.9.jar",
-            "why": [
-              "its mixin config regions_unexplored.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "ae2",
-            "jar": "appliedenergistics2-19.2.19.jar",
-            "why": [
-              "its mixin config ae2.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "extended_industrialization",
-            "jar": "extended-industrialization-1.16.5-1.21.1.jar",
-            "why": [
-              "its mixin config extended_industrialization.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "enderio",
-            "jar": "enderio-8.2.13-beta.jar",
-            "why": [
-              "its code (com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity) is in the stack: at TRANSFORMER/enderio@8.2.13-beta/com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity.getValidPushTargets(CapacitorBankBlockEntity.java:187)",
-              "its code (com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity) is in the stack: at TRANSFORMER/enderio@8.2.13-beta/com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity.getValidPushTargets(CapacitorBankBlockEntity.java:187) ~[enderio-8.2.13-beta.jar%23...",
-              "its code (com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity) is in the stack: at TRANSFORMER/enderio@8.2.13-beta/com.enderio.enderio.content.machines.capacitor_bank.CapacitorBankBlockEntity.getValidPushTargets(CapacitorBankBlockEntity.java:187) ~[enderio-8.2.13-beta.jar%23..."
-            ]
-          }
-        ]
+        "opened": true,
+        "seconds": 807.4970149,
+        "failure": null,
+        "suspects": null
       },
       "clientOnlyLeftOut": 0,
       "leftOutOfServer": 40,
       "keptForDependants": [],
       "probe": {
-        "dimensions": 28,
-        "failed": 26,
-        "placed": 43538
+        "dimensions": 28
       },
       "findings": {
         "note:duplicate-mod": 1,
@@ -396,68 +267,99 @@
         "warning:minecraft-mismatch": 1,
         "note:same-block-file": 3,
         "note:same-block-name": 1,
-        "note:placed-other-block": 1,
-        "note:not-checked": 2,
-        "note:placement-error": 1,
-        "problem:world-reopen": 1
+        "problem:known-fault": 1,
+        "note:not-checked": 1
       },
       "problems": [
         {
-          "kind": "world-reopen",
-          "summary": "A world this pack made opens once and then fails to open again. The log names aether (aether-1.21.1-1.5.10-neoforge.jar), modernfix (modernfix-neoforge-5.27.27+mc1.21.1.jar), bcc (better-compatability-checker-neoforge-21.1.8.jar), rechiseled (rechiseled-1.2.6-neoforge-mc1.21.jar).",
+          "kind": "known-fault",
+          "summary": "enderio 8.2.13-beta (from enderio-8.2.13-beta.jar) has a proven fault in [8.2.13-beta]: A world with an Ender IO capacitor bank stops the server when it opens again: \"Exception in server tick loop\", a NullPointerException because the capacitor bank's BlockCapabilityCache is null in CapacitorBankBloc",
           "jars": []
         }
       ],
       "refutedWarnings": 0,
       "fix": {
-        "applied": [],
-        "notes": [],
-        "proven": null,
+        "applied": [
+          "enderio-capacitor-bank-null-cache"
+        ],
+        "notes": [
+          "enderio-capacitor-bank-null-cache: replaced enderio with enderio-8.2.12-beta.jar"
+        ],
+        "proven": true,
         "rounds": [],
         "remaining": [],
-        "comparison": [],
-        "fixedExport": null,
+        "comparison": [
+          {
+            "check": "dimension-save",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "probe-error",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "server-start",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "world-reopen",
+            "shipped": 0,
+            "repaired": 0
+          }
+        ],
+        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T17-44-24.650253500Z-48e80ea2\\atm10-neoforge-1.21.1 (modaccel fixed).zip",
         "recheck": {
           "newWorld": {
-            "opened": null,
-            "seconds": null
+            "opened": true,
+            "seconds": 1305.1471934
           },
           "reopen": {
-            "opened": null,
-            "seconds": null
+            "opened": true,
+            "seconds": 1016.8278432
           }
         }
       },
-      "ok": false,
+      "ok": true,
       "stages": [
         {
           "name": "fetch",
-          "seconds": 0.1
+          "seconds": 0.4
         },
         {
           "name": "modrinth-sides",
-          "seconds": 0.1
+          "seconds": 0.3
         },
         {
           "name": "read",
-          "seconds": 0.9
+          "seconds": 2.9
         },
         {
           "name": "static-checks",
-          "seconds": 3.1
+          "seconds": 7.9
+        },
+        {
+          "name": "repaired-server-place",
+          "seconds": 1305.1
         },
         {
           "name": "server-place",
-          "seconds": 732.9
+          "seconds": 1309.0
         },
         {
           "name": "server-verify",
-          "seconds": 290.4
+          "seconds": 807.5
+        },
+        {
+          "name": "repaired-server-verify",
+          "seconds": 1016.8
         }
       ],
-      "outcome": "reopen failed",
+      "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T09:42:42",
+      "started": "2026-11-15T10:24:13",
       "label": "repairs"
     },
     {
