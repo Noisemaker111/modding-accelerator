@@ -1,0 +1,7 @@
+{"events": [
+  {"t": 1.0, "type": "tap", "key": "nav-checks"},
+  {"t": 3.0, "type": "tap", "key": "node-ui-check"},
+  {"t": 15.0, "type": "tap", "key": "game-stop"},
+  {"t": 35.0, "type": "tap", "key": "run-ui-check"},
+  {"t": 200.0, "type": "mark", "name": "end"}
+]}

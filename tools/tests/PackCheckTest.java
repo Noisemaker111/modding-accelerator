@@ -442,6 +442,10 @@ public final class PackCheckTest {
             "Caused by: java.lang.RuntimeException: Attempted to load class net/minecraft/client/Minecraft for invalid dist DEDICATED_SERVER",
             "[17:06:43] [modloading-worker-0/ERROR] [ne.mi.fm.ja.FMLModContainer/LOADING]: Failed to register automatic subscribers. ModID: buildpaste, class com.mistrx.buildpaste.BuildPasteMod",
             "java.lang.RuntimeException: Attempted to load class net/minecraft/client/renderer/LevelRenderer for invalid dist DEDICATED_SERVER",
+            "[17:06:44] [modloading-worker-0/ERROR] [ne.mi.fm.ja.FMLModContainer/LOADING]: Failed to create mod instance. ModID: citresewn, class shcm.shsupercm.forge.citresewn.CITResewn",
+            "java.lang.NoClassDefFoundError: net/minecraft/client/renderer/texture/atlas/SpriteSource",
+            "	at java.lang.ClassLoader.defineClass1(Native Method) ~[?:?]",
+            "Caused by: java.lang.ClassNotFoundException: net.minecraft.client.renderer.texture.atlas.SpriteSource",
             "[17:06:44] [modloading-worker-0/ERROR] [ne.mi.fm.ja.FMLModContainer/LOADING]: Failed to create mod instance. ModID: brokenmod, class a.B",
             "java.lang.NullPointerException: config was null",
             "[17:06:44] [main/INFO] [STDERR/]: [Rhino] Failed to get declared methods: Attempted to load class net/minecraft/client/gui/GuiGraphics for invalid dist DEDICATED_SERVER",
@@ -449,8 +453,8 @@ public final class PackCheckTest {
             "java.lang.Exception: Mod Loading has failed"
         );
         expect(
-            PackChecks.clientOnly(clientOnly, forge, forgeScan).equals(new LinkedHashSet<>(List.of("blur", "buildpaste"))),
-            "client-only mods are read from Forge's failure blocks, and only those: " + PackChecks.clientOnly(clientOnly, forge, forgeScan)
+            PackChecks.clientOnly(clientOnly, forge, forgeScan).equals(new LinkedHashSet<>(List.of("blur", "buildpaste", "citresewn"))),
+            "client-only mods are read from Forge's failure blocks (a client class reached, or missing from the server jar), and only those: " + PackChecks.clientOnly(clientOnly, forge, forgeScan)
         );
         String started = clientOnly.replace("Mod Loading has failed", "Done").replace("Failed to complete lifecycle event", "Done").replace("java.lang.", "");
         expect(PackChecks.clientOnly(started, forge, forgeScan).isEmpty(), "a server that started has no client-only mods to remove");
@@ -473,6 +477,18 @@ public final class PackCheckTest {
             "[17:42:34] [main/INFO]: Stopping"
         );
         expect(PackChecks.clientOnly(fabricLog, fabric, scan).equals(Set.of("zoomify")), "Fabric: a client-only mod is found by its frame: " + PackChecks.clientOnly(fabricLog, fabric, scan));
+        // Quilt 1.20.1 (SodiumPlus, from the pack sweep): Lilac reaches Fabric API's client-only classes on a server.
+        PackLoaders.Loader quilt = PackLoaders.all(harness).get("quilt");
+        scan.providers.put("lilac", new ArrayList<>(List.of(new PackMods.Provider("lilac.jar", "1.0", false, "fabric.mod.json"))));
+        String quiltLog = String.join(
+            "\n",
+            "[20:55:45] [main/ERROR]: Failed to start the minecraft server",
+            "java.lang.RuntimeException: Could not execute entrypoint stage 'main' due to errors, provided by 'lilac'!",
+            "\tat org.quiltmc.loader.impl.entrypoint.EntrypointUtils.lambda$invoke0$2(EntrypointUtils.java:66) ~[quilt-loader-0.24.0.jar:?]",
+            "Caused by: org.quiltmc.loader.impl.entrypoint.QuiltEntrypointException: Exception while loading entries for entrypoint 'main' provided by 'lilac'",
+            "Caused by: java.lang.NoClassDefFoundError: net/fabricmc/fabric/api/client/event/lifecycle/v1/ClientTickEvents$EndWorldTick"
+        );
+        expect(PackChecks.clientOnly(quiltLog, quilt, scan).equals(Set.of("lilac")), "Quilt: a mod reaching Fabric API's client classes is client-only: " + PackChecks.clientOnly(quiltLog, quilt, scan));
         var suspects = PackChecks.suspects(fabricLog, List.of(), scan, fabric);
         expect(
             suspects.size() == 1 && suspects.get(0).get("mod").equals("zoomify") && suspects.get(0).get("jar").equals("Zoomify.jar") && Json.array(suspects.get(0).get("why")).size() == 2,
@@ -532,6 +548,72 @@ public final class PackCheckTest {
             "NeoForge reads neoforge.mods.toml from 1.20.5 and mods.toml before"
         );
         expect(all.get("quilt").metadata("1.21.1").equals(List.of("quilt.mod.json", "fabric.mod.json")), "Quilt reads its own metadata, then Fabric's");
+        // Found by the pack sweep (SodiumPlus, Quilt 1.20.1): QSL modules need quilt_base >=6.1.2+1.20.1 and the pack has
+        // 6.1.2+1.20.1. Fabric and Quilt compare SemVer without build metadata, on both sides.
+        PackMods.Dependency qsl = new PackMods.Dependency("block_content_registry", "quilt_base", List.of(">=6.1.2+1.20.1"), "quilt.mod.json", "depends");
+        // From the pack sweep (Additive, Fabric 1.19.2): the world opened but the probe stopped before placing blocks; the
+        // placement check names that as unchecked instead of failing pack-check.
+        List<Object> stopped = new ArrayList<>();
+        PackChecks.Context placed = new PackChecks.Context(null, new PackMods.Scan(), PackLoaders.all(harness).get("fabric"), stopped);
+        placed.start = Map.of("opened", true, "probe", Map.of("error", "java.lang.IllegalStateException: no way to make a player\n\tat x.y", "ok", false));
+        PackChecks.placements(placed);
+        expect(
+            stopped.size() == 1 &&
+            "not-checked".equals(Json.object(stopped.get(0)).get("kind")) &&
+            "note".equals(Json.object(stopped.get(0)).get("severity")),
+            "a probe that stopped before placing is a note that placement went unchecked: " + stopped
+        );
+        // SodiumPlus (Quilt 1.20.1, the pack sweep): QFAPI accepts Minecraft {"all": [">=1.20-", "<1.20.2-"]}, which 1.20.1 satisfies.
+        List<String> allOf = PackMods.quiltRanges(Map.of("all", List.of(">=1.20-", "<1.20.2-")));
+        PackMods.Dependency qfapi = new PackMods.Dependency("qfapi", "minecraft", allOf, "quilt.mod.json", "required");
+        expect(
+            allOf.equals(List.of(">=1.20- <1.20.2-")) &&
+            PackMods.accepts(qfapi, "1.20.1") &&
+            !PackMods.accepts(qfapi, "1.20.2") &&
+            PackMods.quiltRanges(Map.of("any", List.of("1.20", "1.20.1"))).equals(List.of("1.20", "1.20.1")),
+            "a Quilt range object: all of its constraints, or any of its alternatives: " + allOf
+        );
+        // And on Vanilla Perfected 1.0.0+1.21.1 (an independent check): an exact citresewn 1.2.1+1.21, and YACL >=3.5.0+1.21-fabric.
+        PackMods.Dependency cit = new PackMods.Dependency("cit-addon", "citresewn", List.of("1.2.1+1.21"), "fabric.mod.json", "depends");
+        PackMods.Dependency yacl = new PackMods.Dependency("some-mod", "yet_another_config_lib_v3", List.of(">=3.5.0+1.21-fabric"), "fabric.mod.json", "depends");
+        expect(
+            PackMods.accepts(qsl, "6.1.2+1.20.1") && PackMods.accepts(qsl, "6.1.3+1.20.1") && !PackMods.accepts(qsl, "6.1.1+1.20.1") &&
+            PackMods.accepts(cit, "1.2.1+1.21") && !PackMods.accepts(cit, "1.2.0+1.21") &&
+            PackMods.accepts(yacl, "3.5.0+1.21-fabric") && PackMods.accepts(yacl, "3.6.1+1.21.1-fabric") && !PackMods.accepts(yacl, "3.4.4+1.21-fabric"),
+            "a Fabric or Quilt range with build metadata accepts the same version with any build metadata"
+        );
+        Map<String, String> layers = new LinkedHashMap<>();
+        for (String v : List.of("1.16.5", "1.17.1", "1.18.2", "1.19.2", "1.19.3", "1.20.1", "1.21.1", "1.21.4", "1.21.5", "1.21.10", "1.21.11", "26.1.2", "26.3")) layers.put(
+            v,
+            PackLoaders.gameLayer(harness, v).getParent().getFileName().toString()
+        );
+        expect(
+            layers.equals(
+                Map.ofEntries(
+                    Map.entry("1.16.5", "1.16"),
+                    Map.entry("1.17.1", "1.16"),
+                    Map.entry("1.18.2", "1.18"),
+                    Map.entry("1.19.2", "1.18"),
+                    Map.entry("1.19.3", "1.19.3"),
+                    Map.entry("1.20.1", "1.19.3"),
+                    Map.entry("1.21.1", "1.19.3"),
+                    Map.entry("1.21.4", "1.21.2"),
+                    Map.entry("1.21.5", "1.21.5"),
+                    Map.entry("1.21.10", "1.21.5"),
+                    Map.entry("1.21.11", "1.21.11"),
+                    Map.entry("26.1.2", "26.1"),
+                    Map.entry("26.3", "26.1")
+                )
+            ),
+            "the probe compiles with the newest game layer at or below the pack's version: " + layers
+        );
+        boolean refused = false;
+        try {
+            PackLoaders.gameLayer(harness, "1.15.2");
+        } catch (IOException none) {
+            refused = none.getMessage().contains("no game layer");
+        }
+        expect(refused, "a version older than every game layer is named, not compiled");
         expect(
             PackLoaders.neoforgeLine("1.21.1").equals("21.1") && PackLoaders.neoforgeLine("1.21").equals("21.0") && PackLoaders.neoforgeLine("26.1").equals("26.1"),
             "NeoForge's version line follows the game version"

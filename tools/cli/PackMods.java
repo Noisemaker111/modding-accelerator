@@ -284,9 +284,7 @@ final class PackMods {
             if (d instanceof Map<?, ?> m) {
                 dependency = String.valueOf(m.get("id"));
                 optional = Boolean.TRUE.equals(m.get("optional"));
-                Object versions = m.get("versions");
-                if (versions instanceof List<?> list) for (Object r : list) ranges.add(String.valueOf(r));
-                else if (versions != null) ranges.add(String.valueOf(versions));
+                ranges.addAll(quiltRanges(m.get("versions")));
             } else dependency = String.valueOf(d);
             if (ranges.isEmpty()) ranges.add("*");
             if (dependency.contains(":")) dependency = dependency.substring(dependency.indexOf(':') + 1);
@@ -306,6 +304,23 @@ final class PackMods {
         }
     }
 
+    /**
+     * A quilt.mod.json "versions" as the alternatives accepts() tries: a string; an array, any of whose entries may match;
+     * {"any": [...]}, the same; or {"all": [...]}, whose constraints must all hold, as one space-separated range.
+     */
+    static List<String> quiltRanges(Object versions) {
+        List<String> out = new ArrayList<>();
+        if (versions == null) return out;
+        if (versions instanceof List<?> list) for (Object r : list) out.addAll(quiltRanges(r));
+        else if (versions instanceof Map<?, ?> m && m.get("any") instanceof List<?> any) for (Object r : any) out.addAll(quiltRanges(r));
+        else if (versions instanceof Map<?, ?> m && m.get("all") instanceof List<?> all) {
+            List<String> each = new ArrayList<>();
+            for (Object r : all) each.add(String.valueOf(r));
+            out.add(String.join(" ", each));
+        } else out.add(String.valueOf(versions));
+        return out;
+    }
+
     /** Fabric and Quilt compare versions as SemVer, where build metadata (after "+") never counts: 0.5.11+mc1.21 is 0.5.11. */
     static String semantic(String version) {
         int plus = version.indexOf('+');
@@ -323,7 +338,7 @@ final class PackMods {
                 } catch (RuntimeException unreadable) {
                     return true;
                 }
-            } else if (Versions.matches(r, semantic(version))) return true;
+            } else if (Versions.matches(r.replaceAll("\\+[^\\s]*", ""), semantic(version))) return true;
         }
         return false;
     }

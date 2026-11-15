@@ -27,8 +27,11 @@ the Java version from the game's own `version.json`. A pack that names no loader
 If one game version is published under other coordinates (NeoForge for 1.20.1 is), add a `byMinecraft` entry to that
 loader in `pack-loaders.json`.
 
-The probe compiles against the game API from 1.20.1 to 1.21.1. A version whose API moved fails at `probe-compile`
-with javac's error; fix it in `ModaccelPackProbe.java`, keeping one source for every loader.
+The probe compiles against the game API from 1.16 to 26.x, as Java 8 source (1.16 servers run on Java 8). Every game call that changed between versions is in a
+game layer, `tools/packcheck/game/VERSION/ModaccelPackGame.java`, and pack-check compiles the probe with the layer
+whose VERSION is the newest at or below the pack's. A version whose API moved again fails at `probe-compile` with
+javac's error: add a layer named after the first version with the new API, with the same methods as the others, and
+list it in `tools/cli/Installation.java`. Keep loader-specific code out of the layers.
 
 ## Add a loader
 

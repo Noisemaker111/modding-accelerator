@@ -21,7 +21,9 @@ public final class Modaccel {
         }
 
         Path log(String name) {
-            return directory.resolve(stages.size() + "-" + name + ".log");
+            Path log = directory.resolve(stages.size() + "-" + name + ".log");
+            Run.progress(name, log);
+            return log;
         }
 
         void stage(String name, Run.Result result, Map<String, Object> extra) {
@@ -539,6 +541,8 @@ public final class Modaccel {
                 System.out.println("Receipt: " + output.get("receipt"));
             }
         } catch (Exception error) {
+            // MODACCEL_TRACE=1 prints where a failure came from, for a bug in modaccel itself.
+            if (System.getenv("MODACCEL_TRACE") != null) error.printStackTrace();
             try {
                 String reported = plainError(error);
                 // A dedicated server that died mid-check is the likelier cause of a client failure: say so with the error.

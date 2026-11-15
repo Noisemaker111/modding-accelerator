@@ -32,7 +32,7 @@ Version tags build a standalone JAR and portable ZIP with SHA-256 files in a dra
 | 1 | **Test a mod in seconds** | `fast` `data-check` `ui-check` `world-check` `mp-check` `server-check` | Works. Logic tests, the game's data and real-game checks all run with no game window |
 | 2 | **Port a mod to any Minecraft version** | `port` `explain` | Works for Fabric and NeoForge, 1.14.4 to 26.3. Proven mods port with no hand edits, 1.21.1 → 26.3 included |
 | 3 | **Make modpacks work together** | `pack-check` | Works for Forge, NeoForge, Fabric and Quilt packs on their real servers, with two proven repairs |
-| 4 | **Change loader or platform** | `convert` | Works for Fabric ↔ NeoForge on one Minecraft version: two real Fabric mods run on NeoForge with no hand edits. Forge, Quilt and Paper are not converted yet |
+| 4 | **Change loader or platform** | `convert` | Works for Fabric ↔ NeoForge on one Minecraft version: real Fabric mods run on NeoForge, and NeoForge's 26.3 MDK runs on Fabric, with no hand edits. Swept on 35 real mods. Forge, Quilt and Paper are not converted yet |
 
 ## Quick start
 
@@ -49,6 +49,18 @@ Version tags build a standalone JAR and portable ZIP with SHA-256 files in a dra
 ```
 
 On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.jar`. `modaccel help` lists every command and `modaccel help COMMAND` explains one.
+
+## Desktop app
+
+The portable ZIP also holds Minecraft Modding Tools, a window over the same commands for people who don't use a terminal: `modaccel-desktop.exe` on Windows, `modaccel-desktop-linux` on Linux. Keep it in the extracted folder; it runs the launcher beside it, which finds or downloads Java as it does in a terminal.
+
+- **Bench:** open the mod's folder (or drop it on the window). It sits on the bench with a tag saying what `doctor` found (loader, Minecraft version) and a slip of what has been inspected so far.
+- **Checks:** an inspection sheet of stations, build, logic tests, game data, mixins, in the game, behaviour (`compile`, `fast`, `data-check`, `mixin-check`, `ui-check`), plus `world-check`, `mp-check`, `plugin-check` and `server-check`, with live output and Stop. A game check shows the game's own screenshot and is only tagged loaded until a behaviour check (`--assert`) passes; only then is it stamped works.
+- **Change version:** preview a `port`, apply it, and undo it; or `convert` the mod between Fabric and NeoForge on the same Minecraft version, with undo.
+- **Modpack:** `pack-check` on a CurseForge export, a Modrinth `.mrpack` or an instance folder (or drop it on the window), every mod laid out with the clashing ones flagged, then its repair and undo.
+- **Measure:** find the running game, measure it, and read frame rate, a frame-time chart, the cost of each mod and where the time went, then open the full HTML report.
+
+To build it from source, install Rust and run `cargo build --release` in `app/` (Linux also needs `libxkbcommon-dev` and `libwayland-dev`); `modaccel package` then adds it to the ZIP. It also renders without a window for checking: `app/target/release/modaccel-desktop --project . --screen checks --snap checks.png`, and `--script app/ui-tests/fast.json --realtime --out frames/` clicks through a real run, and `--list-scenes` names saved states to render.
 
 ## What works today
 
@@ -77,7 +89,8 @@ On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.ja
 - **What it checks:** a new world is made, every block item is placed the way a player places it, and the same world is opened again with each block read back. Duplicate, missing and wrong-version mods, and mods for another game version or loader, are warnings until the server confirms or refutes them. When a start fails, the log, crash report, mixin configs and stack name the mod responsible.
 - **`--fix`** applies a proven repair and starts the repaired pack's server beside the original. Your pack changes only if the repaired one passes where the original failed. Repairs so far: Biolith's saved climate list (Forge 1.20.1) and Soulslike Weaponry's pinned Projectile Damage (Forge 1.20.1).
 - **Proven in the game** on real public packs: Forge 1.20.1, NeoForge 1.21.1, Fabric 1.21.1 and Quilt 1.21.1.
-- **Not yet:** checks run on a server, so client-only mods are left out of them. The probe's game code is built for 1.20.1 to 1.21.1. `tools/packcheck/CONTRIBUTING.md` explains how to add a loader, input, check or repair.
+- **Sweep:** `python bench/pack_sweep.py run` checks 24 pinned public packs (`bench/pack-sweep/corpus.json`: CurseForge exports and `.mrpack`s, Forge, NeoForge, Fabric and Quilt, 1.16.5 to 26.3, 13 to over 400 mods) one at a time and ranks the gaps (`coverage/sweeps/pack.json`). A mod file CurseForge no longer serves is named as a problem and the rest of the pack is still checked.
+- **Not yet:** checks run on a server, so client-only mods are left out of them. The probe's game code compiles for 1.16 to 26.x through per-version game layers. `tools/packcheck/CONTRIBUTING.md` explains how to add a loader, input, check or repair.
 
 ### Make a mod faster without changing what it does
 
@@ -91,10 +104,12 @@ See [PERFORMANCE.md](PERFORMANCE.md). `python3 bench/performance.py` compares ex
 
 ### 4 · Change loader or platform
 
-- **`convert --to neoforge`** (or `--to fabric`) moves a mod's source to the other loader on the same Minecraft version: the build (Loom ↔ ModDevGradle, with the newest loader releases for that version), the metadata (`fabric.mod.json` ↔ `META-INF/neoforge.mods.toml`), the entrypoints, and the code through the rules in `knowledge/loaders.json`: loader calls, events, key mappings, registration timing, flammability, creative tabs, loot tables, Mod Menu's config screen and Fabric data generation. It compiles the result; `convert --undo` restores every file.
+- **`convert --to neoforge`** (or `--to fabric`) moves a mod's source to the other loader on the same Minecraft version: the build (Loom ↔ ModDevGradle, with the newest loader releases for that version), the metadata (`fabric.mod.json` ↔ `META-INF/neoforge.mods.toml`), the entrypoints, and the code through the rules in `knowledge/loaders.json`: loader calls, events, key mappings, registration timing, flammability, creative tabs, loot tables, Mod Menu's config screen, Fabric data generation, access wideners ↔ access transformers (field types read from Mojang's own data), and dependencies on another mod (moved to that mod's build for the other loader when its own Maven repository publishes it). It reads NeoForge's MDK layouts (ModDevGradle or NeoGradle, metadata in `src/main/templates`) and moves the Gradle wrapper when the newest loader plugin needs it. It compiles the result; `convert --undo` restores every file.
 - **Our own rules, no AI.** Each rule is written here with a before/after test that `self-test` runs both ways, and names the classes and members it uses; `python bench/loader_api.py verify` finds every one in Fabric's, NeoForge's and Mojang's own published jars (`coverage/loader/api.json`). Nothing is taken from other mods' code. What has no rule is listed with its file and line, never dropped.
 - **Proven in the game with no hand edits:** Auto Omen (Fabric, 26.3) on NeoForge passes its own in-game raid self test, 23 of 23 checks, as it does on Fabric. Pride Flags (Fabric, 26.1.2) on NeoForge registers its 13 blocks and 26 items, keeps their flammability, adds its loot to village chests, loads its 48 recipes, and renders its flags from the models its converted data generation writes (189 files, the same as Fabric's but for vanilla's `random_sequence` in block loot).
-- **Not yet:** Forge, Quilt, and mods ↔ Paper plugins. NeoForge → Fabric needs Minecraft 26.1 or later (both loaders on Mojang's names) and is proven only on a mod that was Fabric first. No rules yet for networking payloads, HUD layers, renderers, data attachments, client commands, tag and language providers, or access wideners.
+- **Mods written for NeoForge first** go to Fabric through the NeoForge bridge (`knowledge/bridges/neoforge-on-fabric`, Minecraft 26.1 and later): NeoForge's registration, event bus, mod container, config file and play payloads, and its commonest lifecycle events, written on Fabric's API and copied into the mod. The NeoForge MDK for 26.3 (ModDevGradle and NeoGradle) converts with no hand edits, loads on Fabric in a hidden client and registers the same entries as its NeoForge build.
+- **Sweep:** `python bench/convert_sweep.py run` converts 35 pinned real mods (`bench/convert-sweep/corpus.json`) and ranks what is missing by loader concept (`coverage/sweeps/convert.json`).
+- **Not yet:** Forge, Quilt, and mods ↔ Paper plugins. NeoForge → Fabric before 26.1 builds with Loom on Mojang's names, but the NeoForge bridge is not written for those versions yet. No rules yet for capabilities and transfer, NeoForge's extension methods on game classes, HUD layers, renderers, data attachments, client commands, datagen providers beyond models, loot, recipes and advancements, or Fabric networking on NeoForge.
 
 ## What counts as working
 
