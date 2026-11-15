@@ -70,6 +70,9 @@ final class Convert {
                 continue;
             }
             targets.computeIfAbsent(kind + "|" + key, k -> new LinkedHashSet<>()).add(access);
+            // Fabric makes the owner of an accessible member accessible too (a method of a private nested class can
+            // then be called); a transformer line opens only what it names, so the owner gets its own line.
+            if (!kind.equals("class") && access.equals("accessible")) targets.computeIfAbsent("class|" + owner, k -> new LinkedHashSet<>()).add("accessible");
         }
         List<String> out = new ArrayList<>();
         for (var entry : targets.entrySet()) {

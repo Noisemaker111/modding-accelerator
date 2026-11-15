@@ -1088,12 +1088,15 @@ public final class PortableTests {
                     "public net.minecraft.A$B",
                     "public-f net.minecraft.C",
                     "public-f net.minecraft.D run(I)V",
+                    "public net.minecraft.D",
                     "public-f net.minecraft.E size",
-                    "public net.minecraft.F <init>()V"
+                    "public net.minecraft.E",
+                    "public net.minecraft.F <init>()V",
+                    "public net.minecraft.F"
                 )
             ) &&
             unconverted.equals(List.of("inject-interface net/minecraft/G demo/Extra")),
-            "a Fabric access widener becomes NeoForge access transformer lines, entries for one target merged: " +
+            "a Fabric access widener becomes NeoForge access transformer lines, entries for one target merged, the owner of an accessible member opened too: " +
             transformers +
             " " +
             unconverted
