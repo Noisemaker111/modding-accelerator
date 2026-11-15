@@ -8,7 +8,7 @@ final class Build {
     final Path harness, init;
     final String selected;
     final Modaccel.Report report;
-    final Runtimes.Jdk jdk;
+    Runtimes.Jdk jdk;
 
     Build(ProjectModel project, Path harness, String selected, Modaccel.Report report) throws Exception {
         this.project = project;
@@ -35,6 +35,20 @@ final class Build {
                 jdk.home().toString()
             )
         );
+    }
+
+    /**
+     * Choose Gradle's JDK again after a port rewrote the wrapper: a JDK picked for Gradle 6.9 (Java 11) cannot load the
+     * Loom 0.10 that a port to 1.17 moves to. Returns true when the JDK changed.
+     */
+    boolean refreshJdk() throws Exception {
+        int required = project.javaRequirement();
+        if (required > 0) Runtimes.ensureAtLeast(harness, required);
+        Runtimes.Jdk chosen = Runtimes.ensureForGradle(harness, project.wrapperVersion());
+        if (chosen.home().equals(jdk.home())) return false;
+        report.stages.add(Json.map("name", "java-setup-after-target", "gradleJava", chosen.version(), "home", chosen.home().toString()));
+        jdk = chosen;
+        return true;
     }
 
     static final long DAEMON_IDLE_MS = 10 * 60 * 1000;
@@ -197,7 +211,7 @@ final class Build {
     static boolean selectionFailed(Path log) throws IOException {
         return (
             Files.exists(log) &&
-            SELECTION_FAILURE.matcher(Files.readString(log, java.nio.charset.StandardCharsets.UTF_8)).find()
+            SELECTION_FAILURE.matcher(new String(Files.readAllBytes(log), java.nio.charset.StandardCharsets.UTF_8)).find()
         );
     }
 
@@ -329,6 +343,19 @@ final class Build {
         Run.Result result = gradle(task, stage);
         // The first read downloads Gradle and the build's dependencies, and the wrapper gives up after one 10 s try:
         // on 2026-11-08 services.gradle.org timed out on CI for an hour. One more try after a pause rides that out.
+        // Loom states the Java it needs when it refuses to load ("outdated version of Java (11). Java 16 or higher is
+        // required": Polymer and Carpet's Loom 0.8/0.9 on Gradle 7.1, whose JDKs run 8 to 16). Gradle restarts on that Java.
+        if (result.exit() != 0) {
+            java.util.regex.Matcher needs = java.util.regex.Pattern.compile("outdated version of Java \\((\\d+)\\)\\. Java (\\d+) or higher is required").matcher(
+                new String(Files.readAllBytes(result.log()), java.nio.charset.StandardCharsets.UTF_8)
+            );
+            if (needs.find() && Integer.parseInt(needs.group(2)) > jdk.version()) {
+                Runtimes.Jdk needed = Runtimes.ensureExact(harness, Integer.parseInt(needs.group(2)));
+                report.stages.add(Json.map("name", "java-for-loom", "gradleJava", needed.version(), "evidence", needs.group(0)));
+                jdk = needed;
+                result = gradle(task, stage + "-java-" + needed.version());
+            }
+        }
         String unreachable = result.exit() == 0
             ? null
             : Run.unreachable(
@@ -348,6 +375,16 @@ final class Build {
         if (result.exit() != 0) {
             String why = Run.gradleFailure(result.log());
             throw new IOException(discoveryHeadline(why) + "\n" + why + "\nLog: " + result.log());
+        }
+        if (planning && !Files.isRegularFile(model)) {
+            // Some older Gradle builds (ModMenu 1.16.5 on Gradle 6.9.1) never show the init script the planning flag, so it
+            // writes the full model; that is a superset of the planning model, so it serves as one.
+            java.util.regex.Matcher written = java.util.regex.Pattern.compile("(?m)^MODACCEL_MODEL (.+?)\s*$").matcher(
+                Files.readString(result.log())
+            );
+            Path full = null;
+            while (written.find()) full = Path.of(written.group(1));
+            if (full != null && Files.isRegularFile(full)) Files.copy(full, model, StandardCopyOption.REPLACE_EXISTING);
         }
         Map<String, Object> value = Json.read(model);
         Json.save(stamp, Json.map("key", key));

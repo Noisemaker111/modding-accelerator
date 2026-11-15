@@ -73,6 +73,402 @@ final class Port {
         this.model = model;
     }
 
+    /**
+     * Gradle plugins that only choose the decompiler an IDE shows the game's source with, by plugin id, with the
+     * configuration blocks they add. Old builds name versions that are no longer published anywhere they look (owo-lib,
+     * Polymer and Satin name loom-quiltflower 1.3.0 and 1.6.0, which lived on a repository that is gone), so the build
+     * cannot even be read. Removing such a plugin changes nothing the mod's jar or the game sees.
+     */
+    static final Map<String, List<String>> DEV_ONLY_PLUGINS = Map.of(
+        "io.github.juuxel.loom-quiltflower",
+        List.of("quiltflower", "loomQuiltflower"),
+        "io.github.juuxel.loom-vineflower",
+        List.of("vineflower", "loomVineflower"),
+        "io.github.juuxel.loom-quiltflower-mini",
+        List.of("quiltflower")
+    );
+
+    /** The decompiler-only plugin a failed build read names as missing, or null. */
+    static String deadDevPlugin(String failure) {
+        if (failure == null) return null;
+        Matcher plugin = Pattern.compile("Plugin \\[id: '([^']+)'").matcher(failure);
+        return plugin.find() && DEV_ONLY_PLUGINS.containsKey(plugin.group(1)) ? plugin.group(1) : null;
+    }
+
+    /** Originals of build scripts changed before the port's transaction exists; the transaction takes them over. */
+    static Path pendingOriginals(ProjectModel project) {
+        return project.state().resolve("ports/pending-before");
+    }
+
+    /**
+     * Removes a decompiler-only plugin's declaration and configuration blocks from every build script of the project; each
+     * original waits in pendingOriginals until the port's transaction backs it up (or restorePending puts it back).
+     */
+    static List<String> removeDevPlugin(ProjectModel project, String id) throws IOException {
+        // The build's own scripts only: a separate build in a subfolder is not part of this port (ProjectModel.inputs).
+        List<Path> scripts = project.inputs().stream().filter(p -> p.getFileName().toString().matches("build\\.gradle(\\.kts)?")).toList();
+        Pattern declaration = Pattern.compile(
+            "(?m)^[ \\t]*(?:id\\s*\\(?\\s*[\"']" +
+            Pattern.quote(id) +
+            "[\"']\\s*\\)?(?:\\s*version\\s*\\(?\\s*[\"'][^\"']*[\"']\\s*\\)?)?|apply\\s*\\(?\\s*plugin\\s*[:=]\\s*[\"']" +
+            Pattern.quote(id) +
+            "[\"']\\s*\\)?)[ \\t]*(?:\\r?\\n|$)"
+        );
+        List<String> changed = new ArrayList<>();
+        for (Path script : scripts) {
+            String text = Files.readString(script), after = declaration.matcher(text).replaceAll("");
+            if (after.equals(text)) continue;
+            for (String block : DEV_ONLY_PLUGINS.get(id)) after = Target.removeStatements(
+                after,
+                Pattern.compile("(?m)^[ \\t]*" + block + "\\s*\\{")
+            );
+            Path saved = pendingOriginals(project).resolve(project.root.relativize(script));
+            Files.createDirectories(saved.getParent());
+            if (!Files.exists(saved)) Files.copy(script, saved);
+            Files.writeString(script, after);
+            changed.add(project.root.relativize(script).toString().replace('\\', '/'));
+        }
+        return changed;
+    }
+
+    /** Puts back what removeDevPlugin changed when no port transaction took it over. */
+    static void restorePending(ProjectModel project) throws IOException {
+        Path pending = pendingOriginals(project);
+        if (!Files.isDirectory(pending)) return;
+        List<Path> files;
+        try (var walk = Files.walk(pending)) {
+            files = walk.filter(Files::isRegularFile).toList();
+        }
+        for (Path saved : files) Files.copy(saved, project.root.resolve(pending.relativize(saved).toString()), StandardCopyOption.REPLACE_EXISTING);
+        deletePending(project);
+    }
+
+    static void deletePending(ProjectModel project) throws IOException {
+        Path pending = pendingOriginals(project);
+        if (!Files.isDirectory(pending)) return;
+        List<Path> all;
+        try (var walk = Files.walk(pending)) {
+            all = walk.sorted(Comparator.reverseOrder()).toList();
+        }
+        for (Path p : all) Files.deleteIfExists(p);
+    }
+
+    /**
+     * One map from a yarn-named source to the unobfuscated game: names, the yarn -> Mojang table of the source release
+     * (VersionMap, through Fabric's intermediary), joined with the game's own Mojang-named route map (GameDiff) from the
+     * source release to the target. Every key stays in the source's yarn names and every value is the target's name, in
+     * the usual map shape, so the typed fixer reads it as it reads any map. The route's history is kept for explaining
+     * what is left.
+     */
+    static Map<String, Object> composeMaps(Map<String, Object> names, Map<String, Object> route) {
+        Map<String, String> toMojang = new HashMap<>(), fromMojang = new HashMap<>(), moved = new HashMap<>();
+        for (Object o : Json.array(names.get("classes"))) {
+            var c = Json.object(o);
+            toMojang.put(Json.text(c, "from", ""), Json.text(c, "to", ""));
+            fromMojang.put(Json.text(c, "to", ""), Json.text(c, "from", ""));
+        }
+        for (Object o : Json.array(route.get("classes"))) {
+            var c = Json.object(o);
+            moved.put(Json.text(c, "from", ""), Json.text(c, "to", ""));
+        }
+        Set<String> classesGone = new HashSet<>(ProjectModel.strings(route.get("classesRemoved")));
+        java.util.function.UnaryOperator<String> mojang = y -> toMojang.getOrDefault(y, y);
+        java.util.function.UnaryOperator<String> forward = m -> moved.getOrDefault(m, m);
+        java.util.function.UnaryOperator<String> yarn = m -> fromMojang.getOrDefault(m, m);
+        List<Object> classes = new ArrayList<>(), classesRemoved = new ArrayList<>();
+        Set<String> keyed = new HashSet<>();
+        for (var e : toMojang.entrySet()) {
+            keyed.add(e.getKey());
+            if (classesGone.contains(e.getValue())) classesRemoved.add(e.getKey());
+            else classes.add(Json.map("from", e.getKey(), "to", forward.apply(e.getValue())));
+        }
+        // Classes whose yarn and Mojang names agree are keyed by that name.
+        for (var e : moved.entrySet()) if (!fromMojang.containsKey(e.getKey()) && keyed.add(e.getKey())) classes.add(
+            Json.map("from", e.getKey(), "to", e.getValue())
+        );
+        for (String gone : classesGone) if (!fromMojang.containsKey(gone) && keyed.add(gone)) classesRemoved.add(gone);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("from", names.get("from"));
+        out.put("to", route.get("to"));
+        out.put("names", "yarn");
+        out.put("linked", "yarn-bridge");
+        out.put(
+            "source",
+            "yarn -> Mojang names of " + names.get("from") + " (Fabric's yarn and intermediary with Mojang's mappings), joined with " + route.get("source")
+        );
+        out.put("chain", route.get("chain"));
+        out.put("classes", classes);
+        out.put("classesRemoved", classesRemoved);
+        for (String kind : List.of("methods", "fields")) {
+            // Every route change of this kind, by Mojang owner, name and descriptor, with the list it came from.
+            Map<String, Map<String, Object>> changed = new HashMap<>();
+            Map<String, String> listOf = new HashMap<>();
+            List<String> lists = kind.equals("methods") ? List.of("methods", "methodsMoved", "signatures") : List.of("fields");
+            for (String list : lists) for (Object o : Json.array(route.get(list))) {
+                var m = Json.object(o);
+                String key = Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", "");
+                changed.put(key, m);
+                listOf.put(key, list);
+            }
+            Set<String> gone = new HashSet<>();
+            for (Object o : Json.array(route.get(kind + "Removed"))) {
+                var m = Json.object(o);
+                gone.add(Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", ""));
+            }
+            Map<String, List<Object>> result = new LinkedHashMap<>();
+            for (String list : lists) result.put(list, new ArrayList<>());
+            List<Object> removed = new ArrayList<>();
+            Set<String> reached = new HashSet<>();
+            for (Object o : Json.array(names.get(kind))) {
+                var m = Json.object(o);
+                String owner = Json.text(m, "owner", ""), mojangOwner = Json.text(m, "newOwner", mojang.apply(owner));
+                String key = mojangOwner + "." + Json.text(m, "to", "") + Json.text(m, "newDesc", "");
+                reached.add(key);
+                if (gone.contains(key)) {
+                    removed.add(Json.map("owner", owner, "from", m.get("from"), "desc", m.get("desc")));
+                    continue;
+                }
+                var next = changed.get(key);
+                String list = next == null ? lists.get(0) : listOf.get(key);
+                Map<String, Object> entry = new LinkedHashMap<>();
+                entry.put("owner", owner);
+                entry.put("from", m.get("from"));
+                entry.put("desc", m.get("desc"));
+                entry.put("to", next == null ? m.get("to") : next.get("to"));
+                entry.put("newDesc", next == null ? descriptor(Json.text(m, "newDesc", ""), forward) : next.get("newDesc"));
+                String finalOwner = next != null && next.get("newOwner") != null ? Json.text(next, "newOwner", "") : forward.apply(mojangOwner);
+                if (!finalOwner.equals(owner)) entry.put("newOwner", finalOwner);
+                result.get(list).add(entry);
+            }
+            // Members whose yarn and Mojang names agree are keyed by the yarn owner and descriptor.
+            for (var e : changed.entrySet()) {
+                if (reached.contains(e.getKey())) continue;
+                var m = e.getValue();
+                Map<String, Object> entry = new LinkedHashMap<>(m);
+                entry.put("owner", yarn.apply(Json.text(m, "owner", "")));
+                entry.put("desc", descriptor(Json.text(m, "desc", ""), yarn));
+                result.get(listOf.get(e.getKey())).add(entry);
+            }
+            for (Object o : Json.array(route.get(kind + "Removed"))) {
+                var m = Json.object(o);
+                String key = Json.text(m, "owner", "") + "." + Json.text(m, "from", "") + Json.text(m, "desc", "");
+                if (!reached.contains(key)) removed.add(
+                    Json.map("owner", yarn.apply(Json.text(m, "owner", "")), "from", m.get("from"), "desc", descriptor(Json.text(m, "desc", ""), yarn))
+                );
+            }
+            out.putAll(result);
+            out.put(kind + "Removed", removed);
+        }
+        out.put("history", route.getOrDefault("history", List.of()));
+        return out;
+    }
+
+    /** A JVM descriptor with each class name passed through names (dotted names, as the maps keep them). */
+    static String descriptor(String desc, java.util.function.UnaryOperator<String> names) {
+        Matcher type = Pattern.compile("L([^;]+);").matcher(desc);
+        StringBuilder out = new StringBuilder();
+        while (type.find()) type.appendReplacement(
+            out,
+            Matcher.quoteReplacement("L" + names.apply(type.group(1).replace('/', '.')).replace('.', '/') + ";")
+        );
+        return type.appendTail(out).toString();
+    }
+
+    /** Writes a map in the generators' own layout (one entry per line under each list), which the typed fixer reads line by line. */
+    static void saveMap(Path file, Map<String, Object> map) throws IOException {
+        StringBuilder out = new StringBuilder("{\n");
+        List<String> keys = new ArrayList<>(map.keySet());
+        for (int i = 0; i < keys.size(); i++) {
+            Object value = map.get(keys.get(i));
+            out.append("  ").append(Json.write(keys.get(i))).append(": ");
+            if (value instanceof List<?> list) {
+                out.append("[\n");
+                for (int j = 0; j < list.size(); j++) {
+                    Object item = list.get(j);
+                    out.append("    ");
+                    if (item instanceof Map<?, ?> entry) {
+                        List<String> fields = new ArrayList<>();
+                        for (var f : entry.entrySet()) fields.add(Json.write(String.valueOf(f.getKey())) + ": " + Json.write(f.getValue()));
+                        out.append("{ ").append(String.join(", ", fields)).append(" }");
+                    } else out.append(Json.write(item));
+                    out.append(j + 1 < list.size() ? ",\n" : "\n");
+                }
+                out.append("  ]");
+            } else out.append(Json.write(value));
+            out.append(i + 1 < keys.size() ? ",\n" : "\n");
+        }
+        Files.writeString(file, out.append("}\n").toString(), StandardCharsets.UTF_8);
+    }
+
+    Explain.Index supertypeIndex;
+
+    /**
+     * The supertypes (simple names) of every receiver type the log names in a "location:" line, read from the target
+     * build's own classpath, one "Type Super1 Super2 ..." line each, for the typed fixer: a member renamed on Player is
+     * renamed where javac looked it up on LocalPlayer. Null when the log names none.
+     */
+    Path supertypes(Path log) throws IOException {
+        Matcher located = Pattern.compile("location: (?:variable \\w+ of type |class |interface )([\\w.$]+)").matcher(
+            logText(log)
+        );
+        Set<String> types = new TreeSet<>();
+        while (located.find()) types.add(located.group(1).replaceAll("<.*", ""));
+        if (types.isEmpty()) return null;
+        if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
+        StringBuilder out = new StringBuilder();
+        for (String type : types) {
+            List<String> found = supertypeIndex.resolve(type, List.of());
+            if (found.isEmpty()) continue;
+            Set<String> supers = new LinkedHashSet<>();
+            Deque<String> queue = new ArrayDeque<>(List.of(found.get(0)));
+            while (!queue.isEmpty()) {
+                Explain.ClassInfo info = supertypeIndex.info(queue.poll());
+                if (info == null) continue;
+                List<String> next = new ArrayList<>(info.interfaces());
+                if (info.superName() != null && !info.superName().equals("java/lang/Object")) next.add(0, info.superName());
+                for (String parent : next) if (supers.add(parent)) queue.add(parent);
+            }
+            if (supers.isEmpty()) continue;
+            out.append(simpleName(type.replace('/', '.')));
+            for (String parent : supers) out.append(' ').append(simpleName(parent.replace('/', '.')));
+            out.append('\n');
+        }
+        if (out.length() == 0) return null;
+        Path file = log.resolveSibling(log.getFileName().toString().replaceFirst("\\.log$", "") + "-supertypes.txt");
+        Files.writeString(file, out.toString(), StandardCharsets.UTF_8);
+        return file;
+    }
+
+    /**
+     * A class javac cannot find in a file that does not import it (a rule wrote RenderLayer::getGuiTextured, a class moved
+     * package) is imported when exactly one class of the target game or loader has that simple name. Classes of the mod
+     * itself, and names two game classes share, are left to the compiler. Returns the files changed.
+     */
+    int importMissingClasses(Path log) throws Exception {
+        String errors = logText(log);
+        Matcher reported = Pattern.compile(
+            "(?m)^\\s*" + FILE + ":[0-9]+: error: cannot find symbol\\R(?:.*\\R){0,2}?\\s*symbol:\\s+(?:class|variable) ([A-Z]\\w*)\\s*$"
+        ).matcher(errors);
+        Map<Path, Set<String>> wanted = new LinkedHashMap<>();
+        while (reported.find()) {
+            Path file = Path.of(reported.group(1));
+            if (!file.isAbsolute()) file = build.project.root.resolve(file);
+            file = file.normalize();
+            if (file.startsWith(build.project.root) && Files.isRegularFile(file)) wanted
+                .computeIfAbsent(file, f -> new LinkedHashSet<>())
+                .add(reported.group(2));
+        }
+        if (wanted.isEmpty()) return 0;
+        if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
+        int changed = 0;
+        for (var entry : wanted.entrySet()) {
+            String text = Files.readString(entry.getKey()), after = text;
+            for (String simple : entry.getValue()) {
+                if (Pattern.compile("(?m)^import\\s+[\\w.]+\\." + simple + "\\s*;").matcher(after).find()) continue;
+                if (Pattern.compile("\\b(?:class|interface|enum|record)\\s+" + simple + "\\b").matcher(after).find()) continue;
+                List<String> game = new ArrayList<>();
+                for (String name : supertypeIndex.bySimple.getOrDefault(simple, List.of())) if (
+                    !name.contains("$") &&
+                    (name.startsWith("net/minecraft/") || name.startsWith("com/mojang/") || name.startsWith("net/fabricmc/") || name.startsWith("net/neoforged/"))
+                ) game.add(name);
+                if (game.size() != 1) continue;
+                after = addImport(after, game.get(0).replace('/', '.'));
+            }
+            if (!after.equals(text)) {
+                Files.writeString(entry.getKey(), after);
+                changed++;
+            }
+        }
+        if (changed > 0) rulesApplied.putIfAbsent("import-missing-game-class", List.of());
+        return changed;
+    }
+
+    /** The route map this port uses (for mixin target names, which javac never checks). */
+    Path mapFile;
+    Map<String, List<String[]>> mapMethods;
+
+    /**
+     * The target's name for a method a mixin targets by its old name: Mixin says it found no 'initTabNavigation' in
+     * OptionsScreen, and the map renamed initTabNavigation to refreshWidgetPositions on Screen, OptionsScreen's supertype.
+     * Null unless exactly one new name fits the owner or one of its supertypes in the target.
+     */
+    String mixinTargetRename(String owner, String name) throws Exception {
+        if (mapFile == null || !Files.isRegularFile(mapFile)) return null;
+        if (mapMethods == null) {
+            mapMethods = new HashMap<>();
+            var map = Json.read(mapFile);
+            for (String list : List.of("methods", "methodsMoved", "signatures")) for (Object o : Json.array(map.get(list))) {
+                var m = Json.object(o);
+                String from = Json.text(m, "from", ""), to = Json.text(m, "to", "");
+                if (!from.equals(to)) mapMethods
+                    .computeIfAbsent(from, k -> new ArrayList<>())
+                    .add(new String[] { simpleName(Json.text(m, "owner", "")), to });
+            }
+        }
+        List<String[]> candidates = mapMethods.get(name);
+        if (candidates == null) return null;
+        if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
+        Set<String> owners = new HashSet<>();
+        Deque<String> queue = new ArrayDeque<>(List.of(owner));
+        while (!queue.isEmpty()) {
+            String next = queue.poll();
+            if (!owners.add(simpleName(next.replace('/', '.')))) continue;
+            Explain.ClassInfo info = supertypeIndex.info(next);
+            if (info == null) continue;
+            if (info.superName() != null) queue.add(info.superName());
+            queue.addAll(info.interfaces());
+        }
+        Set<String> names = new HashSet<>();
+        for (String[] c : candidates) if (owners.contains(c[0])) names.add(c[1]);
+        return names.size() == 1 ? names.iterator().next() : null;
+    }
+
+    /**
+     * Drops from a route map the member renames knowledge/meaning-changes.json says change what the member returns
+     * (1.21.2's getMaxBuildHeight -> getMaxY is one lower), so the typed fixer never applies them; the rules that keep
+     * the old meaning run first, and what they cannot rewrite safely stays a reported error. Returns the lines dropped.
+     */
+    static int withoutMeaningChanges(Path map, Path knowledge) throws IOException {
+        if (!Files.isRegularFile(map) || !Files.isRegularFile(knowledge)) return 0;
+        List<String[]> pairs = new ArrayList<>();
+        for (Object o : Json.array(Json.read(knowledge).get("changes"))) {
+            var c = Json.object(o);
+            pairs.add(new String[] { Json.text(c, "from", ""), Json.text(c, "to", "") });
+        }
+        List<String> lines = new ArrayList<>(Files.readAllLines(map, StandardCharsets.UTF_8));
+        String section = "";
+        int dropped = 0;
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            Matcher heading = Pattern.compile("^  \"(\\w+)\": \\[").matcher(line);
+            if (heading.find()) {
+                section = heading.group(1);
+                continue;
+            }
+            if (!List.of("methods", "methodsMoved", "signatures").contains(section)) continue;
+            for (String[] pair : pairs) if (
+                line.contains("\"from\": \"" + pair[0] + "\"") && line.contains("\"to\": \"" + pair[1] + "\"")
+            ) {
+                lines.remove(i--);
+                dropped++;
+                break;
+            }
+        }
+        if (dropped == 0) return 0;
+        // A list whose last entry went keeps no trailing comma.
+        for (int i = 1; i < lines.size(); i++) if (lines.get(i).startsWith("  ]") && lines.get(i - 1).endsWith(",")) lines.set(
+            i - 1,
+            lines.get(i - 1).substring(0, lines.get(i - 1).length() - 1)
+        );
+        Files.write(map, lines, StandardCharsets.UTF_8);
+        return dropped;
+    }
+
+    /** A build log as text: javac on Windows writes in the console's code page, so bytes that are not UTF-8 never stop a port. */
+    static String logText(Path log) throws IOException {
+        return new String(Files.readAllBytes(log), StandardCharsets.UTF_8);
+    }
+
     static List<Path> sources(ProjectModel project) throws IOException {
         List<Path> paths = new ArrayList<>(project.inputs());
         Files.walkFileTree(
@@ -83,7 +479,8 @@ final class Port {
                     return (
                             !dir.equals(project.root) &&
                             (ProjectModel.IGNORED.contains(dir.getFileName().toString()) ||
-                                Files.exists(dir.resolve(".git")))
+                                Files.exists(dir.resolve(".git")) ||
+                                ProjectModel.separateBuild(dir))
                         )
                         ? FileVisitResult.SKIP_SUBTREE
                         : FileVisitResult.CONTINUE;
@@ -119,6 +516,7 @@ final class Port {
             !from.matches("[A-Za-z0-9._+\\-]+") || !to.matches("[A-Za-z0-9._+\\-]+")
         ) throw new IllegalArgumentException("Invalid Minecraft version");
         targetVersion = to;
+        learnFromMods = options.has("learn-from-mods");
         Map<String, Object> refusal = Route.blocked(build.harness, from, to);
         if (refusal != null) return refusal;
         // --direct keeps the one-jump map (A -> B joined in one diff); an explicit --map is used as given.
@@ -240,14 +638,26 @@ final class Port {
         Set<String> sourceLoaders = new TreeSet<>();
         for (Object p : Json.array(model.get("projects"))) sourceLoaders.addAll(Support.loaders(Json.object(p)));
         boolean own = names.equals("mojmap") && route != null && !options.has("intermediary");
-        List<String> chain = route == null ? List.of() : own ? route.versions : route.mappedChain();
+        // A yarn source bound for the unobfuscated game (26.1+) crosses into Mojang's names: its map joins the source
+        // release's yarn -> Mojang table with the game's own route map (composeMaps).
+        boolean bridge =
+            names.equals("yarn") &&
+            route != null &&
+            !options.has("intermediary") &&
+            Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0 &&
+            Versions.compare(from, Route.FIRST_UNOBFUSCATED) < 0;
+        List<String> chain = route == null ? List.of() : own || bridge ? route.versions : route.mappedChain();
         boolean routed =
-            chain.size() >= 2 && !(names.equals("yarn") && Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0);
+            chain.size() >= 2 && (bridge || !(names.equals("yarn") && Versions.compare(to, Route.FIRST_UNOBFUSCATED) >= 0));
         // A generated map is named after the tools that made it, so a changed generator makes a new one.
-        String generator = own ? tools.classes.getFileName().toString() : "";
+        String generator = own || bridge ? tools.classes.getFileName().toString() : "";
+        // A bridged source is in Mojang's names once the map has run, so the Mojang-named rules are the ones that fit it.
+        if (bridge) namespace = "mojmap";
         if (routed) map = build.project.state().resolve(
             "maps/" +
-            (own ? "game-" + generator.substring(0, Math.min(12, generator.length())) + "-" : "route-") +
+            (own
+                    ? "game-" + generator.substring(0, Math.min(12, generator.length())) + "-"
+                    : bridge ? "bridge-" + generator.substring(0, Math.min(12, generator.length())) + "-" : "route-") +
             names +
             "-" +
             from +
@@ -270,10 +680,25 @@ final class Port {
                 current =
                     chain.equals(ProjectModel.strings(cached.get("chain"))) &&
                     names.equals(cached.get("names")) &&
-                    own == "game-bytecode".equals(cached.get("linked")) &&
+                    (bridge ? "yarn-bridge".equals(cached.get("linked")) : own == "game-bytecode".equals(cached.get("linked"))) &&
                     (!own || loaderDiff.equals(cachedLoader));
             }
-            if (!current) {
+            if (!current && bridge) {
+                Files.createDirectories(map.getParent());
+                Path game = map.resolveSibling(map.getFileName().toString().replace(".json", ".game.json"));
+                Path yarnNames = map.resolveSibling(map.getFileName().toString().replace(".json", ".names.json"));
+                var routeMap = tools.run("GameDiff", List.of("--chain", String.join(",", chain), "--out", game.toString()), "mapping-route");
+                if (routeMap.exit() != 0) throw new IOException(
+                    "No verified mapping along the route " + String.join(" -> ", chain) + ". " + Run.tail(routeMap.log())
+                );
+                var namesMap = tools.run(
+                    "VersionMap",
+                    List.of(from, from, "--from-names", "yarn", "--to-names", "mojmap", "--names", "yarn", "--out", yarnNames.toString()),
+                    "mapping-yarn-to-mojang"
+                );
+                if (namesMap.exit() != 0) throw new IOException("No yarn -> Mojang table for " + from + ". " + Run.tail(namesMap.log()));
+                saveMap(map, composeMaps(Json.read(yarnNames), Json.read(game)));
+            } else if (!current) {
                 Files.createDirectories(map.getParent());
                 List<String> arguments = new ArrayList<>(List.of("--chain", String.join(",", chain), "--out", map.toString()));
                 if (own && !loaderDiff.isEmpty()) arguments.addAll(List.of("--loader", loaderDiff));
@@ -312,7 +737,10 @@ final class Port {
                 "No verified mapping for this jump. " + Run.tail(mapped.log())
             );
         }
+        int meaningChanges = withoutMeaningChanges(map, build.harness.resolve("knowledge/meaning-changes.json"));
+        if (meaningChanges > 0) build.report.stages.add(Json.map("name", "meaning-changes", "dropped", meaningChanges, "source", "knowledge/meaning-changes.json"));
         var mapInfo = Json.read(map);
+        mapFile = map;
         String mapFrom = routed ? chain.get(0) : from, mapTo = routed ? chain.get(chain.size() - 1) : to;
         if (
             !unobfuscated &&
@@ -323,7 +751,11 @@ final class Port {
         Map<String, Object> routeRecord = route == null ? null : route.record();
         if (routeRecord != null) routeRecord.put(
             "mapping",
-            routed && own
+            routed && bridge
+                ? "yarn names of " + from + " joined to Mojang's (Fabric's yarn and intermediary with Mojang's mappings), then one map across " +
+                String.join(" -> ", chain) +
+                " from the game itself"
+                : routed && own
                 ? "one map joined across " +
                 String.join(" -> ", chain) +
                 " from the game itself: Mojang's jars and mappings linked release to release by their own bytecode" +
@@ -417,14 +849,21 @@ final class Port {
             );
             backupPaths.add(file);
         }
+        List<String> takenOver = new ArrayList<>();
         for (Path file : backupPaths) {
             Path relative = build.project.root.relativize(file), backup = transaction
                 .resolve("before")
                 .resolve(relative);
+            // A build script already changed before the transaction (a dead decompiler plugin removed) is backed up as it was.
+            Path original = pendingOriginals(build.project).resolve(relative.toString());
+            Path source = Files.isRegularFile(original) ? original : file;
+            if (source == original) takenOver.add(relative.toString().replace('\\', '/'));
             Files.createDirectories(backup.getParent());
-            Files.copy(file, backup);
-            before.put(relative.toString().replace('\\', '/'), Fingerprints.bytes(Files.readAllBytes(file)));
+            Files.copy(source, backup);
+            before.put(relative.toString().replace('\\', '/'), Fingerprints.bytes(Files.readAllBytes(source)));
         }
+        planned.addAll(takenOver);
+        deletePending(build.project);
         // The restore plan is on disk before the first edit: an interrupted port still knows what it may have changed.
         for (Target.Edit edit : target) planned.add(
             build.project.root.relativize(edit.file().toRealPath()).toString().replace('\\', '/')
@@ -437,7 +876,10 @@ final class Port {
         List<String> removed = new ArrayList<>();
         if (rounds < 1 || rounds > 20) throw new IllegalArgumentException("--rounds must be 1–20");
         try {
-            if (!target.isEmpty()) Target.apply(target);
+            if (!target.isEmpty()) {
+                Target.apply(target);
+                build.refreshJdk();
+            }
             for (Path file : excluded) {
                 Path owned = file.toRealPath();
                 if (!owned.startsWith(build.project.root)) throw new IOException(
@@ -468,16 +910,22 @@ final class Port {
             );
             excludeOtherTargets(tasks, model);
             tasks.add(0, "-Dmodaccel.recompile=true");
+            // Every compile task whose inputs built reports its errors, not only the first one to fail.
+            tasks.add(0, "--continue");
             // Repair rounds only need the compiler; the full build (tests, jar) runs once when the source is clean.
             List<String> repairTasks = new ArrayList<>(explicitTask ? tasks : build.tasks(model, "classes"));
             if (repairTasks.isEmpty()) repairTasks = tasks;
             else excludeOtherTargets(repairTasks, model);
+            repairTasks.removeIf(argument -> argument.equals("--continue") || argument.equals("-Dmodaccel.recompile=true"));
             repairTasks.add(0, "-Dmodaccel.recompile=true");
+            repairTasks.add(0, "--continue");
             applySilentRules(from, to);
             renameClassesInStrings(map);
             var initial = build.gradle(tasks, explicitTask ? "port-initial-compile" : "port-initial-build");
             log = initial.log();
             compiled = initial.exit() == 0;
+            // The errors the port started from (every one: port builds lift javac's 100-error cap), before any repair.
+            int errorsBefore = compiled ? 0 : errors(log).size();
             Set<String> seen = new HashSet<>();
             int roundsTried = 0;
             for (int round = 0; !compiled && round < rounds; round++) {
@@ -485,6 +933,7 @@ final class Port {
                 if (!seen.add(state)) break;
                 roundsTried = round + 1;
                 applyRules(log);
+                importMissingClasses(log);
                 // Rules are not learned from other people's mods unless asked: the map comes from the game itself.
                 if (!corpusLoaded && options.has("learn-from-mods")) {
                     learned = Corpus.rules(build, model, tools, map, from, to, names);
@@ -494,6 +943,8 @@ final class Port {
                     List.of("--map", map.toString(), "--fix", log.toString(), "--repo", build.project.root.toString())
                 );
                 if (learned != null) args.addAll(List.of("--rules", learned.toString()));
+                Path supers = supertypes(log);
+                if (supers != null) args.addAll(List.of("--supers", supers.toString()));
                 var fix = tools.run("VersionMap", args, "port-fix-" + (round + 1));
                 flushImports();
                 if (fix.exit() != 0) throw new IOException("Typed repair stopped: " + Run.tail(fix.log()));
@@ -540,9 +991,11 @@ final class Port {
                 "ok",
                 passed,
                 "tier",
-                built ? "build-and-mixin-applied" : "compile-and-mixin-applied",
+                tier(compiled, mixins, built),
                 "compiled",
                 compiled,
+                "errorsBefore",
+                errorsBefore,
                 "built",
                 built,
                 "mixinTargetsVerified",
@@ -622,7 +1075,7 @@ final class Port {
                 Path repair = transaction.resolve("repair-request.json");
                 List<Map<String, Object>> guides = compiled
                     ? List.of()
-                    : repairGuides(build.harness, from, to, Files.readString(log, StandardCharsets.UTF_8));
+                    : repairGuides(build.harness, from, to, logText(log));
                 Json.save(
                     repair,
                     Json.map(
@@ -700,6 +1153,17 @@ final class Port {
         } finally {
             finishTransaction(build.project, transaction, before, removed);
         }
+    }
+
+    /**
+     * What a port reached, never more: a source that did not compile is "compile-failed" (Farmer's Delight's failed
+     * 1.21.4 builds were once reported as compile-and-mixin-applied), mixins Mixin did not apply are
+     * "compiled-mixins-failed", and only a packaged build is "build-and-mixin-applied".
+     */
+    static String tier(boolean compiled, Map<String, Object> mixins, boolean built) {
+        if (!compiled) return "compile-failed";
+        if (mixins == null || !Boolean.TRUE.equals(mixins.get("ok"))) return "compiled-mixins-failed";
+        return built ? "build-and-mixin-applied" : "compile-and-mixin-applied";
     }
 
     /** Report every target dependency as resolved, selected, or blocked without changing the project. */
@@ -834,7 +1298,7 @@ final class Port {
     /** What the mixin audit actually looked at, from its summary line: never "checked" when nothing was. */
     static String auditSummary(Path log) throws IOException {
         String summary = "";
-        if (log != null && Files.exists(log)) for (String line : Files.readAllLines(log, StandardCharsets.UTF_8)) if (
+        if (log != null && Files.exists(log)) for (String line : logText(log).lines().toList()) if (
             line.startsWith("# ")
         ) summary = line.substring(2).strip();
         if (summary.isEmpty()) return "the mixin audit passed without a summary";
@@ -900,7 +1364,7 @@ final class Port {
     static List<Object> errors(Path log) throws IOException {
         List<Object> list = new ArrayList<>();
         Set<String> seen = new HashSet<>();
-        Matcher reported = ERROR.matcher(Files.readString(log));
+        Matcher reported = ERROR.matcher(logText(log));
         while (reported.find()) {
             String key = reported.group(1) + ":" + reported.group(2) + ":" + reported.group(3);
             if (!seen.add(key)) continue;
@@ -1244,6 +1708,17 @@ final class Port {
     }
 
     /** How many of the rules a port applied came from each source (knowledge/fixes.json "provenance"). */
+    /** Whether port --learn-from-mods was given: only then do rules mined from other people's mods run. */
+    boolean learnFromMods;
+
+    /**
+     * The rule book's own rules always run; the older rules mined from third-party mods (provenance third-party-mods)
+     * only with --learn-from-mods. Rules are never taken from other people's mods by default.
+     */
+    static boolean ownRule(Map<String, Object> rule, boolean learnFromMods) {
+        return learnFromMods || !"third-party-mods".equals(Json.text(rule, "provenance", ""));
+    }
+
     Map<String, Object> provenance(Set<String> ids) throws IOException {
         Map<String, Object> counts = new TreeMap<>();
         if (ids.isEmpty()) return counts;
@@ -1275,7 +1750,7 @@ final class Port {
      * names it and reports an empty match, so remove only that dead name and keep the rest.
      */
     void removeDeadMixinTargets(Path log) throws Exception {
-        String errors = Files.readString(log);
+        String errors = logText(log);
         Matcher reported = Pattern.compile(
             "(?m)^\\s*" + FILE + ":(\\d+): error: Multi-target reference conflict for @\\w+ target (\\w+): \\[\\]"
         ).matcher(errors);
@@ -1374,7 +1849,7 @@ final class Port {
         List<Path> all = ownedJava();
         for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
             var rule = Json.object(item);
-            if (!rule.containsKey("silent") || !loaderFits(rule)) continue;
+            if (!rule.containsKey("silent") || !loaderFits(rule) || !ownRule(rule, learnFromMods)) continue;
             List<String> covered = route == null
                 ? List.of()
                 : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
@@ -1461,6 +1936,16 @@ final class Port {
         for (Object item : list) {
             var failure = Json.object(item);
             Path file = build.project.root.resolve(Json.text(failure, "file", "")).normalize();
+            // A mixin in another project of the build (an Architectury :common) is found by its class name.
+            if (Json.text(failure, "file", "").isEmpty() && !Json.text(failure, "mixin", "").isEmpty()) {
+                String tail = Json.text(failure, "mixin", "").replace('.', '/') + ".java";
+                for (Path source : sources(build.project)) if (source.toString().replace('\\', '/').endsWith("/" + tail)) {
+                    file = source;
+                    failure = new LinkedHashMap<>(failure);
+                    failure.put("file", build.project.root.relativize(source).toString());
+                    break;
+                }
+            }
             if (
                 Json.text(failure, "file", "").isEmpty() ||
                 !file.startsWith(build.project.root) ||
@@ -1470,6 +1955,7 @@ final class Port {
                 original,
                 Json.text(failure, "message", "")
             );
+            if (text.equals(original)) text = renameMixinTarget(original, Json.text(failure, "message", ""));
             if (!text.equals(original)) {
                 Files.writeString(file, text);
                 changed = true;
@@ -1478,6 +1964,21 @@ final class Port {
         }
         if (changed) build.report.stages.add(Json.map("name", "mixin-repair", "repaired", repaired));
         return changed;
+    }
+
+    /** A mixin target the game renamed, renamed in the mixin's method strings, from Mixin's words and the route map. */
+    String renameMixinTarget(String text, String message) throws IOException {
+        Matcher missing = Pattern.compile("could not find any targets matching '(\\w+)(?:\\([^']*)?' in ([\\w/$]+)").matcher(message);
+        if (!missing.find()) return text;
+        String to;
+        try {
+            to = mixinTargetRename(missing.group(2), missing.group(1));
+        } catch (Exception unread) {
+            return text;
+        }
+        if (to == null) return text;
+        rulesApplied.putIfAbsent("mixin-target-rename", List.of());
+        return text.replaceAll("\"" + Pattern.quote(missing.group(1)) + "(?:\\([^\"]*\\)[^\"]*)?\"", Matcher.quoteReplacement("\"" + to + "\""));
     }
 
     static String repairMixinSource(String text, String message) {
@@ -1583,7 +2084,7 @@ final class Port {
         Set<String> loaders = new TreeSet<>();
         for (Object p : Json.array(model.get("projects"))) loaders.addAll(Support.loaders(Json.object(p)));
         if (!loaders.contains("neoforge")) return List.of();
-        String errors = Files.readString(log);
+        String errors = logText(log);
         Matcher denied = Pattern.compile(
             "(?m)^\\s*" +
             FILE +
@@ -1664,7 +2165,7 @@ final class Port {
     void applyRules(Path log) throws Exception {
         removeDeadMixinTargets(log);
         repairAccess(log);
-        String errors = Files.readString(log);
+        String errors = logText(log);
         List<Path> all = ownedJava();
         Set<Path> logged = new HashSet<>();
         Matcher reported = Pattern.compile("(?m)^\\s*" + FILE + ":[0-9]+: error:").matcher(errors);
@@ -1674,10 +2175,16 @@ final class Port {
             file = file.normalize();
             if (file.startsWith(build.project.root)) logged.add(file);
         }
+        // A file javac reported while building this target is part of it, even when another project owns it (an
+        // Architectury :common compiled into :fabric).
+        Set<Path> withLogged = new LinkedHashSet<>(all);
+        for (Path file : logged) if (Files.isRegularFile(file) && file.toString().endsWith(".java")) withLogged.add(file);
+        all = new ArrayList<>(withLogged);
         for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
             var rule = Json.object(item);
             if (
                 rule.containsKey("silent") ||
+                !ownRule(rule, learnFromMods) ||
                 !loaderFits(rule) ||
                 !Pattern.compile(rule.get("match").toString()).matcher(errors).find()
             ) continue;
@@ -2549,7 +3056,7 @@ final class Port {
      * with changedIn empty and the reason.
      */
     List<Object> namedErrors(Path log, Map<String, Object> mapInfo) throws IOException {
-        String text = Files.readString(log);
+        String text = logText(log);
         Map<String, List<Map<String, Object>>> history = new HashMap<>();
         if (mapInfo != null) for (Object item : Json.array(mapInfo.get("history"))) {
             var event = Json.object(item);

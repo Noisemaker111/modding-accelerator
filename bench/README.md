@@ -19,6 +19,13 @@ The porting scoreboard:
 
 - `python bench/port_board.py` ports every pinned mod in `bench/port-cases.json` from a clean checkout with `modaccel port --fix`, and shows each against what is recorded and against the last run, then the errors still left grouped by the game update that caused them. `--only ID`, `--list`, `--record`, and `--modaccel PATH` to test another worktree's modaccel. Clones and results live in `.runs/port-board/`.
 
+The port sweep, for what is missing across many mods rather than one:
+
+- `bench/sweep/corpus.json` pins open-source mods (Fabric yarn and Mojang-named, NeoForge, multi-loader and Stonecutter builds, 1.16.5 to 26.3) to a commit; they are test subjects only, never a source of rules.
+- `python bench/sweep.py plan` lists the ports: each mod's adjacent release and the common long jumps (older -> 1.20.1, 1.20.x -> 1.21.1, 1.21.x -> 1.21.6 and -> 26.3, 26.x either way).
+- `python bench/sweep.py run --tag NAME [--jobs 2] [--resume] [--modaccel PATH]` builds each pinned source on its own version first, then ports it; per run it writes `.runs/sweep/runs/NAME/` with the build result, errors before and after, each error's class and API, wall times, and where it built a hidden load check (ui-check plus the loader's mod list) and a registry check of the blocks and items the mod's own assets name. Each mod's Gradle daemons and game are stopped as soon as its ports finish. `--modaccel` sweeps a frozen worktree while this one changes.
+- `python bench/sweep.py summary --tag NAME [--compare OLD] [--save]` prints pass rates per jump and the ranked gap tables (error classes, then APIs, by mods blocked); `--save` keeps the compact result in `bench/sweep/results/NAME.json`.
+
 - `python bench/rule_test.py [--only RULE_ID] [--write]` gives each port rule without a test one from real mod source: the first code in the pinned mods its `find` matches, and what the porter's own rewrite makes of it. `--source DIR:yarn|mojmap:LABEL` searches another checkout too.
 
 Generated, on main only (`.github/workflows/generated.yml` runs these after every merge and commits the result):

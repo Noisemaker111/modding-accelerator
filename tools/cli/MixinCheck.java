@@ -189,7 +189,11 @@ final class MixinCheck {
                 try {
                     for (Object item : Json.array(
                         Json.object(Json.parse(Files.readString(fabric, StandardCharsets.UTF_8))).get("mixins")
-                    )) configs.add(item instanceof String name ? name : Json.text(Json.object(item), "config", ""));
+                    )) {
+                        String config = item instanceof String name ? name : Json.text(Json.object(item), "config", "");
+                        // The source copy before processResources ("${mod_id}.mixins.json"); the built copy names the file.
+                        if (!config.contains("${")) configs.add(config);
+                    }
                 } catch (RuntimeException unreadable) {
                     metadata.add("unreadable: " + fabric);
                 }
