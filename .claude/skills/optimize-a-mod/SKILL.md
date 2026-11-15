@@ -52,6 +52,14 @@ itself. Five runs took 70 min of run time and 84 min of wall clock from clone to
 candidates ran at the same time, and a candidate the exact gate rejected was fixed and checked against the baselines'
 recorded gate value in one launch before its rerun. Launching games was 42% of the run time.
 
+The fifth, Diorama round 3 (session `diorama-round3`), moved the decision to the bakers' exact CPU
+time and cut the collector cost of the cached columns from 19–33% longer young pauses to 6–7%
+(`bench/diorama`, cumulative cold 1.62x, warm 1.93x). Of 10 runs (130 min of run time), 5 ended
+before deciding: a fresh clone's first paired build raced on Loom's mappings cache (compile the root
+once before the first run), a compile beside a launch crashed that arm, two ran out of memory with
+four games up beside other agents' work (run one `perf-optimize` at a time then), and a gate named a
+field the unmodified build lacks (reach a candidate's switches by reflection).
+
 `modaccel perf-optimize --replay OUT1,OUT2` decides finished runs again under the current stopping rule and prints
 the wall time they would take, sequentially and with paired arms. Diorama's four `perf-optimize` runs replay to the
 same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with paired arms.
@@ -261,6 +269,24 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
 - **Independent candidates can run together.** Two `perf-optimize` runs are two heavy jobs; Cyclic's second and third
   candidates ran at the same time against the same accepted build, each with its own worktrees (first launches took
   160 s instead of 145 s).
+- **Decide on thread CPU time, not samples, for a mod's own threads.** JFR samples a thread in Java
+  code whether or not it is on a processor, so on a loaded machine a preempted worker counts as
+  busy. `{"threadCpu": "^mymod-worker"}` reads the operating system's CPU time of those threads
+  over the window (exact); `perCall` divides it by a counted probe's calls when a faster build
+  finishes more work in the window. Keep the shared threads' (render, server) CPU time as scopes:
+  a per-call wall-time scope that rises while its thread's CPU time does not is usually more work
+  done in the window, or the machine (Diorama round 3).
+- **Long-lived caches lengthen young collections.** Data a cache keeps for seconds is copied from
+  survivor space to survivor space before promotion: Diorama's kept columns made each young pause
+  19–33% longer. Arrays at least half a G1 region long are allocated in the old generation and never
+  copied, but allocating one can start a collection: keep such arrays in a ring allocated once, and
+  check reads against the array's serial if a reader can overlap a reuse (`bench/diorama/slab-ring.patch`).
+- **The cold window is the JIT's first minute.** Diorama's cold pairs swung 0.56–1.20× on exact CPU
+  time with the share of interpreted frames; a change that runs hot code less often can compile it
+  later and look slower cold. Count interpreted top frames per capture before reading a cold verdict.
+- **Sampled line numbers inside a hot loop mislead.** Diorama's pick loop charged 38% of its samples to
+  the floating-point step; sharing the steps through a boxed `HashMap` made picks 1.7× slower. Time a
+  replacement for the hot line directly before writing a candidate around it.
 - **Patterns travel.** Pipez's `cache-sorted-copy-until-source-replaced` fired on Storage Network's first capture
   (its storage list was sorted on every use); that was the candidate to write.
 

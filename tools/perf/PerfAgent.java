@@ -104,6 +104,73 @@ public final class PerfAgent {
 
     private static final Map<String, java.util.concurrent.atomic.LongAdder[]> totals = new ConcurrentHashMap<>();
 
+    /**
+     * A thread's CPU time over the capture window, from the operating system's per-thread accounting (ThreadMXBean):
+     * time on a processor only, unlike execution samples, which also count a preempted thread that is in Java code.
+     * {@code whole} is false for a thread that ended during the window (its last second may be missing).
+     */
+    @Name("modaccel.ThreadCpuTime") @jdk.jfr.Label("Thread CPU time in the window") @StackTrace(false)
+    public static final class ThreadCpuTime extends Event {
+        public String thread;
+        public long threadId;
+        @Timespan(Timespan.NANOSECONDS) public long cpuNanos;
+        @Timespan(Timespan.NANOSECONDS) public long userNanos;
+        public boolean whole;
+    }
+
+    /** Per-thread CPU times: at the window's start, as last seen, and the thread's name. */
+    private static final class ThreadClock {
+        final java.lang.management.ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+        final Map<Long, long[]> first = new HashMap<>(), last = new HashMap<>();
+        final Map<Long, String> names = new HashMap<>();
+        final boolean supported;
+
+        ThreadClock() {
+            boolean ok = bean.isThreadCpuTimeSupported();
+            if (ok && !bean.isThreadCpuTimeEnabled()) {
+                try { bean.setThreadCpuTimeEnabled(true); }
+                catch (Throwable error) { ok = false; }
+            }
+            supported = ok;
+        }
+
+        /** Reads every live thread; threads first seen after the start began during the window and count from zero. */
+        Map<Long, long[]> read(boolean start) {
+            Map<Long, long[]> now = new HashMap<>();
+            if (!supported) return now;
+            for (long id : bean.getAllThreadIds()) {
+                long cpu = bean.getThreadCpuTime(id), user = bean.getThreadUserTime(id);
+                if (cpu < 0) continue;
+                long[] value = {cpu, Math.max(0, user)};
+                now.put(id, value);
+                if (start) first.put(id, value);
+                else first.putIfAbsent(id, new long[]{0, 0});
+                last.put(id, value);
+                if (!names.containsKey(id)) {
+                    java.lang.management.ThreadInfo info = bean.getThreadInfo(id, 0);
+                    if (info != null) names.put(id, info.getThreadName());
+                }
+            }
+            return now;
+        }
+
+        void commit() {
+            Map<Long, long[]> end = read(false);
+            for (var entry : last.entrySet()) {
+                long id = entry.getKey();
+                long[] from = first.get(id), to = entry.getValue();
+                if (from == null || !names.containsKey(id)) continue;
+                ThreadCpuTime event = new ThreadCpuTime();
+                event.thread = names.get(id);
+                event.threadId = id;
+                event.cpuNanos = Math.max(0, to[0] - from[0]);
+                event.userNanos = Math.max(0, to[1] - from[1]);
+                event.whole = end.containsKey(id);
+                event.commit();
+            }
+        }
+    }
+
     @Name("modaccel.ProbeCalls") @jdk.jfr.Label("Selected method calls") @StackTrace(false)
     public static final class ProbeCalls extends Event {
         public String label;
@@ -338,6 +405,7 @@ public final class PerfAgent {
             recording.enable(ProcessSample.class).withoutStackTrace();
             recording.enable(ProbeCalls.class).withoutStackTrace();
             recording.enable(TimingTotals.class).withoutStackTrace();
+            recording.enable(ThreadCpuTime.class).withoutStackTrace();
             recording.enable(MethodTiming.class).withoutStackTrace().withThreshold(Duration.ZERO);
             // Attribution converts samples to time with this period; record it rather than assume a configuration.
             recording.enable("jdk.ExecutionSample").withPeriod(Duration.ofMillis(SAMPLE_MS));
@@ -361,6 +429,8 @@ public final class PerfAgent {
             save(out.resolve("status.properties"), status);
             Thread.sleep(warmup * 1000L);
             recording.start();
+            ThreadClock clock = new ThreadClock();
+            clock.read(true);
             long begin = System.nanoTime();
             generation++;
             measuring = true;
@@ -376,11 +446,13 @@ public final class PerfAgent {
                     sample.physicalMemory = os.getTotalMemorySize();
                 }
                 sample.commit();
+                clock.read(false);
                 long remaining = seconds * 1_000_000_000L - (System.nanoTime() - begin);
                 if (remaining <= 0) break;
                 Thread.sleep(Math.min(1000, Math.max(1, remaining / 1_000_000)));
             } while (true);
             measuring = false;
+            clock.commit();
             status.setProperty("elapsedSeconds", Double.toString((System.nanoTime() - begin) / 1e9));
             for (var entry : calls.entrySet()) {
                 ProbeCalls event = new ProbeCalls();
