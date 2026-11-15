@@ -32,6 +32,20 @@ public final class PerfAgent {
     private static final java.util.concurrent.atomic.AtomicLong completed = new java.util.concurrent.atomic.AtomicLong();
     private static final java.util.concurrent.atomic.AtomicLong depthDropped = new java.util.concurrent.atomic.AtomicLong();
     private static final long TIMING_LIMIT = 100_000;
+    private static final long SAMPLE_MS = 10;
+    /** Game base types in Mojang, Yarn and intermediary names; first match wins, so renderers precede entities. */
+    private static final String[][] KINDS = {
+        {"block entity renderer", "net.minecraft.client.renderer.blockentity.BlockEntityRenderer", "net.minecraft.client.render.block.entity.BlockEntityRenderer", "net.minecraft.class_827"},
+        {"entity renderer", "net.minecraft.client.renderer.entity.EntityRenderer", "net.minecraft.client.render.entity.EntityRenderer", "net.minecraft.class_897"},
+        {"block entity", "net.minecraft.world.level.block.entity.BlockEntity", "net.minecraft.block.entity.BlockEntity", "net.minecraft.class_2586"},
+        {"block", "net.minecraft.world.level.block.Block", "net.minecraft.block.Block", "net.minecraft.class_2248"},
+        {"entity", "net.minecraft.world.entity.Entity", "net.minecraft.entity.Entity", "net.minecraft.class_1297"},
+        {"AI goal", "net.minecraft.world.entity.ai.goal.Goal", "net.minecraft.entity.ai.goal.Goal", "net.minecraft.class_1352"},
+        {"item", "net.minecraft.world.item.Item", "net.minecraft.item.Item", "net.minecraft.class_1792"},
+        {"screen", "net.minecraft.client.gui.screens.Screen", "net.minecraft.client.gui.screen.Screen", "net.minecraft.class_437"},
+        {"menu", "net.minecraft.world.inventory.AbstractContainerMenu", "net.minecraft.screen.ScreenHandler", "net.minecraft.class_1703"},
+        {"saved data", "net.minecraft.world.level.saveddata.SavedData", "net.minecraft.world.PersistentState", "net.minecraft.class_18"},
+    };
 
     private static final class TimingStack {
         long generation;
@@ -69,6 +83,17 @@ public final class PerfAgent {
         public long physicalMemory;
     }
 
+    /** Complete per-label totals; unlike per-call events these are never dropped at the event limit. */
+    @Name("modaccel.TimingTotals") @jdk.jfr.Label("Selected function totals") @StackTrace(false)
+    public static final class TimingTotals extends Event {
+        public String label;
+        public long calls;
+        @Timespan(Timespan.NANOSECONDS) public long inclusiveNanos;
+        @Timespan(Timespan.NANOSECONDS) public long selfNanos;
+    }
+
+    private static final Map<String, java.util.concurrent.atomic.LongAdder[]> totals = new ConcurrentHashMap<>();
+
     @Name("modaccel.ProbeCalls") @jdk.jfr.Label("Selected method calls") @StackTrace(false)
     public static final class ProbeCalls extends Event {
         public String label;
@@ -102,6 +127,7 @@ public final class PerfAgent {
         if (selected.size() > 32) throw new IllegalArgumentException("At most 32 probes");
         probes = List.copyOf(selected);
         calls.clear();
+        totals.clear();
         sequence.set(0);
         completed.set(0);
         depthDropped.set(0);
@@ -191,6 +217,11 @@ public final class PerfAgent {
         span.event.selfNanos = Math.max(0, elapsed - span.children);
         span.event.exceptional = kind.startsWith("throw.");
         span.event.end();
+        java.util.concurrent.atomic.LongAdder[] sum = totals.computeIfAbsent(label, k -> new java.util.concurrent.atomic.LongAdder[]{
+            new java.util.concurrent.atomic.LongAdder(), new java.util.concurrent.atomic.LongAdder(), new java.util.concurrent.atomic.LongAdder()});
+        sum[0].increment();
+        sum[1].add(elapsed);
+        sum[2].add(span.event.selfNanos);
         if (completed.incrementAndGet() <= TIMING_LIMIT) span.event.commit();
     }
 
@@ -289,7 +320,12 @@ public final class PerfAgent {
             recording.enable(Pulse.class).withoutStackTrace();
             recording.enable(ProcessSample.class).withoutStackTrace();
             recording.enable(ProbeCalls.class).withoutStackTrace();
+            recording.enable(TimingTotals.class).withoutStackTrace();
             recording.enable(MethodTiming.class).withoutStackTrace().withThreshold(Duration.ZERO);
+            // Attribution converts samples to time with this period; record it rather than assume a configuration.
+            recording.enable("jdk.ExecutionSample").withPeriod(Duration.ofMillis(SAMPLE_MS));
+            recording.enable("jdk.ThreadCPULoad").withPeriod(Duration.ofSeconds(1));
+            status.setProperty("samplePeriodMs", Long.toString(SAMPLE_MS));
             if (!request.getProperty("hooks", "on").equals("off")) {
                 System.getProperties().put(KEY, (Consumer<String>) kind -> {
                     try { pulse(kind); }
@@ -335,6 +371,14 @@ public final class PerfAgent {
                 event.calls = entry.getValue().sum();
                 event.commit();
             }
+            for (var entry : totals.entrySet()) {
+                TimingTotals event = new TimingTotals();
+                event.label = entry.getKey();
+                event.calls = entry.getValue()[0].sum();
+                event.inclusiveNanos = entry.getValue()[1].sum();
+                event.selfNanos = entry.getValue()[2].sum();
+                event.commit();
+            }
             recording.stop();
             recording.dump(out.resolve("capture.jfr"));
             Properties classes = new Properties();
@@ -348,6 +392,8 @@ public final class PerfAgent {
                 } catch (Throwable ignored) { }
             }
             save(out.resolve("classes.properties"), classes);
+            save(out.resolve("features.properties"), features(inst));
+            if (request.getProperty("heap", "on").equals("on")) heapHistogram(out, status);
             Properties env = new Properties();
             for (String key : List.of("java.version", "java.vendor", "os.name", "os.version", "os.arch", "user.dir", "modaccel.background")) {
                 env.setProperty(key, System.getProperty(key, ""));
@@ -385,6 +431,50 @@ public final class PerfAgent {
             try { save(out.resolve("status.properties"), status); }
             catch (IOException error) { System.err.println("Mod Accel capture status: " + error); }
             synchronized (PerfAgent.class) { busy = false; }
+        }
+    }
+
+    /** Feature kind of each loaded non-game class, from its own superclass and interface chain; no class is loaded. */
+    private static Properties features(Instrumentation inst) {
+        Properties kinds = new Properties();
+        for (Class<?> cls : inst.getAllLoadedClasses()) {
+            String name = cls.getName();
+            if (cls.isArray() || cls.isPrimitive() || name.startsWith("java.") || name.startsWith("jdk.") || name.startsWith("sun.")
+                || name.startsWith("com.sun.") || name.startsWith("net.minecraft.") || name.startsWith("com.mojang.")) continue;
+            try {
+                Set<String> chain = new HashSet<>();
+                Deque<Class<?>> pending = new ArrayDeque<>();
+                pending.add(cls);
+                while (!pending.isEmpty() && chain.size() < 256) {
+                    Class<?> next = pending.poll();
+                    if (next == null || !chain.add(next.getName())) continue;
+                    if (next.getSuperclass() != null) pending.add(next.getSuperclass());
+                    pending.addAll(Arrays.asList(next.getInterfaces()));
+                }
+                for (String[] kind : KINDS) {
+                    boolean match = false;
+                    for (int i = 1; i < kind.length; i++) match |= chain.contains(kind[i]);
+                    if (match) {
+                        kinds.setProperty(name, kind[0]);
+                        break;
+                    }
+                }
+            } catch (Throwable ignored) { }
+        }
+        return kinds;
+    }
+
+    /** Live shallow bytes per class after a full GC, taken once the recording has stopped. */
+    private static void heapHistogram(Path out, Properties status) {
+        try {
+            javax.management.ObjectName name = new javax.management.ObjectName("com.sun.management:type=DiagnosticCommand");
+            long started = System.nanoTime();
+            Object text = ManagementFactory.getPlatformMBeanServer().invoke(name, "gcClassHistogram",
+                new Object[]{new String[0]}, new String[]{String[].class.getName()});
+            Files.writeString(out.resolve("heap-histogram.txt"), String.valueOf(text));
+            status.setProperty("heapHistogramMs", Double.toString((System.nanoTime() - started) / 1e6));
+        } catch (Throwable error) {
+            status.setProperty("heapHistogramError", error.toString());
         }
     }
 

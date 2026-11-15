@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "modaccel_pack_probe",
+  "version": "1",
+  "name": "modaccel pack-check probe",
+  "description": "Placed by modaccel pack-check for one check run, then removed.",
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": { "server": ["modaccel.packprobe.ModaccelPackProbeFabric"] }
+}

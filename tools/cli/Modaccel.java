@@ -95,7 +95,10 @@ public final class Modaccel {
             "prepare",
             "no-hooks",
             "learn-from-mods",
-            "intermediary"
+            "intermediary",
+            "no-heap",
+            "allow-hidden",
+            "keep"
         );
         static final Set<String> VALUES = Set.of(
             "command",
@@ -145,7 +148,8 @@ public final class Modaccel {
             "memory",
             "attach", "instance", "launch", "duration", "warmup", "out", "scenario",
             "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block",
-            "check"
+            "check",
+            "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch"
         );
         final Map<String, String> values = new LinkedHashMap<>();
         final Set<String> flags = new HashSet<>();
@@ -207,7 +211,7 @@ public final class Modaccel {
     }
 
     static final Set<String> COMMANDS = Set.of(
-        "perf", "perf-report", "perf-diff", "perf-template",
+        "perf", "perf-report", "perf-diff", "perf-template", "perf-optimize",
         "support",
         "discover",
         "doctor",
@@ -216,6 +220,7 @@ public final class Modaccel {
         "fast",
         "test",
         "port",
+        "convert",
         "explain",
         "dependencies",
         "mixin-check",
@@ -265,7 +270,7 @@ public final class Modaccel {
                 return;
             }
             Path home = Installation.home();
-            if (Set.of("perf", "perf-report", "perf-diff", "perf-template").contains(options.command)) {
+            if (Set.of("perf", "perf-report", "perf-diff", "perf-template", "perf-optimize").contains(options.command)) {
                 report = new Report(Path.of(options.get("root", ".")).toAbsolutePath(), options.command);
                 Map<String, Object> result = Performance.run(home, options, report);
                 exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
@@ -360,7 +365,8 @@ public final class Modaccel {
                     : options.get("project", "");
                 Build build = new Build(project, home, selected, report);
                 Map<String, Object> model = Set.of("game-status", "game-stop", "eval").contains(options.command) ||
-                    (options.command.equals("port") && options.values.containsKey("undo"))
+                    (options.command.equals("port") && options.values.containsKey("undo")) ||
+                    options.command.equals("convert")
                     ? Json.map()
                     : build.model(options.has("refresh"), options.command.equals("port"));
                 switch (options.command) {
@@ -386,6 +392,10 @@ public final class Modaccel {
                     case "port" -> {
                         result = new Port(build, model).run(options);
                         if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model));
+                        exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
+                    }
+                    case "convert" -> {
+                        result = new Convert(build).run(options);
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }
                     case "explain" -> {
@@ -757,11 +767,19 @@ public final class Modaccel {
             case "perf" -> "Profile a running local Java 17+ game/server: modaccel perf [--attach PID | --instance FOLDER | --root SOURCE] [--duration 30] [--warmup 5] [--out FOLDER] [--json]\n" +
                 "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root can launch a visible client.\n" +
                 "Open report.html in the output folder. Frame/tick hooks depend on game mappings; missing metrics are explicit. GPU timing is not collected.\n" +
+                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden profiles a hidden, throttled source session (frame timing not representative); --no-heap skips the post-capture class histogram.\n" +
                 "--no-hooks records JFR only. --prepare prints a startup -javaagent argument when dynamic attach is disabled. Requires JDK 17+ and same OS user.\n" +
                 "--scenario FILE --rcon-port 25575 [--rcon-password-env MODACCEL_RCON_PASSWORD] [--repeat 1] [--seed 0] drives explicit test-world commands.\n" +
                 "Scenarios edit the selected local server world: use a disposable world. Each command requires an expected response. Repeats share one JVM.";
-            case "perf-template" -> "Generate editable scenario files: modaccel perf-template --family transport|block-scene [--block MOD:BLOCK] [--out FOLDER]\nGeneration does not edit a world. Running the generated scenario requires a disposable local server with RCON. Transport uses vanilla hoppers; block-scene requires a connected client.";
+            case "perf-template" -> "Generate editable scenario files: modaccel perf-template --family transport|block-scene|entity-crowd|mod-content [--block MOD:BLOCK] [--entity MOD:ENTITY] [--counts 1,16,64] [--root SOURCE] [--out FOLDER]\n" +
+                "mod-content reads the mod's lang files for its own blocks and entities. Generation does not edit a world. perf --root SOURCE --scenario FILE runs it in the source client's own world; other games need a disposable local server with RCON.";
             case "perf-diff" -> "Compare observed captures: modaccel perf-diff --baseline FOLDER_OR_REPORT --candidate FOLDER_OR_REPORT [--out FOLDER]\nDescriptive differences only; this does not establish equal workload, causality or statistical significance.";
+            case "perf-optimize" -> "Accept or reject one candidate change with measured speedup: modaccel perf-optimize --root SOURCE --experiment EXPERIMENT.json --patch CANDIDATE.diff [--runs 5] [--out FOLDER] [--dry-run] [--keep]\n" +
+                "The candidate is a git diff you or your own agent wrote from the perf report; modaccel never writes code. Baseline (HEAD) and candidate (HEAD + diff)\n" +
+                "are separate git worktrees, launched alternately in fresh games. Each launch runs the experiment's setup snippets, a cold capture and a warm capture of\n" +
+                "the chosen metric (a timing probe or a report value), then its gates: eval snippets compared exactly, against an expected value or within a tolerance,\n" +
+                "and 1280x720 framebuffer captures compared pixel by pixel. Every gate must also agree baseline-to-baseline. Accepted only when all gates pass and the\n" +
+                "95% bootstrap interval of the speedup is above 1 for cold and warm; an accepted diff is then applied to SOURCE (not with --dry-run). See PERFORMANCE.md.";
             case "perf-report" -> "Render an existing capture/JFR locally: modaccel perf-report --file FOLDER_OR_JFR [--out FOLDER]\nNo game or network is required. External JFR files may lack frame/tick events or code-origin metadata.";
             case "self-test" -> "Test modaccel itself, with no game and no network: modaccel self-test [--only SUITE,SUITE] [--json]\n" +
             "Suites: " +
@@ -769,7 +787,8 @@ public final class Modaccel {
             ". Each is a class in tools/tests.\n" +
             "A failed suite is reported first, with the end of its log; --only runs the named suites alone.";
             case "preferences" -> "See or save your game launch preferences: modaccel preferences [--background on|off] [--quiet on|off] [--json]\n" +
-            "Background keeps the client hidden and prevents cursor capture; quiet saves sound and narrator off in the client's game settings. Both default to off.";
+            "Background keeps the client hidden and prevents cursor capture (default off).\n" +
+            "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off.";
             case "port" -> "Port a Gradle mod source checkout (not a JAR):\n" +
             "  modaccel discover --root SOURCE\n" +
             "  modaccel dependencies --root SOURCE --to 1.21.6 --json\n" +
@@ -779,6 +798,16 @@ public final class Modaccel {
             "--check COMMAND runs the mod's own real-game check on the ported project (MODACCEL_PORTED_ROOT is set); the port is ok only when it passes. --learn-from-mods also learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and the rule book.\n" +
             "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n" +
             "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
+            case "convert" -> "Move a mod's source to another loader on the same Minecraft version: modaccel convert --root SOURCE --to neoforge|fabric [--dry-run] [--json]\n" +
+            "  modaccel convert --root SOURCE --undo [ID]   restore every file the conversion changed, byte for byte\n" +
+            "Fabric to NeoForge (any version with a NeoForge release) and NeoForge to Fabric (Minecraft 26.1 and later, where both use Mojang's names).\n" +
+            "It rewrites the build (Loom <-> ModDevGradle, the newest loader releases for that Minecraft version), the metadata (fabric.mod.json <->\n" +
+            "META-INF/neoforge.mods.toml), the entrypoints (ModInitializer <-> @Mod classes that run it in NeoForge's first registry event), and the\n" +
+            "code with the rules in knowledge/loaders.json: loader calls, events, key mappings, Mod Menu's config screen. Every rule names classes checked\n" +
+            "against the loaders' own published jars (python bench/loader_api.py verify) and has a before/after test. There is no AI step.\n" +
+            "Anything with no rule is listed with its file and line and left as it was, never dropped. Then the converted build is compiled\n" +
+            "(--dry-run skips that); exit 0 means it compiled and nothing was left. A compile is not proof: check the mod in the game with ui-check or\n" +
+            "world-check and --assert. Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
             case "explain" -> "Explain a port's compiler errors: modaccel explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n" +
             "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n" +
             "class, method or field it names as each project's jars have it: where a missing class lives, a member's signatures, or similar names.\n" +
@@ -852,33 +881,41 @@ public final class Modaccel {
             "and items made by a recipe without a translation or model are warnings.\n" +
             "Build a jar with the project's own task: modaccel compile --root SOURCE --task :jar. That is the build path for\n" +
             "Paper/Bukkit plugins (the jar lands in build/libs); then modaccel plugin-check loads it.";
-            case "pack-check" -> "Check a modpack the way its players run it: modaccel pack-check --pack EXPORT.zip|FOLDER [--world SAVE] [--only ITEM,ITEM] [--fix] [--json]\n" +
-            "--pack is a CurseForge export (.zip or its folder) or an instance folder with mods/ (add --minecraft 1.20.1 --loader forge-47.4.20 when it has no minecraftinstance.json).\n" +
-            "Mod files come from CurseForge's public file API, size-checked and cached in ~/.modaccel/packs; jars CurseForge does not list get their client/server\n" +
-            "sides from Modrinth by SHA-1. Without the game it reports mod ids in two jars,\n" +
-            "required mods that are missing, block files two mods both ship, and mods older than a proven repair in knowledge/pack-fixes.json.\n" +
-            "Then the pack's own Forge server (its installer, cached) starts offline on 127.0.0.1 with the pack's mods and configs and a probe mod. modaccel\n" +
-            "accepts Minecraft's EULA only for that throwaway local test server. Mods that only work in a game client are left out and named.\n" +
-            "Start 1 makes a new world, saves every dimension the way level.dat stores it and reads it back, and places every block item (or --only) the way\n" +
-            "a player right-clicks, on the ground, a wall, a ceiling or in water as the item needs; start 2 opens that world again and reads every placed block back. --world SAVE also opens a copy of your save.\n" +
-            "--fix adds the repairs the findings name (a verified download) and runs both starts again to show them working: to an instance folder\n" +
-            "(undo with --undo), or for an export as a fixed copy of the .zip. Other loaders get the checks without the game, and say so.\n" +
-            "--memory 6G sets the server's heap; --timeout seconds (default 1200) bounds each start.";
+            case "pack-check" -> "Check a modpack the way its players run it: modaccel pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--fix] [--json]\n" +
+            "--pack is a CurseForge export (.zip or folder), a Modrinth .mrpack (or folder), a CurseForge app, Prism/MultiMC or vanilla launcher\n" +
+            "instance, or any folder with mods/. --minecraft 1.21.1 and --loader neoforge[-21.1.77] override what the pack says; with no loader\n" +
+            "version the loader's newest stable one is used. modaccel pack-check --list shows the inputs, loaders, checks and repairs it knows.\n" +
+            "Mod files are downloaded once, checked against their hashes or sizes, and cached in ~/.modaccel/packs; sides come from the pack,\n" +
+            "CurseForge or Modrinth (by SHA-1). Forge, NeoForge, Fabric and Quilt servers, any version, come from each loader's own installer.\n" +
+            "Without the game it reads every jar the way the pack's loader does and warns about duplicate ids, missing or wrong-version\n" +
+            "dependencies, mods for another game version, loader version or loader, declared conflicts, shared block files and names, and\n" +
+            "mods with a proven repair in knowledge/pack-fixes.json. Warnings become problems only when the game shows them.\n" +
+            "Then the pack's server starts offline on 127.0.0.1 with its mods and configs and a probe mod. modaccel accepts Minecraft's EULA\n" +
+            "only for that throwaway local test server. Mods that only work in a game client are left out and named.\n" +
+            "Start 1 makes a new world, saves every dimension the way level.dat stores it and reads it back, and places every block item (or --only)\n" +
+            "the way a player right-clicks; start 2 opens that world again and reads every placed block back. --world SAVE also opens a copy of your\n" +
+            "save. A start that fails names the mod its log, crash report, mixin configs or stack point at.\n" +
+            "--fix runs the repaired pack's server beside the shipped one and compares them check by check; only when the repaired one passes\n" +
+            "is your pack changed: an instance folder in place (undo with --undo), an export or .mrpack as a fixed copy.\n" +
+            "--memory 6G sets the server's heap; --timeout seconds (default 1200) bounds each start. How to add a loader, input, check or\n" +
+            "repair: tools/packcheck/CONTRIBUTING.md.";
             default -> "modaccel <command> --root SOURCE [--project :module] [--json]\n" +
             "  support                what works today        discover, doctor   what kind of build this is\n" +
             "  setup                  evaluate the build      compile            compile + resource/metadata checks\n" +
             "  fast, test             logic tests, no game    mixin-check        Mixin applies the mixins, no game\n" +
             "  data-check             what the game loads for the mod (items, recipes, errors), no game\n" +
             "  port                   move to another version explain            explain compiler errors\n" +
+            "  convert                move to another loader (Fabric <-> NeoForge), with undo\n" +
             "  dependencies           target dependencies     ui-check, world-check, mp-check   real game checks\n" +
             "  eval, reload           talk to the running game          game-status, game-stop\n" +
             "  plugin-check           Paper/Bukkit plugin on a fake Paper server (MockBukkit), no real server\n" +
             "  server-check           plugin on a real Paper server with a bot player and a scenario\n" +
-            "  pack-check             a modpack on its real loader server: conflicts, block swaps, worlds that will not reopen\n" +
+            "  pack-check             a modpack on its real Forge/NeoForge/Fabric/Quilt server: crashes, conflicts, worlds that will not reopen\n" +
             "  preferences            show or change your game window and sound choices\n" +
-            "  perf, perf-report      record and inspect local game performance\n" +
+            "  perf, perf-report      where a mod's CPU, memory, I/O and frame/tick time go\n" +
+            "  perf-optimize          accept or reject a candidate change with equivalence gates and measured speedup\n" +
             "  package, self-test     build or test modaccel itself\n" +
-            "Run modaccel help COMMAND for one command (port, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +
+            "Run modaccel help COMMAND for one command (port, convert, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +
             "--root is the mod's Gradle source checkout (the folder with gradlew); a multi-version build needs --project, e.g. --project :1.21.6.";
         };
     }

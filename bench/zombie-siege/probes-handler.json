@@ -1,0 +1,11 @@
+{
+ "probes": [
+  {
+   "class": "com.rique.zombieapocalypse.EventHandler",
+   "method": "onEntityTick",
+   "descriptor": "(Lnet/neoforged/neoforge/event/tick/EntityTickEvent$Pre;)V",
+   "label": "onEntityTick",
+   "mode": "timing"
+  }
+ ]
+}

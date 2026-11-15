@@ -474,6 +474,7 @@ final class Game {
                 } catch (RuntimeException unparsed) {}
                 String screen = Json.text(status, "screen", "");
                 status.put("running", true);
+                status.put("pid", current.get("pid"));
                 status.put(
                     "details",
                     "A game is running for this project (process " +

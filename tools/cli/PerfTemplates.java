@@ -12,11 +12,22 @@ final class PerfTemplates {
             String block = options.get("block", "minecraft:stone");
             if (!block.matches("[a-z0-9_.-]+:[a-z0-9_./-]+(?:\\[[a-z0-9_=,.-]+\\])?")) throw new IllegalArgumentException("Invalid namespaced block state");
             for (int width : List.of(1, 4, 8, 16)) cases.add(scene(width, block));
-        } else throw new IllegalArgumentException("--family must be transport or block-scene");
+        } else if (family.equals("entity-crowd")) {
+            String entity = id(options.get("entity", ""), "--entity");
+            for (int count : counts(options.get("counts", "1,16,64,256"))) cases.add(crowd(entity, count));
+        } else if (family.equals("mod-content")) {
+            Map<String, List<String>> content = content(Path.of(options.get("root", ".")).toAbsolutePath());
+            for (String block : content.get("block")) cases.add(scene(8, block));
+            for (String entity : content.get("entity")) for (int count : counts(options.get("counts", "16,64"))) cases.add(crowd(entity, count));
+            if (cases.isEmpty()) throw new IllegalArgumentException("No blocks or entities of the mod were found in its lang files; use --family entity-crowd --entity ID or block-scene --block ID");
+        } else throw new IllegalArgumentException("--family must be transport, block-scene, entity-crowd or mod-content");
         Map<String, Object> template = Json.map("schema", 1, "name", family,
             "requirements", family.equals("transport")
                 ? "Minecraft 1.21.1 command syntax; disposable overworld; local RCON. Use duration >=20 and warmup 0. Fixed total: 16 stone items."
-                : "Minecraft 1.21.1 command syntax; disposable local server; one connected client; attach profiler to that client. Camera, game mode and blocks will change.",
+                : family.equals("block-scene")
+                ? "Minecraft 1.21.1 command syntax; disposable local server; one connected client; attach profiler to that client. Camera, game mode and blocks will change."
+                : "Minecraft 1.20.5+ command syntax; a disposable world: perf --root SOURCE runs it in the source client's own world, or a local server with RCON. "
+                    + "Entities stay inside a barrier pen and are removed afterwards; block cases change camera and game mode.",
             "region", "Overworld x=0..33, y=63..66, z=0..16; chunks temporarily force-loaded. Never run in a valuable world.",
             "cases", cases);
         PerfScenario.validate(template);
@@ -26,6 +37,62 @@ final class PerfTemplates {
         Json.save(file, template);
         return Json.map("ok", true, "scenario", file.toString(), "details", template.get("requirements"),
             "warning", template.get("region"));
+    }
+
+    static String id(String value, String option) {
+        if (!value.matches("[a-z0-9_.-]+:[a-z0-9_./-]+")) throw new IllegalArgumentException(option + " needs a namespaced id such as mymod:thing");
+        return value;
+    }
+
+    static List<Integer> counts(String text) {
+        List<Integer> counts = new ArrayList<>();
+        for (String part : text.split(",")) {
+            int count = Integer.parseInt(part.strip());
+            if (count < 1 || count > 1024) throw new IllegalArgumentException("--counts values must be 1..1024");
+            counts.add(count);
+        }
+        return counts;
+    }
+
+    /** The mod's own blocks and entities, from the translation keys its lang files define. */
+    static Map<String, List<String>> content(Path root) throws Exception {
+        Set<String> blocks = new TreeSet<>(), entities = new TreeSet<>();
+        Path src = root.resolve("src");
+        if (Files.isDirectory(src)) try (var walk = Files.walk(src, 8)) {
+            for (Path file : walk.filter(p -> p.getFileName().toString().equals("en_us.json") && p.getParent().getFileName().toString().equals("lang")).toList()) {
+                for (String key : Json.object(Json.parse(Files.readString(file))).keySet()) {
+                    String[] parts = key.split("\\.");
+                    if (parts.length != 3 || parts[1].equals("minecraft") || !(parts[1] + ":" + parts[2]).matches("[a-z0-9_.-]+:[a-z0-9_/-]+")) continue;
+                    if (parts[0].equals("block")) blocks.add(parts[1] + ":" + parts[2]);
+                    if (parts[0].equals("entity")) entities.add(parts[1] + ":" + parts[2]);
+                }
+            }
+        }
+        return Map.of("block", blocks.stream().limit(16).toList(), "entity", entities.stream().limit(16).toList());
+    }
+
+    /** count entities on a grid inside a barrier pen, tagged so assertions and cleanup touch only them. */
+    static Map<String, Object> crowd(String entity, int count) {
+        int side = (int) Math.ceil(Math.sqrt(count));
+        List<Object> setup = new ArrayList<>();
+        Map<String, Object> load = command("forceload add 0 0 32 32", "force load");
+        load.put("waitMs", 1000);
+        setup.add(load);
+        setup.add(Json.map("command", "fill -1 63 -1 33 70 33 minecraft:barrier hollow", "expectAny", List.of("Successfully filled", "No blocks were filled")));
+        setup.add(Json.map("command", "fill 0 64 0 32 69 32 minecraft:air", "expectAny", List.of("Successfully filled", "No blocks were filled")));
+        double spacing = side > 1 ? 30.0 / (side - 1) : 0;
+        for (int i = 0; i < count; i++) {
+            double x = 1 + (i % side) * spacing;
+            double z = 1 + (i / side) * spacing;
+            setup.add(command(String.format(Locale.ROOT, "summon %s %.2f 64 %.2f {Tags:[\"modaccel_perf\"],PersistenceRequired:1b}", entity, x, z), "Summoned"));
+        }
+        Map<String, Object> present = command("execute if entity @e[tag=modaccel_perf]", "Test passed");
+        return Json.map("id", entity.replace(':', '-') + "-" + count,
+            "parameters", Json.map("entity", entity, "instances", count, "pen", "barrier box x=-1..33 y=63..70 z=-1..33"),
+            "setup", setup, "before", List.of(present), "after", List.of(present),
+            "cleanup", List.of(Json.map("command", "kill @e[tag=modaccel_perf]", "expectAny", List.of("Killed", "No entity was found")),
+                Json.map("command", "fill -1 63 -1 33 70 33 minecraft:air", "expectAny", List.of("Successfully filled", "No blocks were filled")),
+                command("forceload remove 0 0 32 32", "force load")));
     }
 
     static Map<String, Object> command(String text, String expected) {

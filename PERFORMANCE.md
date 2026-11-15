@@ -35,12 +35,61 @@ session with `game-stop`, then run `perf --root` again. Profiling does not cap F
 change vsync, mute your game, modify your saves or stop a game you attached to.
 Source launches retain the existing control agent's focus behavior.
 
-## What the report contains
+## Where your mod's cost goes
+
+The report opens with **Where the cost is, by mod and feature**: one row per mod,
+ranked, with its share of CPU samples, server milliseconds per tick and render
+milliseconds per frame (each with a 95% range), allocation rate, live heap of its
+own classes, lock wait and I/O. With `--root` your own mod is marked ★ and its
+packages come from the checkout; for an installed pack, mods are named from each
+jar's `fabric.mod.json` or `mods.toml`. Use `--mod-package com.example.mymod` to
+name your code explicitly, or `--mod-root my-mod` with `--attach PID`.
+
+`perf` refuses a hidden, throttled source session because its frame timing is not
+representative. When only server ticks or timed methods matter, `--allow-hidden`
+captures it anyway and the report says frame values are not representative.
+
+Each sampled stack, allocation, lock wait and I/O event is charged to the
+**innermost mod frame** on its stack. Game, JVM, loader and library code above that
+frame is work the mod asked for, so it counts as the mod's. Expand a mod to see its
+**features**, named by how the game entered the mod:
+
+- `event handler · EntityTickEvent.Pre → EventHandler.onEntityTick` when an event bus
+  (NeoForge, Forge, Fabric API) called it;
+- `mixin · LevelRenderer ← onRender` for a Fabric mixin handler merged into a game class;
+- `block`, `block entity`, `entity`, `entity renderer`, `block entity renderer`,
+  `AI goal`, `item`, `screen`, `menu` or `saved data` from the class's own type chain;
+- otherwise `other code · Class.method`.
+
+Each feature lists its top methods and threads. A threads table gives each
+thread's operating-system CPU load. Per-tick and per-frame values are the mod's share
+of server-thread or render-thread samples times the measured mean tick duration or
+frame interval. They are **sampled estimates** (marked ≈). Waits inside a tick, GPU
+work and vsync are not sampled.
+
+For **exact** numbers, the capture also writes `probes.suggested.json`: timing
+selectors for each mod's most-sampled methods, with their JVM descriptors. Capture
+again with them:
+
+```sh
+./modaccel perf --root my-mod --probes ./capture/probes.suggested.json --duration 30
+```
+
+The mod's rows then show every timed method's exact call count, calls per tick,
+milliseconds per tick and mean per call. These totals are kept by the agent for the
+whole capture, so they stay complete even when the per-call history is capped.
+Every timed call costs a few hundred nanoseconds of probe overhead. For a method
+called thousands of times per tick, time its caller instead, or compare captures
+with the same probes.
+
+## What else the report contains
 
 - Frame intervals, average FPS, 1% lows, p95/p99 and frames over 50/100 ms.
 - Completed server tick durations, ticks over 50 ms and observed tick rate.
 - Heap samples, process CPU, allocation estimates and GC pauses.
 - Sampled hot methods, threads and loaded-code origins; allocation and lock sites.
+- Live instance count and shallow bytes per class from a class histogram taken
+  after recording stops. This runs a full GC once; `--no-heap` skips it.
 - Time-aligned graphs, explicit coverage gaps, raw JFR, JSON and a Speedscope
   sampled-stack export. Open the latter in a compatible local viewer for flame graphs.
 - Installed top-level jar inventory and hashes where a `mods` directory is found.
@@ -61,10 +110,11 @@ The timing hooks recognize common named, Fabric intermediary and Forge method
 names. Official obfuscated **1.21.1** client/server mappings have explicit selectors.
 If a game version or loader changes these methods, missing timing metrics are
 reported; JVM profiling can still work. Java 8/11 games are not supported by this
-agent. GPU time/VRAM, per-mod retained heap, mixin-origin attribution and arbitrary
-mod behavior are not automatically measured. Code origin means where sampled code
-was loaded from, not which mod caused its work. Optimization claims still require
-controlled experiments and correctness checks.
+agent. GPU time and VRAM, retained (reachable) heap per mod, mixin overwrites,
+unnamed mixin handlers and arbitrary mod behavior are not measured. Heap per mod
+counts instances of the mod's own classes only, not game objects it holds.
+Charging work to the innermost mod is not proof of cause: a mod that triggers
+another mod's work through a shared event is not charged for it.
 
 1% low FPS is `1000 / mean(slowest ceil(1% of frame intervals))`. Tick durations
 cover normally completed tick methods. Allocation weights are estimates; recorded
@@ -160,6 +210,30 @@ those subsystems. Other mods' animations, inventories and custom state need
 appropriate scenario commands or an adapter. Inspect the rendered scene to
 confirm the intended content.
 
+### Your mod's own content
+
+```sh
+./modaccel perf-template --family mod-content --root my-mod --out ./my-scenarios
+./modaccel perf-template --family entity-crowd --entity mymod:ghoul --counts 1,16,64,256 --out ./crowd
+```
+
+`mod-content` reads the `block.<mod>.<id>` and `entity.<mod>.<id>` keys of the mod's
+`en_us.json` lang files and writes a 64-block scene per block and 16- and 64-entity
+crowds per entity (`--counts` changes the sizes). `entity-crowd` does the same for one
+entity ID, which can be a vanilla mob your mod changes. Crowds stand in a barrier pen,
+are tagged `modaccel_perf`, and are removed in cleanup.
+
+Run a scenario inside your source client's own singleplayer world, with no server
+or RCON: enter a disposable world, then
+
+```sh
+./modaccel perf --root my-mod --scenario ./my-scenarios/mod-content.json --duration 20
+```
+
+With `--root` and no `--rcon-port`, each command runs on the integrated server through
+the game console and its feedback text is checked like an RCON reply. This needs the
+game's Mojang or Yarn names in the development client.
+
 ## Custom mechanics and deeper probes
 
 Scenario files have `schema: 1`, `name` and `cases`. Each case has `id`, descriptive
@@ -235,6 +309,83 @@ without timing probes: deeply instrumenting a hot loop can substantially distort
 Exact runtime names/descriptors are required; constructors, native and abstract methods
 are not supported. GPU execution, native internals and cross-thread causal ownership
 require additional tools or domain-specific probes.
+
+## Accept a change only when it is equivalent and faster
+
+`perf-optimize` decides one candidate change. You, or your own agent, write the
+change from what the report shows and save it as a git diff; modaccel never writes
+or proposes code, and makes no network or model calls.
+
+```sh
+git -C my-mod diff > candidate.diff && git -C my-mod checkout -- .
+./modaccel perf-optimize --root my-mod --experiment experiment.json --patch candidate.diff --runs 5
+```
+
+It makes two git worktrees of the mod's `HEAD`: **baseline** and **candidate**
+(`HEAD` plus the diff). For each of `--runs` pairs it launches each arm in a fresh
+game, alternating which goes first, and in every launch:
+
+1. copies the experiment's `files` (configs, `options.txt`) and a fresh copy of
+   `worldSource` into the arm, then starts it (`world-check --world`, or `ui-check`
+   when there is no world) with your saved window and sound preferences;
+2. runs the `setup` eval snippets in order (`expect` checks a returned value);
+3. records a **cold** capture right after setup and a **warm** capture after
+   `measure.warmup` more seconds, attaching by PID (hidden sessions allowed), and
+   reads the metric from each;
+4. runs every gate and stops the game.
+
+The metric is a timing probe's `inclusiveMsPerTick` (or another statistic of its
+exact row, such as `meanInclusiveMs`) or any numeric `report.json` path such as
+`metrics.tick_ms.mean`. Choose a server-side or timed metric when launches are
+hidden: hidden clients are throttled, so FPS and frame intervals are not
+representative. Speedup is baseline ÷ candidate per pair; the report gives
+the geometric mean and a 95% bootstrap interval over pairs, separately for cold and
+warm.
+
+Gates compare each candidate launch with its paired baseline launch:
+
+| `compare` | Passes when |
+|---|---|
+| `exact` | the snippet's returned text is identical, and identical across all baseline launches |
+| `expect` | every launch of both arms returns `expect` (behaviour assertions) |
+| `tolerance` | every number differs by at most the relative `tolerance`, and baseline launches agree within it |
+| `pixels` (`frame: true`) | the 1280x720 framebuffer captures differ in at most `maxDifferentPixels` pixels; baseline launches must agree too |
+
+A frame gate's optional `file` runs first to set up a fixed view; inspect the saved
+`frame-*.png` files to confirm the view shows what you meant to compare. A gate
+whose baseline launches disagree fails: it cannot tell a change from noise, so
+freeze or isolate what it reads. `"tests": true` also runs `fast` in both
+worktrees and requires the candidate to pass if the baseline does.
+
+The change is **accepted** only when every gate passes and both cold and warm
+intervals lie above 1. An accepted diff is applied to `--root` (not with
+`--dry-run`). `--keep` keeps both worktrees. `optimize.html` and `optimize.json`
+hold every launch, capture, gate value and frame.
+
+```json
+{
+  "schema": 1,
+  "gameDirectory": "runs/client",
+  "world": "bench", "worldSource": "saves/bench",
+  "files": {"runs/client/options.txt": "options.txt"},
+  "setup": [{"file": "setup.java", "thread": "control"}],
+  "measure": {"seconds": 20, "warmup": 10, "probes": "probes.json",
+              "metric": {"probe": "onEntityTick", "statistic": "inclusiveMsPerTick"}},
+  "gates": [
+    {"name": "behaviour", "file": "assert.java", "compare": "expect", "expect": "true"},
+    {"name": "decisions", "file": "digest.java", "thread": "control", "compare": "exact"},
+    {"name": "frame", "frame": true, "file": "view.java", "thread": "control", "maxDifferentPixels": 0}
+  ]
+}
+```
+
+Paths are relative to the experiment file. Measurements apply to that scenario,
+world and machine; other load on the machine widens the intervals, and a change too
+small to separate from that noise is rejected. If a run is interrupted, stop its
+games with `game-stop --root OUT/baseline` (and `candidate`) and run
+`git worktree prune` in the mod. Each arm builds in its own worktree, so the first run of an
+experiment includes two cold builds. [`bench/zombie-siege`](bench/zombie-siege/README.md)
+is a complete experiment for a real NeoForge mod.
 
 ## Files and troubleshooting
 
