@@ -16,21 +16,16 @@ POSIX below; Windows uses `modaccel.cmd` and `python` instead of `./modaccel` an
 ```
 
 Use modaccel for builds and game launches; never raw Gradle or `--no-daemon`.
-Offline gate before pushing (game/network checks: `.github/workflows/portable.yml`):
+Once per clone: `git config core.hooksPath .githooks`. Its pre-push hook runs the fast offline checks on what the push changes (`tools/ci/pre_push.py`, seconds).
+Full offline gate before pushing (game/network checks run in CI, `.github/workflows/portable.yml`):
 
 ```sh
 ./modaccel self-test &&
-python3 bench/test_measures.py &&
-python3 bench/test_record.py &&
-python3 bench/test_ledger_rule.py &&
-python3 bench/test_java_lines.py &&
-python3 bench/test_loader_api.py &&
-python3 bench/test_sweeps.py &&
-python3 bench/test_session_cost.py &&
-python3 bench/test_perf_sessions.py &&
-python3 bench/test_utf8_output.py &&
-python3 bench/diorama/test_prepare_world.py
+for t in bench/test_*.py bench/diorama/test_*.py tools/ci/test_*.py; do python3 "$t" || break; done
 ```
+
+CI runs `tools/ci/lanes.py` plans on all three systems; reproduce one with `python3 tools/ci/lanes.py core` (or `server`, `stonecutter`, `--seed N`).
+Never retry a failing check or widen its timeout: find why it failed.
 
 Commit and push your branch. Use `.github/pull_request_template.md`; land on `main`:
 
