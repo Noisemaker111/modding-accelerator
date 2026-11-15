@@ -147,7 +147,8 @@ while (!dev.diorama.render.gpu.GpuBakeCheck.trusted(dev.diorama.render.gpu.GpuBa
     Thread.sleep(250);
 }
 vars.put("warm.gpuRetries", retries);
-if (!dev.diorama.render.gpu.GpuBakeCheck.trusted(dev.diorama.render.gpu.GpuBakeCheck.SKY)) {
-    return "GPU baking not on: " + dev.diorama.render.gpu.GpuBakeCheck.off() + " after " + retries + " retries";
-}
+// GPU baking still off (the check found the GPU's tiles differ from the tracer's, as a broken mesher makes them)
+// is left to the gates: mapped.java requires the flight to end with GPU-baked tiles, so the launch is rejected by
+// a gate instead of ending the run as an error.
+vars.put("warm.gpuOff", String.valueOf(dev.diorama.render.gpu.GpuBakeCheck.off()));
 return "warm";

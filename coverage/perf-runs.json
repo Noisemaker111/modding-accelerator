@@ -51494,6 +51494,237 @@
    "wallSeconds": 354.1773465,
    "finished": "2026-11-15T22:25:45.630095200Z",
    "seconds": 343.86374565
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T22-25-56.775780600Z-27898256",
+   "kind": "perf-optimize",
+   "session": "diorama-round4",
+   "started": "2026-11-15T22:25:56.775780600Z",
+   "mod": {
+    "id": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "project": ":1.21.1"
+   },
+   "phases": {
+    "setup": 49.88409315,
+    "build": 28.479857250000002,
+    "launch": 47.83782725,
+    "warmup": 0.0,
+    "measure": 67.61374955,
+    "gates": 18.32599415,
+    "other": 10.8047581
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 1.3323874
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 28.5677235,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 45.6205374,
+     "share": 0.5
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 28.391991,
+     "share": 0.5
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 50.05511709999999,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-frames",
+     "seconds": 4.6482178,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.0586274,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-frames",
+     "seconds": 3.7106968,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.1705414,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 2.857784,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.7835198,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 41.9879968,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 40.7640126,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 1.631635,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 1.5860792,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 5.2238028,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 68.1015237,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 1.5563279,
+     "share": 0.5
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 1.7068874,
+     "share": 0.5
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0,
+     "share": 0.5
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 67.1259754,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 15.1770895,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.5699432,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.1403942,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-reuseLive",
+     "seconds": 9.9008831,
+     "share": 0.5
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-slabsRing",
+     "seconds": 6.8636783,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 3.6094356,
+     "share": 0.5
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.0352471
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.1734345
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "pair 0 before launch",
+      "at": "2026-11-15T22:25:59.802709Z",
+      "systemCpu": 0.14524582055272506,
+      "javaProcesses": 6
+     }
+    ],
+    "meanSystemCpu": 0.14524582055272506,
+    "maxSystemCpu": 0.14524582055272506,
+    "jit": "full",
+    "framesPerSecond": 60
+   },
+   "candidate": {
+    "label": "sabotage-walk-short-run",
+    "diffSha256": "6bf3bd9d241389aeb55b0c5d47297cdaf7214f98c2f2c3957121a0f68d2ff299",
+    "changedFiles": [
+     "src/main/java/dev/diorama/bake/GpuMesher.java"
+    ]
+   },
+   "gates": [],
+   "speedup": null,
+   "verdict": "error",
+   "rejection": "error: java.io.IOException: Before cold jit-warm.java returned GPU baking not on: NO_MATCH after 0 retries, expected warm",
+   "metric": {
+    "threadCpu": "^diorama-baker"
+   },
+   "source": ".\\.runs\\diorama-opt\\sabotage-walk-short-run",
+   "arms": "parallel",
+   "wallSeconds": 315.0742622,
+   "finished": "2026-11-15T22:31:11.904485400Z",
+   "seconds": 222.94627945000002
   }
  ]
 }
