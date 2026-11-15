@@ -847,18 +847,24 @@ public final class Modaccel {
             "and items made by a recipe without a translation or model are warnings.\n" +
             "Build a jar with the project's own task: modaccel compile --root SOURCE --task :jar. That is the build path for\n" +
             "Paper/Bukkit plugins (the jar lands in build/libs); then modaccel plugin-check loads it.";
-            case "pack-check" -> "Check a modpack the way its players run it: modaccel pack-check --pack EXPORT.zip|FOLDER [--world SAVE] [--only ITEM,ITEM] [--fix] [--json]\n" +
-            "--pack is a CurseForge export (.zip or its folder) or an instance folder with mods/ (add --minecraft 1.20.1 --loader forge-47.4.20 when it has no minecraftinstance.json).\n" +
-            "Mod files come from CurseForge's public file API, size-checked and cached in ~/.modaccel/packs; jars CurseForge does not list get their client/server\n" +
-            "sides from Modrinth by SHA-1. Without the game it reports mod ids in two jars,\n" +
-            "required mods that are missing, block files two mods both ship, and mods older than a proven repair in knowledge/pack-fixes.json.\n" +
-            "Then the pack's own Forge server (its installer, cached) starts offline on 127.0.0.1 with the pack's mods and configs and a probe mod. modaccel\n" +
-            "accepts Minecraft's EULA only for that throwaway local test server. Mods that only work in a game client are left out and named.\n" +
-            "Start 1 makes a new world, saves every dimension the way level.dat stores it and reads it back, and places every block item (or --only) the way\n" +
-            "a player right-clicks, on the ground, a wall, a ceiling or in water as the item needs; start 2 opens that world again and reads every placed block back. --world SAVE also opens a copy of your save.\n" +
-            "--fix adds the repairs the findings name (a verified download) and runs both starts again to show them working: to an instance folder\n" +
-            "(undo with --undo), or for an export as a fixed copy of the .zip. Other loaders get the checks without the game, and say so.\n" +
-            "--memory 6G sets the server's heap; --timeout seconds (default 1200) bounds each start.";
+            case "pack-check" -> "Check a modpack the way its players run it: modaccel pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--fix] [--json]\n" +
+            "--pack is a CurseForge export (.zip or folder), a Modrinth .mrpack (or folder), a CurseForge app, Prism/MultiMC or vanilla launcher\n" +
+            "instance, or any folder with mods/. --minecraft 1.21.1 and --loader neoforge[-21.1.77] override what the pack says; with no loader\n" +
+            "version the loader's newest stable one is used. modaccel pack-check --list shows the inputs, loaders, checks and repairs it knows.\n" +
+            "Mod files are downloaded once, checked against their hashes or sizes, and cached in ~/.modaccel/packs; sides come from the pack,\n" +
+            "CurseForge or Modrinth (by SHA-1). Forge, NeoForge, Fabric and Quilt servers, any version, come from each loader's own installer.\n" +
+            "Without the game it reads every jar the way the pack's loader does and warns about duplicate ids, missing or wrong-version\n" +
+            "dependencies, mods for another game version, loader version or loader, declared conflicts, shared block files and names, and\n" +
+            "mods with a proven repair in knowledge/pack-fixes.json. Warnings become problems only when the game shows them.\n" +
+            "Then the pack's server starts offline on 127.0.0.1 with its mods and configs and a probe mod. modaccel accepts Minecraft's EULA\n" +
+            "only for that throwaway local test server. Mods that only work in a game client are left out and named.\n" +
+            "Start 1 makes a new world, saves every dimension the way level.dat stores it and reads it back, and places every block item (or --only)\n" +
+            "the way a player right-clicks; start 2 opens that world again and reads every placed block back. --world SAVE also opens a copy of your\n" +
+            "save. A start that fails names the mod its log, crash report, mixin configs or stack point at.\n" +
+            "--fix runs the repaired pack's server beside the shipped one and compares them check by check; only when the repaired one passes\n" +
+            "is your pack changed: an instance folder in place (undo with --undo), an export or .mrpack as a fixed copy.\n" +
+            "--memory 6G sets the server's heap; --timeout seconds (default 1200) bounds each start. How to add a loader, input, check or\n" +
+            "repair: tools/packcheck/CONTRIBUTING.md.";
             default -> "modaccel <command> --root SOURCE [--project :module] [--json]\n" +
             "  support                what works today        discover, doctor   what kind of build this is\n" +
             "  setup                  evaluate the build      compile            compile + resource/metadata checks\n" +
@@ -869,7 +875,7 @@ public final class Modaccel {
             "  eval, reload           talk to the running game          game-status, game-stop\n" +
             "  plugin-check           Paper/Bukkit plugin on a fake Paper server (MockBukkit), no real server\n" +
             "  server-check           plugin on a real Paper server with a bot player and a scenario\n" +
-            "  pack-check             a modpack on its real loader server: conflicts, block swaps, worlds that will not reopen\n" +
+            "  pack-check             a modpack on its real Forge/NeoForge/Fabric/Quilt server: crashes, conflicts, worlds that will not reopen\n" +
             "  preferences            show or change your game window and sound choices\n" +
             "  perf, perf-report      record and inspect local game performance\n" +
             "  package, self-test     build or test modaccel itself\n" +

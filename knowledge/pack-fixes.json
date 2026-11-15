@@ -1,13 +1,19 @@
 {
-  "schema": 1,
-  "about": "Repairs pack-check applies for a cause it has proven in a real run. Each entry names the mod and the versions it fixes, the check that shows the fault, and a verified download. A finding with no entry here is reported with its evidence and left alone.",
+  "schema": 2,
+  "about": "Repairs pack-check applies for a cause proven in a real run. Each entry names the loader and game versions it is for, a match (read from the jars before the game runs: mod-below, mod-range, mods-together, dependency-unmet), the check that shows the fault in the game, an action (add-jar, remove-mod, replace-mod) whose downloads are checked against their SHA-512, the evidence, and a test: jars that must match before the action and must not after it (run by self-test). A finding with no entry here is reported with its evidence and left alone.",
   "fixes": [
     {
       "id": "biolith-saved-climate-list",
       "mod": "biolith",
       "loader": "forge",
-      "minecraft": ["1.20.1"],
-      "fixedIn": "1.0.1-beta.1",
+      "minecraft": [
+        "1.20.1"
+      ],
+      "match": {
+        "type": "mod-below",
+        "mod": "biolith",
+        "below": "1.0.1-beta.1"
+      },
       "check": "dimension-save",
       "symptom": "A world opens the first time and never again: \"Failed to load datapacks, can't proceed with server load\", caused by \"Overworld settings missing\".",
       "cause": "Biolith before 1.0.1-beta.1 adds placeholder climate points (3.01, outside the -2..2 the game reads back) for the biomes it places. When another mod saves the overworld's biome list in full (Blueprint's modded biome source does), the next start rejects that entry and the overworld is dropped.",
@@ -15,7 +21,8 @@
         "https://github.com/TerraformersMC/Biolith/issues/57 (Forge Datapack Validation (World Corruption), closed by 1.0.1-beta.1)",
         "pack-check on Prehistoric World 2 2.4.0 (Forge 47.4.20), 2026-10-30: Traverse 7.0.12 bundles Biolith 1.0.1-alpha.1; the second start fails; with 1.0.1-beta.1 added the second start opens, every placed block reads back, and a world saved by the broken version opens too"
       ],
-      "add": {
+      "action": {
+        "type": "add-jar",
         "file": "biolith-forge-1.0.1-beta.1.jar",
         "url": "https://cdn.modrinth.com/data/iGEl6Crx/versions/3wmaz5qg/biolith-forge-1.0.1-beta.1.jar",
         "sha512": "734a6135d8dd7151b7aff735c91998c02c56c06f22f0ebf877a62df7ba13d82dbd64db24572023e710a30eab39d84ac152993a230bc268e0baa3bd09dc8167e1",
@@ -23,7 +30,100 @@
         "page": "https://modrinth.com/mod/biolith/version/1.0.1-beta.1",
         "license": "LGPL-3.0-only"
       },
-      "why": "Forge loads the highest version of a library that is both bundled inside another mod and present on its own, so the newer jar in the mods folder replaces the copy bundled inside Traverse."
+      "why": "Forge loads the highest version of a library that is both bundled inside another mod and present on its own, so the newer jar in the mods folder replaces the copy bundled inside Traverse.",
+      "test": {
+        "jars": [
+          {
+            "file": "traverse-forge-7.0.12.jar",
+            "mods": [
+              {
+                "id": "traverse",
+                "version": "7.0.12"
+              }
+            ],
+            "bundles": [
+              {
+                "id": "biolith",
+                "version": "1.0.1-alpha.1"
+              }
+            ]
+          }
+        ],
+        "added": {
+          "mods": [
+            {
+              "id": "biolith",
+              "version": "1.0.1-beta.1"
+            }
+          ]
+        },
+        "from": "Traverse 7.0.12 for Forge bundles Biolith 1.0.1-alpha.1 (Prehistoric World 2 2.4.0)"
+      }
+    },
+    {
+      "id": "soulsweapons-pinned-projectile-damage",
+      "mod": "soulsweapons",
+      "loader": "forge",
+      "minecraft": [
+        "1.20.1"
+      ],
+      "match": {
+        "type": "dependency-unmet",
+        "mod": "soulsweapons",
+        "dependency": "projectile_damage"
+      },
+      "check": "server-start",
+      "symptom": "The game does not start: Forge stops with \"Mod soulsweapons requires projectile_damage 3.2.2+1.20.1\" because the pack has Projectile Damage 3.2.3+1.20.1.",
+      "cause": "Marium's Soulslike Weaponry before 1.4 (1.2.x and 1.3.x for Forge 1.20.1) pins projectile_damage to exactly [3.2.2+1.20.1]; Projectile Damage's current Forge release is 3.2.3+1.20.1, so a pack that takes the newest library does not load. Soulslike Weaponry 1.4.4 drops the dependency.",
+      "evidence": [
+        "soulslike-weaponry-1.2.4-1.20.1-forge.jar and 1.3.1 META-INF/mods.toml: projectile_damage versionRange=\"[3.2.2+1.20.1]\"; 1.4.4 has no projectile_damage dependency",
+        "pack-check --fix on JoJo's Bizarre Modpack 1.0.0 (Modrinth .mrpack, Forge 47.4.3, 108 files), 2026-11-14: the shipped pack's server stops at start-up and its log names soulsweapons; the repaired pack, run beside it, makes a new world, places 4,515 block items, opens the world again and reads all 4,474 placed blocks back; the fixed .mrpack it writes passes pack-check on its own"
+      ],
+      "action": {
+        "type": "replace-mod",
+        "mod": "projectile_damage",
+        "file": "projectile_damage-forge-3.2.2+1.20.1.jar",
+        "url": "https://cdn.modrinth.com/data/AOyJhFvl/versions/KgTLAkfq/projectile_damage-forge-3.2.2%2B1.20.1.jar",
+        "sha512": "a6576a0b971f38f95ac1ff587d12d7f26fcbc1f64bf216f5bae873eb069c97e7b350ad76605aa6a9df5a6ad6821edc9a17672a5f93767e624669f25be4cc9536",
+        "bytes": 251688,
+        "page": "https://modrinth.com/mod/projectile-damage-attribute/version/3.2.2+1.20.1-forge",
+        "license": "GPL-3.0-only"
+      },
+      "why": "Projectile Damage 3.2.2 is the version Soulslike Weaponry was built against and still provides the projectile_damage id other mods read; replacing the library keeps every mod of the pack, where updating Soulslike Weaponry to 1.4 would change its content.",
+      "test": {
+        "jars": [
+          {
+            "file": "soulslike-weaponry-1.2.4-1.20.1-forge.jar",
+            "mods": [
+              {
+                "id": "soulsweapons",
+                "version": "1.2.4-1.20.1-forge",
+                "depends": {
+                  "projectile_damage": "[3.2.2+1.20.1]"
+                }
+              }
+            ]
+          },
+          {
+            "file": "projectile_damage-forge-3.2.3+1.20.1.jar",
+            "mods": [
+              {
+                "id": "projectile_damage",
+                "version": "3.2.3+1.20.1"
+              }
+            ]
+          }
+        ],
+        "added": {
+          "mods": [
+            {
+              "id": "projectile_damage",
+              "version": "3.2.2+1.20.1"
+            }
+          ]
+        },
+        "from": "JoJo's Bizarre Modpack 1.0.0 (Modrinth, Forge 47.4.3)"
+      }
     }
   ]
 }

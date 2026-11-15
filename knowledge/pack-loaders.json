@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "about": "How pack-check gets and starts each loader's server. Versions come from the loader's own metadata at run time, never from this file; every download is checked against the SHA-1 its maven or metadata publishes. A loader here needs a small adapter in tools/cli/PackLoaders.java naming its launch style; see docs in tools/packcheck/CONTRIBUTING.md.",
+  "minecraft": {
+    "manifest": "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
+  },
+  "tools": {
+    "renamer": {
+      "about": "Forge's renaming tool, used to give the probe the game's run-time names (two passes: Mojang to official, then official to the loader's names).",
+      "url": "https://maven.minecraftforge.net/net/minecraftforge/ForgeAutoRenamingTool/1.1.2/ForgeAutoRenamingTool-1.1.2-all.jar",
+      "sha1": "1c0e9093bf1483039e3f342c4051cbbf9764d23c"
+    }
+  },
+  "common": {
+    "failed": [
+      "Failed to start the minecraft server",
+      "Failed to load datapacks",
+      "Crash report saved to",
+      "Encountered an unexpected exception",
+      "Exception in server tick loop"
+    ],
+    "builtIn": ["minecraft", "java"]
+  },
+  "loaders": {
+    "forge": {
+      "style": "args-file",
+      "aliases": ["forge", "net.minecraftforge", "minecraftforge", "lexforge"],
+      "versions": "https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml",
+      "versionPrefix": "{mc}-",
+      "installer": "https://maven.minecraftforge.net/net/minecraftforge/forge/{mc}-{version}/forge-{mc}-{version}-installer.jar",
+      "install": ["--installServer", "{dir}"],
+      "metadata": [{ "file": "META-INF/mods.toml" }],
+      "builtIn": ["forge", "javafml", "lowcodefml", "mixin"],
+      "failed": ["Mod Loading has failed", "Failed to complete lifecycle event"],
+      "modNamed": ["Failed to [^.]+\\. ModID: ([a-z0-9_.\\-]+)", "Mod ([a-z0-9_.\\-]+) requires "],
+      "clientOnly": ["for invalid dist DEDICATED_SERVER"]
+    },
+    "neoforge": {
+      "style": "args-file",
+      "aliases": ["neoforge", "net.neoforged", "neoforged"],
+      "versions": "https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml",
+      "versionPrefix": "{neoforge}.",
+      "installer": "https://maven.neoforged.net/releases/net/neoforged/neoforge/{version}/neoforge-{version}-installer.jar",
+      "install": ["--installServer", "{dir}"],
+      "byMinecraft": {
+        "1.20.1": {
+          "about": "NeoForge for 1.20.1 is a Forge 47 fork published under Forge's coordinates.",
+          "versions": "https://maven.neoforged.net/releases/net/neoforged/forge/maven-metadata.xml",
+          "versionPrefix": "1.20.1-",
+          "installer": "https://maven.neoforged.net/releases/net/neoforged/forge/1.20.1-{version}/forge-1.20.1-{version}-installer.jar"
+        }
+      },
+      "metadata": [
+        { "file": "META-INF/neoforge.mods.toml", "from": "1.20.5" },
+        { "file": "META-INF/mods.toml", "below": "1.20.5" }
+      ],
+      "builtIn": ["neoforge", "forge", "javafml", "lowcodefml", "mixin"],
+      "failed": ["Mod Loading has failed", "Failed to complete lifecycle event", "Loading errors encountered", "ModLoadingException"],
+      "modNamed": [
+        "Failed to [^.]+\\. ModID: ([a-z0-9_.\\-]+)",
+        "Mod ([a-z0-9_.\\-]+) requires ",
+        "Mod ([a-z0-9_.\\-]+) failed to load correctly",
+        "\\(([a-z0-9_.\\-]+)\\) has failed to load correctly",
+        "mod ([a-z0-9_.\\-]+) failed to"
+      ],
+      "clientOnly": ["for invalid dist DEDICATED_SERVER"]
+    },
+    "fabric": {
+      "style": "launch-jar",
+      "aliases": ["fabric", "fabric-loader", "net.fabricmc", "net.fabricmc.fabric-loader"],
+      "versions": "https://meta.fabricmc.net/v2/versions/loader/{mc}",
+      "installers": "https://meta.fabricmc.net/v2/versions/installer",
+      "install": ["server", "-dir", "{dir}", "-mcversion", "{mc}", "-loader", "{version}", "-downloadMinecraft"],
+      "launchJar": "fabric-server-launch.jar",
+      "launcherProperties": "fabric-server-launcher.properties",
+      "intermediary": "https://maven.fabricmc.net/net/fabricmc/intermediary/{mc}/intermediary-{mc}-v2.jar",
+      "metadata": [{ "file": "fabric.mod.json" }],
+      "builtIn": ["fabricloader", "fabric-loader"],
+      "failed": ["Incompatible mods found!", "Mod resolution failed", "Could not execute entrypoint stage", "A critical error occurred", "Mixin transformation of", "Failed to start Minecraft"],
+      "modNamed": [
+        "provided by '([a-z0-9_\\-]+)'",
+        "Mixin apply for mod ([a-z0-9_\\-]+) failed",
+        "Mod '[^']*' \\(([a-z0-9_\\-]+)\\)",
+        "from mod ([a-z0-9_\\-]+)\\]"
+      ],
+      "clientOnly": ["in environment type SERVER"]
+    },
+    "quilt": {
+      "style": "launch-jar",
+      "aliases": ["quilt", "quilt-loader", "org.quiltmc", "org.quiltmc.quilt-loader"],
+      "versions": "https://meta.quiltmc.org/v3/versions/loader/{mc}",
+      "installers": "https://meta.quiltmc.org/v3/versions/installer",
+      "install": ["install", "server", "{mc}", "{version}", "--download-server", "--install-dir={dir}"],
+      "launchJar": "quilt-server-launch.jar",
+      "launcherProperties": "quilt-server-launcher.properties",
+      "intermediary": "https://maven.fabricmc.net/net/fabricmc/intermediary/{mc}/intermediary-{mc}-v2.jar",
+      "metadata": [{ "file": "quilt.mod.json" }, { "file": "fabric.mod.json" }],
+      "builtIn": ["quilt_loader", "fabricloader", "fabric-loader", "quilt_base"],
+      "failed": ["Incompatible mods found!", "Mod resolution failed", "Could not execute entrypoint stage", "A critical error occurred", "Mixin transformation of", "Failed to start Minecraft", "Quilt Loader: crash"],
+      "modNamed": [
+        "provided by '([a-z0-9_\\-]+)'",
+        "Mixin apply for mod ([a-z0-9_\\-]+) failed",
+        "Mod '[^']*' \\(([a-z0-9_\\-]+)\\)",
+        "from mod ([a-z0-9_\\-]+)\\]"
+      ],
+      "clientOnly": ["in environment type SERVER"]
+    }
+  }
+}

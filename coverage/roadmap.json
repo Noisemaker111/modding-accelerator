@@ -467,7 +467,7 @@
    "headline": [
     "pack.packs-in-game"
    ],
-   "today": "Forge 1.20.1 packs: duplicate and missing mods, blocks that place as another block, worlds that will not reopen. One proven repair so far.",
+   "today": "Forge, NeoForge, Fabric and Quilt packs from CurseForge, Modrinth and launcher instances, run on their real servers: worlds that will not open or reopen, crashes named by mod, duplicate and missing mods, blocks that place as another block. Two proven repairs.",
    "try": [
     {
      "say": "find and repair what breaks a modpack",
