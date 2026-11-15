@@ -73,11 +73,15 @@ On Windows the command is `modaccel.cmd`; from any shell, `java -jar modaccel.ja
 - **`--fix`** applies a proven repair, then starts the repaired pack beside the original to show it working.
 - **Not yet:** Forge 1.20.1 only in the game, and one known repair. Other loaders get the checks that need no game.
 
-### Performance evidence for mods and packs
+### Make a mod faster without changing what it does
 
-Run `modaccel perf` while your game is running to capture frame/tick timing, JVM memory, GC, allocation and sampled execution hotspots. Open the local HTML report; use `perf --list` / `--attach PID` to choose a process, `perf-diff` for observed differences, and `perf-template` for editable transport and block-scene scenarios. Requires Java 17+; missing timing hooks and unsupported metrics are explicit. See [local profiling instructions](PERFORMANCE.md).
+- **Where the cost goes:** `perf --root my-mod` (or `perf` beside any running game or server) ranks every mod by CPU share, server ms per tick, render ms per frame, allocation, live heap of its own classes, lock wait and I/O, then splits each mod into features: event handlers, mixin handlers, blocks, entities, renderers, AI goals, screens. Sampled values are marked as estimates.
+- **Exact numbers:** the capture writes timing probes for each mod's hottest methods; capture again with `--probes` for exact calls and milliseconds per tick.
+- **Repeatable scenarios:** `perf-template --family mod-content --root my-mod` builds scenes and crowds of the mod's own blocks and entities, and runs them in the source client's own world.
+- **Accept or reject a change:** `perf-optimize` takes a candidate diff you or your own agent wrote, measures baseline and candidate in alternating fresh launches (cold and warm), and accepts it only if every equivalence gate passes (behaviour assertions, exact or tolerance-bounded output, pixel-exact 1280x720 frames) and the speedup interval is above 1. It never writes code itself.
+- **Not yet:** GPU time and VRAM, retained heap per mod, and mixin overwrites are not measured. Java 8/11 games are not supported.
 
-`python3 bench/performance.py` separately validates supplied independent-run evidence and compares paired runs with uncertainty and regression budgets. See [the capture contract](bench/performance.md). Sampled code origins are not exact per-mod causal costs; observation captures are not automatically controlled benchmarks.
+See [PERFORMANCE.md](PERFORMANCE.md). `python3 bench/performance.py` compares externally collected paired runs against regression budgets ([capture contract](bench/performance.md)).
 
 ### 4 · Change loader or platform
 

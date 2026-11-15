@@ -13,3 +13,6 @@
 ROADMAP.md linguist-generated=true
 docs/index.html linguist-generated=true
 docs/porting-map/** linguist-generated=true
+
+# Candidate diffs are applied with git apply; keep their bytes stable on every OS
+*.diff text eol=lf

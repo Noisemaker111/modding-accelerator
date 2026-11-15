@@ -11,6 +11,7 @@ final class Performance {
     static Map<String, Object> run(Path home, Modaccel.Options options, Modaccel.Report receipt) throws Exception {
         if (options.command.equals("perf-template")) return PerfTemplates.run(options);
         if (options.command.equals("perf-diff")) return PerfDiff.run(options);
+        if (options.command.equals("perf-optimize")) return PerfOptimize.run(home, options);
         if (options.command.equals("perf-report")) {
             Path input = Path.of(options.get("file", "")).toAbsolutePath();
             return PerfReport.write(input, output(options));
@@ -23,6 +24,7 @@ final class Performance {
         int warmup = integer(options, "warmup", 5, 0, 600);
         Path request = request(out, seconds, warmup, options.has("no-hooks"));
         probes(request, options);
+        attribution(request, options);
         stamp(request, agent);
         if (options.has("prepare")) {
             return Json.map("ok", true, "agent", agent.toString(), "request", request.toString(),
@@ -108,22 +110,7 @@ final class Performance {
             if (pid.equals(Long.toString(ProcessHandle.current().pid()))) throw new IllegalArgumentException("Cannot profile the profiler itself");
             return pid;
         }
-        if (options.values.containsKey("root")) {
-            ProjectModel project = new ProjectModel(Path.of(options.get("root", ".")));
-            project.requireGradleBuild();
-            try (ProjectLock ignored = ProjectLock.acquire(project, "perf")) {
-                Build build = new Build(project, home, options.get("project", ""), receipt);
-                Game game = new Game(build, Json.map());
-                Map<String, Object> session = game.session();
-                if (session == null) {
-                    game = new Game(build, build.model(options.has("refresh"), false));
-                    session = game.start(options, game.fingerprint());
-                }
-                if (Boolean.TRUE.equals(session.get("background"))) throw new IOException(
-                    "This source session is throttled/hidden. Run game-stop for this project, then perf --root again to launch visibly.");
-                return session.get("pid").toString();
-            }
-        }
+        if (options.values.containsKey("root")) return rootSession(home, options, receipt).get("pid").toString();
         List<String> matching = new ArrayList<>();
         Path instance = options.values.containsKey("instance") ? Path.of(options.get("instance", "")).toRealPath() : null;
         for (VirtualMachineDescriptor process : VirtualMachine.list()) {
@@ -142,6 +129,24 @@ final class Performance {
         if (matching.size() != 1) throw new IOException(
             "Found " + matching.size() + " matching running games. Start your game/server normally, then run perf --list and perf --attach PID.");
         return matching.get(0);
+    }
+
+    /** The visible source session for --root, started when none runs. */
+    static Map<String, Object> rootSession(Path home, Modaccel.Options options, Modaccel.Report receipt) throws Exception {
+        ProjectModel project = new ProjectModel(Path.of(options.get("root", ".")));
+        project.requireGradleBuild();
+        try (ProjectLock ignored = ProjectLock.acquire(project, "perf")) {
+            Build build = new Build(project, home, options.get("project", ""), receipt);
+            Game game = new Game(build, Json.map());
+            Map<String, Object> session = game.session();
+            if (session == null) {
+                game = new Game(build, build.model(options.has("refresh"), false));
+                session = game.start(options, game.fingerprint());
+            }
+            if (Boolean.TRUE.equals(session.get("background"))) throw new IOException(
+                "This source session is throttled/hidden. Run game-stop for this project, then perf --root again to launch visibly.");
+            return session;
+        }
     }
 
     static String launch(Modaccel.Options options, Modaccel.Report receipt) throws Exception {
@@ -193,6 +198,46 @@ final class Performance {
         return file;
     }
 
+    /** Which code is "your mod": the source checkout and its packages, or --mod-package; heap histogram on unless --no-heap. */
+    static void attribution(Path request, Modaccel.Options options) throws Exception {
+        Properties properties = properties(request);
+        String source = options.values.containsKey("root") ? options.get("root", ".") : options.get("mod-root", "");
+        if (!source.isBlank()) {
+            Path root = Path.of(source).toAbsolutePath().normalize();
+            properties.setProperty("attributionRoot", root.toString());
+            if (!options.values.containsKey("mod-package")) properties.setProperty("modPackages", String.join(",", packages(root)));
+        }
+        if (options.values.containsKey("mod-package")) {
+            String value = options.get("mod-package", "");
+            if (!value.matches("[A-Za-z0-9_.$]+(,[A-Za-z0-9_.$]+)*")) throw new IllegalArgumentException("--mod-package takes Java package names, comma separated");
+            properties.setProperty("modPackages", value);
+        }
+        properties.setProperty("heap", options.has("no-heap") ? "off" : "on");
+        if (options.has("allow-hidden")) properties.setProperty("allowHidden", "true");
+        try (Writer writer = Files.newBufferedWriter(request)) { properties.store(writer, "Mod Accel capture request"); }
+    }
+
+    /** The smallest set of package prefixes covering a checkout's Java and Kotlin sources. */
+    static List<String> packages(Path root) throws IOException {
+        TreeSet<String> found = new TreeSet<>();
+        Path src = root.resolve("src");
+        if (!Files.isDirectory(src)) return List.of();
+        try (var walk = Files.walk(src, 24)) {
+            for (Path file : (Iterable<Path>) walk.limit(200_000)::iterator) {
+                String name = file.getFileName().toString();
+                if (!name.endsWith(".java") && !name.endsWith(".kt")) continue;
+                Path relative = src.relativize(file);
+                // src/<set>/<java|kotlin>/<package path>/File.java
+                if (relative.getNameCount() < 4) continue;
+                Path pkg = relative.subpath(2, relative.getNameCount() - 1);
+                found.add(pkg.toString().replace(File.separatorChar, '.').replace('/', '.') + ".");
+            }
+        }
+        List<String> minimal = new ArrayList<>();
+        for (String pkg : found) if (minimal.stream().noneMatch(pkg::startsWith)) minimal.add(pkg);
+        return minimal.stream().limit(32).toList();
+    }
+
     static void probes(Path request, Modaccel.Options options) throws Exception {
         if (!options.values.containsKey("probes")) return;
         if (options.has("no-hooks")) throw new IllegalArgumentException("--probes cannot be used with --no-hooks");
@@ -228,8 +273,10 @@ final class Performance {
         VirtualMachine vm = VirtualMachine.attach(pid);
         try {
             Properties props = vm.getSystemProperties();
-            if (Boolean.parseBoolean(props.getProperty("modaccel.background", "false"))) {
-                throw new IOException("Refusing a throttled hidden game. Restart visibly for representative frame timing.");
+            if (Boolean.parseBoolean(props.getProperty("modaccel.background", "false"))
+                && !Boolean.parseBoolean(properties(request).getProperty("allowHidden", "false"))) {
+                throw new IOException("Refusing a throttled hidden game. Restart visibly for representative frame timing, "
+                    + "or pass --allow-hidden when only server ticks or timed methods matter.");
             }
             vm.loadAgent(agent.toString(), request.toString());
         } finally { vm.detach(); }

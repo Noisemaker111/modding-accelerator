@@ -1,0 +1,3 @@
+version:3955
+pauseOnLostFocus:false
+tutorialStep:none

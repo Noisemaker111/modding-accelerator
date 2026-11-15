@@ -1,0 +1,23 @@
+# Zombie Apocalypse Addon settings for the siege experiment; every other key keeps its default.
+# Chances are 1.0 so the random roll can never change a decision between baseline and candidate.
+# The mod's own spawners, hordes and blood moons are off so every launch besieges the same 224 zombies.
+[dayspawning]
+	enableDaySpawning = false
+
+[horde]
+	enableHordeEvents = false
+
+[bloodmoon]
+	enableBloodMoon = false
+
+[blockbreaking]
+	enableZombieBlockBreaking = true
+	zombieBlockBreakingChance = 1.0
+
+[blockplacing]
+	enableZombieBlockPlacing = true
+	zombieBlockPlacingChance = 1.0
+
+[towering]
+	enableZombieTowering = true
+	zombieToweringChance = 1.0

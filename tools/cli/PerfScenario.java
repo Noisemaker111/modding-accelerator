@@ -26,9 +26,11 @@ final class PerfScenario {
         if (Files.exists(out.resolve("suite.json"))) throw new IOException("Scenario output already exists: " + out);
         String pid = Performance.select(home, options, receipt);
         Path agent = Performance.agent(home, receipt);
-        String password = System.getenv(options.get("rcon-password-env", "MODACCEL_RCON_PASSWORD"));
-        if (password == null || password.isBlank()) throw new IllegalArgumentException("Set the RCON password environment variable first");
-        int port = Performance.integer(options, "rcon-port", 25575, 1, 65535);
+        // A source session's integrated server runs the commands directly; any other game needs RCON.
+        boolean dev = options.values.containsKey("root") && !options.values.containsKey("rcon-port");
+        String password = dev ? "" : System.getenv(options.get("rcon-password-env", "MODACCEL_RCON_PASSWORD"));
+        if (!dev && (password == null || password.isBlank())) throw new IllegalArgumentException("Set the RCON password environment variable first");
+        int port = dev ? 0 : Performance.integer(options, "rcon-port", 25575, 1, 65535);
         List<Object> results = new ArrayList<>();
         List<Object> order = new ArrayList<>();
         for (int i = 0; i < repeat; i++) order.addAll(cases);
@@ -38,7 +40,7 @@ final class PerfScenario {
             "seed", options.get("seed", "0"), "cases", results, "ok", false,
             "meaning", "Within-session scenario observations. Repeats share one JVM; not independent launches or causal comparisons.");
         Json.save(out.resolve("suite.json"), suite);
-        try (Rcon rcon = new Rcon(port, password)) {
+        try (Commands rcon = dev ? new DevCommands(Performance.rootSession(home, options, receipt)) : new Rcon(port, password)) {
             int index = 0;
             for (Object value : order) {
                 Map<String, Object> test = Json.object(value);
@@ -53,6 +55,7 @@ final class PerfScenario {
                     commands(rcon, test, "before", evidence);
                     Path request = Performance.request(capture, seconds, warmup, options.has("no-hooks"));
                     Performance.probes(request, options);
+                    Performance.attribution(request, options);
                     java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newSingleThreadExecutor();
                     java.util.concurrent.Future<?> actions = executor.submit(() -> {
                         try { during(rcon, test, evidence, capture, seconds, warmup); }
@@ -124,7 +127,7 @@ final class PerfScenario {
         return cases;
     }
 
-    static void during(Rcon rcon, Map<String, Object> test, List<Object> evidence, Path capture, int seconds, int warmup) throws Exception {
+    static void during(Commands rcon, Map<String, Object> test, List<Object> evidence, Path capture, int seconds, int warmup) throws Exception {
         if (!test.containsKey("during")) return;
         List<Object> actions = new ArrayList<>(Json.array(test.get("during")));
         actions.sort(Comparator.comparingDouble(a -> ((Number) Json.object(a).get("atSeconds")).doubleValue()));
@@ -145,7 +148,7 @@ final class PerfScenario {
         }
     }
 
-    static void commands(Rcon rcon, Map<String, Object> test, String phase, List<Object> evidence) throws Exception {
+    static void commands(Commands rcon, Map<String, Object> test, String phase, List<Object> evidence) throws Exception {
         if (!test.containsKey(phase)) return;
         List<String> failures = new ArrayList<>();
         for (Object step : Json.array(test.get(phase))) {
@@ -158,7 +161,7 @@ final class PerfScenario {
         if (!failures.isEmpty()) throw new IOException(String.join("; ", failures));
     }
 
-    static void execute(Rcon rcon, Map<String, Object> command, String phase, List<Object> evidence) throws Exception {
+    static void execute(Commands rcon, Map<String, Object> command, String phase, List<Object> evidence) throws Exception {
         String text = command.get("command").toString();
         List<String> expected = expected(command);
         String response = rcon.command(text);
@@ -177,7 +180,80 @@ final class PerfScenario {
         return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
-    static final class Rcon implements AutoCloseable {
+    interface Commands extends AutoCloseable {
+        String command(String text) throws IOException;
+        void close() throws IOException;
+    }
+
+    /**
+     * Runs scenario commands on a source session's integrated server through the game console,
+     * collecting the same feedback text RCON would return. Mojang names first, then Yarn names.
+     */
+    static final class DevCommands implements Commands {
+        static final String KEY = "modaccel.scenario.command";
+        static final String MOJANG = """
+            java.util.function.Function<String, String> run = text -> {
+                StringBuilder out = new StringBuilder();
+                net.minecraft.commands.CommandSource sink = new net.minecraft.commands.CommandSource() {
+                    public void sendSystemMessage(net.minecraft.network.chat.Component message) { synchronized (out) { out.append(message.getString()); } }
+                    public boolean acceptsSuccess() { return true; }
+                    public boolean acceptsFailure() { return true; }
+                    public boolean shouldInformAdmins() { return false; }
+                };
+                var server = mc.getSingleplayerServer();
+                if (server == null) throw new IllegalStateException("No integrated server: enter a singleplayer world first");
+                server.submit(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSource(sink).withPermission(4), text)).join();
+                synchronized (out) { return out.toString(); }
+            };
+            vars.put("KEY", run);
+            return "mojang";
+            """.replace("KEY", KEY);
+        static final String YARN = """
+            java.util.function.Function<String, String> run = text -> {
+                StringBuilder out = new StringBuilder();
+                net.minecraft.server.command.CommandOutput sink = new net.minecraft.server.command.CommandOutput() {
+                    public void sendMessage(net.minecraft.text.Text message) { synchronized (out) { out.append(message.getString()); } }
+                    public boolean shouldReceiveFeedback() { return true; }
+                    public boolean shouldTrackOutput() { return true; }
+                    public boolean shouldBroadcastConsoleToOps() { return false; }
+                };
+                var server = mc.getServer();
+                if (server == null) throw new IllegalStateException("No integrated server: enter a singleplayer world first");
+                server.submit(() -> server.getCommandManager().executeWithPrefix(server.getCommandSource().withOutput(sink).withLevel(4), text)).join();
+                synchronized (out) { return out.toString(); }
+            };
+            vars.put("KEY", run);
+            return "yarn";
+            """.replace("KEY", KEY);
+        final Map<String, Object> session;
+
+        DevCommands(Map<String, Object> session) throws IOException {
+            this.session = session;
+            List<String> failures = new ArrayList<>();
+            for (String installer : List.of(MOJANG, YARN)) {
+                try {
+                    Game.request(session, Json.map("command", "eval", "code", installer, "thread", "control"));
+                    return;
+                } catch (Exception failure) { failures.add(failure.getMessage()); }
+            }
+            throw new IOException("Could not run commands in this source session (neither Mojang nor Yarn names compiled): " + failures);
+        }
+
+        public String command(String text) throws IOException {
+            String literal = Json.write(text);
+            String code = "return ((java.util.function.Function<String, String>) vars.get(\"" + KEY + "\")).apply(" + literal + ");";
+            try {
+                Map<String, Object> answer = Game.request(session, Json.map("command", "eval", "code", code, "thread", "control"));
+                Object value = answer.get("value");
+                return value == null ? "" : value.toString();
+            } catch (IOException failure) { throw failure; }
+            catch (Exception failure) { throw new IOException(failure); }
+        }
+
+        public void close() { }
+    }
+
+    static final class Rcon implements Commands {
         final Socket socket = new Socket();
         InputStream input;
         OutputStream output;
@@ -200,7 +276,7 @@ final class PerfScenario {
                 throw error;
             }
         }
-        String command(String text) throws IOException {
+        public String command(String text) throws IOException {
             int id = serial++, marker = serial++;
             send(id, 2, text);
             // Vanilla's RCON reader expects one request per read. Do not pipeline the marker:

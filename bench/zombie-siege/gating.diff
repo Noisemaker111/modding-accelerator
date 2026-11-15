@@ -1,0 +1,172 @@
+diff --git a/src/main/java/com/rique/zombieapocalypse/EventHandler.java b/src/main/java/com/rique/zombieapocalypse/EventHandler.java
+index 9d25cd6..3a57457 100644
+--- a/src/main/java/com/rique/zombieapocalypse/EventHandler.java
++++ b/src/main/java/com/rique/zombieapocalypse/EventHandler.java
+@@ -211,7 +211,7 @@ public final class EventHandler {
+                         Config.COMMON.enableZombieBlockBreaking.get(),
+                         Config.COMMON.enableZombieBlockPlacing.get(),
+                         Config.COMMON.enableZombieTowering.get())
+-                && ZombieCompatibility.shouldUseAddonAi(zombie)) {
++                && ZombieCompatibility.shouldUseAddonAiForZombieClass(zombie)) {
+             boolean acted = ZombieTowering.tick(zombie);
+             if (!acted) {
+                 acted = ZombieBlockBreaker.tick(zombie, EventHandler::canZombieDestroyBlock);
+diff --git a/src/main/java/com/rique/zombieapocalypse/ZombieBlockBreaker.java b/src/main/java/com/rique/zombieapocalypse/ZombieBlockBreaker.java
+index 9336f45..193c3eb 100644
+--- a/src/main/java/com/rique/zombieapocalypse/ZombieBlockBreaker.java
++++ b/src/main/java/com/rique/zombieapocalypse/ZombieBlockBreaker.java
+@@ -65,6 +65,12 @@ public final class ZombieBlockBreaker {
+             return false;
+         }
+ 
++        // Schedule first: it rejects all but one tick per interval without touching shared state.
++        long gameTime = level.getGameTime();
++        if (!isScheduledTick(gameTime, zombie.getId(), Config.COMMON.zombieBlockBreakingInterval.get())) {
++            return false;
++        }
++
+         if (!HordeManager.isAbilityActive(level,
+                 Config.COMMON.enableZombieBlockBreaking.get(),
+                 Config.COMMON.zombieBlockBreakingStartDay.get(),
+@@ -72,11 +78,6 @@ public final class ZombieBlockBreaker {
+             return false;
+         }
+ 
+-        long gameTime = level.getGameTime();
+-        if (!isScheduledTick(gameTime, zombie.getId(), Config.COMMON.zombieBlockBreakingInterval.get())) {
+-            return false;
+-        }
+-
+         Settings settings = Settings.capture();
+         LivingEntity target = getValidTarget(zombie);
+         if (settings.requireTarget() && target == null) {
+diff --git a/src/main/java/com/rique/zombieapocalypse/ZombieBlockPlacer.java b/src/main/java/com/rique/zombieapocalypse/ZombieBlockPlacer.java
+index 3be0504..728eed8 100644
+--- a/src/main/java/com/rique/zombieapocalypse/ZombieBlockPlacer.java
++++ b/src/main/java/com/rique/zombieapocalypse/ZombieBlockPlacer.java
+@@ -88,13 +88,7 @@ public final class ZombieBlockPlacer {
+             return false;
+         }
+ 
+-        if (!HordeManager.isAbilityActive(level,
+-                Config.COMMON.enableZombieBlockPlacing.get(),
+-                Config.COMMON.zombieBlockPlacingStartDay.get(),
+-                Config.COMMON.zombieBlockPlacingDuringEvents.get())) {
+-            return false;
+-        }
+-
++        // Schedule first: it rejects all but one tick per interval without touching shared state.
+         long gameTime = level.getGameTime();
+         int scheduleSalt = zombie.getId() * 31 + 17;
+         if (!ZombieBlockBreaker.isScheduledTick(
+@@ -104,6 +98,13 @@ public final class ZombieBlockPlacer {
+             return false;
+         }
+ 
++        if (!HordeManager.isAbilityActive(level,
++                Config.COMMON.enableZombieBlockPlacing.get(),
++                Config.COMMON.zombieBlockPlacingStartDay.get(),
++                Config.COMMON.zombieBlockPlacingDuringEvents.get())) {
++            return false;
++        }
++
+         Block block = resolveConfiguredBlock(level, zombie.blockPosition());
+         if (block == null) {
+             return false;
+diff --git a/src/main/java/com/rique/zombieapocalypse/ZombieCompatibility.java b/src/main/java/com/rique/zombieapocalypse/ZombieCompatibility.java
+index 09443c7..aa6699d 100644
+--- a/src/main/java/com/rique/zombieapocalypse/ZombieCompatibility.java
++++ b/src/main/java/com/rique/zombieapocalypse/ZombieCompatibility.java
+@@ -4,8 +4,10 @@ import java.util.Arrays;
+ import java.util.Collections;
+ import java.util.LinkedHashSet;
+ import java.util.List;
++import java.util.Map;
+ import java.util.Objects;
+ import java.util.Set;
++import java.util.concurrent.ConcurrentHashMap;
+ import java.util.stream.Collectors;
+ 
+ import org.slf4j.Logger;
+@@ -96,6 +98,17 @@ public final class ZombieCompatibility {
+                 isExternallyManagedAi(zombie.getType()));
+     }
+ 
++    /** {@link #shouldUseAddonAi(Zombie)} for a zombie the caller has just confirmed is zombie-class. */
++    static boolean shouldUseAddonAiForZombieClass(Zombie zombie) {
++        boolean vanillaType = vanillaZombieTypes().contains(zombie.getType());
++        return shouldUseAddonAi(
++                true,
++                vanillaType,
++                Config.COMMON.applyAiFeaturesToModdedZombies.get(),
++                Config.COMMON.respectExternalZombieAi.get(),
++                isExternallyManagedAi(zombie.getType()));
++    }
++
+     public static boolean shouldRespectDoorBreakingAbility() {
+         return Config.COMMON.respectZombieDoorBreakingAbility.get();
+     }
+@@ -148,11 +161,13 @@ public final class ZombieCompatibility {
+     }
+ 
+     private static boolean isIncluded(EntityType<?> type) {
+-        return currentConfiguredIds().included().contains(EntityType.getKey(type));
++        ConfiguredIds ids = currentConfiguredIds();
++        return !ids.included().isEmpty() && ids.includedTypes().computeIfAbsent(type, t -> ids.included().contains(EntityType.getKey(t)));
+     }
+ 
+     private static boolean isExcluded(EntityType<?> type) {
+-        return currentConfiguredIds().excluded().contains(EntityType.getKey(type));
++        ConfiguredIds ids = currentConfiguredIds();
++        return !ids.excluded().isEmpty() && ids.excludedTypes().computeIfAbsent(type, t -> ids.excluded().contains(EntityType.getKey(t)));
+     }
+ 
+     private static ConfiguredIds currentConfiguredIds() {
+@@ -219,11 +234,18 @@ public final class ZombieCompatibility {
+     private record KnownMod(String id, String name) {
+     }
+ 
++    /** Parsed id lists plus per-type answers; a config change replaces the whole record, and its memos with it. */
+     private record ConfiguredIds(
+             String includedRaw,
+             String excludedRaw,
+             Set<ResourceLocation> included,
+-            Set<ResourceLocation> excluded) {
++            Set<ResourceLocation> excluded,
++            Map<EntityType<?>, Boolean> includedTypes,
++            Map<EntityType<?>, Boolean> excludedTypes) {
++
++        ConfiguredIds(String includedRaw, String excludedRaw, Set<ResourceLocation> included, Set<ResourceLocation> excluded) {
++            this(includedRaw, excludedRaw, included, excluded, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
++        }
+     }
+ 
+ }
+diff --git a/src/main/java/com/rique/zombieapocalypse/ZombieTowering.java b/src/main/java/com/rique/zombieapocalypse/ZombieTowering.java
+index 6642b49..f157f0e 100644
+--- a/src/main/java/com/rique/zombieapocalypse/ZombieTowering.java
++++ b/src/main/java/com/rique/zombieapocalypse/ZombieTowering.java
+@@ -115,10 +115,8 @@ public final class ZombieTowering {
+             return false;
+         }
+ 
+-        if (!isToweringActive(level)) {
+-            return false;
+-        }
+-
++        // The per-zombie schedule is plain arithmetic; check it before the shared start-day gate,
++        // which reads several config values and the overworld day on every call.
+         long gameTime = level.getGameTime();
+         int scheduleSalt = zombie.getId() * 37 + 23;
+         if (!ZombieBlockBreaker.isScheduledTick(
+@@ -128,6 +126,10 @@ public final class ZombieTowering {
+             return false;
+         }
+ 
++        if (!isToweringActive(level)) {
++            return false;
++        }
++
+         LivingEntity target = getValidTarget(zombie);
+         if (target == null) {
+             return false;
