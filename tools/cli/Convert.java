@@ -84,9 +84,19 @@ final class Convert {
 
     /**
      * NeoForge access transformer lines as a Fabric access widener (v2), the reverse of widenerToTransformer. A field
-     * line names no field type, which an access widener needs, so it goes to unconverted with wildcards and +f.
+     * line names no field type, which an access widener needs: fieldTypes gives it from the game (owner/name to
+     * descriptor), and a field it does not know goes to unconverted with wildcards and +f.
      */
     static String transformerToWidener(String text, boolean official, List<String> unconverted) {
+        return transformerToWidener(text, official, unconverted, (owner, field) -> null);
+    }
+
+    static String transformerToWidener(
+        String text,
+        boolean official,
+        List<String> unconverted,
+        java.util.function.BiFunction<String, String, String> fieldTypes
+    ) {
         StringBuilder out = new StringBuilder("accessWidener v2 " + (official ? "official" : "named") + "\n");
         for (String raw : text.lines().toList()) {
             String line = raw.replaceAll("#.*$", "").strip();
@@ -105,7 +115,13 @@ final class Convert {
             }
             int paren = t[2].indexOf('(');
             if (paren < 0) {
-                unconverted.add(line + " (an access widener names the field's type, which the transformer line does not)");
+                String type = fieldTypes.apply(owner, t[2]);
+                if (type == null) {
+                    unconverted.add(line + " (an access widener names the field's type, which the transformer line does not)");
+                    continue;
+                }
+                out.append("accessible field ").append(owner).append(' ').append(t[2]).append(' ').append(type).append('\n');
+                if (definal) out.append("mutable field ").append(owner).append(' ').append(t[2]).append(' ').append(type).append('\n');
                 continue;
             }
             String name = t[2].substring(0, paren), desc = t[2].substring(paren);
@@ -113,6 +129,90 @@ final class Convert {
             if (definal) out.append("extendable method ").append(owner).append(' ').append(name).append(' ').append(desc).append('\n');
         }
         return out.toString();
+    }
+
+    /**
+     * The game's field types (owner in slash form, field name, to its descriptor), in Mojang's names, read only when a
+     * field line asks: before 26.1 from Mojang's client mappings, which give every field's type; from 26.1 from the class
+     * files of Mojang's client jar, which is no longer obfuscated. Null for a field the game does not have, or offline.
+     */
+    java.util.function.BiFunction<String, String, String> gameFieldTypes(String minecraft) {
+        Map<String, String> known = new HashMap<>();
+        Map<String, java.util.zip.ZipFile> jar = new HashMap<>();
+        boolean[] loaded = { false };
+        return (owner, field) -> {
+            try {
+                if (!loaded[0]) {
+                    loaded[0] = true;
+                    var version = Json.object(Json.parse(Target.fetch(build, gameVersionUrl(minecraft))));
+                    var downloads = Json.object(version.get("downloads"));
+                    if (downloads.get("client_mappings") instanceof Map<?, ?> mappings) known.putAll(
+                        mappingFieldTypes(Target.fetch(build, Json.text(Json.object(mappings), "url", "")))
+                    );
+                    else {
+                        var client = Json.object(downloads.get("client"));
+                        Path file = Path.of(System.getProperty("user.home"), ".modaccel", "minecraft", minecraft, "client.jar");
+                        if (!Files.isRegularFile(file)) {
+                            Files.createDirectories(file.getParent());
+                            PackCheck.download(Json.text(client, "url", ""), file, Json.text(client, "sha1", ""));
+                        }
+                        jar.put("client", new java.util.zip.ZipFile(file.toFile()));
+                    }
+                }
+                String key = owner + " " + field;
+                if (known.containsKey(key)) return known.get(key);
+                var zip = jar.get("client");
+                if (zip == null) return null;
+                var entry = zip.getEntry(owner + ".class");
+                if (entry == null) return null;
+                try (var in = zip.getInputStream(entry)) {
+                    for (var member : Explain.Index.parse(in.readAllBytes()).members()) if (!member.method()) known.put(owner + " " + member.name(), member.descriptor());
+                }
+                return known.get(key);
+            } catch (Exception offline) {
+                return null;
+            }
+        };
+    }
+
+    String gameVersionUrl(String minecraft) throws Exception {
+        for (Object v : Json.array(Json.object(Json.parse(Target.fetch(build, "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"))).get("versions"))) {
+            if (minecraft.equals(Json.object(v).get("id"))) return Json.text(Json.object(v), "url", "");
+        }
+        throw new IOException("Mojang lists no Minecraft " + minecraft);
+    }
+
+    /** Every field of Mojang's ProGuard mappings: "owner/Class name" to its descriptor. */
+    static Map<String, String> mappingFieldTypes(String mappings) {
+        Map<String, String> out = new HashMap<>();
+        String owner = null;
+        for (String line : mappings.split("\n")) {
+            if (line.startsWith("#") || line.isBlank()) continue;
+            if (!line.startsWith(" ")) {
+                owner = line.substring(0, line.indexOf(" -> ")).replace('.', '/');
+                continue;
+            }
+            Matcher field = Pattern.compile("^\\s+([\\w.$\\[\\]]+) ([\\w$]+) -> [\\w$]+\\s*$").matcher(line);
+            if (owner != null && field.find()) out.put(owner + " " + field.group(2), descriptor(field.group(1)));
+        }
+        return out;
+    }
+
+    /** A Java type as written in Mojang's mappings (int, java.util.List, a.B[]) as a JVM descriptor. */
+    static String descriptor(String type) {
+        if (type.endsWith("[]")) return "[" + descriptor(type.substring(0, type.length() - 2));
+        return switch (type) {
+            case "boolean" -> "Z";
+            case "byte" -> "B";
+            case "char" -> "C";
+            case "short" -> "S";
+            case "int" -> "I";
+            case "long" -> "J";
+            case "float" -> "F";
+            case "double" -> "D";
+            case "void" -> "V";
+            default -> "L" + type.replace('.', '/') + ";";
+        };
     }
 
     /** A Fabric mod id as NeoForge accepts it (^[a-z][a-z0-9_]{1,63}$): Fabric also allows "-". */
@@ -1694,7 +1794,8 @@ final class Convert {
                 String widener = transformerToWidener(
                     String.join("\n", keep),
                     Versions.compare(minecraft, Route.FIRST_UNOBFUSCATED) >= 0,
-                    unconverted
+                    unconverted,
+                    gameFieldTypes(minecraft)
                 );
                 for (String u : unconverted) leave(AT_FILE, 0, u, "an access transformer line with no access widener counterpart");
                 fabricWidener = fabricId + ".accesswidener";

@@ -1055,6 +1055,28 @@ public final class PortableTests {
             widener +
             widenerLeft
         );
+        Map<String, String> fieldTypes = Convert.mappingFieldTypes(
+            "# {\"fileName\":\"client.txt\"}\nnet.minecraft.client.renderer.block.ModelBlockRenderer -> fxx:\n" +
+            "    net.minecraft.client.color.block.BlockColors blockColors -> b\n    int[][] grid -> c\n" +
+            "    15:20:void <init>(net.minecraft.client.color.block.BlockColors) -> <init>\n"
+        );
+        List<String> typedLeft = new ArrayList<>();
+        String typed = Convert.transformerToWidener(
+            "public-f net.minecraft.client.renderer.block.ModelBlockRenderer blockColors\npublic net.minecraft.client.renderer.block.ModelBlockRenderer missing\n",
+            false,
+            typedLeft,
+            (owner, field) -> fieldTypes.get(owner + " " + field)
+        );
+        check(
+            fieldTypes.get("net/minecraft/client/renderer/block/ModelBlockRenderer grid").equals("[[I") &&
+            fieldTypes.size() == 2 &&
+            typed.equals(
+                "accessWidener v2 named\naccessible field net/minecraft/client/renderer/block/ModelBlockRenderer blockColors Lnet/minecraft/client/color/block/BlockColors;\n" +
+                "mutable field net/minecraft/client/renderer/block/ModelBlockRenderer blockColors Lnet/minecraft/client/color/block/BlockColors;\n"
+            ) &&
+            typedLeft.size() == 1,
+            "an access transformer field line becomes an access widener field with its type from Mojang's mappings:\n" + typed + typedLeft
+        );
         String cleaned = Convert.dropUnusedImports(
             "import net.fabricmc.loader.api.FabricLoader;\nimport net.fabricmc.api.EnvType;\nimport java.util.List;\n\n// FabricLoader is only named here\nclass A {\n\tEnvType side;\n\tString s = \"FabricLoader\";\n}\n",
             List.of("net.fabricmc.")
