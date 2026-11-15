@@ -71,7 +71,7 @@ def main():
         for path in written:
             path.unlink()
         raise
-    print("Reference and candidate prepared. Build/launch through modaccel, then run compare.java.")
+    print("Reference and candidate prepared. Build/launch through mmt, then run compare.java.")
 
 
 if __name__ == "__main__":

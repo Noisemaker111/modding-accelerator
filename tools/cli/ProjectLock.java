@@ -46,7 +46,7 @@ final class ProjectLock implements AutoCloseable {
                     ")";
             } catch (Exception unreadable) {}
             throw new IOException(
-                "Another modaccel command" +
+                "Another mmt command" +
                 who +
                 " is already working on this project. Two at once would overwrite each other's build files, " +
                 "so this one did nothing. Wait for that one to finish, or stop it, then rerun."

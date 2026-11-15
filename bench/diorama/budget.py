@@ -71,7 +71,7 @@ def describe_study(study, target):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('capture', type=Path, help='modaccel capture report.json')
+    p.add_argument('capture', type=Path, help='mmt capture report.json')
     p.add_argument('--study', type=Path, help='study.json or paired final-data.json with bake samples')
     p.add_argument('--target', type=float, default=100.0)
     p.add_argument('--fraction', type=float, help='hypothetical optimizable serial fraction from 0 to 1')

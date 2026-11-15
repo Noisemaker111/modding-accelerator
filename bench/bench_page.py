@@ -1,6 +1,6 @@
 """Render the one public page, docs/index.html, and ROADMAP.md (the same roadmap as text for GitHub).
 
-The page opens with what modaccel is and how to get it, then the four goals, the roadmap (timeline,
+The page opens with what mmt is and how to get it, then the four goals, the roadmap (timeline,
 every step), the porting map, every number and every port run. It reads coverage/roadmap.json (the
 four goals, their steps, dates, targets) and coverage/measures.json (every number, with its history
 and target) through bench/measures.py, draws them with bench/viz.py, and embeds the porting map from
@@ -61,7 +61,7 @@ def secs(v):
 def tested():
     rows = {}
     for h in ledger["hops"]:
-        r = rows.setdefault(h["mod"], {"loaders": set(), "versions": set(), "best": {}, "date": "", "what": "ported by modaccel"})
+        r = rows.setdefault(h["mod"], {"loaders": set(), "versions": set(), "best": {}, "date": "", "what": "ported by mmt"})
         r["loaders"].add(LOADER.get(h["loader"], h["loader"]))
         r["versions"].update([h["from"], h["to"]])
         # A run proves only its own loader: keep the furthest run per loader.
@@ -77,7 +77,7 @@ def tested():
         r.setdefault("errors", m["errors"]["total"])
     for m in mods["mods"]:
         name = {"diorama": "Diorama", "minecolonies": "MineColonies"}.get(m["name"], m["name"])
-        r = rows.setdefault(name, {"loaders": set(), "versions": set(), "best": {}, "date": "", "what": "their own build, then modaccel fast"})
+        r = rows.setdefault(name, {"loaders": set(), "versions": set(), "best": {}, "date": "", "what": "their own build, then mmt fast"})
         r["loaders"].update(LOADER.get(x, x) for x in m.get("loaders", []))
         mc = m.get("minecraft", {})
         if mc.get("active"):
@@ -309,7 +309,7 @@ def evidence_html(t_rows, vers, n_mods):
               '<table class="tbl stack"><thead><tr><th class="l">Mod</th><th>Version</th><th class="hi">Compile errors</th><th>Their first build</th><th>Build after bump</th><th>Date</th></tr></thead>'
               f"<tbody>{earlier_runs()}</tbody></table>")
     return (fold("Every port run", runs, f'{len(ledger["hops"])} runs', anchor="runs") + fold("Mods we test", tested_, f"{n_mods} mods", anchor="mods")
-            + fold("Before modaccel", before, "version bumps by hand", anchor="before"))
+            + fold("Before mmt", before, "version bumps by hand", anchor="before"))
 
 
 def page(book):
@@ -490,8 +490,8 @@ header.top { position:sticky; top:0; z-index:5; background:color-mix(in srgb, va
 TEMPLATE = r"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Modding Accelerator</title>
-<meta name="description" content="modaccel tests a Minecraft mod in seconds, ports it to any version and makes modpacks work together. The roadmap, every number and every port run are on this page.">
+<title>Minecraft Modding Tools</title>
+<meta name="description" content="mmt tests a Minecraft mod in seconds, ports it to any version and makes modpacks work together. The roadmap, every number and every port run are on this page.">
 <link rel="icon" type="image/svg+xml" href="logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Pixelify+Sans:wght@500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
@@ -500,13 +500,13 @@ TEMPLATE = r"""<!doctype html>
 </style></head><body>
 <main id="top">
 <header class="top">
-  <a class="brand" href="#top"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>modaccel</a>
+  <a class="brand" href="#top"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>mmt</a>
   <nav>{NAV}<a href="https://github.com/Noisemaker111/modding-accelerator">GitHub</a><button class="theme" id="theme" type="button">Dark</button></nav>
 </header>
 
 <section class="hero">
   <div class="hero-text">
-    <p class="eyebrow">Modding Accelerator · beta {VERSION}</p>
+    <p class="eyebrow">Minecraft Modding Tools · beta {VERSION}</p>
     <h1><span>Test a Minecraft mod in seconds.</span> <span>Port it to any version.</span></h1>
     <p class="lede">One command for mod, plugin and modpack work. It runs your checks in the real game without you opening it, moves your source between Minecraft versions, and finds what breaks a modpack.</p>
     <div class="cta"><a class="btn primary" href="https://github.com/Noisemaker111/modding-accelerator/releases/latest">Download the beta</a><a class="btn" href="https://github.com/Noisemaker111/modding-accelerator#quick-start">Quick start</a></div>

@@ -1,5 +1,5 @@
 {
- "what": "modaccel mp-check on the Prism Lab demo mod: its own dedicated Fabric 26.3 server (:runServerLab) and a hidden, quiet client joining it, then a 1280x720 framebuffer capture. The second run's windows were counted every 0.5 s for the whole run.",
+ "what": "mmt mp-check on the Prism Lab demo mod: its own dedicated Fabric 26.3 server (:runServerLab) and a hidden, quiet client joining it, then a 1280x720 framebuffer capture. The second run's windows were counted every 0.5 s for the whole run.",
  "runs": [
   {
    "label": "mp-check-hidden",
@@ -18,7 +18,7 @@
     "os": "win32"
    },
    "measured": "2026-11-07T23:29:23+00:00",
-   "modaccel": {
+   "mmt": {
     "ok": true,
     "seconds": 101.6,
     "stages": {
@@ -63,7 +63,7 @@
     "os": "win32"
    },
    "measured": "2026-11-07T23:32:00+00:00",
-   "modaccel": {
+   "mmt": {
     "ok": true,
     "seconds": 51.4,
     "stages": {

@@ -7,13 +7,13 @@ import java.util.regex.*;
 /**
  * plugin-check: a Paper/Bukkit plugin's run check without a real server. The plugin's own jar task
  * builds the jar; Gradle resolves MockBukkit (a fake Paper server) for the plugin's Paper API line
- * in a detached configuration; tools/plugincheck/ModaccelPluginCheck loads and enables the real jar
+ * in a detached configuration; tools/plugincheck/MmtPluginCheck loads and enables the real jar
  * in a fresh JVM and reports each check. MockBukkit has no Minecraft server inside, so code through
  * server internals, and API MockBukkit does not implement, is reported unchecked, never passed.
  */
 final class PluginCheck {
 
-    static final List<String> SOURCES = List.of("tools/plugincheck/ModaccelPluginCheck.java", "tools/cli/Json.java");
+    static final List<String> SOURCES = List.of("tools/plugincheck/MmtPluginCheck.java", "tools/cli/Json.java");
     static final Pattern API_JAR = Pattern.compile("(?:^|[\\\\/])(paper-api|spigot-api|bukkit)-(\\d[^\\\\/]*?)\\.jar$");
     static final int TIMEOUT_SECONDS = 300;
 
@@ -79,7 +79,7 @@ final class PluginCheck {
         return out;
     }
 
-    Map<String, Object> run(Modaccel.Options options) throws Exception {
+    Map<String, Object> run(Mmt.Options options) throws Exception {
         long begin = System.nanoTime();
         Api api = api(model);
         if (api == null) return unchecked(
@@ -124,7 +124,7 @@ final class PluginCheck {
         );
         String path = project.get("path").toString();
         Run.Result gradle = build.gradle(
-            List.of("-Dmodaccel.pluginCheck=" + spec, (path.equals(":") ? "" : path) + ":modaccelPluginClasspath"),
+            List.of("-Dmmt.pluginCheck=" + spec, (path.equals(":") ? "" : path) + ":mmtPluginClasspath"),
             "plugin-build"
         );
         if (gradle.exit() != 0 || !Files.isRegularFile(classpathFile)) {
@@ -194,7 +194,7 @@ final class PluginCheck {
                 "-Xshare:auto",
                 "-cp",
                 tools + File.pathSeparator + String.join(File.pathSeparator, classpath),
-                "ModaccelPluginCheck",
+                "MmtPluginCheck",
                 checkSpec.toString()
             )
         );

@@ -22,9 +22,10 @@ replay_*.log
 *.hprof
 *.jfr
 
-# modaccel's own working folders. Scratch output belongs in .runs/, not the repo root.
+# mmt's own working folders. Scratch output belongs in .runs/, not the repo root.
 .tools/
 .runs/
+.mmt/
 .modaccel/
 .workers/
 .lab/
@@ -53,16 +54,16 @@ server.properties
 usercache.json
 
 # Harness copies the older Windows lane installs into a version node
-versions/*/modaccel.ps1
-versions/*/modaccel.cmd
-versions/*/tools/
-versions/*/check.ps1
-versions/*/lint.ps1
-versions/*/mp.ps1
-versions/*/portlog.ps1
-versions/*/LabDaemon.java
-versions/*/config/
-versions/*/downloads/
+fixtures/prism-lab/versions/*/mmt.ps1
+fixtures/prism-lab/versions/*/mmt.cmd
+fixtures/prism-lab/versions/*/tools/
+fixtures/prism-lab/versions/*/check.ps1
+fixtures/prism-lab/versions/*/lint.ps1
+fixtures/prism-lab/versions/*/mp.ps1
+fixtures/prism-lab/versions/*/portlog.ps1
+fixtures/prism-lab/versions/*/LabDaemon.java
+fixtures/prism-lab/versions/*/config/
+fixtures/prism-lab/versions/*/downloads/
 
 # Cloned mods and their logs; only the results are kept
 bench/port/*

@@ -547,7 +547,7 @@ final class PackChecks {
             }
             if (reached.isEmpty()) for (String frameLine : failing.lines().toList()) {
                 Matcher frame = FRAME.matcher(frameLine);
-                if (!frame.find() || frame.group(2).startsWith("modaccel.packprobe")) continue;
+                if (!frame.find() || frame.group(2).startsWith("mmt.packprobe")) continue;
                 String jar = owner(scan, frame.group(2));
                 if (frame.group(1) != null && scan.providers.containsKey(frame.group(1))) blame(reached, scan, frame.group(1), null, reaches + frameLine.strip());
                 else if (jar != null) blame(reached, scan, null, jar, reaches + frameLine.strip());
@@ -589,7 +589,7 @@ final class PackChecks {
             Matcher frame = FRAME.matcher(line);
             if (!inCause || !frame.find()) continue;
             String module = frame.group(1), type = frame.group(2);
-            if (type.startsWith("modaccel.packprobe")) continue;
+            if (type.startsWith("mmt.packprobe")) continue;
             String jar = module != null && scan.providers.containsKey(module) ? null : owner(scan, type);
             if (module != null && scan.providers.containsKey(module)) {
                 blame(found, scan, module, null, "its code (" + type + ") is in the stack: " + line.strip());
@@ -697,14 +697,14 @@ final class PackChecks {
             List<String> ids = scan.idsOf(jar);
             id = ids.isEmpty() ? jar : ids.get(0);
         }
-        if (id == null || id.equals("modaccel_pack_probe") || id.equals("minecraft")) return;
+        if (id == null || id.equals("mmt_pack_probe") || id.equals("minecraft")) return;
         if (jar == null) {
             List<PackMods.Provider> providers = scan.providers.getOrDefault(id, List.of());
             jar = providers.stream().filter(p -> !p.bundled()).map(PackMods.Provider::jar).findFirst().orElse(
                 providers.isEmpty() ? "" : providers.get(0).jar()
             );
         }
-        if (jar.startsWith("zz-modaccel")) return;
+        if (jar.startsWith("zz-mmt")) return;
         Map<String, Object> suspect = found.computeIfAbsent(id, k -> new LinkedHashMap<>());
         suspect.put("mod", id);
         suspect.put("jar", jar);
@@ -770,7 +770,7 @@ final class PackChecks {
             }
             ids.addAll(named);
         }
-        ids.remove("modaccel_pack_probe");
+        ids.remove("mmt_pack_probe");
         return ids;
     }
 
@@ -787,7 +787,7 @@ final class PackChecks {
     static String failure(String log, List<String> failed) {
         String done = startedLine(log);
         if (done != null && !FAILED_AFTER_START.matcher(log.substring(log.indexOf(done) + done.length())).find()) return (
-            "The server finished starting (" + plain(done).strip() + ") but modaccel's probe never reported back: a fault of the probe, not of a mod in the pack."
+            "The server finished starting (" + plain(done).strip() + ") but mmt's probe never reported back: a fault of the probe, not of a mod in the pack."
         );
         List<String> lines = plain(unwrapStderr(log)).lines().toList(), out = new ArrayList<>();
         // Forge logs a class a mixin only probed for, on the wrong side, at FATAL from RuntimeDistCleaner; that alone stops nothing.

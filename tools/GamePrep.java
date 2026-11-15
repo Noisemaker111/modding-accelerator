@@ -19,13 +19,15 @@ import java.util.zip.*;
  *
  * Nothing is redistributed: the jar is made from Mojang's client and server jars and their published
  * mappings, verified by the SHA-1s in Mojang's version file, and cached once per version per machine
- * (default ~/.modaccel/game/VERSION). Only class files go in; compile needs nothing else.
+ * (default ~/.mmt/game/VERSION). Only class files go in; compile needs nothing else.
  */
 public final class GamePrep {
 
-    static Path cache = System.getenv("MODACCEL_GAME_CACHE") != null
-        ? Path.of(System.getenv("MODACCEL_GAME_CACHE"))
-        : Path.of(System.getProperty("user.home"), ".modaccel", "game");
+    static Path cache = System.getenv("MMT_GAME_CACHE") != null
+        ? Path.of(System.getenv("MMT_GAME_CACHE"))
+        : System.getenv("MODACCEL_GAME_CACHE") != null
+            ? Path.of(System.getenv("MODACCEL_GAME_CACHE"))
+            : Path.of(System.getProperty("user.home"), ".mmt", "game");
     static final HttpClient HTTP = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
 
     public static void main(String[] args) throws Exception {
@@ -471,7 +473,7 @@ public final class GamePrep {
             "Bad NeoForge version " + version
         );
         Path dir = cache.toAbsolutePath().resolve("neoforge-" + version), install = dir.resolve("install"), done =
-            install.resolve("modaccel-installed");
+            install.resolve("mmt-installed");
         Files.createDirectories(dir);
         try (
             var channel = java.nio.channels.FileChannel.open(

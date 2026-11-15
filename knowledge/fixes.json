@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Ordered fix rules for `modaccel port -Fix`. `match` is a regex tested against each javac error's message + symbol + file. `apply.find` / `apply.replace` is a .NET regex replace in the affected source (named groups survive as ${name}); `apply.literal` is a plain string replace; `apply.ensureImports` adds an import only when the file lacks it. `scope` is `log` (only the files that error was reported in) or `repo` (every .java in the repo, for a family whose remaining call sites javac has not reached yet). `when` is an optional regex the candidate file's own text must match. `verified` names the repo, the count and the log a build actually proved it on; null means reasoned, not measured. `provenance` says where a rule came from: `hand` = written for a fixture port from its compiler errors and the game's own classes; `game-diff` = generated from the game's own jars; `third-party-mods` = learned from other people's mods (the Stonecutter switches, `source: stonecutter`). New rules come from the game and the compiler, never from other mods' code.",
+  "note": "Ordered fix rules for `mmt port -Fix`. `match` is a regex tested against each javac error's message + symbol + file. `apply.find` / `apply.replace` is a .NET regex replace in the affected source (named groups survive as ${name}); `apply.literal` is a plain string replace; `apply.ensureImports` adds an import only when the file lacks it. `scope` is `log` (only the files that error was reported in) or `repo` (every .java in the repo, for a family whose remaining call sites javac has not reached yet). `when` is an optional regex the candidate file's own text must match. `verified` names the repo, the count and the log a build actually proved it on; null means reasoned, not measured. `provenance` says where a rule came from: `hand` = written for a fixture port from its compiler errors and the game's own classes; `game-diff` = generated from the game's own jars; `third-party-mods` = learned from other people's mods (the Stonecutter switches, `source: stonecutter`). New rules come from the game and the compiler, never from other mods' code.",
   "rules": [
     {
       "id": "neo263-drop-glfw-import",
@@ -661,8 +661,8 @@
       "match": "symbol:\\s+method getSaturationModifier\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) FoodComponent\\b",
       "apply": {
         "transform": "helper",
-        "name": "modaccel$saturationModifier",
-        "source": "\t/** Written by modaccel port: since 1.20.5 a food's saturation() is the saturation it gives (nutrition x modifier x 2), not the modifier it was made from. */\n\tprivate static float modaccel$saturationModifier(FoodComponent food) {\n\t\treturn food.nutrition() == 0 ? 0.0F : food.saturation() / (food.nutrition() * 2.0F);\n\t}",
+        "name": "mmt$saturationModifier",
+        "source": "\t/** Written by mmt port: since 1.20.5 a food's saturation() is the saturation it gives (nutrition x modifier x 2), not the modifier it was made from. */\n\tprivate static float mmt$saturationModifier(FoodComponent food) {\n\t\treturn food.nutrition() == 0 ? 0.0F : food.saturation() / (food.nutrition() * 2.0F);\n\t}",
         "ensureImports": ["net.minecraft.component.type.FoodComponent"]
       },
       "scope": "line",
@@ -672,7 +672,7 @@
       "test": {
         "error": "FoodHelper.java:4: error: cannot find symbol\n\t\tfloat saturationModifier = itemFood != null ? itemFood.getSaturationModifier() : 0;\n\t\t                                                      ^\n  symbol:   method getSaturationModifier()\n  location: variable itemFood of type FoodComponent\n",
         "before": "package mod;\n\npublic class FoodHelper {\n\t\tfloat saturationModifier = itemFood != null ? itemFood.getSaturationModifier() : 0;\n}\n",
-        "after": "package mod;\nimport net.minecraft.component.type.FoodComponent;\n\npublic class FoodHelper {\n\t\tfloat saturationModifier = itemFood != null ? modaccel$saturationModifier(itemFood) : 0;\n\n\t/** Written by modaccel port: since 1.20.5 a food's saturation() is the saturation it gives (nutrition x modifier x 2), not the modifier it was made from. */\n\tprivate static float modaccel$saturationModifier(FoodComponent food) {\n\t\treturn food.nutrition() == 0 ? 0.0F : food.saturation() / (food.nutrition() * 2.0F);\n\t}\n}\n"
+        "after": "package mod;\nimport net.minecraft.component.type.FoodComponent;\n\npublic class FoodHelper {\n\t\tfloat saturationModifier = itemFood != null ? mmt$saturationModifier(itemFood) : 0;\n\n\t/** Written by mmt port: since 1.20.5 a food's saturation() is the saturation it gives (nutrition x modifier x 2), not the modifier it was made from. */\n\tprivate static float mmt$saturationModifier(FoodComponent food) {\n\t\treturn food.nutrition() == 0 ? 0.0F : food.saturation() / (food.nutrition() * 2.0F);\n\t}\n}\n"
       }
     },
     {
@@ -4100,8 +4100,8 @@
       "match": "symbol:\\s+method getGameRules\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) World\\b",
       "apply": {
         "transform": "helper",
-        "name": "modaccel$gameRules",
-        "source": "\t/** Written by modaccel port: 1.21.2 keeps game rules on the server. A client world gets the default rules, all a client ever had. */\n\tprivate static GameRules modaccel$gameRules(World world) {\n\t\tif (world instanceof ServerWorld server) return server.getGameRules();\n\t\tif (world.getServer() != null) return world.getServer().getGameRules();\n\t\treturn new GameRules(world.getEnabledFeatures());\n\t}",
+        "name": "mmt$gameRules",
+        "source": "\t/** Written by mmt port: 1.21.2 keeps game rules on the server. A client world gets the default rules, all a client ever had. */\n\tprivate static GameRules mmt$gameRules(World world) {\n\t\tif (world instanceof ServerWorld server) return server.getGameRules();\n\t\tif (world.getServer() != null) return world.getServer().getGameRules();\n\t\treturn new GameRules(world.getEnabledFeatures());\n\t}",
         "ensureImports": ["net.minecraft.world.GameRules", "net.minecraft.world.World", "net.minecraft.server.world.ServerWorld"]
       },
       "scope": "line",
@@ -4111,7 +4111,7 @@
       "test": {
         "error": "FoodHelper.java:5: error: cannot find symbol\n\t\treturn world != null && world.getGameRules().getBoolean(GameRules.NATURAL_REGENERATION);\n\t\t                             ^\n  symbol:   method getGameRules()\n  location: variable world of type World\n",
         "before": "package mod;\n\npublic class FoodHelper {\n\tstatic boolean regen(World world) {\n\t\treturn world != null && world.getGameRules().getBoolean(GameRules.NATURAL_REGENERATION);\n\t}\n}\n",
-        "after": "package mod;\nimport net.minecraft.server.world.ServerWorld;\nimport net.minecraft.world.World;\nimport net.minecraft.world.GameRules;\n\npublic class FoodHelper {\n\tstatic boolean regen(World world) {\n\t\treturn world != null && modaccel$gameRules(world).getBoolean(GameRules.NATURAL_REGENERATION);\n\t}\n\n\t/** Written by modaccel port: 1.21.2 keeps game rules on the server. A client world gets the default rules, all a client ever had. */\n\tprivate static GameRules modaccel$gameRules(World world) {\n\t\tif (world instanceof ServerWorld server) return server.getGameRules();\n\t\tif (world.getServer() != null) return world.getServer().getGameRules();\n\t\treturn new GameRules(world.getEnabledFeatures());\n\t}\n}\n"
+        "after": "package mod;\nimport net.minecraft.server.world.ServerWorld;\nimport net.minecraft.world.World;\nimport net.minecraft.world.GameRules;\n\npublic class FoodHelper {\n\tstatic boolean regen(World world) {\n\t\treturn world != null && mmt$gameRules(world).getBoolean(GameRules.NATURAL_REGENERATION);\n\t}\n\n\t/** Written by mmt port: 1.21.2 keeps game rules on the server. A client world gets the default rules, all a client ever had. */\n\tprivate static GameRules mmt$gameRules(World world) {\n\t\tif (world instanceof ServerWorld server) return server.getGameRules();\n\t\tif (world.getServer() != null) return world.getServer().getGameRules();\n\t\treturn new GameRules(world.getEnabledFeatures());\n\t}\n}\n"
       }
     },
     {
@@ -4121,8 +4121,8 @@
       "match": "symbol:\\s+method getGameRules\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) Level\\b",
       "apply": {
         "transform": "helper",
-        "name": "modaccel$gameRules",
-        "source": "\t/** Written by modaccel port: 1.21.2 keeps game rules on the server. A client level gets the default rules, all a client ever had. */\n\tprivate static GameRules modaccel$gameRules(Level level) {\n\t\tif (level instanceof ServerLevel server) return server.getGameRules();\n\t\tif (level.getServer() != null) return level.getServer().getGameRules();\n\t\treturn new GameRules(level.enabledFeatures());\n\t}",
+        "name": "mmt$gameRules",
+        "source": "\t/** Written by mmt port: 1.21.2 keeps game rules on the server. A client level gets the default rules, all a client ever had. */\n\tprivate static GameRules mmt$gameRules(Level level) {\n\t\tif (level instanceof ServerLevel server) return server.getGameRules();\n\t\tif (level.getServer() != null) return level.getServer().getGameRules();\n\t\treturn new GameRules(level.enabledFeatures());\n\t}",
         "ensureImports": ["net.minecraft.world.level.GameRules", "net.minecraft.world.level.Level", "net.minecraft.server.level.ServerLevel"]
       },
       "scope": "line",
@@ -4132,7 +4132,7 @@
       "test": {
         "error": "FoodHelper.java:5: error: cannot find symbol\n\t\treturn level.getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION);\n\t\t            ^\n  symbol:   method getGameRules()\n  location: variable level of type Level\n",
         "before": "package mod;\n\npublic class FoodHelper {\n\tstatic boolean regen(Level level) {\n\t\treturn level.getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION);\n\t}\n}\n",
-        "after": "package mod;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.Level;\nimport net.minecraft.world.level.GameRules;\n\npublic class FoodHelper {\n\tstatic boolean regen(Level level) {\n\t\treturn modaccel$gameRules(level).getBoolean(GameRules.RULE_NATURAL_REGENERATION);\n\t}\n\n\t/** Written by modaccel port: 1.21.2 keeps game rules on the server. A client level gets the default rules, all a client ever had. */\n\tprivate static GameRules modaccel$gameRules(Level level) {\n\t\tif (level instanceof ServerLevel server) return server.getGameRules();\n\t\tif (level.getServer() != null) return level.getServer().getGameRules();\n\t\treturn new GameRules(level.enabledFeatures());\n\t}\n}\n"
+        "after": "package mod;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.Level;\nimport net.minecraft.world.level.GameRules;\n\npublic class FoodHelper {\n\tstatic boolean regen(Level level) {\n\t\treturn mmt$gameRules(level).getBoolean(GameRules.RULE_NATURAL_REGENERATION);\n\t}\n\n\t/** Written by mmt port: 1.21.2 keeps game rules on the server. A client level gets the default rules, all a client ever had. */\n\tprivate static GameRules mmt$gameRules(Level level) {\n\t\tif (level instanceof ServerLevel server) return server.getGameRules();\n\t\tif (level.getServer() != null) return level.getServer().getGameRules();\n\t\treturn new GameRules(level.enabledFeatures());\n\t}\n}\n"
       }
     },
     {
@@ -4142,10 +4142,10 @@
       "match": "symbol:\\s+method getStatusEffects\\(\\)[^\\n]*\\n\\s*location: (?:class|variable \\w+ of type) FoodComponent\\b",
       "apply": {
         "transform": "helper",
-        "name": "modaccel$foodEffects",
+        "name": "mmt$foodEffects",
         "find": "([\\w.]+)\\.get\\(DataComponentTypes\\.FOOD\\)\\.getStatusEffects\\(\\)",
-        "replace": "modaccel\\$foodEffects($1)",
-        "source": "\t/** Written by modaccel port: 1.21.2 moved a food's effects to its consumable component. The same list as before: each effect with its chance. */\n\tprivate static List<Pair<StatusEffectInstance, Float>> modaccel$foodEffects(ItemStack stack) {\n\t\tList<Pair<StatusEffectInstance, Float>> effects = new ArrayList<>();\n\t\tConsumableComponent consumable = stack.get(DataComponentTypes.CONSUMABLE);\n\t\tif (consumable == null) return effects;\n\t\tfor (ConsumeEffect effect : consumable.onConsumeEffects())\n\t\t\tif (effect instanceof ApplyEffectsConsumeEffect apply)\n\t\t\t\tfor (StatusEffectInstance instance : apply.effects()) effects.add(Pair.of(instance, apply.probability()));\n\t\treturn effects;\n\t}",
+        "replace": "mmt\\$foodEffects($1)",
+        "source": "\t/** Written by mmt port: 1.21.2 moved a food's effects to its consumable component. The same list as before: each effect with its chance. */\n\tprivate static List<Pair<StatusEffectInstance, Float>> mmt$foodEffects(ItemStack stack) {\n\t\tList<Pair<StatusEffectInstance, Float>> effects = new ArrayList<>();\n\t\tConsumableComponent consumable = stack.get(DataComponentTypes.CONSUMABLE);\n\t\tif (consumable == null) return effects;\n\t\tfor (ConsumeEffect effect : consumable.onConsumeEffects())\n\t\t\tif (effect instanceof ApplyEffectsConsumeEffect apply)\n\t\t\t\tfor (StatusEffectInstance instance : apply.effects()) effects.add(Pair.of(instance, apply.probability()));\n\t\treturn effects;\n\t}",
         "ensureImports": ["java.util.List", "java.util.ArrayList", "com.mojang.datafixers.util.Pair", "net.minecraft.entity.effect.StatusEffectInstance", "net.minecraft.item.ItemStack", "net.minecraft.component.DataComponentTypes", "net.minecraft.component.type.ConsumableComponent", "net.minecraft.item.consume.ConsumeEffect", "net.minecraft.item.consume.ApplyEffectsConsumeEffect"]
       },
       "scope": "line",
@@ -4155,7 +4155,7 @@
       "test": {
         "error": "FoodHelper.java:5: error: cannot find symbol\n\t\tfor (Pair<StatusEffectInstance, Float> effect : itemStack.get(DataComponentTypes.FOOD).getStatusEffects())\n\t\t                                                                                     ^\n  symbol:   method getStatusEffects()\n  location: class FoodComponent\n",
         "before": "package mod;\n\npublic class FoodHelper {\n\tstatic boolean rotten(ItemStack itemStack) {\n\t\tfor (Pair<StatusEffectInstance, Float> effect : itemStack.get(DataComponentTypes.FOOD).getStatusEffects())\n\t\t\tif (effect.getFirst().getEffectType().value().getCategory() == StatusEffectCategory.HARMFUL) return true;\n\t\treturn false;\n\t}\n}\n",
-        "after": "package mod;\nimport net.minecraft.item.consume.ApplyEffectsConsumeEffect;\nimport net.minecraft.item.consume.ConsumeEffect;\nimport net.minecraft.component.type.ConsumableComponent;\nimport net.minecraft.component.DataComponentTypes;\nimport net.minecraft.item.ItemStack;\nimport net.minecraft.entity.effect.StatusEffectInstance;\nimport com.mojang.datafixers.util.Pair;\nimport java.util.ArrayList;\nimport java.util.List;\n\npublic class FoodHelper {\n\tstatic boolean rotten(ItemStack itemStack) {\n\t\tfor (Pair<StatusEffectInstance, Float> effect : modaccel$foodEffects(itemStack))\n\t\t\tif (effect.getFirst().getEffectType().value().getCategory() == StatusEffectCategory.HARMFUL) return true;\n\t\treturn false;\n\t}\n\n\t/** Written by modaccel port: 1.21.2 moved a food's effects to its consumable component. The same list as before: each effect with its chance. */\n\tprivate static List<Pair<StatusEffectInstance, Float>> modaccel$foodEffects(ItemStack stack) {\n\t\tList<Pair<StatusEffectInstance, Float>> effects = new ArrayList<>();\n\t\tConsumableComponent consumable = stack.get(DataComponentTypes.CONSUMABLE);\n\t\tif (consumable == null) return effects;\n\t\tfor (ConsumeEffect effect : consumable.onConsumeEffects())\n\t\t\tif (effect instanceof ApplyEffectsConsumeEffect apply)\n\t\t\t\tfor (StatusEffectInstance instance : apply.effects()) effects.add(Pair.of(instance, apply.probability()));\n\t\treturn effects;\n\t}\n}\n"
+        "after": "package mod;\nimport net.minecraft.item.consume.ApplyEffectsConsumeEffect;\nimport net.minecraft.item.consume.ConsumeEffect;\nimport net.minecraft.component.type.ConsumableComponent;\nimport net.minecraft.component.DataComponentTypes;\nimport net.minecraft.item.ItemStack;\nimport net.minecraft.entity.effect.StatusEffectInstance;\nimport com.mojang.datafixers.util.Pair;\nimport java.util.ArrayList;\nimport java.util.List;\n\npublic class FoodHelper {\n\tstatic boolean rotten(ItemStack itemStack) {\n\t\tfor (Pair<StatusEffectInstance, Float> effect : mmt$foodEffects(itemStack))\n\t\t\tif (effect.getFirst().getEffectType().value().getCategory() == StatusEffectCategory.HARMFUL) return true;\n\t\treturn false;\n\t}\n\n\t/** Written by mmt port: 1.21.2 moved a food's effects to its consumable component. The same list as before: each effect with its chance. */\n\tprivate static List<Pair<StatusEffectInstance, Float>> mmt$foodEffects(ItemStack stack) {\n\t\tList<Pair<StatusEffectInstance, Float>> effects = new ArrayList<>();\n\t\tConsumableComponent consumable = stack.get(DataComponentTypes.CONSUMABLE);\n\t\tif (consumable == null) return effects;\n\t\tfor (ConsumeEffect effect : consumable.onConsumeEffects())\n\t\t\tif (effect instanceof ApplyEffectsConsumeEffect apply)\n\t\t\t\tfor (StatusEffectInstance instance : apply.effects()) effects.add(Pair.of(instance, apply.probability()));\n\t\treturn effects;\n\t}\n}\n"
       }
     },
     {
@@ -4165,17 +4165,17 @@
       "match": "method registerGlobalReceiver in class (?:Client|Server)PlayNetworking cannot be applied|constructor CustomPayload(?:S2C|C2S)Packet in (?:record|class) CustomPayload(?:S2C|C2S)Packet cannot be applied|method send in class (?:Client|Server)PlayNetworking cannot be applied|no suitable method found for send\\(",
       "apply": {
         "transform": "payload-bytes",
-        "name": "ModaccelPacket",
-        "source": "package {package};\n\nimport io.netty.buffer.Unpooled;\nimport java.util.HashMap;\nimport java.util.Map;\nimport net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;\nimport net.minecraft.network.PacketByteBuf;\nimport net.minecraft.network.codec.PacketCodec;\nimport net.minecraft.network.packet.CustomPayload;\nimport net.minecraft.util.Identifier;\n\n/**\n * Written by modaccel port: 1.20.5 replaced channel-plus-buffer packets with typed payloads. Each old channel becomes a\n * payload carrying the same bytes, so the mod's own writes and reads are unchanged.\n */\npublic record ModaccelPacket(CustomPayload.Id<ModaccelPacket> id, byte[] bytes) implements CustomPayload {\n\tprivate static final Map<Identifier, CustomPayload.Id<ModaccelPacket>> TYPES = new HashMap<>();\n\n\t/** The payload type for a channel, registered for both directions the first time the mod names it. */\n\tpublic static synchronized CustomPayload.Id<ModaccelPacket> type(Identifier channel) {\n\t\tCustomPayload.Id<ModaccelPacket> known = TYPES.get(channel);\n\t\tif (known != null) return known;\n\t\tCustomPayload.Id<ModaccelPacket> id = new CustomPayload.Id<>(channel);\n\t\tPacketCodec<PacketByteBuf, ModaccelPacket> codec = PacketCodec.of((packet, buf) -> buf.writeBytes(packet.bytes()), buf -> {\n\t\t\tbyte[] bytes = new byte[buf.readableBytes()];\n\t\t\tbuf.readBytes(bytes);\n\t\t\treturn new ModaccelPacket(id, bytes);\n\t\t});\n\t\tPayloadTypeRegistry.playS2C().register(id, codec);\n\t\tPayloadTypeRegistry.playC2S().register(id, codec);\n\t\tTYPES.put(channel, id);\n\t\treturn id;\n\t}\n\n\t/** A payload holding what the buffer holds now. */\n\tpublic static ModaccelPacket of(Identifier channel, PacketByteBuf buf) {\n\t\tbyte[] bytes = new byte[buf.readableBytes()];\n\t\tbuf.getBytes(buf.readerIndex(), bytes);\n\t\treturn new ModaccelPacket(type(channel), bytes);\n\t}\n\n\t/** The bytes as a buffer to read, as the old handler received them. */\n\tpublic PacketByteBuf buf() {\n\t\treturn new PacketByteBuf(Unpooled.wrappedBuffer(bytes));\n\t}\n\n\t@Override\n\tpublic CustomPayload.Id<ModaccelPacket> getId() {\n\t\treturn id;\n\t}\n}\n"
+        "name": "MmtPacket",
+        "source": "package {package};\n\nimport io.netty.buffer.Unpooled;\nimport java.util.HashMap;\nimport java.util.Map;\nimport net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;\nimport net.minecraft.network.PacketByteBuf;\nimport net.minecraft.network.codec.PacketCodec;\nimport net.minecraft.network.packet.CustomPayload;\nimport net.minecraft.util.Identifier;\n\n/**\n * Written by mmt port: 1.20.5 replaced channel-plus-buffer packets with typed payloads. Each old channel becomes a\n * payload carrying the same bytes, so the mod's own writes and reads are unchanged.\n */\npublic record MmtPacket(CustomPayload.Id<MmtPacket> id, byte[] bytes) implements CustomPayload {\n\tprivate static final Map<Identifier, CustomPayload.Id<MmtPacket>> TYPES = new HashMap<>();\n\n\t/** The payload type for a channel, registered for both directions the first time the mod names it. */\n\tpublic static synchronized CustomPayload.Id<MmtPacket> type(Identifier channel) {\n\t\tCustomPayload.Id<MmtPacket> known = TYPES.get(channel);\n\t\tif (known != null) return known;\n\t\tCustomPayload.Id<MmtPacket> id = new CustomPayload.Id<>(channel);\n\t\tPacketCodec<PacketByteBuf, MmtPacket> codec = PacketCodec.of((packet, buf) -> buf.writeBytes(packet.bytes()), buf -> {\n\t\t\tbyte[] bytes = new byte[buf.readableBytes()];\n\t\t\tbuf.readBytes(bytes);\n\t\t\treturn new MmtPacket(id, bytes);\n\t\t});\n\t\tPayloadTypeRegistry.playS2C().register(id, codec);\n\t\tPayloadTypeRegistry.playC2S().register(id, codec);\n\t\tTYPES.put(channel, id);\n\t\treturn id;\n\t}\n\n\t/** A payload holding what the buffer holds now. */\n\tpublic static MmtPacket of(Identifier channel, PacketByteBuf buf) {\n\t\tbyte[] bytes = new byte[buf.readableBytes()];\n\t\tbuf.getBytes(buf.readerIndex(), bytes);\n\t\treturn new MmtPacket(type(channel), bytes);\n\t}\n\n\t/** The bytes as a buffer to read, as the old handler received them. */\n\tpublic PacketByteBuf buf() {\n\t\treturn new PacketByteBuf(Unpooled.wrappedBuffer(bytes));\n\t}\n\n\t@Override\n\tpublic CustomPayload.Id<MmtPacket> getId() {\n\t\treturn id;\n\t}\n}\n"
       },
       "scope": "log",
       "when": "",
-      "note": "Fabric API 1.20.5 dropped id-plus-buffer networking for typed payload records. Rather than guess a record per packet, the port carries each old channel over as one payload type holding the same bytes: sends wrap (channel, buf) as ModaccelPacket.of, receivers take ModaccelPacket.type(channel) and keep their old lambda body, with client, handler, buf and responseSender (or server, player, ...) declared from the new context. The class is written beside the first file it changes. Names checked against yarn 1.21.6 and Fabric networking API 5. Seen in AppleSkin 1.20.1 -> 1.21.6 (exhaustion and saturation sync); the custom-payload-records guide stays for a mod that wants real records.",
+      "note": "Fabric API 1.20.5 dropped id-plus-buffer networking for typed payload records. Rather than guess a record per packet, the port carries each old channel over as one payload type holding the same bytes: sends wrap (channel, buf) as MmtPacket.of, receivers take MmtPacket.type(channel) and keep their old lambda body, with client, handler, buf and responseSender (or server, player, ...) declared from the new context. The class is written beside the first file it changes. Names checked against yarn 1.21.6 and Fabric networking API 5. Seen in AppleSkin 1.20.1 -> 1.21.6 (exhaustion and saturation sync); the custom-payload-records guide stays for a mod that wants real records.",
       "verified": null,
       "test": {
         "error": "ClientSyncHandler.java:1: error: method registerGlobalReceiver in class ClientPlayNetworking cannot be applied to given types;\n",
         "before": "\t\tClientPlayNetworking.registerGlobalReceiver(SyncHandler.EXHAUSTION_SYNC, (client, handler, buf, responseSender) -> {\n\t\t\tfloat exhaustion = buf.readFloat();\n\t\t\tclient.execute(() -> client.player.sendMessage(Text.of(\"(\" + ')'), false));\n\t\t});\n\t\treturn new CustomPayloadS2CPacket(identifier, buf);\n\t\tServerPlayNetworking.send(player, CHANNEL, PacketByteBufs.create());\n\t\tServerPlayNetworking.registerGlobalReceiver(CHANNEL, (server, player, handler, buf, sender) -> {\n\t\t\tint count = buf.readInt();\n\t\t});\n",
-        "after": "\t\tClientPlayNetworking.registerGlobalReceiver(ModaccelPacket.type(SyncHandler.EXHAUSTION_SYNC), (modaccel$payload, modaccel$context) -> { var client = modaccel$context.client(); var handler = modaccel$context.client().getNetworkHandler(); var buf = modaccel$payload.buf(); var responseSender = modaccel$context.responseSender();\n\t\t\tfloat exhaustion = buf.readFloat();\n\t\t\tclient.execute(() -> client.player.sendMessage(Text.of(\"(\" + ')'), false));\n\t\t});\n\t\treturn new CustomPayloadS2CPacket(ModaccelPacket.of(identifier, buf));\n\t\tServerPlayNetworking.send(player, ModaccelPacket.of(CHANNEL, PacketByteBufs.create()));\n\t\tServerPlayNetworking.registerGlobalReceiver(ModaccelPacket.type(CHANNEL), (modaccel$payload, modaccel$context) -> { var server = modaccel$context.server(); var player = modaccel$context.player(); var handler = modaccel$context.player().networkHandler; var buf = modaccel$payload.buf(); var sender = modaccel$context.responseSender();\n\t\t\tint count = buf.readInt();\n\t\t});\n"
+        "after": "\t\tClientPlayNetworking.registerGlobalReceiver(MmtPacket.type(SyncHandler.EXHAUSTION_SYNC), (mmt$payload, mmt$context) -> { var client = mmt$context.client(); var handler = mmt$context.client().getNetworkHandler(); var buf = mmt$payload.buf(); var responseSender = mmt$context.responseSender();\n\t\t\tfloat exhaustion = buf.readFloat();\n\t\t\tclient.execute(() -> client.player.sendMessage(Text.of(\"(\" + ')'), false));\n\t\t});\n\t\treturn new CustomPayloadS2CPacket(MmtPacket.of(identifier, buf));\n\t\tServerPlayNetworking.send(player, MmtPacket.of(CHANNEL, PacketByteBufs.create()));\n\t\tServerPlayNetworking.registerGlobalReceiver(MmtPacket.type(CHANNEL), (mmt$payload, mmt$context) -> { var server = mmt$context.server(); var player = mmt$context.player(); var handler = mmt$context.player().networkHandler; var buf = mmt$payload.buf(); var sender = mmt$context.responseSender();\n\t\t\tint count = buf.readInt();\n\t\t});\n"
       }
     },
     {
@@ -4199,7 +4199,7 @@
       "test": {
         "error": "HUD.java:4: error: cannot find symbol\n\t\treturn player.getHungerManager().getExhaustion();\n\t\t                                ^\n  symbol:   method getExhaustion()\n  location: class HungerManager\n",
         "before": "package mod.client;\n\nclass HUD {\n\tfloat read(PlayerEntity player) { return player.getHungerManager().getExhaustion(); }\n\tvoid write(HungerManager stats, float[] values) { stats.setExhaustion(values[0]); }\n}\n",
-        "after": "package mod.client;\nimport mod.mixin.HungerManagerAccessor;\n\nclass HUD {\n\tfloat read(PlayerEntity player) { return ((HungerManagerAccessor) player.getHungerManager()).modaccel$getExhaustion(); }\n\tvoid write(HungerManager stats, float[] values) { ((HungerManagerAccessor) stats).modaccel$setExhaustion(values[0]); }\n}\n"
+        "after": "package mod.client;\nimport mod.mixin.HungerManagerAccessor;\n\nclass HUD {\n\tfloat read(PlayerEntity player) { return ((HungerManagerAccessor) player.getHungerManager()).mmt$getExhaustion(); }\n\tvoid write(HungerManager stats, float[] values) { ((HungerManagerAccessor) stats).mmt$setExhaustion(values[0]); }\n}\n"
       }
     },
     {
@@ -4223,7 +4223,7 @@
       "test": {
         "error": "HUD.java:4: error: cannot find symbol\n\t\treturn player.getFoodData().getExhaustionLevel();\n\t\t                           ^\n  symbol:   method getExhaustionLevel()\n  location: class FoodData\n",
         "before": "package mod.client;\n\nclass HUD {\n\tfloat read(Player player) { return player.getFoodData().getExhaustionLevel(); }\n}\n",
-        "after": "package mod.client;\nimport mod.mixin.FoodDataAccessor;\n\nclass HUD {\n\tfloat read(Player player) { return ((FoodDataAccessor) player.getFoodData()).modaccel$getExhaustionLevel(); }\n}\n"
+        "after": "package mod.client;\nimport mod.mixin.FoodDataAccessor;\n\nclass HUD {\n\tfloat read(Player player) { return ((FoodDataAccessor) player.getFoodData()).mmt$getExhaustionLevel(); }\n}\n"
       }
     },
     {
@@ -4378,10 +4378,10 @@
       "match": "no suitable method found for drawString\\(Font,String,float,float,int,boolean\\)",
       "apply": {
         "transform": "helper",
-        "name": "modaccel$drawString",
+        "name": "mmt$drawString",
         "find": "\\b(\\w+(?:\\.\\w+)*)\\.drawString\\(",
-        "replace": "modaccel\\$drawString($1, ",
-        "source": "\t/** Written by modaccel port: NeoForge 1.21.6 dropped GuiGraphics.drawString at float positions, which drew the text and returned where it ended; the game's own drawString returns nothing now. */\n\tprivate static int modaccel$drawString(GuiGraphics graphics, Font font, String text, float x, float y, int color, boolean shadow) {\n\t\tif (text == null) return 0;\n\t\tgraphics.drawString(font, text, (int) x, (int) y, color, shadow);\n\t\treturn (int) (x + font.width(text)) + (shadow ? 1 : 0);\n\t}",
+        "replace": "mmt\\$drawString($1, ",
+        "source": "\t/** Written by mmt port: NeoForge 1.21.6 dropped GuiGraphics.drawString at float positions, which drew the text and returned where it ended; the game's own drawString returns nothing now. */\n\tprivate static int mmt$drawString(GuiGraphics graphics, Font font, String text, float x, float y, int color, boolean shadow) {\n\t\tif (text == null) return 0;\n\t\tgraphics.drawString(font, text, (int) x, (int) y, color, shadow);\n\t\treturn (int) (x + font.width(text)) + (shadow ? 1 : 0);\n\t}",
         "ensureImports": [
           "net.minecraft.client.gui.GuiGraphics",
           "net.minecraft.client.gui.Font"
@@ -4394,7 +4394,7 @@
       "test": {
         "error": "NotesTitleField.java:5: error: no suitable method found for drawString(Font,String,float,float,int,boolean)\n\t\t\t\tj1 = guiGraphics.drawString(font, s1, (float) l, (float) i1, i, true);\n\t\t\t\t                ^\n    method GuiGraphics.drawString(Font,String,int,int,int,boolean) is not applicable\n",
         "before": "package mod;\n\nclass NotesTitleField {\n\tvoid render(GuiGraphics guiGraphics) {\n\t\t\t\tj1 = guiGraphics.drawString(font, s1, (float) l, (float) i1, i, true);\n\t\tguiGraphics.drawString(font, s1, l, i1, i, true);\n\t}\n}\n",
-        "after": "package mod;\nimport net.minecraft.client.gui.Font;\nimport net.minecraft.client.gui.GuiGraphics;\n\nclass NotesTitleField {\n\tvoid render(GuiGraphics guiGraphics) {\n\t\t\t\tj1 = modaccel$drawString(guiGraphics, font, s1, (float) l, (float) i1, i, true);\n\t\tguiGraphics.drawString(font, s1, l, i1, i, true);\n\t}\n\n\t/** Written by modaccel port: NeoForge 1.21.6 dropped GuiGraphics.drawString at float positions, which drew the text and returned where it ended; the game's own drawString returns nothing now. */\n\tprivate static int modaccel$drawString(GuiGraphics graphics, Font font, String text, float x, float y, int color, boolean shadow) {\n\t\tif (text == null) return 0;\n\t\tgraphics.drawString(font, text, (int) x, (int) y, color, shadow);\n\t\treturn (int) (x + font.width(text)) + (shadow ? 1 : 0);\n\t}\n}\n"
+        "after": "package mod;\nimport net.minecraft.client.gui.Font;\nimport net.minecraft.client.gui.GuiGraphics;\n\nclass NotesTitleField {\n\tvoid render(GuiGraphics guiGraphics) {\n\t\t\t\tj1 = mmt$drawString(guiGraphics, font, s1, (float) l, (float) i1, i, true);\n\t\tguiGraphics.drawString(font, s1, l, i1, i, true);\n\t}\n\n\t/** Written by mmt port: NeoForge 1.21.6 dropped GuiGraphics.drawString at float positions, which drew the text and returned where it ended; the game's own drawString returns nothing now. */\n\tprivate static int mmt$drawString(GuiGraphics graphics, Font font, String text, float x, float y, int color, boolean shadow) {\n\t\tif (text == null) return 0;\n\t\tgraphics.drawString(font, text, (int) x, (int) y, color, shadow);\n\t\treturn (int) (x + font.width(text)) + (shadow ? 1 : 0);\n\t}\n}\n"
       }
     },
     {
@@ -4484,8 +4484,8 @@
       "match": "symbol:\\s+method equipSaddle\\(ItemStack,SoundSource\\)",
       "apply": {
         "transform": "helper",
-        "name": "modaccel$equipSaddle",
-        "source": "\t/** Written by modaccel port: 1.21.5 made the saddle an equipment slot and removed equipSaddle(ItemStack, SoundSource); with a sound source it played the saddling sound, which the saddle's own equippable component now names. */\n\tprivate static void modaccel$equipSaddle(net.minecraft.world.entity.Mob mob, net.minecraft.world.item.ItemStack saddle, net.minecraft.sounds.SoundSource source) {\n\t\tmob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.SADDLE, saddle);\n\t\tnet.minecraft.world.item.equipment.Equippable equippable = saddle.get(net.minecraft.core.component.DataComponents.EQUIPPABLE);\n\t\tif (source != null && equippable != null) mob.level().playSound(null, mob, equippable.equipSound().value(), source, 0.5F, 1.0F);\n\t}"
+        "name": "mmt$equipSaddle",
+        "source": "\t/** Written by mmt port: 1.21.5 made the saddle an equipment slot and removed equipSaddle(ItemStack, SoundSource); with a sound source it played the saddling sound, which the saddle's own equippable component now names. */\n\tprivate static void mmt$equipSaddle(net.minecraft.world.entity.Mob mob, net.minecraft.world.item.ItemStack saddle, net.minecraft.sounds.SoundSource source) {\n\t\tmob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.SADDLE, saddle);\n\t\tnet.minecraft.world.item.equipment.Equippable equippable = saddle.get(net.minecraft.core.component.DataComponents.EQUIPPABLE);\n\t\tif (source != null && equippable != null) mob.level().playSound(null, mob, equippable.equipSound().value(), source, 0.5F, 1.0F);\n\t}"
       },
       "scope": "line",
       "when": "",
@@ -4494,7 +4494,7 @@
       "test": {
         "error": "ZombieHuntCompat.java:3: error: cannot find symbol\n        zombieHorse.equipSaddle(\n                   ^\n  symbol:   method equipSaddle(ItemStack,SoundSource)\n  location: variable zombieHorse of type ZombieHorse\n",
         "before": "class ZombieHuntCompat {\n    static void equipSaddle(ZombieHorse zombieHorse) {\n        zombieHorse.equipSaddle(\n                new ItemStack(Items.SADDLE),\n                SoundSource.NEUTRAL);\n    }\n}\n",
-        "after": "class ZombieHuntCompat {\n    static void equipSaddle(ZombieHorse zombieHorse) {\n        modaccel$equipSaddle(zombieHorse, \n                new ItemStack(Items.SADDLE),\n                SoundSource.NEUTRAL);\n    }\n\n\t/** Written by modaccel port: 1.21.5 made the saddle an equipment slot and removed equipSaddle(ItemStack, SoundSource); with a sound source it played the saddling sound, which the saddle's own equippable component now names. */\n\tprivate static void modaccel$equipSaddle(net.minecraft.world.entity.Mob mob, net.minecraft.world.item.ItemStack saddle, net.minecraft.sounds.SoundSource source) {\n\t\tmob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.SADDLE, saddle);\n\t\tnet.minecraft.world.item.equipment.Equippable equippable = saddle.get(net.minecraft.core.component.DataComponents.EQUIPPABLE);\n\t\tif (source != null && equippable != null) mob.level().playSound(null, mob, equippable.equipSound().value(), source, 0.5F, 1.0F);\n\t}\n}\n"
+        "after": "class ZombieHuntCompat {\n    static void equipSaddle(ZombieHorse zombieHorse) {\n        mmt$equipSaddle(zombieHorse, \n                new ItemStack(Items.SADDLE),\n                SoundSource.NEUTRAL);\n    }\n\n\t/** Written by mmt port: 1.21.5 made the saddle an equipment slot and removed equipSaddle(ItemStack, SoundSource); with a sound source it played the saddling sound, which the saddle's own equippable component now names. */\n\tprivate static void mmt$equipSaddle(net.minecraft.world.entity.Mob mob, net.minecraft.world.item.ItemStack saddle, net.minecraft.sounds.SoundSource source) {\n\t\tmob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.SADDLE, saddle);\n\t\tnet.minecraft.world.item.equipment.Equippable equippable = saddle.get(net.minecraft.core.component.DataComponents.EQUIPPABLE);\n\t\tif (source != null && equippable != null) mob.level().playSound(null, mob, equippable.equipSound().value(), source, 0.5F, 1.0F);\n\t}\n}\n"
       }
     },
     {
@@ -4504,8 +4504,8 @@
       "match": "symbol:\\s+method getOwnerUUID\\(\\)",
       "apply": {
         "transform": "helper",
-        "name": "modaccel$ownerUUID",
-        "source": "\t/** Written by modaccel port: 1.21.5 replaced OwnableEntity.getOwnerUUID() with getOwnerReference(), a reference that is null when nothing owns the animal. */\n\tprivate static java.util.UUID modaccel$ownerUUID(net.minecraft.world.entity.OwnableEntity owned) {\n\t\tnet.minecraft.world.entity.EntityReference<?> owner = owned.getOwnerReference();\n\t\treturn owner == null ? null : owner.getUUID();\n\t}"
+        "name": "mmt$ownerUUID",
+        "source": "\t/** Written by mmt port: 1.21.5 replaced OwnableEntity.getOwnerUUID() with getOwnerReference(), a reference that is null when nothing owns the animal. */\n\tprivate static java.util.UUID mmt$ownerUUID(net.minecraft.world.entity.OwnableEntity owned) {\n\t\tnet.minecraft.world.entity.EntityReference<?> owner = owned.getOwnerReference();\n\t\treturn owner == null ? null : owner.getUUID();\n\t}"
       },
       "scope": "line",
       "when": "",
@@ -4514,7 +4514,7 @@
       "test": {
         "error": "ZombieHunt.java:3: error: cannot find symbol\n        UUID owner = horse.getOwnerUUID();\n                          ^\n  symbol:   method getOwnerUUID()\n  location: variable horse of type Horse\n",
         "before": "class ZombieHunt {\n    void f(Horse horse) {\n        UUID owner = horse.getOwnerUUID();\n    }\n}\n",
-        "after": "class ZombieHunt {\n    void f(Horse horse) {\n        UUID owner = modaccel$ownerUUID(horse);\n    }\n\n\t/** Written by modaccel port: 1.21.5 replaced OwnableEntity.getOwnerUUID() with getOwnerReference(), a reference that is null when nothing owns the animal. */\n\tprivate static java.util.UUID modaccel$ownerUUID(net.minecraft.world.entity.OwnableEntity owned) {\n\t\tnet.minecraft.world.entity.EntityReference<?> owner = owned.getOwnerReference();\n\t\treturn owner == null ? null : owner.getUUID();\n\t}\n}\n"
+        "after": "class ZombieHunt {\n    void f(Horse horse) {\n        UUID owner = mmt$ownerUUID(horse);\n    }\n\n\t/** Written by mmt port: 1.21.5 replaced OwnableEntity.getOwnerUUID() with getOwnerReference(), a reference that is null when nothing owns the animal. */\n\tprivate static java.util.UUID mmt$ownerUUID(net.minecraft.world.entity.OwnableEntity owned) {\n\t\tnet.minecraft.world.entity.EntityReference<?> owner = owned.getOwnerReference();\n\t\treturn owner == null ? null : owner.getUUID();\n\t}\n}\n"
       }
     },
     {
@@ -4529,7 +4529,7 @@
         "field": "owner",
         "type": "net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>",
         "set": "setOwnerUUID",
-        "setArgument": "java.util.Optional.ofNullable({value}).map(modaccel$uuid -> new net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>(modaccel$uuid)).orElse(null)",
+        "setArgument": "java.util.Optional.ofNullable({value}).map(mmt$uuid -> new net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>(mmt$uuid)).orElse(null)",
         "why": "1.21.5 removed AbstractHorse.setOwnerUUID(UUID); the private field owner, an EntityReference<LivingEntity>, remains and only setOwner(LivingEntity) sets it, which needs the owner loaded."
       },
       "scope": "log",
@@ -4539,7 +4539,7 @@
       "test": {
         "error": "ZombieHunt.java:3: error: cannot find symbol\n            zombieHorse.setOwnerUUID(owner);\n                       ^\n  symbol:   method setOwnerUUID(UUID)\n  location: variable zombieHorse of type ZombieHorse\n",
         "before": "package mod;\n\nclass ZombieHunt {\n    void f(ZombieHorse zombieHorse, UUID owner) {\n            zombieHorse.setOwnerUUID(owner);\n    }\n}\n",
-        "after": "package mod;\nimport mod.mixin.AbstractHorseAccessor;\n\nclass ZombieHunt {\n    void f(ZombieHorse zombieHorse, UUID owner) {\n            ((AbstractHorseAccessor) zombieHorse).modaccel$setOwner(java.util.Optional.ofNullable(owner).map(modaccel$uuid -> new net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>(modaccel$uuid)).orElse(null));\n    }\n}\n"
+        "after": "package mod;\nimport mod.mixin.AbstractHorseAccessor;\n\nclass ZombieHunt {\n    void f(ZombieHorse zombieHorse, UUID owner) {\n            ((AbstractHorseAccessor) zombieHorse).mmt$setOwner(java.util.Optional.ofNullable(owner).map(mmt$uuid -> new net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>(mmt$uuid)).orElse(null));\n    }\n}\n"
       }
     },
     {
@@ -4766,8 +4766,8 @@
       "verified": "ZombieApocalypseAddon 1.21.1 -> 26.3 (NeoForge 26.3.0.103): the error it names was left by the routed port on 2026-11-14; the 26.3 game source (NeoForm) has the replacement",
       "test": {
         "error": "ZombieHunt.java:4: error: no suitable constructor found for EntityReference(UUID)\n        constructor EntityReference.EntityReference(UUID) is not applicable\n          (EntityReference(UUID) has private access in EntityReference)\n",
-        "before": "package com.rique.zombieapocalypse;\n\n        if (tamed) {\n            ((AbstractHorseAccessor) zombieHorse).modaccel$setOwner(java.util.Optional.ofNullable(owner).map(modaccel$uuid -> new net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>(modaccel$uuid)).orElse(null));\n        }\n",
-        "after": "package com.rique.zombieapocalypse;\n\n        if (tamed) {\n            ((AbstractHorseAccessor) zombieHorse).modaccel$setOwner(java.util.Optional.ofNullable(owner).map(modaccel$uuid -> net.minecraft.world.entity.EntityReference.<net.minecraft.world.entity.LivingEntity>of(modaccel$uuid)).orElse(null));\n        }\n",
+        "before": "package com.rique.zombieapocalypse;\n\n        if (tamed) {\n            ((AbstractHorseAccessor) zombieHorse).mmt$setOwner(java.util.Optional.ofNullable(owner).map(mmt$uuid -> new net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity>(mmt$uuid)).orElse(null));\n        }\n",
+        "after": "package com.rique.zombieapocalypse;\n\n        if (tamed) {\n            ((AbstractHorseAccessor) zombieHorse).mmt$setOwner(java.util.Optional.ofNullable(owner).map(mmt$uuid -> net.minecraft.world.entity.EntityReference.<net.minecraft.world.entity.LivingEntity>of(mmt$uuid)).orElse(null));\n        }\n",
         "from": "ZombieApocalypseAddon neoforge 1.21.1 at 1bb67d4a, src/main/java/com/rique/zombieapocalypse/ZombieHunt.java:447, as horse-owner-accessor-official left it"
       }
     },
@@ -5202,10 +5202,10 @@
       "match": "incompatible types: void cannot be converted to int",
       "apply": {
         "transform": "helper",
-        "name": "modaccel$drawStringEnd",
+        "name": "mmt$drawStringEnd",
         "find": "\\b(\\w+(?:\\.\\w+)*)\\.drawString\\(",
-        "replace": "modaccel\\$drawStringEnd($1, ",
-        "source": "\t/** Written by modaccel port: 1.21.6's GuiGraphics.drawString returns nothing; before, it returned the x where the text ended, one more with its shadow. */\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, String text, int x, int y, int color) {\n\t\treturn modaccel$drawStringEnd(graphics, font, text, x, y, color, true);\n\t}\n\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, String text, int x, int y, int color, boolean shadow) {\n\t\tif (text == null) return x;\n\t\tgraphics.drawString(font, text, x, y, color, shadow);\n\t\treturn x + font.width(text) + (shadow ? 1 : 0);\n\t}\n\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, FormattedCharSequence text, int x, int y, int color) {\n\t\treturn modaccel$drawStringEnd(graphics, font, text, x, y, color, true);\n\t}\n\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, FormattedCharSequence text, int x, int y, int color, boolean shadow) {\n\t\tgraphics.drawString(font, text, x, y, color, shadow);\n\t\treturn x + font.width(text) + (shadow ? 1 : 0);\n\t}\n\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, Component text, int x, int y, int color) {\n\t\treturn modaccel$drawStringEnd(graphics, font, text, x, y, color, true);\n\t}\n\n\tprivate static int modaccel$drawStringEnd(GuiGraphics graphics, Font font, Component text, int x, int y, int color, boolean shadow) {\n\t\tgraphics.drawString(font, text, x, y, color, shadow);\n\t\treturn x + font.width(text) + (shadow ? 1 : 0);\n\t}",
+        "replace": "mmt\\$drawStringEnd($1, ",
+        "source": "\t/** Written by mmt port: 1.21.6's GuiGraphics.drawString returns nothing; before, it returned the x where the text ended, one more with its shadow. */\n\tprivate static int mmt$drawStringEnd(GuiGraphics graphics, Font font, String text, int x, int y, int color) {\n\t\treturn mmt$drawStringEnd(graphics, font, text, x, y, color, true);\n\t}\n\n\tprivate static int mmt$drawStringEnd(GuiGraphics graphics, Font font, String text, int x, int y, int color, boolean shadow) {\n\t\tif (text == null) return x;\n\t\tgraphics.drawString(font, text, x, y, color, shadow);\n\t\treturn x + font.width(text) + (shadow ? 1 : 0);\n\t}\n\n\tprivate static int mmt$drawStringEnd(GuiGraphics graphics, Font font, FormattedCharSequence text, int x, int y, int color) {\n\t\treturn mmt$drawStringEnd(graphics, font, text, x, y, color, true);\n\t}\n\n\tprivate static int mmt$drawStringEnd(GuiGraphics graphics, Font font, FormattedCharSequence text, int x, int y, int color, boolean shadow) {\n\t\tgraphics.drawString(font, text, x, y, color, shadow);\n\t\treturn x + font.width(text) + (shadow ? 1 : 0);\n\t}\n\n\tprivate static int mmt$drawStringEnd(GuiGraphics graphics, Font font, Component text, int x, int y, int color) {\n\t\treturn mmt$drawStringEnd(graphics, font, text, x, y, color, true);\n\t}\n\n\tprivate static int mmt$drawStringEnd(GuiGraphics graphics, Font font, Component text, int x, int y, int color, boolean shadow) {\n\t\tgraphics.drawString(font, text, x, y, color, shadow);\n\t\treturn x + font.width(text) + (shadow ? 1 : 0);\n\t}",
         "ensureImports": [
           "net.minecraft.client.gui.GuiGraphics",
           "net.minecraft.client.gui.Font",
@@ -5220,7 +5220,7 @@
       "test": {
         "error": "TooltipOverlayHandler.java:4: error: incompatible types: void cannot be converted to int\n",
         "before": "package squeek.appleskin.client;\n\n\t\t\t\tposeStack.scale(0.75f, 0.75f);\n\t\t\t\tguiGraphics.drawString(font, foodTooltip.hungerBarsText, 2, 2, 0xFFAAAAAA);\n\t\t\t\tposeStack.popMatrix();\n",
-        "after": "package squeek.appleskin.client;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.util.FormattedCharSequence;\nimport net.minecraft.client.gui.Font;\nimport net.minecraft.client.gui.GuiGraphics;\n\n\t\t\t\tposeStack.scale(0.75f, 0.75f);\n\t\t\t\tmodaccel$drawStringEnd(guiGraphics, font, foodTooltip.hungerBarsText, 2, 2, 0xFFAAAAAA);\n\t\t\t\tposeStack.popMatrix();\n",
+        "after": "package squeek.appleskin.client;\nimport net.minecraft.network.chat.Component;\nimport net.minecraft.util.FormattedCharSequence;\nimport net.minecraft.client.gui.Font;\nimport net.minecraft.client.gui.GuiGraphics;\n\n\t\t\t\tposeStack.scale(0.75f, 0.75f);\n\t\t\t\tmmt$drawStringEnd(guiGraphics, font, foodTooltip.hungerBarsText, 2, 2, 0xFFAAAAAA);\n\t\t\t\tposeStack.popMatrix();\n",
         "from": "AppleSkin neoforge 1.21.6 at ea9d971d, java/squeek/appleskin/client/TooltipOverlayHandler.java:180"
       }
     },

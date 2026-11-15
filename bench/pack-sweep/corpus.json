@@ -1,5 +1,5 @@
 {
-  "about": "The pack-check sweep corpus: public modpacks pinned by exact file (Modrinth version and SHA-512, or CurseForge project and file id with its length and the SHA-256 recorded on first download). python bench/pack_sweep.py run downloads each into .runs/pack-sweep and runs modaccel pack-check on it.",
+  "about": "The pack-check sweep corpus: public modpacks pinned by exact file (Modrinth version and SHA-512, or CurseForge project and file id with its length and the SHA-256 recorded on first download). python bench/pack_sweep.py run downloads each into .runs/pack-sweep and runs mmt pack-check on it.",
   "packs": [
     {
       "id": "create_plus-forge-1.19.2",

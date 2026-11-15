@@ -15,7 +15,7 @@ public final class FastLaneIsolationTest {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) throw new IllegalArgumentException(
-            "Usage: java FastLaneIsolationTest.java <checkout> <modaccel.jar>"
+            "Usage: java FastLaneIsolationTest.java <checkout> <mmt.jar>"
         );
         Path home = Path.of(args[0]).toRealPath(), jar = Path.of(args[1]).toAbsolutePath().normalize();
         if (!Files.isRegularFile(jar)) throw new IOException("Missing package: " + jar);
@@ -24,9 +24,9 @@ public final class FastLaneIsolationTest {
         Path root = Files.createTempDirectory(runs, "fastlane-isolation-");
         Path wrapper = root.resolve("gradle/wrapper");
         Files.createDirectories(wrapper);
-        Files.copy(home.resolve("gradle/wrapper/gradle-wrapper.jar"), wrapper.resolve("gradle-wrapper.jar"));
+        Files.copy(home.resolve("fixtures/prism-lab/gradle/wrapper/gradle-wrapper.jar"), wrapper.resolve("gradle-wrapper.jar"));
         Files.copy(
-            home.resolve("gradle/wrapper/gradle-wrapper.properties"),
+            home.resolve("fixtures/prism-lab/gradle/wrapper/gradle-wrapper.properties"),
             wrapper.resolve("gradle-wrapper.properties")
         );
         Files.writeString(
@@ -70,9 +70,9 @@ public final class FastLaneIsolationTest {
         Path root = Files.createTempDirectory(runs, "fastlane-plain-");
         Path wrapper = root.resolve("gradle/wrapper");
         Files.createDirectories(wrapper);
-        Files.copy(home.resolve("gradle/wrapper/gradle-wrapper.jar"), wrapper.resolve("gradle-wrapper.jar"));
+        Files.copy(home.resolve("fixtures/prism-lab/gradle/wrapper/gradle-wrapper.jar"), wrapper.resolve("gradle-wrapper.jar"));
         Files.copy(
-            home.resolve("gradle/wrapper/gradle-wrapper.properties"),
+            home.resolve("fixtures/prism-lab/gradle/wrapper/gradle-wrapper.properties"),
             wrapper.resolve("gradle-wrapper.properties")
         );
         Files.writeString(root.resolve("settings.gradle"), "rootProject.name = 'fastlane-plain'\n");
@@ -129,7 +129,7 @@ public final class FastLaneIsolationTest {
         Process process = new ProcessBuilder(
             List.of(
                 java,
-                "-Dmodaccel.home=" + home,
+                "-Dmmt.home=" + home,
                 "-jar",
                 jar.toString(),
                 "fast",

@@ -57,7 +57,7 @@ final class PerfReport {
         Files.createDirectories(output);
         Properties status = Performance.properties(directory.resolve("status.properties"));
         Properties environment = Performance.properties(directory.resolve("environment.properties"));
-        report.hidden = Boolean.parseBoolean(environment.getProperty("modaccel.background", "false"));
+        report.hidden = Boolean.parseBoolean(environment.getProperty("mmt.background", "false"));
         report.c1Only = Boolean.parseBoolean(environment.getProperty("c1Only", "false"));
         Map<String, Object> result = report.finish(status);
         result.put("environment", new TreeMap<>(environment));
@@ -97,25 +97,25 @@ final class PerfReport {
         long bucket = time.getEpochSecond();
         Map<String, Object> point = timeline.computeIfAbsent(bucket, key -> Json.map("epochSecond", key));
         switch (name) {
-            case "modaccel.MethodTiming" -> functions.accept(event);
-            case "modaccel.TimingTotals" -> timingTotals.put(event.getString("label"),
+            case "mmt.MethodTiming" -> functions.accept(event);
+            case "mmt.TimingTotals" -> timingTotals.put(event.getString("label"),
                 new double[]{event.getLong("calls"), event.getLong("inclusiveNanos") / 1e6, event.getLong("selfNanos") / 1e6});
-            case "modaccel.ThreadCpuTime" -> {
+            case "mmt.ThreadCpuTime" -> {
                 double[] sum = threadCpuTime.computeIfAbsent(event.getString("thread"), k -> new double[4]);
                 sum[0] += event.getLong("cpuNanos") / 1e6;
                 sum[1] += event.getLong("userNanos") / 1e6;
                 sum[2]++;
                 if (!event.getBoolean("whole")) sum[3]++;
             }
-            case "modaccel.ProbeCalls" -> probeCalls.merge(event.getString("label"), event.getLong("calls"), Long::sum);
-            case "modaccel.Pulse" -> {
+            case "mmt.ProbeCalls" -> probeCalls.merge(event.getString("label"), event.getLong("calls"), Long::sum);
+            case "mmt.Pulse" -> {
                 String kind = event.getString("kind");
                 double ms = event.getLong("nanos") / 1e6;
                 add(kind + "_ms", ms);
                 point.merge(kind + "Count", 1L, (a, b) -> ((Number) a).longValue() + 1);
                 point.merge(kind + "MaxMs", ms, (a, b) -> Math.max(((Number) a).doubleValue(), ms));
             }
-            case "modaccel.Process" -> {
+            case "mmt.Process" -> {
                 long heap = event.getLong("heapUsed");
                 add("heap_used_bytes", heap);
                 point.put("heapMiB", heap / 1048576.0);
@@ -306,7 +306,7 @@ final class PerfReport {
         warnings.add("Observation of this session, including menus/loading/pauses. Not a controlled benchmark or a causal mod ranking.");
         warnings.add("Frame intervals measure CPU-side frame completion pacing, not GPU duration or displayed-frame presentation.");
         if (hidden) {
-            warnings.add("This client was hidden and throttled by Mod Accel: FPS and frame intervals are not representative. "
+            warnings.add("This client was hidden and throttled by Minecraft Modding Tools: FPS and frame intervals are not representative. "
                 + "Server ticks and timed methods still run normally.");
         }
         warnings.add("1% low FPS = 1000 / mean duration of the slowest ceil(1% of captured frame intervals).");
@@ -315,7 +315,7 @@ final class PerfReport {
         warnings.add("Mixin handlers are charged to a mod only when their merged method name names it; overwrites and unnamed handlers remain game code.");
         warnings.add("JFR allocation weights are estimates; each thread's first allocation sample only starts its count (it also covers time before the capture). "
             + "I/O and lock events may be thresholded and are observed lower bounds, not complete totals.");
-        if (c1Only) warnings.add("This JVM compiled with C1 only (-XX:TieredStopAtLevel=1, as hidden modaccel test sessions and JBR reload sessions do): "
+        if (c1Only) warnings.add("This JVM compiled with C1 only (-XX:TieredStopAtLevel=1, as hidden mmt test sessions and JBR reload sessions do): "
             + "its code is slower than players' and JFR gets far fewer execution samples from it. perf --root launches a new game with the full JIT; stop this one first.");
         warnings.add("Explicit probes count method entries (including failed/simulated operations), not delivered items. Their overhead can be substantial.");
         warnings.add("Instrumentation overhead is not calibrated. Compare with --no-hooks and external baseline measurements before performance claims.");
@@ -365,7 +365,7 @@ final class PerfReport {
     }
 
     Map<String, Object> speedscope() {
-        return Json.map("$schema", "https://www.speedscope.app/file-format-schema.json", "name", "Mod Accel execution samples",
+        return Json.map("$schema", "https://www.speedscope.app/file-format-schema.json", "name", "Minecraft Modding Tools execution samples",
             "shared", Json.map("frames", frameIds.keySet().stream().map(n -> Json.map("name", n)).toList()),
             "profiles", List.of(Json.map("type", "sampled", "name", "Execution samples (all threads)", "unit", "none",
                 "startValue", 0, "endValue", stacks.size(), "samples", stacks, "weights", Collections.nCopies(stacks.size(), 1))));
@@ -376,7 +376,7 @@ final class PerfReport {
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mod Accel · Performance</title>
+<title>Minecraft Modding Tools · Performance</title>
 <style>
 :root{color-scheme:dark;
 font:15px system-ui;
@@ -414,7 +414,7 @@ background:#80e4b3}
 #tree-root{max-width:100%}summary{overflow-wrap:anywhere}
 </style>
 <header>
-<div class="muted">MOD ACCEL / LOCAL PERFORMANCE REPORT</div>
+<div class="muted">MINECRAFT MODDING TOOLS / LOCAL PERFORMANCE REPORT</div>
 <h1>What this session costs</h1>
 <p id="meta" class="muted">
 </p>

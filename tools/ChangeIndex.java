@@ -19,7 +19,7 @@ import java.util.zip.*;
  * a rename or move there is a best guess ("by-name"), labelled as such in the data.
  *
  * Single file plus tools/VersionMap.java (mapping parsers and the cached downloader), JDK 25:
- *   java tools/ChangeIndex.java [--out coverage/changes] [--cache .modaccel/change-index]
+ *   java tools/ChangeIndex.java [--out coverage/changes] [--cache .mmt/change-index]
  *                               [--first 1.14.4] [--last 26.3] [--pair A B]...
  *
  * Without --pair every neighbouring release pair from --first to --last is written, plus
@@ -32,7 +32,7 @@ public final class ChangeIndex {
 	static final int ACC_PRIVATE = 0x0002, ACC_PROTECTED = 0x0004, ACC_PUBLIC = 0x0001, ACC_BRIDGE = 0x0040, ACC_SYNTHETIC = 0x1000;
 
 	public static void main(String[] args) throws Exception {
-		Path out = Path.of("coverage", "changes"), cache = Path.of(".modaccel", "change-index");
+		Path out = Path.of("coverage", "changes"), cache = Path.of(".mmt", "change-index");
 		String first = "1.14.4", last = null;
 		List<String[]> pairs = new ArrayList<>();
 		for (int i = 0; i < args.length; i++) {

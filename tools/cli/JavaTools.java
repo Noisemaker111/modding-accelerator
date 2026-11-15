@@ -18,7 +18,7 @@ final class JavaTools {
             build.harness.resolve("tools/MixinAudit.java"),
             build.harness.resolve("tools/GamePrep.java")
         );
-        classes = build.harness.resolve(".modaccel/portable-tools/" + Fingerprints.files(sources));
+        classes = build.harness.resolve(".mmt/portable-tools/" + Fingerprints.files(sources));
         Path ready = classes.resolve("ready");
         if (!Files.exists(ready)) {
             Files.createDirectories(classes);

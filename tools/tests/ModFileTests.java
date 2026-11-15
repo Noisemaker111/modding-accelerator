@@ -4,7 +4,7 @@ import java.util.*;
 
 /**
  * Resource and metadata checks, and real mods' files the loaders accept.
- * From the stranger playthrough (an outside modder using modaccel on Diorama and F3Nope): a message that hid the
+ * From the stranger playthrough (an outside modder using mmt on Diorama and F3Nope): a message that hid the
  * cause, or a pass that should have failed. Every case runs the real code path on real files (or real tool output)
  * and checks what a person would read.
  */
@@ -13,7 +13,7 @@ public final class ModFileTests {
     static int count;
 
     public static void main(String[] args) throws Exception {
-        Path scratch = Files.createTempDirectory("modaccel stranger");
+        Path scratch = Files.createTempDirectory("mmt stranger");
         try {
             modChecks(scratch);
             realModFiles(scratch);

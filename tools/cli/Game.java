@@ -171,7 +171,7 @@ final class Game {
             out.append("\nA mixin could not be applied:");
             for (int i = mixin; i < lines.size() && i < mixin + 3; i++) out.append("\n  ").append(lines.get(i).strip());
             out.append(
-                "\nCheck the mixin's target class and method (modaccel mixin-check finds most of these without starting the game)."
+                "\nCheck the mixin's target class and method (mmt mixin-check finds most of these without starting the game)."
             );
         }
         if (incompatible >= 0) {
@@ -348,7 +348,7 @@ final class Game {
         return result;
     }
 
-    Map<String, Object> run(Modaccel.Options options) throws Exception {
+    Map<String, Object> run(Mmt.Options options) throws Exception {
         if (options.command.equals("mp-check") && !options.values.containsKey("server")) {
             try (Server owned = new Server(build, model, options)) {
                 options.values.put("server", "127.0.0.1:" + owned.port);
@@ -567,7 +567,7 @@ final class Game {
         Map<String, String> inputsBefore = Fingerprints.each(model, build.project, build.init);
         if (current != null && !fingerprint.equals(current.get("fingerprint"))) throw new IOException(
             "A game is already running for this project, started from an older build (the code or resources changed since). " +
-            "A check against it would test the old code, so this one did nothing. Run modaccel game-stop --root \"" +
+            "A check against it would test the old code, so this one did nothing. Run mmt game-stop --root \"" +
             build.project.root +
             "\"" +
             (options.values.containsKey("project") ? " --project " + options.get("project", "") : "") +
@@ -598,7 +598,7 @@ final class Game {
         Map<String, Object> mods = modsLoaded(
             current,
             options,
-            build.project.root.resolve("build/modaccel/shots/" + build.report.id + "-mods.png")
+            build.project.root.resolve("build/mmt/shots/" + build.report.id + "-mods.png")
         );
         if (command.equals("world-check")) {
             String world = options.get("world", "lab");
@@ -673,7 +673,7 @@ final class Game {
         if (options.values.containsKey("screen")) actions.add(
             request(current, Json.map("command", "screen", "class", options.get("screen", "")))
         );
-        Path shot = build.project.root.resolve("build/modaccel/shots/" + build.report.id + ".png");
+        Path shot = build.project.root.resolve("build/mmt/shots/" + build.report.id + ".png");
         Path baseline = shot.resolveSibling(build.report.id + "-before.png");
         boolean expectChange = options.values.containsKey("expect-change");
         if (expectChange) {
@@ -774,7 +774,7 @@ final class Game {
             throw new IOException(
                 "Project changed during verification; the capture cannot verify the current build. Changed: " +
                 (changed.isEmpty()
-                        ? "a modaccel agent file"
+                        ? "a mmt agent file"
                         : String.join(", ", changed.subList(0, Math.min(10, changed.size()))))
             );
         }
@@ -880,9 +880,9 @@ final class Game {
         String error = Json.text(status, "backgroundError", ""), applied = Json.text(status, "backgroundApplied", "");
         if (error.isEmpty() && !applied.isEmpty()) return null;
         return (
-            "The game was asked to stay hidden (modaccel preferences --background on) but its window could not be hidden" +
+            "The game was asked to stay hidden (mmt preferences --background on) but its window could not be hidden" +
             (error.isEmpty() ? ": no window library was rewritten" : ": " + error) +
-            ". The window may be open on your screen, so this check did not run. Run game-stop; to check with a visible window instead, run modaccel preferences --background off." +
+            ". The window may be open on your screen, so this check did not run. Run game-stop; to check with a visible window instead, run mmt preferences --background off." +
             "\nGame log: " +
             session.get("log")
         );
@@ -958,7 +958,7 @@ final class Game {
     }
 
     /** The Gradle task that runs the client: --client-task or --task, else the one runClient task. */
-    String clientTask(Modaccel.Options options) throws IOException {
+    String clientTask(Mmt.Options options) throws IOException {
         String task = options.get("client-task", options.get("task", ""));
         if (!task.isEmpty()) return task;
         List<String> tasks = new ArrayList<>(), warm = new ArrayList<>();
@@ -976,7 +976,7 @@ final class Game {
      * Fails unless the running loader lists every mod this project's built metadata declares, with
      * its version. On failure the current frame is saved first, so the refusal can be looked at.
      */
-    Map<String, Object> modsLoaded(Map<String, Object> session, Modaccel.Options options, Path shot) throws Exception {
+    Map<String, Object> modsLoaded(Map<String, Object> session, Mmt.Options options, Path shot) throws Exception {
         long start = System.nanoTime();
         List<Path> outputs = LoadedMods.outputs(model, LoadedMods.owner(clientTask(options)));
         List<LoadedMods.Declared> declared = LoadedMods.declared(outputs);
@@ -1058,12 +1058,12 @@ final class Game {
                 skip = false;
                 continue;
             }
-            arguments.add(argument.startsWith("-Dmodaccel.token=") ? "-Dmodaccel.token=" + token : argument);
+            arguments.add(argument.startsWith("-Dmmt.token=") ? "-Dmmt.token=" + token : argument);
         }
         return arguments;
     }
 
-    Map<String, Object> start(Modaccel.Options options, String fingerprint) throws Exception {
+    Map<String, Object> start(Mmt.Options options, String fingerprint) throws Exception {
         Path agent = agent();
         String token = UUID.randomUUID().toString();
         Map<String, Object> preferences = Preferences.read(Preferences.file());
@@ -1072,9 +1072,9 @@ final class Game {
         String jit = options.get("jit", "");
         if (!jit.isEmpty() && !jit.equals("full")) throw new IllegalArgumentException("--jit takes full (the JIT players have) or nothing");
         boolean c1 = c1(preferences, options.command) && !jit.equals("full");
-        String background = "-Dmodaccel.background=" + preferences.get("background"), quiet =
-            "-Dmodaccel.quiet=" + preferences.get("quiet"), compiler = "-Dmodaccel.c1=" + c1;
-        String jitProperty = "-Dmodaccel.jit=" + jit;
+        String background = "-Dmmt.background=" + preferences.get("background"), quiet =
+            "-Dmmt.quiet=" + preferences.get("quiet"), compiler = "-Dmmt.c1=" + c1;
+        String jitProperty = "-Dmmt.jit=" + jit;
         String task = clientTask(options);
         String missing = missingRuntime(model, LoadedMods.owner(task));
         if (missing != null) throw new IOException(missing);
@@ -1106,17 +1106,17 @@ final class Game {
         if (!saved && !gradleOnly) {
             Run.Result prepared = build.gradle(
                 List.of(
-                    "-Dmodaccel.recompile=true",
-                    "-Dmodaccel.captureTask=" + task,
-                    "-Dmodaccel.agent=" + agent,
-                    "-Dmodaccel.fingerprint=" + fingerprint,
-                    "-Dmodaccel.token=" + token,
-                    "-Dmodaccel.jbr=" + jbr,
+                    "-Dmmt.recompile=true",
+                    "-Dmmt.captureTask=" + task,
+                    "-Dmmt.agent=" + agent,
+                    "-Dmmt.fingerprint=" + fingerprint,
+                    "-Dmmt.token=" + token,
+                    "-Dmmt.jbr=" + jbr,
                     background,
                     jitProperty,
                     quiet,
                     compiler,
-                    "-Dmodaccel.recordOnly=true",
+                    "-Dmmt.recordOnly=true",
                     task
                 ),
                 jbr ? "prepare-jbr-launch" : "prepare-launch"
@@ -1157,12 +1157,12 @@ final class Game {
         } else {
             command = build.command(
                 List.of(
-                    "-Dmodaccel.recompile=true",
-                    "-Dmodaccel.captureTask=" + task,
-                    "-Dmodaccel.agent=" + agent,
-                    "-Dmodaccel.fingerprint=" + fingerprint,
-                    "-Dmodaccel.token=" + token,
-                    "-Dmodaccel.jbr=" + jbr,
+                    "-Dmmt.recompile=true",
+                    "-Dmmt.captureTask=" + task,
+                    "-Dmmt.agent=" + agent,
+                    "-Dmmt.fingerprint=" + fingerprint,
+                    "-Dmmt.token=" + token,
+                    "-Dmmt.jbr=" + jbr,
                     background,
                     jitProperty,
                     quiet,
@@ -1201,7 +1201,7 @@ final class Game {
                     }
                 } catch (InterruptedException | ClosedWatchServiceException stopped) {}
             },
-            "modaccel-start-event"
+            "mmt-start-event"
         );
         observer.setDaemon(true);
         observer.start();
@@ -1316,7 +1316,7 @@ final class Game {
                     offset += bytes.length;
                     tail.append(new String(bytes, StandardCharsets.UTF_8));
                     if (tail.length() > 4096) tail.delete(0, tail.length() - 4096);
-                    if (gameStarted == 0 && tail.indexOf("MODACCEL_LAUNCH") >= 0) gameStarted = System.nanoTime();
+                    if (gameStarted == 0 && tail.indexOf("MMT_LAUNCH") >= 0) gameStarted = System.nanoTime();
                     if (tail.indexOf("Incompatible mods found!") >= 0) throw new IOException(
                         "The mod loader rejected the mods (Incompatible mods found!); the reason is in the game log."
                     );
@@ -1420,7 +1420,7 @@ final class Game {
             "-private-asm-redefine";
         Path dir = build.project.state().resolve("agent/" + key);
         Files.createDirectories(dir);
-        Path jar = dir.resolve("modaccel-agent.jar");
+        Path jar = dir.resolve("mmt-agent.jar");
         if (Files.exists(jar)) return jar;
         Path classes = dir.resolve("classes");
         Files.createDirectories(classes);

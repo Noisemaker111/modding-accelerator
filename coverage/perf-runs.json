@@ -1,5 +1,5 @@
 {
- "note": "Every kept optimization-session run: modaccel perf captures, perf-optimize decisions and comparison-script runs, one record each in the shape tools/cli/PerfRecord.java writes. Add with python bench/record.py perf RECORD; summarise with python bench/perf_sessions.py. knowledge/perf-patterns.json cites accepted runs here as proof.",
+ "note": "Every kept optimization-session run: mmt perf captures, perf-optimize decisions and comparison-script runs, one record each in the shape tools/cli/PerfRecord.java writes. Add with python bench/record.py perf RECORD; summarise with python bench/perf_sessions.py. knowledge/perf-patterns.json cites accepted runs here as proof.",
  "runs": [
   {
    "schema": 1,
@@ -29739,7 +29739,7 @@
    "gates": [],
    "speedup": null,
    "verdict": "error",
-   "rejection": "error: java.io.IOException: baseline run 0 did not start: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nCould not determine the dependencies of task ':modaccelMetadata'.\n> A problem occurred configuring project ':1.21.1'.\n   > Failed to setup Minecraft, java.io.UncheckedIOException: Failed to setup layered mappings: loom:mappings:layered+hash.2198\nLog: .\\.runs\\diorama-opt\\all3\\baseline\\.runs\\portable\\2026-11-15T14-02-53.817584600Z-66e913b7\\1-metadata.log",
+   "rejection": "error: java.io.IOException: baseline run 0 did not start: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nCould not determine the dependencies of task ':mmtMetadata'.\n> A problem occurred configuring project ':1.21.1'.\n   > Failed to setup Minecraft, java.io.UncheckedIOException: Failed to setup layered mappings: loom:mappings:layered+hash.2198\nLog: .\\.runs\\diorama-opt\\all3\\baseline\\.runs\\portable\\2026-11-15T14-02-53.817584600Z-66e913b7\\1-metadata.log",
    "metric": {
     "threadCpu": "^diorama-baker"
    },

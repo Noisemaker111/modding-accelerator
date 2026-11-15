@@ -8,7 +8,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
 /**
- * What a NeoForge @Mod class's constructor received, and NeoForge's start-up order, for the Fabric entrypoint modaccel
+ * What a NeoForge @Mod class's constructor received, and NeoForge's start-up order, for the Fabric entrypoint mmt
  * convert made of it: the entrypoint gets its mod bus and container from here, registers its @EventBusSubscriber
  * classes here, and ends with common(), which registers the mod's DeferredRegisters, hooks NeoForge's game events to
  * the Fabric callbacks that fire at the same moments, and posts FMLCommonSetupEvent. The client entrypoint ends with

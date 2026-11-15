@@ -3,10 +3,10 @@
 Requires a **JDK 17 or newer**, a game/server using Java 17+, and the same OS user
 for the game and profiler. Start Minecraft normally through your preferred launcher.
 No mod source, Python, uploaded data or profiler configuration is required for a
-basic capture. Use `modaccel.cmd` instead of `./modaccel` on Windows.
+basic capture. Use `mmt.cmd` instead of `./mmt` on Windows.
 
 ```sh
-./modaccel perf
+./mmt perf
 ```
 
 Play normally during the capture (five seconds of warmup, then 30 seconds of
@@ -14,21 +14,21 @@ recording). Open the printed `report.html` in your browser. If multiple games ar
 running, select one:
 
 ```sh
-./modaccel perf --list
-./modaccel perf --attach 12345 --duration 60 --out ./my-capture
+./mmt perf --list
+./mmt perf --attach 12345 --duration 60 --out ./my-capture
 ```
 
 `--instance /path/to/instance` narrows automatic selection by the running JVM's
 working directory. It does not launch or modify a launcher-managed instance.
 If the launcher uses another working directory, use `--attach`.
 
-For a source project supported by Mod Accel's existing launcher:
+For a source project supported by Minecraft Modding Tools' existing launcher:
 
 ```sh
-./modaccel perf --root /path/to/my-mod --duration 60
+./mmt perf --root /path/to/my-mod --duration 60
 ```
 
-This starts a client if none is running, the way `modaccel preferences` says:
+This starts a client if none is running, the way `mmt preferences` says:
 hidden with background on (frame timing is then not representative, and the report
 says so; server ticks and timed methods are unaffected), visible otherwise. It runs
 the full JIT even when hidden, unlike other hidden test sessions, which compile with
@@ -54,7 +54,7 @@ captures it anyway and the report says frame values are not representative.
 
 Each sampled stack, allocation, lock wait and I/O event is charged to the
 **innermost mod frame** on its stack. Game, JVM, loader and library code above that
-frame is work the mod asked for, so it counts as the mod's. Work inside Mod Accel's
+frame is work the mod asked for, so it counts as the mod's. Work inside Minecraft Modding Tools'
 own frame/tick hooks and timing probes is profiler overhead, reported apart and never
 charged to a mod. JFR weighs an allocation sample by what its thread allocated since
 its previous sample, so each thread's first sample, which also covers time before the
@@ -79,7 +79,7 @@ selectors for each mod's most-sampled methods, with their JVM descriptors. Captu
 again with them:
 
 ```sh
-./modaccel perf --root my-mod --probes ./capture/probes.suggested.json --duration 30
+./mmt perf --root my-mod --probes ./capture/probes.suggested.json --duration 30
 ```
 
 The mod's rows then show every timed method's exact call count, calls per tick,
@@ -131,9 +131,9 @@ add overhead. No overhead correction or universal performance score is applied.
 ## Compare, reopen, and use startup capture
 
 ```sh
-./modaccel perf-diff --baseline ./before --candidate ./after --out ./comparison
-./modaccel perf-report --file ./my-capture --out ./rendered-report
-./modaccel perf-report --file ./external-recording.jfr
+./mmt perf-diff --baseline ./before --candidate ./after --out ./comparison
+./mmt perf-report --file ./my-capture --out ./rendered-report
+./mmt perf-report --file ./external-recording.jfr
 ```
 
 `perf-diff` reports observed changes and differing environment fields. It does not
@@ -145,7 +145,7 @@ contract. Observation reports are deliberately not silently promoted to benchmar
 If a runtime disables dynamic agent loading, prepare a startup argument:
 
 ```sh
-./modaccel perf --prepare --warmup 60 --duration 60 --out ./startup-capture
+./mmt perf --prepare --warmup 60 --duration 60 --out ./startup-capture
 ```
 
 Put the printed `-javaagent:...=...` argument into your launcher's JVM arguments as
@@ -175,7 +175,7 @@ acceptance remain under your control.
 Generate a ready-to-edit transport scenario:
 
 ```sh
-./modaccel perf-template --family transport --out ./scenarios
+./mmt perf-template --family transport --out ./scenarios
 ```
 
 This produces **nine vanilla-hopper cases**, crossing lengths 1, 8 and 32 with
@@ -191,9 +191,9 @@ scenarios place/remove blocks, change chunk force-loading and, for scenes, chang
 player camera/game mode. They do not back up or restore a valuable world for you.
 
 ```sh
-# POSIX; PowerShell uses $env:MODACCEL_RCON_PASSWORD = 'your-local-password'
-export MODACCEL_RCON_PASSWORD='your-local-password'
-./modaccel perf --attach SERVER_PID --scenario ./scenarios/transport.json --duration 20 --warmup 0 --out ./transport-results
+# POSIX; PowerShell uses $env:MMT_RCON_PASSWORD = 'your-local-password'
+export MMT_RCON_PASSWORD='your-local-password'
+./mmt perf --attach SERVER_PID --scenario ./scenarios/transport.json --duration 20 --warmup 0 --out ./transport-results
 ```
 
 Use `--rcon-port` for a nondefault port, `--only length-32-stack-1` to select a case,
@@ -204,7 +204,7 @@ All cases and failures remain in `suite.json`. Repeats share one JVM and are not
 independent-launch evidence. Setup and command traffic can affect results.
 
 ```sh
-./modaccel perf-template --family block-scene --block minecraft:stone --out ./scene-scenarios
+./mmt perf-template --family block-scene --block minecraft:stone --out ./scene-scenarios
 ```
 
 The scene template places 1, 16, 64 and 256 instances and establishes a camera
@@ -220,21 +220,21 @@ confirm the intended content.
 ### Your mod's own content
 
 ```sh
-./modaccel perf-template --family mod-content --root my-mod --out ./my-scenarios
-./modaccel perf-template --family entity-crowd --entity mymod:ghoul --counts 1,16,64,256 --out ./crowd
+./mmt perf-template --family mod-content --root my-mod --out ./my-scenarios
+./mmt perf-template --family entity-crowd --entity mymod:ghoul --counts 1,16,64,256 --out ./crowd
 ```
 
 `mod-content` reads the `block.<mod>.<id>` and `entity.<mod>.<id>` keys of the mod's
 `en_us.json` lang files and writes a 64-block scene per block and 16- and 64-entity
 crowds per entity (`--counts` changes the sizes). `entity-crowd` does the same for one
 entity ID, which can be a vanilla mob your mod changes. Crowds stand in a barrier pen,
-are tagged `modaccel_perf`, and are removed in cleanup.
+are tagged `mmt_perf`, and are removed in cleanup.
 
 Run a scenario inside your source client's own singleplayer world, with no server
 or RCON: enter a disposable world, then
 
 ```sh
-./modaccel perf --root my-mod --scenario ./my-scenarios/mod-content.json --duration 20
+./mmt perf --root my-mod --scenario ./my-scenarios/mod-content.json --duration 20
 ```
 
 With `--root` and no `--rcon-port`, each command runs on the integrated server through
@@ -270,7 +270,7 @@ Optional method-entry counters can test a hypothesis found in the sampled stacks
 ```
 
 ```sh
-./modaccel perf --attach PID --probes ./probes.json --duration 30
+./mmt perf --attach PID --probes ./probes.json --duration 30
 ```
 
 Use exact runtime class/method names and JVM descriptors. Up to 32 selectors are
@@ -320,12 +320,12 @@ require additional tools or domain-specific probes.
 ## Accept a change only when it is equivalent and faster
 
 `perf-optimize` decides one candidate change. You, or your own agent, write the
-change from what the report shows and save it as a git diff; modaccel never writes
+change from what the report shows and save it as a git diff; mmt never writes
 or proposes code, and makes no network or model calls.
 
 ```sh
 git -C my-mod diff > candidate.diff && git -C my-mod checkout -- .
-./modaccel perf-optimize --root my-mod --experiment experiment.json --patch candidate.diff --runs 5
+./mmt perf-optimize --root my-mod --experiment experiment.json --patch candidate.diff --runs 5
 ```
 
 First it checks the experiment offline (below); a problem stops it before any worktree or
@@ -417,7 +417,7 @@ hold every launch, capture, gate value and frame.
 }
 ```
 
-`modaccel perf-optimize --check-only --experiment E --root SOURCE [--patch P]` runs only the
+`mmt perf-optimize --check-only --experiment E --root SOURCE [--patch P]` runs only the
 offline check. It refuses missing snippet, probe, file and world paths (a world needs
 `level.dat`), metrics and scopes naming a timing probe the probe file lacks, gate snippets
 still holding the template mark, a frame or FPS metric while launches are hidden (a hidden
@@ -425,13 +425,13 @@ client presents about 8 frames per second), and a patch that does not apply to t
 checkout. It warns about exact gates that read clocks or randomness, the C1-only JIT and
 captures shorter than 15 s.
 
-`modaccel perf-template --family experiment --from CAPTURE --root SOURCE --out DIR` writes a
+`mmt perf-template --family experiment --from CAPTURE --root SOURCE --out DIR` writes a
 starting experiment from a `perf --root` capture: the metric (the mod's top timing probe per
 tick when the server thread carries its cost, else its sampled CPU on its busiest threads),
 scopes, `probes.json` from the capture's suggestions, `options.txt`, `"jit": "full"`, and two
 gate snippets to write. The check refuses to launch until they are written.
 
-`modaccel perf-optimize --replay OUT1,OUT2` decides finished runs again with the current
+`mmt perf-optimize --replay OUT1,OUT2` decides finished runs again with the current
 stopping rule from their `optimize.json`, and prints where each would have stopped, its
 verdict then, and the wall time sequentially and with paired arms (estimated as each
 pair's slower arm).

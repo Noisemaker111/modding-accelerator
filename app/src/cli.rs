@@ -1,9 +1,9 @@
-//! Runs the modaccel command line as a subprocess. The app never repeats the CLI's own logic: it
-//! starts `modaccel.cmd` (Windows) or `modaccel` (macOS, Linux), which find or download Java the way
+//! Runs the mmt command line as a subprocess. The app never repeats the CLI's own logic: it
+//! starts `mmt.cmd` (Windows) or `mmt` (macOS, Linux), which find or download Java the way
 //! they do in a terminal, asks for `--json`, and reads the one JSON answer printed at the end.
 //!
-//! While a command runs it reports progress on stderr when `MODACCEL_PROGRESS` is set
-//! (`modaccel-progress {"step": .., "log": ..}`), and each step writes its output to a log file:
+//! While a command runs it reports progress on stderr when `MMT_PROGRESS` is set
+//! (`mmt-progress {"step": .., "log": ..}`), and each step writes its output to a log file:
 //! a worker thread tails that file so the window shows the build and game output as it happens.
 
 use std::collections::VecDeque;
@@ -18,22 +18,24 @@ use serde_json::Value;
 /// Lines of live output kept for the window.
 const KEEP_LINES: usize = 400;
 
-/// Where the modaccel launcher is, and how to start it.
+/// Where the mmt launcher is, and how to start it.
 #[derive(Clone, Debug)]
 pub struct Launcher {
-    /// The folder with the launcher, and either `modaccel.jar` (a release) or `tools/cli` (a source checkout).
+    /// The folder with the launcher, and either `mmt.jar` (a release) or `tools/cli` (a source checkout).
     pub home: PathBuf,
-    /// `modaccel.cmd` or `modaccel`.
+    /// `mmt.cmd` or `mmt`.
     pub program: PathBuf,
 }
 
 impl Launcher {
-    /// Looks in `MODACCEL_HOME`, then beside this program, then in the folders above it (so a
-    /// development build in `app/target/release` finds the checkout it was built from).
+    /// Looks in `MMT_HOME` (or the old `MODACCEL_HOME`), then beside this program, then in the folders
+    /// above it (so a development build in `app/target/release` finds the checkout it was built from).
     pub fn find() -> Result<Launcher, String> {
         let mut candidates = Vec::new();
-        if let Some(home) = std::env::var_os("MODACCEL_HOME") {
-            candidates.push(PathBuf::from(home));
+        for variable in ["MMT_HOME", "MODACCEL_HOME"] {
+            if let Some(home) = std::env::var_os(variable) {
+                candidates.push(PathBuf::from(home));
+            }
         }
         if let Ok(exe) = std::env::current_exe() {
             let mut dir = exe.parent().map(Path::to_path_buf);
@@ -49,15 +51,15 @@ impl Launcher {
             }
         }
         Err(format!(
-            "Couldn't find the modaccel launcher ({}). Keep this program in the folder you extracted the download into, \
-             or set MODACCEL_HOME to that folder.",
+            "Couldn't find the mmt launcher ({}). Keep this program in the folder you extracted the download into, \
+             or set MMT_HOME to that folder.",
             LAUNCHER
         ))
     }
 
     fn at(home: &Path) -> Option<Launcher> {
         let program = home.join(LAUNCHER);
-        let runnable = home.join("modaccel.jar").is_file() || home.join("tools/cli/Bootstrap.java").is_file();
+        let runnable = home.join("mmt.jar").is_file() || home.join("tools/cli/Bootstrap.java").is_file();
         (program.is_file() && runnable).then(|| Launcher {
             home: dunce(home),
             program: dunce(&program),
@@ -66,9 +68,9 @@ impl Launcher {
 }
 
 #[cfg(windows)]
-const LAUNCHER: &str = "modaccel.cmd";
+const LAUNCHER: &str = "mmt.cmd";
 #[cfg(not(windows))]
-const LAUNCHER: &str = "modaccel";
+const LAUNCHER: &str = "mmt";
 
 /// `\\?\C:\x` is `C:\x`: cmd.exe and Java don't take verbatim paths.
 pub fn dunce(path: &Path) -> PathBuf {
@@ -166,7 +168,7 @@ impl Inner {
     }
 }
 
-/// One running (or finished) modaccel command.
+/// One running (or finished) mmt command.
 pub struct Job {
     pub args: Vec<String>,
     pub started: Instant,
@@ -183,7 +185,7 @@ pub struct Snapshot {
 }
 
 impl Job {
-    /// Starts `modaccel ARGS --json` in `cwd`. `wake` is called whenever new output arrives.
+    /// Starts `mmt ARGS --json` in `cwd`. `wake` is called whenever new output arrives.
     pub fn start(launcher: &Launcher, args: Vec<String>, cwd: &Path, wake: Option<rune::Waker>) -> Job {
         let inner = Arc::new(Mutex::new(Inner::default()));
         let mut full = args.clone();
@@ -192,7 +194,7 @@ impl Job {
         command
             .args(&full)
             .current_dir(cwd)
-            .env("MODACCEL_PROGRESS", "1")
+            .env("MMT_PROGRESS", "1")
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
@@ -235,7 +237,7 @@ impl Job {
                 let line = String::from_utf8_lossy(&buf).trim_end().to_string();
                 buf.clear();
                 let mut i = err_inner.lock().unwrap();
-                if let Some(json) = line.strip_prefix("modaccel-progress ") {
+                if let Some(json) = line.strip_prefix("mmt-progress ") {
                     if let Ok(v) = serde_json::from_str::<Value>(json) {
                         i.step = v["step"].as_str().map(str::to_string);
                         i.log = v["log"].as_str().map(PathBuf::from);

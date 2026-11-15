@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The real-game behaviour checks on Linux with no screen: AppleSkin's HUD estimate (Fabric 1.21.6), Zombie
-# Apocalypse's AI (NeoForge, ported 1.21.1 -> 1.21.6 by modaccel port) and Notes' pinned note (NeoForge, ported
+# Apocalypse's AI (NeoForge, ported 1.21.1 -> 1.21.6 by mmt port) and Notes' pinned note (NeoForge, ported
 # 1.21 -> 1.21.6). Each check passes on the mod as it is and must fail on a copy broken on purpose. The client runs hidden and quiet on a virtual display (Xvfb) with Mesa's software
 # OpenGL, so it needs no GPU. Run it when a port reaches the game or the game-check code changes; it is not a
 # scheduled job, since nothing it tests changes between runs. From the repo root on any Linux machine (the boat T3
@@ -19,7 +19,7 @@ fi
 start=$(date +%s)
 [ -d /usr/lib/jvm/java-21-openjdk-amd64 ] && ! javac -version 2>&1 | grep -Eq "javac (1[7-9]|[2-9][0-9])" && export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 PATH=/usr/lib/jvm/java-21-openjdk-amd64/bin:$PATH
 java tools/cli/Bootstrap.java . package --json >/tmp/package.log 2>&1 || { tail -40 /tmp/package.log; exit 8; }
-JAR=$PWD/build/distributions/modaccel.jar
+JAR=$PWD/build/distributions/mmt.jar
 java -jar "$JAR" preferences --background on --quiet on >/dev/null
 W=${BEHAVIOUR_WORK:-/tmp/behaviour}
 mkdir -p "$W"
@@ -43,7 +43,7 @@ clone https://github.com/squeek502/AppleSkin 1.21.6-fabric a1c60fccba094969ec2de
   && run appleskin java tools/tests/AppleSkinHudCheck.java . "$JAR" "$W/appleskin" && passed=$((passed + 1))
 java -jar "$JAR" game-stop --root "$W/appleskin" >/dev/null 2>&1
 
-ported() {  # ported NAME REPO BRANCH COMMIT FROM TO CHECK: modaccel port --fix, then the mod's own check
+ported() {  # ported NAME REPO BRANCH COMMIT FROM TO CHECK: mmt port --fix, then the mod's own check
   local name=$1 dir="$W/$1"
   clone "$2" "$3" "$4" "$dir" || return 1
   local t=$(date +%s)

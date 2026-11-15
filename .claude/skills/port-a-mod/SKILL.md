@@ -1,13 +1,13 @@
 ---
 name: port-a-mod
-description: Port a Minecraft mod from one version to another with modaccel and turn everything that breaks into rules, so the next mod on the same step ports by itself. Use when Jon names a mod and a target version, says "next mod", "bigger mod", "next version", or asks to push the porting map further.
+description: Port a Minecraft mod from one version to another with mmt and turn everything that breaks into rules, so the next mod on the same step ports by itself. Use when Jon names a mod and a target version, says "next mod", "bigger mod", "next version", or asks to push the porting map further.
 ---
 
 The goal is a porter that needs no hand edits: every failure becomes a rule, a guide or a porter fix. Ledger
 statuses: `stop` (errors left), `build`, `load`, `behaviour` (a game check that fails when the mod is broken on purpose).
 
-1. Pin the port in `bench/port-cases.json` (repo, commit, loader, from, to). Baseline: `modaccel compile` on its own version.
-2. `modaccel port --root R --from A --to B --fix --json`. Sort the errors by the update that caused them:
+1. Pin the port in `bench/port-cases.json` (repo, commit, loader, from, to). Baseline: `mmt compile` on its own version.
+2. `mmt port --root R --from A --to B --fix --json`. Sort the errors by the update that caused them:
    a mechanical change → a rule in `knowledge/fixes.json` plus `python bench/rule_test.py --only ID --write`;
    new code needed → a guide in `knowledge/structural.json`; build setup → `tools/cli/Target.java`; a porter bug →
    `tools/cli` with a self-test case.

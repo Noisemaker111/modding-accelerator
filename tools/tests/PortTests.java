@@ -261,16 +261,16 @@ public final class PortTests {
             Fingerprints.changed(Map.of("x", "1"), Map.of("x", "2")).equals(List.of("x (changed)")),
             "a refused check names the file that changed"
         );
-        Path stale = root.resolve("build/test-results/modaccelPure/TEST-old.xml");
+        Path stale = root.resolve("build/test-results/mmtPure/TEST-old.xml");
         Files.createDirectories(stale.getParent());
         Files.writeString(stale, "<testsuite tests=\"8\" failures=\"0\" errors=\"0\" skipped=\"0\"/>");
         check(
-            ((Number) TestResults.read(model, "modaccelPure", "fresh-run").get("executed")).intValue() == 0,
+            ((Number) TestResults.read(model, "mmtPure", "fresh-run").get("executed")).intValue() == 0,
             "old successful XML cannot make an empty run pass"
         );
-        Build build = new Build(project, home, "", new Modaccel.Report(root, "test"));
+        Build build = new Build(project, home, "", new Mmt.Report(root, "test"));
         Port port = new Port(build, model);
-        Build portBuild = new Build(project, home, "", new Modaccel.Report(root, "port"));
+        Build portBuild = new Build(project, home, "", new Mmt.Report(root, "port"));
         routeChecks(home, new Port(portBuild, model), scratch);
         for (var groups : List.of(
             List.of("net.minecraftforge"),
@@ -295,12 +295,12 @@ public final class PortTests {
         );
         check(
             !portBuild.command(List.of("help")).contains("--no-configure-on-demand"),
-            "modaccel's Gradle runs keep the build's configure-on-demand"
+            "mmt's Gradle runs keep the build's configure-on-demand"
         );
         Path missed = scratch.resolve("missed.log");
         Files.writeString(
             missed,
-            "* What went wrong:\nCannot locate tasks that match ':modaccelMetadata' as task 'modaccelMetadata' not found in root project 'diorama'.\n"
+            "* What went wrong:\nCannot locate tasks that match ':mmtMetadata' as task 'mmtMetadata' not found in root project 'diorama'.\n"
         );
         check(
             Build.selectionFailed(missed),

@@ -1,76 +1,62 @@
-# Scope: what modaccel supports, and how new things get in
+# What works where
 
-The four goals (README.md) meet this file in the ladder of section 2: rungs 1 to 4 are Goal 1 (test a mod in seconds), rung 5 is Goal 2 (port to any version) and rung 6 is Goal 4 (change loader or platform). Goal 3 (modpacks) takes installed packs, not source projects, so it has no rung.
+mmt counts something as working only when the game shows it: the mod's own state asserted in a real client, a plugin
+scenario on a real Paper server, or a modpack's world made and reopened on its own server. A build or a load is a step
+on the way, not a result. This file says which platform has reached what, and how a new one gets in.
 
-## 1. Kinds of projects
+## What works, per platform
 
-A project has a **platform** (what it's written against) and a **side** (where it runs).
+"Yes" means it has passed on a real project nobody edited for us, with a receipt (`coverage/ledger.json`, a sweep in
+`coverage/sweeps/`, or a kept run in `coverage/perf-runs.json`).
 
-| Platform | What it is | Players install it? | Examples we've run |
+| | Fabric | NeoForge | Forge | Quilt | Paper plugin |
+|---|---|---|---|---|---|
+| Build and logic tests (`compile`, `fast`) | Yes | Yes | Yes | Through Fabric | Yes (AgentCraft, all 17 tests) |
+| Game data and mixins, no game (`data-check`, `mixin-check`) | Yes (`data-check`: 26.x) | `mixin-check` | No | No | Not applicable |
+| Behaviour in a hidden client (`ui-check`, `world-check`) | Yes | Yes | Loads only | No | Not applicable |
+| Dedicated server plus client or test player (`mp-check`, `server-check`) | Partly | Partly | No | No | Yes: real Paper 1.8 and up, with a test player |
+| Port between versions (`port`) | Yes, 1.14.4 to 26.3 | Yes, 1.14.4 to 26.3 | No | No | No: `port` names the edits instead |
+| Switch loader (`convert`) | To NeoForge | To Fabric (26.1+ and 1.21.1) | No | No | No |
+| Modpacks on their own server (`pack-check`) | Yes | Yes | Yes | Yes | Not applicable |
+| Performance (`perf`, `perf-optimize`) | Yes | Yes | Not yet proven | No | No |
+
+Multi-version builds (Stonecutter, such as Diorama) work through their version nodes: build, tests, game checks and
+port each run on one node. Proxy plugins (Velocity, BungeeCord) and standalone datapacks have no commands.
+
+Operating systems: the CLI and its offline checks pass on Windows, Linux and macOS in CI. Game checks are proven on
+Windows and partly on Linux, not on macOS.
+
+## Current numbers
+
+| What | Corpus | Result | Source |
 |---|---|---|---|
-| Fabric mod | Changes the game itself, through the Fabric loader | Yes, if it has client parts | AppleSkin, F3Nope, Krypton |
-| NeoForge mod | Same idea, NeoForge loader (successor of Forge from 1.20.2) | Yes, if it has client parts | ZombieApocalypseAddon, Jade |
-| Forge mod | The older loader; most big modpacks up to 1.20.1 | Yes, if it has client parts | MineColonies |
-| Quilt mod | Fabric fork; runs most Fabric mods | Yes | none yet |
-| Multi-version build (Stonecutter) | One source, many versions and loaders, via comment switches | Yes | Diorama |
-| Paper / Spigot plugin | Runs only on a server, through the Bukkit API; does not change the game's code | **No**: vanilla clients join | AgentCraft |
-| Proxy plugin (Velocity, BungeeCord) | Runs on the proxy that links servers | No | none |
-| Datapack / resource pack | Data and art only, no Java | Data: no; art: offered by the server | none |
+| Ports proven in the game, no hand edits | 3 mods, 7 routes | All pass their own in-game check | `coverage/ledger.json` |
+| Port sweep | 46 mods, 126 routes | 9 build, 7 load, 1 passes its behaviour check | `bench/sweep/results/after2.json` |
+| Convert sweep | 35 mods | 28 not refused, 5 compile, 5 match the original's behaviour in the game, 5 convert back | `coverage/sweeps/convert.json` |
+| Pack sweep | 24 packs, 1.16.5 to 26.3 | 21 pass as shipped, 24 with repairs | `coverage/sweeps/pack.json` |
+| Accepted speedups, exact gates | 4 mods | Cyclic 15.7×, Simple Storage Network 5–6×, Diorama 1.6–2.2×, Pipez 1.2–1.3× | `coverage/perf-runs.json` |
 
-| Side | Meaning | Check that proves it works |
-|---|---|---|
-| Client only | HUDs, minimaps, menus (AppleSkin, F3Nope) | Game client: `ui-check`, `eval` |
-| Server only | Plugins, server tweaks (AgentCraft, Krypton) | A server with the project loaded, plus a bot player |
-| Both sides | New blocks, items, mobs; both must have the mod (Diorama, ZombieApocalypseAddon) | Singleplayer `world-check`, then `mp-check` (a dedicated server plus a client) |
+## Who it is for
 
-"Singleplayer vs multiplayer" is really **side**. Singleplayer runs a hidden server inside the client, so a both-sides mod can pass in singleplayer and still break on a real server. That's why `mp-check` exists.
+- People who write mods or plugins from source. Porting and converting need the source; a compiled jar is only read
+  when a modpack is checked.
+- Modpack users and makers who need their installed mods to work together.
+- Fabric and NeoForge come first, then Forge (older modpacks), then Paper (servers). Quilt rides on Fabric.
 
-## 2. What "supported" means: the ladder
+## How a platform or feature gets in
 
-Each platform climbs these rungs in order. A rung counts only when it passes on a real, untouched project, with a ledger row.
+1. A real project someone uses needs it.
+2. It is proven in the game on that project, and a receipt is recorded.
+3. One fixture from it joins the checks CI runs (`bench/run_tests.py`, or `integration.yml` when it needs a server).
 
-| Rung | Means | Fabric | NeoForge | Forge | Stonecutter | Paper |
-|---|---|---|---|---|---|---|
-| 1 Build | Fast, warm build of the jar | yes | yes | yes | yes | yes (1.8 s jar) |
-| 2 Tests | Logic tests in seconds, no game | yes | yes | yes | yes | yes (all 17 AgentCraft tests, 2-5 s warm) |
-| 3 Run check | Loads in the real game/server, screenshot or command proof | yes | yes | partial | yes (26.3 node) | yes, on MockBukkit (a fake Paper server, no real server): `plugin-check` |
-| 4 Multiplayer check | Dedicated server plus client, or server plus bot | partial | partial | no | no | yes, real Paper server plus a bot player: `server-check` (MCProtocolLib, with ViaProxy for other versions) |
-| 5 Version port | `port --from --to`, routed through hubs | yes (1.14.4+) | yes (1.14.4+) | no | via its nodes | no: config only, done by hand (AgentCraft 26.3 to 1.21.10 passes `plugin-check`); `port` refuses plugins and names the edits |
-| 6 Platform change | e.g. Fabric → NeoForge, Forge → Paper | yes, to NeoForge: `convert` (Auto Omen 26.3, Pride Flags 26.1.2, in the game) | yes, to Fabric on 26.1+ and 1.21.1: `convert` (a converted mod back to Fabric; the NeoForge 26.3 and 1.21.1 MDKs through the NeoForge bridge, in the game, and back to NeoForge) | no | n/a | no |
+Claims follow the table: the README says what has passed, never just "supports X". Loader switches and version ports
+are separate claims. A move between a mod and a Paper plugin can only carry server-side code (events, commands,
+scheduler, config); client code, mixins and new blocks or items cannot exist on a plugin server, so such a move names
+them and stops. `convert` does not move mods to or from Paper yet.
 
-## 3. Policy
+## When someone brings a new project
 
-1. **Who we're for.** People who write mods or plugins from source, and modpack users who need their installed mods to work together. `pack-check` diagnoses installed packs, CurseForge exports and Modrinth `.mrpack`s on Forge, NeoForge, Fabric and Quilt servers; porting a mod requires its source.
-2. **What gets first-class support.** Fabric and NeoForge first, then Forge (old modpacks), then Paper (servers). Quilt rides on Fabric. Proxy plugins and standalone datapacks have no dedicated commands.
-3. **When a platform earns the next rung.**
-   - A real project someone uses needs it.
-   - The bench shows a measured gain.
-   - One fixture from that platform joins the merge gate.
-4. **Ports between Paper versions need manual edits.** `port` refuses plugin projects and names the required changes; `server-check` can check them against a real Paper server.
-5. **Plugin ↔ mod moves: yes, as part of Goal 4.**
-   - Server-side code can be mapped between a loader's API and the Bukkit API: events, commands, the scheduler, config.
-   - Client code, mixins into the game and new blocks or items cannot exist on a plugin server, where vanilla clients join. A move names each of them and stops; it never drops them.
-   - `convert` does not move mods to or from Paper yet.
-6. **Loader and platform changes stay separate from version ports**, with separate claims.
-7. **Every claim carries its rung.** The README says which rung a platform reached, never just "supports X".
-
-## 4. Intake: what happens when someone brings a new project
-
-1. **Bench it.** Run the `bench-new-mod` skill: their workflow, before/after numbers, blockers, versions.
-2. **Classify it.** Platform and side from section 1, and the highest rung it passes today.
-3. **Decide.**
-   - **Fits a supported platform and passes:** add it to the test set if it covers a new kind of build.
-   - **Fits but fails a rung:** the smallest fix goes on a branch, and an issue names the exact blocker.
-   - **New platform:** apply policy 3. If it qualifies, open an issue under its goal for rung 1 or 2 only, not the whole ladder.
-   - **Out of scope:** say so plainly in the report, with the reason.
-4. **Record it.** A ledger row for any port run and the merge gate updated if it became a fixture. Pages regenerate on main from the source records.
-
-## 5. Example: where AgentCraft lands
-
-- Paper plugin, server side, at rung 4.
-- Rung 1: `modaccel compile --task :jar` builds the plugin jar.
-- Rung 2: `modaccel fast` runs all 17 of its tests, because no Minecraft or loader is on the test classpath.
-- Rung 3: `modaccel plugin-check` loads the jar on MockBukkit. It is a fake server: world, entity and network behaviour are not proven.
-- Rung 4: `modaccel server-check` starts a real Paper server with the plugin, joins a bot player and runs a scenario with expect steps. Two breaks made on purpose fail at the step that catches them.
-- It is the first server fixture in the merge gate (`bench/server-plugins/manifest.json`, run by `tools/tests/ServerPluginFixtures.java`).
-What each check covers is in `modaccel help plugin-check` and `modaccel help server-check`; use `python3 bench/measures.py table --area plugin` for timings.
+1. **Bench it** with the `bench-new-mod` skill: its own workflow, before/after numbers, blockers and versions.
+2. **Place it** in the table above: platform, side (client, server or both), and the furthest row it passes.
+3. **Decide:** it joins the fixtures if it covers a new kind of build; a failing row gets the smallest fix on a branch
+   and an issue naming the blocker; a new platform follows the three steps above; anything out of scope is said plainly.

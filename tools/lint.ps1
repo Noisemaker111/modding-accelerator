@@ -15,12 +15,12 @@ $problems = New-Object System.Collections.Generic.List[string]
 # and silently skips the member, so a renamed field or method in the game only shows up when
 # something reads it in game. This asks Mixin's question directly, against the same jar the build
 # compiles against: does a member with that name (and for methods, that descriptor) exist?
-# tools\MixinAudit.java is compiled once into .modaccel\mixin and costs about 0.4s per run.
+# tools\MixinAudit.java is compiled once into .mmt\mixin and costs about 0.4s per run.
 $mixinSummary = $null
 $auditSource = Join-Path $PSScriptRoot 'MixinAudit.java'
-$auditClasses = Join-Path $Root '.modaccel\mixin\classes'
+$auditClasses = Join-Path $Root '.mmt\mixin\classes'
 $auditClass = Join-Path $auditClasses 'MixinAudit.class'
-$auditCp = Join-Path $Root '.modaccel\classpath.txt'
+$auditCp = Join-Path $Root '.mmt\classpath.txt'
 
 $javaExe = $null
 $jdk25 = @(Get-ChildItem (Join-Path $Root '.tools') -Directory -Filter 'jdk-25*' -ErrorAction SilentlyContinue |

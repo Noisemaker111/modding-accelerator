@@ -2,7 +2,8 @@
 # https://help.github.com/articles/dealing-with-line-endings/
 #
 # Linux start scripts should use lf
-/gradlew        text eol=lf
+/fixtures/prism-lab/gradlew text eol=lf
+/mmt            text eol=lf
 /modaccel       text eol=lf
 /tools/cloud-run text eol=lf
 *.yml          text eol=lf

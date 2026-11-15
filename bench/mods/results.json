@@ -88,7 +88,7 @@
       },
       "port_report": {
         "run": true,
-        "command": ".\\modaccel port -Log bench/mods/logs/minecolonies-1.20.4.log",
+        "command": ".\\mmt port -Log bench/mods/logs/minecolonies-1.20.4.log",
         "result": "0 error(s) in 0 file(s)",
         "group_by_file": {},
         "why_empty": "failure is a Gradle/NeoGradle variant resolution error; the tool only parses '<file>.java:line: error:' lines",

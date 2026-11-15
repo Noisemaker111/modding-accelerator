@@ -1,5 +1,5 @@
 {
- "what": "modaccel server-check on AgentCraft (eca1d91) with bench/server-plugins/agentcraft.scenario: a real Paper server, a bot player, AgentCraft's own mock backend; cold = a fresh clone and --fresh-server, then warm twice",
+ "what": "mmt server-check on AgentCraft (eca1d91) with bench/server-plugins/agentcraft.scenario: a real Paper server, a bot player, AgentCraft's own mock backend; cold = a fresh clone and --fresh-server, then warm twice",
  "runs": [
   {
    "label": "paper-cold",
@@ -18,7 +18,7 @@
     "os": "win32"
    },
    "measured": "2026-11-07T23:24:25+00:00",
-   "modaccel": {
+   "mmt": {
     "ok": true,
     "seconds": 315.9,
     "stages": {
@@ -54,7 +54,7 @@
     "os": "win32"
    },
    "measured": "2026-11-07T23:25:15+00:00",
-   "modaccel": {
+   "mmt": {
     "ok": true,
     "seconds": 49.1,
     "stages": {
@@ -88,7 +88,7 @@
     "os": "win32"
    },
    "measured": "2026-11-07T23:26:09+00:00",
-   "modaccel": {
+   "mmt": {
     "ok": true,
     "seconds": 52.9,
     "stages": {

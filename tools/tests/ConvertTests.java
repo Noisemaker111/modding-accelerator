@@ -68,7 +68,7 @@ public final class ConvertTests {
             Convert.neoforgeModId("2fast").equals("mod_2fast"),
             "a Fabric mod id with a hyphen becomes one NeoForge accepts"
         );
-        // Found by an independent check: modaccel package copied whatever desktop app build was in app/target/release.
+        // Found by an independent check: mmt package copied whatever desktop app build was in app/target/release.
         Path app = scratch.resolve("stale-app/app");
         Files.createDirectories(app.resolve("src"));
         Files.createDirectories(app.resolve("target/release"));
@@ -359,13 +359,13 @@ public final class ConvertTests {
         Map<String, byte[]> original = new LinkedHashMap<>();
         for (String name : files.keySet()) original.put(name, Files.readAllBytes(root.resolve(name)));
 
-        // Found by an independent check: the command line's --dry-run still left modaccel's state, its cached release lookups and
+        // Found by an independent check: the command line's --dry-run still left mmt's state, its cached release lookups and
         // a receipt in the mod folder, and exited 1 when items were left. Its preview runs on a copy outside the project.
         Map<String, String> beforePreview = new TreeMap<>();
         try (var walk = Files.walk(root)) {
             for (Path p : walk.filter(Files::isRegularFile).toList()) beforePreview.put(root.relativize(p).toString(), Fingerprints.bytes(Files.readAllBytes(p)));
         }
-        Map<String, Object> preview = Convert.preview(root, home, new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" }));
+        Map<String, Object> preview = Convert.preview(root, home, new Mmt.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" }));
         Map<String, String> afterPreview = new TreeMap<>();
         try (var walk = Files.walk(root)) {
             for (Path p : walk.filter(Files::isRegularFile).toList()) afterPreview.put(root.relativize(p).toString(), Fingerprints.bytes(Files.readAllBytes(p)));
@@ -383,10 +383,10 @@ public final class ConvertTests {
         Process previewRun = new ProcessBuilder(
             ProcessHandle.current().info().command().orElse("java"),
             "-Djava.io.tmpdir=" + previewTemp,
-            "-Dmodaccel.home=" + home,
+            "-Dmmt.home=" + home,
             "-cp",
-            Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(),
-            "Modaccel",
+            Path.of(Mmt.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(),
+            "Mmt",
             "convert",
             "--root",
             root.toString(),
@@ -407,9 +407,9 @@ public final class ConvertTests {
             previewText.substring(Math.max(0, previewText.length() - 400))
         );
 
-        Build build = new Build(project, home, "", new Modaccel.Report(root, "convert"));
+        Build build = new Build(project, home, "", new Mmt.Report(root, "convert"));
         Map<String, Object> dry = new Convert(build).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+            new Mmt.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
         );
         boolean untouched = true;
         for (var file : original.entrySet()) if (
@@ -420,7 +420,7 @@ public final class ConvertTests {
             List<String> made = all
                 .filter(Files::isRegularFile)
                 .map(p -> root.relativize(p).toString().replace(File.separatorChar, '/'))
-                .filter(p -> !p.startsWith(".modaccel/") && !p.startsWith(".runs/") && !original.containsKey(p))
+                .filter(p -> !p.startsWith(".mmt/") && !p.startsWith(".runs/") && !original.containsKey(p))
                 .toList();
             check(
                 untouched && made.isEmpty() && !Files.exists(project.state().resolve(Convert.FOLDER)) && dry.get("undoConvert") == null,
@@ -428,7 +428,7 @@ public final class ConvertTests {
             );
         }
         Map<String, Object> toNeo = new Convert(build).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "neoforge" }),
+            new Mmt.Options(new String[] { "convert", "--to", "neoforge" }),
             false
         );
         check(
@@ -448,7 +448,7 @@ public final class ConvertTests {
             List<String> converted = all
                 .filter(Files::isRegularFile)
                 .map(p -> root.relativize(p).toString().replace(File.separatorChar, '/'))
-                .filter(p -> !p.startsWith(".modaccel/") && !p.startsWith(".runs/"))
+                .filter(p -> !p.startsWith(".mmt/") && !p.startsWith(".runs/"))
                 .sorted()
                 .toList();
             check(
@@ -541,8 +541,8 @@ public final class ConvertTests {
             toml.contains("[[accessTransformers]]"),
             "fabric.mod.json becomes neoforge.mods.toml:\n" + toml
         );
-        Map<String, Object> back = new Convert(new Build(project, home, "", new Modaccel.Report(root, "convert"))).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "fabric" }),
+        Map<String, Object> back = new Convert(new Build(project, home, "", new Mmt.Report(root, "convert"))).run(
+            new Mmt.Options(new String[] { "convert", "--to", "fabric" }),
             false
         );
         boolean javaSame = true;
@@ -614,8 +614,8 @@ public final class ConvertTests {
             Files.createDirectories(cache.getParent());
             Files.writeString(cache, answer.getValue());
         }
-        Convert quitConvert = new Convert(new Build(quitProject, home, "", new Modaccel.Report(quit, "convert")));
-        quitConvert.run(new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" }));
+        Convert quitConvert = new Convert(new Build(quitProject, home, "", new Mmt.Report(quit, "convert")));
+        quitConvert.run(new Mmt.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" }));
         // A dry run writes nothing; the converted text is what it staged.
         String quitGradle = quitConvert.current("build.gradle");
         check(
@@ -657,9 +657,9 @@ public final class ConvertTests {
             Files.createDirectories(cache.getParent());
             Files.writeString(cache, answer.getValue());
         }
-        Convert neoConvert = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert")));
+        Convert neoConvert = new Convert(new Build(neoProject, home, "", new Mmt.Report(neo, "convert")));
         // Written, not a dry run: the way back and undo below start from the converted mod.
-        Map<String, Object> bridged = neoConvert.run(new Modaccel.Options(new String[] { "convert", "--to", "fabric" }), false);
+        Map<String, Object> bridged = neoConvert.run(new Mmt.Options(new String[] { "convert", "--to", "fabric" }), false);
         String bridgedEntry = neoConvert.current("src/main/java/demo/Demo.java");
         String fabricJson = neoConvert.current("src/main/resources/fabric.mod.json");
         String bridgedRegister = neoConvert.current("src/main/java/demo/loaderbridge/DeferredRegister.java");
@@ -686,8 +686,8 @@ public final class ConvertTests {
             "the NeoForge bridge goes beside the common @Mod class, never in a client package"
         );
         // Found by the convert sweep: the NeoForge MDK converted to Fabric did not convert back. The way back takes the bridge out.
-        Map<String, Object> unbridged = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert"))).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--no-compile" })
+        Map<String, Object> unbridged = new Convert(new Build(neoProject, home, "", new Mmt.Report(neo, "convert"))).run(
+            new Mmt.Options(new String[] { "convert", "--to", "neoforge", "--no-compile" })
         );
         String backEntry = Files.readString(neo.resolve("src/main/java/demo/Demo.java"));
         String neoOriginal = Json.text(bridgeTest, "neoforge", "");

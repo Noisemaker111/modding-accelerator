@@ -5,15 +5,15 @@ import java.util.*;
 /**
  * Which jars a pack's server gets, and how each loader in pack-loaders.json starts it: metadata by game version,
  * launch arguments, the probe's game layer.
- * Needs no game and no network (modaccel.pack.offline; mod sides are pre-cached).
+ * Needs no game and no network (mmt.pack.offline; mod sides are pre-cached).
  */
 public final class PackServerTests extends PackCheckFixtures {
 
     public static void main(String[] args) throws Exception {
-        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("modaccel-pack");
+        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("mmt-pack");
         String home = System.getProperty("user.home");
         System.setProperty("user.home", scratch.resolve("home").toString());
-        System.setProperty("modaccel.pack.offline", "true");
+        System.setProperty("mmt.pack.offline", "true");
         try {
             serverMods(harness, scratch);
             loaders(harness, scratch);
@@ -244,10 +244,10 @@ public final class PackServerTests extends PackCheckFixtures {
         Files.writeString(install.resolve("libraries/net/neoforged/neoforge/21.1.77/" + name), "-p libraries/a.jar\n-DlibraryDirectory=libraries\n--launchTarget forgeserver\n");
         Path instance = Files.createDirectories(scratch.resolve("loader-instance"));
         List<String> launch = neo.launch(install, instance, "1.21.1", "21.1.77");
-        String args = Files.readString(instance.resolve("modaccel-args.txt"));
+        String args = Files.readString(instance.resolve("mmt-args.txt"));
         String libraries = install.resolve("libraries").toString().replace('\\', '/');
         expect(
-            launch.equals(List.of("@" + instance.resolve("modaccel-args.txt"))) && args.contains("-p " + libraries + "/a.jar") && args.contains("-DlibraryDirectory=" + libraries),
+            launch.equals(List.of("@" + instance.resolve("mmt-args.txt"))) && args.contains("-p " + libraries + "/a.jar") && args.contains("-DlibraryDirectory=" + libraries),
             "the args file's library paths are made absolute: " + args
         );
         // The launch-jar style: the launcher is told where the vanilla server is.

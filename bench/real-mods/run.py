@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Real-mods test: put real mods through the whole modaccel loop on fresh clones.
+"""Real-mods test: put real mods through the whole mmt loop on fresh clones.
 
 For each mod in manifest.json: fresh clone at the pinned commit (or the branch head with
---latest) into a cache folder outside the repo, then through modaccel only: doctor, setup,
+--latest) into a cache folder outside the repo, then through mmt only: doctor, setup,
 port (when the manifest asks), compile, test (when the checkout has tests), ui-check, a second
 unchanged ui-check, a stale-game check (append a comment to one source file: ui-check must
 refuse; revert: it must pass), eval, world-check on a shipped flat save, eval --until, reload of
@@ -19,9 +19,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 WINDOWS = os.name == "nt"
-TOOL = REPO  # the modaccel checkout under test; --modaccel points it at another worktree for an A/B run
-MODACCEL = [str(REPO / "modaccel.cmd")] if WINDOWS else [str(REPO / "modaccel")]
-MARK = b"\n// modaccel real-mods stale-game check: this line must make ui-check refuse the running game\n"
+TOOL = REPO  # the mmt checkout under test; --mmt points it at another worktree for an A/B run
+MMT = [str(REPO / "mmt.cmd")] if WINDOWS else [str(REPO / "mmt")]
+MARK = b"\n// mmt real-mods stale-game check: this line must make ui-check refuse the running game\n"
 GRADLE_HOME = Path(os.environ.get("GRADLE_USER_HOME", Path.home() / ".gradle"))
 TIMEOUTS = {"clone": 1800, "doctor": 600, "setup": 3600, "compile": 3600, "test": 3600, "ui-check": 1500}
 GAME_STEPS = ["port", "compile", "test", "ui-check-1", "ui-check-2", "stale-refused", "revert-passes", "eval",
@@ -35,10 +35,10 @@ SAVE_26 = HERE / "saves/lab-26.3"
 
 # Known failure text -> the next action a person can take. Matching is a hint, not a verdict.
 HINTS = [
-    (r"Unsupported class file major version", "The mod's Gradle is older than the JDK it was started on; modaccel has to pick a JDK that Gradle version supports."),
+    (r"Unsupported class file major version", "The mod's Gradle is older than the JDK it was started on; mmt has to pick a JDK that Gradle version supports."),
     (r"Could not resolve|Could not find .*:.*:", "A dependency did not resolve; check the named coordinate and its repository."),
     (r"different build", "The running game was refused as a different build; if nothing changed, the fingerprint is unstable."),
-    (r"configure-on-demand|configureondemand|on-demand", "The build uses configure-on-demand; modaccel's model or task run must work with it."),
+    (r"configure-on-demand|configureondemand|on-demand", "The build uses configure-on-demand; mmt's model or task run must work with it."),
     (r"No running game", "No game was running, so the check had nothing to talk to (an earlier ui-check failed)."),
     (r"Client startup failed|Client stopped before", "The client did not reach its first frame; read the game log named in the error."),
     (r"Choose --project and/or --task", "More than one client run task; set project in the manifest."),
@@ -52,7 +52,7 @@ def now():
 
 def default_cache():
     base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData/Local")) if WINDOWS else Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
-    return base / "modaccel-real-mods"
+    return base / "mmt-real-mods"
 
 
 def kill_tree(pid):
@@ -96,8 +96,8 @@ def last_json(text):
 
 
 def compiled_by(call):
-    """Who compiled: Gradle, or modaccel's own javac (#22's NeoForge path), which Gradle has not confirmed."""
-    return "modaccel's own javac (Gradle not run)" if call["result"].get("tier") == "own-compile" else "Gradle"
+    """Who compiled: Gradle, or mmt's own javac (#22's NeoForge path), which Gradle has not confirmed."""
+    return "mmt's own javac (Gradle not run)" if call["result"].get("tier") == "own-compile" else "Gradle"
 
 
 def short(text, limit=900):
@@ -158,8 +158,8 @@ class ModRun:
         self.record = {k: mod.get(k, "") for k in ("id", "name", "repo", "branch", "commit", "project", "loader", "minecraft", "shape")}
         self.record["pinned"] = not latest
 
-    def modaccel(self, name, verb, extra=(), timeout=None, project=None):
-        args = MODACCEL + [verb, "--root", str(self.root)]
+    def mmt(self, name, verb, extra=(), timeout=None, project=None):
+        args = MMT + [verb, "--root", str(self.root)]
         project = self.mod.get("project") if project is None else project
         if project and verb != "doctor":
             args += ["--project", project]
@@ -192,7 +192,7 @@ class ModRun:
                         receipt=call["receipt"], log=call["log"], **extra)
 
     def ui(self, name, extra=()):
-        call = self.modaccel(name, "ui-check", extra)
+        call = self.mmt(name, "ui-check", extra)
         return self.from_call(name, call, capture=find_png(call["result"].get("capture")) or find_png(call["result"]))
 
     def block(self, names, reason):
@@ -212,10 +212,10 @@ class ModRun:
         if ARGS.compile_nodes:
             return self.compile_nodes(start_wall)
         for name in ("doctor", "setup"):
-            self.from_call(name, self.modaccel(name, name))
-        model = self.root / ".modaccel/portable/model.json"
+            self.from_call(name, self.mmt(name, name))
+        model = self.root / ".mmt/portable/model.json"
         if model.exists():
-            # Kept for A/B comparison: the evaluated model this modaccel produced for a fresh clone.
+            # Kept for A/B comparison: the evaluated model this mmt produced for a fresh clone.
             shutil.copyfile(model, self.logs / "model.json")
             self.record["model"] = str(self.logs / "model.json")
         if self.mod.get("setup_only"):
@@ -227,22 +227,22 @@ class ModRun:
         self.nodes()
         if "game-stop-final" not in self.steps or self.steps["game-stop-final"]["status"] == "n/a":
             # Setup and node compiles start Gradle daemons too; game-stop is what stops them.
-            self.from_call("game-stop-final", self.modaccel("game-stop-final", "game-stop", timeout=300))
+            self.from_call("game-stop-final", self.mmt("game-stop-final", "game-stop", timeout=300))
         self.leftovers(start_wall)
         return self.finish()
 
     def game_flow(self):
         port = self.mod.get("port")
         if port:
-            self.from_call("port", self.modaccel("port", "port", ["--from", port["from"], "--to", port["to"], "--fix"], timeout=3600),
+            self.from_call("port", self.mmt("port", "port", ["--from", port["from"], "--to", port["to"], "--fix"], timeout=3600),
                            hop=f"{port['from']} -> {port['to']}")
         else:
             self.put("port", "n/a", error="manifest asks for no port; the checkout runs as published")
-        call = self.modaccel("compile", "compile")
+        call = self.mmt("compile", "compile")
         self.from_call("compile", call, compiledBy=compiled_by(call))
         tests = test_sources(self.root)
         if tests:
-            self.from_call("test", self.modaccel("test", "test"), tests=len(tests))
+            self.from_call("test", self.mmt("test", "test"), tests=len(tests))
         else:
             self.put("test", "n/a", error="no test sources (no src/test files in this checkout)")
         self.ui("ui-check-1")
@@ -255,13 +255,13 @@ class ModRun:
             self.eval_steps()
             self.world_check()
             self.reload_check()
-        stop = self.modaccel("game-stop", "game-stop", timeout=300)
+        stop = self.mmt("game-stop", "game-stop", timeout=300)
         stopped = stop["exit"] == 0 and stop["result"].get("gradleDaemonsStopped", True) is not False
         self.from_call("game-stop", stop, ok=stopped, error=None if stopped else (stop["error"] or "gradleDaemonsStopped=false"))
         # An unchanged project after game-stop: the next start may replay the recorded launch.
         self.ui("restart-unchanged")
         self.java_check()
-        stop = self.modaccel("game-stop-final", "game-stop", timeout=300)
+        stop = self.mmt("game-stop-final", "game-stop", timeout=300)
         self.from_call("game-stop-final", stop)
 
     def clone(self):
@@ -269,7 +269,7 @@ class ModRun:
         self.logs.mkdir(parents=True, exist_ok=True)
         if self.root.exists():
             # A previous run's game must not keep files locked or memory held.
-            run(MODACCEL + ["game-stop", "--root", str(self.root), "--json"], TOOL, self.logs / "pre-clean-game-stop.log", 300)
+            run(MMT + ["game-stop", "--root", str(self.root), "--json"], TOOL, self.logs / "pre-clean-game-stop.log", 300)
             remove(self.root)
         self.root.parent.mkdir(parents=True, exist_ok=True)
         git = ["git", "-c", "core.longpaths=true", "-c", "advice.detachedHead=false"]
@@ -286,7 +286,7 @@ class ModRun:
         self.put("clone", "pass" if exit == 0 else "fail", now() - start, "" if exit == 0 else short(out), log=str(log))
 
     def running(self):
-        call = self.modaccel("game-status", "game-status", timeout=120)
+        call = self.mmt("game-status", "game-status", timeout=120)
         return call["exit"] == 0 and call["result"].get("running", True) is not False and bool(call["result"])
 
     def stale_check(self):
@@ -300,7 +300,7 @@ class ModRun:
         relative = str(path.relative_to(self.root)).replace("\\", "/")
         try:
             path.write_bytes(original + MARK)
-            call = self.modaccel("stale-refused", "ui-check")
+            call = self.mmt("stale-refused", "ui-check")
             refused = call["exit"] != 0 and "different build" in str(call["error"])
             if call["exit"] == 0:
                 why = "ui-check passed against a game started before the source changed: the stale game was not refused"
@@ -315,7 +315,7 @@ class ModRun:
         self.ui("revert-passes")
 
     def eval_steps(self):
-        call = self.modaccel("eval", "eval", ["--code", "1 + 1"], timeout=300)
+        call = self.mmt("eval", "eval", ["--code", "1 + 1"], timeout=300)
         value = call["result"].get("value")
         ok = call["exit"] == 0 and str(value).strip() in ("2", "2.0")
         self.from_call("eval", call, ok=ok, error=None if ok else (call["error"] or f"expected 2, got {value!r}"), value=value)
@@ -329,7 +329,7 @@ class ModRun:
                 "Object game = call(type, \"getInstance\");\n"
                 "Object d;\ntry { d = field(game, \"gameDirectory\"); } catch (NoSuchFieldException yarn) { d = field(game, \"runDirectory\"); }\n"
                 "return ((java.io.File) d).getAbsolutePath();\n")
-        call = self.modaccel("game-directory", "eval", self.snippet("game-directory", code), timeout=300)
+        call = self.mmt("game-directory", "eval", self.snippet("game-directory", code), timeout=300)
         value = call["result"].get("value")
         return Path(str(value)) if call["exit"] == 0 and value else None
 
@@ -342,10 +342,10 @@ class ModRun:
             save = SAVE_26 if str(self.mod.get("minecraft", "")).startswith("26") else SAVE
             if not target.exists():
                 shutil.copytree(save, target)
-            call = self.modaccel("world-check", "world-check", ["--world", "lab"])
+            call = self.mmt("world-check", "world-check", ["--world", "lab"])
             self.from_call("world-check", call, gameDirectory=str(directory),
                            capture=find_png(call["result"].get("capture")) or find_png(call["result"]))
-        call = self.modaccel("eval-until", "eval", ["--until", "mc.player != null", "--timeout", "60"], timeout=300)
+        call = self.mmt("eval-until", "eval", ["--until", "mc.player != null", "--timeout", "60"], timeout=300)
         self.from_call("eval-until", call, waited=call["result"].get("waitedSeconds"))
 
     def reload_check(self):
@@ -358,8 +358,8 @@ class ModRun:
         try:
             # A leading comment moves every line, so the class bytes really change (line numbers)
             # without changing the class shape: a body-only redefinition on any JVM.
-            path.write_bytes(b"// modaccel real-mods reload check\n" + original)
-            call = self.modaccel("reload", "reload", timeout=900)
+            path.write_bytes(b"// mmt real-mods reload check\n" + original)
+            call = self.mmt("reload", "reload", timeout=900)
             restart = call["result"].get("restartNeeded")
             self.from_call("reload", call, ok=call["exit"] == 0 and not restart, file=relative,
                            error=None if call["exit"] == 0 and not restart else (call["error"] or call["result"].get("details") or "restart needed"),
@@ -367,11 +367,11 @@ class ModRun:
             self.ui("reload-current")
         finally:
             path.write_bytes(original)
-        call = self.modaccel("reload-revert", "reload", timeout=900)
+        call = self.mmt("reload-revert", "reload", timeout=900)
         self.from_call("reload-revert", call, ok=call["exit"] == 0 and not call["result"].get("restartNeeded"))
 
     def java_check(self):
-        launch = self.root / ".modaccel/portable/launch.json"
+        launch = self.root / ".mmt/portable/launch.json"
         executable = None
         try:
             executable = json.loads(launch.read_text(encoding="utf-8")).get("executable")
@@ -381,7 +381,7 @@ class ModRun:
             self.put("java-ui-check", "blocked", error="no recorded launch to take the game's own Java from")
             return
         java_home = Path(executable).parent.parent
-        self.modaccel("java-stop-first", "game-stop", timeout=300)
+        self.mmt("java-stop-first", "game-stop", timeout=300)
         self.ui("java-ui-check", ["--java", str(java_home)])
         self.steps["java-ui-check"]["java"] = str(java_home)
 
@@ -392,12 +392,12 @@ class ModRun:
             return
         results, start = {}, now()
         for node in nodes:
-            call = self.modaccel("compile-" + node.strip(":").replace(":", "_"), "compile", project=node)
+            call = self.mmt("compile-" + node.strip(":").replace(":", "_"), "compile", project=node)
             results[node] = {"status": "pass" if call["exit"] == 0 else "fail", "seconds": call["seconds"], "compiledBy": compiled_by(call)}
             if call["exit"] != 0:
                 results[node]["error"] = short(call["error"], 400)
                 results[node]["fullError"] = str(call["error"])
-        self.modaccel("nodes-stop", "game-stop", timeout=300)  # the node compiles' Gradle daemons
+        self.mmt("nodes-stop", "game-stop", timeout=300)  # the node compiles' Gradle daemons
         failed = classify(self.mod, results)
         self.put("nodes-compile", "fail" if failed else "pass", now() - start,
                  ("; ".join(f"{n}: {results[n].get('error', '')[:200]}" for n in failed)) if failed else "",
@@ -405,13 +405,13 @@ class ModRun:
 
     def compile_nodes(self, start_wall):
         """CI mode: no game. Every listed node gets its own setup and compile, on a fresh clone."""
-        self.from_call("doctor", self.modaccel("doctor", "doctor"))
+        self.from_call("doctor", self.mmt("doctor", "doctor"))
         results, start = {}, now()
         for node in self.mod.get("nodes") or [self.mod.get("project", "")]:
             name = node.strip(":").replace(":", "_") or "root"
             entry = {}
             for verb in ("setup", "compile"):
-                call = self.modaccel(f"{verb}-{name}", verb, project=node)
+                call = self.mmt(f"{verb}-{name}", verb, project=node)
                 entry[verb] = {"status": "pass" if call["exit"] == 0 else "fail", "seconds": call["seconds"]}
                 if verb == "compile":
                     entry[verb]["compiledBy"] = compiled_by(call)
@@ -421,7 +421,7 @@ class ModRun:
                     break
             results[node] = entry
             print(f"   {node:22} " + "  ".join(f"{v} {r['status']} {r['seconds']:.1f}s" for v, r in entry.items()), flush=True)
-        self.modaccel("nodes-stop", "game-stop", timeout=300)
+        self.mmt("nodes-stop", "game-stop", timeout=300)
         failed = classify(self.mod, results)
         self.put("nodes-compile", "fail" if failed else "pass", now() - start,
                  "; ".join(f"{n}: " + next(r.get("error", "") for r in results[n].values() if r["status"] == "fail")[:300] for n in failed),
@@ -476,7 +476,7 @@ def wrapper_cached(root):
     return bool(match) and (GRADLE_HOME / "wrapper/dists" / match.group(1)).is_dir()
 
 
-SKIP = {".git", ".gradle", "build", ".modaccel", ".runs", "run", "out", "node_modules"}
+SKIP = {".git", ".gradle", "build", ".mmt", ".runs", "run", "out", "node_modules"}
 
 
 def walk(root):
@@ -541,8 +541,8 @@ def log_mentions(log, needles):
 def scan_leftovers(root, since):
     root_text = str(root).lower()
     needles = [root_text.encode(), root_text.replace("\\", "/").encode(), root_text.replace("\\", "\\\\").encode()]
-    private = root / ".modaccel/portable/gradle-daemons"
-    agent = root / ".modaccel/portable/agent.json"
+    private = root / ".mmt/portable/gradle-daemons"
+    agent = root / ".mmt/portable/agent.json"
     game_pid = None
     if agent.exists():
         try:
@@ -561,9 +561,9 @@ def scan_leftovers(root, since):
             attributed.append({"pid": pid, "kind": "game", "why": "java command line points into the clone"})
         elif daemon:
             if list(private.glob(f"*/daemon-{pid}.out.log")):
-                attributed.append({"pid": pid, "kind": "gradle-daemon", "why": "registered in modaccel's private daemon registry for this clone"})
+                attributed.append({"pid": pid, "kind": "gradle-daemon", "why": "registered in mmt's private daemon registry for this clone"})
             elif any(log_mentions(log, needles) for log in GRADLE_HOME.glob(f"daemon/*/daemon-{pid}.out.log")):
-                attributed.append({"pid": pid, "kind": "gradle-daemon", "why": "user-registry daemon whose log names this clone (started outside modaccel's private registry)"})
+                attributed.append({"pid": pid, "kind": "gradle-daemon", "why": "user-registry daemon whose log names this clone (started outside mmt's private registry)"})
             elif p.get("created") and p["created"] >= since:
                 unattributed.append({"pid": pid, "kind": "gradle-daemon", "why": "started during this mod's run; log does not name the clone (may be another agent)"})
         elif kotlin and p.get("created") and p["created"] >= since:
@@ -582,8 +582,8 @@ def cell(step):
 
 
 def report(summary, path):
-    lines = ["# Real mods through the modaccel loop", "",
-             f"Run {summary['startedAt']} on {summary['platform']}, modaccel at `{summary['modaccelCommit']}`, "
+    lines = ["# Real mods through the mmt loop", "",
+             f"Run {summary['startedAt']} on {summary['platform']}, mmt at `{summary['mmtCommit']}`, "
              f"{'pinned commits' if summary['pinned'] else 'latest upstream heads'}. Every mod was cloned fresh; "
              f"global Gradle cache {'warm' if summary['gradleCacheWarm'] else 'cold'} at start ({summary['gradleUserHome']}).",
              "", "| mod | " + " | ".join(STEPS) + " |", "|---|" + "---|" * len(STEPS)]
@@ -617,9 +617,9 @@ def report(summary, path):
 
 
 def main():
-    global ARGS, TOOL, MODACCEL
+    global ARGS, TOOL, MMT
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--modaccel", type=Path, default=REPO, help="modaccel checkout to test (default: this one); for A/B runs against another branch's worktree")
+    parser.add_argument("--mmt", type=Path, default=REPO, help="mmt checkout to test (default: this one); for A/B runs against another branch's worktree")
     parser.add_argument("--label", default="latest", help="name of the result files: <label>.json and <label>.md (default latest.json / REPORT.md)")
     parser.add_argument("--only", help="comma-separated mod ids from the manifest")
     parser.add_argument("--latest", action="store_true", help="use each branch head instead of the pinned commit")
@@ -631,8 +631,8 @@ def main():
     parser.add_argument("--node", help="with --compile-nodes and one --only mod: run just this node of its nodes list (one CI job per node)")
     parser.add_argument("--matrix", action="store_true", help="print the --only mods' nodes as a JSON list of {mod, node} for a CI matrix, then exit")
     ARGS = parser.parse_args()
-    TOOL = ARGS.modaccel.resolve()
-    MODACCEL = [str(TOOL / "modaccel.cmd")] if WINDOWS else [str(TOOL / "modaccel")]
+    TOOL = ARGS.mmt.resolve()
+    MMT = [str(TOOL / "mmt.cmd")] if WINDOWS else [str(TOOL / "mmt")]
     manifest = json.loads((HERE / "manifest.json").read_text(encoding="utf-8"))
     mods = manifest["mods"]
     if ARGS.only:
@@ -652,14 +652,14 @@ def main():
         mods = [dict(mods[0], nodes=[ARGS.node])]
     cache = ARGS.cache.resolve()
     if cache.is_relative_to(REPO):
-        sys.exit("--cache must be outside the repo so clones never mix with modaccel's own files")
+        sys.exit("--cache must be outside the repo so clones never mix with mmt's own files")
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     logs = cache / "logs" / stamp
     summary = {"schema": 1, "startedAt": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
                "platform": sys.platform, "pinned": not ARGS.latest, "cache": str(cache), "logs": str(logs),
                "gradleUserHome": str(GRADLE_HOME), "gradleCacheWarm": gradle_cache_warm(),
-               "modaccel": str(TOOL), "label": ARGS.label,
-               "modaccelCommit": subprocess.run(["git", "-C", str(TOOL), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip(),
+               "mmt": str(TOOL), "label": ARGS.label,
+               "mmtCommit": subprocess.run(["git", "-C", str(TOOL), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip(),
                "mods": []}
     ARGS.out.mkdir(parents=True, exist_ok=True)
     previous = ARGS.out / f"{ARGS.label}.json"
@@ -668,8 +668,8 @@ def main():
         summary["mods"] = earlier["mods"]
         summary["startedAt"] = earlier["startedAt"]
         summary["resumedAt"] = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
-        if earlier.get("modaccelCommit") != summary["modaccelCommit"]:
-            sys.exit(f"--resume: {previous} was made with modaccel {earlier.get('modaccelCommit')}, this run uses {summary['modaccelCommit']}")
+        if earlier.get("mmtCommit") != summary["mmtCommit"]:
+            sys.exit(f"--resume: {previous} was made with mmt {earlier.get('mmtCommit')}, this run uses {summary['mmtCommit']}")
         done = {m["id"] for m in earlier["mods"]}
         mods = [m for m in mods if m["id"] not in done]
         print(f"resuming {previous}: {len(done)} mods kept, {len(mods)} to run", flush=True)

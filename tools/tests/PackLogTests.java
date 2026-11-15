@@ -5,15 +5,15 @@ import java.util.*;
 /**
  * pack-check reads a failed start: the words it is reported with, client-only mods, the mod a crash names, for Forge
  * and Fabric, a port lost to the other server and a free voice chat port.
- * Needs no game and no network (modaccel.pack.offline; mod sides are pre-cached).
+ * Needs no game and no network (mmt.pack.offline; mod sides are pre-cached).
  */
 public final class PackLogTests extends PackCheckFixtures {
 
     public static void main(String[] args) throws Exception {
-        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("modaccel-pack");
+        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("mmt-pack");
         String home = System.getProperty("user.home");
         System.setProperty("user.home", scratch.resolve("home").toString());
-        System.setProperty("modaccel.pack.offline", "true");
+        System.setProperty("mmt.pack.offline", "true");
         try {
             logs(harness, scratch);
             culprits(harness, scratch);

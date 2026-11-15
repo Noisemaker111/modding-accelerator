@@ -5,7 +5,7 @@ name: Integration
 #   each break made on purpose; tools/tests/ServerPluginFixtures.java).
 # - server-check: plugins on a real headless Paper server with a bot player, one part per job (scenario, bot, breaks;
 #   tools/tests/ServerCheckFixtures.java).
-# - stonecutter: three representative Stonecutter nodes set up and compiled through modaccel; every node runs on
+# - stonecutter: three representative Stonecutter nodes set up and compiled through mmt; every node runs on
 #   demand in stonecutter-nodes.yml.
 # Caches are saved only from a passing main run.
 on:
@@ -48,12 +48,12 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
+            ~/.mmt/jdks
           key: plugins-${{ hashFiles('bench/server-plugins/manifest.json') }}
           restore-keys: plugins-
       - run: java tools/cli/Bootstrap.java . package --json
-      - name: Server plugins through modaccel
-        run: java tools/tests/ServerPluginFixtures.java . build/distributions/modaccel.jar
+      - name: Server plugins through mmt
+        run: java tools/tests/ServerPluginFixtures.java . build/distributions/mmt.jar
       - name: Save caches (main only)
         if: success() && github.event_name == 'push' && steps.cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
@@ -62,7 +62,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
+            ~/.mmt/jdks
           key: ${{ steps.cache.outputs.cache-primary-key }}
       - name: Receipts on failure
         if: failure()
@@ -98,14 +98,14 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
-            ~/.modaccel/servers
-            ~/.modaccel/tools
+            ~/.mmt/jdks
+            ~/.mmt/servers
+            ~/.mmt/tools
           key: server-check-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
           restore-keys: server-check-${{ matrix.part }}-
       - run: java tools/cli/Bootstrap.java . package --json
-      - name: Plugins on a real Paper server through modaccel
-        run: java tools/tests/ServerCheckFixtures.java . build/distributions/modaccel.jar "${{ matrix.part }}"
+      - name: Plugins on a real Paper server through mmt
+        run: java tools/tests/ServerCheckFixtures.java . build/distributions/mmt.jar "${{ matrix.part }}"
       - name: Save caches (main only)
         if: success() && github.event_name == 'push' && steps.cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
@@ -114,9 +114,9 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
-            ~/.modaccel/servers
-            ~/.modaccel/tools
+            ~/.mmt/jdks
+            ~/.mmt/servers
+            ~/.mmt/tools
           key: ${{ steps.cache.outputs.cache-primary-key }}
       - name: Receipts on failure
         if: failure()
@@ -147,7 +147,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
+            ~/.mmt/jdks
           key: stonecutter-${{ hashFiles('bench/real-mods/manifest.json') }}
           restore-keys: stonecutter-
       - name: Set up and compile three nodes
@@ -163,7 +163,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
+            ~/.mmt/jdks
           key: ${{ steps.cache.outputs.cache-primary-key }}
       - name: Node results
         if: always()

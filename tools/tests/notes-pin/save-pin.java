@@ -1,6 +1,6 @@
 // Saves a note through Notes' own Note.save(), finds it again in Note.getCurrentNotes() (read back from the notes folder)
 // and pins that copy, as its Pin button does (Notes.pinnedNote).
-String title = "modaccel pin check";
+String title = "mmt pin check";
 String text = "Gutters cleaned at 12 Elm St " + (System.nanoTime() % 100000);
 for (var old : com.chaosthedude.notes.note.Note.getCurrentNotes()) if (old.getTitle().startsWith(title)) old.delete();
 new com.chaosthedude.notes.note.Note(title, text, com.chaosthedude.notes.note.Scope.GLOBAL).save();

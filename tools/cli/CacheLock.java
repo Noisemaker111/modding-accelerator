@@ -4,7 +4,7 @@ import java.nio.channels.FileLock;
 import java.nio.file.*;
 
 /**
- * Holds a shared cache folder (~/.modaccel/servers/paper-VERSION, ~/.modaccel/tools/...) for one process at a time while
+ * Holds a shared cache folder (~/.mmt/servers/paper-VERSION, ~/.mmt/tools/...) for one process at a time while
  * it is checked and filled. Two server-checks in different projects at once otherwise download and patch into the same
  * files. Waits for the holder; the lock is released when the process exits, so a killed run cannot leave it held.
  */

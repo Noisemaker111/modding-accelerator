@@ -5,10 +5,10 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Zombie Apocalypse Addon's own effect on a zombie, checked in the real NeoForge client (ported 1.21.1 -> 1.21.4 and -> 1.21.6) through modaccel's eval:
+ * Zombie Apocalypse Addon's own effect on a zombie, checked in the real NeoForge client (ported 1.21.1 -> 1.21.4 and -> 1.21.6) through mmt's eval:
  * a zombie summoned by a command gets the mod's AI goals and scaling tag, and hunts a pig three blocks away (a vanilla
  * zombie never targets a pig). Not in PR CI (it starts the game); run it locally on the ported checkout:
- *   java tools/tests/ZombieAiCheck.java <checkout> <modaccel.jar> <ported ZombieApocalypseAddon checkout>
+ *   java tools/tests/ZombieAiCheck.java <checkout> <mmt.jar> <ported ZombieApocalypseAddon checkout>
  * It then breaks the mod on purpose in a copy (EventHandler no longer injects its goals) and requires that run to fail.
  */
 public final class ZombieAiCheck {
@@ -26,7 +26,7 @@ public final class ZombieAiCheck {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 3) throw new IllegalArgumentException(
-            "Usage: java ZombieAiCheck.java <checkout> <modaccel.jar> <ZombieApocalypseAddon checkout>"
+            "Usage: java ZombieAiCheck.java <checkout> <mmt.jar> <ZombieApocalypseAddon checkout>"
         );
         Path home = Path.of(args[0]).toRealPath(), jar = Path.of(args[1]).toAbsolutePath().normalize(), root = Path.of(
             args[2]
@@ -66,7 +66,7 @@ public final class ZombieAiCheck {
 
     /** The PASS line on success, null when the mod's effects were missing; anything else going wrong throws. */
     static String check(Path home, Path jar, Path root, Path snippets) throws Exception {
-        modaccel(home, jar, root, "game-stop"); // a client left from an older build would be refused
+        mmt(home, jar, root, "game-stop"); // a client left from an older build would be refused
         try {
             step(home, jar, root, "ui-check");
             if (!value(step(home, jar, root, "eval", "--code", "mc.level != null")).equals("true")) {
@@ -96,11 +96,11 @@ public final class ZombieAiCheck {
             System.out.println(
                 "  " + value(step(home, jar, root, "eval", "--file", snippets.resolve("spawn.java").toString()))
             );
-            Run hunting = modaccel(home, jar, root, "eval", "--until", HUNTING, "--timeout", "30");
+            Run hunting = mmt(home, jar, root, "eval", "--until", HUNTING, "--timeout", "30");
             if (hunting.exit() != 0) System.out.println(
                 "  the zombie targeted nothing within 30 s: " + between(hunting.output(), "\"error\":", "\\n")
             );
-            Run check = modaccel(home, jar, root, "eval", "--file", snippets.resolve("check.java").toString());
+            Run check = mmt(home, jar, root, "eval", "--file", snippets.resolve("check.java").toString());
             if (check.exit() == 0) return value(check);
             if (check.output().contains("effects are missing")) {
                 System.out.println(
@@ -111,14 +111,14 @@ public final class ZombieAiCheck {
             }
             throw new AssertionError("The check did not run:\n" + check.output());
         } finally {
-            modaccel(home, jar, root, "game-stop");
+            mmt(home, jar, root, "game-stop");
         }
     }
 
     static Run step(Path home, Path jar, Path root, String... args) throws Exception {
-        Run run = modaccel(home, jar, root, args);
+        Run run = mmt(home, jar, root, args);
         if (run.exit() != 0) throw new AssertionError(
-            "modaccel " + String.join(" ", args) + " failed with exit " + run.exit() + ":\n" + run.output()
+            "mmt " + String.join(" ", args) + " failed with exit " + run.exit() + ":\n" + run.output()
         );
         return run;
     }
@@ -140,7 +140,7 @@ public final class ZombieAiCheck {
                 Path rel = from.relativize(p);
                 if (
                     rel.getNameCount() > 0 &&
-                    Set.of(".git", ".gradle", "build", ".modaccel", ".runs", "run", "runs").contains(
+                    Set.of(".git", ".gradle", "build", ".mmt", ".runs", "run", "runs").contains(
                         rel.getName(0).toString()
                     )
                 ) continue;
@@ -151,23 +151,23 @@ public final class ZombieAiCheck {
         }
     }
 
-    static Run modaccel(Path home, Path jar, Path root, String... args) throws Exception {
+    static Run mmt(Path home, Path jar, Path root, String... args) throws Exception {
         String java = Path.of(
             System.getProperty("java.home"),
             "bin",
             System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows") ? "java.exe" : "java"
         ).toString();
-        List<String> command = new ArrayList<>(List.of(java, "-Dmodaccel.home=" + home, "-jar", jar.toString()));
+        List<String> command = new ArrayList<>(List.of(java, "-Dmmt.home=" + home, "-jar", jar.toString()));
         command.addAll(List.of(args));
         command.addAll(List.of("--root", root.toString(), "--json"));
-        Path output = Files.createTempFile("modaccel-za-", ".log");
+        Path output = Files.createTempFile("mmt-za-", ".log");
         long start = System.nanoTime();
         Process process = new ProcessBuilder(command)
             .directory(home.toFile())
             .redirectErrorStream(true)
             .redirectOutput(output.toFile())
             .start();
-        // Longer than modaccel's own 20-minute game start limit, so its reason is reported rather than this kill.
+        // Longer than mmt's own 20-minute game start limit, so its reason is reported rather than this kill.
         if (!process.waitFor(25, TimeUnit.MINUTES)) {
             process.descendants().forEach(ProcessHandle::destroyForcibly);
             process.destroyForcibly();
