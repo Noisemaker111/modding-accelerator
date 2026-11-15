@@ -1098,6 +1098,13 @@ public final class PortableTests {
             " " +
             unconverted
         );
+        // Found by the convert sweep (Zombie Apocalypse back from Fabric): the NeoForge exclusion the way to Fabric adds for
+        // kept dependencies would exclude NeoForge, and the game's classes, from the ModDevGradle build.
+        String excluded = "dependencies {\n}\n" + Convert.NEOFORGE_EXCLUSION + "\texclude group: 'net.neoforged', module: 'neoforge'\n}\n";
+        check(
+            Convert.dropNeoForgeExclusion(excluded).equals("dependencies {\n}\n"),
+            "the way back to NeoForge removes the NeoForge exclusion the way to Fabric added: " + Convert.dropNeoForgeExclusion(excluded)
+        );
         // Found by the convert sweep (Jade, then The One Probe back from Fabric): an accessible member's owner is opened as
         // Fabric opens it, but never an anonymous class (HolderSet$1), which NeoForge's transformer tool cannot open.
         List<String> owned = Convert.withOwners(List.of(

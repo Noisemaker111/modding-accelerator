@@ -974,6 +974,25 @@ final class Convert {
         return gradle;
     }
 
+    /** The block the way to Fabric adds so kept NeoForge mods do not bring NeoForge into the Fabric build. */
+    static final String NEOFORGE_EXCLUSION =
+        "\n// Dependencies kept from the NeoForge build may ask for NeoForge itself, which the Fabric build does not have.\n" +
+        "configurations.configureEach {\n";
+
+    /**
+     * The way back to NeoForge removes that block: on ModDevGradle it would exclude NeoForge itself, and the game's
+     * classes with it, from every configuration.
+     */
+    static String dropNeoForgeExclusion(String gradle) {
+        int at = gradle.indexOf(NEOFORGE_EXCLUSION);
+        if (at < 0) return gradle;
+        int end = gradle.indexOf("\n}\n", at + NEOFORGE_EXCLUSION.length());
+        if (end < 0) return gradle;
+        String body = gradle.substring(at + NEOFORGE_EXCLUSION.length(), end).strip();
+        if (!body.equals("exclude group: 'net.neoforged', module: 'neoforge'")) return gradle;
+        return gradle.substring(0, at) + gradle.substring(end + 3);
+    }
+
     /** The loader a publishing plugin names (mod-publish-plugin's modLoaders.add, publishMods' loaders) follows the build. */
     static String publishLoader(String gradle, String from, String to) {
         return gradle.replaceAll("(modLoaders\\.add\\(\\s*[\"'])" + from + "([\"']\\s*\\))", "$1" + to + "$2");
@@ -2243,6 +2262,9 @@ final class Convert {
         if (!droppedEntries.isEmpty()) notes.add("Build: removed " + String.join(", ", droppedEntries) + " (Fabric's properties, which only filled fabric.mod.json).");
         gradle = publishLoader(gradle, "fabric", "neoforge");
         gradle = dropPluginCode(gradle, "net.fabricmc.loom");
+        String withExclusion = gradle;
+        gradle = dropNeoForgeExclusion(gradle);
+        if (!gradle.equals(withExclusion)) notes.add("Build: removed the NeoForge exclusion the way to Fabric added for kept dependencies.");
         // A line of code (not a comment) that still names Fabric.
         boolean[] gradleCode = LoaderRules.code(gradle);
         for (Matcher named = Pattern.compile("(?m)^.*fabricmc.*$").matcher(gradle); named.find(); ) {
@@ -3956,7 +3978,7 @@ final class Convert {
         if (!neutralDependencies.isEmpty() && !gradle.contains("exclude group: 'net.neoforged', module: 'neoforge'")) {
             // A dependency kept as it is can be a NeoForge mod whose own metadata asks for NeoForge; Fabric's build has none.
             gradle +=
-                "\n// Dependencies kept from the NeoForge build may ask for NeoForge itself, which the Fabric build does not have.\nconfigurations.configureEach {\n" +
+                NEOFORGE_EXCLUSION +
                 unit +
                 "exclude group: 'net.neoforged', module: 'neoforge'\n}\n";
             notes.add("Build: NeoForge itself is excluded from the dependencies the kept libraries bring with them.");
