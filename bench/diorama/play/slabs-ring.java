@@ -80,7 +80,7 @@ var store = (TileStore) field(map, "store");
 // the ring too, and a stale read there would otherwise show on both sides.
 List<java.lang.reflect.Field> switches = new ArrayList<>();
 for (String name : List.of("dev.diorama.bake.VoxelReader.SHARED", "dev.diorama.bake.GpuMesher.REUSE", "dev.diorama.bake.GpuMesher.AIR_ROWS", "dev.diorama.bake.GpuMesher.BITS",
-    "dev.diorama.bake.GpuMesher.RINGS", "dev.diorama.bake.MapPick.OPEN_AIR")) {
+    "dev.diorama.bake.GpuMesher.RINGS", "dev.diorama.bake.VoxelReader.EDGE_RINGS", "dev.diorama.bake.MapPick.OPEN_AIR")) {
     int dot = name.lastIndexOf('.');
     try {
         switches.add(Class.forName(name.substring(0, dot)).getField(name.substring(dot + 1)));

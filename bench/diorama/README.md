@@ -372,13 +372,34 @@ Measured and dropped:
 
 Gates for these: `reuse-live.java` and `slabs-ring.java` turn every switch off for their fresh side,
 `VoxelReader.SHARED` included, so a stale shared mask shows as a difference instead of on both sides.
-Two deliberately wrong candidates check that they do (results below):
-`sabotage-stale-ring.diff` reads ring runs without checking the serial, and
-`sabotage-walk-short-run.diff` opens one cell too few of each run of air.
+Two deliberately wrong candidates, each applied on all eight patches and run through every gate in
+one launch, fail them:
+
+| Sabotage | `bake-digest` | `mapped` | `reuse-live` | `slabs-ring` |
+|---|---|---|---|---|
+| `sabotage-stale-ring.diff`: reads ring runs without checking the serial | `483900ac…` | true | 27 of 27 tiles differ | 27 of 27 differ |
+| `sabotage-walk-short-run.diff`: opens one cell too few of each run of air | mesh `c63ab6b3` | false | 24 of 24 differ | 24 of 24 differ |
+
+The stale ring changes even the frozen digest: the gate's own bakes go round the ring. Diorama's
+own GPU self-check also turned the short-run walk away (`NO_MATCH`).
+
+Two more, ready to prove and time on the patches above:
+
+- `occlusion-ring-edges.patch` (`VoxelReader.EDGE_RINGS`): a face at a section's edge, a quarter of
+  them, asked its eight neighbours block by block, and `solid`'s one-section cache went back and
+  forth between the sections they span. It now reads each cell from its own section's bits. In a
+  profile of first meshes with the patches above, occlusion asked block by block was 11% of a mesh.
+  It compiles; it has not run in a launch yet.
+- `sky-free-round4.patch`: `sky-free.patch` on all eight, the column walk's dependencies included.
+  In one launch every gate passed (`bake-digest` `ac6a8694…`).
 
 ### Timing the candidates
 
-Each candidate is decided against the patches before it, then all eight against unmodified Diorama:
+Each candidate is decided against the patches before it, in this order: `bit-walk`,
+`occlusion-rings`, `occlusion-ring-edges`, `open-air-picks`, `ring-masks` (for the collector:
+accepted only if young pauses and heap are no worse), `sky-free-round4`; then all of them against
+unmodified Diorama, and `experiment-screen.json` for the render thread. On a machine that runs
+nothing else:
 
 ```sh
 ./modaccel perf-optimize --root DIORAMA_SOURCE --project :1.21.1 --experiment bench/diorama/play/experiment.json \
