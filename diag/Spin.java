@@ -4,7 +4,7 @@ public class Spin {
     public static void main(String[] a) throws Exception {
         int threads = Integer.parseInt(a[0]);
         long busyMs = Long.parseLong(a[1]), sleepMs = Long.parseLong(a[2]), seconds = Long.parseLong(a[3]);
-        boolean clockLoop = a.length > 4 && a[4].equals("clock");
+        boolean clockLoop = Boolean.getBoolean("clock");
         long stop = System.nanoTime() + seconds * 1_000_000_000L;
         Thread[] ts = new Thread[threads];
         for (int t = 0; t < threads; t++) {
