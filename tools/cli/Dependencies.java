@@ -135,7 +135,12 @@ final class Dependencies {
             try {
                 if (selection != null && selection.disable()) disable(setup, group, name, old, binary, selection);
                 else if (selection != null) choose(setup, group, name, old, binary, selection);
-                else discover(setup, group, name, old, binary, Json.text(dep, "configuration", ""), loader);
+                else if (group.equals(CURSE_MAVEN)) curseMaven(setup, group, name, old, binary, Json.text(dep, "configuration", ""), loader);
+                else try {
+                    discover(setup, group, name, old, binary, Json.text(dep, "configuration", ""), loader);
+                } catch (IOException unpublished) {
+                    if (unpublished instanceof Target.LookupFailure || !loader.equals("fabric") || !mavenRelease(setup, group, name, old, binary)) throw unpublished;
+                }
             } catch (IOException failure) {
                 String configuration = Json.text(dep, "configuration", "");
                 // A compile-only integration is never packaged or loaded with the mod, and authors often
@@ -280,6 +285,114 @@ final class Dependencies {
         Matcher number = Pattern.compile("[0-9]+").matcher(version);
         while (number.find()) key.append(String.format("%012d", Long.parseLong(number.group().length() > 12 ? "999999999999" : number.group()))).append('.');
         return key.toString();
+    }
+
+    /**
+     * A Fabric library published only to Maven (teamreborn:energy on maven.fabricmc.net, with no Modrinth project to
+     * match): the newest version in the project's own repositories whose jar's fabric.mod.json accepts the target game.
+     * A jar that states no Minecraft range proves nothing and is not chosen. Returns false when none does.
+     */
+    static boolean mavenRelease(Target.Setup setup, String group, String name, String old, Path binary) throws Exception {
+        for (String repository : ProjectModel.strings(setup.project.get("repositories"))) {
+            if (!repository.startsWith("https://")) continue;
+            String base = repository.replaceFirst("/$", "") + "/" + group.replace('.', '/') + "/" + name + "/";
+            List<String> versions = new ArrayList<>();
+            try {
+                Matcher version = Pattern.compile("<version>([^<]+)</version>").matcher(Target.fetch(setup.build, base + "maven-metadata.xml"));
+                while (version.find()) if (!version.group(1).contains("SNAPSHOT")) versions.add(version.group(1).strip());
+            } catch (IOException notHere) {
+                continue;
+            }
+            versions.sort((a, b) -> Versions.compare(b, a));
+            int tried = 0;
+            for (String version : versions) {
+                if (tried++ >= 10) break;
+                String accepts;
+                try {
+                    accepts = minecraftConstraint(Target.download(setup.build, base + version + "/" + name + "-" + version + ".jar"));
+                } catch (Exception unreadable) {
+                    continue;
+                }
+                if (accepts.isEmpty() || !Versions.matches(accepts, setup.to)) continue;
+                apply(
+                    setup,
+                    group,
+                    name,
+                    old,
+                    group,
+                    name,
+                    version,
+                    binary,
+                    Json.map(
+                        "repository",
+                        repository,
+                        "gameVersion",
+                        setup.to,
+                        "evidence",
+                        "its fabric.mod.json accepts Minecraft " + setup.to + " (" + accepts + "), the newest such release in " + repository
+                    )
+                );
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static final String CURSE_MAVEN = "curse.maven";
+
+    /**
+     * A CurseMaven coordinate (curse.maven:SLUG-PROJECTID:FILEID) names one CurseForge file, so the target is the file the
+     * project itself lists for the target game and loader: CurseForge's public file listing for that project id, newest
+     * first, a release before a beta or alpha. Its file id goes where the build keeps the old one.
+     */
+    static void curseMaven(Target.Setup setup, String group, String name, String old, Path binary, String configuration, String loader)
+        throws Exception {
+        Matcher id = Pattern.compile("-(\\d+)$").matcher(name);
+        if (!id.find()) throw new IOException("CurseMaven name " + name + " ends in no project id");
+        String loaderName = loader.equals("neoforge") ? "NeoForge" : loader.equals("forge") ? "Forge" : "Fabric";
+        Map<String, Object> best = null;
+        for (int page = 0; page < 8; page++) {
+            var files = Json.array(
+                Json.object(
+                    Json.parse(
+                        Target.fetch(
+                            setup.build,
+                            "https://www.curseforge.com/api/v1/mods/" + id.group(1) + "/files?pageIndex=" + page + "&pageSize=50&sort=dateCreated&sortDescending=true"
+                        )
+                    )
+                ).get("data")
+            );
+            best = curseFile(files, best, setup.to, loaderName);
+            if (files.size() < 50 || best != null && ((Number) best.getOrDefault("releaseType", 1)).intValue() == 1) break;
+        }
+        if (best == null) throw new IOException(
+            "CurseForge lists no " + loaderName + " file of project " + id.group(1) + " for " + setup.to
+        );
+        Map<String, Object> evidence = Json.map(
+            "publishedFile",
+            best.get("displayName"),
+            "gameVersion",
+            setup.to,
+            "evidence",
+            "CurseForge's file listing for project " + id.group(1) + " lists this " + loaderName + " file for " + setup.to
+        );
+        if (((Number) best.getOrDefault("releaseType", 1)).intValue() != 1) evidence.put(
+            "preRelease",
+            name + " has no release file for " + setup.to + ", so its newest " + (((Number) best.get("releaseType")).intValue() == 2 ? "beta" : "alpha") + " was chosen"
+        );
+        apply(setup, group, name, old, group, name, String.valueOf(((Number) best.get("id")).longValue()), binary, evidence);
+    }
+
+    /** The better of best and the files of one listing page for a game and loader: a release first, then the newest. */
+    static Map<String, Object> curseFile(List<Object> files, Map<String, Object> best, String to, String loaderName) {
+        for (Object item : files) {
+            var file = Json.object(item);
+            var versions = ProjectModel.strings(file.get("gameVersions"));
+            if (!versions.contains(to) || !versions.contains(loaderName)) continue;
+            int type = ((Number) file.getOrDefault("releaseType", 3)).intValue();
+            if (best == null || type < ((Number) best.getOrDefault("releaseType", 3)).intValue()) best = file;
+        }
+        return best;
     }
 
     /** compileOnly, modCompileOnly, modCompileOnlyApi: on the compile classpath only, never in the jar or the game. */
