@@ -25,9 +25,9 @@ public final class RuntimeNativesTest {
         Path root = Files.createTempDirectory(runs, "runtime-natives-");
         Path wrapper = root.resolve("gradle/wrapper");
         Files.createDirectories(wrapper);
-        Files.copy(home.resolve("gradle/wrapper/gradle-wrapper.jar"), wrapper.resolve("gradle-wrapper.jar"));
+        Files.copy(home.resolve("fixtures/prism-lab/gradle/wrapper/gradle-wrapper.jar"), wrapper.resolve("gradle-wrapper.jar"));
         Files.copy(
-            home.resolve("gradle/wrapper/gradle-wrapper.properties"),
+            home.resolve("fixtures/prism-lab/gradle/wrapper/gradle-wrapper.properties"),
             wrapper.resolve("gradle-wrapper.properties")
         );
         Files.writeString(root.resolve("settings.gradle"), "rootProject.name = 'runtime-natives'\n");

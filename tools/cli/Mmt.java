@@ -288,6 +288,7 @@ public final class Mmt {
         Path previewReceipts = null;
         try {
             options = new Options(args);
+            UserState.migrateHome();
             if (options.has("help") || options.command.equals("help")) {
                 System.out.println(help(options.command.equals("help") ? options.get("command", "") : options.command));
                 return;
@@ -344,6 +345,7 @@ public final class Mmt {
                 unknownCommand(options.command)
             );
             ProjectModel project = new ProjectModel(root);
+            UserState.migrateProject(project.root);
             if (!Set.of("package", "self-test").contains(options.command)) project.requireGradleBuild();
             // Commands that build, edit or start the game take the project lock; reading state and talking to a running game don't.
             // convert --dry-run converts a copy elsewhere: it takes no lock and keeps no receipt.
@@ -614,7 +616,7 @@ public final class Mmt {
             }
         } catch (Exception error) {
             // MMT_TRACE=1 prints where a failure came from, for a bug in mmt itself.
-            if (System.getenv("MMT_TRACE") != null) error.printStackTrace();
+            if (UserState.env("TRACE") != null) error.printStackTrace();
             try {
                 String reported = plainError(error);
                 // A dedicated server that died mid-check is the likelier cause of a client failure: say so with the error.

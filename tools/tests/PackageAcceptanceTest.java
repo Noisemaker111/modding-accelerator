@@ -28,6 +28,8 @@ public final class PackageAcceptanceTest {
             "mmt.jar.sha256",
             "mmt",
             "mmt.cmd",
+            "modaccel",
+            "modaccel.cmd",
             "LICENSE",
             "NOTICE",
             "PERFORMANCE.md",
@@ -86,6 +88,15 @@ public final class PackageAcceptanceTest {
                 help.exit == 0 && help.output.contains("mmt <"),
                 "extracted Windows launcher starts JAR from path with spaces"
             );
+            Outcome old = run(
+                List.of(extracted.resolve("modaccel.cmd").toString(), "discover", "--root", extracted.resolve("mmt.jar").toString()),
+                outside,
+                Map.of("JAVA_HOME", javaHome)
+            );
+            check(
+                old.exit == 2 && old.output.contains("modaccel.cmd is now mmt.cmd") && old.output.contains("Gradle source directory"),
+                "the old modaccel.cmd name says it is now mmt and forwards arguments and exit code"
+            );
             Outcome support = run(
                 List.of(launcher.toString(), "support", "--json"),
                 outside,
@@ -139,6 +150,16 @@ public final class PackageAcceptanceTest {
             check(
                 help.exit == 0 && help.output.contains("mmt <"),
                 "extracted POSIX launcher starts JAR from path with spaces"
+            );
+            Files.setPosixFilePermissions(extracted.resolve("modaccel"), Files.getPosixFilePermissions(launcher));
+            Outcome old = run(
+                List.of(extracted.resolve("modaccel").toString(), "discover", "--root", extracted.resolve("mmt.jar").toString()),
+                outside,
+                Map.of("JAVA_HOME", javaHome)
+            );
+            check(
+                old.exit == 2 && old.output.contains("modaccel is now mmt") && old.output.contains("Gradle source directory"),
+                "the old modaccel name says it is now mmt and forwards arguments and exit code"
             );
             Outcome support = run(
                 List.of(launcher.toString(), "support", "--json"),

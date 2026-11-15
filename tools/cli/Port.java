@@ -1686,7 +1686,7 @@ final class Port {
         Run.Result run = Run.command(
             shell,
             build.project.root,
-            Map.of("MMT_PORTED_ROOT", build.project.root.toString()),
+            Map.of("MMT_PORTED_ROOT", build.project.root.toString(), "MODACCEL_PORTED_ROOT", build.project.root.toString()),
             build.report.log("port-game-check"),
             3600
         );

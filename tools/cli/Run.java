@@ -31,7 +31,7 @@ final class Run {
      * for the end: mmt-progress {"step": what is running, "log": the file that step writes, or null}.
      */
     static void progress(String step, Path log) {
-        if (System.getenv("MMT_PROGRESS") == null) return;
+        if (UserState.env("PROGRESS") == null) return;
         String file = log == null ? null : log.toAbsolutePath().toString();
         System.err.println("mmt-progress " + Json.write(Json.map("step", step, "log", file)));
         System.err.flush();

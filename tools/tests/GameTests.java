@@ -197,6 +197,33 @@ public final class GameTests {
             Boolean.FALSE.equals(Preferences.read(prefs).get("quiet")),
             "a user can opt out of the muted game and the choice is kept"
         );
+        // The old name's folder (~/.modaccel) is copied into ~/.mmt once; preferences keep their exact bytes.
+        Path oldHome = scratch.resolve("old home/.modaccel"), newHome = scratch.resolve("old home/.mmt");
+        byte[] saved = "{\n  \"background\": true,\n  \"quiet\": true\n}\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        Files.createDirectories(oldHome.resolve("jdks/temurin-21"));
+        Files.write(oldHome.resolve("preferences.json"), saved);
+        Files.write(oldHome.resolve("jdks/temurin-21/big.bin"), new byte[(int) UserState.LINK_FROM_BYTES + 7]);
+        check(
+            UserState.migrate(oldHome, newHome) != null &&
+            Arrays.equals(Files.readAllBytes(newHome.resolve("preferences.json")), saved) &&
+            Boolean.TRUE.equals(Preferences.read(newHome.resolve("preferences.json")).get("background")) &&
+            Files.size(newHome.resolve("jdks/temurin-21/big.bin")) == UserState.LINK_FROM_BYTES + 7 &&
+            Arrays.equals(Files.readAllBytes(oldHome.resolve("preferences.json")), saved) &&
+            Files.isRegularFile(newHome.resolve(UserState.MARKER)),
+            "the first run copies ~/.modaccel into ~/.mmt, preferences byte for byte, keeping the old folder"
+        );
+        Files.writeString(newHome.resolve("preferences.json"), "{\"background\": false, \"quiet\": false}");
+        check(
+            UserState.migrate(oldHome, newHome) == null &&
+            Boolean.FALSE.equals(Preferences.read(newHome.resolve("preferences.json")).get("quiet")),
+            "the copy happens once: a later choice in ~/.mmt is never overwritten by the old folder"
+        );
+        Path oldProject = Files.createDirectories(scratch.resolve("old project/.modaccel/portable"));
+        UserState.migrateProject(scratch.resolve("old project"));
+        check(
+            Files.isDirectory(scratch.resolve("old project/.mmt/portable")) && !Files.exists(oldProject),
+            "a project's .modaccel folder (its undo records) becomes .mmt"
+        );
         Path dark = scratch.resolve("frame dark.png"), half = scratch.resolve("frame half.png");
         BufferedImage left = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB), right = new BufferedImage(
             10,
