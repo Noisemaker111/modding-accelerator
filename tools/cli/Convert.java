@@ -460,11 +460,17 @@ final class Convert {
         return text.replace("\r\n", "\n");
     }
 
+    /** The files this run has read or written, as they now are (null: none); convert alone changes them while it runs. */
+    final Map<String, String> texts = new HashMap<>();
+
     /** A file's text, with a dry run's changes; null when there is none. */
     String current(String relative) throws IOException {
         if (staged.containsKey(relative)) return staged.get(relative);
+        if (texts.containsKey(relative)) return texts.get(relative);
         Path file = project.root.resolve(relative);
-        return Files.isRegularFile(file) ? Files.readString(file, StandardCharsets.UTF_8) : null;
+        String text = Files.isRegularFile(file) ? Files.readString(file, StandardCharsets.UTF_8) : null;
+        texts.put(relative, text);
+        return text;
     }
 
     boolean exists(String relative) throws IOException {
@@ -485,6 +491,7 @@ final class Convert {
         track(file);
         Files.createDirectories(file.getParent());
         Files.writeString(file, text, StandardCharsets.UTF_8);
+        texts.put(relative, text);
         if (!changed.contains(relative)) changed.add(relative);
     }
 
@@ -501,6 +508,7 @@ final class Convert {
         removed.add(relative);
         saveInProgress();
         Files.delete(file);
+        texts.put(relative, null);
         changed.remove(relative);
         for (
             Path parent = file.getParent();
@@ -2684,6 +2692,7 @@ final class Convert {
             "\\.addListener\\(\\s*((?:EventPriority\\.\\w+\\s*,\\s*)?(?:(?:true|false)\\s*,\\s*)?)(?:(this|[A-Z]\\w*(?:\\.[A-Z]\\w*)*)::(\\w+)|\\(\\s*(?:final\\s+)?([A-Z][\\w.]*)(?:<[^>]*>)?\\s+\\w+\\s*\\)\\s*->)"
         ).matcher(text);
         StringBuilder out = new StringBuilder();
+        List<String> imports = new ArrayList<>();
         while (m.find()) {
             if (!code[m.start()]) {
                 m.appendReplacement(out, Matcher.quoteReplacement(m.group()));
@@ -2697,7 +2706,11 @@ final class Convert {
                     : Pattern.compile(
                         "\\b" + Pattern.quote(m.group(3)) + "\\s*\\(\\s*(?:(?:final|@[\\w.]+(?:\\([^)]*\\))?)\\s+)*([A-Z][\\w.]*)(?:<[^>]*>)?\\s+\\w+\\s*\\)"
                     ).matcher(owner);
-                if (method != null && method.find()) type = method.group(1);
+                if (method != null && method.find()) {
+                    type = method.group(1);
+                    // The type is named in the listener's own class: this file imports it as that class does.
+                    if (owner != text) imports.add(importOf(owner, type));
+                }
             }
             if (type == null) {
                 leave(file, LoaderRules.line(text, m.start()), "addListener" + m.group().substring(m.group().indexOf('(')), "the listener's event type could not be read from its method");
@@ -2708,7 +2721,24 @@ final class Convert {
             m.appendReplacement(out, Matcher.quoteReplacement(m.group().substring(0, at) + type + ".class, " + m.group().substring(at)));
         }
         m.appendTail(out);
-        return out.toString();
+        String result = out.toString();
+        for (String name : imports) {
+            if (name == null) continue;
+            String simple = name.substring(name.lastIndexOf('.') + 1);
+            if (Pattern.compile("(?m)^import\\s+[\\w.]+\\." + Pattern.quote(simple) + "\\s*;").matcher(result).find()) continue;
+            result = LoaderRules.addImport(result, name);
+        }
+        return result;
+    }
+
+    /** How a class's source imports the class a type name starts with, as the bridge names it; null when it does not import it. */
+    String importOf(String source, String type) {
+        String simple = type.contains(".") ? type.substring(0, type.indexOf('.')) : type;
+        Matcher imported = Pattern.compile("(?m)^import\\s+([\\w.]+\\." + Pattern.quote(simple) + ")\\s*;").matcher(source);
+        if (!imported.find()) return null;
+        String name = imported.group(1);
+        Object mirrored = bridge == null ? null : Json.object(bridge.get("classes")).get(name);
+        return mirrored == null ? name : bridgePackage + "." + mirrored;
     }
 
     /** The source of a class named in a file (its own package or an import), or null. */

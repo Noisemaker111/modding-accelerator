@@ -460,7 +460,8 @@ final class Installation {
             );
             if (suite.wantsHarness()) command.add(harness.toString());
             if (suite.wantsScratch()) command.add(report.directory.resolve("fixtures").toString());
-            var run = Run.command(command, report.root, Map.of(), report.log(suite.name() + "-tests"), 120);
+            // The portable suite converts every bridge test both ways, each writing the whole bridge: allow it 5 minutes.
+            var run = Run.command(command, report.root, Map.of(), report.log(suite.name() + "-tests"), 300);
             report.stage(suite.name() + "-tests", run, Map.of());
             boolean ok = run.exit() == 0;
             results.add(

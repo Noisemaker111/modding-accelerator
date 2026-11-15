@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "4a5c64c017aa235d3ee95e7fca3e01604eb1b9c3a1fa0753998cb6ce87a3b4fc",
+ "rules_sha256": "610ca204064125f50f69b0419caa0a1d6daebf9e9bb7bb9648bb65a0a49d03e8",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -453,6 +453,24 @@
    },
    {
     "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IPlayerExtension#openMenu",
+    "found": true
+   }
+  ],
+  "neoforge-block-light-emission": [
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission",
+    "found": true
+   }
+  ],
+  "neoforge-block-clone-item-stack": [
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getCloneItemStack",
+    "found": true
+   }
+  ],
+  "neoforge-state-clone-item-stack": [
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getCloneItemStack",
     "found": true
    }
   ],
@@ -1835,6 +1853,26 @@
    },
    {
     "symbol": "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseScrolled",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getName",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getDescription",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getModContainer",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#getCloneItemStack",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops",
     "found": true
    },
    {
@@ -3828,6 +3866,34 @@
    {
     "symbol": "neoforge|net.neoforged.neoforge.client.gui.widget.ExtendedButton#extractContents",
     "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModContainer#getModInfo",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.neoforgespi.language.IModInfo#getDisplayName",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.neoforgespi.language.IModInfo#getDescription",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.neoforgespi.language.IModInfo#getNamespace",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$HarvestCheck#canHarvest",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$HarvestCheck#setCanHarvest",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck",
+    "found": true
    }
   ],
   "neoforge-on-fabric@1.21.1": [
@@ -4433,6 +4499,10 @@
    },
    {
     "symbol": "minecraft-1.21.1|net.minecraft.server.packs.resources.PreparableReloadListener#reload",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops",
     "found": true
    },
    {
@@ -5945,6 +6015,14 @@
    },
    {
     "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getActiveModifier",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission",
     "found": true
    }
   ],

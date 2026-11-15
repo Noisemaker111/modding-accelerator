@@ -24,6 +24,11 @@ public class ModContainer {
         return modid;
     }
 
+    /** The mod's id, name and description, from Fabric Loader's metadata. */
+    public IModInfo getModInfo() {
+        return IModInfo.of(modid);
+    }
+
     public IEventBus getEventBus() {
         return Bus.INSTANCE;
     }

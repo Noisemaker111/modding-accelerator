@@ -17,6 +17,7 @@ import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -154,5 +155,11 @@ public final class EventHooks {
         LivingEntityUseItemEvent.Finish event = new LivingEntityUseItemEvent.Finish(entity, item, duration, result);
         Bus.INSTANCE.post(event);
         return event.getResultStack();
+    }
+
+    /** Posts PlayerEvent.HarvestCheck with the player's own answer (hasCorrectToolForDrops) as the default; the event's answer. */
+    public static boolean doPlayerHarvestCheck(Player player, BlockState state, BlockGetter level, BlockPos pos) {
+        boolean vanillaValue = player.hasCorrectToolForDrops(state);
+        return Bus.INSTANCE.post(new PlayerEvent.HarvestCheck(player, state, level, pos, vanillaValue)).canHarvest();
     }
 }

@@ -660,6 +660,75 @@
     "neoforge": "class A { void open(Player player, MenuProvider menu, BlockPos pos) { player.openMenu(menu, pos); } }",
     "fabric": "import net.neoforged.neoforge.common.extensions.IPlayerExtension;\nclass A { void open(Player player, MenuProvider menu, BlockPos pos) { IPlayerExtension.openMenu(player, menu, pos); } }"
    }
+  },
+  {
+   "id": "neoforge-block-light-emission",
+   "about": "NeoForge adds getLightEmission(state, level, pos) to Block (IBlockExtension); its default is the state's own light emission, which the NeoForge bridge's IBlockExtension.getLightEmission returns on Fabric.",
+   "fabric": "IBlockExtension.getLightEmission($block, $state, $level, $pos)",
+   "neoforge": "$block.getLightEmission($state, $level, $pos)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockExtension;\nclass A { int a(Level level, BlockPos pos, BlockState state) { return IBlockExtension.getLightEmission(state.getBlock(), state, level, pos); } }",
+    "neoforge": "class A { int a(Level level, BlockPos pos, BlockState state) { return state.getBlock().getLightEmission(state, level, pos); } }"
+   }
+  },
+  {
+   "id": "neoforge-block-clone-item-stack",
+   "about": "NeoForge adds getCloneItemStack(level, pos, state, includeData, player) to Block (IBlockExtension); its default is the game's own pick, which the NeoForge bridge's IBlockExtension.getCloneItemStack returns on Fabric. Minecraft 26.x's signature.",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "IBlockExtension.getCloneItemStack($block, $level, $pos, $state, $includeData, $player)",
+   "neoforge": "$block.getCloneItemStack($level, $pos, $state, $includeData, $player)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getCloneItemStack"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockExtension;\nclass A { ItemStack a(Level level, BlockPos pos, BlockState state, Player player) { return IBlockExtension.getCloneItemStack(state.getBlock(), level, pos, state, true, player); } }",
+    "neoforge": "class A { ItemStack a(Level level, BlockPos pos, BlockState state, Player player) { return state.getBlock().getCloneItemStack(level, pos, state, true, player); } }"
+   }
+  },
+  {
+   "id": "neoforge-state-clone-item-stack",
+   "about": "NeoForge adds getCloneItemStack(pos, level, includeData, player) to BlockState (IBlockStateExtension); its default is the game's own pick, which the NeoForge bridge's IBlockStateExtension.getCloneItemStack returns on Fabric. Minecraft 26.x's signature.",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "IBlockStateExtension.getCloneItemStack($state, $pos, $level, $includeData, $player)",
+   "neoforge": "$state.getCloneItemStack($pos, $level, $includeData, $player)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getCloneItemStack"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { ItemStack a(BlockHitResult hit, BlockState state, Player player) { return IBlockStateExtension.getCloneItemStack(state, hit.getBlockPos(), player.level(), true, player); } }",
+    "neoforge": "class A { ItemStack a(BlockHitResult hit, BlockState state, Player player) { return state.getCloneItemStack(hit.getBlockPos(), player.level(), true, player); } }"
+   }
   }
  ],
  "types": [
@@ -1780,7 +1849,9 @@
     "net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent": "CustomizeGuiOverlayEvent",
     "net.neoforged.neoforge.client.event.RegisterClientCommandsEvent": "RegisterClientCommandsEvent",
     "net.neoforged.neoforge.client.event.AddClientReloadListenersEvent": "AddClientReloadListenersEvent",
-    "net.neoforged.neoforge.client.gui.widget.ExtendedButton": "ExtendedButton"
+    "net.neoforged.neoforge.client.gui.widget.ExtendedButton": "ExtendedButton",
+    "net.neoforged.neoforgespi.language.IModInfo": "IModInfo",
+    "net.neoforged.neoforge.common.extensions.IBlockExtension": "IBlockExtension"
    },
    "symbols": {
     "neoforge": [
@@ -2281,7 +2352,14 @@
      "neoforge|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getBuildContext",
      "neoforge|net.neoforged.neoforge.client.event.AddClientReloadListenersEvent",
      "neoforge|net.neoforged.neoforge.client.gui.widget.ExtendedButton",
-     "neoforge|net.neoforged.neoforge.client.gui.widget.ExtendedButton#extractContents"
+     "neoforge|net.neoforged.neoforge.client.gui.widget.ExtendedButton#extractContents",
+     "fml|net.neoforged.fml.ModContainer#getModInfo",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getDisplayName",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getDescription",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getNamespace",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$HarvestCheck#canHarvest",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$HarvestCheck#setCanHarvest",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -2519,7 +2597,12 @@
      "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseClicked",
      "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseReleased",
      "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseDragged",
-     "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseScrolled"
+     "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseScrolled",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getName",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getDescription",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getModContainer",
+     "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#getCloneItemStack",
+     "minecraft|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops"
     ]
    },
    "test": {
@@ -2910,7 +2993,9 @@
        "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getBuildContext",
        "neoforge-21.1|net.neoforged.neoforge.client.gui.widget.ExtendedButton",
        "neoforge-21.1|net.neoforged.neoforge.client.gui.widget.ExtendedButton#renderWidget",
-       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getActiveModifier"
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getActiveModifier",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission"
       ],
       "fabric": [
        "fabric-api-1.21.1|net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#MODIFY_ENTRIES_ALL",
@@ -3063,7 +3148,8 @@
        "minecraft-1.21.1|net.minecraft.client.gui.components.Button#<init>",
        "minecraft-1.21.1|net.minecraft.client.gui.components.AbstractButton#renderWidget",
        "minecraft-1.21.1|net.minecraft.commands.CommandSourceStack#<init>",
-       "minecraft-1.21.1|net.minecraft.server.packs.resources.PreparableReloadListener#reload"
+       "minecraft-1.21.1|net.minecraft.server.packs.resources.PreparableReloadListener#reload",
+       "minecraft-1.21.1|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops"
       ]
      },
      "below": "1.21.2",
