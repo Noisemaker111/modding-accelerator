@@ -406,7 +406,7 @@ final class Installation {
 
     static final List<Suite> SUITES = List.of(
         // convert's bridge tests convert a small mod there and back once per test, each copying the whole bridge.
-        new Suite("portable", "PortableTests", true, true, 300),
+        new Suite("portable", "PortableTests", true, true, 600),
         new Suite("perf", "PerfTest", true, true),
         new Suite("jdk", "JdkDownloadsTest", false, false),
         new Suite("dependency", "DependenciesTest", false, false),

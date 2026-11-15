@@ -806,6 +806,306 @@
     "fabric": "import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;\nimport net.neoforged.fml.config.ModConfig;\nclass A { void a() { ConfigRegistry.INSTANCE.register(\"demo\", ModConfig.Type.SERVER, SPEC); } }",
     "neoforge": "import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;\nimport net.neoforged.fml.config.ModConfig;\nclass A { void a() { ConfigRegistry.INSTANCE.register(\"demo\", ModConfig.Type.SYNCED, SPEC); } }"
    }
+  },
+  {
+   "id": "neoforge-entity-persistent-data",
+   "about": "NeoForge adds getPersistentData() to Entity (IEntityExtension) and BlockEntity (IBlockEntityExtension); on Fabric the NeoForge bridge's IEntityExtension.getPersistentData keeps the tag in the entity's saved data (a Fabric API persistent attachment) and carries a player's PlayerPersisted section through respawn, as NeoForge does.",
+   "fabric": "IEntityExtension.getPersistentData($entity)",
+   "neoforge": "$entity.getPersistentData()",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IEntityExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IEntityExtension#getPersistentData",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockEntityExtension#getPersistentData"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IEntityExtension;\nclass A { void a(Entity e) { CompoundTag data = IEntityExtension.getPersistentData(e); IEntityExtension.getPersistentData(((Zombie) e)).putInt(\"n\", IEntityExtension.getPersistentData(this.find(e).get(0)).getInt(\"n\")); } }",
+    "neoforge": "class A { void a(Entity e) { CompoundTag data = e.getPersistentData(); ((Zombie) e).getPersistentData().putInt(\"n\", this.find(e).get(0).getPersistentData().getInt(\"n\")); } }"
+   }
+  },
+  {
+   "id": "neoforge-state-light-emission",
+   "about": "NeoForge adds getLightEmission(level, pos) to BlockState (IBlockStateExtension); its default is the state's own light emission, which the NeoForge bridge's IBlockStateExtension.getLightEmission returns on Fabric.",
+   "fabric": "IBlockStateExtension.getLightEmission($state, $level, $pos)",
+   "neoforge": "$state.getLightEmission($level, $pos)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getLightEmission",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { int a(Level level, BlockPos pos) { return IBlockStateExtension.getLightEmission(level.getBlockState(pos), level, pos); } }",
+    "neoforge": "class A { int a(Level level, BlockPos pos) { return level.getBlockState(pos).getLightEmission(level, pos); } }"
+   }
+  },
+  {
+   "id": "neoforge-state-can-entity-destroy",
+   "about": "NeoForge adds canEntityDestroy(level, pos, entity) to BlockState (IBlockStateExtension, from IBlockExtension's default: dragon-immune blocks stop the ender dragon, the wither and its skulls break what WitherBoss.canDestroy allows); the NeoForge bridge's IBlockStateExtension.canEntityDestroy does the same on Fabric. A static call on a class (CommonHooks.canEntityDestroy) is left alone.",
+   "fabric": "IBlockStateExtension.canEntityDestroy($state, $level, $pos, $entity)",
+   "neoforge": "$state.canEntityDestroy($level, $pos, $entity)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#canEntityDestroy",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#canEntityDestroy"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { boolean a(ServerLevel level, BlockPos pos, Zombie zombie) { BlockState state = level.getBlockState(pos); return CommonHooks.canEntityDestroy(level, pos, zombie) || IBlockStateExtension.canEntityDestroy(state, level, pos, zombie); } }",
+    "neoforge": "class A { boolean a(ServerLevel level, BlockPos pos, Zombie zombie) { BlockState state = level.getBlockState(pos); return CommonHooks.canEntityDestroy(level, pos, zombie) || state.canEntityDestroy(level, pos, zombie); } }"
+   }
+  },
+  {
+   "id": "neoforge-stack-equipment-slot",
+   "about": "NeoForge adds getEquipmentSlot() to ItemStack (IItemStackExtension); its default (IItemExtension) is null, the item asking for no slot of its own, which the NeoForge bridge's IItemStackExtension.getEquipmentSlot returns on Fabric. On 1.21.1 the game's own Equipable.getEquipmentSlot() calls go the same way and keep the game's answer.",
+   "fabric": "IItemStackExtension.getEquipmentSlot($stack)",
+   "neoforge": "$stack.getEquipmentSlot()",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IItemStackExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot",
+     "neoforge|net.neoforged.neoforge.common.extensions.IItemExtension#getEquipmentSlot"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IItemStackExtension;\nclass A { EquipmentSlot a(ItemStack stack) { EquipmentSlot slot = IItemStackExtension.getEquipmentSlot(stack); return slot != null ? slot : EquipmentSlot.MAINHAND; } }",
+    "neoforge": "class A { EquipmentSlot a(ItemStack stack) { EquipmentSlot slot = stack.getEquipmentSlot(); return slot != null ? slot : EquipmentSlot.MAINHAND; } }"
+   }
+  },
+  {
+   "id": "neoforge-saved-data-factory",
+   "about": "NeoForge 21.1 adds a two-argument SavedData.Factory constructor (no DataFixTypes: the data is read back unfixed); on Fabric it is the game's three-argument one with null, which the NeoForge bridge's SavedDataFixMixin reads back unfixed as NeoForge's DimensionDataStorage patch does. Minecraft 26.x has no SavedData.Factory.",
+   "minecraft": {
+    "below": "1.21.2"
+   },
+   "fabric": "new SavedData.Factory<>($constructor, $deserializer, null)",
+   "neoforge": "new SavedData.Factory<>($constructor, $deserializer)",
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft-1.21.1|net.minecraft.world.level.saveddata.SavedData$Factory#type",
+     "minecraft-1.21.1|net.minecraft.world.level.storage.DimensionDataStorage#computeIfAbsent"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "class A { static SavedData.Factory<Data> FACTORY = new SavedData.Factory<>(Data::new, Data::load, null); }",
+    "neoforge": "class A { static SavedData.Factory<Data> FACTORY = new SavedData.Factory<>(Data::new, Data::load); }"
+   }
+  },
+  {
+   "id": "neoforge-saved-data-factory-inherited",
+   "about": "The same two-argument SavedData.Factory constructor written as Factory, as a SavedData subclass may (the nested class is inherited).",
+   "minecraft": {
+    "below": "1.21.2"
+   },
+   "fabric": "new Factory<>($constructor, $deserializer, null)",
+   "neoforge": "new Factory<>($constructor, $deserializer)",
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft-1.21.1|net.minecraft.world.level.saveddata.SavedData$Factory#type"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "class Data extends SavedData { static Data get(ServerLevel level) { return level.getDataStorage().computeIfAbsent(new Factory<>(Data::new, Data::load, null), \"data\"); } }",
+    "neoforge": "class Data extends SavedData { static Data get(ServerLevel level) { return level.getDataStorage().computeIfAbsent(new Factory<>(Data::new, Data::load), \"data\"); } }"
+   }
+  },
+  {
+   "id": "neoforge-key-mapping-context-6",
+   "about": "NeoForge adds KeyMapping constructors that take a key conflict context (and a KeyModifier) after the name; the game on Fabric has none, so the NeoForge bridge's KeyConflictContext makes the key mapping (KeyConflictContext.X.keyMapping, one method per NeoForge constructor, with the same arguments after the context). Matched by its written KeyConflictContext.X argument, so a mapping made from a context held in a variable is left for review.",
+   "neoforge": "new KeyMapping($name, KeyConflictContext.$context, $modifier, $type, $code, $category)",
+   "fabric": "KeyConflictContext.$context.keyMapping($name, $modifier, $type, $code, $category)",
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft|net.minecraft.client.KeyMapping#<init>"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#IN_GAME",
+     "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext#isActive",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#NONE"
+    ]
+   },
+   "test": {
+    "neoforge": "import net.neoforged.neoforge.client.settings.KeyConflictContext;\nclass A { KeyMapping K = new KeyMapping(\"key.demo\", KeyConflictContext.IN_GAME, modifier, type, code, category); }",
+    "fabric": "import net.neoforged.neoforge.client.settings.KeyConflictContext;\nclass A { KeyMapping K = KeyConflictContext.IN_GAME.keyMapping(\"key.demo\", modifier, type, code, category); }"
+   }
+  },
+  {
+   "id": "neoforge-key-mapping-context-5",
+   "about": "NeoForge adds KeyMapping constructors that take a key conflict context (and a KeyModifier) after the name; the game on Fabric has none, so the NeoForge bridge's KeyConflictContext makes the key mapping (KeyConflictContext.X.keyMapping, one method per NeoForge constructor, with the same arguments after the context). Matched by its written KeyConflictContext.X argument, so a mapping made from a context held in a variable is left for review.",
+   "neoforge": "new KeyMapping($name, KeyConflictContext.$context, $key, $code, $category)",
+   "fabric": "KeyConflictContext.$context.keyMapping($name, $key, $code, $category)",
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft|net.minecraft.client.KeyMapping#<init>"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#IN_GAME",
+     "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext#isActive",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#NONE"
+    ]
+   },
+   "test": {
+    "neoforge": "import net.neoforged.neoforge.client.settings.KeyConflictContext;\nclass A { KeyMapping K = new KeyMapping(\"key.demo\", KeyConflictContext.IN_GAME, key, code, category); }",
+    "fabric": "import net.neoforged.neoforge.client.settings.KeyConflictContext;\nclass A { KeyMapping K = KeyConflictContext.IN_GAME.keyMapping(\"key.demo\", key, code, category); }"
+   }
+  },
+  {
+   "id": "neoforge-key-mapping-context-4",
+   "about": "NeoForge adds KeyMapping constructors that take a key conflict context (and a KeyModifier) after the name; the game on Fabric has none, so the NeoForge bridge's KeyConflictContext makes the key mapping (KeyConflictContext.X.keyMapping, one method per NeoForge constructor, with the same arguments after the context). Matched by its written KeyConflictContext.X argument, so a mapping made from a context held in a variable is left for review.",
+   "neoforge": "new KeyMapping($name, KeyConflictContext.$context, $key, $category)",
+   "fabric": "KeyConflictContext.$context.keyMapping($name, $key, $category)",
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft|net.minecraft.client.KeyMapping#<init>"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#IN_GAME",
+     "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext#isActive"
+    ]
+   },
+   "test": {
+    "neoforge": "import net.neoforged.neoforge.client.settings.KeyConflictContext;\nclass A { KeyMapping K = new KeyMapping(\"key.demo\", KeyConflictContext.IN_GAME, key, category); }",
+    "fabric": "import net.neoforged.neoforge.client.settings.KeyConflictContext;\nclass A { KeyMapping K = KeyConflictContext.IN_GAME.keyMapping(\"key.demo\", key, category); }"
+   }
+  },
+  {
+   "id": "neoforge-player-open-menu",
+   "about": "NeoForge adds openMenu(MenuProvider, BlockPos or Consumer<RegistryFriendlyByteBuf>) to Player (IPlayerExtension) to send a menu's opening data; the game has only openMenu(MenuProvider). On Fabric the NeoForge bridge's IPlayerExtension.openMenu(player, provider, data) opens the menu through Fabric API's extended menu provider with those bytes, which IMenuTypeExtension's menu types read.",
+   "neoforge": "$player.openMenu($provider, $data)",
+   "fabric": "IPlayerExtension.openMenu($player, $provider, $data)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IPlayerExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider#getScreenOpeningData",
+     "minecraft|net.minecraft.server.level.ServerPlayer#openMenu"
+    ],
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IPlayerExtension#openMenu"
+    ]
+   },
+   "test": {
+    "neoforge": "class A { void open(Player player, MenuProvider menu, BlockPos pos) { player.openMenu(menu, pos); } }",
+    "fabric": "import net.neoforged.neoforge.common.extensions.IPlayerExtension;\nclass A { void open(Player player, MenuProvider menu, BlockPos pos) { IPlayerExtension.openMenu(player, menu, pos); } }"
+   }
+  },
+  {
+   "id": "neoforge-block-light-emission",
+   "about": "NeoForge adds getLightEmission(state, level, pos) to Block (IBlockExtension); its default is the state's own light emission, which the NeoForge bridge's IBlockExtension.getLightEmission returns on Fabric.",
+   "fabric": "IBlockExtension.getLightEmission($block, $state, $level, $pos)",
+   "neoforge": "$block.getLightEmission($state, $level, $pos)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockExtension;\nclass A { int a(Level level, BlockPos pos, BlockState state) { return IBlockExtension.getLightEmission(state.getBlock(), state, level, pos); } }",
+    "neoforge": "class A { int a(Level level, BlockPos pos, BlockState state) { return state.getBlock().getLightEmission(state, level, pos); } }"
+   }
+  },
+  {
+   "id": "neoforge-block-clone-item-stack",
+   "about": "NeoForge adds getCloneItemStack(level, pos, state, includeData, player) to Block (IBlockExtension); its default is the game's own pick, which the NeoForge bridge's IBlockExtension.getCloneItemStack returns on Fabric. Minecraft 26.x's signature.",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "IBlockExtension.getCloneItemStack($block, $level, $pos, $state, $includeData, $player)",
+   "neoforge": "$block.getCloneItemStack($level, $pos, $state, $includeData, $player)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getCloneItemStack"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockExtension;\nclass A { ItemStack a(Level level, BlockPos pos, BlockState state, Player player) { return IBlockExtension.getCloneItemStack(state.getBlock(), level, pos, state, true, player); } }",
+    "neoforge": "class A { ItemStack a(Level level, BlockPos pos, BlockState state, Player player) { return state.getBlock().getCloneItemStack(level, pos, state, true, player); } }"
+   }
+  },
+  {
+   "id": "neoforge-state-clone-item-stack",
+   "about": "NeoForge adds getCloneItemStack(pos, level, includeData, player) to BlockState (IBlockStateExtension); its default is the game's own pick, which the NeoForge bridge's IBlockStateExtension.getCloneItemStack returns on Fabric. Minecraft 26.x's signature.",
+   "minecraft": {
+    "from": "26.1"
+   },
+   "fabric": "IBlockStateExtension.getCloneItemStack($state, $pos, $level, $includeData, $player)",
+   "neoforge": "$state.getCloneItemStack($pos, $level, $includeData, $player)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getCloneItemStack"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { ItemStack a(BlockHitResult hit, BlockState state, Player player) { return IBlockStateExtension.getCloneItemStack(state, hit.getBlockPos(), player.level(), true, player); } }",
+    "neoforge": "class A { ItemStack a(BlockHitResult hit, BlockState state, Player player) { return state.getCloneItemStack(hit.getBlockPos(), player.level(), true, player); } }"
+   }
   }
  ],
  "types": [
@@ -1917,7 +2217,70 @@
     "net.neoforged.neoforge.transfer.transaction.RootCommitJournal": "transfer.transaction.RootCommitJournal",
     "net.neoforged.neoforge.transfer.transaction.SnapshotJournal": "transfer.transaction.SnapshotJournal",
     "net.neoforged.neoforge.transfer.transaction.Transaction": "transfer.transaction.Transaction",
-    "net.neoforged.neoforge.transfer.transaction.TransactionContext": "transfer.transaction.TransactionContext"
+    "net.neoforged.neoforge.transfer.transaction.TransactionContext": "transfer.transaction.TransactionContext",
+    "net.neoforged.neoforge.event.tick.EntityTickEvent": "EntityTickEvent",
+    "net.neoforged.neoforge.event.tick.PlayerTickEvent": "PlayerTickEvent",
+    "net.neoforged.neoforge.event.EventHooks": "EventHooks",
+    "net.neoforged.neoforge.common.util.BlockSnapshot": "BlockSnapshot",
+    "net.neoforged.neoforge.event.level.BlockEvent": "BlockEvent",
+    "net.neoforged.neoforge.event.entity.living.LivingDropsEvent": "LivingDropsEvent",
+    "net.neoforged.neoforge.event.entity.living.MobSpawnEvent": "MobSpawnEvent",
+    "net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent": "FinalizeSpawnEvent",
+    "net.neoforged.neoforge.event.entity.EntityMobGriefingEvent": "EntityMobGriefingEvent",
+    "net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent": "LivingDestroyBlockEvent",
+    "net.neoforged.neoforge.event.entity.living.LivingConversionEvent": "LivingConversionEvent",
+    "net.neoforged.neoforge.common.CommonHooks": "CommonHooks",
+    "net.neoforged.neoforge.common.extensions.IEntityExtension": "IEntityExtension",
+    "net.neoforged.neoforge.common.extensions.IBlockStateExtension": "IBlockStateExtension",
+    "net.neoforged.neoforge.common.extensions.IItemStackExtension": "IItemStackExtension",
+    "net.neoforged.fml.config.IConfigSpec": "IConfigSpec",
+    "net.neoforged.neoforge.event.entity.player.PlayerInteractEvent": "PlayerInteractEvent",
+    "net.neoforged.fml.LogicalSide": "LogicalSide",
+    "net.neoforged.neoforge.common.util.TriState": "TriState",
+    "net.neoforged.neoforge.event.level.block.BreakBlockEvent": "BreakBlockEvent",
+    "net.neoforged.neoforge.event.level.BlockDropsEvent": "BlockDropsEvent",
+    "net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent": "LivingEquipmentChangeEvent",
+    "net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent": "LivingEntityUseItemEvent",
+    "net.neoforged.neoforge.event.server.ServerAboutToStartEvent": "ServerAboutToStartEvent",
+    "net.neoforged.neoforge.event.TagsUpdatedEvent": "TagsUpdatedEvent",
+    "net.neoforged.neoforge.event.SortedReloadListenerEvent": "SortedReloadListenerEvent",
+    "net.neoforged.neoforge.event.AddServerReloadListenersEvent": "AddServerReloadListenersEvent",
+    "net.neoforged.neoforge.event.AddReloadListenerEvent": "AddReloadListenerEvent",
+    "net.neoforged.neoforge.registries.RegisterEvent": "RegisterEvent",
+    "net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent": "EntityLeaveLevelEvent",
+    "net.neoforged.neoforge.common.util.FakePlayer": "FakePlayer",
+    "net.neoforged.neoforge.common.util.FakePlayerFactory": "FakePlayerFactory",
+    "net.neoforged.neoforge.common.UsernameCache": "UsernameCache",
+    "net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs": "NeoForgeStreamCodecs",
+    "net.neoforged.fml.event.lifecycle.ModLifecycleEvent": "ModLifecycleEvent",
+    "net.neoforged.fml.event.lifecycle.ParallelDispatchEvent": "ParallelDispatchEvent",
+    "net.neoforged.fml.event.lifecycle.InterModEnqueueEvent": "InterModEnqueueEvent",
+    "net.neoforged.fml.event.lifecycle.InterModProcessEvent": "InterModProcessEvent",
+    "net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent": "FMLLoadCompleteEvent",
+    "net.neoforged.fml.InterModComms": "InterModComms",
+    "net.neoforged.neoforge.entity.IEntityWithComplexSpawn": "IEntityWithComplexSpawn",
+    "net.neoforged.neoforge.client.ClientHooks": "ClientHooks",
+    "net.neoforged.neoforge.client.settings.IKeyConflictContext": "IKeyConflictContext",
+    "net.neoforged.neoforge.client.settings.KeyConflictContext": "KeyConflictContext",
+    "net.neoforged.neoforge.client.settings.KeyModifier": "KeyModifier",
+    "net.neoforged.neoforge.client.event.RegisterMenuScreensEvent": "RegisterMenuScreensEvent",
+    "net.neoforged.neoforge.common.extensions.IMenuTypeExtension": "IMenuTypeExtension",
+    "net.neoforged.neoforge.network.IContainerFactory": "IContainerFactory",
+    "net.neoforged.neoforge.common.extensions.IPlayerExtension": "IPlayerExtension",
+    "net.neoforged.neoforge.client.gui.GuiLayer": "GuiLayer",
+    "net.neoforged.neoforge.client.gui.VanillaGuiLayers": "VanillaGuiLayers",
+    "net.neoforged.neoforge.client.event.RegisterGuiLayersEvent": "RegisterGuiLayersEvent",
+    "net.neoforged.neoforge.client.event.RenderGuiLayerEvent": "RenderGuiLayerEvent",
+    "net.neoforged.neoforge.client.event.RenderGuiEvent": "RenderGuiEvent",
+    "net.neoforged.neoforge.client.event.ScreenEvent": "ScreenEvent",
+    "net.neoforged.neoforge.client.event.InputEvent": "InputEvent",
+    "net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent": "ClientPlayerNetworkEvent",
+    "net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent": "CustomizeGuiOverlayEvent",
+    "net.neoforged.neoforge.client.event.RegisterClientCommandsEvent": "RegisterClientCommandsEvent",
+    "net.neoforged.neoforge.client.event.AddClientReloadListenersEvent": "AddClientReloadListenersEvent",
+    "net.neoforged.neoforge.client.gui.widget.ExtendedButton": "ExtendedButton",
+    "net.neoforged.neoforgespi.language.IModInfo": "IModInfo",
+    "net.neoforged.neoforge.common.extensions.IBlockExtension": "IBlockExtension"
    },
    "symbols": {
     "neoforge": [
@@ -2416,7 +2779,425 @@
      "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#canExtract",
      "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#canReceive",
      "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#serialize",
-     "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#deserialize"
+     "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#deserialize",
+     "neoforge|net.neoforged.neoforge.event.tick.EntityTickEvent$Pre",
+     "neoforge|net.neoforged.neoforge.event.tick.EntityTickEvent$Post",
+     "neoforge|net.neoforged.neoforge.event.tick.PlayerTickEvent$Pre",
+     "neoforge|net.neoforged.neoforge.event.tick.PlayerTickEvent$Post",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#fireEntityTickPre",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#fireEntityTickPost",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#firePlayerTickPre",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#firePlayerTickPost",
+     "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#create",
+     "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#getCurrentState",
+     "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#restoreToLocation",
+     "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#restoreBlockEntity",
+     "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#recreateBlockEntity",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent#getState",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$EntityPlaceEvent#getPlacedAgainst",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$EntityMultiPlaceEvent#getReplacedBlockSnapshots",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$NeighborNotifyEvent#getNotifiedSides",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$FluidPlaceBlockEvent#setNewState",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$FarmlandTrampleEvent#getFallDistance",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#getDrops",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#getSource",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#isRecentlyHit",
+     "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent#getLevel",
+     "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$SpawnPlacementCheck#getPlacementCheckResult",
+     "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$SpawnPlacementCheck$Result",
+     "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$PositionCheck#getSpawner",
+     "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$PositionCheck$Result",
+     "neoforge|net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent#setSpawnData",
+     "neoforge|net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent#getSpawner",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityMobGriefingEvent#canGrief",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityMobGriefingEvent#isMobGriefingEnabled",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent#getState",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingConversionEvent$Pre#setConversionTimer",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingConversionEvent$Post#getOutcome",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityJoinLevelEvent#loadedFromDisk",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onBlockPlace",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onMultiBlockPlace",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onEntityDestroyBlock",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#canEntityGrief",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#checkSpawnPlacements",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#checkSpawnPosition",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#finalizeMobSpawn",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#canLivingConvert",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onLivingConvert",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#onLivingDrops",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#canEntityDestroy",
+     "neoforge|net.neoforged.neoforge.common.extensions.IEntityExtension#getPersistentData",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockEntityExtension#getPersistentData",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getLightEmission",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#canEntityDestroy",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#canEntityDestroy",
+     "neoforge|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot",
+     "neoforge|net.neoforged.neoforge.common.extensions.IItemExtension#getEquipmentSlot",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec#getSpec",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec#getValues",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec#afterReload",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#test",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#correct",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#getClazz",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#getComment",
+     "fml|net.neoforged.fml.config.ModConfig#getLoadedConfig",
+     "fml|net.neoforged.fml.config.ModConfig#getFullPath",
+     "fml|net.neoforged.fml.config.IConfigSpec$ILoadedConfig#config",
+     "fml|net.neoforged.fml.config.IConfigSpec$ILoadedConfig#save",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getHand",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getItemStack",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getPos",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getFace",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getLevel",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getSide",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#getUseBlock",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#getUseItem",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#setUseBlock",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#setUseItem",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#getHitVec",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#setCancellationResult",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickItem#setCancellationResult",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickEmpty",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$LeftClickBlock#getAction",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$LeftClickBlock#setUseItem",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$LeftClickBlock$Action#convert",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$LeftClickEmpty",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$EntityInteract#getTarget",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$EntityInteract#getLocation",
+     "fml|net.neoforged.fml.LogicalSide#isServer",
+     "fml|net.neoforged.fml.LogicalSide#isClient",
+     "neoforge|net.neoforged.neoforge.event.level.block.BreakBlockEvent#getPlayer",
+     "neoforge|net.neoforged.neoforge.event.level.block.BreakBlockEvent#setNotifyClient",
+     "neoforge|net.neoforged.neoforge.event.level.block.BreakBlockEvent#shouldNotifyClient",
+     "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#getDrops",
+     "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#getBlockEntity",
+     "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#getBreaker",
+     "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#getTool",
+     "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#getDroppedExperience",
+     "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#setDroppedExperience",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent#getSlot",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent#getFrom",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent#getTo",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent#getItem",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent#getDuration",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent#setDuration",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent#getHand",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Start",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Tick",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Stop",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Finish#getResultStack",
+     "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Finish#setResultStack",
+     "neoforge|net.neoforged.neoforge.event.server.ServerAboutToStartEvent",
+     "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent#getRegistries",
+     "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent#shouldUpdateStaticData",
+     "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent$ServerDataLoad#getServerResources",
+     "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent$ClientPacketReceived",
+     "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#addListener",
+     "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#addDependency",
+     "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#getGraph",
+     "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#getRegistry",
+     "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#getNameLookup",
+     "neoforge|net.neoforged.neoforge.event.AddServerReloadListenersEvent#getServerResources",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onResourceReload",
+     "neoforge|net.neoforged.neoforge.registries.RegisterEvent#register",
+     "neoforge|net.neoforged.neoforge.registries.RegisterEvent#getRegistryKey",
+     "neoforge|net.neoforged.neoforge.registries.RegisterEvent#getRegistry",
+     "neoforge|net.neoforged.neoforge.registries.RegisterEvent$RegisterHelper#register",
+     "neoforge|net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent#getLevel",
+     "neoforge|net.neoforged.neoforge.common.util.FakePlayer#isFakePlayer",
+     "neoforge|net.neoforged.neoforge.common.util.FakePlayerFactory#get",
+     "neoforge|net.neoforged.neoforge.common.util.FakePlayerFactory#getMinecraft",
+     "neoforge|net.neoforged.neoforge.common.util.FakePlayerFactory#unloadLevel",
+     "neoforge|net.neoforged.neoforge.common.UsernameCache#getLastKnownUsername",
+     "neoforge|net.neoforged.neoforge.common.UsernameCache#containsUUID",
+     "neoforge|net.neoforged.neoforge.common.UsernameCache#getMap",
+     "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#UNBOUNDED_BYTE_ARRAY",
+     "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#CHUNK_POS",
+     "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#lazy",
+     "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#enumCodec",
+     "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#registryKey",
+     "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#connectionAware",
+     "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#uncheckedUnit",
+     "fml|net.neoforged.fml.InterModComms#sendTo",
+     "fml|net.neoforged.fml.InterModComms#getMessages",
+     "fml|net.neoforged.fml.InterModComms$IMCMessage#messageSupplier",
+     "fml|net.neoforged.fml.InterModComms$IMCMessage#method",
+     "fml|net.neoforged.fml.event.lifecycle.ModLifecycleEvent#getIMCStream",
+     "fml|net.neoforged.fml.event.lifecycle.ModLifecycleEvent#getContainer",
+     "fml|net.neoforged.fml.event.lifecycle.InterModEnqueueEvent",
+     "fml|net.neoforged.fml.event.lifecycle.InterModProcessEvent",
+     "fml|net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent",
+     "neoforge|net.neoforged.neoforge.entity.IEntityWithComplexSpawn#writeSpawnData",
+     "neoforge|net.neoforged.neoforge.entity.IEntityWithComplexSpawn#readSpawnData",
+     "neoforge|net.neoforged.neoforge.network.payload.AdvancedAddEntityPayload",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#onLeftClickBlock",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#onClientMineHold",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#onRightClickBlock",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#onItemRightClick",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#onInteractEntity",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#onEmptyClick",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#onEmptyLeftClick",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#fireBlockBreak",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#handleBlockDrops",
+     "neoforge|net.neoforged.neoforge.common.CommonHooks#onPlaceItemIntoWorld",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onItemUseStart",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onItemUseTick",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onUseItemStop",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#onItemUseFinish",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseClickedPre",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseClickedPost",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseReleasedPre",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseReleasedPost",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseDragPre",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseDragPost",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseScrollPre",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseScrollPost",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenKeyPressedPre",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenKeyPressedPost",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenKeyReleasedPre",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenKeyReleasedPost",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenCharTypedPre",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenCharTypedPost",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenPreeditPre",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenPreeditPost",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onMouseButtonPre",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onMouseButtonPost",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onMouseScroll",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onKeyInput",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#onCustomizeBossEventProgress",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#firePlayerLogin",
+     "neoforge|net.neoforged.neoforge.client.ClientHooks#firePlayerLogout",
+     "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext",
+     "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext#isActive",
+     "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext#conflicts",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#UNIVERSAL",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#GUI",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#IN_GAME",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#CONTROL",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#matches",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#isActive",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#getCombinedName",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#codes",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#CONTROL_OR_COMMAND",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#SHIFT",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#ALT",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#NONE",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#MODIFIER_VALUES",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#getActiveModifiers",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#getKeyModifier",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#isKeyCodeModifier",
+     "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#valueFromString",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterMenuScreensEvent",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterMenuScreensEvent#register",
+     "neoforge|net.neoforged.neoforge.common.extensions.IMenuTypeExtension",
+     "neoforge|net.neoforged.neoforge.common.extensions.IMenuTypeExtension#create",
+     "neoforge|net.neoforged.neoforge.network.IContainerFactory",
+     "neoforge|net.neoforged.neoforge.network.IContainerFactory#create",
+     "neoforge|net.neoforged.neoforge.common.extensions.IPlayerExtension",
+     "neoforge|net.neoforged.neoforge.common.extensions.IPlayerExtension#openMenu",
+     "neoforge|net.neoforged.neoforge.client.gui.GuiLayer",
+     "neoforge|net.neoforged.neoforge.client.gui.GuiLayer#render",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CAMERA_OVERLAYS",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CROSSHAIR",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#AFTER_CAMERA_DECORATIONS",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#HOTBAR",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#PLAYER_HEALTH",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#ARMOR_LEVEL",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#FOOD_LEVEL",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#VEHICLE_HEALTH",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#AIR_LEVEL",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CONTEXTUAL_INFO_BAR_BACKGROUND",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EXPERIENCE_LEVEL",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CONTEXTUAL_INFO_BAR",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SELECTED_ITEM_NAME",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SPECTATOR_TOOLTIP",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EFFECTS",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#BOSS_OVERLAY",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SLEEP_OVERLAY",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#DEMO_OVERLAY",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SCOREBOARD_SIDEBAR",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#OVERLAY_MESSAGE",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TITLE",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CHAT",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TAB_LIST",
+     "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SUBTITLE_OVERLAY",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelowAll",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelow",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAbove",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAboveAll",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#replaceLayer",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#wrapLayer",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getGuiGraphics",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getPartialTick",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getName",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getLayer",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent$Post",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiEvent",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiEvent#getGuiGraphics",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiEvent#getPartialTick",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiEvent$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.RenderGuiEvent$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent#getScreen",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init#getListenersList",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init#addListener",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init#removeListener",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getGuiGraphics",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseX",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseY",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getPartialTick",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Background",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Foreground",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#getAvailableSpace",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#isCompact",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#getHorizontalOffset",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#setHorizontalOffset",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#addHorizontalOffset",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#setCompact",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput#getMouseX",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput#getMouseY",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed#getMouseButtonEvent",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed#getButton",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed#isDoubleClick",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#wasClickHandled",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#setResult",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#getResult",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#getClickResult",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post$Result",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased#getMouseButtonEvent",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased#getButton",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#wasReleaseHandled",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#setResult",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#getResult",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#getReleaseResult",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post$Result",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getMouseButtonEvent",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getMouseButton",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getDragX",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getDragY",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled#getScrollDeltaX",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled#getScrollDeltaY",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getKeyEvent",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getKey",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getKeycode",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getModifiers",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped#getCharacterEvent",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped#getCodePoint",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Preedit",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Preedit$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Preedit$Post",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Opening",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Opening#getCurrentScreen",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Opening#getNewScreen",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Opening#setNewScreen",
+     "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Closing",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getMouseButtonInfo",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getButton",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getAction",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getModifiers",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton$Pre",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton$Post",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getScrollDeltaX",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getScrollDeltaY",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getAccumulatedScrollX",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getAccumulatedScrollY",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isLeftDown",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isRightDown",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isMiddleDown",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getMouseX",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getMouseY",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key#getKeyEvent",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key#getKey",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key#getKeycode",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key#getAction",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key#getModifiers",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#setSwingHand",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#shouldSwingHand",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#getHand",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isAttack",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isUseItem",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isPickBlock",
+     "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#getKeyMapping",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getMultiPlayerGameMode",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getPlayer",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getConnection",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingIn",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingOut",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getOldPlayer",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getNewPlayer",
+     "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getPlayer",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getWindow",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getGuiGraphics",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getPartialTick",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getBossEvent",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getX",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getY",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getIncrement",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#setIncrement",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#getPosX",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#setPosX",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#getPosY",
+     "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#setPosY",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getDispatcher",
+     "neoforge|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getBuildContext",
+     "neoforge|net.neoforged.neoforge.client.event.AddClientReloadListenersEvent",
+     "neoforge|net.neoforged.neoforge.client.gui.widget.ExtendedButton",
+     "neoforge|net.neoforged.neoforge.client.gui.widget.ExtendedButton#extractContents",
+     "fml|net.neoforged.fml.ModContainer#getModInfo",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getDisplayName",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getDescription",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getNamespace",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$HarvestCheck#canHarvest",
+     "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$HarvestCheck#setCanHarvest",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -2571,7 +3352,203 @@
      "minecraft|net.minecraft.world.level.Level",
      "minecraft|net.minecraft.world.entity.Entity",
      "minecraft|net.minecraft.world.item.ItemStack#typeHolder",
-     "minecraft|net.minecraft.world.item.ItemStack#getComponentsPatch"
+     "minecraft|net.minecraft.world.item.ItemStack#getComponentsPatch",
+     "minecraft|net.minecraft.server.level.ServerLevel#tickNonPassenger",
+     "minecraft|net.minecraft.client.multiplayer.ClientLevel#tickNonPassenger",
+     "minecraft|net.minecraft.world.entity.Entity#commonTick",
+     "minecraft|net.minecraft.world.entity.Entity#tick",
+     "minecraft|net.minecraft.world.entity.Entity#rideTick",
+     "minecraft|net.minecraft.world.entity.player.Player#tick",
+     "minecraft|net.minecraft.world.level.block.entity.BlockEntity#loadStatic",
+     "minecraft|net.minecraft.world.level.block.entity.BlockEntity#loadWithComponents",
+     "minecraft|net.minecraft.world.level.block.entity.BlockEntity#saveWithFullMetadata",
+     "minecraft|net.minecraft.world.level.block.entity.BlockEntity#problemPath",
+     "minecraft|net.minecraft.world.level.storage.TagValueInput#create",
+     "minecraft|net.minecraft.resources.ResourceKey#identifier",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#initializer",
+     "minecraft|net.minecraft.nbt.CompoundTag#CODEC",
+     "minecraft|net.minecraft.resources.Identifier#fromNamespaceAndPath",
+     "minecraft|net.minecraft.world.entity.LivingEntity#dropAllDeathLoot",
+     "minecraft|net.minecraft.world.entity.LivingEntity#lastHurtByPlayerMemoryTime",
+     "minecraft|net.minecraft.world.entity.LivingEntity#drop",
+     "minecraft|net.minecraft.world.entity.Entity#spawnAtLocation",
+     "minecraft|net.minecraft.world.entity.EntityEquipment#dropAll",
+     "minecraft|net.minecraft.world.entity.player.Inventory#dropAll",
+     "minecraft|net.minecraft.world.entity.player.Inventory#player",
+     "minecraft|net.minecraft.world.level.LevelWriter#addFreshEntity",
+     "minecraft|net.minecraft.server.level.ServerLevel#addFreshEntity",
+     "minecraft|net.minecraft.world.entity.SpawnPlacements#checkSpawnRules",
+     "minecraft|net.minecraft.world.entity.EntityType#isAllowedInPeaceful",
+     "minecraft|net.minecraft.world.level.NaturalSpawner#isValidPositionForMob",
+     "minecraft|net.minecraft.world.level.NaturalSpawner#spawnMobsForChunkGeneration",
+     "minecraft|net.minecraft.util.SpawnUtil#trySpawnMob",
+     "minecraft|net.minecraft.world.entity.Mob#checkSpawnRules",
+     "minecraft|net.minecraft.world.entity.Mob#checkSpawnObstruction",
+     "minecraft|net.minecraft.world.entity.Mob#finalizeSpawn",
+     "minecraft|net.minecraft.world.entity.EntitySpawnReason",
+     "minecraft|net.minecraft.world.level.gamerules.GameRules#MOB_GRIEFING",
+     "minecraft|net.minecraft.world.level.gamerules.GameRules#get",
+     "minecraft|net.minecraft.client.multiplayer.ClientLevel#addEntity",
+     "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#getLightEmission",
+     "minecraft|net.minecraft.world.entity.boss.wither.WitherBoss#canDestroy",
+     "minecraft|net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull",
+     "minecraft|net.minecraft.tags.BlockTags#DRAGON_IMMUNE",
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#EQUIPMENT_CHANGE",
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#ENTITY_UNLOAD",
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents#ENTITY_UNLOAD",
+     "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STARTED",
+     "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents#TAGS_LOADED",
+     "fabric-api|net.fabricmc.fabric.api.entity.FakePlayer",
+     "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#canSend",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getObjectShare",
+     "fabric-loader|net.fabricmc.loader.api.ObjectShare#get",
+     "fabric-loader|net.fabricmc.loader.api.ObjectShare#putIfAbsent",
+     "minecraft|net.minecraft.server.level.ServerPlayerGameMode#handleBlockBreakAction",
+     "minecraft|net.minecraft.server.level.ServerPlayerGameMode#useItem",
+     "minecraft|net.minecraft.server.level.ServerPlayerGameMode#useItemOn",
+     "minecraft|net.minecraft.server.level.ServerPlayerGameMode#destroyBlock",
+     "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#attack",
+     "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#useItemOn",
+     "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#spawnAfterBreak",
+     "minecraft|net.minecraft.world.item.ItemStack#canDestroyBlock",
+     "minecraft|net.minecraft.world.item.ItemStack#useOn",
+     "minecraft|net.minecraft.world.item.ItemStack#use",
+     "minecraft|net.minecraft.world.item.ItemStack#getUseDuration",
+     "minecraft|net.minecraft.world.item.ItemStack#onUseTick",
+     "minecraft|net.minecraft.world.item.ItemStack#finishUsingItem",
+     "minecraft|net.minecraft.world.item.ItemStack#releaseUsing",
+     "minecraft|net.minecraft.world.item.ItemStack#applyComponents",
+     "minecraft|net.minecraft.world.item.Item#useOn",
+     "minecraft|net.minecraft.world.item.ItemCooldowns#isOnCooldown",
+     "minecraft|net.minecraft.world.entity.player.Player#interactOn",
+     "minecraft|net.minecraft.world.entity.player.Player#resetAttackStrengthTicker",
+     "minecraft|net.minecraft.world.entity.player.Player#isSecondaryUseActive",
+     "minecraft|net.minecraft.world.entity.Entity#registryAccess",
+     "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#performUseItemOn",
+     "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#useItem",
+     "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#startDestroyBlock",
+     "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#continueDestroyBlock",
+     "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#destroyBlock",
+     "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#startPrediction",
+     "minecraft|net.minecraft.client.tutorial.Tutorial#onDestroyBlock",
+     "minecraft|net.minecraft.client.Minecraft#startAttack",
+     "minecraft|net.minecraft.client.Minecraft#startUseItem",
+     "minecraft|net.minecraft.client.Minecraft#isLocalServer",
+     "minecraft|net.minecraft.world.entity.LivingEntity#startUsingItem",
+     "minecraft|net.minecraft.world.entity.LivingEntity#updateUsingItem",
+     "minecraft|net.minecraft.world.entity.LivingEntity#completeUsingItem",
+     "minecraft|net.minecraft.world.entity.LivingEntity#releaseUsingItem",
+     "minecraft|net.minecraft.world.entity.LivingEntity#getUseItemRemainingTicks",
+     "minecraft|net.minecraft.world.entity.LivingEntity#useItemRemaining",
+     "minecraft|net.minecraft.world.level.block.Block#dropResources",
+     "minecraft|net.minecraft.world.level.block.Block#popResource",
+     "minecraft|net.minecraft.world.level.Level#setBlock",
+     "minecraft|net.minecraft.world.entity.monster.Enderman$EndermanLeaveBlockGoal#canPlaceBlock",
+     "minecraft|net.minecraft.server.ReloadableServerResources#listeners",
+     "minecraft|net.minecraft.server.level.ServerEntity#sendPairingData",
+     "minecraft|net.minecraft.world.entity.ExperienceOrb#award",
+     "minecraft|net.minecraft.world.entity.player.Inventory#createInventoryUpdatePacket",
+     "minecraft|net.minecraft.world.entity.player.Inventory#getSelectedSlot",
+     "minecraft|net.minecraft.util.TriState",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#addFirst",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#addLast",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#attachElementBefore",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#attachElementAfter",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#replaceElement",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement#extractRenderState",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MISC_OVERLAYS",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#CROSSHAIR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SPECTATOR_MENU",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HOTBAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HEALTH_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#ARMOR_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#FOOD_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MOUNT_HEALTH",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#AIR_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#INFO_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#EXPERIENCE_LEVEL",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HELD_ITEM_TOOLTIP",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SPECTATOR_TOOLTIP",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MOB_EFFECTS",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#BOSS_BAR",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SLEEP",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#DEMO_TIMER",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SCOREBOARD",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#OVERLAY_MESSAGE",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#TITLE_AND_SUBTITLE",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#CHAT",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#PLAYER_LIST",
+     "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SUBTITLES",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#AFTER_INIT",
+     "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#remove",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#JOIN",
+     "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#DISCONNECT",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback#EVENT",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#literal",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#argument",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#sendFeedback",
+     "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getPlayer",
+     "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#get",
+     "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#registerReloadListener",
+     "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#addListenerOrdering",
+     "fabric-api|net.fabricmc.fabric.api.menu.v1.ExtendedMenuType#<init>",
+     "fabric-api|net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider#getScreenOpeningData",
+     "minecraft|net.minecraft.client.gui.screens.MenuScreens#register",
+     "minecraft|net.minecraft.client.gui.screens.Screen#init",
+     "minecraft|net.minecraft.client.gui.screens.Screen#rebuildWidgets",
+     "minecraft|net.minecraft.client.gui.screens.Screen#setInitialFocus",
+     "minecraft|net.minecraft.client.gui.screens.Screen#removeWidget",
+     "minecraft|net.minecraft.client.gui.screens.Screen#children",
+     "minecraft|net.minecraft.client.gui.screens.Screen#renderables",
+     "minecraft|net.minecraft.client.gui.screens.Screen#narratables",
+     "minecraft|net.minecraft.client.gui.screens.Screen#extractRenderStateWithTooltipAndSubtitles",
+     "minecraft|net.minecraft.client.gui.screens.Screen#extractBackground",
+     "minecraft|net.minecraft.client.gui.screens.Screen#keyPressed",
+     "minecraft|net.minecraft.client.gui.components.events.GuiEventListener#preeditUpdated",
+     "minecraft|net.minecraft.client.gui.GuiGraphicsExtractor#extractDeferredElements",
+     "minecraft|net.minecraft.client.gui.GuiGraphicsExtractor#text",
+     "minecraft|net.minecraft.client.gui.GuiGraphicsExtractor#textRendererForWidget",
+     "minecraft|net.minecraft.client.KeyboardHandler#keyPress",
+     "minecraft|net.minecraft.client.KeyboardHandler#charTyped",
+     "minecraft|net.minecraft.client.KeyboardHandler#submitPreeditEvent",
+     "minecraft|net.minecraft.client.MouseHandler#onButton",
+     "minecraft|net.minecraft.client.MouseHandler#onScroll",
+     "minecraft|net.minecraft.client.MouseHandler#handleAccumulatedMovement",
+     "minecraft|net.minecraft.client.MouseHandler#xpos",
+     "minecraft|net.minecraft.client.MouseHandler#isLeftPressed",
+     "minecraft|net.minecraft.client.ScrollWheelHandler#onMouseScroll",
+     "minecraft|net.minecraft.client.gui.Gui#setScreen",
+     "minecraft|net.minecraft.client.gui.components.BossHealthOverlay#extractRenderState",
+     "minecraft|net.minecraft.client.gui.components.BossHealthOverlay#extractBar",
+     "minecraft|net.minecraft.client.KeyMapping#<init>",
+     "minecraft|net.minecraft.client.KeyMapping#isDown",
+     "minecraft|net.minecraft.client.KeyMapping#consumeClick",
+     "minecraft|net.minecraft.client.Minecraft#hasShiftDown",
+     "minecraft|net.minecraft.client.Minecraft#hasControlDown",
+     "minecraft|net.minecraft.client.Minecraft#hasAltDown",
+     "minecraft|net.minecraft.client.Minecraft#getDeltaTracker",
+     "minecraft|com.mojang.blaze3d.platform.InputConstants#getKey",
+     "minecraft|com.mojang.blaze3d.platform.Window#handle",
+     "minecraft|net.minecraft.util.Util#getPlatform",
+     "minecraft|net.minecraft.client.gui.components.Button#<init>",
+     "minecraft|net.minecraft.client.gui.components.AbstractButton#extractDefaultSprite",
+     "minecraft|net.minecraft.client.gui.components.AbstractButton#extractDefaultLabel",
+     "minecraft|net.minecraft.commands.CommandSourceStack#<init>",
+     "minecraft|net.minecraft.world.entity.player.Player#permissions",
+     "minecraft|net.minecraft.network.RegistryFriendlyByteBuf#<init>",
+     "minecraft|net.minecraft.network.codec.StreamCodec#of",
+     "minecraft|net.minecraft.server.level.ServerPlayer#openMenu",
+     "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#keyReleased",
+     "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#charTyped",
+     "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseClicked",
+     "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseReleased",
+     "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseDragged",
+     "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseScrolled",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getName",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getDescription",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getModContainer",
+     "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#getCloneItemStack",
+     "minecraft|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops"
     ]
    },
    "test": {
@@ -2654,7 +3631,324 @@
        "neoforge-21.1|net.neoforged.neoforge.attachment.AttachmentType$Builder#serialize",
        "neoforge-21.1|net.neoforged.neoforge.attachment.AttachmentType$Builder#sync",
        "neoforge-21.1|net.neoforged.neoforge.attachment.IAttachmentHolder#getData",
-       "neoforge-21.1|net.neoforged.neoforge.registries.NeoForgeRegistries$Keys#ATTACHMENT_TYPES"
+       "neoforge-21.1|net.neoforged.neoforge.registries.NeoForgeRegistries$Keys#ATTACHMENT_TYPES",
+       "neoforge-21.1|net.neoforged.neoforge.event.tick.EntityTickEvent$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.event.tick.EntityTickEvent$Post",
+       "neoforge-21.1|net.neoforged.neoforge.event.tick.PlayerTickEvent$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.event.tick.PlayerTickEvent$Post",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#fireEntityTickPre",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#fireEntityTickPost",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#firePlayerTickPre",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#firePlayerTickPost",
+       "neoforge-21.1|net.neoforged.neoforge.common.util.BlockSnapshot#create",
+       "neoforge-21.1|net.neoforged.neoforge.common.util.BlockSnapshot#restoreBlockEntity",
+       "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$BreakEvent#getPlayer",
+       "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$EntityPlaceEvent#getPlacedAgainst",
+       "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$FarmlandTrampleEvent#getFallDistance",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#getDrops",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$SpawnPlacementCheck#getSpawnType",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$PositionCheck#getSpawnType",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent#getSpawnType",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.EntityMobGriefingEvent#canGrief",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent#getState",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingConversionEvent$Pre#setConversionTimer",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.EntityJoinLevelEvent#loadedFromDisk",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onBlockPlace",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onMultiBlockPlace",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onEntityDestroyBlock",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#canEntityGrief",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#checkSpawnPlacements",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#checkSpawnPosition",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#finalizeMobSpawn",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#canLivingConvert",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onLivingConvert",
+       "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#onLivingDrops",
+       "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#canEntityDestroy",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IEntityExtension#getPersistentData",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getLightEmission",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension#canEntityDestroy",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot",
+       "neoforge-21.1|net.neoforged.neoforge.common.ModConfigSpec#getSpec",
+       "neoforge-21.1|net.neoforged.neoforge.common.ModConfigSpec#getValues",
+       "neoforge-21.1|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#test",
+       "fml-21.1|net.neoforged.fml.config.ModConfig#getLoadedConfig",
+       "fml-21.1|net.neoforged.fml.config.ModConfig#getFullPath",
+       "fml-21.1|net.neoforged.fml.config.IConfigSpec$ILoadedConfig#config",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getSide",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#setUseBlock",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$EntityInteract#getTarget",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$EntityInteractSpecific#getLocalPos",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$EntityInteractSpecific#getTarget",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$LeftClickBlock$Action#convert",
+       "neoforge-21.1|net.neoforged.neoforge.common.util.TriState#isTrue",
+       "neoforge-21.1|net.neoforged.neoforge.common.util.TriState#isDefault",
+       "neoforge-21.1|net.neoforged.neoforge.common.util.TriState#isFalse",
+       "neoforge-21.1|net.neoforged.neoforge.event.level.BlockDropsEvent#setDroppedExperience",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent#getTo",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Finish#setResultStack",
+       "neoforge-21.1|net.neoforged.neoforge.event.server.ServerAboutToStartEvent",
+       "neoforge-21.1|net.neoforged.neoforge.event.TagsUpdatedEvent#getRegistryAccess",
+       "neoforge-21.1|net.neoforged.neoforge.event.TagsUpdatedEvent#getUpdateCause",
+       "neoforge-21.1|net.neoforged.neoforge.event.TagsUpdatedEvent#shouldUpdateStaticData",
+       "neoforge-21.1|net.neoforged.neoforge.event.TagsUpdatedEvent$UpdateCause",
+       "neoforge-21.1|net.neoforged.neoforge.event.AddReloadListenerEvent#addListener",
+       "neoforge-21.1|net.neoforged.neoforge.event.AddReloadListenerEvent#getListeners",
+       "neoforge-21.1|net.neoforged.neoforge.event.AddReloadListenerEvent#getServerResources",
+       "neoforge-21.1|net.neoforged.neoforge.event.AddReloadListenerEvent#getRegistryAccess",
+       "neoforge-21.1|net.neoforged.neoforge.registries.RegisterEvent#register",
+       "neoforge-21.1|net.neoforged.neoforge.registries.RegisterEvent$RegisterHelper#register",
+       "neoforge-21.1|net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent#getLevel",
+       "neoforge-21.1|net.neoforged.neoforge.common.util.FakePlayerFactory#get",
+       "neoforge-21.1|net.neoforged.neoforge.common.UsernameCache#getLastKnownUsername",
+       "neoforge-21.1|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#enumCodec",
+       "neoforge-21.1|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#registryKey",
+       "neoforge-21.1|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#composite",
+       "neoforge-21.1|net.neoforged.neoforge.entity.IEntityWithComplexSpawn#writeSpawnData",
+       "neoforge-21.1|net.neoforged.neoforge.entity.IEntityWithComplexSpawn#readSpawnData",
+       "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#onInteractEntity",
+       "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#onInteractEntityAt",
+       "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#fireBlockBreak",
+       "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#handleBlockDrops",
+       "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#onPlaceItemIntoWorld",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onItemUseStart",
+       "fml-21.1|net.neoforged.fml.InterModComms#sendTo",
+       "fml-21.1|net.neoforged.fml.InterModComms#getMessages",
+       "fml-21.1|net.neoforged.fml.event.lifecycle.ModLifecycleEvent#getIMCStream",
+       "fml-21.1|net.neoforged.fml.event.lifecycle.InterModProcessEvent",
+       "fml-21.1|net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent",
+       "fml-21.1|net.neoforged.fml.LogicalSide#isClient",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseClickedPre",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseClickedPost",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseReleasedPre",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseReleasedPost",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseScrollPre",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseScrollPost",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenKeyPressedPre",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenKeyPressedPost",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenKeyReleasedPre",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenKeyReleasedPost",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onMouseButtonPre",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onMouseButtonPost",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onMouseScroll",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onKeyInput",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onCustomizeBossEventProgress",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#firePlayerLogin",
+       "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#firePlayerLogout",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.IKeyConflictContext",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.IKeyConflictContext#isActive",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.IKeyConflictContext#conflicts",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyConflictContext",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyConflictContext#UNIVERSAL",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyConflictContext#GUI",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyConflictContext#IN_GAME",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#CONTROL",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#matches",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#isActive",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getCombinedName",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#codes",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#SHIFT",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#ALT",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#NONE",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#MODIFIER_VALUES",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getActiveModifiers",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getKeyModifier",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#isKeyCodeModifier",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#valueFromString",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterMenuScreensEvent",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterMenuScreensEvent#register",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IMenuTypeExtension",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IMenuTypeExtension#create",
+       "neoforge-21.1|net.neoforged.neoforge.network.IContainerFactory",
+       "neoforge-21.1|net.neoforged.neoforge.network.IContainerFactory#create",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IPlayerExtension",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IPlayerExtension#openMenu",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CAMERA_OVERLAYS",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CROSSHAIR",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#HOTBAR",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#JUMP_METER",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EXPERIENCE_BAR",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#PLAYER_HEALTH",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#ARMOR_LEVEL",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#FOOD_LEVEL",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#VEHICLE_HEALTH",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#AIR_LEVEL",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SELECTED_ITEM_NAME",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SPECTATOR_TOOLTIP",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EXPERIENCE_LEVEL",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EFFECTS",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#BOSS_OVERLAY",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SLEEP_OVERLAY",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#DEMO_OVERLAY",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#DEBUG_OVERLAY",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SCOREBOARD_SIDEBAR",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#OVERLAY_MESSAGE",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TITLE",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CHAT",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TAB_LIST",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SUBTITLE_OVERLAY",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SAVING_INDICATOR",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelowAll",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelow",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAbove",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAboveAll",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#replaceLayer",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#wrapLayer",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getGuiGraphics",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getPartialTick",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getName",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getLayer",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiEvent",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiEvent#getGuiGraphics",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiEvent#getPartialTick",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiEvent$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiEvent$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent#getScreen",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init#getListenersList",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init#addListener",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init#removeListener",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render#getGuiGraphics",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseX",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseY",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render#getPartialTick",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$BackgroundRendered",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$BackgroundRendered#getGuiGraphics",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#getAvailableSpace",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#isCompact",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#getHorizontalOffset",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#setHorizontalOffset",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#addHorizontalOffset",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#setCompact",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput#getMouseX",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput#getMouseY",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed#getButton",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#wasClickHandled",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#setResult",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#getResult",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#getClickResult",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post$Result",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased#getButton",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#wasReleaseHandled",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#setResult",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#getResult",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#getReleaseResult",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post$Result",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getMouseButton",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getDragX",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getDragY",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled#getScrollDeltaX",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled#getScrollDeltaY",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getKeyCode",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getScanCode",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getModifiers",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped#getCodePoint",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped#getModifiers",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Opening",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Opening#getCurrentScreen",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Opening#getNewScreen",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Opening#setNewScreen",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Closing",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getButton",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getAction",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getModifiers",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton$Post",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getScrollDeltaX",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getScrollDeltaY",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isLeftDown",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isRightDown",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isMiddleDown",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getMouseX",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getMouseY",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$Key",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$Key#getKey",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$Key#getScanCode",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$Key#getAction",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$Key#getModifiers",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#setSwingHand",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#shouldSwingHand",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#getHand",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isAttack",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isUseItem",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isPickBlock",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#getKeyMapping",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getMultiPlayerGameMode",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getPlayer",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getConnection",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingIn",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingOut",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getOldPlayer",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getNewPlayer",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getPlayer",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getWindow",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getGuiGraphics",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getPartialTick",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getBossEvent",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getX",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getY",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getIncrement",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#setIncrement",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$DebugText",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$DebugText#getLeft",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$DebugText#getRight",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#getPosX",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#setPosX",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#getPosY",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#setPosY",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getDispatcher",
+       "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getBuildContext",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.widget.ExtendedButton",
+       "neoforge-21.1|net.neoforged.neoforge.client.gui.widget.ExtendedButton#renderWidget",
+       "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getActiveModifier",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck",
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission"
       ],
       "fabric": [
        "fabric-api-1.21.1|net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#MODIFY_ENTRIES_ALL",
@@ -2700,7 +3994,117 @@
        "fabric-api-1.21.1|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#create",
        "fabric-api-1.21.1|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#syncWith",
        "fabric-api-1.21.1|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate",
-       "fabric-api-1.21.1|net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder#createSimple"
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder#createSimple",
+       "minecraft-1.21.1|net.minecraft.server.level.ServerLevel#tickNonPassenger",
+       "minecraft-1.21.1|net.minecraft.client.multiplayer.ClientLevel#tickNonPassenger",
+       "minecraft-1.21.1|net.minecraft.world.entity.Entity#tick",
+       "minecraft-1.21.1|net.minecraft.world.entity.Entity#rideTick",
+       "minecraft-1.21.1|net.minecraft.world.entity.player.Player#tick",
+       "minecraft-1.21.1|net.minecraft.world.level.block.entity.BlockEntity#loadWithComponents",
+       "minecraft-1.21.1|net.minecraft.world.level.block.entity.BlockEntity#saveWithFullMetadata",
+       "minecraft-1.21.1|net.minecraft.world.entity.LivingEntity#dropAllDeathLoot",
+       "minecraft-1.21.1|net.minecraft.world.entity.LivingEntity#lastHurtByPlayerTime",
+       "minecraft-1.21.1|net.minecraft.world.entity.Entity#spawnAtLocation",
+       "minecraft-1.21.1|net.minecraft.server.level.ServerPlayer#drop",
+       "minecraft-1.21.1|net.minecraft.world.level.LevelWriter#addFreshEntity",
+       "minecraft-1.21.1|net.minecraft.world.entity.SpawnPlacements#checkSpawnRules",
+       "minecraft-1.21.1|net.minecraft.world.level.NaturalSpawner#isValidPositionForMob",
+       "minecraft-1.21.1|net.minecraft.world.level.NaturalSpawner#spawnMobsForChunkGeneration",
+       "minecraft-1.21.1|net.minecraft.util.SpawnUtil#trySpawnMob",
+       "minecraft-1.21.1|net.minecraft.world.entity.Mob#checkSpawnRules",
+       "minecraft-1.21.1|net.minecraft.world.entity.Mob#checkSpawnObstruction",
+       "minecraft-1.21.1|net.minecraft.world.entity.Mob#finalizeSpawn",
+       "minecraft-1.21.1|net.minecraft.world.entity.MobSpawnType",
+       "minecraft-1.21.1|net.minecraft.world.level.GameRules#RULE_MOBGRIEFING",
+       "minecraft-1.21.1|net.minecraft.world.level.GameRules#getBoolean",
+       "minecraft-1.21.1|net.minecraft.world.level.entity.PersistentEntitySectionManager#addEntity",
+       "minecraft-1.21.1|net.minecraft.client.multiplayer.ClientLevel#addEntity",
+       "minecraft-1.21.1|net.minecraft.world.entity.projectile.WitherSkull",
+       "minecraft-1.21.1|net.minecraft.world.entity.boss.wither.WitherBoss#canDestroy",
+       "minecraft-1.21.1|net.minecraft.world.level.storage.DimensionDataStorage#readTagFromDisk",
+       "minecraft-1.21.1|net.minecraft.util.datafix.DataFixTypes#update",
+       "minecraft-1.21.1|net.minecraft.world.item.Equipable#getEquipmentSlot",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#EQUIPMENT_CHANGE",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#ENTITY_UNLOAD",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents#ENTITY_UNLOAD",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STARTED",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents#TAGS_LOADED",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.entity.FakePlayer",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#canSend",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#registerGlobalReceiver",
+       "minecraft-1.21.1|net.minecraft.server.level.ServerPlayerGameMode#handleBlockBreakAction",
+       "minecraft-1.21.1|net.minecraft.server.level.ServerPlayerGameMode#useItemOn",
+       "minecraft-1.21.1|net.minecraft.server.level.ServerPlayerGameMode#destroyBlock",
+       "minecraft-1.21.1|net.minecraft.world.item.Item#canAttackBlock",
+       "minecraft-1.21.1|net.minecraft.world.ItemInteractionResult#SKIP_DEFAULT_BLOCK_INTERACTION",
+       "minecraft-1.21.1|net.minecraft.world.InteractionResultHolder",
+       "minecraft-1.21.1|net.minecraft.world.item.ItemCooldowns#isOnCooldown",
+       "minecraft-1.21.1|net.minecraft.world.entity.player.Player#interactOn",
+       "minecraft-1.21.1|net.minecraft.world.entity.Entity#interactAt",
+       "minecraft-1.21.1|net.minecraft.client.multiplayer.MultiPlayerGameMode#interactAt",
+       "minecraft-1.21.1|net.minecraft.client.multiplayer.MultiPlayerGameMode#performUseItemOn",
+       "minecraft-1.21.1|net.minecraft.client.multiplayer.MultiPlayerGameMode#startPrediction",
+       "minecraft-1.21.1|net.minecraft.client.Minecraft#startUseItem",
+       "minecraft-1.21.1|net.minecraft.world.entity.LivingEntity#updateUsingItem",
+       "minecraft-1.21.1|net.minecraft.world.level.block.Block#dropResources",
+       "minecraft-1.21.1|net.minecraft.world.level.block.Block#popResource",
+       "minecraft-1.21.1|net.minecraft.world.level.Level#setBlock",
+       "minecraft-1.21.1|net.minecraft.world.entity.monster.EnderMan$EndermanLeaveBlockGoal#canPlaceBlock",
+       "minecraft-1.21.1|net.minecraft.server.ReloadableServerResources#listeners",
+       "minecraft-1.21.1|net.minecraft.server.level.ServerEntity#sendPairingData",
+       "minecraft-1.21.1|net.minecraft.server.network.ServerGamePacketListenerImpl#handleInteract",
+       "minecraft-1.21.1|net.minecraft.core.LayeredRegistryAccess#compositeAccess",
+       "minecraft-1.21.1|net.minecraft.network.FriendlyByteBuf#readResourceLocation",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback#EVENT",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#AFTER_INIT",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#remove",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents#allowKeyPress",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents#afterKeyPress",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents#allowKeyRelease",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents#afterKeyRelease",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#allowMouseClick",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#afterMouseClick",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#allowMouseRelease",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#afterMouseRelease",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#allowMouseScroll",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#afterMouseScroll",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#JOIN",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#DISCONNECT",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback#EVENT",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.command.v2.ClientCommandManager#literal",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.command.v2.ClientCommandManager#argument",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#sendFeedback",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.resource.ResourceManagerHelper#get",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.resource.ResourceManagerHelper#registerReloadListener",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener#getFabricId",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener#getFabricDependencies",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType#<init>",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory#getScreenOpeningData",
+       "minecraft-1.21.1|net.minecraft.client.gui.screens.MenuScreens#register",
+       "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#init",
+       "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#rebuildWidgets",
+       "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#setInitialFocus",
+       "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#removeWidget",
+       "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#renderWithTooltip",
+       "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#renderBackground",
+       "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#hasShiftDown",
+       "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#hasControlDown",
+       "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#hasAltDown",
+       "minecraft-1.21.1|net.minecraft.client.KeyboardHandler#keyPress",
+       "minecraft-1.21.1|net.minecraft.client.MouseHandler#onPress",
+       "minecraft-1.21.1|net.minecraft.client.MouseHandler#onScroll",
+       "minecraft-1.21.1|net.minecraft.client.Minecraft#setScreen",
+       "minecraft-1.21.1|net.minecraft.client.Minecraft#getTimer",
+       "minecraft-1.21.1|net.minecraft.client.gui.components.BossHealthOverlay#render",
+       "minecraft-1.21.1|net.minecraft.client.gui.components.BossHealthOverlay#drawBar",
+       "minecraft-1.21.1|net.minecraft.client.gui.GuiGraphics#drawString",
+       "minecraft-1.21.1|net.minecraft.client.gui.LayeredDraw$Layer#render",
+       "minecraft-1.21.1|net.minecraft.client.KeyMapping#<init>",
+       "minecraft-1.21.1|net.minecraft.client.gui.components.Button#<init>",
+       "minecraft-1.21.1|net.minecraft.client.gui.components.AbstractButton#renderWidget",
+       "minecraft-1.21.1|net.minecraft.commands.CommandSourceStack#<init>",
+       "minecraft-1.21.1|net.minecraft.server.packs.resources.PreparableReloadListener#reload",
+       "minecraft-1.21.1|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops"
       ]
      },
      "below": "1.21.2",
@@ -2715,7 +4119,249 @@
       "mixin/EntityCapabilitiesMixin.java",
       "mixin/ItemStackCapabilitiesMixin.java"
      ],
-     "mixins": []
+     "mixins": [
+      {
+       "mixin": "EntityTickMixin",
+       "client": false,
+       "for": [
+        "EntityTickEvent"
+       ]
+      },
+      {
+       "mixin": "EntityRideTickMixin",
+       "client": false,
+       "for": [
+        "EntityTickEvent"
+       ]
+      },
+      {
+       "mixin": "ClientEntityTickMixin",
+       "client": true,
+       "for": [
+        "EntityTickEvent"
+       ]
+      },
+      {
+       "mixin": "PlayerTickMixin",
+       "client": false,
+       "for": [
+        "PlayerTickEvent"
+       ]
+      },
+      {
+       "mixin": "LivingDropsMixin",
+       "client": false,
+       "for": [
+        "LivingDropsEvent"
+       ]
+      },
+      {
+       "mixin": "EntityDropsMixin",
+       "client": false,
+       "for": [
+        "LivingDropsEvent"
+       ]
+      },
+      {
+       "mixin": "InventoryDropsMixin",
+       "client": false,
+       "for": [
+        "LivingDropsEvent"
+       ]
+      },
+      {
+       "mixin": "SpawnPlacementsMixin",
+       "client": false,
+       "for": [
+        "MobSpawnEvent"
+       ]
+      },
+      {
+       "mixin": "MobSpawnPositionMixin",
+       "client": false,
+       "for": [
+        "MobSpawnEvent"
+       ]
+      },
+      {
+       "mixin": "SpawnUtilPositionMixin",
+       "client": false,
+       "for": [
+        "MobSpawnEvent"
+       ]
+      },
+      {
+       "mixin": "EntityJoinLevelMixin",
+       "client": false,
+       "for": [
+        "EntityJoinLevelEvent"
+       ]
+      },
+      {
+       "mixin": "ClientEntityJoinMixin",
+       "client": true,
+       "for": [
+        "EntityJoinLevelEvent"
+       ]
+      },
+      {
+       "mixin": "SavedDataFixMixin",
+       "client": false,
+       "for": [
+        "Bridge"
+       ]
+      },
+      {
+       "mixin": "PlayerInteractMixin",
+       "client": false,
+       "for": [
+        "PlayerInteractEvent"
+       ]
+      },
+      {
+       "mixin": "EntityInteractMixin",
+       "client": false,
+       "for": [
+        "PlayerInteractEvent"
+       ]
+      },
+      {
+       "mixin": "ClientPlayerInteractMixin",
+       "client": true,
+       "for": [
+        "PlayerInteractEvent"
+       ]
+      },
+      {
+       "mixin": "EmptyClickMixin",
+       "client": true,
+       "for": [
+        "PlayerInteractEvent"
+       ]
+      },
+      {
+       "mixin": "BlockBreakMixin",
+       "client": false,
+       "for": [
+        "BlockEvent",
+        "BreakBlockEvent"
+       ]
+      },
+      {
+       "mixin": "PlaceBlockMixin",
+       "client": false,
+       "for": [
+        "BlockEvent"
+       ]
+      },
+      {
+       "mixin": "BlockSnapshotMixin",
+       "client": false,
+       "for": [
+        "BlockEvent"
+       ]
+      },
+      {
+       "mixin": "EndermanPlaceMixin",
+       "client": false,
+       "for": [
+        "BlockEvent"
+       ]
+      },
+      {
+       "mixin": "BlockDropsMixin",
+       "client": false,
+       "for": [
+        "BlockDropsEvent"
+       ]
+      },
+      {
+       "mixin": "LivingEntityUseItemMixin",
+       "client": false,
+       "for": [
+        "LivingEntityUseItemEvent"
+       ]
+      },
+      {
+       "mixin": "ReloadListenersMixin",
+       "client": false,
+       "for": [
+        "AddServerReloadListenersEvent",
+        "AddReloadListenerEvent",
+        "TagsUpdatedEvent"
+       ]
+      },
+      {
+       "mixin": "ComplexSpawnMixin",
+       "client": false,
+       "for": [
+        "IEntityWithComplexSpawn"
+       ]
+      },
+      {
+       "mixin": "EntityInteractSpecificMixin",
+       "client": false,
+       "for": [
+        "PlayerInteractEvent"
+       ]
+      },
+      {
+       "mixin": "ScreenEventMixin",
+       "client": true,
+       "for": [
+        "ScreenEvent"
+       ]
+      },
+      {
+       "mixin": "ScreenKeyboardMixin",
+       "client": true,
+       "for": [
+        "ScreenEvent"
+       ]
+      },
+      {
+       "mixin": "ScreenMouseMixin",
+       "client": true,
+       "for": [
+        "ScreenEvent"
+       ]
+      },
+      {
+       "mixin": "ScreenOpeningMixin",
+       "client": true,
+       "for": [
+        "ScreenEvent"
+       ]
+      },
+      {
+       "mixin": "ScreenOpeningLegacyMixin",
+       "client": true,
+       "for": [
+        "ScreenEvent"
+       ]
+      },
+      {
+       "mixin": "InputKeyMixin",
+       "client": true,
+       "for": [
+        "InputEvent"
+       ]
+      },
+      {
+       "mixin": "InputMouseMixin",
+       "client": true,
+       "for": [
+        "InputEvent"
+       ]
+      },
+      {
+       "mixin": "BossEventProgressMixin",
+       "client": true,
+       "for": [
+        "CustomizeGuiOverlayEvent"
+       ]
+      }
+     ]
     }
    ],
    "tests": [
@@ -2771,6 +4417,181 @@
      "name": "Slots",
      "from": "package demo;\n\nimport net.minecraft.world.item.ItemStack;\nimport net.neoforged.neoforge.items.IItemHandler;\nimport net.neoforged.neoforge.items.ItemHandlerHelper;\nimport net.neoforged.neoforge.items.ItemStackHandler;\n\npublic final class Slots {\n\tpublic static final ItemStackHandler ITEMS = new ItemStackHandler(9);\n\n\tpublic static ItemStack give(IItemHandler target, ItemStack stack) {\n\t\treturn ItemHandlerHelper.insertItemStacked(target, stack, false);\n\t}\n}\n",
      "to": "package demo;\n\nimport net.minecraft.world.item.ItemStack;\nimport demo.loaderbridge.items.IItemHandler;\nimport demo.loaderbridge.items.ItemHandlerHelper;\nimport demo.loaderbridge.items.ItemStackHandler;\n\npublic final class Slots {\n\tpublic static final ItemStackHandler ITEMS = new ItemStackHandler(9);\n\n\tpublic static ItemStack give(IItemHandler target, ItemStack stack) {\n\t\treturn ItemHandlerHelper.insertItemStacked(target, stack, false);\n\t}\n}\n"
+    },
+    {
+     "name": "TickListener",
+     "from": "package demo;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.tick.EntityTickEvent;\nimport net.neoforged.neoforge.event.tick.PlayerTickEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class TickListener {\n\t@SubscribeEvent\n\tpublic static void onEntityTick(EntityTickEvent.Pre event) {\n\t\tif (event.getEntity().isOnFire()) event.setCanceled(true);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onPlayerTick(PlayerTickEvent.Post event) {\n\t\tevent.getEntity().getPersistentData().putInt(\"ticks\", event.getEntity().getPersistentData().getIntOr(\"ticks\", 0) + 1);\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.IEntityExtension;\nimport demo.loaderbridge.EntityTickEvent;\nimport demo.loaderbridge.PlayerTickEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class TickListener {\n\t@SubscribeEvent\n\tpublic static void onEntityTick(EntityTickEvent.Pre event) {\n\t\tif (event.getEntity().isOnFire()) event.setCanceled(true);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onPlayerTick(PlayerTickEvent.Post event) {\n\t\tIEntityExtension.getPersistentData(event.getEntity()).putInt(\"ticks\", IEntityExtension.getPersistentData(event.getEntity()).getIntOr(\"ticks\", 0) + 1);\n\t}\n}\n",
+     "mixins": [
+      "EntityTickMixin",
+      "EntityRideTickMixin",
+      "ClientEntityTickMixin",
+      "PlayerTickMixin"
+     ],
+     "minecraft": "26.3"
+    },
+    {
+     "name": "DropsListener",
+     "from": "package demo;\n\nimport net.minecraft.world.entity.item.ItemEntity;\nimport net.minecraft.world.item.ItemStack;\nimport net.minecraft.world.item.Items;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.entity.living.LivingDropsEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class DropsListener {\n\t@SubscribeEvent\n\tpublic static void onDrops(LivingDropsEvent event) {\n\t\tif (!event.isRecentlyHit()) {\n\t\t\tevent.setCanceled(true);\n\t\t\treturn;\n\t\t}\n\t\tvar entity = event.getEntity();\n\t\tevent.getDrops().add(new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), new ItemStack(Items.BONE)));\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.world.entity.item.ItemEntity;\nimport net.minecraft.world.item.ItemStack;\nimport net.minecraft.world.item.Items;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.LivingDropsEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class DropsListener {\n\t@SubscribeEvent\n\tpublic static void onDrops(LivingDropsEvent event) {\n\t\tif (!event.isRecentlyHit()) {\n\t\t\tevent.setCanceled(true);\n\t\t\treturn;\n\t\t}\n\t\tvar entity = event.getEntity();\n\t\tevent.getDrops().add(new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), new ItemStack(Items.BONE)));\n\t}\n}\n",
+     "mixins": [
+      "LivingDropsMixin",
+      "EntityDropsMixin",
+      "InventoryDropsMixin",
+      "SavedDataFixMixin"
+     ],
+     "minecraft": "1.21.1"
+    },
+    {
+     "name": "SpawnHooks",
+     "from": "package demo;\n\nimport net.minecraft.world.DifficultyInstance;\nimport net.minecraft.world.entity.Mob;\nimport net.minecraft.world.entity.MobSpawnType;\nimport net.minecraft.world.entity.SpawnGroupData;\nimport net.minecraft.world.level.ServerLevelAccessor;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.common.NeoForge;\nimport net.neoforged.neoforge.event.EventHooks;\nimport net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;\nimport net.neoforged.neoforge.event.entity.living.MobSpawnEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class SpawnHooks {\n\t@SubscribeEvent\n\tpublic static void onJoin(EntityJoinLevelEvent event) {\n\t\tif (!event.loadedFromDisk() && event.getEntity() instanceof Mob mob) mob.setPersistenceRequired();\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onPosition(MobSpawnEvent.PositionCheck event) {\n\t\tif (event.getSpawnType() == MobSpawnType.NATURAL && event.getY() < 0) event.setResult(MobSpawnEvent.PositionCheck.Result.FAIL);\n\t}\n\n\tpublic static boolean allowed(Mob mob, ServerLevelAccessor level, MobSpawnType type) {\n\t\tMobSpawnEvent.PositionCheck event = new MobSpawnEvent.PositionCheck(mob, level, type, null);\n\t\tNeoForge.EVENT_BUS.post(event);\n\t\treturn event.getResult() != MobSpawnEvent.PositionCheck.Result.FAIL;\n\t}\n\n\tpublic static SpawnGroupData finish(Mob mob, ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType type, SpawnGroupData data) {\n\t\treturn EventHooks.finalizeMobSpawn(mob, level, difficulty, type, data);\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.world.DifficultyInstance;\nimport net.minecraft.world.entity.Mob;\nimport net.minecraft.world.entity.MobSpawnType;\nimport net.minecraft.world.entity.SpawnGroupData;\nimport net.minecraft.world.level.ServerLevelAccessor;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.NeoForge;\nimport demo.loaderbridge.EventHooks;\nimport demo.loaderbridge.EntityJoinLevelEvent;\nimport demo.loaderbridge.MobSpawnEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class SpawnHooks {\n\t@SubscribeEvent\n\tpublic static void onJoin(EntityJoinLevelEvent event) {\n\t\tif (!event.loadedFromDisk() && event.getEntity() instanceof Mob mob) mob.setPersistenceRequired();\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onPosition(MobSpawnEvent.PositionCheck event) {\n\t\tif (event.getSpawnType() == MobSpawnType.NATURAL && event.getY() < 0) event.setResult(MobSpawnEvent.PositionCheck.Result.FAIL);\n\t}\n\n\tpublic static boolean allowed(Mob mob, ServerLevelAccessor level, MobSpawnType type) {\n\t\tMobSpawnEvent.PositionCheck event = new MobSpawnEvent.PositionCheck(mob, level, type, null);\n\t\tNeoForge.EVENT_BUS.post(event);\n\t\treturn event.getResult() != MobSpawnEvent.PositionCheck.Result.FAIL;\n\t}\n\n\tpublic static SpawnGroupData finish(Mob mob, ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType type, SpawnGroupData data) {\n\t\treturn EventHooks.finalizeMobSpawn(mob, level, difficulty, type, data);\n\t}\n}\n",
+     "mixins": [
+      "SpawnPlacementsMixin",
+      "MobSpawnPositionMixin",
+      "SpawnUtilPositionMixin",
+      "EntityJoinLevelMixin",
+      "ClientEntityJoinMixin"
+     ],
+     "minecraft": "1.21.1"
+    },
+    {
+     "name": "GriefHooks",
+     "from": "package demo;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.core.Direction;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.entity.EquipmentSlot;\nimport net.minecraft.world.entity.monster.zombie.Zombie;\nimport net.minecraft.world.item.ItemStack;\nimport net.minecraft.world.level.block.state.BlockState;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.common.CommonHooks;\nimport net.neoforged.neoforge.common.util.BlockSnapshot;\nimport net.neoforged.neoforge.event.EventHooks;\nimport net.neoforged.neoforge.event.entity.EntityMobGriefingEvent;\nimport net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class GriefHooks {\n\t@SubscribeEvent\n\tpublic static void onGrief(EntityMobGriefingEvent event) {\n\t\tif (event.getEntity() instanceof Zombie) event.setCanGrief(true);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onDestroy(LivingDestroyBlockEvent event) {\n\t\tif (event.getState().getLightEmission(event.getEntity().level(), event.getPos()) > 0) event.setCanceled(true);\n\t}\n\n\tpublic static boolean canBreak(ServerLevel level, BlockPos pos, Zombie zombie, boolean rules) {\n\t\tif (rules) return CommonHooks.canEntityDestroy(level, pos, zombie);\n\t\tBlockState state = level.getBlockState(pos);\n\t\treturn state.canEntityDestroy(level, pos, zombie) && EventHooks.onEntityDestroyBlock(zombie, pos, state);\n\t}\n\n\tpublic static boolean canPlace(ServerLevel level, BlockPos pos, Zombie zombie, Direction face) {\n\t\treturn EventHooks.canEntityGrief(level, zombie) && !EventHooks.onBlockPlace(zombie, BlockSnapshot.create(level.dimension(), level, pos), face);\n\t}\n\n\tpublic static EquipmentSlot slot(ItemStack stack) {\n\t\tEquipmentSlot slot = stack.getEquipmentSlot();\n\t\treturn slot != null ? slot : EquipmentSlot.MAINHAND;\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.core.Direction;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.entity.EquipmentSlot;\nimport net.minecraft.world.entity.monster.zombie.Zombie;\nimport net.minecraft.world.item.ItemStack;\nimport net.minecraft.world.level.block.state.BlockState;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.CommonHooks;\nimport demo.loaderbridge.IBlockStateExtension;\nimport demo.loaderbridge.IItemStackExtension;\nimport demo.loaderbridge.BlockSnapshot;\nimport demo.loaderbridge.EventHooks;\nimport demo.loaderbridge.EntityMobGriefingEvent;\nimport demo.loaderbridge.LivingDestroyBlockEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class GriefHooks {\n\t@SubscribeEvent\n\tpublic static void onGrief(EntityMobGriefingEvent event) {\n\t\tif (event.getEntity() instanceof Zombie) event.setCanGrief(true);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onDestroy(LivingDestroyBlockEvent event) {\n\t\tif (IBlockStateExtension.getLightEmission(event.getState(), event.getEntity().level(), event.getPos()) > 0) event.setCanceled(true);\n\t}\n\n\tpublic static boolean canBreak(ServerLevel level, BlockPos pos, Zombie zombie, boolean rules) {\n\t\tif (rules) return CommonHooks.canEntityDestroy(level, pos, zombie);\n\t\tBlockState state = level.getBlockState(pos);\n\t\treturn IBlockStateExtension.canEntityDestroy(state, level, pos, zombie) && EventHooks.onEntityDestroyBlock(zombie, pos, state);\n\t}\n\n\tpublic static boolean canPlace(ServerLevel level, BlockPos pos, Zombie zombie, Direction face) {\n\t\treturn EventHooks.canEntityGrief(level, zombie) && !EventHooks.onBlockPlace(zombie, BlockSnapshot.create(level.dimension(), level, pos), face);\n\t}\n\n\tpublic static EquipmentSlot slot(ItemStack stack) {\n\t\tEquipmentSlot slot = IItemStackExtension.getEquipmentSlot(stack);\n\t\treturn slot != null ? slot : EquipmentSlot.MAINHAND;\n\t}\n}\n",
+     "mixins": [],
+     "minecraft": "26.3"
+    },
+    {
+     "name": "Interactions",
+     "from": "package demo;\n\nimport net.minecraft.util.TriState;\nimport net.minecraft.world.InteractionResult;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.LogicalSide;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Interactions {\n\t@SubscribeEvent\n\tpublic static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {\n\t\tif (event.getSide() == LogicalSide.SERVER && event.getEntity().isShiftKeyDown()) {\n\t\t\tevent.setUseBlock(TriState.FALSE);\n\t\t}\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {\n\t\tif (event.getItemStack().isEmpty()) {\n\t\t\tevent.setCancellationResult(InteractionResult.FAIL);\n\t\t\tevent.setCanceled(true);\n\t\t}\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {\n\t\tif (event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.START) {\n\t\t\tevent.setUseItem(TriState.FALSE);\n\t\t}\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {\n\t\tevent.getTarget().setGlowingTag(true);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onEmpty(PlayerInteractEvent.RightClickEmpty event) {\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.util.TriState;\nimport net.minecraft.world.InteractionResult;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.LogicalSide;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.PlayerInteractEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Interactions {\n\t@SubscribeEvent\n\tpublic static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {\n\t\tif (event.getSide() == LogicalSide.SERVER && event.getEntity().isShiftKeyDown()) {\n\t\t\tevent.setUseBlock(TriState.FALSE);\n\t\t}\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {\n\t\tif (event.getItemStack().isEmpty()) {\n\t\t\tevent.setCancellationResult(InteractionResult.FAIL);\n\t\t\tevent.setCanceled(true);\n\t\t}\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {\n\t\tif (event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.START) {\n\t\t\tevent.setUseItem(TriState.FALSE);\n\t\t}\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {\n\t\tevent.getTarget().setGlowingTag(true);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onEmpty(PlayerInteractEvent.RightClickEmpty event) {\n\t}\n}\n",
+     "mixins": [
+      "PlayerInteractMixin",
+      "EntityInteractMixin",
+      "ClientPlayerInteractMixin",
+      "EmptyClickMixin"
+     ]
+    },
+    {
+     "name": "Interactions21",
+     "from": "package demo;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.common.util.TriState;\nimport net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Interactions21 {\n\t@SubscribeEvent\n\tpublic static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {\n\t\tevent.setUseItem(TriState.TRUE);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onInteractAt(PlayerInteractEvent.EntityInteractSpecific event) {\n\t\tif (event.getLocalPos().y > 1.0) {\n\t\t\tevent.setCanceled(true);\n\t\t}\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.TriState;\nimport demo.loaderbridge.PlayerInteractEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Interactions21 {\n\t@SubscribeEvent\n\tpublic static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {\n\t\tevent.setUseItem(TriState.TRUE);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onInteractAt(PlayerInteractEvent.EntityInteractSpecific event) {\n\t\tif (event.getLocalPos().y > 1.0) {\n\t\t\tevent.setCanceled(true);\n\t\t}\n\t}\n}\n",
+     "mixins": [
+      "PlayerInteractMixin",
+      "EntityInteractMixin",
+      "ClientPlayerInteractMixin"
+     ],
+     "minecraft": "1.21.1"
+    },
+    {
+     "name": "Breaking",
+     "from": "package demo;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.level.block.BreakBlockEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Breaking {\n\t@SubscribeEvent\n\tpublic static void onBreak(BreakBlockEvent event) {\n\t\tif (event.getPlayer().isCreative()) {\n\t\t\tevent.setNotifyClient(true);\n\t\t\tevent.setCanceled(true);\n\t\t}\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.BreakBlockEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Breaking {\n\t@SubscribeEvent\n\tpublic static void onBreak(BreakBlockEvent event) {\n\t\tif (event.getPlayer().isCreative()) {\n\t\t\tevent.setNotifyClient(true);\n\t\t\tevent.setCanceled(true);\n\t\t}\n\t}\n}\n",
+     "mixins": [
+      "BlockBreakMixin"
+     ]
+    },
+    {
+     "name": "Breaking21",
+     "from": "package demo;\n\nimport net.minecraft.world.level.block.Blocks;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.level.BlockEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Breaking21 {\n\t@SubscribeEvent\n\tpublic static void onBreak(BlockEvent.BreakEvent event) {\n\t\tif (event.getState().is(Blocks.BEDROCK)) {\n\t\t\tevent.setCanceled(true);\n\t\t}\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onPlace(BlockEvent.EntityPlaceEvent event) {\n\t\tif (event.getPlacedAgainst().is(Blocks.OBSIDIAN)) {\n\t\t\tevent.setCanceled(true);\n\t\t}\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.world.level.block.Blocks;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.BlockEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Breaking21 {\n\t@SubscribeEvent\n\tpublic static void onBreak(BlockEvent.BreakEvent event) {\n\t\tif (event.getState().is(Blocks.BEDROCK)) {\n\t\t\tevent.setCanceled(true);\n\t\t}\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onPlace(BlockEvent.EntityPlaceEvent event) {\n\t\tif (event.getPlacedAgainst().is(Blocks.OBSIDIAN)) {\n\t\t\tevent.setCanceled(true);\n\t\t}\n\t}\n}\n",
+     "mixins": [
+      "BlockBreakMixin",
+      "PlaceBlockMixin",
+      "BlockSnapshotMixin",
+      "EndermanPlaceMixin"
+     ],
+     "minecraft": "1.21.1"
+    },
+    {
+     "name": "Drops",
+     "from": "package demo;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;\nimport net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;\nimport net.neoforged.neoforge.event.level.BlockDropsEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Drops {\n\t@SubscribeEvent\n\tpublic static void onDrops(BlockDropsEvent event) {\n\t\tevent.getDrops().clear();\n\t\tevent.setDroppedExperience(5);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onEquip(LivingEquipmentChangeEvent event) {\n\t\tif (event.getTo().isEmpty()) {\n\t\t\tevent.getEntity().setGlowingTag(false);\n\t\t}\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onUseStart(LivingEntityUseItemEvent.Start event) {\n\t\tevent.setDuration(event.getDuration() / 2);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onUseFinish(LivingEntityUseItemEvent.Finish event) {\n\t\tevent.setResultStack(event.getItem().copy());\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.LivingEntityUseItemEvent;\nimport demo.loaderbridge.LivingEquipmentChangeEvent;\nimport demo.loaderbridge.BlockDropsEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Drops {\n\t@SubscribeEvent\n\tpublic static void onDrops(BlockDropsEvent event) {\n\t\tevent.getDrops().clear();\n\t\tevent.setDroppedExperience(5);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onEquip(LivingEquipmentChangeEvent event) {\n\t\tif (event.getTo().isEmpty()) {\n\t\t\tevent.getEntity().setGlowingTag(false);\n\t\t}\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onUseStart(LivingEntityUseItemEvent.Start event) {\n\t\tevent.setDuration(event.getDuration() / 2);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onUseFinish(LivingEntityUseItemEvent.Finish event) {\n\t\tevent.setResultStack(event.getItem().copy());\n\t}\n}\n",
+     "mixins": [
+      "BlockDropsMixin",
+      "LivingEntityUseItemMixin"
+     ]
+    },
+    {
+     "name": "ServerData",
+     "from": "package demo;\n\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.server.packs.resources.ResourceManagerReloadListener;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.AddServerReloadListenersEvent;\nimport net.neoforged.neoforge.event.TagsUpdatedEvent;\nimport net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;\nimport net.neoforged.neoforge.event.server.ServerAboutToStartEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class ServerData {\n\t@SubscribeEvent\n\tpublic static void onReload(AddServerReloadListenersEvent event) {\n\t\tevent.addListener(Identifier.fromNamespaceAndPath(\"demo\", \"data\"), (ResourceManagerReloadListener) manager -> {\n\t\t});\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onTags(TagsUpdatedEvent.ClientPacketReceived event) {\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onLeave(EntityLeaveLevelEvent event) {\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onAboutToStart(ServerAboutToStartEvent event) {\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.server.packs.resources.ResourceManagerReloadListener;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.AddServerReloadListenersEvent;\nimport demo.loaderbridge.TagsUpdatedEvent;\nimport demo.loaderbridge.EntityLeaveLevelEvent;\nimport demo.loaderbridge.ServerAboutToStartEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class ServerData {\n\t@SubscribeEvent\n\tpublic static void onReload(AddServerReloadListenersEvent event) {\n\t\tevent.addListener(Identifier.fromNamespaceAndPath(\"demo\", \"data\"), (ResourceManagerReloadListener) manager -> {\n\t\t});\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onTags(TagsUpdatedEvent.ClientPacketReceived event) {\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onLeave(EntityLeaveLevelEvent event) {\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onAboutToStart(ServerAboutToStartEvent event) {\n\t}\n}\n",
+     "mixins": [
+      "ReloadListenersMixin"
+     ]
+    },
+    {
+     "name": "ServerData21",
+     "from": "package demo;\n\nimport net.minecraft.server.packs.resources.ResourceManagerReloadListener;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.AddReloadListenerEvent;\nimport net.neoforged.neoforge.event.TagsUpdatedEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class ServerData21 {\n\t@SubscribeEvent\n\tpublic static void onReload(AddReloadListenerEvent event) {\n\t\tevent.addListener((ResourceManagerReloadListener) manager -> {\n\t\t});\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onTags(TagsUpdatedEvent event) {\n\t\tif (event.getUpdateCause() == TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD) {\n\t\t}\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.server.packs.resources.ResourceManagerReloadListener;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.AddReloadListenerEvent;\nimport demo.loaderbridge.TagsUpdatedEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class ServerData21 {\n\t@SubscribeEvent\n\tpublic static void onReload(AddReloadListenerEvent event) {\n\t\tevent.addListener((ResourceManagerReloadListener) manager -> {\n\t\t});\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onTags(TagsUpdatedEvent event) {\n\t\tif (event.getUpdateCause() == TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD) {\n\t\t}\n\t}\n}\n",
+     "mixins": [
+      "ReloadListenersMixin"
+     ],
+     "minecraft": "1.21.1"
+    },
+    {
+     "name": "Lifecycle",
+     "from": "package demo;\n\nimport net.minecraft.core.registries.Registries;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.world.item.Item;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.InterModComms;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;\nimport net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;\nimport net.neoforged.fml.event.lifecycle.InterModProcessEvent;\nimport net.neoforged.neoforge.registries.RegisterEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Lifecycle {\n\t@SubscribeEvent\n\tpublic static void onRegister(RegisterEvent event) {\n\t\tevent.register(Registries.ITEM, helper -> helper.register(Identifier.fromNamespaceAndPath(\"demo\", \"thing\"), new Item(new Item.Properties())));\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onEnqueue(InterModEnqueueEvent event) {\n\t\tInterModComms.sendTo(\"demo\", \"hello\", () -> \"world\");\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onProcess(InterModProcessEvent event) {\n\t\tevent.getIMCStream().forEach(message -> message.messageSupplier().get());\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onLoaded(FMLLoadCompleteEvent event) {\n\t\tevent.enqueueWork(() -> {\n\t\t});\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.core.registries.Registries;\nimport net.minecraft.resources.Identifier;\nimport net.minecraft.world.item.Item;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.InterModComms;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.FMLLoadCompleteEvent;\nimport demo.loaderbridge.InterModEnqueueEvent;\nimport demo.loaderbridge.InterModProcessEvent;\nimport demo.loaderbridge.RegisterEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Lifecycle {\n\t@SubscribeEvent\n\tpublic static void onRegister(RegisterEvent event) {\n\t\tevent.register(Registries.ITEM, helper -> helper.register(Identifier.fromNamespaceAndPath(\"demo\", \"thing\"), new Item(new Item.Properties())));\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onEnqueue(InterModEnqueueEvent event) {\n\t\tInterModComms.sendTo(\"demo\", \"hello\", () -> \"world\");\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onProcess(InterModProcessEvent event) {\n\t\tevent.getIMCStream().forEach(message -> message.messageSupplier().get());\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onLoaded(FMLLoadCompleteEvent event) {\n\t\tevent.enqueueWork(() -> {\n\t\t});\n\t}\n}\n",
+     "mixins": []
+    },
+    {
+     "name": "Helpers",
+     "from": "package demo;\n\nimport java.util.UUID;\nimport net.minecraft.network.FriendlyByteBuf;\nimport net.minecraft.network.RegistryFriendlyByteBuf;\nimport net.minecraft.network.codec.StreamCodec;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.storage.ValueInput;\nimport net.minecraft.world.level.storage.ValueOutput;\nimport net.neoforged.neoforge.common.UsernameCache;\nimport net.neoforged.neoforge.common.util.FakePlayer;\nimport net.neoforged.neoforge.common.util.FakePlayerFactory;\nimport net.neoforged.neoforge.common.util.ValueIOSerializable;\nimport net.neoforged.neoforge.entity.IEntityWithComplexSpawn;\nimport net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs;\n\npublic class Helpers implements IEntityWithComplexSpawn, ValueIOSerializable {\n\tpublic enum Mode {\n\t\tON,\n\t\tOFF\n\t}\n\n\tpublic static final StreamCodec<FriendlyByteBuf, Mode> MODE = NeoForgeStreamCodecs.enumCodec(Mode.class);\n\tprivate int value;\n\n\tpublic static String owner(UUID id) {\n\t\treturn UsernameCache.getLastKnownUsername(id);\n\t}\n\n\tpublic static FakePlayer machine(ServerLevel level) {\n\t\treturn FakePlayerFactory.getMinecraft(level);\n\t}\n\n\t@Override\n\tpublic void writeSpawnData(RegistryFriendlyByteBuf buffer) {\n\t\tbuffer.writeVarInt(value);\n\t}\n\n\t@Override\n\tpublic void readSpawnData(RegistryFriendlyByteBuf buffer) {\n\t\tvalue = buffer.readVarInt();\n\t}\n\n\t@Override\n\tpublic void serialize(ValueOutput output) {\n\t\toutput.putInt(\"value\", value);\n\t}\n\n\t@Override\n\tpublic void deserialize(ValueInput input) {\n\t\tvalue = input.getIntOr(\"value\", 0);\n\t}\n}\n",
+     "to": "package demo;\n\nimport java.util.UUID;\nimport net.minecraft.network.FriendlyByteBuf;\nimport net.minecraft.network.RegistryFriendlyByteBuf;\nimport net.minecraft.network.codec.StreamCodec;\nimport net.minecraft.server.level.ServerLevel;\nimport net.minecraft.world.level.storage.ValueInput;\nimport net.minecraft.world.level.storage.ValueOutput;\nimport demo.loaderbridge.UsernameCache;\nimport demo.loaderbridge.FakePlayer;\nimport demo.loaderbridge.FakePlayerFactory;\nimport demo.loaderbridge.common.util.ValueIOSerializable;\nimport demo.loaderbridge.IEntityWithComplexSpawn;\nimport demo.loaderbridge.NeoForgeStreamCodecs;\n\npublic class Helpers implements IEntityWithComplexSpawn, ValueIOSerializable {\n\tpublic enum Mode {\n\t\tON,\n\t\tOFF\n\t}\n\n\tpublic static final StreamCodec<FriendlyByteBuf, Mode> MODE = NeoForgeStreamCodecs.enumCodec(Mode.class);\n\tprivate int value;\n\n\tpublic static String owner(UUID id) {\n\t\treturn UsernameCache.getLastKnownUsername(id);\n\t}\n\n\tpublic static FakePlayer machine(ServerLevel level) {\n\t\treturn FakePlayerFactory.getMinecraft(level);\n\t}\n\n\t@Override\n\tpublic void writeSpawnData(RegistryFriendlyByteBuf buffer) {\n\t\tbuffer.writeVarInt(value);\n\t}\n\n\t@Override\n\tpublic void readSpawnData(RegistryFriendlyByteBuf buffer) {\n\t\tvalue = buffer.readVarInt();\n\t}\n\n\t@Override\n\tpublic void serialize(ValueOutput output) {\n\t\toutput.putInt(\"value\", value);\n\t}\n\n\t@Override\n\tpublic void deserialize(ValueInput input) {\n\t\tvalue = input.getIntOr(\"value\", 0);\n\t}\n}\n",
+     "mixins": [
+      "ComplexSpawnMixin"
+     ]
+    },
+    {
+     "name": "ScreenListener",
+     "from": "package demo;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.client.event.ScreenEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class ScreenListener {\n\t@SubscribeEvent\n\tpublic static void onOpen(ScreenEvent.Opening event) {\n\t\tif (event.getCurrentScreen() != null) event.setCanceled(true);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onRender(ScreenEvent.Render.Post event) {\n\t\tevent.getGuiGraphics().nextStratum();\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.ScreenEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class ScreenListener {\n\t@SubscribeEvent\n\tpublic static void onOpen(ScreenEvent.Opening event) {\n\t\tif (event.getCurrentScreen() != null) event.setCanceled(true);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onRender(ScreenEvent.Render.Post event) {\n\t\tevent.getGuiGraphics().nextStratum();\n\t}\n}\n",
+     "mixins": [
+      "ScreenEventMixin",
+      "ScreenKeyboardMixin",
+      "ScreenMouseMixin",
+      "ScreenOpeningMixin",
+      "ScreenOpeningLegacyMixin"
+     ]
+    },
+    {
+     "name": "KeyBindings",
+     "from": "package demo;\n\nimport com.mojang.blaze3d.platform.InputConstants;\nimport net.minecraft.client.KeyMapping;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.client.event.InputEvent;\nimport net.neoforged.neoforge.client.settings.KeyConflictContext;\nimport net.neoforged.neoforge.client.settings.KeyModifier;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class KeyBindings {\n\tpublic static final KeyMapping TOGGLE = new KeyMapping(\"key.demo.toggle\", KeyConflictContext.IN_GAME, InputConstants.UNKNOWN, KeyMapping.Category.MISC);\n\tpublic static final KeyMapping DETAILS = new KeyMapping(\"key.demo.details\", KeyConflictContext.IN_GAME, KeyModifier.SHIFT, InputConstants.UNKNOWN, KeyMapping.Category.MISC);\n\n\t@SubscribeEvent\n\tpublic static void onKey(InputEvent.Key event) {\n\t\tif (TOGGLE.consumeClick() && event.getAction() == 1) DETAILS.setDown(false);\n\t}\n}\n",
+     "to": "package demo;\n\nimport com.mojang.blaze3d.platform.InputConstants;\nimport net.minecraft.client.KeyMapping;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.InputEvent;\nimport demo.loaderbridge.KeyConflictContext;\nimport demo.loaderbridge.KeyModifier;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class KeyBindings {\n\tpublic static final KeyMapping TOGGLE = KeyConflictContext.IN_GAME.keyMapping(\"key.demo.toggle\", InputConstants.UNKNOWN, KeyMapping.Category.MISC);\n\tpublic static final KeyMapping DETAILS = KeyConflictContext.IN_GAME.keyMapping(\"key.demo.details\", KeyModifier.SHIFT, InputConstants.UNKNOWN, KeyMapping.Category.MISC);\n\n\t@SubscribeEvent\n\tpublic static void onKey(InputEvent.Key event) {\n\t\tif (TOGGLE.consumeClick() && event.getAction() == 1) DETAILS.setDown(false);\n\t}\n}\n",
+     "mixins": [
+      "InputKeyMixin",
+      "InputMouseMixin"
+     ]
+    },
+    {
+     "name": "Hud",
+     "from": "package demo;\n\nimport net.minecraft.resources.Identifier;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;\nimport net.neoforged.neoforge.client.event.RenderGuiEvent;\nimport net.neoforged.neoforge.client.event.RenderGuiLayerEvent;\nimport net.neoforged.neoforge.client.gui.VanillaGuiLayers;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Hud {\n\t@SubscribeEvent\n\tpublic static void onLayers(RegisterGuiLayersEvent event) {\n\t\tevent.registerAbove(VanillaGuiLayers.TITLE, Identifier.fromNamespaceAndPath(\"demo\", \"probe\"), (graphics, deltaTracker) -> {});\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onLayer(RenderGuiLayerEvent.Pre event) {\n\t\tif (event.getName().equals(VanillaGuiLayers.CHAT)) event.setCanceled(true);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onHud(RenderGuiEvent.Post event) {\n\t\tevent.getPartialTick().getRealtimeDeltaTicks();\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.resources.Identifier;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.RegisterGuiLayersEvent;\nimport demo.loaderbridge.RenderGuiEvent;\nimport demo.loaderbridge.RenderGuiLayerEvent;\nimport demo.loaderbridge.VanillaGuiLayers;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Hud {\n\t@SubscribeEvent\n\tpublic static void onLayers(RegisterGuiLayersEvent event) {\n\t\tevent.registerAbove(VanillaGuiLayers.TITLE, Identifier.fromNamespaceAndPath(\"demo\", \"probe\"), (graphics, deltaTracker) -> {});\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onLayer(RenderGuiLayerEvent.Pre event) {\n\t\tif (event.getName().equals(VanillaGuiLayers.CHAT)) event.setCanceled(true);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onHud(RenderGuiEvent.Post event) {\n\t\tevent.getPartialTick().getRealtimeDeltaTicks();\n\t}\n}\n"
+    },
+    {
+     "name": "Menus",
+     "from": "package demo;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.world.MenuProvider;\nimport net.minecraft.world.entity.player.Player;\nimport net.minecraft.world.inventory.MenuType;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;\nimport net.neoforged.neoforge.common.extensions.IMenuTypeExtension;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Menus {\n\tpublic static final MenuType<DemoMenu> DEMO = IMenuTypeExtension.create((windowId, inventory, data) -> new DemoMenu(windowId, inventory, data.readBlockPos()));\n\n\tpublic static void open(Player player, MenuProvider provider, BlockPos pos) {\n\t\tplayer.openMenu(provider, pos);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onScreens(RegisterMenuScreensEvent event) {\n\t\tevent.register(DEMO, DemoScreen::new);\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.core.BlockPos;\nimport net.minecraft.world.MenuProvider;\nimport net.minecraft.world.entity.player.Player;\nimport net.minecraft.world.inventory.MenuType;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.RegisterMenuScreensEvent;\nimport demo.loaderbridge.IMenuTypeExtension;\nimport demo.loaderbridge.IPlayerExtension;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Menus {\n\tpublic static final MenuType<DemoMenu> DEMO = IMenuTypeExtension.create((windowId, inventory, data) -> new DemoMenu(windowId, inventory, data.readBlockPos()));\n\n\tpublic static void open(Player player, MenuProvider provider, BlockPos pos) {\n\t\tIPlayerExtension.openMenu(player, provider, pos);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onScreens(RegisterMenuScreensEvent event) {\n\t\tevent.register(DEMO, DemoScreen::new);\n\t}\n}\n"
+    },
+    {
+     "name": "ClientMisc",
+     "from": "package demo;\n\nimport net.minecraft.commands.Commands;\nimport net.minecraft.network.chat.Component;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;\nimport net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;\nimport net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;\nimport net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;\nimport net.neoforged.neoforge.client.gui.widget.ExtendedButton;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class ClientMisc {\n\t@SubscribeEvent\n\tpublic static void onJoin(ClientPlayerNetworkEvent.LoggingIn event) {\n\t\tevent.getPlayer().getName();\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onBossBar(CustomizeGuiOverlayEvent.BossEventProgress event) {\n\t\tevent.setIncrement(event.getIncrement() + 2);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onCommands(RegisterClientCommandsEvent event) {\n\t\tevent.getDispatcher().register(Commands.literal(\"demo\"));\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onReload(AddClientReloadListenersEvent event) {\n\t\tevent.getRegistry().size();\n\t}\n\n\tpublic static ExtendedButton button() {\n\t\treturn new ExtendedButton(0, 0, 20, 20, Component.literal(\"x\"), pressed -> {});\n\t}\n}\n",
+     "to": "package demo;\n\nimport net.minecraft.commands.Commands;\nimport net.minecraft.network.chat.Component;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.AddClientReloadListenersEvent;\nimport demo.loaderbridge.ClientPlayerNetworkEvent;\nimport demo.loaderbridge.CustomizeGuiOverlayEvent;\nimport demo.loaderbridge.RegisterClientCommandsEvent;\nimport demo.loaderbridge.ExtendedButton;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class ClientMisc {\n\t@SubscribeEvent\n\tpublic static void onJoin(ClientPlayerNetworkEvent.LoggingIn event) {\n\t\tevent.getPlayer().getName();\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onBossBar(CustomizeGuiOverlayEvent.BossEventProgress event) {\n\t\tevent.setIncrement(event.getIncrement() + 2);\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onCommands(RegisterClientCommandsEvent event) {\n\t\tevent.getDispatcher().register(Commands.literal(\"demo\"));\n\t}\n\n\t@SubscribeEvent\n\tpublic static void onReload(AddClientReloadListenersEvent event) {\n\t\tevent.getRegistry().size();\n\t}\n\n\tpublic static ExtendedButton button() {\n\t\treturn new ExtendedButton(0, 0, 20, 20, Component.literal(\"x\"), pressed -> {});\n\t}\n}\n",
+     "mixins": [
+      "BossEventProgressMixin"
+     ]
+    },
+    {
+     "name": "OldScreens",
+     "from": "package demo;\n\nimport com.mojang.blaze3d.platform.InputConstants;\nimport net.minecraft.client.KeyMapping;\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.client.event.ScreenEvent;\nimport net.neoforged.neoforge.client.settings.KeyConflictContext;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class OldScreens {\n\tpublic static final KeyMapping SEARCH = new KeyMapping(\"key.demo.search\", KeyConflictContext.GUI, InputConstants.Type.KEYSYM, 70, \"key.categories.misc\");\n\n\t@SubscribeEvent\n\tpublic static void onKey(ScreenEvent.KeyPressed.Pre event) {\n\t\tif (SEARCH.matches(event.getKeyCode(), event.getScanCode())) event.setCanceled(true);\n\t}\n}\n",
+     "to": "package demo;\n\nimport com.mojang.blaze3d.platform.InputConstants;\nimport net.minecraft.client.KeyMapping;\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.ScreenEvent;\nimport demo.loaderbridge.KeyConflictContext;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class OldScreens {\n\tpublic static final KeyMapping SEARCH = KeyConflictContext.GUI.keyMapping(\"key.demo.search\", InputConstants.Type.KEYSYM, 70, \"key.categories.misc\");\n\n\t@SubscribeEvent\n\tpublic static void onKey(ScreenEvent.KeyPressed.Pre event) {\n\t\tif (SEARCH.matches(event.getKeyCode(), event.getScanCode())) event.setCanceled(true);\n\t}\n}\n",
+     "mixins": [
+      "ScreenEventMixin",
+      "ScreenOpeningLegacyMixin"
+     ],
+     "minecraft": "1.21.1"
     }
    ],
    "mixins": [
@@ -2803,6 +4624,233 @@
      "injects": {
       "net/minecraft/world/item/ItemStack": "capabilities.ItemStackCapabilities"
      }
+    },
+    {
+     "mixin": "EntityTickMixin",
+     "client": false,
+     "for": [
+      "EntityTickEvent"
+     ]
+    },
+    {
+     "mixin": "EntityRideTickMixin",
+     "client": false,
+     "for": [
+      "EntityTickEvent"
+     ]
+    },
+    {
+     "mixin": "ClientEntityTickMixin",
+     "client": true,
+     "for": [
+      "EntityTickEvent"
+     ]
+    },
+    {
+     "mixin": "PlayerTickMixin",
+     "client": false,
+     "for": [
+      "PlayerTickEvent"
+     ]
+    },
+    {
+     "mixin": "LivingDropsMixin",
+     "client": false,
+     "for": [
+      "LivingDropsEvent"
+     ]
+    },
+    {
+     "mixin": "EntityDropsMixin",
+     "client": false,
+     "for": [
+      "LivingDropsEvent"
+     ]
+    },
+    {
+     "mixin": "EquipmentDropsMixin",
+     "client": false,
+     "for": [
+      "LivingDropsEvent"
+     ]
+    },
+    {
+     "mixin": "InventoryDropsMixin",
+     "client": false,
+     "for": [
+      "LivingDropsEvent"
+     ]
+    },
+    {
+     "mixin": "SpawnPlacementsMixin",
+     "client": false,
+     "for": [
+      "MobSpawnEvent"
+     ]
+    },
+    {
+     "mixin": "MobSpawnPositionMixin",
+     "client": false,
+     "for": [
+      "MobSpawnEvent"
+     ]
+    },
+    {
+     "mixin": "SpawnUtilPositionMixin",
+     "client": false,
+     "for": [
+      "MobSpawnEvent"
+     ]
+    },
+    {
+     "mixin": "ClientEntityJoinMixin",
+     "client": true,
+     "for": [
+      "EntityJoinLevelEvent"
+     ]
+    },
+    {
+     "mixin": "PlayerInteractMixin",
+     "client": false,
+     "for": [
+      "PlayerInteractEvent"
+     ]
+    },
+    {
+     "mixin": "EntityInteractMixin",
+     "client": false,
+     "for": [
+      "PlayerInteractEvent"
+     ]
+    },
+    {
+     "mixin": "ClientPlayerInteractMixin",
+     "client": true,
+     "for": [
+      "PlayerInteractEvent"
+     ]
+    },
+    {
+     "mixin": "EmptyClickMixin",
+     "client": true,
+     "for": [
+      "PlayerInteractEvent"
+     ]
+    },
+    {
+     "mixin": "BlockBreakMixin",
+     "client": false,
+     "for": [
+      "BlockEvent",
+      "BreakBlockEvent"
+     ]
+    },
+    {
+     "mixin": "PlaceBlockMixin",
+     "client": false,
+     "for": [
+      "BlockEvent"
+     ]
+    },
+    {
+     "mixin": "BlockSnapshotMixin",
+     "client": false,
+     "for": [
+      "BlockEvent"
+     ]
+    },
+    {
+     "mixin": "EndermanPlaceMixin",
+     "client": false,
+     "for": [
+      "BlockEvent"
+     ]
+    },
+    {
+     "mixin": "BlockDropsMixin",
+     "client": false,
+     "for": [
+      "BlockDropsEvent"
+     ]
+    },
+    {
+     "mixin": "LivingEntityUseItemMixin",
+     "client": false,
+     "for": [
+      "LivingEntityUseItemEvent"
+     ]
+    },
+    {
+     "mixin": "ReloadListenersMixin",
+     "client": false,
+     "for": [
+      "AddServerReloadListenersEvent",
+      "AddReloadListenerEvent",
+      "TagsUpdatedEvent"
+     ]
+    },
+    {
+     "mixin": "ComplexSpawnMixin",
+     "client": false,
+     "for": [
+      "IEntityWithComplexSpawn"
+     ]
+    },
+    {
+     "mixin": "ScreenEventMixin",
+     "client": true,
+     "for": [
+      "ScreenEvent"
+     ]
+    },
+    {
+     "mixin": "ScreenKeyboardMixin",
+     "client": true,
+     "for": [
+      "ScreenEvent"
+     ]
+    },
+    {
+     "mixin": "ScreenMouseMixin",
+     "client": true,
+     "for": [
+      "ScreenEvent"
+     ]
+    },
+    {
+     "mixin": "ScreenOpeningMixin",
+     "client": true,
+     "for": [
+      "ScreenEvent"
+     ]
+    },
+    {
+     "mixin": "ScreenOpeningLegacyMixin",
+     "client": true,
+     "for": [
+      "ScreenEvent"
+     ]
+    },
+    {
+     "mixin": "InputKeyMixin",
+     "client": true,
+     "for": [
+      "InputEvent"
+     ]
+    },
+    {
+     "mixin": "InputMouseMixin",
+     "client": true,
+     "for": [
+      "InputEvent"
+     ]
+    },
+    {
+     "mixin": "BossEventProgressMixin",
+     "client": true,
+     "for": [
+      "CustomizeGuiOverlayEvent"
+     ]
     }
    ]
   },

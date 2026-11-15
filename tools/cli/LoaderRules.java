@@ -227,7 +227,10 @@ final class LoaderRules {
         int first = 0;
         while (first < pieces.size() && pieces.get(first).startsWith("$")) first++;
         if (first == pieces.size()) return found;
-        String anchor = pieces.get(first);
+        // A pattern that opens with one hole and ".name" ($stack.getEquipmentSlot()) is a call on a receiver: it is found
+        // by the member's name, and the hole takes the expression before the dot.
+        boolean receiver = first == 1 && pieces.size() > 2 && pieces.get(1).equals(".") && ident(pieces.get(2).charAt(0));
+        String anchor = pieces.get(receiver ? 2 : first);
         int from = 0;
         while (true) {
             int at = s.indexOf(anchor, from);
@@ -240,7 +243,16 @@ final class LoaderRules {
                 (ident(s.charAt(at - 1)) || (first == 0 && s.charAt(at - 1) == '.'))
             ) continue;
             int start = at;
-            if (first > 0) {
+            if (receiver) {
+                int dot = at - 1;
+                while (dot >= 0 && Character.isWhitespace(s.charAt(dot))) dot--;
+                if (dot < 0 || s.charAt(dot) != '.' || !code[dot]) continue;
+                start = receiverStart(s, code, dot);
+                if (start < 0) continue;
+                // A class name before the dot (CommonHooks.canEntityDestroy(...)) is a static call, not a receiver.
+                String name = s.substring(start, dot).strip();
+                if (name.matches("[A-Z][\\w$]*") && !name.equals(name.toUpperCase(Locale.ROOT))) continue;
+            } else if (first > 0) {
                 // A pattern that opens with holes (a statement's target) starts at the statement's start.
                 start = statementStart(s, code, at);
             }
@@ -254,79 +266,53 @@ final class LoaderRules {
     }
 
     /**
-     * Every match of an expression pattern that opens with a receiver and a call ($target.getAttached($type)): the
-     * receiver is the expression just before the dot (a name, a call chain, a bracketed expression), never more of
-     * the statement, so `a && !player.getAttached(T)` takes `player`.
+     * Where the receiver of a call starts, reading back from the dot before the member: a chain of names, calls and
+     * indexes (a.b(c).d[0]), a parenthesised expression or cast ((Zombie) e), or new X(...); -1 when there is none.
      */
-    static List<Match> findCalls(String s, String pattern) {
-        boolean[] code = code(s);
-        List<String> pieces = pieces(pattern);
-        List<Match> found = new ArrayList<>();
-        String name = pieces.get(2);
-        int from = 0;
-        while (true) {
-            int at = s.indexOf(name, from);
-            if (at < 0) break;
-            from = at + 1;
-            if (!code[at] || (at > 0 && ident(s.charAt(at - 1)))) continue;
-            int dot = at - 1;
-            while (dot >= 0 && Character.isWhitespace(s.charAt(dot))) dot--;
-            if (dot < 0 || s.charAt(dot) != '.' || !code[dot]) continue;
-            int start = receiverStart(s, code, dot);
-            String receiver = s.substring(start, dot).strip();
-            if (receiver.isEmpty()) continue;
-            Map<String, String> holes = new LinkedHashMap<>();
-            holes.put(pieces.get(0), receiver);
-            int end = matchFrom(s, code, pieces, 1, dot, holes);
-            if (end < 0) continue;
-            found.add(new Match(skipSpace(s, code, start), end, holes));
-            from = end;
-        }
-        return found;
-    }
-
-    /** True when an expression pattern opens with a receiver hole and a call on it: $x.name(. */
-    static boolean opensWithCall(String pattern) {
-        List<String> pieces = pieces(pattern);
-        return pieces.size() > 3 && pieces.get(0).startsWith("$") && !pieces.get(0).endsWith(".name") && pieces.get(1).equals(".") && ident(pieces.get(2).charAt(0)) && pieces.get(3).equals("(");
-    }
-
-    /** Where the receiver before the dot at index dot starts: names, calls and brackets joined by dots, and a new before them. */
     static int receiverStart(String s, boolean[] code, int dot) {
-        int start = dot;
-        int i = dot - 1;
+        int i = dot - 1, start = -1;
         while (true) {
             while (i >= 0 && Character.isWhitespace(s.charAt(i))) i--;
-            boolean bracketed = false;
-            while (i >= 0 && code[i] && (s.charAt(i) == ')' || s.charAt(i) == ']')) {
-                int depth = 0;
-                int k = i;
-                for (; k >= 0; k--) {
-                    if (!code[k]) continue;
-                    char c = s.charAt(k);
-                    if (c == ')' || c == ']') depth++;
-                    else if (c == '(' || c == '[') {
-                        depth--;
-                        if (depth == 0) break;
+            if (i < 0 || !code[i]) return start;
+            char c = s.charAt(i);
+            if (c == ')' || c == ']') {
+                int depth = 0, open = -1;
+                for (int j = i; j >= 0; j--) {
+                    if (!code[j]) continue;
+                    char d = s.charAt(j);
+                    if (d == ')' || d == ']' || d == '}') depth++;
+                    else if ((d == '(' || d == '[' || d == '{') && --depth == 0) {
+                        open = j;
+                        break;
                     }
                 }
-                if (k < 0) return start;
-                bracketed = true;
-                start = k;
-                i = k - 1;
-                while (i >= 0 && Character.isWhitespace(s.charAt(i))) i--;
+                if (open < 0) return -1;
+                start = open;
+                i = open - 1;
+                int j = i;
+                while (j >= 0 && Character.isWhitespace(s.charAt(j))) j--;
+                // A call or an index goes on to its name; a bracket after anything else is the receiver's start.
+                if (j >= 0 && ident(s.charAt(j)) && code[j]) {
+                    i = j;
+                    continue;
+                }
+                // new X<>(...) or a generic call: not read here, so not matched.
+                if (j >= 0 && s.charAt(j) == '>') return -1;
+                return start;
             }
-            int end = i;
-            while (i >= 0 && ident(s.charAt(i))) i--;
-            if (i < end) start = i + 1;
-            else if (!bracketed) return start;
-            int before = i;
-            while (before >= 0 && Character.isWhitespace(s.charAt(before))) before--;
-            if (i < end && before >= 0 && s.charAt(before) == '.' && code[before]) {
-                i = before - 1;
+            if (!ident(c)) return start;
+            int j = i;
+            while (j >= 0 && ident(s.charAt(j))) j--;
+            String word = s.substring(j + 1, i + 1);
+            if (Set.of("return", "throw", "case", "yield", "else", "do", "assert").contains(word)) return start;
+            start = j + 1;
+            int k = j;
+            while (k >= 0 && Character.isWhitespace(s.charAt(k))) k--;
+            if (k >= 0 && s.charAt(k) == '.' && code[k]) {
+                i = k - 1;
                 continue;
             }
-            if (i < end && before >= 2 && s.startsWith("new", before - 2) && (before < 3 || !ident(s.charAt(before - 3)))) start = before - 2;
+            if (k >= 2 && s.startsWith("new", k - 2) && (k < 3 || !ident(s.charAt(k - 3)))) return k - 2;
             return start;
         }
     }
@@ -621,7 +607,7 @@ final class LoaderRules {
         if (rule.get("inline") instanceof Map<?, ?> inline && Json.object(inline).get(from) instanceof Map<?, ?> how) {
             text = inline(text, Json.text(Json.object(how), "type", ""), Json.text(Json.object(how), "value", ""));
         }
-        List<Match> matches = opensWithCall(source) ? findCalls(text, source) : find(text, source);
+        List<Match> matches = find(text, source);
         if (matches.isEmpty()) return;
         StringBuilder out = new StringBuilder();
         int last = 0;

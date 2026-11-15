@@ -467,11 +467,17 @@ final class Convert {
         return text.replace("\r\n", "\n");
     }
 
+    /** The files this run has read or written, as they now are (null: none); convert alone changes them while it runs. */
+    final Map<String, String> texts = new HashMap<>();
+
     /** A file's text, with a dry run's changes; null when there is none. */
     String current(String relative) throws IOException {
         if (staged.containsKey(relative)) return staged.get(relative);
+        if (texts.containsKey(relative)) return texts.get(relative);
         Path file = project.root.resolve(relative);
-        return Files.isRegularFile(file) ? Files.readString(file, StandardCharsets.UTF_8) : null;
+        String text = Files.isRegularFile(file) ? Files.readString(file, StandardCharsets.UTF_8) : null;
+        texts.put(relative, text);
+        return text;
     }
 
     boolean exists(String relative) throws IOException {
@@ -492,6 +498,7 @@ final class Convert {
         track(file);
         Files.createDirectories(file.getParent());
         Files.writeString(file, text, StandardCharsets.UTF_8);
+        texts.put(relative, text);
         if (!changed.contains(relative)) changed.add(relative);
     }
 
@@ -508,6 +515,7 @@ final class Convert {
         removed.add(relative);
         saveInProgress();
         Files.delete(file);
+        texts.put(relative, null);
         changed.remove(relative);
         for (
             Path parent = file.getParent();
@@ -552,6 +560,23 @@ final class Convert {
         List<String> out = new ArrayList<>();
         for (var set : sets.entrySet()) if (!set.getKey().getFileName().toString().startsWith("test")) {
             for (Path file : set.getValue()) out.add(relative(file));
+        }
+        return out;
+    }
+
+    /** The Java files of the source sets whose name starts with test (src/test/java ...), which javaFiles() leaves out. */
+    List<String> testJavaFiles() throws IOException {
+        List<String> out = new ArrayList<>();
+        Path src = project.root.resolve("src").toAbsolutePath().normalize();
+        if (!Files.isDirectory(src)) return out;
+        try (var list = Files.list(src)) {
+            for (Path set : list.sorted().toList()) {
+                Path java = set.resolve("java");
+                if (!set.getFileName().toString().startsWith("test") || !Files.isDirectory(java)) continue;
+                try (var walk = Files.walk(java)) {
+                    for (Path file : walk.filter(p -> p.toString().endsWith(".java")).sorted().toList()) out.add(relative(file));
+                }
+            }
         }
         return out;
     }
@@ -711,6 +736,16 @@ final class Convert {
                 boolean yarn = properties(read("gradle.properties")).keySet().stream().anyMatch(k -> k.startsWith("yarn_"));
                 List<String> unconverted = new ArrayList<>();
                 List<String> lines = widenerToTransformer(text, !yarn, unconverted);
+                // Members NeoForge's own access transformer opens need no line of the mod's (the way back from Fabric).
+                Set<String> opened = new HashSet<>();
+                for (String line : neoforgeAccessTransformers(minecraft)) {
+                    String[] t = line.split("\\s+");
+                    if (t.length >= 3) opened.add(t[1] + " " + t[2]);
+                }
+                lines.removeIf(line -> {
+                    String[] t = line.split("\\s+");
+                    return t.length >= 3 && opened.contains(t[1] + " " + t[2]);
+                });
                 accessTransformers.addAll(lines);
                 for (String u : unconverted) leave(path, 0, u, "an access widener entry with no access transformer counterpart");
                 delete(path);
@@ -2387,9 +2422,19 @@ final class Convert {
         for (Object rule : LoaderRules.list(rules.get("expressions"))) if (
             Json.object(rule).get("accessTransformers") instanceof Map<?, ?> at
         ) known.addAll(LoaderRules.strings(Json.object(at).get("neoforge")));
-        if (exists(AT_FILE)) {
+        // NeoForge's own access transformer opened members for every mod; those the code names stay open on Fabric.
+        List<String> neoforgeAccess = usedNeoForgeAccess(minecraft);
+        if (exists(AT_FILE) || !neoforgeAccess.isEmpty()) {
             List<String> keep = new ArrayList<>();
-            for (String line : read(AT_FILE).lines().toList()) if (!known.contains(line.strip())) keep.add(line);
+            if (exists(AT_FILE)) for (String line : read(AT_FILE).lines().toList()) if (!known.contains(line.strip())) keep.add(line);
+            for (String line : neoforgeAccess) if (!keep.contains(line)) keep.add(line);
+            if (!neoforgeAccess.isEmpty()) notes.add(
+                "Access widener: " +
+                neoforgeAccess.size() +
+                " member(s) NeoForge's own access transformer opens for every mod, which the code uses: " +
+                String.join("; ", neoforgeAccess) +
+                "."
+            );
             if (!keep.stream().allMatch(l -> l.isBlank() || l.strip().startsWith("#"))) {
                 List<String> unconverted = new ArrayList<>();
                 String widener = transformerToWidener(
@@ -2404,7 +2449,7 @@ final class Convert {
                 widenerConverted = true;
                 applied.computeIfAbsent("access-widener", k -> new ArrayList<>()).add(AT_FILE);
             }
-            delete(AT_FILE);
+            if (exists(AT_FILE)) delete(AT_FILE);
         }
         toml.remove("[[accessTransformers]]");
         buildToFabric(minecraft, menu != null);
@@ -2510,6 +2555,67 @@ final class Convert {
 
     String bridgeFolder() {
         return "src/main/java/" + bridgePackage.replace('.', '/');
+    }
+
+    /**
+     * NeoForge's own access transformer lines for this game (the NeoForge bridge folder's .cfg files, or its version
+     * layer's), comments dropped: NeoForge applies them to the game for every mod.
+     */
+    List<String> neoforgeAccessTransformers(String minecraft) throws IOException {
+        for (Object item : LoaderRules.list(rules.get("bridges"))) {
+            var b = Json.object(item);
+            if (!"neoforge".equals(b.get("from")) || !"fabric".equals(b.get("to"))) continue;
+            Map<String, Object> layer = bridgeLayer(b, minecraft);
+            if (Versions.compare(minecraft, Json.text(b, "minecraft", "99")) < 0 && layer == null) continue;
+            List<String> out = new ArrayList<>();
+            for (Map<String, Object> from : layer == null ? List.of(b) : List.of(layer, b)) {
+                Path folder = build.harness.resolve(Json.text(from, "folder", ""));
+                if (!Files.isDirectory(folder)) continue;
+                try (var files = Files.list(folder)) {
+                    for (Path cfg : files.filter(p -> p.getFileName().toString().endsWith(".cfg")).sorted().toList()) {
+                        for (String line : Files.readString(cfg, StandardCharsets.UTF_8).lines().toList()) {
+                            String stripped = line.replaceAll("#.*$", "").strip();
+                            if (!stripped.isEmpty()) out.add(stripped);
+                        }
+                    }
+                }
+                // A version layer's own file stands in for the bridge's.
+                if (!out.isEmpty()) return out;
+            }
+            return out;
+        }
+        return List.of();
+    }
+
+    /**
+     * NeoForge's own access transformer lines for the members the converted code names (.member, ::member, or new
+     * Owner( for a constructor): the code was written with those open, so its Fabric access widener opens them too.
+     */
+    List<String> usedNeoForgeAccess(String minecraft) throws IOException {
+        List<String> lines = neoforgeAccessTransformers(minecraft);
+        if (lines.isEmpty()) return List.of();
+        StringBuilder all = new StringBuilder();
+        for (String file : javaFiles()) if (bridgePackage == null || !file.startsWith(bridgeFolder() + "/")) all.append(read(file)).append('\n');
+        String code = all.toString();
+        List<String> out = new ArrayList<>();
+        for (String line : lines) {
+            String[] t = line.split("\\s+");
+            if (t.length < 3) continue;
+            int paren = t[2].indexOf('(');
+            String member = paren < 0 ? t[2] : t[2].substring(0, paren);
+            String owner = t[1].substring(Math.max(t[1].lastIndexOf('.'), t[1].lastIndexOf('$')) + 1);
+            boolean named = Pattern.compile("(?<![\\w$])" + Pattern.quote(owner) + "(?![\\w$])").matcher(code).find();
+            boolean used;
+            if (member.equals("<init>")) used = Pattern.compile("\\bnew\\s+(?:[\\w.]+\\.)?" + Pattern.quote(owner) + "\\s*[(<]").matcher(code).find();
+            else if (paren >= 0) used = named && Pattern.compile("(?:\\.|::)\\s*" + Pattern.quote(member) + "\\s*\\(?(?![\\w$])").matcher(code).find();
+            else {
+                // A field is read on an instance whose class the file need not name (zombie.goalSelector): a long enough
+                // name is taken on its own, a short one (level) only where its class is named.
+                used = (named || member.length() >= 7) && Pattern.compile("\\.\\s*" + Pattern.quote(member) + "(?![\\w$(])").matcher(code).find();
+            }
+            if (used) out.add(line);
+        }
+        return out;
     }
 
     /**
@@ -2645,13 +2751,20 @@ final class Convert {
         Set<String> attachmentFields = new TreeSet<>();
         for (String file : javaFiles()) for (Matcher f = ATTACHMENT_FIELD.matcher(read(file)); f.find(); ) attachmentFields.add(f.group(1));
         List<String> drops = LoaderRules.strings(bridgeLayer == null ? null : bridgeLayer.get("drops"));
-        for (String file : javaFiles()) {
+        // The mod's tests use the same NeoForge classes as its code, so their imports and qualified names move too.
+        List<String> sources = new ArrayList<>(javaFiles());
+        sources.addAll(testJavaFiles());
+        for (String file : sources) {
             String text = read(file);
             String out = text;
             // Plain, static and nested-class imports of a mirrored class (import static ...FluidType.BUCKET_VOLUME;).
             for (var c : classes.entrySet()) if (!dropped(drops, String.valueOf(c.getValue()).replace('.', '/') + ".java")) out = out.replaceAll(
                 "(?m)^import(\\s+static)?\\s+" + Pattern.quote(c.getKey()) + "((?:\\.\\w+)*(?:\\.\\*)?)\\s*;",
                 "import$1 " + Matcher.quoteReplacement(bridgePackage + "." + c.getValue()) + "$2;"
+            );
+            for (var c : classes.entrySet()) out = out.replaceAll(
+                "(?<![\\w.])" + Pattern.quote(c.getKey()) + "(?![\\w$])",
+                Matcher.quoteReplacement(bridgePackage + "." + c.getValue())
             );
             out = eventClassesInListeners(file, out);
             out = sideQueries(out);
@@ -2860,6 +2973,7 @@ final class Convert {
             "\\.addListener\\(\\s*((?:EventPriority\\.\\w+\\s*,\\s*)?(?:(?:true|false)\\s*,\\s*)?)(?:(this|[A-Z]\\w*(?:\\.[A-Z]\\w*)*)::(\\w+)|\\(\\s*(?:final\\s+)?([A-Z][\\w.]*)(?:<[^>]*>)?\\s+\\w+\\s*\\)\\s*->)"
         ).matcher(text);
         StringBuilder out = new StringBuilder();
+        List<String> imports = new ArrayList<>();
         while (m.find()) {
             if (!code[m.start()]) {
                 m.appendReplacement(out, Matcher.quoteReplacement(m.group()));
@@ -2873,7 +2987,11 @@ final class Convert {
                     : Pattern.compile(
                         "\\b" + Pattern.quote(m.group(3)) + "\\s*\\(\\s*(?:(?:final|@[\\w.]+(?:\\([^)]*\\))?)\\s+)*([A-Z][\\w.]*)(?:<[^>]*>)?\\s+\\w+\\s*\\)"
                     ).matcher(owner);
-                if (method != null && method.find()) type = method.group(1);
+                if (method != null && method.find()) {
+                    type = method.group(1);
+                    // The type is named in the listener's own class: this file imports it as that class does.
+                    if (owner != text) imports.add(importOf(owner, type));
+                }
             }
             if (type == null) {
                 leave(file, LoaderRules.line(text, m.start()), "addListener" + m.group().substring(m.group().indexOf('(')), "the listener's event type could not be read from its method");
@@ -2884,7 +3002,24 @@ final class Convert {
             m.appendReplacement(out, Matcher.quoteReplacement(m.group().substring(0, at) + type + ".class, " + m.group().substring(at)));
         }
         m.appendTail(out);
-        return out.toString();
+        String result = out.toString();
+        for (String name : imports) {
+            if (name == null) continue;
+            String simple = name.substring(name.lastIndexOf('.') + 1);
+            if (Pattern.compile("(?m)^import\\s+[\\w.]+\\." + Pattern.quote(simple) + "\\s*;").matcher(result).find()) continue;
+            result = LoaderRules.addImport(result, name);
+        }
+        return result;
+    }
+
+    /** How a class's source imports the class a type name starts with, as the bridge names it; null when it does not import it. */
+    String importOf(String source, String type) {
+        String simple = type.contains(".") ? type.substring(0, type.indexOf('.')) : type;
+        Matcher imported = Pattern.compile("(?m)^import\\s+([\\w.]+\\." + Pattern.quote(simple) + ")\\s*;").matcher(source);
+        if (!imported.find()) return null;
+        String name = imported.group(1);
+        Object mirrored = bridge == null ? null : Json.object(bridge.get("classes")).get(name);
+        return mirrored == null ? name : bridgePackage + "." + mirrored;
     }
 
     /** The source of a class named in a file (its own package or an import), or null. */
@@ -3007,7 +3142,9 @@ final class Convert {
             for (var c : Json.object(b.get("classes")).entrySet()) back.put(String.valueOf(c.getValue()), c.getKey());
         }
         String folder = "src/main/java/" + pkg.replace('.', '/') + "/";
-        for (String file : javaFiles()) {
+        List<String> sources = new ArrayList<>(javaFiles());
+        sources.addAll(testJavaFiles());
+        for (String file : sources) {
             if (file.startsWith(folder)) continue;
             String text = read(file), out = text;
             Matcher entry = BRIDGED_ENTRY.matcher(out);
@@ -3021,6 +3158,10 @@ final class Convert {
             for (var c : back.entrySet()) out = out.replaceAll(
                 "(?m)^import(\\s+static)?\\s+" + Pattern.quote(pkg + "." + c.getKey()) + "((?:\\.\\w+)*(?:\\.\\*)?)\\s*;",
                 "import$1 " + Matcher.quoteReplacement(c.getValue()) + "$2;"
+            );
+            for (var c : back.entrySet()) out = out.replaceAll(
+                "(?<![\\w.])" + Pattern.quote(pkg + "." + c.getKey()) + "(?![\\w$])",
+                Matcher.quoteReplacement(c.getValue())
             );
             out = LoaderRules.dropImport(LoaderRules.dropImport(out, pkg + ".Bridge"), pkg + ".ClientBridge");
             out = LoaderRules.dropImport(attachmentCallsBack(out), pkg + ".Attachments");

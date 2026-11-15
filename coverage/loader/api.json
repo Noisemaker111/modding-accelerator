@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "3ef37ed9fecd7a626cdb56e5b711d2b53d113c148f1e78282f028573a3a0ca82",
+ "rules_sha256": "622f4e12ce00ba9c9a869981f5c3599626505aca40cc94fd618975f2135e4f9f",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -486,6 +486,144 @@
    },
    {
     "symbol": "fml|net.neoforged.fml.config.ModConfig$Type#SYNCED",
+    "found": true
+   }
+  ],
+  "neoforge-entity-persistent-data": [
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IEntityExtension#getPersistentData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockEntityExtension#getPersistentData",
+    "found": true
+   }
+  ],
+  "neoforge-state-light-emission": [
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getLightEmission",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission",
+    "found": true
+   }
+  ],
+  "neoforge-state-can-entity-destroy": [
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#canEntityDestroy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#canEntityDestroy",
+    "found": true
+   }
+  ],
+  "neoforge-stack-equipment-slot": [
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IItemExtension#getEquipmentSlot",
+    "found": true
+   }
+  ],
+  "neoforge-saved-data-factory": [
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.saveddata.SavedData$Factory#type",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.storage.DimensionDataStorage#computeIfAbsent",
+    "found": true
+   }
+  ],
+  "neoforge-saved-data-factory-inherited": [
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.saveddata.SavedData$Factory#type",
+    "found": true
+   }
+  ],
+  "neoforge-key-mapping-context-6": [
+   {
+    "symbol": "minecraft|net.minecraft.client.KeyMapping#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#IN_GAME",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext#isActive",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#NONE",
+    "found": true
+   }
+  ],
+  "neoforge-key-mapping-context-5": [
+   {
+    "symbol": "minecraft|net.minecraft.client.KeyMapping#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#IN_GAME",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext#isActive",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#NONE",
+    "found": true
+   }
+  ],
+  "neoforge-key-mapping-context-4": [
+   {
+    "symbol": "minecraft|net.minecraft.client.KeyMapping#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#IN_GAME",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext#isActive",
+    "found": true
+   }
+  ],
+  "neoforge-player-open-menu": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider#getScreenOpeningData",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerPlayer#openMenu",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IPlayerExtension#openMenu",
+    "found": true
+   }
+  ],
+  "neoforge-block-light-emission": [
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission",
+    "found": true
+   }
+  ],
+  "neoforge-block-clone-item-stack": [
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getCloneItemStack",
+    "found": true
+   }
+  ],
+  "neoforge-state-clone-item-stack": [
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getCloneItemStack",
     "found": true
    }
   ],
@@ -1536,6 +1674,790 @@
    },
    {
     "symbol": "minecraft|net.minecraft.world.item.ItemStack#getComponentsPatch",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerLevel#tickNonPassenger",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientLevel#tickNonPassenger",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.Entity#commonTick",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.Entity#tick",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.Entity#rideTick",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.player.Player#tick",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.entity.BlockEntity#loadStatic",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.entity.BlockEntity#loadWithComponents",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.entity.BlockEntity#saveWithFullMetadata",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.entity.BlockEntity#problemPath",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.storage.TagValueInput#create",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.resources.ResourceKey#identifier",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#initializer",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.nbt.CompoundTag#CODEC",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.resources.Identifier#fromNamespaceAndPath",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.LivingEntity#dropAllDeathLoot",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.LivingEntity#lastHurtByPlayerMemoryTime",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.LivingEntity#drop",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.Entity#spawnAtLocation",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.EntityEquipment#dropAll",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.player.Inventory#dropAll",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.player.Inventory#player",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.LevelWriter#addFreshEntity",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerLevel#addFreshEntity",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.SpawnPlacements#checkSpawnRules",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.EntityType#isAllowedInPeaceful",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.NaturalSpawner#isValidPositionForMob",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.NaturalSpawner#spawnMobsForChunkGeneration",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.util.SpawnUtil#trySpawnMob",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.Mob#checkSpawnRules",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.Mob#checkSpawnObstruction",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.Mob#finalizeSpawn",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.EntitySpawnReason",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.gamerules.GameRules#MOB_GRIEFING",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.gamerules.GameRules#get",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientLevel#addEntity",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#getLightEmission",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.boss.wither.WitherBoss#canDestroy",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.tags.BlockTags#DRAGON_IMMUNE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#EQUIPMENT_CHANGE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#ENTITY_UNLOAD",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents#ENTITY_UNLOAD",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STARTED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents#TAGS_LOADED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.entity.FakePlayer",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#canSend",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getObjectShare",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.ObjectShare#get",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.ObjectShare#putIfAbsent",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerPlayerGameMode#handleBlockBreakAction",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerPlayerGameMode#useItem",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerPlayerGameMode#useItemOn",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerPlayerGameMode#destroyBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#attack",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#useItemOn",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#spawnAfterBreak",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.ItemStack#canDestroyBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.ItemStack#useOn",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.ItemStack#use",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.ItemStack#getUseDuration",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.ItemStack#onUseTick",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.ItemStack#finishUsingItem",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.ItemStack#releaseUsing",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.ItemStack#applyComponents",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.Item#useOn",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.ItemCooldowns#isOnCooldown",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.player.Player#interactOn",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.player.Player#resetAttackStrengthTicker",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.player.Player#isSecondaryUseActive",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.Entity#registryAccess",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#performUseItemOn",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#useItem",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#startDestroyBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#continueDestroyBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#destroyBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.MultiPlayerGameMode#startPrediction",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.tutorial.Tutorial#onDestroyBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.Minecraft#startAttack",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.Minecraft#startUseItem",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.Minecraft#isLocalServer",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.LivingEntity#startUsingItem",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.LivingEntity#updateUsingItem",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.LivingEntity#completeUsingItem",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.LivingEntity#releaseUsingItem",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.LivingEntity#getUseItemRemainingTicks",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.LivingEntity#useItemRemaining",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.Block#dropResources",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.Block#popResource",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.Level#setBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.monster.Enderman$EndermanLeaveBlockGoal#canPlaceBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.ReloadableServerResources#listeners",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerEntity#sendPairingData",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.ExperienceOrb#award",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.player.Inventory#createInventoryUpdatePacket",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.player.Inventory#getSelectedSlot",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.util.TriState",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#addFirst",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#addLast",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#attachElementBefore",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#attachElementAfter",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#replaceElement",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement#extractRenderState",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MISC_OVERLAYS",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#CROSSHAIR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SPECTATOR_MENU",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HOTBAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HEALTH_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#ARMOR_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#FOOD_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MOUNT_HEALTH",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#AIR_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#INFO_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#EXPERIENCE_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HELD_ITEM_TOOLTIP",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SPECTATOR_TOOLTIP",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MOB_EFFECTS",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#BOSS_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SLEEP",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#DEMO_TIMER",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SCOREBOARD",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#OVERLAY_MESSAGE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#TITLE_AND_SUBTITLE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#CHAT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#PLAYER_LIST",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SUBTITLES",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#AFTER_INIT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#remove",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#JOIN",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#DISCONNECT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback#EVENT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#literal",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#argument",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#sendFeedback",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getPlayer",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#get",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#registerReloadListener",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#addListenerOrdering",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.menu.v1.ExtendedMenuType#<init>",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider#getScreenOpeningData",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.MenuScreens#register",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.Screen#init",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.Screen#rebuildWidgets",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.Screen#setInitialFocus",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.Screen#removeWidget",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.Screen#children",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.Screen#renderables",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.Screen#narratables",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.Screen#extractRenderStateWithTooltipAndSubtitles",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.Screen#extractBackground",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.screens.Screen#keyPressed",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.events.GuiEventListener#preeditUpdated",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.GuiGraphicsExtractor#extractDeferredElements",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.GuiGraphicsExtractor#text",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.GuiGraphicsExtractor#textRendererForWidget",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.KeyboardHandler#keyPress",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.KeyboardHandler#charTyped",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.KeyboardHandler#submitPreeditEvent",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.MouseHandler#onButton",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.MouseHandler#onScroll",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.MouseHandler#handleAccumulatedMovement",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.MouseHandler#xpos",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.MouseHandler#isLeftPressed",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.ScrollWheelHandler#onMouseScroll",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.Gui#setScreen",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.BossHealthOverlay#extractRenderState",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.BossHealthOverlay#extractBar",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.KeyMapping#<init>",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.KeyMapping#isDown",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.KeyMapping#consumeClick",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.Minecraft#hasShiftDown",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.Minecraft#hasControlDown",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.Minecraft#hasAltDown",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.Minecraft#getDeltaTracker",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|com.mojang.blaze3d.platform.InputConstants#getKey",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|com.mojang.blaze3d.platform.Window#handle",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.util.Util#getPlatform",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.Button#<init>",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.AbstractButton#extractDefaultSprite",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.AbstractButton#extractDefaultLabel",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.commands.CommandSourceStack#<init>",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.player.Player#permissions",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.network.RegistryFriendlyByteBuf#<init>",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.network.codec.StreamCodec#of",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ServerPlayer#openMenu",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#keyReleased",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#charTyped",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseClicked",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseReleased",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseDragged",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.components.events.ContainerEventHandler#mouseScrolled",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getName",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getDescription",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getModContainer",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase#getCloneItemStack",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops",
     "found": true
    },
    {
@@ -3521,6 +4443,1678 @@
    {
     "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#deserialize",
     "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.tick.EntityTickEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.tick.EntityTickEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.tick.PlayerTickEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.tick.PlayerTickEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#fireEntityTickPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#fireEntityTickPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#firePlayerTickPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#firePlayerTickPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#create",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#getCurrentState",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#restoreToLocation",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#restoreBlockEntity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#recreateBlockEntity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockEvent#getState",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockEvent$EntityPlaceEvent#getPlacedAgainst",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockEvent$EntityMultiPlaceEvent#getReplacedBlockSnapshots",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockEvent$NeighborNotifyEvent#getNotifiedSides",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockEvent$FluidPlaceBlockEvent#setNewState",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockEvent$FarmlandTrampleEvent#getFallDistance",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#getDrops",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#getSource",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#isRecentlyHit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$SpawnPlacementCheck#getPlacementCheckResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$SpawnPlacementCheck$Result",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$PositionCheck#getSpawner",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$PositionCheck$Result",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent#setSpawnData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent#getSpawner",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityMobGriefingEvent#canGrief",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityMobGriefingEvent#isMobGriefingEnabled",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent#getState",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingConversionEvent$Pre#setConversionTimer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingConversionEvent$Post#getOutcome",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityJoinLevelEvent#loadedFromDisk",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#onBlockPlace",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#onMultiBlockPlace",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#onEntityDestroyBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#canEntityGrief",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#checkSpawnPlacements",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#checkSpawnPosition",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#finalizeMobSpawn",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#canLivingConvert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#onLivingConvert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#onLivingDrops",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#canEntityDestroy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IEntityExtension#getPersistentData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockEntityExtension#getPersistentData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getLightEmission",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#canEntityDestroy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#canEntityDestroy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IItemExtension#getEquipmentSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec#getSpec",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec#getValues",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec#afterReload",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#test",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#correct",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#getClazz",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#getComment",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.config.ModConfig#getLoadedConfig",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.config.ModConfig#getFullPath",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.config.IConfigSpec$ILoadedConfig#config",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.config.IConfigSpec$ILoadedConfig#save",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getHand",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getItemStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getPos",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getFace",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getSide",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#getUseBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#getUseItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#setUseBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#setUseItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#getHitVec",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#setCancellationResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickItem#setCancellationResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$LeftClickBlock#getAction",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$LeftClickBlock#setUseItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$LeftClickBlock$Action#convert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$LeftClickEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$EntityInteract#getTarget",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$EntityInteract#getLocation",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.LogicalSide#isServer",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.LogicalSide#isClient",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.block.BreakBlockEvent#getPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.block.BreakBlockEvent#setNotifyClient",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.block.BreakBlockEvent#shouldNotifyClient",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#getDrops",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#getBlockEntity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#getBreaker",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#getTool",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#getDroppedExperience",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.level.BlockDropsEvent#setDroppedExperience",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent#getSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent#getFrom",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent#getTo",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent#getItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent#getDuration",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent#setDuration",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent#getHand",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Start",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Tick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Stop",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Finish#getResultStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Finish#setResultStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.server.ServerAboutToStartEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent#getRegistries",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent#shouldUpdateStaticData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent$ServerDataLoad#getServerResources",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent$ClientPacketReceived",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#addListener",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#addDependency",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#getGraph",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#getRegistry",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#getNameLookup",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.AddServerReloadListenersEvent#getServerResources",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#onResourceReload",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.RegisterEvent#register",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.RegisterEvent#getRegistryKey",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.RegisterEvent#getRegistry",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.RegisterEvent$RegisterHelper#register",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.FakePlayer#isFakePlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.FakePlayerFactory#get",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.FakePlayerFactory#getMinecraft",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.FakePlayerFactory#unloadLevel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.UsernameCache#getLastKnownUsername",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.UsernameCache#containsUUID",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.UsernameCache#getMap",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#UNBOUNDED_BYTE_ARRAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#CHUNK_POS",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#lazy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#enumCodec",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#registryKey",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#connectionAware",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#uncheckedUnit",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.InterModComms#sendTo",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.InterModComms#getMessages",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.InterModComms$IMCMessage#messageSupplier",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.InterModComms$IMCMessage#method",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.lifecycle.ModLifecycleEvent#getIMCStream",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.lifecycle.ModLifecycleEvent#getContainer",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.lifecycle.InterModEnqueueEvent",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.lifecycle.InterModProcessEvent",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.entity.IEntityWithComplexSpawn#writeSpawnData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.entity.IEntityWithComplexSpawn#readSpawnData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.payload.AdvancedAddEntityPayload",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#onLeftClickBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#onClientMineHold",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#onRightClickBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#onItemRightClick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#onInteractEntity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#onEmptyClick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#onEmptyLeftClick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#fireBlockBreak",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#handleBlockDrops",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.CommonHooks#onPlaceItemIntoWorld",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#onItemUseStart",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#onItemUseTick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#onUseItemStop",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#onItemUseFinish",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseClickedPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseClickedPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseReleasedPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseReleasedPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseDragPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseDragPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseScrollPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenMouseScrollPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenKeyPressedPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenKeyPressedPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenKeyReleasedPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenKeyReleasedPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenCharTypedPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenCharTypedPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenPreeditPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onScreenPreeditPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onMouseButtonPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onMouseButtonPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onMouseScroll",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onKeyInput",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#onCustomizeBossEventProgress",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#firePlayerLogin",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.ClientHooks#firePlayerLogout",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext#isActive",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.IKeyConflictContext#conflicts",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#UNIVERSAL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#GUI",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyConflictContext#IN_GAME",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#CONTROL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#matches",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#isActive",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#getCombinedName",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#codes",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#CONTROL_OR_COMMAND",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#SHIFT",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#ALT",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#NONE",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#MODIFIER_VALUES",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#getActiveModifiers",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#getKeyModifier",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#isKeyCodeModifier",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.settings.KeyModifier#valueFromString",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterMenuScreensEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterMenuScreensEvent#register",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IMenuTypeExtension",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IMenuTypeExtension#create",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.IContainerFactory",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.IContainerFactory#create",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IPlayerExtension",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IPlayerExtension#openMenu",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.GuiLayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.GuiLayer#render",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CAMERA_OVERLAYS",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CROSSHAIR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#AFTER_CAMERA_DECORATIONS",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#HOTBAR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#PLAYER_HEALTH",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#ARMOR_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#FOOD_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#VEHICLE_HEALTH",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#AIR_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CONTEXTUAL_INFO_BAR_BACKGROUND",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EXPERIENCE_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CONTEXTUAL_INFO_BAR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SELECTED_ITEM_NAME",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SPECTATOR_TOOLTIP",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EFFECTS",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#BOSS_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SLEEP_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#DEMO_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SCOREBOARD_SIDEBAR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#OVERLAY_MESSAGE",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TITLE",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CHAT",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TAB_LIST",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SUBTITLE_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelowAll",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelow",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAbove",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAboveAll",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#replaceLayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#wrapLayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getGuiGraphics",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getPartialTick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getName",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getLayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiLayerEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiEvent#getGuiGraphics",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiEvent#getPartialTick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderGuiEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent#getScreen",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init#getListenersList",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init#addListener",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init#removeListener",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getGuiGraphics",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getPartialTick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Background",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Foreground",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#getAvailableSpace",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#isCompact",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#getHorizontalOffset",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#setHorizontalOffset",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#addHorizontalOffset",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#setCompact",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput#getMouseX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput#getMouseY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed#getMouseButtonEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed#getButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed#isDoubleClick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#wasClickHandled",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#setResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#getResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#getClickResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post$Result",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased#getMouseButtonEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased#getButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#wasReleaseHandled",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#setResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#getResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#getReleaseResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post$Result",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getMouseButtonEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getMouseButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getDragX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getDragY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled#getScrollDeltaX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled#getScrollDeltaY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getKeyEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getKey",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getKeycode",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getModifiers",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped#getCharacterEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped#getCodePoint",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Preedit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Preedit$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Preedit$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Opening",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Opening#getCurrentScreen",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Opening#getNewScreen",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Opening#setNewScreen",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Closing",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getMouseButtonInfo",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getAction",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getModifiers",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseButton$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getScrollDeltaX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getScrollDeltaY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getAccumulatedScrollX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getAccumulatedScrollY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isLeftDown",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isRightDown",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isMiddleDown",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getMouseX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getMouseY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key#getKeyEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key#getKey",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key#getKeycode",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key#getAction",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$Key#getModifiers",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#setSwingHand",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#shouldSwingHand",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#getHand",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isAttack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isUseItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isPickBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#getKeyMapping",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getMultiPlayerGameMode",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getConnection",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingIn",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingOut",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getOldPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getNewPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getWindow",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getGuiGraphics",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getPartialTick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getBossEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getIncrement",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#setIncrement",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#getPosX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#setPosX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#getPosY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#setPosY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getDispatcher",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getBuildContext",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.AddClientReloadListenersEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.widget.ExtendedButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.widget.ExtendedButton#extractContents",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModContainer#getModInfo",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.neoforgespi.language.IModInfo#getDisplayName",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.neoforgespi.language.IModInfo#getDescription",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.neoforgespi.language.IModInfo#getNamespace",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$HarvestCheck#canHarvest",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$HarvestCheck#setCanHarvest",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck",
+    "found": true
    }
   ],
   "neoforge-on-fabric@1.21.1": [
@@ -3698,6 +6292,446 @@
    },
    {
     "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder#createSimple",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.server.level.ServerLevel#tickNonPassenger",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.multiplayer.ClientLevel#tickNonPassenger",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.Entity#tick",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.Entity#rideTick",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.player.Player#tick",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.block.entity.BlockEntity#loadWithComponents",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.block.entity.BlockEntity#saveWithFullMetadata",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.LivingEntity#dropAllDeathLoot",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.LivingEntity#lastHurtByPlayerTime",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.Entity#spawnAtLocation",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.server.level.ServerPlayer#drop",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.LevelWriter#addFreshEntity",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.SpawnPlacements#checkSpawnRules",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.NaturalSpawner#isValidPositionForMob",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.NaturalSpawner#spawnMobsForChunkGeneration",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.util.SpawnUtil#trySpawnMob",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.Mob#checkSpawnRules",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.Mob#checkSpawnObstruction",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.Mob#finalizeSpawn",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.MobSpawnType",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.GameRules#RULE_MOBGRIEFING",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.GameRules#getBoolean",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.entity.PersistentEntitySectionManager#addEntity",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.multiplayer.ClientLevel#addEntity",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.projectile.WitherSkull",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.boss.wither.WitherBoss#canDestroy",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.storage.DimensionDataStorage#readTagFromDisk",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.util.datafix.DataFixTypes#update",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.item.Equipable#getEquipmentSlot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#EQUIPMENT_CHANGE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents#ENTITY_UNLOAD",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents#ENTITY_UNLOAD",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STARTED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents#TAGS_LOADED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.entity.FakePlayer",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#canSend",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#registerGlobalReceiver",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.server.level.ServerPlayerGameMode#handleBlockBreakAction",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.server.level.ServerPlayerGameMode#useItemOn",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.server.level.ServerPlayerGameMode#destroyBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.item.Item#canAttackBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.ItemInteractionResult#SKIP_DEFAULT_BLOCK_INTERACTION",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.InteractionResultHolder",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.item.ItemCooldowns#isOnCooldown",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.player.Player#interactOn",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.Entity#interactAt",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.multiplayer.MultiPlayerGameMode#interactAt",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.multiplayer.MultiPlayerGameMode#performUseItemOn",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.multiplayer.MultiPlayerGameMode#startPrediction",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.Minecraft#startUseItem",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.LivingEntity#updateUsingItem",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.block.Block#dropResources",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.block.Block#popResource",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.level.Level#setBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.monster.EnderMan$EndermanLeaveBlockGoal#canPlaceBlock",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.server.ReloadableServerResources#listeners",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.server.level.ServerEntity#sendPairingData",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.server.network.ServerGamePacketListenerImpl#handleInteract",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.core.LayeredRegistryAccess#compositeAccess",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.network.FriendlyByteBuf#readResourceLocation",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback#EVENT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#AFTER_INIT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#remove",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents#allowKeyPress",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents#afterKeyPress",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents#allowKeyRelease",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents#afterKeyRelease",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#allowMouseClick",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#afterMouseClick",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#allowMouseRelease",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#afterMouseRelease",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#allowMouseScroll",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents#afterMouseScroll",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#JOIN",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#DISCONNECT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback#EVENT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.command.v2.ClientCommandManager#literal",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.command.v2.ClientCommandManager#argument",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#sendFeedback",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.resource.ResourceManagerHelper#get",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.resource.ResourceManagerHelper#registerReloadListener",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener#getFabricId",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener#getFabricDependencies",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType#<init>",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory#getScreenOpeningData",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.screens.MenuScreens#register",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#init",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#rebuildWidgets",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#setInitialFocus",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#removeWidget",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#renderWithTooltip",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#renderBackground",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#hasShiftDown",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#hasControlDown",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.screens.Screen#hasAltDown",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.KeyboardHandler#keyPress",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.MouseHandler#onPress",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.MouseHandler#onScroll",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.Minecraft#setScreen",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.Minecraft#getTimer",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.components.BossHealthOverlay#render",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.components.BossHealthOverlay#drawBar",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.GuiGraphics#drawString",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.LayeredDraw$Layer#render",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.KeyMapping#<init>",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.components.Button#<init>",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.client.gui.components.AbstractButton#renderWidget",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.commands.CommandSourceStack#<init>",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.server.packs.resources.PreparableReloadListener#reload",
+    "found": true
+   },
+   {
+    "symbol": "minecraft-1.21.1|net.minecraft.world.entity.player.Player#hasCorrectToolForDrops",
     "found": true
    },
    {
@@ -3978,6 +7012,1274 @@
    },
    {
     "symbol": "neoforge-21.1|net.neoforged.neoforge.registries.NeoForgeRegistries$Keys#ATTACHMENT_TYPES",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.tick.EntityTickEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.tick.EntityTickEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.tick.PlayerTickEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.tick.PlayerTickEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#fireEntityTickPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#fireEntityTickPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#firePlayerTickPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#firePlayerTickPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.util.BlockSnapshot#create",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.util.BlockSnapshot#restoreBlockEntity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$BreakEvent#getPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$EntityPlaceEvent#getPlacedAgainst",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$FarmlandTrampleEvent#getFallDistance",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingDropsEvent#getDrops",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$SpawnPlacementCheck#getSpawnType",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.living.MobSpawnEvent$PositionCheck#getSpawnType",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent#getSpawnType",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.EntityMobGriefingEvent#canGrief",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent#getState",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingConversionEvent$Pre#setConversionTimer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.EntityJoinLevelEvent#loadedFromDisk",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onBlockPlace",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onMultiBlockPlace",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onEntityDestroyBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#canEntityGrief",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#checkSpawnPlacements",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#checkSpawnPosition",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#finalizeMobSpawn",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#canLivingConvert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onLivingConvert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#onLivingDrops",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#canEntityDestroy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IEntityExtension#getPersistentData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getLightEmission",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension#canEntityDestroy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.ModConfigSpec#getSpec",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.ModConfigSpec#getValues",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#test",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.config.ModConfig#getLoadedConfig",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.config.ModConfig#getFullPath",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.config.IConfigSpec$ILoadedConfig#config",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent#getSide",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$RightClickBlock#setUseBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$EntityInteract#getTarget",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$EntityInteractSpecific#getLocalPos",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$EntityInteractSpecific#getTarget",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.player.PlayerInteractEvent$LeftClickBlock$Action#convert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.util.TriState#isTrue",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.util.TriState#isDefault",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.util.TriState#isFalse",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.level.BlockDropsEvent#setDroppedExperience",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent#getTo",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent$Finish#setResultStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.server.ServerAboutToStartEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.TagsUpdatedEvent#getRegistryAccess",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.TagsUpdatedEvent#getUpdateCause",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.TagsUpdatedEvent#shouldUpdateStaticData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.TagsUpdatedEvent$UpdateCause",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.AddReloadListenerEvent#addListener",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.AddReloadListenerEvent#getListeners",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.AddReloadListenerEvent#getServerResources",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.AddReloadListenerEvent#getRegistryAccess",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.registries.RegisterEvent#register",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.registries.RegisterEvent$RegisterHelper#register",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.util.FakePlayerFactory#get",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.UsernameCache#getLastKnownUsername",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#enumCodec",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#registryKey",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs#composite",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.entity.IEntityWithComplexSpawn#writeSpawnData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.entity.IEntityWithComplexSpawn#readSpawnData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#onInteractEntity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#onInteractEntityAt",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#fireBlockBreak",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#handleBlockDrops",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.CommonHooks#onPlaceItemIntoWorld",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#onItemUseStart",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.InterModComms#sendTo",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.InterModComms#getMessages",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.event.lifecycle.ModLifecycleEvent#getIMCStream",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.event.lifecycle.InterModProcessEvent",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.LogicalSide#isClient",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseClickedPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseClickedPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseReleasedPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseReleasedPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseScrollPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenMouseScrollPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenKeyPressedPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenKeyPressedPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenKeyReleasedPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onScreenKeyReleasedPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onMouseButtonPre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onMouseButtonPost",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onMouseScroll",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onKeyInput",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#onCustomizeBossEventProgress",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#firePlayerLogin",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.ClientHooks#firePlayerLogout",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.IKeyConflictContext",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.IKeyConflictContext#isActive",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.IKeyConflictContext#conflicts",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyConflictContext",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyConflictContext#UNIVERSAL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyConflictContext#GUI",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyConflictContext#IN_GAME",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#CONTROL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#matches",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#isActive",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getCombinedName",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#codes",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#SHIFT",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#ALT",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#NONE",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#MODIFIER_VALUES",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getActiveModifiers",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getKeyModifier",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#isKeyCodeModifier",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#valueFromString",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterMenuScreensEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterMenuScreensEvent#register",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IMenuTypeExtension",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IMenuTypeExtension#create",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.network.IContainerFactory",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.network.IContainerFactory#create",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IPlayerExtension",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IPlayerExtension#openMenu",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CAMERA_OVERLAYS",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CROSSHAIR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#HOTBAR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#JUMP_METER",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EXPERIENCE_BAR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#PLAYER_HEALTH",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#ARMOR_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#FOOD_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#VEHICLE_HEALTH",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#AIR_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SELECTED_ITEM_NAME",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SPECTATOR_TOOLTIP",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EXPERIENCE_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EFFECTS",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#BOSS_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SLEEP_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#DEMO_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#DEBUG_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SCOREBOARD_SIDEBAR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#OVERLAY_MESSAGE",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TITLE",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CHAT",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TAB_LIST",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SUBTITLE_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SAVING_INDICATOR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelowAll",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelow",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAbove",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAboveAll",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#replaceLayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#wrapLayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getGuiGraphics",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getPartialTick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getName",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent#getLayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiLayerEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiEvent#getGuiGraphics",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiEvent#getPartialTick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RenderGuiEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent#getScreen",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init#getListenersList",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init#addListener",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init#removeListener",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Init$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render#getGuiGraphics",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render#getPartialTick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Render$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$BackgroundRendered",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$BackgroundRendered#getGuiGraphics",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#getAvailableSpace",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#isCompact",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#getHorizontalOffset",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#setHorizontalOffset",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#addHorizontalOffset",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$RenderInventoryMobEffects#setCompact",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput#getMouseX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseInput#getMouseY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed#getButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#wasClickHandled",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#setResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#getResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post#getClickResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonPressed$Post$Result",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased#getButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#wasReleaseHandled",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#setResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#getResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post#getReleaseResult",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseButtonReleased$Post$Result",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getMouseButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getDragX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged#getDragY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseDragged$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled#getScrollDeltaX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled#getScrollDeltaY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$MouseScrolled$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getKeyCode",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getScanCode",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyInput#getModifiers",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyPressed$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$KeyReleased$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped#getCodePoint",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped#getModifiers",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$CharacterTyped$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Opening",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Opening#getCurrentScreen",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Opening#getNewScreen",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Opening#setNewScreen",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ScreenEvent$Closing",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getAction",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton#getModifiers",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseButton$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getScrollDeltaX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getScrollDeltaY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isLeftDown",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isRightDown",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#isMiddleDown",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getMouseX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$MouseScrollingEvent#getMouseY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$Key",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$Key#getKey",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$Key#getScanCode",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$Key#getAction",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$Key#getModifiers",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#setSwingHand",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#shouldSwingHand",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#getHand",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isAttack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isUseItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#isPickBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.InputEvent$InteractionKeyMappingTriggered#getKeyMapping",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getMultiPlayerGameMode",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getConnection",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingIn",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingOut",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getOldPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getNewPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$Clone#getPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getWindow",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getGuiGraphics",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent#getPartialTick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getBossEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#getIncrement",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$BossEventProgress#setIncrement",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$DebugText",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$DebugText#getLeft",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$DebugText#getRight",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#getPosX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#setPosX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#getPosY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent$Chat#setPosY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getDispatcher",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getBuildContext",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.widget.ExtendedButton",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.gui.widget.ExtendedButton#renderWidget",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getActiveModifier",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission",
     "found": true
    }
   ],
