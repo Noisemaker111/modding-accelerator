@@ -1,0 +1,2290 @@
+diff --git a/src/main/java/dev/diorama/bake/ChunkBakeData.java b/src/main/java/dev/diorama/bake/ChunkBakeData.java
+new file mode 100644
+index 00000000..a8aa5683
+--- /dev/null
++++ b/src/main/java/dev/diorama/bake/ChunkBakeData.java
+@@ -0,0 +1,97 @@
++package dev.diorama.bake;
++
++import dev.diorama.data.ChunkSnapshot;
++import java.util.concurrent.atomic.AtomicReferenceArray;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * What bakes work out from one chunk's blocks under one set of looks, kept with the snapshot (see
++ * {@link ChunkSnapshot#blocksToken}) so the next bake of any tile over it starts from it instead of
++ * working it out again. A tile is meshed about ten times while the land around it loads, and its
++ * shadow casters reach over dozens of chunks the neighbouring tiles mesh too.
++ *
++ * <p>Everything here is a function of the chunk's blocks and the looks alone, or, for a caster
++ * column on the chunk's west or south edge, of those and the blocks of the neighbour it reads,
++ * which the column records by token. Entries are made whole and then published, so bakes on
++ * several threads can share them; two bakes making the same entry make the same thing.
++ */
++final class ChunkBakeData {
++	/** Stands for a neighbour the bake had no chunk for. */
++	static final Object MISSING = new Object();
++
++	final Looks looks;
++	final byte[] kinds;
++	final int @Nullable [] shapes;
++	/** Per section: the solid mask and its smaller-than-a-cube mask, as {@link VoxelReader} builds them. */
++	final AtomicReferenceArray<long @Nullable []> solid;
++	final AtomicReferenceArray<long @Nullable []> partial;
++	/**
++	 * Per column {@code (z << 4) | x}: one above its highest block that isn't {@link Looks#AIR} to these
++	 * looks, the world's bottom where there's none; null until worked out. Every cell from there up is air.
++	 */
++	volatile int @Nullable [] openFrom;
++	/** The chunk's shadow caster faces, see {@link CasterChunk}; null until a bake needs them. */
++	volatile @Nullable CasterChunk casters;
++
++	private ChunkBakeData(Looks looks, byte[] kinds, int @Nullable [] shapes, int sections) {
++		this.looks = looks;
++		this.kinds = kinds;
++		this.shapes = shapes;
++		this.solid = new AtomicReferenceArray<>(sections);
++		this.partial = new AtomicReferenceArray<>(sections);
++	}
++
++	/**
++	 * The data for this snapshot's blocks under these looks, made if there's none yet or what there
++	 * is was made under other looks. Null where nothing is shared: snapshots with copycats, whose
++	 * ids the looks make up as they go.
++	 */
++	static @Nullable ChunkBakeData of(ChunkSnapshot snapshot, Looks looks, byte[] kinds, int @Nullable [] shapes) {
++		if (!VoxelReader.SHARED) {
++			return null;
++		}
++		for (int i = 0; i < snapshot.sectionCount(); i++) {
++			if (snapshot.copycats(i) != null) {
++				return null;
++			}
++		}
++		java.util.concurrent.atomic.AtomicReference<@Nullable Object> holder = snapshot.bakeData();
++		while (true) {
++			Object now = holder.get();
++			// One with and one without shapes: the tracer's readers tell smaller blocks apart, the map's picks don't.
++			if (now instanceof ChunkBakeData[] pair) {
++				ChunkBakeData found = pair[shapes == null ? 0 : 1];
++				if (found != null && found.looks == looks && found.kinds == kinds && found.shapes == shapes) {
++					return found;
++				}
++			}
++			ChunkBakeData made = new ChunkBakeData(looks, kinds, shapes, snapshot.sectionCount());
++			ChunkBakeData[] pair = now instanceof ChunkBakeData[] old ? old.clone() : new ChunkBakeData[2];
++			if (pair[shapes == null ? 1 : 0] != null && pair[shapes == null ? 1 : 0].looks != looks) {
++				pair[shapes == null ? 1 : 0] = null;
++			}
++			pair[shapes == null ? 0 : 1] = made;
++			if (holder.compareAndSet(now, pair)) {
++				return made;
++			}
++		}
++	}
++
++	/**
++	 * The chunk's shadow caster faces, every column from the block above its top down to
++	 * {@link #downTo}, in one array: column {@code (z << 4) | x} from {@code offsets[column]} to
++	 * {@code offsets[column + 1]}, per block with faces from the top down, {@code (y - minY) << 4 | faces}
++	 * with faces {@link #TOP}, {@link #WEST}, {@link #SOUTH}, or {@link #SHAPE} followed by the
++	 * block's id, whose shape's boxes each give all three. Columns on the chunk's west or south edge
++	 * read the neighbour there; when they did, its token is kept, and the faces hold only while the
++	 * neighbour does. One object a chunk: kept per column, they were half a million, which the
++	 * collector had to trace.
++	 */
++	record CasterChunk(int downTo, int[] offsets, int[] faces, @Nullable Object west, @Nullable Object south) {
++	}
++
++	static final int TOP = 1;
++	static final int WEST = 2;
++	static final int SOUTH = 4;
++	static final int SHAPE = 8;
++}
+diff --git a/src/main/java/dev/diorama/bake/GpuMesher.java b/src/main/java/dev/diorama/bake/GpuMesher.java
+index 4d8a706a..1edd4d05 100644
+--- a/src/main/java/dev/diorama/bake/GpuMesher.java
++++ b/src/main/java/dev/diorama/bake/GpuMesher.java
+@@ -64,6 +64,11 @@ public final class GpuMesher {
+ 	private GpuMesher() {
+ 	}
+ 
++	/** Whether meshes take unchanged columns from the tile's last mesh ({@link MeshColumns}). Only for checking that they come out the same either way. */
++	public static boolean REUSE = true;
++	/** Whether the walk takes rows of nothing but open air in one step. Only for checking that meshes come out the same either way. */
++	public static boolean AIR_ROWS = true;
++
+ 	/**
+ 	 * Ints per face in a {@link Quads} list: cell, face, colour, occlusion, light, flags, then the
+ 	 * face's box as {@link ShapeFaces} packs it, two ints in 128ths of a block, then under a roof
+@@ -166,6 +171,140 @@ public final class GpuMesher {
+ 			this.count++;
+ 		}
+ 
++		/**
++		 * Packs faces {@code from} to {@code to} of one column onto {@code out} at {@code at}, as
++		 * {@link #addCopied} takes them: {@code (z - zBase) << 16 | (y - minY) << 3 | face << 1}, with bit 0
++		 * set where the box isn't the whole cube, then colour, occlusion, light and flags, then lo and hi
++		 * for such a box. Returns where it ended, or -1 if a face doesn't fit or has fog, which the sky
++		 * view never gives one.
++		 */
++		int copyOut(int from, int to, int[] out, int at, int zBase, int minY) {
++			java.nio.IntBuffer data = this.memory.data;
++			for (int f = from; f < to; f++) {
++				int i = f * STRIDE;
++				int y = data.get(i + 1) - minY;
++				int z = data.get(i + 2) - zBase;
++				int face = data.get(i + 3);
++				if (y < 0 || y > 0x1FFF || z < 0 || z > 0x7FFF || face < 0 || face > 3
++					|| (data.get(i + 10) | data.get(i + 11) | data.get(i + 12) | data.get(i + 13)) != 0) {
++					return -1;
++				}
++				int lo = data.get(i + 8);
++				int hi = data.get(i + 9);
++				boolean whole = lo == ShapeFaces.FULL_LO && hi == ShapeFaces.FULL_HI;
++				out[at++] = z << 16 | y << 3 | face << 1 | (whole ? 0 : 1);
++				out[at++] = data.get(i + 4);
++				out[at++] = data.get(i + 5);
++				out[at++] = data.get(i + 6);
++				out[at++] = data.get(i + 7);
++				if (!whole) {
++					out[at++] = lo;
++					out[at++] = hi;
++				}
++			}
++			return at;
++		}
++
++		/** Adds {@code count} faces of column {@code x} as {@link #copyOut} packed them from {@code at}; returns where they end. */
++		int addCopied(int x, int[] faces, int at, int count, int zBase, int minY) {
++			long to = this.reserve(count);
++			for (int f = 0; f < count; f++) {
++				int packed = faces[at];
++				boolean whole = (packed & 1) == 0;
++				MemoryUtil.memPutInt(to, x);
++				MemoryUtil.memPutInt(to + 4, (packed >> 3 & 0x1FFF) + minY);
++				MemoryUtil.memPutInt(to + 8, (packed >>> 16) + zBase);
++				MemoryUtil.memPutInt(to + 12, packed >> 1 & 3);
++				MemoryUtil.memPutInt(to + 16, faces[at + 1]);
++				MemoryUtil.memPutInt(to + 20, faces[at + 2]);
++				MemoryUtil.memPutInt(to + 24, faces[at + 3]);
++				MemoryUtil.memPutInt(to + 28, faces[at + 4]);
++				at += 5;
++				MemoryUtil.memPutInt(to + 32, whole ? ShapeFaces.FULL_LO : faces[at++]);
++				MemoryUtil.memPutInt(to + 36, whole ? ShapeFaces.FULL_HI : faces[at++]);
++				for (int n = 10; n < STRIDE; n++) {
++					MemoryUtil.memPutInt(to + 4L * n, 0);
++				}
++				to += STRIDE * 4L;
++			}
++			this.count += count;
++			return at;
++		}
++
++		/**
++		 * Adds {@code count} shadow caster faces of column {@code x} as {@link #copyCasters} packed them,
++		 * with the same {@code zBase} and {@code minY}, as {@code add} would.
++		 */
++		void addCasters(int x, int[] faces, int count, int zBase, int minY) {
++			long to = this.reserve(count);
++			int k = 0;
++			for (int f = 0; f < count; f++) {
++				int packed = faces[k++];
++				boolean whole = (packed & 1) == 0;
++				MemoryUtil.memPutInt(to, x);
++				MemoryUtil.memPutInt(to + 4, (packed >> 3 & 0x1FFF) + minY);
++				MemoryUtil.memPutInt(to + 8, (packed >>> 16) + zBase);
++				MemoryUtil.memPutInt(to + 12, packed >> 1 & 3);
++				MemoryUtil.memPutInt(to + 16, 0);
++				MemoryUtil.memPutInt(to + 20, 0);
++				MemoryUtil.memPutInt(to + 24, 0);
++				MemoryUtil.memPutInt(to + 28, 0);
++				MemoryUtil.memPutInt(to + 32, whole ? ShapeFaces.FULL_LO : faces[k++]);
++				MemoryUtil.memPutInt(to + 36, whole ? ShapeFaces.FULL_HI : faces[k++]);
++				for (int n = 10; n < STRIDE; n++) {
++					MemoryUtil.memPutInt(to + 4L * n, 0);
++				}
++				to += STRIDE * 4L;
++			}
++			this.count += count;
++		}
++
++		/** Room for {@code faces} more faces; the native address the first of them goes at. */
++		private long reserve(int faces) {
++			java.nio.IntBuffer data = this.memory.data;
++			long need = (long) (this.count + faces) * STRIDE;
++			if (need > data.capacity()) {
++				int capacity = data.capacity();
++				while (capacity < need) {
++					capacity *= 2;
++				}
++				data = MemoryUtil.memRealloc(data, capacity);
++				this.memory.data = data;
++			}
++			return MemoryUtil.memAddress(data) + (long) this.count * STRIDE * Integer.BYTES;
++		}
++
++		/**
++		 * Packs faces {@code from} to {@code to}, all of them shadow casters of one x, as {@link #addCasters}
++		 * takes them: one int a face, {@code (z - zBase) << 16 | (y - minY) << 3 | face << 1}, and where its
++		 * box isn't the whole cube, bit 0 set and lo and hi after it. Null if one doesn't fit, or isn't
++		 * what {@link #add} makes of a caster.
++		 */
++		int @Nullable [] copyCasters(int from, int to, int zBase, int minY) {
++			java.nio.IntBuffer data = this.memory.data;
++			int[] out = new int[(to - from) * 3];
++			int k = 0;
++			for (int f = from; f < to; f++) {
++				int i = f * STRIDE;
++				int y = data.get(i + 1) - minY;
++				int z = data.get(i + 2) - zBase;
++				int face = data.get(i + 3);
++				int lo = data.get(i + 8);
++				int hi = data.get(i + 9);
++				if (y < 0 || y > 0x1FFF || z < 0 || z > 0x7FFF || face < 0 || face > 3
++					|| (data.get(i + 4) | data.get(i + 5) | data.get(i + 6) | data.get(i + 7) | data.get(i + 10) | data.get(i + 11) | data.get(i + 12) | data.get(i + 13)) != 0) {
++					return null;
++				}
++				boolean whole = lo == ShapeFaces.FULL_LO && hi == ShapeFaces.FULL_HI;
++				out[k++] = z << 16 | y << 3 | face << 1 | (whole ? 0 : 1);
++				if (!whole) {
++					out[k++] = lo;
++					out[k++] = hi;
++				}
++			}
++			return java.util.Arrays.copyOf(out, k);
++		}
++
+ 		/**
+ 		 * The last face's biome fog under a roof, at its cube face's corners in the order of
+ 		 * {@link GpuMesher#aoTop}: sRGB bytes, red lowest, of TileBaker's blend before its light is limited.
+@@ -352,358 +491,669 @@ public final class GpuMesher {
+ 		int fz0 = Integer.MAX_VALUE;
+ 		int fz1 = Integer.MIN_VALUE;
+ 
++		// The sky view outside a roof keeps its columns for the tile's next mesh (MeshColumns).
++		MeshColumns.Settings settings = REUSE && !lit && !lifted && !helper.depthLook && !fog && !helper.cave
++			? new MeshColumns.Settings(looks, style, overlays, sin, cos, Projection.facing(), startY, limitY, helper.rockLimit, minV,
++				helper.passesMissingFrom()) : null;
++		MeshColumns.Tile kept = settings == null ? null : MeshColumns.get(key);
++		if (kept != null && (!kept.settings.equals(settings) || kept.x0 != x0 - 1)) {
++			kept = null;
++		}
++		MeshColumns.Tile keep = settings == null ? null : new MeshColumns.Tile(settings, x0 - 1, x1 - x0 + 2);
++		// In the sky view a row of cells that are all air, reached from above at its south end, is
++		// reached throughout and adds nothing but its extent: those come in one step. Per cell of
++		// the column's x, the height from which everything up is air (VoxelReader.openFrom).
++		boolean airRows = AIR_ROWS && !lit && !lifted && !fog && looks.kind[VoxelReader.AIR_ID] == BlockLooks.AIR;
++		int[] openFrom = airRows ? new int[zSpan] : null;
++		// Each column is walked by a method of its own: called a hundred and thirty times a mesh, it is
++		// compiled early, and a branch it hasn't seen yet costs one column in the interpreter, not a tile.
++		Walk walk = new Walk(mesh, helper, reader, source, looks, style, sin, cos, cot, startY, limitY, lit, fog, lifted, minV, maxV, x0, zBase, zSpan,
++			airRows, openFrom, keep, aboveOpen, hereOpen, aboveRock, hereRock, aboveRockU, hereRockU, aboveRockN, hereRockN, rockIn, pieces,
++			aboveWater, hereWater, aboveFirstWater, hereFirstWater);
+ 		// One column more each side: the bake draws a pixel past the tile's edges for outlines.
+ 		for (int x = x0 - 1; x <= x1 && !mesh.empty; x++) {
+-			// Where the rays start: open air above the tallest block, or inside rock at a cut.
+-			java.util.Arrays.fill(aboveOpen, !lit);
+-			java.util.Arrays.fill(aboveRock, lit);
+-			java.util.Arrays.fill(aboveRockN, RockRays.ALL);
+-			java.util.Arrays.fill(aboveWater, false);
+-			java.util.Arrays.fill(aboveFirstWater, NO_WATER);
+-			for (int y = startY - 1; y >= limitY; y--) {
+-				int lo = zLow(minV, y, sin, cos);
+-				int hi = zHigh(maxV, y, sin, cos);
+-				java.util.Arrays.fill(hereOpen, false);
+-				java.util.Arrays.fill(hereRock, false);
+-				java.util.Arrays.fill(hereRockN, 0);
+-				java.util.Arrays.fill(hereWater, false);
+-				java.util.Arrays.fill(hereFirstWater, NO_WATER);
+-				boolean any = false;
+-				for (int z = hi; z >= lo; z--) {
+-					int i = z - zBase;
+-					boolean openAbove = aboveOpen[i];
+-					boolean openSouth = z < hi && hereOpen[i + 1];
+-					boolean rockAbove = aboveRock[i];
+-					boolean rockSouth = z < hi && hereRock[i + 1];
+-					boolean fromAbove = openAbove || rockAbove;
+-					boolean fromSouth = openSouth || rockSouth;
+-					if (!fromAbove && !fromSouth) {
+-						continue;
++			MeshColumns.Column was = kept == null ? null : kept.columns[x - (x0 - 1)];
++			if (was != null && walk.reuse(x, was)) {
++				continue;
++			}
++			walk.column(x);
++		}
++		fx0 = walk.fx0;
++		fx1 = walk.fx1;
++		fy0 = walk.fy0;
++		fy1 = walk.fy1;
++		fz0 = walk.fz0;
++		fz1 = walk.fz1;
++		if (keep != null) {
++			MeshColumns.put(key, keep);
++		}
++		if (!lit || lifted) {
++			casters(mesh, helper, reader, looks, style, x0, x1, minV, maxV, source.minY());
++			if (fx0 <= fx1) {
++				voxels(mesh, helper, reader, fx0, fx1, fy0, fy1, fz0, fz1);
++			}
++		} else {
++			// No sun in these views, so no shadow map; its region just has to be sane.
++			mesh.casterX0 = x0 - 1;
++			mesh.casterX1 = x1 + 2;
++			mesh.casterZ0 = zBase;
++			mesh.casterZ1 = zBase + zSpan;
++			mesh.casterY0 = limitY;
++			mesh.casterY1 = startY;
++		}
++		mesh.originZ = Math.floorDiv(Math.min(zBase, mesh.casterZ0), 16) * 16;
++		if (mesh.voxels != null) {
++			// The table was placed before the origin was known: make it relative now.
++			mesh.voxelOrigin[2] -= mesh.originZ >> 4;
++		}
++		sortNearToFar(mesh.tinted, sin, cos);
++		mesh.buildNanos = System.nanoTime() - start;
++		return mesh;
++	}
++
++	/**
++	 * Walks one column of x of a mesh at a time: what {@link #build} works out once for the tile, the
++	 * rows of cell state the walk reuses from column to column, and the camera's faces' extent so far.
++	 */
++	private static final class Walk {
++		private final Mesh mesh;
++		private final TileBaker helper;
++		private final VoxelReader reader;
++		private final ChunkSource source;
++		private final BlockLooks looks;
++		private final MapStyle style;
++		private final double sin;
++		private final double cos;
++		private final double cot;
++		private final int startY;
++		private final int limitY;
++		private final boolean lit;
++		private final boolean fog;
++		private final boolean lifted;
++		private final double minV;
++		private final double maxV;
++		private final int x0;
++		private final int zBase;
++		private final int zSpan;
++		private final boolean airRows;
++		private final int @Nullable [] openFrom;
++		private final MeshColumns.@Nullable Tile keep;
++		private final boolean[] aboveOpen;
++		private final boolean[] hereOpen;
++		private final boolean[] aboveRock;
++		private final boolean[] hereRock;
++		private final double[][] aboveRockU;
++		private final double[][] hereRockU;
++		private final int[] aboveRockN;
++		private final int[] hereRockN;
++		private final double[] rockIn;
++		private final int[] pieces;
++		private final boolean[] aboveWater;
++		private final boolean[] hereWater;
++		private final byte[] aboveFirstWater;
++		private final byte[] hereFirstWater;
++		int fx0 = Integer.MAX_VALUE;
++		int fx1 = Integer.MIN_VALUE;
++		int fy0 = Integer.MAX_VALUE;
++		int fy1 = Integer.MIN_VALUE;
++		int fz0 = Integer.MAX_VALUE;
++		int fz1 = Integer.MIN_VALUE;
++
++		Walk(Mesh mesh, TileBaker helper, VoxelReader reader, ChunkSource source, BlockLooks looks, MapStyle style, double sin, double cos, double cot, int startY, int limitY, boolean lit, boolean fog, boolean lifted, double minV, double maxV, int x0, int zBase, int zSpan, boolean airRows, int @Nullable [] openFrom, MeshColumns.@Nullable Tile keep, boolean[] aboveOpen, boolean[] hereOpen, boolean[] aboveRock, boolean[] hereRock, double[][] aboveRockU, double[][] hereRockU, int[] aboveRockN, int[] hereRockN, double[] rockIn, int[] pieces, boolean[] aboveWater, boolean[] hereWater, byte[] aboveFirstWater, byte[] hereFirstWater) {
++			this.mesh = mesh;
++			this.helper = helper;
++			this.reader = reader;
++			this.source = source;
++			this.looks = looks;
++			this.style = style;
++			this.sin = sin;
++			this.cos = cos;
++			this.cot = cot;
++			this.startY = startY;
++			this.limitY = limitY;
++			this.lit = lit;
++			this.fog = fog;
++			this.lifted = lifted;
++			this.minV = minV;
++			this.maxV = maxV;
++			this.x0 = x0;
++			this.zBase = zBase;
++			this.zSpan = zSpan;
++			this.airRows = airRows;
++			this.openFrom = openFrom;
++			this.keep = keep;
++			this.aboveOpen = aboveOpen;
++			this.hereOpen = hereOpen;
++			this.aboveRock = aboveRock;
++			this.hereRock = hereRock;
++			this.aboveRockU = aboveRockU;
++			this.hereRockU = hereRockU;
++			this.aboveRockN = aboveRockN;
++			this.hereRockN = hereRockN;
++			this.rockIn = rockIn;
++			this.pieces = pieces;
++			this.aboveWater = aboveWater;
++			this.hereWater = hereWater;
++			this.aboveFirstWater = aboveFirstWater;
++			this.hereFirstWater = hereFirstWater;
++		}
++
++		/** Takes a column as the tile's last mesh had it, if nothing it depends on has changed; see {@link MeshColumns}. */
++		boolean reuse(int x, MeshColumns.Column was) {
++			Mesh mesh = this.mesh;
++			if (!MeshColumns.matches(was, this.reader, this.helper.savedSpots(), x - this.x0)) {
++				return false;
++			}
++			int at = 0;
++			Quads[] lists = {mesh.opaque, mesh.water, mesh.tinted};
++			for (int l = 0; l < 3; l++) {
++				at = lists[l].addCopied(x, was.faces, at, was.counts[l], this.zBase, this.reader.minY());
++			}
++			mesh.traceInstead |= was.traceInstead;
++			mesh.lowestY = Math.min(mesh.lowestY, was.lowestY);
++			if (was.reached) {
++				this.fy0 = Math.min(this.fy0, was.y0);
++				this.fy1 = Math.max(this.fy1, was.y1);
++				this.fx0 = Math.min(this.fx0, x);
++				this.fx1 = Math.max(this.fx1, x);
++				this.fz0 = Math.min(this.fz0, was.z0);
++				this.fz1 = Math.max(this.fz1, was.z1);
++			}
++			this.keep.columns[x - (this.x0 - 1)] = was;
++			this.keep.size += was.faces.length + was.deps.length;
++			return true;
++		}
++
++		/** Walks column {@code x}: its camera faces into the mesh, and, when the tile keeps its columns, the column into {@link #keep}. */
++		void column(int x) {
++			Mesh mesh = this.mesh;
++			TileBaker helper = this.helper;
++			VoxelReader reader = this.reader;
++			ChunkSource source = this.source;
++			BlockLooks looks = this.looks;
++			MapStyle style = this.style;
++			double sin = this.sin;
++			double cos = this.cos;
++			double cot = this.cot;
++			int startY = this.startY;
++			int limitY = this.limitY;
++			boolean lit = this.lit;
++			boolean fog = this.fog;
++			boolean lifted = this.lifted;
++			double minV = this.minV;
++			double maxV = this.maxV;
++			int x0 = this.x0;
++			int zBase = this.zBase;
++			int zSpan = this.zSpan;
++			boolean airRows = this.airRows;
++			int[] openFrom = this.openFrom;
++			MeshColumns.Tile keep = this.keep;
++			boolean[] aboveOpen = this.aboveOpen;
++			boolean[] hereOpen = this.hereOpen;
++			boolean[] aboveRock = this.aboveRock;
++			boolean[] hereRock = this.hereRock;
++			double[][] aboveRockU = this.aboveRockU;
++			double[][] hereRockU = this.hereRockU;
++			int[] aboveRockN = this.aboveRockN;
++			int[] hereRockN = this.hereRockN;
++			double[] rockIn = this.rockIn;
++			int[] pieces = this.pieces;
++			boolean[] aboveWater = this.aboveWater;
++			boolean[] hereWater = this.hereWater;
++			byte[] aboveFirstWater = this.aboveFirstWater;
++			byte[] hereFirstWater = this.hereFirstWater;
++			int fx0 = this.fx0;
++			int fx1 = this.fx1;
++			int fy0 = this.fy0;
++			int fy1 = this.fy1;
++			int fz0 = this.fz0;
++			int fz1 = this.fz1;
++		// This column's own share of what the walk sums over the tile, for keeping it.
++		int[] before = {mesh.opaque.count, mesh.water.count, mesh.tinted.count};
++		boolean traceBefore = mesh.traceInstead;
++		int lowestBefore = mesh.lowestY;
++		mesh.traceInstead = false;
++		mesh.lowestY = Integer.MAX_VALUE;
++		int cy0 = Integer.MAX_VALUE;
++		int cy1 = Integer.MIN_VALUE;
++		int cz0 = Integer.MAX_VALUE;
++		int cz1 = Integer.MIN_VALUE;
++		boolean unknown = false;
++		boolean airRow = airRows;
++		if (airRow) {
++			int[] open = null;
++			for (int i = 0; i < zSpan; i++) {
++				int z = zBase + i;
++				if (i == 0 || (z & 15) == 0) {
++					open = reader.openFrom(x >> 4, z >> 4);
++				}
++				openFrom[i] = open == null ? Integer.MAX_VALUE : open[((z & 15) << 4) | (x & 15)];
++			}
++		}
++		// The cells the column read, unknown ones too.
++		int dz0 = Integer.MAX_VALUE;
++		int dz1 = Integer.MIN_VALUE;
++		// Where the rays start: open air above the tallest block, or inside rock at a cut.
++		java.util.Arrays.fill(aboveOpen, !lit);
++		java.util.Arrays.fill(aboveRock, lit);
++		java.util.Arrays.fill(aboveRockN, RockRays.ALL);
++		java.util.Arrays.fill(aboveWater, false);
++		java.util.Arrays.fill(aboveFirstWater, NO_WATER);
++		// The cells of the row above that rays reached, as indices: none below or past these can
++		// pass rays down. Every cell starts reached.
++		int aboveLo = 0;
++		int aboveHi = zSpan - 1;
++		for (int y = startY - 1; y >= limitY; y--) {
++			int hereLo = Integer.MAX_VALUE;
++			int hereHi = -1;
++			int lo = zLow(minV, y, sin, cos);
++			int hi = zHigh(maxV, y, sin, cos);
++			java.util.Arrays.fill(hereOpen, false);
++			java.util.Arrays.fill(hereRock, false);
++			java.util.Arrays.fill(hereRockN, 0);
++			java.util.Arrays.fill(hereWater, false);
++			java.util.Arrays.fill(hereFirstWater, NO_WATER);
++			boolean any = false;
++			if (airRow) {
++				// Until the first row that isn't all air from its south end on, which ends them.
++				airRow = aboveOpen[hi - zBase];
++				for (int i = lo - zBase; i <= hi - zBase && airRow; i++) {
++					airRow = openFrom[i] <= y;
++				}
++				if (airRow) {
++					java.util.Arrays.fill(hereOpen, lo - zBase, hi - zBase + 1, true);
++					hereLo = lo - zBase;
++					hereHi = hi - zBase;
++					any = true;
++					fy0 = Math.min(fy0, y);
++					fy1 = Math.max(fy1, y + 1);
++					fx0 = Math.min(fx0, x);
++					fx1 = Math.max(fx1, x);
++					fz0 = Math.min(fz0, lo);
++					fz1 = Math.max(fz1, hi);
++					cy0 = Math.min(cy0, y);
++					cy1 = Math.max(cy1, y + 1);
++					cz0 = Math.min(cz0, lo);
++					cz1 = Math.max(cz1, hi);
++					dz0 = Math.min(dz0, lo);
++					dz1 = Math.max(dz1, hi);
++				}
++			}
++			// Cells south of what the row above reached can only be reached from the south, which
++			// starts nowhere; north of it, only along an unbroken run from the south.
++			for (int z = airRow ? lo - 1 : Math.min(hi, zBase + aboveHi); z >= lo; z--) {
++				int i = z - zBase;
++				if (i < aboveLo && !(z < hi && (hereOpen[i + 1] || hereRock[i + 1]))) {
++					break;
++				}
++				boolean openAbove = aboveOpen[i];
++				boolean openSouth = z < hi && hereOpen[i + 1];
++				boolean rockAbove = aboveRock[i];
++				boolean rockSouth = z < hi && hereRock[i + 1];
++				boolean fromAbove = openAbove || rockAbove;
++				boolean fromSouth = openSouth || rockSouth;
++				if (!fromAbove && !fromSouth) {
++					continue;
++				}
++				int rockN = 0;
++				if (rockAbove || rockSouth) {
++					rockN = RockRays.enter(rockIn, aboveRockU[i], rockAbove ? aboveRockN[i] : 0, rockSouth ? hereRockU[i + 1] : null, rockSouth ? hereRockN[i + 1] : 0, y, z, cot);
++					if (rockN > RockRays.MAX) {
++						// More ranges than a cell keeps: rare enough to trace.
++						mesh.traceInstead = true;
++						rockN = RockRays.ALL;
+ 					}
+-					int rockN = 0;
+-					if (rockAbove || rockSouth) {
+-						rockN = RockRays.enter(rockIn, aboveRockU[i], rockAbove ? aboveRockN[i] : 0, rockSouth ? hereRockU[i + 1] : null, rockSouth ? hereRockN[i + 1] : 0, y, z, cot);
+-						if (rockN > RockRays.MAX) {
+-							// More ranges than a cell keeps: rare enough to trace.
+-							mesh.traceInstead = true;
+-							rockN = RockRays.ALL;
++				}
++				int id = reader.state(x, y, z);
++				if (id == VoxelReader.UNKNOWN) {
++					// What a ray meets here comes from the saved spots, which the column keeps.
++					unknown = true;
++					dz0 = Math.min(dz0, z);
++					dz1 = Math.max(dz1, z);
++					if (!helper.passesMissing(y) && !helper.passedWhenSaved(x, y, z)) {
++						if (fromAbove) {
++							mesh.opaque.add(x, y, z, TOP, 0, 0, 0, UNKNOWN);
+ 						}
+-					}
+-					int id = reader.state(x, y, z);
+-					if (id == VoxelReader.UNKNOWN) {
+-						if (!helper.passesMissing(y) && !helper.passedWhenSaved(x, y, z)) {
+-							if (fromAbove) {
+-								mesh.opaque.add(x, y, z, TOP, 0, 0, 0, UNKNOWN);
+-							}
+-							if (fromSouth) {
+-								mesh.opaque.add(x, y, z, SOUTH, 0, 0, 0, UNKNOWN);
+-							}
+-							continue;
++						if (fromSouth) {
++							mesh.opaque.add(x, y, z, SOUTH, 0, 0, 0, UNKNOWN);
+ 						}
+-						id = VoxelReader.AIR_ID;
++						continue;
+ 					}
+-					byte kind = looks.kind[id];
+-					// Smaller than a cube (only solid and see-through blocks have shapes): a ray
+-					// meets one of its boxes or goes on beside them, as TileBaker.enterShape.
+-					int shape = kind == BlockLooks.SOLID || kind == BlockLooks.GLASS ? looks.shape[id] : 0;
+-					if (lifted && rockN != 0 && kind != BlockLooks.SOLID && y + 1 < startY && reader.pocket(x, y, z)) {
+-						// Under a roof a one-block pocket in the rock is rock to rays still in it, so
+-						// buried lava springs don't speckle it; open rays meet what's there.
+-						keepRock(hereRock, hereRockU, hereRockN, i, rockIn, rockN);
+-						any = true;
+-						if (openAbove || openSouth) {
+-							if (kind == BlockLooks.LAVA) {
+-								if (openAbove) {
+-									solidFace(mesh, helper, source, looks, style, id, x, y, z, true, kind, lit, fog, ShapeFaces.FULL_LO, ShapeFaces.FULL_HI, rockIn, rockN, cot, pieces);
+-								}
+-								if (openSouth) {
+-									solidFace(mesh, helper, source, looks, style, id, x, y, z, false, kind, lit, fog, ShapeFaces.FULL_LO, ShapeFaces.FULL_HI, rockIn, rockN, cot, pieces);
+-								}
+-								mesh.lowestY = Math.min(mesh.lowestY, y);
+-							} else if (kind == BlockLooks.AIR || (kind == BlockLooks.PLANT || kind == BlockLooks.GLASS) && shape == 0) {
+-								hereOpen[i] = true;
+-								if (fog) {
+-									byte a = openAbove ? aboveFirstWater[i] : NO_WATER;
+-									byte b = openSouth ? hereFirstWater[i + 1] : NO_WATER;
+-									hereFirstWater[i] = a == SEEN_WATER || b == SEEN_WATER ? SEEN_WATER : a == UNSEEN_WATER || b == UNSEEN_WATER ? UNSEEN_WATER : NO_WATER;
+-								}
+-								if (kind != BlockLooks.AIR) {
+-									// Roots, fungi, vines and fire in a gap: they tint only the open rays.
+-									helper.albedo(id, x, z, true);
+-									int color = encode(helper.albedoR, helper.albedoG, helper.albedoB, kind == BlockLooks.PLANT ? 102 : 64);
+-									if (openAbove) {
+-										tintedFace(mesh.tinted, x, y, z, true, color, rockIn, rockN, cot, pieces);
+-									}
+-									if (openSouth) {
+-										tintedFace(mesh.tinted, x, y, z, false, color, rockIn, rockN, cot, pieces);
+-									}
+-								}
+-							} else {
+-								// Water, or a see-through block smaller than a cube, in a pocket that rays
+-								// of both kinds reach.
+-								mesh.traceInstead = true;
+-							}
+-						}
+-					} else if (shape != 0) {
+-						ShapeFaces sh = looks.faces(shape);
+-						int wet = looks.wetShape[id];
+-						boolean passes = false;
+-						boolean reached;
+-						boolean traced = false;
+-						boolean underside = false;
+-						if (kind == BlockLooks.SOLID) {
+-							if (rockN != 0) {
+-								// Inside the rock below a cut, any solid block is rock.
+-								keepRock(hereRock, hereRockU, hereRockN, i, rockIn, rockN);
+-								any = true;
+-							}
+-							reached = openAbove || openSouth;
+-							if (reached && (lifted || helper.depthLook) && reader.ceilingUnderside(x, y, z, helper.lid(x, z), limitY)) {
+-								// The bottom of a ceiling: rays that have left the rock pass
+-								// through it, as the tracer's do, so it doesn't float over the floor.
+-								passes = true;
+-								underside = true;
+-								if (wet >= 0) {
+-									// They'd come out in water.
+-									mesh.traceInstead = true;
+-								}
+-							} else if (reached) {
+-								mesh.lowestY = Math.min(mesh.lowestY, y);
+-								// A piece on the cell's top or south side is met only by rays coming in that way, one
+-								// inside the cell by rays from either, and none by rays still in the rock.
+-								for (int b = 0; b < sh.top.length; b += 2) {
+-									if (openAbove || ShapeFaces.inset(sh.top[b + 1], true)) {
+-										solidFace(mesh, helper, source, looks, style, id, x, y, z, true, kind, lit, fog, sh.top[b], sh.top[b + 1], rockIn, rockN, cot, pieces);
+-									}
+-								}
+-								for (int b = 0; b < sh.south.length; b += 2) {
+-									if (openSouth || ShapeFaces.inset(sh.south[b + 1], false)) {
+-										solidFace(mesh, helper, source, looks, style, id, x, y, z, false, kind, lit, fog, sh.south[b], sh.south[b + 1], rockIn, rockN, cot, pieces);
+-									}
+-								}
+-								// Rays that miss its boxes go on, even past one filling the floor: a ray coming in near
+-								// the north side leaves before it gets down to the box.
+-								passes = true;
+-								if (wet >= 0 && rockN != 0 && (wet(reader, looks, x, y - 1, z) || wet(reader, looks, x, y, z - 1))) {
+-									// Rays from the rock leave it dry, into water whose surface the next cell won't draw
+-									// for them, as it's drawn here for the others.
+-									traced = true;
+-									mesh.traceInstead = true;
+-								}
++					id = VoxelReader.AIR_ID;
++				}
++				byte kind = looks.kind[id];
++				// Smaller than a cube (only solid and see-through blocks have shapes): a ray
++				// meets one of its boxes or goes on beside them, as TileBaker.enterShape.
++				int shape = kind == BlockLooks.SOLID || kind == BlockLooks.GLASS ? looks.shape[id] : 0;
++				if (lifted && rockN != 0 && kind != BlockLooks.SOLID && y + 1 < startY && reader.pocket(x, y, z)) {
++					// Under a roof a one-block pocket in the rock is rock to rays still in it, so
++					// buried lava springs don't speckle it; open rays meet what's there.
++					keepRock(hereRock, hereRockU, hereRockN, i, rockIn, rockN);
++					any = true;
++					if (openAbove || openSouth) {
++						if (kind == BlockLooks.LAVA) {
++							if (openAbove) {
++								solidFace(mesh, helper, source, looks, style, id, x, y, z, true, kind, lit, fog, ShapeFaces.FULL_LO, ShapeFaces.FULL_HI, rockIn, rockN, cot, pieces);
+ 							}
+-						} else {
+-							reached = fromAbove || fromSouth;
+-							if (reached) {
+-								// Only what a ray meets first in the cell: the tracer tints a ray once for
+-								// the block it meets.
+-								helper.albedo(id, x, z, true);
+-								int color = encode(helper.albedoR, helper.albedoG, helper.albedoB, 64);
+-								int[][] seen = sh.seen(sin, cos);
+-								for (int b = 0; b < seen[0].length; b += 2) {
+-									if (fromAbove || ShapeFaces.inset(seen[0][b + 1], true)) {
+-										mesh.tinted.add(x, y, z, TOP, color, 0, 0, 0, seen[0][b], seen[0][b + 1]);
+-									}
+-								}
+-								for (int b = 0; b < seen[1].length; b += 2) {
+-									if (fromSouth || ShapeFaces.inset(seen[1][b + 1], false)) {
+-										mesh.tinted.add(x, y, z, SOUTH, color, 0, 0, 0, seen[1][b], seen[1][b + 1]);
+-									}
+-								}
+-								passes = true;
++							if (openSouth) {
++								solidFace(mesh, helper, source, looks, style, id, x, y, z, false, kind, lit, fog, ShapeFaces.FULL_LO, ShapeFaces.FULL_HI, rockIn, rockN, cot, pieces);
+ 							}
+-						}
+-						if (passes) {
+-							// Rays that miss the boxes go on through the cell.
++							mesh.lowestY = Math.min(mesh.lowestY, y);
++						} else if (kind == BlockLooks.AIR || (kind == BlockLooks.PLANT || kind == BlockLooks.GLASS) && shape == 0) {
+ 							hereOpen[i] = true;
+-							any = true;
+ 							if (fog) {
+ 								byte a = openAbove ? aboveFirstWater[i] : NO_WATER;
+-								byte c = openSouth ? hereFirstWater[i + 1] : NO_WATER;
+-								hereFirstWater[i] = a == SEEN_WATER || c == SEEN_WATER ? SEEN_WATER : a == UNSEEN_WATER || c == UNSEEN_WATER ? UNSEEN_WATER : NO_WATER;
+-							}
+-						}
+-						if (reached && !traced && !underside && wet >= 0) {
+-							int[] wetTop = sh.wetTop;
+-							int[] wetSouth = sh.wetSouth;
+-							if (kind == BlockLooks.SOLID && rockN != 0) {
+-								wetTop = outsideRock(sh.wetTop, true, rockIn, rockN, y, z, cot, pieces);
+-								wetSouth = outsideRock(sh.wetSouth, false, rockIn, rockN, y, z, cot, pieces);
++								byte b = openSouth ? hereFirstWater[i + 1] : NO_WATER;
++								hereFirstWater[i] = a == SEEN_WATER || b == SEEN_WATER ? SEEN_WATER : a == UNSEEN_WATER || b == UNSEEN_WATER ? UNSEEN_WATER : NO_WATER;
+ 							}
+-							// Waterlogged: in water from where the ray came into the cell, but dry
+-							// where it meets the block right there.
+-							waterCell(mesh, helper, reader, source, wet, x, y, z, i, fromAbove, fromSouth, openAbove, openSouth,
+-								aboveWater, hereWater, hereFirstWater, lit, fog, wetTop, wetSouth);
+-							if (sh.wetCut) {
+-								// Rays that came in dry where the block is level with the water are in
+-								// water again in the next cell, so that one draws its own surface; where
+-								// this cell's water is drawn, it's nearer and wins.
+-								hereWater[i] = false;
++							if (kind != BlockLooks.AIR) {
++								// Roots, fungi, vines and fire in a gap: they tint only the open rays.
++								helper.albedo(id, x, z, true);
++								int color = encode(helper.albedoR, helper.albedoG, helper.albedoB, kind == BlockLooks.PLANT ? 102 : 64);
++								if (openAbove) {
++									tintedFace(mesh.tinted, x, y, z, true, color, rockIn, rockN, cot, pieces);
++								}
++								if (openSouth) {
++									tintedFace(mesh.tinted, x, y, z, false, color, rockIn, rockN, cot, pieces);
++								}
+ 							}
+-						}
+-						if (fog && hereRock[i] && hereOpen[i] && hereFirstWater[i] != NO_WATER) {
+-							// The rays from the rock it lets through haven't been in water, the others
+-							// have, here or before: one state for both doesn't hold.
++						} else {
++							// Water, or a see-through block smaller than a cube, in a pocket that rays
++							// of both kinds reach.
+ 							mesh.traceInstead = true;
+ 						}
+-					} else if (kind == BlockLooks.SOLID) {
++					}
++				} else if (shape != 0) {
++					ShapeFaces sh = looks.faces(shape);
++					int wet = looks.wetShape[id];
++					boolean passes = false;
++					boolean reached;
++					boolean traced = false;
++					boolean underside = false;
++					if (kind == BlockLooks.SOLID) {
+ 						if (rockN != 0) {
+-							// Still in the rock below the cut.
++							// Inside the rock below a cut, any solid block is rock.
+ 							keepRock(hereRock, hereRockU, hereRockN, i, rockIn, rockN);
+ 							any = true;
+ 						}
+-						if ((openAbove || openSouth) && (lifted || helper.depthLook) && reader.ceilingUnderside(x, y, z, helper.lid(x, z), limitY)) {
++						reached = openAbove || openSouth;
++						if (reached && (lifted || helper.depthLook) && reader.ceilingUnderside(x, y, z, helper.lid(x, z), limitY)) {
+ 							// The bottom of a ceiling: rays that have left the rock pass
+ 							// through it, as the tracer's do, so it doesn't float over the floor.
+-							hereOpen[i] = true;
+-							any = true;
+-							if (fog) {
+-								byte a = openAbove ? aboveFirstWater[i] : NO_WATER;
+-								byte b = openSouth ? hereFirstWater[i + 1] : NO_WATER;
+-								hereFirstWater[i] = a == SEEN_WATER || b == SEEN_WATER ? SEEN_WATER : a == UNSEEN_WATER || b == UNSEEN_WATER ? UNSEEN_WATER : NO_WATER;
++							passes = true;
++							underside = true;
++							if (wet >= 0) {
++								// They'd come out in water.
++								mesh.traceInstead = true;
+ 							}
+-						} else {
+-							if (openAbove) {
+-								solidFace(mesh, helper, source, looks, style, id, x, y, z, true, kind, lit, fog, ShapeFaces.FULL_LO, ShapeFaces.FULL_HI, rockIn, rockN, cot, pieces);
++						} else if (reached) {
++							mesh.lowestY = Math.min(mesh.lowestY, y);
++							// A piece on the cell's top or south side is met only by rays coming in that way, one
++							// inside the cell by rays from either, and none by rays still in the rock.
++							for (int b = 0; b < sh.top.length; b += 2) {
++								if (openAbove || ShapeFaces.inset(sh.top[b + 1], true)) {
++									solidFace(mesh, helper, source, looks, style, id, x, y, z, true, kind, lit, fog, sh.top[b], sh.top[b + 1], rockIn, rockN, cot, pieces);
++								}
+ 							}
+-							if (openSouth) {
+-								solidFace(mesh, helper, source, looks, style, id, x, y, z, false, kind, lit, fog, ShapeFaces.FULL_LO, ShapeFaces.FULL_HI, rockIn, rockN, cot, pieces);
++							for (int b = 0; b < sh.south.length; b += 2) {
++								if (openSouth || ShapeFaces.inset(sh.south[b + 1], false)) {
++									solidFace(mesh, helper, source, looks, style, id, x, y, z, false, kind, lit, fog, sh.south[b], sh.south[b + 1], rockIn, rockN, cot, pieces);
++								}
++							}
++							// Rays that miss its boxes go on, even past one filling the floor: a ray coming in near
++							// the north side leaves before it gets down to the box.
++							passes = true;
++							if (wet >= 0 && rockN != 0 && (wet(reader, looks, x, y - 1, z) || wet(reader, looks, x, y, z - 1))) {
++								// Rays from the rock leave it dry, into water whose surface the next cell won't draw
++								// for them, as it's drawn here for the others.
++								traced = true;
++								mesh.traceInstead = true;
+ 							}
+-							mesh.lowestY = Math.min(mesh.lowestY, y);
+ 						}
+-					} else if (kind == BlockLooks.LAVA) {
+-						// Lava stops a ray whether it came through open space or out of the rock.
+-						if (fromAbove) {
+-							solidFace(mesh, helper, source, looks, style, id, x, y, z, true, kind, lit, fog);
++					} else {
++						reached = fromAbove || fromSouth;
++						if (reached) {
++							// Only what a ray meets first in the cell: the tracer tints a ray once for
++							// the block it meets.
++							helper.albedo(id, x, z, true);
++							int color = encode(helper.albedoR, helper.albedoG, helper.albedoB, 64);
++							int[][] seen = sh.seen(sin, cos);
++							for (int b = 0; b < seen[0].length; b += 2) {
++								if (fromAbove || ShapeFaces.inset(seen[0][b + 1], true)) {
++									mesh.tinted.add(x, y, z, TOP, color, 0, 0, 0, seen[0][b], seen[0][b + 1]);
++								}
++							}
++							for (int b = 0; b < seen[1].length; b += 2) {
++								if (fromSouth || ShapeFaces.inset(seen[1][b + 1], false)) {
++									mesh.tinted.add(x, y, z, SOUTH, color, 0, 0, 0, seen[1][b], seen[1][b + 1]);
++								}
++							}
++							passes = true;
+ 						}
+-						if (fromSouth) {
+-							solidFace(mesh, helper, source, looks, style, id, x, y, z, false, kind, lit, fog);
++					}
++					if (passes) {
++						// Rays that miss the boxes go on through the cell.
++						hereOpen[i] = true;
++						any = true;
++						if (fog) {
++							byte a = openAbove ? aboveFirstWater[i] : NO_WATER;
++							byte c = openSouth ? hereFirstWater[i + 1] : NO_WATER;
++							hereFirstWater[i] = a == SEEN_WATER || c == SEEN_WATER ? SEEN_WATER : a == UNSEEN_WATER || c == UNSEEN_WATER ? UNSEEN_WATER : NO_WATER;
+ 						}
+-						mesh.lowestY = Math.min(mesh.lowestY, y);
+-					} else {
++					}
++					if (reached && !traced && !underside && wet >= 0) {
++						int[] wetTop = sh.wetTop;
++						int[] wetSouth = sh.wetSouth;
++						if (kind == BlockLooks.SOLID && rockN != 0) {
++							wetTop = outsideRock(sh.wetTop, true, rockIn, rockN, y, z, cot, pieces);
++							wetSouth = outsideRock(sh.wetSouth, false, rockIn, rockN, y, z, cot, pieces);
++						}
++						// Waterlogged: in water from where the ray came into the cell, but dry
++						// where it meets the block right there.
++						waterCell(mesh, helper, reader, source, wet, x, y, z, i, fromAbove, fromSouth, openAbove, openSouth,
++							aboveWater, hereWater, hereFirstWater, lit, fog, wetTop, wetSouth);
++						if (sh.wetCut) {
++							// Rays that came in dry where the block is level with the water are in
++							// water again in the next cell, so that one draws its own surface; where
++							// this cell's water is drawn, it's nearer and wins.
++							hereWater[i] = false;
++						}
++					}
++					if (fog && hereRock[i] && hereOpen[i] && hereFirstWater[i] != NO_WATER) {
++						// The rays from the rock it lets through haven't been in water, the others
++						// have, here or before: one state for both doesn't hold.
++						mesh.traceInstead = true;
++					}
++				} else if (kind == BlockLooks.SOLID) {
++					if (rockN != 0) {
++						// Still in the rock below the cut.
++						keepRock(hereRock, hereRockU, hereRockN, i, rockIn, rockN);
++						any = true;
++					}
++					if ((openAbove || openSouth) && (lifted || helper.depthLook) && reader.ceilingUnderside(x, y, z, helper.lid(x, z), limitY)) {
++						// The bottom of a ceiling: rays that have left the rock pass
++						// through it, as the tracer's do, so it doesn't float over the floor.
+ 						hereOpen[i] = true;
+ 						any = true;
+ 						if (fog) {
+-							// Rays from above and from the south are different rays through the same
+-							// cell; where they disagree, the seen one wins.
+ 							byte a = openAbove ? aboveFirstWater[i] : NO_WATER;
+ 							byte b = openSouth ? hereFirstWater[i + 1] : NO_WATER;
+ 							hereFirstWater[i] = a == SEEN_WATER || b == SEEN_WATER ? SEEN_WATER : a == UNSEEN_WATER || b == UNSEEN_WATER ? UNSEEN_WATER : NO_WATER;
+ 						}
+-						if (kind == BlockLooks.WATER) {
+-							waterCell(mesh, helper, reader, source, id, x, y, z, i, fromAbove, fromSouth, openAbove, openSouth,
+-								aboveWater, hereWater, hereFirstWater, lit, fog);
+-						} else if (kind == BlockLooks.PLANT || kind == BlockLooks.GLASS) {
+-							helper.albedo(id, x, z, true);
+-							int weight = kind == BlockLooks.PLANT ? 102 : 64;
+-							int color = encode(helper.albedoR, helper.albedoG, helper.albedoB, weight);
+-							if (fromAbove) {
+-								mesh.tinted.add(x, y, z, TOP, color, 0, 0, 0);
+-							}
+-							if (fromSouth) {
+-								mesh.tinted.add(x, y, z, SOUTH, color, 0, 0, 0);
+-							}
++					} else {
++						if (openAbove) {
++							solidFace(mesh, helper, source, looks, style, id, x, y, z, true, kind, lit, fog, ShapeFaces.FULL_LO, ShapeFaces.FULL_HI, rockIn, rockN, cot, pieces);
+ 						}
++						if (openSouth) {
++							solidFace(mesh, helper, source, looks, style, id, x, y, z, false, kind, lit, fog, ShapeFaces.FULL_LO, ShapeFaces.FULL_HI, rockIn, rockN, cot, pieces);
++						}
++						mesh.lowestY = Math.min(mesh.lowestY, y);
+ 					}
+-					if (y < fy0) {
+-						fy0 = y;
++				} else if (kind == BlockLooks.LAVA) {
++					// Lava stops a ray whether it came through open space or out of the rock.
++					if (fromAbove) {
++						solidFace(mesh, helper, source, looks, style, id, x, y, z, true, kind, lit, fog);
+ 					}
+-					if (y + 1 > fy1) {
+-						fy1 = y + 1;
++					if (fromSouth) {
++						solidFace(mesh, helper, source, looks, style, id, x, y, z, false, kind, lit, fog);
++					}
++					mesh.lowestY = Math.min(mesh.lowestY, y);
++				} else {
++					hereOpen[i] = true;
++					any = true;
++					if (fog) {
++						// Rays from above and from the south are different rays through the same
++						// cell; where they disagree, the seen one wins.
++						byte a = openAbove ? aboveFirstWater[i] : NO_WATER;
++						byte b = openSouth ? hereFirstWater[i + 1] : NO_WATER;
++						hereFirstWater[i] = a == SEEN_WATER || b == SEEN_WATER ? SEEN_WATER : a == UNSEEN_WATER || b == UNSEEN_WATER ? UNSEEN_WATER : NO_WATER;
++					}
++					if (kind == BlockLooks.WATER) {
++						waterCell(mesh, helper, reader, source, id, x, y, z, i, fromAbove, fromSouth, openAbove, openSouth,
++							aboveWater, hereWater, hereFirstWater, lit, fog);
++					} else if (kind == BlockLooks.PLANT || kind == BlockLooks.GLASS) {
++						helper.albedo(id, x, z, true);
++						int weight = kind == BlockLooks.PLANT ? 102 : 64;
++						int color = encode(helper.albedoR, helper.albedoG, helper.albedoB, weight);
++						if (fromAbove) {
++							mesh.tinted.add(x, y, z, TOP, color, 0, 0, 0);
++						}
++						if (fromSouth) {
++							mesh.tinted.add(x, y, z, SOUTH, color, 0, 0, 0);
++						}
+ 					}
+-					fx0 = Math.min(fx0, x);
+-					fx1 = Math.max(fx1, x);
+-					fz0 = Math.min(fz0, z);
+-					fz1 = Math.max(fz1, z);
+ 				}
+-				if (y == helper.rockLimit && y > limitY) {
+-					// Rays still in the rock this far below the cut stop on the cut face, as the tracer's do.
+-					for (int z = hi; z >= lo; z--) {
+-						int i = z - zBase;
+-						if (!hereRock[i]) {
+-							continue;
++				if (y < fy0) {
++					fy0 = y;
++				}
++				if (y + 1 > fy1) {
++					fy1 = y + 1;
++				}
++				fx0 = Math.min(fx0, x);
++				fx1 = Math.max(fx1, x);
++				fz0 = Math.min(fz0, z);
++				fz1 = Math.max(fz1, z);
++				cy0 = Math.min(cy0, y);
++				cy1 = Math.max(cy1, y + 1);
++				cz0 = Math.min(cz0, z);
++				cz1 = Math.max(cz1, z);
++				dz0 = Math.min(dz0, z);
++				dz1 = Math.max(dz1, z);
++				hereLo = Math.min(hereLo, i);
++				hereHi = Math.max(hereHi, i);
++			}
++			if (y == helper.rockLimit && y > limitY) {
++				// Rays still in the rock this far below the cut stop on the cut face, as the tracer's do.
++				for (int z = hi; z >= lo; z--) {
++					int i = z - zBase;
++					if (!hereRock[i]) {
++						continue;
++					}
++					if (hereOpen[i] && hereRockN[i] == RockRays.ALL) {
++						mesh.traceInstead = true;
++					} else if (hereOpen[i]) {
++						int n = RockRays.pieces(pieces, 0, true, FLOOR_LO, FLOOR_HI, hereRockU[i], hereRockN[i], y, z, cot, true);
++						for (int b = 0; b < n; b += 2) {
++							mesh.opaque.add(x, y, z, FLOOR, 0, 0, 0, fog ? UNKNOWN : CUT, pieces[b], pieces[b + 1]);
+ 						}
+-						if (hereOpen[i] && hereRockN[i] == RockRays.ALL) {
+-							mesh.traceInstead = true;
+-						} else if (hereOpen[i]) {
++					} else {
++						mesh.opaque.add(x, y, z, FLOOR, 0, 0, 0, fog ? UNKNOWN : CUT);
++					}
++					hereRock[i] = false;
++					hereRockN[i] = 0;
++				}
++			}
++			if (y == limitY) {
++				// Rays still going: they end at the view's limit, on the cut face or the void.
++				for (int z = hi; z >= lo; z--) {
++					int i = z - zBase;
++					if (hereRock[i] || hereOpen[i]) {
++						int open = fog && hereFirstWater[i] != SEEN_WATER ? UNKNOWN : VOID;
++						if (hereRock[i] && hereOpen[i] && hereRockN[i] != RockRays.ALL) {
++							// Out of a smaller block both reach: the cut face for rays still in the rock, the void
++							// for the others.
+ 							int n = RockRays.pieces(pieces, 0, true, FLOOR_LO, FLOOR_HI, hereRockU[i], hereRockN[i], y, z, cot, true);
+ 							for (int b = 0; b < n; b += 2) {
+ 								mesh.opaque.add(x, y, z, FLOOR, 0, 0, 0, fog ? UNKNOWN : CUT, pieces[b], pieces[b + 1]);
+ 							}
+-						} else {
+-							mesh.opaque.add(x, y, z, FLOOR, 0, 0, 0, fog ? UNKNOWN : CUT);
+-						}
+-						hereRock[i] = false;
+-						hereRockN[i] = 0;
+-					}
+-				}
+-				if (y == limitY) {
+-					// Rays still going: they end at the view's limit, on the cut face or the void.
+-					for (int z = hi; z >= lo; z--) {
+-						int i = z - zBase;
+-						if (hereRock[i] || hereOpen[i]) {
+-							int open = fog && hereFirstWater[i] != SEEN_WATER ? UNKNOWN : VOID;
+-							if (hereRock[i] && hereOpen[i] && hereRockN[i] != RockRays.ALL) {
+-								// Out of a smaller block both reach: the cut face for rays still in the rock, the void
+-								// for the others.
+-								int n = RockRays.pieces(pieces, 0, true, FLOOR_LO, FLOOR_HI, hereRockU[i], hereRockN[i], y, z, cot, true);
+-								for (int b = 0; b < n; b += 2) {
+-									mesh.opaque.add(x, y, z, FLOOR, 0, 0, 0, fog ? UNKNOWN : CUT, pieces[b], pieces[b + 1]);
+-								}
+-								n = RockRays.pieces(pieces, 0, true, FLOOR_LO, FLOOR_HI, hereRockU[i], hereRockN[i], y, z, cot, false);
+-								for (int b = 0; b < n; b += 2) {
+-									mesh.opaque.add(x, y, z, FLOOR, 0, 0, 0, open, pieces[b], pieces[b + 1]);
+-								}
+-							} else {
+-								mesh.opaque.add(x, y, z, FLOOR, 0, 0, 0, hereRock[i] ? (fog ? UNKNOWN : CUT) : open);
++							n = RockRays.pieces(pieces, 0, true, FLOOR_LO, FLOOR_HI, hereRockU[i], hereRockN[i], y, z, cot, false);
++							for (int b = 0; b < n; b += 2) {
++								mesh.opaque.add(x, y, z, FLOOR, 0, 0, 0, open, pieces[b], pieces[b + 1]);
+ 							}
++						} else {
++							mesh.opaque.add(x, y, z, FLOOR, 0, 0, 0, hereRock[i] ? (fog ? UNKNOWN : CUT) : open);
+ 						}
+ 					}
+ 				}
+-				boolean[] t = aboveOpen;
+-				aboveOpen = hereOpen;
+-				hereOpen = t;
+-				t = aboveRock;
+-				aboveRock = hereRock;
+-				hereRock = t;
+-				double[][] ru = aboveRockU;
+-				aboveRockU = hereRockU;
+-				hereRockU = ru;
+-				int[] rn = aboveRockN;
+-				aboveRockN = hereRockN;
+-				hereRockN = rn;
+-				t = aboveWater;
+-				aboveWater = hereWater;
+-				hereWater = t;
+-				byte[] w = aboveFirstWater;
+-				aboveFirstWater = hereFirstWater;
+-				hereFirstWater = w;
+-				if (!any) {
+-					break;
+-				}
++			}
++			boolean[] t = aboveOpen;
++			aboveOpen = hereOpen;
++			hereOpen = t;
++			t = aboveRock;
++			aboveRock = hereRock;
++			hereRock = t;
++			double[][] ru = aboveRockU;
++			aboveRockU = hereRockU;
++			hereRockU = ru;
++			int[] rn = aboveRockN;
++			aboveRockN = hereRockN;
++			hereRockN = rn;
++			t = aboveWater;
++			aboveWater = hereWater;
++			hereWater = t;
++			byte[] w = aboveFirstWater;
++			aboveFirstWater = hereFirstWater;
++			hereFirstWater = w;
++			aboveLo = hereLo;
++			aboveHi = hereHi;
++			if (!any) {
++				break;
+ 			}
+ 		}
+-		if (!lit || lifted) {
+-			casters(mesh, helper, reader, looks, style, x0, x1, minV, maxV, source.minY());
+-			if (fx0 <= fx1) {
+-				voxels(mesh, helper, reader, fx0, fx1, fy0, fy1, fz0, fz1);
++		boolean columnTrace = mesh.traceInstead;
++		int columnLowest = mesh.lowestY;
++		mesh.traceInstead = traceBefore || columnTrace;
++		mesh.lowestY = Math.min(lowestBefore, columnLowest);
++		if (keep != null) {
++			MeshColumns.Column column = new MeshColumns.Column();
++			Quads[] lists = {mesh.opaque, mesh.water, mesh.tinted};
++			int total = 0;
++			for (int l = 0; l < 3; l++) {
++				column.counts[l] = lists[l].count - before[l];
++				total += column.counts[l];
++			}
++			int[] packed = new int[total * 7];
++			int at = 0;
++			for (int l = 0; l < 3 && at >= 0; l++) {
++				at = lists[l].copyOut(before[l], lists[l].count, packed, at, zBase, reader.minY());
++			}
++			if (at >= 0) {
++				column.faces = java.util.Arrays.copyOf(packed, at);
++				column.traceInstead = columnTrace;
++				column.lowestY = columnLowest;
++				column.reached = cy0 <= cy1;
++				column.y0 = cy0;
++				column.y1 = cy1;
++				column.z0 = cz0;
++				column.z1 = cz1;
++				if (dz0 <= dz1) {
++					MeshColumns.depend(column, reader, x, dz0, dz1);
++				} else {
++					column.deps = new Object[0];
++				}
++				column.usesSpots = unknown;
++				column.spots = unknown ? MeshColumns.spotColumn(helper.savedSpots(), x - x0) : null;
++				keep.columns[x - (x0 - 1)] = column;
++				keep.size += column.faces.length + column.deps.length;
+ 			}
+-		} else {
+-			// No sun in these views, so no shadow map; its region just has to be sane.
+-			mesh.casterX0 = x0 - 1;
+-			mesh.casterX1 = x1 + 2;
+-			mesh.casterZ0 = zBase;
+-			mesh.casterZ1 = zBase + zSpan;
+-			mesh.casterY0 = limitY;
+-			mesh.casterY1 = startY;
+ 		}
+-		mesh.originZ = Math.floorDiv(Math.min(zBase, mesh.casterZ0), 16) * 16;
+-		if (mesh.voxels != null) {
+-			// The table was placed before the origin was known: make it relative now.
+-			mesh.voxelOrigin[2] -= mesh.originZ >> 4;
++			this.fx0 = fx0;
++			this.fx1 = fx1;
++			this.fy0 = fy0;
++			this.fy1 = fy1;
++			this.fz0 = fz0;
++			this.fz1 = fz1;
+ 		}
+-		sortNearToFar(mesh.tinted, sin, cos);
+-		mesh.buildNanos = System.nanoTime() - start;
+-		return mesh;
+ 	}
+ 
+ 	/** A water cell a ray reaches: its top or south face where the ray first enters water. */
+@@ -1002,7 +1452,26 @@ public final class GpuMesher {
+ 		int cz0 = zLow(minV, bottom, mesh.sin, mesh.cos) - 1;
+ 		int cz1 = zHigh(maxV, mesh.topY, mesh.sin, mesh.cos) + reachZ;
+ 		int highest = Integer.MIN_VALUE;
++		// Outside a roof the tile keeps each x's faces for its next mesh, as for the camera's faces (MeshColumns).
++		MeshColumns.CasterSettings settings = REUSE && !lifted && mesh.lowestY != Integer.MAX_VALUE
++			? new MeshColumns.CasterSettings(looks, cx0, cx1, cz0, cz1, bottom, mesh.topY + reachY) : null;
++		MeshColumns.CasterTile kept = settings == null ? null : MeshColumns.casters(mesh.key, settings);
++		MeshColumns.CasterTile keep = settings == null ? null : new MeshColumns.CasterTile(settings, cx1 - cx0 + 1);
+ 		for (int x = cx0; x <= cx1 && mesh.lowestY != Integer.MAX_VALUE; x++) {
++			MeshColumns.CasterRow was = kept == null ? null : kept.rows[x - cx0];
++			if (was != null && MeshColumns.matches(was, reader, x)) {
++				mesh.casters.addCasters(x, was.faces, was.count, was.cz0 << 4, reader.minY());
++				highest = Math.max(highest, was.highest);
++				keep.rows[x - cx0] = was;
++				keep.size += was.faces.length + was.chunks.length;
++				continue;
++			}
++			int first = mesh.casters.count;
++			int highestBefore = highest;
++			highest = Integer.MIN_VALUE;
++			// The chunk the last z was in and its caster faces: sixteen z a chunk.
++			int casterChunkZ = Integer.MIN_VALUE;
++			ChunkBakeData.CasterChunk casterChunk = null;
+ 			for (int z = cz0; z <= cz1; z++) {
+ 				ChunkSnapshot chunk = reader.snapshot(x, z);
+ 				if (chunk == null) {
+@@ -1013,6 +1482,17 @@ public final class GpuMesher {
+ 				int top = Math.min(chunk.surface(x & 15, z & 15) + 1, mesh.topY + reachY);
+ 				if (lifted) {
+ 					top = Math.min(top, helper.lid(x, z) - 1);
++				} else {
++					if (z >> 4 != casterChunkZ) {
++						casterChunkZ = z >> 4;
++						casterChunk = reader.casterChunk(x >> 4, casterChunkZ, bottom);
++					}
++					if (casterChunk != null) {
++						int column = ((z & 15) << 4) | (x & 15);
++						highest = casters(mesh, looks, casterChunk.faces(), casterChunk.offsets()[column], casterChunk.offsets()[column + 1], x, z, top, bottom,
++							reader.minY(), highest);
++						continue;
++					}
+ 				}
+ 				long[] mayCast = null;
+ 				int castY = Integer.MIN_VALUE;
+@@ -1060,6 +1540,21 @@ public final class GpuMesher {
+ 					}
+ 				}
+ 			}
++			int rowHighest = highest;
++			highest = Math.max(highestBefore, rowHighest);
++			int[] packed = keep == null ? null : mesh.casters.copyCasters(first, mesh.casters.count, (cz0 >> 4) << 4, reader.minY());
++			if (packed != null) {
++				MeshColumns.CasterRow row = new MeshColumns.CasterRow();
++				row.count = mesh.casters.count - first;
++				row.faces = packed;
++				row.highest = rowHighest;
++				MeshColumns.depend(row, reader, x, cz0, cz1);
++				keep.rows[x - cx0] = row;
++				keep.size += row.faces.length + row.chunks.length;
++			}
++		}
++		if (keep != null) {
++			MeshColumns.put(mesh.key, keep);
+ 		}
+ 		mesh.casterX0 = cx0;
+ 		mesh.casterX1 = cx1 + 1;
+@@ -1069,6 +1564,51 @@ public final class GpuMesher {
+ 		mesh.casterY1 = Math.max(highest, mesh.topY);
+ 	}
+ 
++	/**
++	 * Adds a column's caster faces from {@code top} down to {@code bottom}, from what {@link VoxelReader#casterChunk}
++	 * found ({@code faces} from {@code from} to {@code to}): the faces the scan above adds, in its order.
++	 * Returns the new {@code highest}.
++	 */
++	private static int casters(Mesh mesh, BlockLooks looks, int[] faces, int from, int to, int x, int z, int top, int bottom, int minY, int highest) {
++		Quads casters = mesh.casters;
++		for (int k = from; k < to; k++) {
++			int entry = faces[k];
++			int y = (entry >> 4) + minY;
++			int bits = entry & 15;
++			if (y < bottom) {
++				break;
++			}
++			if (bits == ChunkBakeData.SHAPE) {
++				int id = faces[++k];
++				if (y > top) {
++					continue;
++				}
++				int[] boxes = looks.faces(looks.shape[id]).boxes;
++				for (int b = 0; b < boxes.length; b += 2) {
++					casters.add(x, y, z, TOP, 0, 0, 0, 0, boxes[b], boxes[b + 1]);
++					casters.add(x, y, z, WEST, 0, 0, 0, 0, boxes[b], boxes[b + 1]);
++					casters.add(x, y, z, SOUTH, 0, 0, 0, 0, boxes[b], boxes[b + 1]);
++				}
++				highest = Math.max(highest, y + 1);
++				continue;
++			}
++			if (y > top) {
++				continue;
++			}
++			if ((bits & ChunkBakeData.TOP) != 0) {
++				casters.add(x, y, z, TOP, 0, 0, 0, 0);
++				highest = Math.max(highest, y + 1);
++			}
++			if ((bits & ChunkBakeData.WEST) != 0) {
++				casters.add(x, y, z, WEST, 0, 0, 0, 0);
++			}
++			if ((bits & ChunkBakeData.SOUTH) != 0) {
++				casters.add(x, y, z, SOUTH, 0, 0, 0, 0);
++			}
++		}
++		return highest;
++	}
++
+ 	/**
+ 	 * Sorts faces by camera depth, nearest first: plants and glass are added up in the order the
+ 	 * tracer's ray meets them, each weighted by how much light the ones in front let through.
+diff --git a/src/main/java/dev/diorama/bake/MapPick.java b/src/main/java/dev/diorama/bake/MapPick.java
+index a6ee6f70..f3ad98f5 100644
+--- a/src/main/java/dev/diorama/bake/MapPick.java
++++ b/src/main/java/dev/diorama/bake/MapPick.java
+@@ -1,6 +1,7 @@
+ package dev.diorama.bake;
+ 
+ import dev.diorama.Projection;
++import dev.diorama.data.ChunkSnapshot;
+ import net.minecraft.core.BlockPos;
+ import org.jspecify.annotations.Nullable;
+ 
+@@ -41,6 +42,10 @@ public final class MapPick {
+ 	/** Where the last {@link #FOUND} pick stands; its x is the picked column. */
+ 	public int y;
+ 	public int z;
++	/** The last pick's first and last z, which bound the blocks it read, and whether one was in a chunk the map has no data for. */
++	int firstZ;
++	int lastZ;
++	boolean readUnknown;
+ 
+ 	/** A pick for map points in {@code tile}, which must be a level-0 tile. */
+ 	public MapPick(ChunkSource source, BlockLooks looks, TileKey tile, boolean fogOfWar) {
+@@ -86,6 +91,27 @@ public final class MapPick {
+ 		return this.tall != null;
+ 	}
+ 
++	/**
++	 * Whether a pick reads nothing but blocks of its own column along its ray, and the saved spots
++	 * where those are in chunks the map has no data for: the sky view outside a roof, from one height.
++	 */
++	boolean columnOnly() {
++		return !this.cave && !this.roofless && this.tall == null && !this.raised;
++	}
++
++	int limitY() {
++		return this.limitY;
++	}
++
++	Looks looks() {
++		return this.looks;
++	}
++
++	/** The chunk holding a column, as this pick reads it. */
++	@Nullable ChunkSnapshot snapshot(int x, int z) {
++		return this.reader.snapshot(x, z);
++	}
++
+ 	/**
+ 	 * Lets rays through chunks the map has no data for above where the saved tile's rays stood,
+ 	 * as the baker does (see {@link TileSpots#passedWhenSaved}). Sky view only.
+@@ -120,6 +146,9 @@ public final class MapPick {
+ 		int bz = (int) Math.floor(z0);
+ 		double tMaxY = 1 / sin;
+ 		double tMaxZ = (z0 - bz) / cos;
++		this.firstZ = bz;
++		this.lastZ = bz;
++		this.readUnknown = false;
+ 		boolean skippingRock = this.cave || this.roofless;
+ 		CaveCut cut = this.raised ? new CaveCut(this.reader, this.base, x, (int) Math.floor((v + this.limitY * cos) / sin) - 2, x, bz + 1) : null;
+ 		while (by >= this.limitY && !(skippingRock && by < this.rockLimit)) {
+@@ -136,7 +165,9 @@ public final class MapPick {
+ 				continue;
+ 			}
+ 			int id = this.reader.state(x, by, bz);
++			this.lastZ = bz;
+ 			if (id == VoxelReader.UNKNOWN) {
++				this.readUnknown = true;
+ 				if ((this.tall == null || by < this.tall.missingTop) && !TileSpots.passedWhenSaved(this.tile, this.savedSpots, x, by, bz)) {
+ 					return UNKNOWN;
+ 				}
+diff --git a/src/main/java/dev/diorama/bake/MeshColumns.java b/src/main/java/dev/diorama/bake/MeshColumns.java
+new file mode 100644
+index 00000000..b40701da
+--- /dev/null
++++ b/src/main/java/dev/diorama/bake/MeshColumns.java
+@@ -0,0 +1,297 @@
++package dev.diorama.bake;
++
++import dev.diorama.data.ChunkSnapshot;
++import java.util.Arrays;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * What {@link GpuMesher} found for each column of x the last time it meshed a tile, so the next
++ * mesh of that tile takes the columns nothing has changed under instead of walking them again.
++ * While the land around a tile loads it is meshed about ten times, and most of its columns come
++ * out the same each time.
++ *
++ * <p>A column's camera faces are worked out from the blocks, light and biome tints of the cells
++ * its rays reach and the cells next to those, and from the tile's own settings. So a column keeps
++ * the chunks under that reach, each by its {@link ChunkSnapshot#blocksToken}, light tokens and
++ * tints, and is taken again only when the tile's settings are equal and every one of those chunks
++ * is: the same tokens (the same blocks and light) and equal tints. Where its rays reached a chunk
++ * the map has no data for, what it shows there comes from the tile's saved spots in that column,
++ * which must be the same too. Only the sky view outside a roof is kept: cave slices and lifted
++ * views read more.
++ */
++final class MeshColumns {
++	/**
++	 * How many ints the kept tiles may hold in all, about 16 MB for camera faces and as much for
++	 * shadow casters: some 40 tiles, a flight's worth. The least recently meshed go first.
++	 */
++	private static final long MAX_INTS = 4L << 20;
++
++	private static final java.util.LinkedHashMap<TileKey, Tile> TILES = new java.util.LinkedHashMap<>(64, 0.75F, true);
++	private static long ints;
++
++	private MeshColumns() {
++	}
++
++	/** The tile's settings a column's faces depend on besides its chunks. */
++	record Settings(Looks looks, Object style, @Nullable Overlays overlays, double sin, double cos, Object facing, int startY, int limitY,
++		int rockLimit, double minV, int passesMissingFrom) {
++	}
++
++	/** One column as last meshed; see {@link #matches}. */
++	static final class Column {
++		/** Its faces, packed (see {@code Quads.copyOut}): opaque, then water, then plants and glass. */
++		int[] faces;
++		final int[] counts = new int[3];
++		boolean traceInstead;
++		int lowestY;
++		/** Whether its rays reached any cell, and the cells' extent. */
++		boolean reached;
++		int y0;
++		int y1;
++		int z0;
++		int z1;
++		/** The chunks under its reach: x from cx0, z from cz0, {@link #DEPS} entries each. */
++		int cx0;
++		int cz0;
++		int cxCount;
++		int czCount;
++		@Nullable Object[] deps;
++		/**
++		 * Where its rays reached a chunk the map has no data for, what they did there came from the
++		 * tile's saved spots in this column (see {@link TileSpots#passedWhenSaved}): those, or null
++		 * where there were none.
++		 */
++		boolean usesSpots;
++		int @Nullable [] spots;
++	}
++
++	/** Per chunk: its blocks, block light and sky light tokens, and its tints (null where none were blended). */
++	static final int DEPS = 4;
++
++	static final class Tile {
++		final Settings settings;
++		final int x0;
++		final @Nullable Column[] columns;
++		long size;
++
++		Tile(Settings settings, int x0, int width) {
++			this.settings = settings;
++			this.x0 = x0;
++			this.columns = new Column[width];
++		}
++	}
++
++	static synchronized @Nullable Tile get(TileKey key) {
++		return TILES.get(key);
++	}
++
++	static synchronized void put(TileKey key, Tile tile) {
++		Tile old = TILES.put(key, tile);
++		if (old != null) {
++			ints -= old.size;
++		}
++		ints += tile.size;
++		java.util.Iterator<Tile> it = TILES.values().iterator();
++		while (ints > MAX_INTS && it.hasNext()) {
++			Tile t = it.next();
++			if (t == tile) {
++				break;
++			}
++			ints -= t.size;
++			it.remove();
++		}
++	}
++
++	/** What a tile's shadow casters depend on besides the chunks: their region, as {@link GpuMesher}'s casters work it out. */
++	record CasterSettings(Looks looks, int x0, int x1, int z0, int z1, int bottom, int top) {
++	}
++
++	/** One x of a tile's shadow casters as last meshed: its faces, z by z, packed (see {@code Quads.copyCasters}), and the chunks they came from. */
++	static final class CasterRow {
++		int[] faces;
++		int count;
++		int highest;
++		/** The chunks of x - 1 and x, z by z from {@link #cz0}, by blocks token; {@link ChunkBakeData#MISSING} where none. */
++		int cz0;
++		int czCount;
++		Object[] chunks;
++	}
++
++	static final class CasterTile {
++		final CasterSettings settings;
++		final @Nullable CasterRow[] rows;
++		long size;
++
++		CasterTile(CasterSettings settings, int width) {
++			this.settings = settings;
++			this.rows = new CasterRow[width];
++		}
++	}
++
++	private static final java.util.LinkedHashMap<TileKey, CasterTile> CASTERS = new java.util.LinkedHashMap<>(64, 0.75F, true);
++	private static long casterInts;
++
++	static synchronized @Nullable CasterTile casters(TileKey key, CasterSettings settings) {
++		CasterTile tile = CASTERS.get(key);
++		return tile != null && tile.settings.equals(settings) ? tile : null;
++	}
++
++	static synchronized void put(TileKey key, CasterTile tile) {
++		CasterTile old = CASTERS.put(key, tile);
++		if (old != null) {
++			casterInts -= old.size;
++		}
++		casterInts += tile.size;
++		java.util.Iterator<CasterTile> it = CASTERS.values().iterator();
++		while (casterInts > MAX_INTS && it.hasNext()) {
++			CasterTile t = it.next();
++			if (t == tile) {
++				break;
++			}
++			casterInts -= t.size;
++			it.remove();
++		}
++	}
++
++	/**
++	 * Records the chunks an x of shadow casters from z {@code z0} to {@code z1} came from: its own and,
++	 * for the faces on a chunk's west or south edge, the chunk west of it and the one south of the last.
++	 */
++	static void depend(CasterRow row, VoxelReader reader, int x, int z0, int z1) {
++		row.cz0 = z0 >> 4;
++		row.czCount = ((z1 + 1) >> 4) - row.cz0 + 1;
++		row.chunks = new Object[row.czCount * 2];
++		fill(row.chunks, reader, x, row.cz0, row.czCount);
++	}
++
++	static boolean matches(CasterRow row, VoxelReader reader, int x) {
++		for (int k = 0; k < row.czCount; k++) {
++			for (int w = 0; w < 2; w++) {
++				ChunkSnapshot chunk = reader.snapshot(x - 1 + w, (row.cz0 + k) << 4);
++				if ((chunk == null ? ChunkBakeData.MISSING : chunk.blocksToken()) != row.chunks[k * 2 + w]) {
++					return false;
++				}
++			}
++		}
++		return true;
++	}
++
++	private static void fill(Object[] chunks, VoxelReader reader, int x, int cz0, int count) {
++		for (int k = 0; k < count; k++) {
++			for (int w = 0; w < 2; w++) {
++				ChunkSnapshot chunk = reader.snapshot(x - 1 + w, (cz0 + k) << 4);
++				chunks[k * 2 + w] = chunk == null ? ChunkBakeData.MISSING : chunk.blocksToken();
++			}
++		}
++	}
++
++	/** Forgets every tile; nothing else depends on them. */
++	static synchronized void clear() {
++		TILES.clear();
++		ints = 0;
++		CASTERS.clear();
++		casterInts = 0;
++	}
++
++	/** Records which chunks a column reached and what they hold now, as the reader has them. */
++	static void depend(Column column, VoxelReader reader, int x, int z0, int z1) {
++		int cx0 = (x - 1) >> 4;
++		int cx1 = (x + 1) >> 4;
++		int cz0 = (z0 - 1) >> 4;
++		int cz1 = (z1 + 1) >> 4;
++		column.cx0 = cx0;
++		column.cz0 = cz0;
++		column.cxCount = cx1 - cx0 + 1;
++		column.czCount = cz1 - cz0 + 1;
++		Object[] deps = new Object[column.cxCount * column.czCount * DEPS];
++		int k = 0;
++		for (int cx = cx0; cx <= cx1; cx++) {
++			for (int cz = cz0; cz <= cz1; cz++) {
++				ChunkSnapshot chunk = reader.snapshot(cx << 4, cz << 4);
++				if (chunk == null) {
++					deps[k] = ChunkBakeData.MISSING;
++				} else {
++					deps[k] = chunk.blocksToken();
++					deps[k + 1] = chunk.blockLightToken();
++					deps[k + 2] = chunk.skyLightToken();
++					deps[k + 3] = chunk.tints();
++				}
++				k += DEPS;
++			}
++		}
++		column.deps = deps;
++	}
++
++	/** The saved spots of the tile's block column {@code column}, top row first, or null where there are none. */
++	static int @Nullable [] spotColumn(int @Nullable [] spots, int column) {
++		if (spots == null || column < 0 || column >= TileSpots.COLUMNS) {
++			return null;
++		}
++		int[] out = new int[TileSpots.ROWS];
++		for (int row = 0; row < TileSpots.ROWS; row++) {
++			out[row] = spots[row * TileSpots.COLUMNS + column];
++		}
++		return out;
++	}
++
++	static boolean sameSpots(int @Nullable [] kept, int @Nullable [] spots, int column) {
++		if (spots == null || column < 0 || column >= TileSpots.COLUMNS) {
++			return kept == null;
++		}
++		if (kept == null) {
++			return false;
++		}
++		for (int row = 0; row < TileSpots.ROWS; row++) {
++			if (spots[row * TileSpots.COLUMNS + column] != kept[row]) {
++				return false;
++			}
++		}
++		return true;
++	}
++
++	/**
++	 * Whether every chunk the column reached holds what it did, as this reader has them, and the
++	 * saved spots it read, if any, are the same: {@code spots} as the tile's block column {@code column}.
++	 */
++	static boolean matches(Column column, VoxelReader reader, int @Nullable [] spots, int spotColumn) {
++		if (column.usesSpots && !sameSpots(column.spots, spots, spotColumn)) {
++			return false;
++		}
++		Object[] deps = column.deps;
++		int k = 0;
++		for (int cx = column.cx0; cx < column.cx0 + column.cxCount; cx++) {
++			for (int cz = column.cz0; cz < column.cz0 + column.czCount; cz++) {
++				ChunkSnapshot chunk = reader.snapshot(cx << 4, cz << 4);
++				if (chunk == null) {
++					if (deps[k] != ChunkBakeData.MISSING) {
++						return false;
++					}
++				} else if (deps[k] != chunk.blocksToken() || deps[k + 1] != chunk.blockLightToken() || deps[k + 2] != chunk.skyLightToken()
++					|| !sameTints((ChunkSnapshot.Tints) deps[k + 3], chunk)) {
++					return false;
++				}
++				k += DEPS;
++			}
++		}
++		return true;
++	}
++
++	/**
++	 * Whether the chunk's tints are what the column was meshed with. Tints are blended from the
++	 * chunk's biomes, so a chunk none were blended for when the column was meshed gave it none.
++	 */
++	private static boolean sameTints(ChunkSnapshot.@Nullable Tints kept, ChunkSnapshot chunk) {
++		if (kept == null) {
++			return true;
++		}
++		ChunkSnapshot.Tints now = chunk.tints();
++		if (now == kept) {
++			return true;
++		}
++		if (now == null) {
++			now = BiomeTints.of(chunk);
++		}
++		return Arrays.equals(now.grass(), kept.grass()) && Arrays.equals(now.foliage(), kept.foliage())
++			&& Arrays.equals(now.dryFoliage(), kept.dryFoliage()) && Arrays.equals(now.water(), kept.water());
++	}
++}
+diff --git a/src/main/java/dev/diorama/bake/SpotColumns.java b/src/main/java/dev/diorama/bake/SpotColumns.java
+new file mode 100644
+index 00000000..a729f7d5
+--- /dev/null
++++ b/src/main/java/dev/diorama/bake/SpotColumns.java
+@@ -0,0 +1,99 @@
++package dev.diorama.bake;
++
++import dev.diorama.Projection;
++import dev.diorama.data.ChunkSnapshot;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * Each block column's spots as {@link TileSpots} last picked the whole column for a tile, so the
++ * next pick of that tile takes the columns nothing has changed under. In the sky view a pick's ray
++ * reads only blocks of its own column, from where it starts down to what it lands on, and where
++ * those are in a chunk the map has no data for, the tile's saved spots in that column. So a column
++ * keeps the chunks under its rays by {@link ChunkSnapshot#blocksToken} and, if it read them, those
++ * saved spots, and is taken again only when the pick's settings, those chunks and those spots
++ * are all the same.
++ */
++final class SpotColumns {
++	/** How many ints the kept tiles may hold in all, about 8 MB; the least recently picked go first. */
++	private static final long MAX_INTS = 2L << 20;
++
++	private static final java.util.LinkedHashMap<TileKey, Tile> TILES = new java.util.LinkedHashMap<>(64, 0.75F, true);
++	private static long ints;
++
++	private SpotColumns() {
++	}
++
++	/** What a pick's rays depend on besides the chunks and the saved spots. */
++	record Settings(Looks looks, double sin, double cos, Object facing, int startY, int limitY) {
++	}
++
++	/** One column, all its rows; see {@link #matches}. */
++	static final class Column {
++		final int[] spots = new int[TileSpots.ROWS];
++		/** The chunks its rays read, z from cz0, by token, {@link ChunkBakeData#MISSING} where none. */
++		int cz0;
++		Object[] chunks;
++		boolean usesSaved;
++		int @Nullable [] saved;
++	}
++
++	static final class Tile {
++		final Settings settings;
++		final @Nullable Column[] columns = new Column[TileSpots.COLUMNS];
++		long size;
++
++		Tile(Settings settings) {
++			this.settings = settings;
++		}
++	}
++
++	static Settings settings(MapPick pick, Looks looks) {
++		return new Settings(looks, Projection.sin(), Projection.cos(), Projection.facing(), pick.startY(), pick.limitY());
++	}
++
++	static synchronized @Nullable Tile get(TileKey key, Settings settings) {
++		Tile tile = TILES.get(key);
++		return tile != null && tile.settings.equals(settings) ? tile : null;
++	}
++
++	static synchronized void put(TileKey key, Tile tile) {
++		Tile old = TILES.put(key, tile);
++		if (old != null) {
++			ints -= old.size;
++		}
++		ints += tile.size;
++		java.util.Iterator<Tile> it = TILES.values().iterator();
++		while (ints > MAX_INTS && it.hasNext()) {
++			Tile t = it.next();
++			if (t == tile) {
++				break;
++			}
++			ints -= t.size;
++			it.remove();
++		}
++	}
++
++	/** Whether the column's chunks and the saved spots it read are the same now, as this pick reads them. */
++	static boolean matches(Column column, MapPick pick, int x, int @Nullable [] saved, int index) {
++		if (column.usesSaved && !MeshColumns.sameSpots(column.saved, saved, index)) {
++			return false;
++		}
++		for (int k = 0; k < column.chunks.length; k++) {
++			ChunkSnapshot chunk = pick.snapshot(x, (column.cz0 + k) << 4);
++			if ((chunk == null ? ChunkBakeData.MISSING : chunk.blocksToken()) != column.chunks[k]) {
++				return false;
++			}
++		}
++		return true;
++	}
++
++	/** Records the chunks of z {@code z0} to {@code z1} a column's rays read, as this pick reads them. */
++	static void depend(Column column, MapPick pick, int x, int z0, int z1) {
++		column.cz0 = z0 >> 4;
++		column.chunks = new Object[(z1 >> 4) - column.cz0 + 1];
++		for (int k = 0; k < column.chunks.length; k++) {
++			ChunkSnapshot chunk = pick.snapshot(x, (column.cz0 + k) << 4);
++			column.chunks[k] = chunk == null ? ChunkBakeData.MISSING : chunk.blocksToken();
++		}
++	}
++}
+diff --git a/src/main/java/dev/diorama/bake/TileBaker.java b/src/main/java/dev/diorama/bake/TileBaker.java
+index 28ba3de3..8815025d 100644
+--- a/src/main/java/dev/diorama/bake/TileBaker.java
++++ b/src/main/java/dev/diorama/bake/TileBaker.java
+@@ -295,6 +295,16 @@ public final class TileBaker {
+ 		return this.tall != null && y >= this.tall.missingTop;
+ 	}
+ 
++	/** Where {@link #passesMissing} starts, {@code Integer.MAX_VALUE} for nowhere. */
++	int passesMissingFrom() {
++		return this.tall == null ? Integer.MAX_VALUE : this.tall.missingTop;
++	}
++
++	/** The saved spots {@link #passedWhenSaved} reads, or null. */
++	int @Nullable [] savedSpots() {
++		return this.savedSpots;
++	}
++
+ 	float hazeR;
+ 	float hazeG;
+ 	float hazeB;
+diff --git a/src/main/java/dev/diorama/bake/TileSpots.java b/src/main/java/dev/diorama/bake/TileSpots.java
+index 20a58438..aa390689 100644
+--- a/src/main/java/dev/diorama/bake/TileSpots.java
++++ b/src/main/java/dev/diorama/bake/TileSpots.java
+@@ -105,8 +105,71 @@ public final class TileSpots {
+ 		return patch.blockX() * PATCH_COLUMNS;
+ 	}
+ 
+-	/** Fills in a rectangle of samples; returns whether any is known. */
++	/**
++	 * Fills in a rectangle of samples; returns whether any is known. In the sky view a column whose
++	 * chunks and saved spots are what they were when this tile's spots last picked it whole takes
++	 * those spots ({@link SpotColumns}); a whole pick keeps its columns for the next.
++	 */
+ 	private static boolean pick(TileKey key, MapPick pick, int[] spots, int @Nullable [] saved, int column0, int row0, int columns, int rows) {
++		SpotColumns.Settings settings = GpuMesher.REUSE && pick.columnOnly() ? SpotColumns.settings(pick, pick.looks()) : null;
++		if (settings == null) {
++			return pickRows(key, pick, spots, saved, column0, row0, columns, rows);
++		}
++		SpotColumns.Tile kept = SpotColumns.get(key, settings);
++		SpotColumns.Tile keep = row0 == 0 && rows == ROWS ? new SpotColumns.Tile(settings) : null;
++		int x0 = (int) Math.floor(key.minU());
++		boolean known = false;
++		for (int column = column0; column < column0 + columns; column++) {
++			int x = x0 + column;
++			SpotColumns.Column was = kept == null ? null : kept.columns[column];
++			if (was != null && SpotColumns.matches(was, pick, x, saved, column)) {
++				for (int row = row0; row < row0 + rows; row++) {
++					int i = row * COLUMNS + column;
++					spots[i] = was.spots[row];
++					known |= spots[i] != UNKNOWN;
++				}
++				if (keep != null) {
++					keep.columns[column] = was;
++					keep.size += ROWS + was.chunks.length;
++				}
++				continue;
++			}
++			SpotColumns.Column made = keep == null ? null : new SpotColumns.Column();
++			int z0 = Integer.MAX_VALUE;
++			int z1 = Integer.MIN_VALUE;
++			boolean unknown = false;
++			for (int row = row0; row < row0 + rows; row++) {
++				double v = v(key, row);
++				int i = row * COLUMNS + column;
++				spots[i] = switch (pick.pick(key.minU() + column + 0.5, v)) {
++					case MapPick.FOUND -> encode(pick.y, pick.z, v);
++					case MapPick.NOTHING -> NOTHING;
++					default -> saved == null ? UNKNOWN : saved[i];
++				};
++				known |= spots[i] != UNKNOWN;
++				if (made != null) {
++					made.spots[row] = spots[i];
++					z0 = Math.min(z0, pick.lastZ);
++					z1 = Math.max(z1, pick.firstZ);
++					unknown |= pick.readUnknown;
++				}
++			}
++			if (made != null) {
++				SpotColumns.depend(made, pick, x, z0, z1);
++				made.usesSaved = unknown;
++				made.saved = unknown ? MeshColumns.spotColumn(saved, column) : null;
++				keep.columns[column] = made;
++				keep.size += ROWS + made.chunks.length;
++			}
++		}
++		if (keep != null) {
++			SpotColumns.put(key, keep);
++		}
++		return known;
++	}
++
++	/** The rectangle as picked row by row, every sample. */
++	private static boolean pickRows(TileKey key, MapPick pick, int[] spots, int @Nullable [] saved, int column0, int row0, int columns, int rows) {
+ 		boolean known = false;
+ 		for (int row = row0; row < row0 + rows; row++) {
+ 			double v = v(key, row);
+diff --git a/src/main/java/dev/diorama/bake/VoxelReader.java b/src/main/java/dev/diorama/bake/VoxelReader.java
+index 403a0961..c83f14b9 100644
+--- a/src/main/java/dev/diorama/bake/VoxelReader.java
++++ b/src/main/java/dev/diorama/bake/VoxelReader.java
+@@ -299,6 +299,151 @@ public final class VoxelReader {
+ 		return out;
+ 	}
+ 
++	/**
++	 * Whether bakes share what they work out from a chunk's blocks ({@link ChunkBakeData}). Only
++	 * for checking that they come out the same either way.
++	 */
++	public static boolean SHARED = true;
++
++	/**
++	 * The shadow caster faces of the chunk at these chunk coordinates as {@link GpuMesher}'s casters
++	 * find them, every column from the block above its top down to {@code bottom} at least, from what
++	 * an earlier bake found if it still holds, else scanned now. Null where the chunk is missing or
++	 * nothing is shared.
++	 */
++	ChunkBakeData.@Nullable CasterChunk casterChunk(int cx, int cz, int bottom) {
++		Decoded chunk = this.chunk(cx, cz);
++		if (chunk == null || chunk.shared == null || chunk.shared.shapes == null) {
++			return null;
++		}
++		ChunkBakeData.CasterChunk known = chunk.shared.casters;
++		if (known != null && known.downTo() <= bottom && (known.west() == null || known.west() == this.blocksToken(cx - 1, cz))
++			&& (known.south() == null || known.south() == this.blocksToken(cx, cz + 1))) {
++			return known;
++		}
++		// Tiles nearby reach down about as far: a little further now saves scanning it all again.
++		int downTo = Math.max(this.minY, Math.min(bottom, known == null ? bottom : known.downTo()) - 16);
++		int[] offsets = new int[257];
++		int[] faces = new int[1024];
++		int length = 0;
++		boolean west = false;
++		boolean south = false;
++		for (int column = 0; column < 256; column++) {
++			offsets[column] = length;
++			int x = (cx << 4) | (column & 15);
++			int z = (cz << 4) | (column >> 4);
++			long[] mayCast = null;
++			int castY = Integer.MIN_VALUE;
++			for (int y = chunk.snapshot.surface(column & 15, column >> 4) + 1; y >= downTo; y--) {
++				// As GpuMesher.casters: rock under rock casts nothing, which these bits skip.
++				if (y >> 4 != castY) {
++					castY = y >> 4;
++					mayCast = this.casterSection(cx, castY, cz);
++				}
++				int i = ((y & 15) << 8) | column;
++				if (mayCast != null && (mayCast[i >> 6] >>> i & 1) == 0) {
++					continue;
++				}
++				int solid = this.solid(x, y, z);
++				int bits;
++				int id = 0;
++				if (solid == 2) {
++					id = this.state(x, y, z);
++					if (id < 0 || this.shapes[id] == 0) {
++						continue;
++					}
++					bits = ChunkBakeData.SHAPE;
++				} else if (solid == 1) {
++					bits = 0;
++					if (this.solid(x, y + 1, z) != 1) {
++						bits |= ChunkBakeData.TOP;
++					}
++					west |= (x & 15) == 0;
++					if (this.solid(x - 1, y, z) != 1) {
++						bits |= ChunkBakeData.WEST;
++					}
++					south |= (z & 15) == 15;
++					if (this.solid(x, y, z + 1) != 1) {
++						bits |= ChunkBakeData.SOUTH;
++					}
++					if (bits == 0) {
++						continue;
++					}
++				} else {
++					continue;
++				}
++				if (length + 2 > faces.length) {
++					faces = java.util.Arrays.copyOf(faces, faces.length * 2);
++				}
++				faces[length++] = (y - this.minY) << 4 | bits;
++				if (bits == ChunkBakeData.SHAPE) {
++					faces[length++] = id;
++				}
++			}
++		}
++		offsets[256] = length;
++		ChunkBakeData.CasterChunk made = new ChunkBakeData.CasterChunk(downTo, offsets, java.util.Arrays.copyOf(faces, length),
++			west ? this.blocksToken(cx - 1, cz) : null, south ? this.blocksToken(cx, cz + 1) : null);
++		chunk.shared.casters = made;
++		return made;
++	}
++
++	/**
++	 * See {@link ChunkBakeData#openFrom}: for the chunk at these chunk coordinates as this job reads
++	 * it, per column {@code (z << 4) | x}, the lowest y from which every cell up is {@link Looks#AIR}
++	 * as {@link #state} reads it. Null where the chunk is missing or nothing is shared.
++	 */
++	int @Nullable [] openFrom(int chunkX, int chunkZ) {
++		Decoded chunk = this.chunk(chunkX, chunkZ);
++		if (chunk == null || chunk.shared == null) {
++			return null;
++		}
++		int[] open = chunk.shared.openFrom;
++		if (open == null) {
++			open = new int[256];
++			java.util.Arrays.fill(open, Integer.MIN_VALUE);
++			int left = 256;
++			byte[] kinds = this.kinds;
++			for (int index = chunk.sections.length - 1; index >= 0 && left > 0; index--) {
++				Section section = chunk.section(index);
++				if (section == AIR_SECTION) {
++					continue;
++				}
++				int y0 = (chunk.snapshot.minSectionY + index) << 4;
++				int[] ids = chunk.ids(index, this.unpacked);
++				for (int column = 0; column < 256; column++) {
++					if (open[column] != Integer.MIN_VALUE) {
++						continue;
++					}
++					for (int y = 15; y >= 0; y--) {
++						if (kinds[ids[(y << 8) | column]] != Looks.AIR) {
++							open[column] = y0 + y + 1;
++							left--;
++							break;
++						}
++					}
++				}
++			}
++			for (int column = 0; column < 256; column++) {
++				if (open[column] == Integer.MIN_VALUE) {
++					open[column] = this.minY;
++				}
++			}
++			chunk.shared.openFrom = open;
++		}
++		return open;
++	}
++
++	/** The {@link ChunkSnapshot#blocksToken} of a chunk as this job reads it, {@link ChunkBakeData#MISSING} where it has none. */
++	private Object blocksToken(int chunkX, int chunkZ) {
++		Decoded chunk = this.chunk(chunkX, chunkZ);
++		return chunk == null ? ChunkBakeData.MISSING : chunk.snapshot.blocksToken();
++	}
++
++	int minY() {
++		return this.minY;
++	}
++
+ 	/** A chunk this job has already read, without asking the source for one it hasn't: null then, or where it had none. */
+ 	private @Nullable Decoded peek(int chunkX, int chunkZ) {
+ 		int slot = ((chunkX & TABLE_MASK) << TABLE_BITS) | (chunkZ & TABLE_MASK);
+@@ -382,7 +527,8 @@ public final class VoxelReader {
+ 		Decoded decoded = this.cache.get(key);
+ 		if (decoded == null && !this.cache.containsKey(key)) {
+ 			ChunkSnapshot snapshot = this.source.chunk(chunkX, chunkZ);
+-			decoded = snapshot == null ? null : new Decoded(snapshot, this.looks);
++			decoded = snapshot == null ? null : new Decoded(snapshot, this.looks,
++				this.looks == null || this.kinds == null ? null : ChunkBakeData.of(snapshot, this.looks, this.kinds, this.shapes));
+ 			this.cache.put(key, decoded);
+ 		}
+ 		this.tableX[slot] = chunkX;
+@@ -430,9 +576,13 @@ public final class VoxelReader {
+ 		/** See {@link VoxelReader#solidTop}; {@code Integer.MAX_VALUE} until worked out. */
+ 		int solidTop = Integer.MAX_VALUE;
+ 
+-		Decoded(ChunkSnapshot snapshot, @Nullable Looks looks) {
++		/** What earlier bakes worked out from these blocks under these looks, shared with them; null where nothing is shared. */
++		final @Nullable ChunkBakeData shared;
++
++		Decoded(ChunkSnapshot snapshot, @Nullable Looks looks, @Nullable ChunkBakeData shared) {
+ 			this.snapshot = snapshot;
+ 			this.looks = looks;
++			this.shared = shared;
+ 			this.sections = new Section[snapshot.sectionCount()];
+ 			this.ids = new int[snapshot.sectionCount()][];
+ 			this.solid = new long[snapshot.sectionCount()][];
+@@ -446,6 +596,11 @@ public final class VoxelReader {
+ 				return NOTHING_SOLID;
+ 			}
+ 			long[] mask = this.solid[index];
++			if (mask == null && this.shared != null && (mask = this.shared.solid.get(index)) != null) {
++				// Published after its partial mask, so that is there too.
++				this.partial[index] = this.shared.partial.get(index);
++				this.solid[index] = mask;
++			}
+ 			if (mask == null) {
+ 				long[] partial = NOTHING_SOLID;
+ 				Section section = this.section(index);
+@@ -517,6 +672,10 @@ public final class VoxelReader {
+ 				}
+ 				this.partial[index] = partial;
+ 				this.solid[index] = mask;
++				if (this.shared != null) {
++					this.shared.partial.set(index, partial);
++					this.shared.solid.set(index, mask);
++				}
+ 			}
+ 			return mask;
+ 		}
+diff --git a/src/main/java/dev/diorama/data/ChunkSnapshot.java b/src/main/java/dev/diorama/data/ChunkSnapshot.java
+index 0ff92f7f..63e49c5d 100644
+--- a/src/main/java/dev/diorama/data/ChunkSnapshot.java
++++ b/src/main/java/dev/diorama/data/ChunkSnapshot.java
+@@ -661,6 +661,144 @@ public final class ChunkSnapshot {
+ 		return true;
+ 	}
+ 
++	/**
++	 * Stands for this snapshot's blocks: snapshots with the same token hold the same blocks, column
++	 * tops and copycats, so whatever is worked out from those alone holds for all of them. A snapshot
++	 * that replaces one with the same blocks (light updates take new ones all the time) takes over
++	 * its token (see {@link #replacing}); otherwise every snapshot has its own.
++	 */
++	private Object blocksToken = new Object();
++	/** Like {@link #blocksToken}, for the block light and the sky light. */
++	private Object blockLightToken = new Object();
++	private Object skyLightToken = new Object();
++	/** What bakes worked out from this snapshot's blocks, kept for the next bake; see {@code ChunkBakeData}. */
++	private final java.util.concurrent.atomic.AtomicReference<@Nullable Object> bakeData = new java.util.concurrent.atomic.AtomicReference<>();
++	/** The snapshot this one replaced, until the first bake that asks for a token compares the two. */
++	private volatile @Nullable ChunkSnapshot replaced;
++
++	/**
++	 * Notes that this snapshot replaces {@code before}. Comparing them takes a bake thread's time,
++	 * not the client thread's: the first token or bake data asked for compares them, and takes over
++	 * what is the same. The one replaced takes over nothing more from its own predecessor; whatever
++	 * still holds it gets tokens of its own. Call before bakes can see this one.
++	 */
++	public void replacing(ChunkSnapshot before) {
++		before.replaced = null;
++		if (this.base == null && before.base == null) {
++			this.replaced = before;
++		}
++	}
++
++	public Object blocksToken() {
++		this.compare();
++		return this.blocksToken;
++	}
++
++	public Object blockLightToken() {
++		this.compare();
++		return this.blockLightToken;
++	}
++
++	public Object skyLightToken() {
++		this.compare();
++		return this.skyLightToken;
++	}
++
++	/** See {@link #blocksToken}; the holder of bake data shared with every snapshot of the same blocks. */
++	public java.util.concurrent.atomic.AtomicReference<@Nullable Object> bakeData() {
++		this.compare();
++		return this.bakeData;
++	}
++
++	/** Takes over what is the same as in the snapshot this one replaced, once. */
++	private void compare() {
++		if (this.replaced == null) {
++			return;
++		}
++		synchronized (this) {
++			ChunkSnapshot before = this.replaced;
++			if (before == null) {
++				return;
++			}
++			before.compare();
++			if (this.sameBlocks(before)) {
++				this.blocksToken = before.blocksToken;
++				this.bakeData.set(before.bakeData.get());
++			}
++			if (this.chunkX == before.chunkX && this.chunkZ == before.chunkZ && this.minSectionY == before.minSectionY && this.hasSkyLight == before.hasSkyLight) {
++				if (sameLight(this.blockLight, before.blockLight)) {
++					this.blockLightToken = before.blockLightToken;
++				}
++				if (sameLight(this.skyLight, before.skyLight)) {
++					this.skyLightToken = before.skyLightToken;
++				}
++			}
++			// Published by this write: a bake that reads null reads the tokens as set here.
++			this.replaced = null;
++		}
++	}
++
++	private static boolean sameLight(@Nullable DataLayer[] a, @Nullable DataLayer[] b) {
++		if (a.length != b.length) {
++			return false;
++		}
++		for (int i = 0; i < a.length; i++) {
++			if (a[i] == b[i]) {
++				continue;
++			}
++			if (a[i] == null || b[i] == null || a[i].isEmpty() != b[i].isEmpty()) {
++				return false;
++			}
++			// An empty layer holds one value throughout, which it gives for any block.
++			if (a[i].isEmpty() ? a[i].get(0, 0, 0) != b[i].get(0, 0, 0) : !java.util.Arrays.equals(a[i].getData(), b[i].getData())) {
++				return false;
++			}
++		}
++		return true;
++	}
++
++	/**
++	 * Whether {@code before} holds the same blocks: every section the same block or the same packed
++	 * palette indices with the same palette, the same column tops and no copycats.
++	 */
++	private boolean sameBlocks(ChunkSnapshot before) {
++		if (this.chunkX != before.chunkX || this.chunkZ != before.chunkZ
++			|| this.minSectionY != before.minSectionY || this.copycats != null || before.copycats != null
++			|| this.states.length != before.states.length || !java.util.Arrays.equals(this.surface, before.surface)) {
++			return false;
++		}
++		for (int i = 0; i < this.states.length; i++) {
++			if (this.uniform[i] != before.uniform[i]) {
++				return false;
++			}
++			PalettedContainer<BlockState> mine = this.states[i];
++			PalettedContainer<BlockState> theirs = before.states[i];
++			if (mine == theirs) {
++				continue;
++			}
++			if (mine == null || theirs == null || !samePacked(this.packed(i), before.packed(i))) {
++				return false;
++			}
++		}
++		return true;
++	}
++
++	private static boolean samePacked(@Nullable Packed a, @Nullable Packed b) {
++		if (a == null || b == null || a.storage().getBits() != b.storage().getBits() || a.storage().getSize() != b.storage().getSize()) {
++			return false;
++		}
++		int size = a.palette().getSize();
++		if (size != b.palette().getSize() || !java.util.Arrays.equals(a.storage().getRaw(), b.storage().getRaw())) {
++			return false;
++		}
++		for (int p = 0; p < size; p++) {
++			if (a.palette().valueFor(p) != b.palette().valueFor(p)) {
++				return false;
++			}
++		}
++		return true;
++	}
++
+ 	/** Blended biome tints per column, as 0xRRGGBB, indexed {@code (z << 4) | x}. */
+ 	public record Tints(int[] grass, int[] foliage, int[] dryFoliage, int[] water) {
+ 	}
+diff --git a/src/main/java/dev/diorama/render/MapLevel.java b/src/main/java/dev/diorama/render/MapLevel.java
+index fee7f4d0..370b86b4 100644
+--- a/src/main/java/dev/diorama/render/MapLevel.java
++++ b/src/main/java/dev/diorama/render/MapLevel.java
+@@ -597,6 +597,7 @@ public final class MapLevel implements ChunkSource {
+ 		if (before != null) {
+ 			// Before it's visible to bakes, so none blends what it can reuse.
+ 			snapshot.inheritTints(before);
++			snapshot.replacing(before);
+ 		}
+ 		this.chunks.put(snapshot.key(), snapshot);
+ 		if (changed == null && this.watchingLiveChunks) {

@@ -157,6 +157,13 @@
    "thread": "control",
    "compare": "expect",
    "expect": "true"
+  },
+  {
+   "name": "reuseLive",
+   "file": "reuse-live.java",
+   "thread": "control",
+   "compare": "expect",
+   "expect": "true"
   }
  ],
  "jit": "full"
