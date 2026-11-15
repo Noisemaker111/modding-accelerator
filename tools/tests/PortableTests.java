@@ -1405,10 +1405,10 @@ public final class PortableTests {
             Files.createDirectories(cache.getParent());
             Files.writeString(cache, answer.getValue());
         }
-        new Convert(new Build(quitProject, home, "", new Modaccel.Report(quit, "convert"))).run(
-            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
-        );
-        String quitGradle = Files.readString(quit.resolve("build.gradle"));
+        Convert quitConvert = new Convert(new Build(quitProject, home, "", new Modaccel.Report(quit, "convert")));
+        quitConvert.run(new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" }));
+        // A dry run writes nothing; the converted text is what it staged.
+        String quitGradle = quitConvert.current("build.gradle");
         check(
             quitGradle.chars().filter(c -> c == '{').count() == quitGradle.chars().filter(c -> c == '}').count() &&
             !quitGradle.contains("modmenu") &&
@@ -1448,15 +1448,19 @@ public final class PortableTests {
             Files.createDirectories(cache.getParent());
             Files.writeString(cache, answer.getValue());
         }
-        Map<String, Object> bridged = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert"))).run(
+        Convert neoConvert = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert")));
+        Map<String, Object> bridged = neoConvert.run(
             new Modaccel.Options(new String[] { "convert", "--to", "fabric", "--dry-run" })
         );
-        String bridgedEntry = Files.readString(neo.resolve("src/main/java/demo/Demo.java"));
-        String fabricJson = Files.readString(neo.resolve("src/main/resources/fabric.mod.json"));
+        // A dry run writes nothing; the converted text is what it staged.
+        String bridgedEntry = neoConvert.current("src/main/java/demo/Demo.java");
+        String fabricJson = neoConvert.current("src/main/resources/fabric.mod.json");
+        String bridgedRegister = neoConvert.current("src/main/java/demo/loaderbridge/DeferredRegister.java");
         check(
             bridgedEntry.equals(Json.text(bridgeTest, "fabric", "")) &&
-            Files.readString(neo.resolve("src/main/java/demo/loaderbridge/DeferredRegister.java")).startsWith("package demo.loaderbridge;") &&
-            Files.isRegularFile(neo.resolve("src/main/java/demo/loaderbridge/ClientEntrypoint.java")) &&
+            bridgedRegister != null &&
+            bridgedRegister.startsWith("package demo.loaderbridge;") &&
+            neoConvert.current("src/main/java/demo/loaderbridge/ClientEntrypoint.java") != null &&
             fabricJson.contains("\"demo.Demo\"") &&
             fabricJson.contains("\"demo.loaderbridge.ClientEntrypoint\"") &&
             Json.array(bridged.get("left")).isEmpty(),
