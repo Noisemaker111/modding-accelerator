@@ -10,7 +10,7 @@ For each rule it searches the pinned mods of bench/port-cases.json (each at its 
 clone's working tree holds) for the first code the rule's find matches, cuts out the matched lines with one line
 either side, and runs the porter's own rewrite on that. The test is real code before and what the porter makes
 of it after, with "from" naming the mod, commit, file and line. The compiler error is worded from the rule's
-match, not taken from a build. PortableTests then holds the rule to it on every self-test.
+match, not taken from a build. PortRepairTests then holds the rule to it on every self-test.
 
 A rule nothing matches is listed with the reason. Pass the checkout of the mod it was written for with --source,
 and put the commit in its label so the test can be traced. A rule that only applies once another rule has run

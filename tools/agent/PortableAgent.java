@@ -23,6 +23,10 @@ public final class PortableAgent {
     // at full rate. Until the first answer the game is still loading, and loading finishes its work between frames.
     private static final int IDLE_FPS = 10; private static final long IDLE_AFTER = 2000000000L;
     private static volatile long lastRequest; private static volatile boolean serving, answered; private static final Object wake = new Object();
+    // A hidden game no modaccel request has reached for LEASE quits: one left by a command that died, or kept for a
+    // reload nobody ran, ran for 13 hours. Each request renews it. A visible game may be someone playing, so it stays.
+    static final long LEASE = 15 * 60 * 1000000000L;
+    static boolean leaseOver(boolean hidden, long lastContact, long now) { return hidden && now - lastContact >= LEASE; }
     private static final Map<String, Object> identity = new LinkedHashMap<String, Object>();
     private static boolean installed;
     public static synchronized void premain(String args, Instrumentation instrumentation) {
@@ -33,6 +37,9 @@ public final class PortableAgent {
         // second set of transformers hooked every frame twice and failed on already-rewritten classes.
         if (installed) return;
         installed = true;
+        // A game Gradle launched is no descendant of modaccel; a start that fails ends it by this pid.
+        System.out.println("MODACCEL_PID " + java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+        System.out.flush();
         // Only JDK classes are referenced by transformed game code. Isolated loaders
         // need neither our jar on their mod path nor access to our implementation classes.
         HotReload.install(instrumentation);
@@ -102,14 +109,25 @@ public final class PortableAgent {
                     "background", Boolean.getBoolean("modaccel.background"), "quiet", Boolean.getBoolean("modaccel.quiet")));
             Json.save(Paths.get(System.getProperty("modaccel.state"), "agent.json"), identity);
             System.out.println("MODACCEL_READY " + Json.write(identity)); System.out.flush();
+            boolean hidden = Boolean.getBoolean("modaccel.background");
+            long lastContact = System.nanoTime();
+            if (hidden) server.setSoTimeout(60000);
             while (true) {
-                try (Socket socket = server.accept()) {
+                Socket accepted;
+                try { accepted = server.accept(); }
+                catch (SocketTimeoutException idle) {
+                    if (!leaseOver(hidden, lastContact, System.nanoTime())) continue;
+                    leaseEnded();
+                    return;
+                }
+                try (Socket socket = accepted) {
                     socket.setSoTimeout(135000);
                     BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                     PrintWriter output = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
                     String line = input.readLine(); if (line == null) continue;
                     final Map<String, Object> request = Json.object(Json.parse(line));
                     if (!token.equals(request.get("token"))) { output.println(Json.write(Json.map("ok", false, "error", "Wrong session token"))); continue; }
+                    lastContact = System.nanoTime();
                     serving = true; synchronized (wake) { wake.notifyAll(); }
                     if ("eval".equals(request.get("command"))) { output.println(Json.write(eval(request))); continue; }
                     final CompletableFuture<Map<String, Object>> result = new CompletableFuture<Map<String, Object>>();
@@ -117,9 +135,23 @@ public final class PortableAgent {
                     try { output.println(Json.write(result.get(130, TimeUnit.SECONDS))); }
                     catch (Exception error) { result.cancel(false); output.println(Json.write(Json.map("ok", false, "error", "Game did not finish the requested action: " + cause(error)))); }
                 } catch (Throwable error) { System.err.println("MODACCEL_CONTROL_ERROR " + cause(error)); }
-                finally { if (serving) { lastRequest = System.nanoTime(); serving = false; answered = true; } }
+                finally { if (serving) { lastRequest = System.nanoTime(); lastContact = lastRequest; serving = false; answered = true; } }
             }
         } catch (Throwable error) { System.err.println("MODACCEL_AGENT_ERROR " + cause(error)); }
+    }
+    /** Stops the game the way quit does; a game thread too stuck to stop within 2 minutes is ended. */
+    private static void leaseEnded() {
+        System.out.println("MODACCEL_LEASE_ENDED no modaccel request for " + LEASE / 60000000000L + " minutes; stopping this hidden game");
+        System.out.flush();
+        pending.add(new Runnable() { public void run() {
+            try { perform(Json.map("command", "quit"), new CompletableFuture<Map<String, Object>>()); }
+            catch (Throwable error) { System.err.println("MODACCEL_AGENT_ERROR " + cause(error)); }
+        } });
+        Thread stuck = new Thread(new Runnable() { public void run() {
+            try { Thread.sleep(120000); } catch (InterruptedException stop) { return; }
+            Runtime.getRuntime().halt(0);
+        } }, "modaccel-lease-end");
+        stuck.setDaemon(true); stuck.start();
     }
     /**
      * Compiles off the game thread, then runs on it unless the snippet asked for the control thread.

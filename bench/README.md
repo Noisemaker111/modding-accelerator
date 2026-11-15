@@ -17,7 +17,8 @@ Recording, so no one edits those files by hand:
 
 The porting scoreboard:
 
-- `python bench/port_board.py` ports every pinned mod in `bench/port-cases.json` from a clean checkout with `modaccel port --fix`, and shows each against what is recorded and against the last run, then the errors still left grouped by the game update that caused them. `--only ID`, `--list`, `--record`, and `--modaccel PATH` to test another worktree's modaccel. Clones and results live in `.runs/port-board/`.
+- `python bench/port_board.py` ports every pinned mod in `bench/port-cases.json` from a clean checkout with `modaccel port --fix`, and shows each against what is recorded and against the last run, then the errors still left grouped by the game update that caused them. `--only ID`, `--changed` (only the cases a rule this branch changed crosses: the local check before merge), `--list`, `--record`, and `--modaccel PATH` to test another worktree's modaccel. Clones and results live in `.runs/port-board/`.
+- In the cloud, one runner per case: `tools/cloud-run ports [-f cases=ID,ID]` (`.github/workflows/cloud-ports.yml`).
 
 The port sweep, for what is missing across many mods rather than one:
 

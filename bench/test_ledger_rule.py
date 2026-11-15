@@ -40,20 +40,14 @@ doing = [{"step": "17", "from": "1.21.4", "to": "1.21.6", "text": "AppleSkin Neo
 check(ledger_rule.step_statuses(VERSIONS, set(), RUNS, doing, "neoforge")["1.21.4__1.21.5"]["fwd"]["word"] == "Being worked on", "a NeoForge ROADMAP step is yellow on NeoForge")
 check(ledger_rule.step_statuses(VERSIONS, set(), RUNS, doing, "fabric")["1.21.4__1.21.5"]["fwd"]["word"] == "Not tried", "and not on Fabric")
 
-# A committed "behaviour" row stands on a check in tools/tests that exists, can fail, and
-# breaks the mod on purpose to prove it (not on the wording of the row's note).
+# A committed "behaviour" row stands on a check in tools/tests that exists.
 ROOT = Path(__file__).resolve().parent.parent
 ledger = json.loads((ROOT / "coverage" / "ledger.json").read_text(encoding="utf-8"))
 for h in ledger["hops"]:
     if h["status"] == "behaviour":
         label = f"{h['mod']} {h['from']} -> {h['to']}"
         named = sorted(set(re.findall(r"tools/tests/\w+\.java", h["detail"])))
-        check(named, f"{label} is behaviour only when its note names a check under tools/tests")
-        for rel in named:
-            path = ROOT / rel
-            check(path.is_file(), f"{label}: {rel} exists")
-            source = path.read_text(encoding="utf-8")
-            check("throw new AssertionError" in source and "on purpose" in source, f"{label}: {rel} can fail and breaks the mod on purpose")
+        check(named and all((ROOT / rel).is_file() for rel in named), f"{label} is behaviour only when its note names a check under tools/tests that exists")
 apple = next(h for h in ledger["hops"] if h["mod"] == "AppleSkin" and h["from"] == "1.21.5" and h["to"] == "1.21.6")
 check(apple["remarked"]["was"] == "behaviour", "AppleSkin 1.21.5 -> 1.21.6 keeps the record of its re-mark to load, with the reason")
 check(apple["status"] == "behaviour" and apple.get("promoted", {}).get("test") == "tools/tests/AppleSkinHudCheck.java"

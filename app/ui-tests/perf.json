@@ -1,7 +1,0 @@
-{"events": [
-  {"t": 1.0, "type": "tap", "key": "nav-perf"},
-  {"t": 3.0, "type": "tap", "key": "perf-find"},
-  {"t": 15.0, "type": "tap", "key": "proc-12920"},
-  {"t": 16.0, "type": "tap", "key": "perf-start"},
-  {"t": 70.0, "type": "mark", "name": "end"}
-]}

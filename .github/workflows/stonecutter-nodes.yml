@@ -1,6 +1,6 @@
 name: Stonecutter nodes (on demand)
 # Every node of Diorama and In-Game Account Switcher: setup and compile through modaccel on fresh
-# pinned clones, Windows, Linux and macOS, no game. One job per node and OS, so each job is one
+# pinned clones, on Linux (the build code is not OS-specific), no game. One job per node, so each job is one
 # cold node (a few minutes; Forge decompiles take the longest) instead of a whole mod's 30+.
 # No Gradle cache: a node is measured from first use, and per-node caches would evict the PR
 # sample caches. Runs on demand (a change to the build or a mod pin), never blocks a merge; PRs run
@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         target: ${{ fromJSON(needs.plan.outputs.nodes) }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
