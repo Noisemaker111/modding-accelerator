@@ -139,7 +139,25 @@ final class Dependencies {
                 else try {
                     discover(setup, group, name, old, binary, Json.text(dep, "configuration", ""), loader);
                 } catch (IOException unpublished) {
-                    if (unpublished instanceof Target.LookupFailure || !loader.equals("fabric") || !mavenRelease(setup, group, name, old, binary)) throw unpublished;
+                    if (unpublished instanceof Target.LookupFailure || !loader.equals("fabric")) throw unpublished;
+                    if (!mavenRelease(setup, group, name, old, binary)) {
+                        // A Fabric library whose own metadata names no Minecraft version (MixinExtras) runs on any game: it stays.
+                        if (!gameIndependent(binary)) throw unpublished;
+                        setup.applied.add(
+                            Json.map(
+                                "artifact",
+                                group + ":" + name,
+                                "from",
+                                old,
+                                "to",
+                                old,
+                                "kept",
+                                true,
+                                "evidence",
+                                "its fabric.mod.json depends on no Minecraft version, so it is not tied to the game it was built beside"
+                            )
+                        );
+                    }
                 }
             } catch (IOException failure) {
                 String configuration = Json.text(dep, "configuration", "");
@@ -1338,6 +1356,18 @@ final class Dependencies {
         String replacement = literal.group(1) + artifact + ":" + target + literal.group(2);
         if (literal.find()) throw new IOException("Multiple dependency literals for " + artifact);
         return text.substring(0, start) + replacement + text.substring(end);
+    }
+
+    /** A Fabric mod jar whose fabric.mod.json exists and depends on no Minecraft version. */
+    static boolean gameIndependent(Path jar) {
+        try (var zip = new ZipFile(jar.toFile())) {
+            var entry = zip.getEntry("fabric.mod.json");
+            if (entry == null) return false;
+            var metadata = Json.object(Json.parse(new String(zip.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8)));
+            return !(metadata.get("depends") instanceof Map<?, ?> depends) || !depends.containsKey("minecraft");
+        } catch (Exception unreadable) {
+            return false;
+        }
     }
 
     static String minecraftConstraint(Path jar) throws Exception {
