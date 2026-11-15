@@ -128,10 +128,11 @@ def main():
                 toml.write_text(text + f'\n[[mixins]]\nconfig = "{name}"\n', encoding="utf-8")
     code, result, seconds = convert_sweep.modaccel(["compile", "--root", str(work), "--json"], 3600)
     errors = []
-    log = result.get("log") or result.get("compileLog")
-    text = json.dumps(result)
-    for m in re.finditer(r"([^\s\"]+\.java):(\d+): error: ([^\"\\]+)", text):
-        errors.append(f"{Path(m.group(1)).name}:{m.group(2)}: {m.group(3)}")
+    # javac's errors are in the compile log of this run (the receipt's folder), not in the JSON modaccel prints.
+    logs = sorted((work / ".runs" / "portable").glob("*/*compile*.log"), key=lambda p: p.stat().st_mtime)
+    if code != 0 and logs:
+        for e in convert_sweep.compile_errors(logs[-1].read_text(encoding="utf-8", errors="replace")):
+            errors.append(f"{Path(e['file']).name}:{e['line']}: {e['message']} {e['symbol']}".strip())
     out = {"ok": code == 0, "bridge": args.bridge, "minecraft": args.minecraft, "layer": (layer or {}).get("minecraft"),
            "files": len(files), "mixins": len(mixins), "seconds": round(seconds, 1), "work": str(work), "errors": errors[:200]}
     if code != 0 and not errors:
