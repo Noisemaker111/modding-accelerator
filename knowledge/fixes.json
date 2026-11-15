@@ -6126,6 +6126,106 @@
         "after": "package mod;\n\nclass TrashCanBlockEntity {\n\tvoid load(CompoundTag tag) {\n\t\tfor (int i = 0; i < 9; i++) this.itemFilter.set(i, tag.contains(\"itemFilter\" + i) ? decode(tag.getCompoundOrEmpty(\"itemFilter\" + i), access) : ItemStack.EMPTY);\n\t\ttag.getCompound(\"x\").ifPresent(this::read);\n\t}\n}\n",
         "from": "written for this rule (the shape of Trash Cans 1.21.4's TrashCanBlockEntity)"
       }
+    },
+    {
+      "id": "item-interaction-pass-to-default",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
+      "apply": {
+        "find": "\\bItemInteractionResult\\.PASS_TO_DEFAULT_BLOCK_INTERACTION\\b",
+        "replace": "InteractionResult.TRY_WITH_EMPTY_HAND"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2: 'pass to the block's own use without the item' is InteractionResult.TRY_WITH_EMPTY_HAND.",
+      "verified": "Mojang's 1.21.1 mappings: enum ItemInteractionResult {SUCCESS, CONSUME, CONSUME_PARTIAL, PASS_TO_DEFAULT_BLOCK_INTERACTION, SKIP_DEFAULT_BLOCK_INTERACTION, FAIL}; Mojang's 26.1 jar (same since 1.21.2): no ItemInteractionResult, InteractionResult has SUCCESS, SUCCESS_SERVER, CONSUME, FAIL, PASS, TRY_WITH_EMPTY_HAND, and BlockBehaviour.useItemOn's default returns TRY_WITH_EMPTY_HAND where 1.21.1's returned PASS_TO_DEFAULT_BLOCK_INTERACTION",
+      "test": {
+        "error": "Stove.java:7: error: cannot find symbol\n  symbol:   class ItemInteractionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return InteractionResult.TRY_WITH_EMPTY_HAND;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-interaction-skip-default",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
+      "apply": {
+        "find": "\\bItemInteractionResult\\.SKIP_DEFAULT_BLOCK_INTERACTION\\b",
+        "replace": "InteractionResult.PASS"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2: skipping the block's own use and going on to the item's is InteractionResult.PASS.",
+      "verified": "Mojang's 1.21.1 mappings: enum ItemInteractionResult {SUCCESS, CONSUME, CONSUME_PARTIAL, PASS_TO_DEFAULT_BLOCK_INTERACTION, SKIP_DEFAULT_BLOCK_INTERACTION, FAIL}; Mojang's 26.1 jar (same since 1.21.2): no ItemInteractionResult, InteractionResult has SUCCESS, SUCCESS_SERVER, CONSUME, FAIL, PASS, TRY_WITH_EMPTY_HAND, and BlockBehaviour.useItemOn's default returns TRY_WITH_EMPTY_HAND where 1.21.1's returned PASS_TO_DEFAULT_BLOCK_INTERACTION",
+      "test": {
+        "error": "Stove.java:7: error: cannot find symbol\n  symbol:   class ItemInteractionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return InteractionResult.PASS;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-interaction-consume-partial",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
+      "apply": {
+        "find": "\\bItemInteractionResult\\.CONSUME_PARTIAL\\b",
+        "replace": "InteractionResult.CONSUME"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 has no CONSUME_PARTIAL; the game's own uses became CONSUME.",
+      "verified": "Mojang's 1.21.1 mappings: enum ItemInteractionResult {SUCCESS, CONSUME, CONSUME_PARTIAL, PASS_TO_DEFAULT_BLOCK_INTERACTION, SKIP_DEFAULT_BLOCK_INTERACTION, FAIL}; Mojang's 26.1 jar (same since 1.21.2): no ItemInteractionResult, InteractionResult has SUCCESS, SUCCESS_SERVER, CONSUME, FAIL, PASS, TRY_WITH_EMPTY_HAND, and BlockBehaviour.useItemOn's default returns TRY_WITH_EMPTY_HAND where 1.21.1's returned PASS_TO_DEFAULT_BLOCK_INTERACTION",
+      "test": {
+        "error": "Stove.java:7: error: cannot find symbol\n  symbol:   class ItemInteractionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return InteractionResult.CONSUME;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-interaction-sided-success",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
+      "apply": {
+        "find": "\\bItemInteractionResult\\.sidedSuccess\\(((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))*)\\)",
+        "replace": "InteractionResult.SUCCESS"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 has no sidedSuccess: InteractionResult.SUCCESS is returned on both sides (the server answers SUCCESS_SERVER itself where it matters).",
+      "verified": "Mojang's 1.21.1 mappings: enum ItemInteractionResult {SUCCESS, CONSUME, CONSUME_PARTIAL, PASS_TO_DEFAULT_BLOCK_INTERACTION, SKIP_DEFAULT_BLOCK_INTERACTION, FAIL}; Mojang's 26.1 jar (same since 1.21.2): no ItemInteractionResult, InteractionResult has SUCCESS, SUCCESS_SERVER, CONSUME, FAIL, PASS, TRY_WITH_EMPTY_HAND, and BlockBehaviour.useItemOn's default returns TRY_WITH_EMPTY_HAND where 1.21.1's returned PASS_TO_DEFAULT_BLOCK_INTERACTION",
+      "test": {
+        "error": "Stove.java:7: error: cannot find symbol\n  symbol:   class ItemInteractionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn InteractionResult.SUCCESS;\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-interaction-result-type",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
+      "apply": {
+        "find": "\\bItemInteractionResult\\b",
+        "replace": "InteractionResult"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 folded ItemInteractionResult into InteractionResult; SUCCESS, CONSUME and FAIL keep their names. The constants that changed meaning are rewritten by the item-interaction-* rules first.",
+      "verified": "Mojang's 1.21.1 mappings: enum ItemInteractionResult {SUCCESS, CONSUME, CONSUME_PARTIAL, PASS_TO_DEFAULT_BLOCK_INTERACTION, SKIP_DEFAULT_BLOCK_INTERACTION, FAIL}; Mojang's 26.1 jar (same since 1.21.2): no ItemInteractionResult, InteractionResult has SUCCESS, SUCCESS_SERVER, CONSUME, FAIL, PASS, TRY_WITH_EMPTY_HAND, and BlockBehaviour.useItemOn's default returns TRY_WITH_EMPTY_HAND where 1.21.1's returned PASS_TO_DEFAULT_BLOCK_INTERACTION",
+      "test": {
+        "error": "Stove.java:7: error: cannot find symbol\n  symbol:   class ItemInteractionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.InteractionResult;\n\nclass Stove {\n\tprotected InteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return InteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return InteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return InteractionResult.CONSUME_PARTIAL;\n\t\treturn InteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }
