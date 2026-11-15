@@ -52,6 +52,9 @@ final class PerfOptimize {
         record.record.put("candidate", Json.map("label", label, "diffSha256", Performance.sha256(patch), "changedFiles", List.of()));
         record.record.put("metric", Json.object(experiment.get("measure")).get("metric"));
         Json.object(record.record.get("machine")).put("jit", "full".equals(experiment.get("jit")) ? "full" : "C1 only (hidden test client)");
+        if (experiment.get("frames") instanceof Number frames && frames.intValue() > 0) {
+            Json.object(record.record.get("machine")).put("framesPerSecond", frames.intValue());
+        }
         record.record.put("source", out.toString());
         record.record.put("arms", parallel ? "parallel" : "sequential");
     }
@@ -345,6 +348,15 @@ final class PerfOptimize {
         record.modFromLaunch(launched);
         if (!Boolean.TRUE.equals(launched.get("ok"))) throw new IOException(arm + " run " + run + " did not start: " + launched.get("error"));
         try {
+            // "frames": a hidden game otherwise draws about 8 frames a second once idle, so per-frame costs and frame
+            // timing measure the throttle; held at a player's rate, they measure the frames a player's game draws.
+            if (experiment.get("frames") instanceof Number frames && frames.intValue() > 0) {
+                Map<String, Object> held = modaccel(tree, arm + "-frames", List.of("eval", "--code",
+                    "System.setProperty(\"modaccel.frames\", \"" + frames.intValue() + "\"); return \"frames\";"), 120);
+                if (!Boolean.TRUE.equals(held.get("ok"))) {
+                    throw new IOException(arm + " run " + run + ": could not hold " + frames.intValue() + " frames a second: " + held.get("error"));
+                }
+            }
             for (Object step : Json.array(experiment.getOrDefault("setup", List.of()))) {
                 Map<String, Object> setup = Json.object(step);
                 Map<String, Object> answer = eval(tree, arm + "-setup", file(experimentDir, Json.text(setup, "file", "")), Json.text(setup, "thread", "game"));

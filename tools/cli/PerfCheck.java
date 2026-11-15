@@ -80,9 +80,15 @@ final class PerfCheck {
         }
         Map<String, Object> metric = Json.object(measure.get("metric"));
         boolean hidden = preferences != null && Boolean.TRUE.equals(preferences.get("background"));
-        if (hidden && metric.containsKey("report") && FRAME_METRIC.matcher(metric.get("report").toString()).find()) {
+        Object frames = experiment.get("frames");
+        if (frames != null && !(frames instanceof Number number && number.doubleValue() == number.intValue() && number.intValue() >= 1 && number.intValue() <= 1000)) {
+            problems.add("frames is " + frames + ": a whole number of frames a second from 1 to 1000, the rate hidden launches are held at");
+        }
+        boolean held = frames instanceof Number number && number.intValue() > 0;
+        if (hidden && !held && metric.containsKey("report") && FRAME_METRIC.matcher(metric.get("report").toString()).find()) {
             problems.add("metric " + metric.get("report") + " is frame timing, but launches are hidden (preferences background on): a hidden client presents"
-                + " about 8 frames per second, so frame time measures the throttle. Measure a timing probe, server ticks or the mod's sampled CPU");
+                + " about 8 frames per second, so frame time measures the throttle. Hold launches at a player's rate with \"frames\": 60, or measure"
+                + " a timing probe, server ticks or the mod's sampled CPU");
         }
         if (!"full".equals(experiment.get("jit"))) {
             warnings.add("jit is not \"full\": hidden test clients compile with C1 alone, which weighs code differently from a player's game."

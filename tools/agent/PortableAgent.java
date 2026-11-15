@@ -88,11 +88,23 @@ public final class PortableAgent {
             server.setDaemon(true); server.start();
         }
         try { Object current = screen(); if (current != lastScreen) { lastScreen = current; screenSince = System.nanoTime(); } } catch (Exception ignored) {}
+        // A measurement can hold a hidden game at a player's frame rate instead (modaccel.frames, which perf-optimize's
+        // "frames" sets), so per-frame costs are what a player's game pays: at the idle rate they measured the throttle.
+        int frames = Boolean.getBoolean("modaccel.background") ? Integer.getInteger("modaccel.frames", 0) : 0;
         if (serving || !pending.isEmpty()) lastRequest = System.nanoTime();
+        if (frames > 0) pace(frames);
         else if (answered && Boolean.getBoolean("modaccel.background") && System.nanoTime() - lastRequest > IDLE_AFTER)
             synchronized (wake) { try { wake.wait(1000 / IDLE_FPS); } catch (InterruptedException stop) { Thread.currentThread().interrupt(); } }
         int count = pending.size();
         for (int i = 0; i < count; i++) { Runnable action = pending.poll(); if (action != null) action.run(); }
+    }
+    private static long nextFrame;
+    /** Waits until the next of {@code frames} evenly spaced frames a second is due; a frame that ran late starts the spacing again. */
+    private static void pace(int frames) {
+        long period = 1000000000L / frames;
+        long now = System.nanoTime();
+        if (nextFrame - now > 0) { java.util.concurrent.locks.LockSupport.parkNanos(nextFrame - now); now = System.nanoTime(); }
+        nextFrame = nextFrame - now > -period ? nextFrame + period : now + period;
     }
     private static void serve() {
         try (ServerSocket server = new ServerSocket(0, 16, InetAddress.getByName("127.0.0.1"))) {

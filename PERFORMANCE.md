@@ -476,6 +476,11 @@ More experiment fields, for a mod whose cost is spread over threads:
   state a mod keeps beside the save that would otherwise carry from one launch to the next.
 - `"jit": "full"` launches with the JIT players have. A hidden test client otherwise runs
   C1 alone, which starts cheaply but weighs code differently from a player's game.
+- `"frames": 60` holds each hidden launch at that many frames a second, as a player's game
+  draws them. Otherwise a hidden client that is not answering a request draws about 8 frames
+  a second, so frame timing and per-frame costs (a minimap, a HUD) measure the throttle;
+  `--check-only` refuses a frame metric on hidden launches without it. In a game you started
+  yourself, `modaccel eval --code 'System.setProperty("modaccel.frames", "60")'` does the same.
 
 Every `perf` capture and every `perf-optimize` decision writes `record.json`: the mod, its
 version and loader, wall time per phase (setup, build, launch, warmup, measure, gates),
