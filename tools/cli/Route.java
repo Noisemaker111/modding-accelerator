@@ -131,7 +131,9 @@ final class Route {
         if (Versions.compare(version, FIRST_MAPPED) < 0) return (
             "Mojang published no official mappings before " +
             FIRST_MAPPED +
-            " and Fabric intermediary ids start there, so no proven name links this release to newer ones (it would need MCP or other legacy community mappings, which mmt does not use)."
+            " and Fabric intermediary ids start there. This release's names are indexed through Forge's SRG ids (MCP names), but porting from a pre-" +
+            FIRST_MAPPED +
+            " release is not wired into port yet."
         );
         return null;
     }

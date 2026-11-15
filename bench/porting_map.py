@@ -239,7 +239,7 @@ MAP_BODY = r"""<p class="lede">Pick the version your mod is on and the one you w
 <p class="small">Stonecutter mods keep one source for many versions, with switches like <span class="mono">//? if &gt;=1.21.2</span>: each one is a person showing the code before and after an update. These are the switches mined from <span id="scmods"></span> open-source mods, placed on the update their version boundary falls on, and the rules learned where the same change repeats across mods. A rule runs only on its own update, and only when the compiler reports the old name.</p>
 {SC_CHART}<details class="v-tablefold"><summary>Every update as a table</summary><table class="tbl stack" id="sctable"><thead><tr><th class="l">Update</th><th>Switches</th><th>Mods</th><th class="l">Rules learned (forward)</th><th class="l">Backport rules</th></tr></thead><tbody></tbody></table></details>
 
-<p class="foot">Made by <span class="mono">bench/porting_map.py</span> from <span class="mono">coverage/changes/index.json</span>, <span class="mono">coverage/ledger.json</span> and <span class="mono">ROADMAP.md</span> on <span id="gen"></span>. Before 1.14.4 Mojang published no official names, so those families are grouped by version number and nothing there is measured.</p>
+<p class="foot">Made by <span class="mono">bench/porting_map.py</span> from <span class="mono">coverage/changes/index.json</span>, <span class="mono">coverage/ledger.json</span> and <span class="mono">ROADMAP.md</span> on <span id="gen"></span>. Before 1.14.4 there are no Mojang names: the hubs 1.7.10, 1.8.9, 1.10.2 and 1.12.2 are measured in MCP names through Forge SRG ids, and the other early families are grouped by version number, unmeasured.</p>
 """
 
 MAP_JS = r"""const IX = /*INDEX*/null;
@@ -358,7 +358,7 @@ function render() {
   const back = POS[y] < POS[x];
   let html = `<h2>${esc(x)} → ${esc(y)}${back ? " (backport)" : ""} on ${LOADERS[LOADER]}</h2>
   <p class="summary">${hops.length} hop${hops.length === 1 ? "" : "s"}: ${[["green", "work"], ["yellow", "being worked on"], ["red", "not working yet or blocked"]].filter(([c]) => n(c)).map(([c, w]) => `<span class="dot st-${c}"></span>${n(c)} ${w}`).join(" &nbsp; ")}</p>
-  ${blocked.length ? `<div class="notice"><b>Blocked: no official mappings for ${esc([...new Set(blocked.flatMap(h => [h.a, h.b]).filter(v => !MEASURED(v)))].slice(0, 4).join(", "))}${blocked.length > 0 ? "" : ""} yet.</b> Mojang's names start at 1.14.4. Those hops can't be measured or ported by mmt today; they would need MCP or other legacy community mappings.</div>` : ""}
+  ${blocked.length ? `<div class="notice"><b>Not measured: ${esc([...new Set(blocked.flatMap(h => [h.a, h.b]).filter(v => !MEASURED(v)))].slice(0, 4).join(", "))}.</b> No indexed step touches those releases yet, so those hops can't be measured or ported by mmt today.</div>` : ""}
   ${(() => { const on = HUBS.filter(h => POS[h] >= Math.min(POS[x], POS[y]) && POS[h] <= Math.max(POS[x], POS[y])); return on.length > 2 ? `<p class="small">One <code>port</code> command does the whole trip from ${esc(back ? on[on.length - 1] : on[0])} to ${esc(back ? on[0] : on[on.length - 1])} (the thick line with no dots on the map), passing the ${hops.length} hops below. Each hop's colour says what has been seen working.</p>` : ""; })()}
   ${back ? `<p class="small">Backport: rules are written for forward ports, so only renames from the mappings count as handled. What the newer game added is missing on the way back.</p>` : ""}
   <div class="plat"><span class="small">Commands for</span><button type="button" data-plat="win" class="${PLAT === "win" ? "on" : ""}">Windows</button><button type="button" data-plat="nix" class="${PLAT === "nix" ? "on" : ""}">macOS / Linux</button></div>
@@ -375,7 +375,7 @@ function render() {
       <td data-k="Names that break">${num(h.broken)}</td>
       <td class="hi" data-k="mmt handles">${num(h.handled)}${h.measured && h.note ? `<span class="sub">+ ${fmt(h.note)} with a how-to</span>` : ""}</td>
       <td data-k="Left for you">${num(h.left)}</td></tr>
-      <tr class="cmd"><td colspan="6">${h.measured ? `<div class="ready ${h.ready.k}">${esc(h.ready.label)}</div><div class="cmdline"><code>${esc(cmd(h))}</code><button type="button" data-copy="${i}">Copy</button>${h.steps.length ? `<button type="button" data-open="${i}">Show ${h.steps.length === 1 ? "the update" : h.steps.length + " updates"}</button>` : ""}</div><div class="inner" id="in${i}" hidden></div>` : `<div class="ready blocked">Blocked: no command until there are mappings for this hop.</div>`}</td></tr>`;
+      <tr class="cmd"><td colspan="6">${h.measured ? `<div class="ready ${h.ready.k}">${esc(h.ready.label)}</div><div class="cmdline"><code>${esc(cmd(h))}</code><button type="button" data-copy="${i}">Copy</button>${h.steps.length ? `<button type="button" data-open="${i}">Show ${h.steps.length === 1 ? "the update" : h.steps.length + " updates"}</button>` : ""}</div><div class="inner" id="in${i}" hidden></div>` : `<div class="ready blocked">Blocked: no measured step for this hop yet.</div>`}</td></tr>`;
   });
   html += `</tbody></table>`;
   out.innerHTML = html;
@@ -384,7 +384,7 @@ function render() {
   out.querySelectorAll("button[data-open]").forEach(b => b.onclick = () => {
     const i = +b.dataset.open, box = $("#in" + i), h = hops[i];
     if (!box.hidden) { box.hidden = true; return; }
-    box.innerHTML = h.steps.map(l => `<div class="srow"><b>${esc(l.a)} → ${esc(l.b)}</b><span class="size sz-${l.size}">${l.size}</span><span class="n">${fmt(l.broken)} break · ${fmt(l.mapped + l.rule)} handled · ${fmt(l.left)} left${l.s.linked === "exact" ? "" : " · names matched by guess"}${mined(l)}</span><button type="button" data-step="${esc(l.s.from + "__" + l.s.to)}" data-fwd="${l.fwd ? 1 : 0}">What changed</button></div>`).join("");
+    box.innerHTML = h.steps.map(l => `<div class="srow"><b>${esc(l.a)} → ${esc(l.b)}</b><span class="size sz-${l.size}">${l.size}</span><span class="n">${fmt(l.broken)} break · ${fmt(l.mapped + l.rule)} handled · ${fmt(l.left)} left${l.s.linked === "exact" ? "" : l.s.linked === "srg" ? " · members linked by SRG id, classes by name" : " · names matched by guess"}${mined(l)}</span><button type="button" data-step="${esc(l.s.from + "__" + l.s.to)}" data-fwd="${l.fwd ? 1 : 0}">What changed</button></div>`).join("");
     box.hidden = false;
     box.querySelectorAll("button[data-step]").forEach(s => s.onclick = () => openStep(s.dataset.step, s.dataset.fwd === "1"));
   });

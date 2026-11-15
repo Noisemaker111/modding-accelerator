@@ -10,7 +10,8 @@ neighbouring releases gets a colour per loader and per direction:
            behaviour check;
   yellow - such a run reached a packaged build, or a ROADMAP "doing" step for that loader covers it;
   red    - such a run stopped with named errors, nothing was tried on that loader, or it is blocked
-           (no official mappings before 1.14.4).
+           (no indexed step touches it: before 1.14.4 only the hubs 1.7.10, 1.8.9, 1.10.2 and
+           1.12.2 are measured).
 A longer hop (hub to hub) takes the worst colour of its updates, and says which part is which.
 """
 
@@ -20,7 +21,7 @@ WORD = {"behaviour": "Behaviour checked in the game", "load": "Loads in the real
         "build": "Builds, mixins checked", "stop": "Stops with named errors"}
 SAID = {"behaviour": "behaviour checked in the game", "load": "loads in the real game",
         "build": "packaged build, not loaded yet", "stop": "stopped with named errors"}
-BLOCKED = "No official mappings before 1.14.4, so nothing here is measured and mmt cannot port it yet."
+BLOCKED = "No indexed step touches this release, so nothing here is measured and mmt cannot port it yet."
 WORST = {"red": 0, "yellow": 1, "green": 2}
 LOADERS = ["fabric", "neoforge", "forge", "quilt"]
 NAME = {"fabric": "Fabric", "neoforge": "NeoForge", "forge": "Forge", "quilt": "Quilt"}

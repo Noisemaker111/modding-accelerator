@@ -57,8 +57,9 @@ public final class PortTests {
             refused != null &&
             "blocked".equals(refused.get("tier")) &&
             String.valueOf(refused.get("details")).contains("1.14.4") &&
+            String.valueOf(refused.get("details")).contains("not wired into port yet") &&
             Route.blocked(home, "1.20.1", "1.21.6") == null,
-            "releases before 1.14.4 are refused with the reason; later ones are not: " +
+            "releases before 1.14.4 are refused as not yet wired (their names are indexed through SRG ids); later ones are not: " +
             (refused == null ? null : refused.get("details"))
         );
         check(
