@@ -249,6 +249,9 @@ final class LoaderRules {
                 if (dot < 0 || s.charAt(dot) != '.' || !code[dot]) continue;
                 start = receiverStart(s, code, dot);
                 if (start < 0) continue;
+                // A class name before the dot (CommonHooks.canEntityDestroy(...)) is a static call, not a receiver.
+                String name = s.substring(start, dot).strip();
+                if (name.matches("[A-Z][\\w$]*") && !name.equals(name.toUpperCase(Locale.ROOT))) continue;
             } else if (first > 0) {
                 // A pattern that opens with holes (a statement's target) starts at the statement's start.
                 start = statementStart(s, code, at);

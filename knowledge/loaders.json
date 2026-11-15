@@ -429,6 +429,141 @@
     "fabric": "import net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder;\nimport net.minecraft.world.level.gamerules.GameRule;\nclass A {\n    static final GameRule<Boolean> CALM = GameRuleBuilder.forBoolean(true).category(GameRuleCategory.MOBS).buildAndRegister(Identifier.fromNamespaceAndPath(\"demo\", \"calm\"));\n}",
     "neoforge": "import com.mojang.brigadier.arguments.BoolArgumentType;\nimport com.mojang.serialization.Codec;\nimport net.minecraft.core.Registry;\nimport net.minecraft.core.registries.BuiltInRegistries;\nimport net.minecraft.world.flag.FeatureFlagSet;\nimport net.minecraft.world.level.gamerules.GameRule;\nimport net.minecraft.world.level.gamerules.GameRuleType;\nimport net.minecraft.world.level.gamerules.GameRuleTypeVisitor;\nclass A {\n    static final GameRule<Boolean> CALM = Registry.register(BuiltInRegistries.GAME_RULE, Identifier.fromNamespaceAndPath(\"demo\", \"calm\"), new GameRule<>(GameRuleCategory.MOBS, GameRuleType.BOOL, BoolArgumentType.bool(), GameRuleTypeVisitor::visitBoolean, Codec.BOOL, value -> value ? 1 : 0, true, FeatureFlagSet.of()));\n}"
    }
+  },
+  {
+   "id": "neoforge-entity-persistent-data",
+   "about": "NeoForge adds getPersistentData() to Entity (IEntityExtension) and BlockEntity (IBlockEntityExtension); on Fabric the NeoForge bridge's IEntityExtension.getPersistentData keeps the tag in the entity's saved data (a Fabric API persistent attachment) and carries a player's PlayerPersisted section through respawn, as NeoForge does.",
+   "fabric": "IEntityExtension.getPersistentData($entity)",
+   "neoforge": "$entity.getPersistentData()",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IEntityExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IEntityExtension#getPersistentData",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockEntityExtension#getPersistentData"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IEntityExtension;\nclass A { void a(Entity e) { CompoundTag data = IEntityExtension.getPersistentData(e); IEntityExtension.getPersistentData(((Zombie) e)).putInt(\"n\", IEntityExtension.getPersistentData(this.find(e).get(0)).getInt(\"n\")); } }",
+    "neoforge": "class A { void a(Entity e) { CompoundTag data = e.getPersistentData(); ((Zombie) e).getPersistentData().putInt(\"n\", this.find(e).get(0).getPersistentData().getInt(\"n\")); } }"
+   }
+  },
+  {
+   "id": "neoforge-state-light-emission",
+   "about": "NeoForge adds getLightEmission(level, pos) to BlockState (IBlockStateExtension); its default is the state's own light emission, which the NeoForge bridge's IBlockStateExtension.getLightEmission returns on Fabric.",
+   "fabric": "IBlockStateExtension.getLightEmission($state, $level, $pos)",
+   "neoforge": "$state.getLightEmission($level, $pos)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getLightEmission",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { int a(Level level, BlockPos pos) { return IBlockStateExtension.getLightEmission(level.getBlockState(pos), level, pos); } }",
+    "neoforge": "class A { int a(Level level, BlockPos pos) { return level.getBlockState(pos).getLightEmission(level, pos); } }"
+   }
+  },
+  {
+   "id": "neoforge-state-can-entity-destroy",
+   "about": "NeoForge adds canEntityDestroy(level, pos, entity) to BlockState (IBlockStateExtension, from IBlockExtension's default: dragon-immune blocks stop the ender dragon, the wither and its skulls break what WitherBoss.canDestroy allows); the NeoForge bridge's IBlockStateExtension.canEntityDestroy does the same on Fabric. A static call on a class (CommonHooks.canEntityDestroy) is left alone.",
+   "fabric": "IBlockStateExtension.canEntityDestroy($state, $level, $pos, $entity)",
+   "neoforge": "$state.canEntityDestroy($level, $pos, $entity)",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IBlockStateExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#canEntityDestroy",
+     "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#canEntityDestroy"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IBlockStateExtension;\nclass A { boolean a(ServerLevel level, BlockPos pos, Zombie zombie) { BlockState state = level.getBlockState(pos); return CommonHooks.canEntityDestroy(level, pos, zombie) || IBlockStateExtension.canEntityDestroy(state, level, pos, zombie); } }",
+    "neoforge": "class A { boolean a(ServerLevel level, BlockPos pos, Zombie zombie) { BlockState state = level.getBlockState(pos); return CommonHooks.canEntityDestroy(level, pos, zombie) || state.canEntityDestroy(level, pos, zombie); } }"
+   }
+  },
+  {
+   "id": "neoforge-stack-equipment-slot",
+   "about": "NeoForge adds getEquipmentSlot() to ItemStack (IItemStackExtension); its default (IItemExtension) is null, the item asking for no slot of its own, which the NeoForge bridge's IItemStackExtension.getEquipmentSlot returns on Fabric. On 1.21.1 the game's own Equipable.getEquipmentSlot() calls go the same way and keep the game's answer.",
+   "fabric": "IItemStackExtension.getEquipmentSlot($stack)",
+   "neoforge": "$stack.getEquipmentSlot()",
+   "imports": {
+    "fabric": [
+     "net.neoforged.neoforge.common.extensions.IItemStackExtension"
+    ],
+    "neoforge": []
+   },
+   "symbols": {
+    "neoforge": [
+     "neoforge|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot",
+     "neoforge|net.neoforged.neoforge.common.extensions.IItemExtension#getEquipmentSlot"
+    ]
+   },
+   "test": {
+    "fabric": "import net.neoforged.neoforge.common.extensions.IItemStackExtension;\nclass A { EquipmentSlot a(ItemStack stack) { EquipmentSlot slot = IItemStackExtension.getEquipmentSlot(stack); return slot != null ? slot : EquipmentSlot.MAINHAND; } }",
+    "neoforge": "class A { EquipmentSlot a(ItemStack stack) { EquipmentSlot slot = stack.getEquipmentSlot(); return slot != null ? slot : EquipmentSlot.MAINHAND; } }"
+   }
+  },
+  {
+   "id": "neoforge-saved-data-factory",
+   "about": "NeoForge 21.1 adds a two-argument SavedData.Factory constructor (no DataFixTypes: the data is read back unfixed); on Fabric it is the game's three-argument one with null, which the NeoForge bridge's SavedDataFixMixin reads back unfixed as NeoForge's DimensionDataStorage patch does. Minecraft 26.x has no SavedData.Factory.",
+   "minecraft": {
+    "below": "1.21.2"
+   },
+   "fabric": "new SavedData.Factory<>($constructor, $deserializer, null)",
+   "neoforge": "new SavedData.Factory<>($constructor, $deserializer)",
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft-1.21.1|net.minecraft.world.level.saveddata.SavedData$Factory#type",
+     "minecraft-1.21.1|net.minecraft.world.level.storage.DimensionDataStorage#computeIfAbsent"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "class A { static SavedData.Factory<Data> FACTORY = new SavedData.Factory<>(Data::new, Data::load, null); }",
+    "neoforge": "class A { static SavedData.Factory<Data> FACTORY = new SavedData.Factory<>(Data::new, Data::load); }"
+   }
+  },
+  {
+   "id": "neoforge-saved-data-factory-inherited",
+   "about": "The same two-argument SavedData.Factory constructor written as Factory, as a SavedData subclass may (the nested class is inherited).",
+   "minecraft": {
+    "below": "1.21.2"
+   },
+   "fabric": "new Factory<>($constructor, $deserializer, null)",
+   "neoforge": "new Factory<>($constructor, $deserializer)",
+   "imports": {
+    "fabric": [],
+    "neoforge": []
+   },
+   "symbols": {
+    "fabric": [
+     "minecraft-1.21.1|net.minecraft.world.level.saveddata.SavedData$Factory#type"
+    ]
+   },
+   "test": {
+    "minecraft": "1.21.1",
+    "fabric": "class Data extends SavedData { static Data get(ServerLevel level) { return level.getDataStorage().computeIfAbsent(new Factory<>(Data::new, Data::load, null), \"data\"); } }",
+    "neoforge": "class Data extends SavedData { static Data get(ServerLevel level) { return level.getDataStorage().computeIfAbsent(new Factory<>(Data::new, Data::load), \"data\"); } }"
+   }
   }
  ],
  "types": [
@@ -1911,7 +2046,10 @@
        "minecraft-1.21.1|net.minecraft.world.level.entity.PersistentEntitySectionManager#addEntity",
        "minecraft-1.21.1|net.minecraft.client.multiplayer.ClientLevel#addEntity",
        "minecraft-1.21.1|net.minecraft.world.entity.projectile.WitherSkull",
-       "minecraft-1.21.1|net.minecraft.world.entity.boss.wither.WitherBoss#canDestroy"
+       "minecraft-1.21.1|net.minecraft.world.entity.boss.wither.WitherBoss#canDestroy",
+       "minecraft-1.21.1|net.minecraft.world.level.storage.DimensionDataStorage#readTagFromDisk",
+       "minecraft-1.21.1|net.minecraft.util.datafix.DataFixTypes#update",
+       "minecraft-1.21.1|net.minecraft.world.item.Equipable#getEquipmentSlot"
       ]
      },
      "below": "1.21.2",
@@ -1998,6 +2136,13 @@
        "client": true,
        "for": [
         "EntityJoinLevelEvent"
+       ]
+      },
+      {
+       "mixin": "SavedDataFixMixin",
+       "client": false,
+       "for": [
+        "Bridge"
        ]
       }
      ]
