@@ -1487,7 +1487,10 @@
     "net.neoforged.neoforge.server.ServerLifecycleHooks": "ServerLifecycleHooks",
     "net.neoforged.fml.event.IModBusEvent": "IModBusEvent",
     "net.neoforged.fml.loading.FMLEnvironment": "FMLEnvironment",
-    "net.neoforged.fml.ModList": "ModList"
+    "net.neoforged.fml.ModList": "ModList",
+    "net.neoforged.neoforge.event.tick.EntityTickEvent": "EntityTickEvent",
+    "net.neoforged.neoforge.event.tick.PlayerTickEvent": "PlayerTickEvent",
+    "net.neoforged.neoforge.event.EventHooks": "EventHooks"
    },
    "symbols": {
     "neoforge": [
@@ -1575,7 +1578,15 @@
      "fml|net.neoforged.fml.loading.FMLEnvironment#isProduction",
      "fml|net.neoforged.fml.ModList#get",
      "fml|net.neoforged.fml.ModList#isLoaded",
-     "fml|net.neoforged.fml.ModList#getModContainerById"
+     "fml|net.neoforged.fml.ModList#getModContainerById",
+     "neoforge|net.neoforged.neoforge.event.tick.EntityTickEvent$Pre",
+     "neoforge|net.neoforged.neoforge.event.tick.EntityTickEvent$Post",
+     "neoforge|net.neoforged.neoforge.event.tick.PlayerTickEvent$Pre",
+     "neoforge|net.neoforged.neoforge.event.tick.PlayerTickEvent$Post",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#fireEntityTickPre",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#fireEntityTickPost",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#firePlayerTickPre",
+     "neoforge|net.neoforged.neoforge.event.EventHooks#firePlayerTickPost"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -1616,7 +1627,13 @@
      "fabric-api|net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#registerKeyMapping",
      "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
      "fabric-loader|net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
-     "fabric-loader|net.fabricmc.loader.api.FabricLoader#isModLoaded"
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#isModLoaded",
+     "minecraft|net.minecraft.server.level.ServerLevel#tickNonPassenger",
+     "minecraft|net.minecraft.client.multiplayer.ClientLevel#tickNonPassenger",
+     "minecraft|net.minecraft.world.entity.Entity#commonTick",
+     "minecraft|net.minecraft.world.entity.Entity#tick",
+     "minecraft|net.minecraft.world.entity.Entity#rideTick",
+     "minecraft|net.minecraft.world.entity.player.Player#tick"
     ]
    },
    "test": {
@@ -1692,7 +1709,15 @@
        "fml-21.1|net.neoforged.fml.loading.FMLEnvironment#dist",
        "fml-21.1|net.neoforged.fml.loading.FMLEnvironment#production",
        "fml-21.1|net.neoforged.fml.ModList#isLoaded",
-       "fml-21.1|net.neoforged.fml.ModList#getModContainerById"
+       "fml-21.1|net.neoforged.fml.ModList#getModContainerById",
+       "neoforge-21.1|net.neoforged.neoforge.event.tick.EntityTickEvent$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.event.tick.EntityTickEvent$Post",
+       "neoforge-21.1|net.neoforged.neoforge.event.tick.PlayerTickEvent$Pre",
+       "neoforge-21.1|net.neoforged.neoforge.event.tick.PlayerTickEvent$Post",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#fireEntityTickPre",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#fireEntityTickPost",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#firePlayerTickPre",
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#firePlayerTickPost"
       ],
       "fabric": [
        "fabric-api-1.21.1|net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#MODIFY_ENTRIES_ALL",
@@ -1734,7 +1759,12 @@
        "fabric-api-1.21.1|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#END_WORLD_TICK",
        "fabric-api-1.21.1|net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper#registerKeyBinding",
        "fabric-api-1.21.1|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#playC2S",
-       "fabric-api-1.21.1|net.fabricmc.fabric.api.networking.v1.PlayerLookup#world"
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.networking.v1.PlayerLookup#world",
+       "minecraft-1.21.1|net.minecraft.server.level.ServerLevel#tickNonPassenger",
+       "minecraft-1.21.1|net.minecraft.client.multiplayer.ClientLevel#tickNonPassenger",
+       "minecraft-1.21.1|net.minecraft.world.entity.Entity#tick",
+       "minecraft-1.21.1|net.minecraft.world.entity.Entity#rideTick",
+       "minecraft-1.21.1|net.minecraft.world.entity.player.Player#tick"
       ]
      },
      "below": "1.21.2"
@@ -1745,6 +1775,36 @@
      "name": "Listener",
      "from": "package demo;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.entity.living.LivingDeathEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Listener {\n\t@SubscribeEvent\n\tpublic static void onDeath(LivingDeathEvent event) {\n\t\tevent.getEntity().discard();\n\t}\n}\n",
      "to": "package demo;\n\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.LivingDeathEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Listener {\n\t@SubscribeEvent\n\tpublic static void onDeath(LivingDeathEvent event) {\n\t\tevent.getEntity().discard();\n\t}\n}\n"
+    }
+   ],
+   "mixins": [
+    {
+     "mixin": "EntityTickMixin",
+     "client": false,
+     "for": [
+      "EntityTickEvent"
+     ]
+    },
+    {
+     "mixin": "EntityRideTickMixin",
+     "client": false,
+     "for": [
+      "EntityTickEvent"
+     ]
+    },
+    {
+     "mixin": "ClientEntityTickMixin",
+     "client": true,
+     "for": [
+      "EntityTickEvent"
+     ]
+    },
+    {
+     "mixin": "PlayerTickMixin",
+     "client": false,
+     "for": [
+      "PlayerTickEvent"
+     ]
     }
    ]
   },

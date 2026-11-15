@@ -227,7 +227,10 @@ final class LoaderRules {
         int first = 0;
         while (first < pieces.size() && pieces.get(first).startsWith("$")) first++;
         if (first == pieces.size()) return found;
-        String anchor = pieces.get(first);
+        // A pattern that opens with one hole and ".name" ($stack.getEquipmentSlot()) is a call on a receiver: it is found
+        // by the member's name, and the hole takes the expression before the dot.
+        boolean receiver = first == 1 && pieces.size() > 2 && pieces.get(1).equals(".") && ident(pieces.get(2).charAt(0));
+        String anchor = pieces.get(receiver ? 2 : first);
         int from = 0;
         while (true) {
             int at = s.indexOf(anchor, from);
@@ -240,7 +243,13 @@ final class LoaderRules {
                 (ident(s.charAt(at - 1)) || (first == 0 && s.charAt(at - 1) == '.'))
             ) continue;
             int start = at;
-            if (first > 0) {
+            if (receiver) {
+                int dot = at - 1;
+                while (dot >= 0 && Character.isWhitespace(s.charAt(dot))) dot--;
+                if (dot < 0 || s.charAt(dot) != '.' || !code[dot]) continue;
+                start = receiverStart(s, code, dot);
+                if (start < 0) continue;
+            } else if (first > 0) {
                 // A pattern that opens with holes (a statement's target) starts at the statement's start.
                 start = statementStart(s, code, at);
             }
@@ -251,6 +260,58 @@ final class LoaderRules {
             from = end;
         }
         return found;
+    }
+
+    /**
+     * Where the receiver of a call starts, reading back from the dot before the member: a chain of names, calls and
+     * indexes (a.b(c).d[0]), a parenthesised expression or cast ((Zombie) e), or new X(...); -1 when there is none.
+     */
+    static int receiverStart(String s, boolean[] code, int dot) {
+        int i = dot - 1, start = -1;
+        while (true) {
+            while (i >= 0 && Character.isWhitespace(s.charAt(i))) i--;
+            if (i < 0 || !code[i]) return start;
+            char c = s.charAt(i);
+            if (c == ')' || c == ']') {
+                int depth = 0, open = -1;
+                for (int j = i; j >= 0; j--) {
+                    if (!code[j]) continue;
+                    char d = s.charAt(j);
+                    if (d == ')' || d == ']' || d == '}') depth++;
+                    else if ((d == '(' || d == '[' || d == '{') && --depth == 0) {
+                        open = j;
+                        break;
+                    }
+                }
+                if (open < 0) return -1;
+                start = open;
+                i = open - 1;
+                int j = i;
+                while (j >= 0 && Character.isWhitespace(s.charAt(j))) j--;
+                // A call or an index goes on to its name; a bracket after anything else is the receiver's start.
+                if (j >= 0 && ident(s.charAt(j)) && code[j]) {
+                    i = j;
+                    continue;
+                }
+                // new X<>(...) or a generic call: not read here, so not matched.
+                if (j >= 0 && s.charAt(j) == '>') return -1;
+                return start;
+            }
+            if (!ident(c)) return start;
+            int j = i;
+            while (j >= 0 && ident(s.charAt(j))) j--;
+            String word = s.substring(j + 1, i + 1);
+            if (Set.of("return", "throw", "case", "yield", "else", "do", "assert").contains(word)) return start;
+            start = j + 1;
+            int k = j;
+            while (k >= 0 && Character.isWhitespace(s.charAt(k))) k--;
+            if (k >= 0 && s.charAt(k) == '.' && code[k]) {
+                i = k - 1;
+                continue;
+            }
+            if (k >= 2 && s.startsWith("new", k - 2) && (k < 3 || !ident(s.charAt(k - 3)))) return k - 2;
+            return start;
+        }
     }
 
     static int statementStart(String s, boolean[] code, int at) {
