@@ -217,7 +217,8 @@ final class PackCheck {
                     if (more.isEmpty()) break;
                     chosen.addAll(more);
                     change = PackRepairs.change(this, chosen, facts);
-                    rounds.add(Json.map("round", round, "after", again != null ? "the repaired pack's start failed" : "the shipped pack's start failed", "added", more.stream().map(f -> f.get("id")).toList()));
+                    String after = again != null ? "the repaired pack's start failed" : "the shipped pack's start failed";
+                    rounds.add(Json.map("round", round, "after", after, "added", more.stream().map(f -> f.get("id")).toList()));
                     if (change.empty()) break;
                     repaired = new ServerLane(checked, change, "repaired-", new ArrayList<>(), context);
                     repaired.prepare();
@@ -1338,7 +1339,10 @@ final class PackCheck {
         StringBuilder out = new StringBuilder("---- Minecraft Crash Report ----\nDescription: pack-check: the server stopped making progress (a thread dump)\n\n");
         for (String block : dump.split("\\R\\R")) {
             String first = block.strip().lines().findFirst().orElse("");
-            if (!first.startsWith("\"Server thread\"") && !first.startsWith("\"main\"")) continue;
+            // The server thread, main (a start that hung before the server thread began), and the game's workers that run
+            // (a data pack reload that never finishes runs there while main waits for it).
+            boolean worker = first.startsWith("\"Worker-Main") && block.contains("RUNNABLE");
+            if (!first.startsWith("\"Server thread\"") && !first.startsWith("\"main\"") && !worker) continue;
             out.append("java.lang.IllegalStateException: stuck in ").append(first, 0, first.indexOf('"', 1) + 1).append('\n');
             block.lines().filter(l -> l.strip().startsWith("at ")).forEach(l -> out.append('\t').append(l.strip()).append('\n'));
             out.append('\n');

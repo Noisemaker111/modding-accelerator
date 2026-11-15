@@ -382,8 +382,13 @@ public final class ModaccelPackProbe {
                 row.addProperty("saved", nowId);
                 // A block still waiting for a scheduled tick when the world saves (coral out of water, a cactus beside a block)
                 // changes by the game's own rules when that tick runs after the reload; the save is not what changed it.
-                try { if (level.getBlockTicks().hasScheduledTick(new BlockPos(row.get("x").getAsInt(), row.get("y").getAsInt(), row.get("z").getAsInt()), now.getBlock())) row.addProperty("ticking", true); }
+                BlockPos at = new BlockPos(row.get("x").getAsInt(), row.get("y").getAsInt(), row.get("z").getAsInt());
+                try { if (level.getBlockTicks().hasScheduledTick(at, now.getBlock())) row.addProperty("ticking", true); }
                 catch (Throwable unknown) { /* this game's tick list cannot say; the block is compared as it is */ }
+                // A block that cannot survive where it stands (a shrub a mod lets you place on stone) breaks at its next block
+                // update, whenever that comes: the game's survival rule, not the save, changes it.
+                try { if (!now.canSurvive(level, at)) row.addProperty("ticking", true); }
+                catch (Throwable unknown) { /* a block whose survival check needs more than the level: compared as it is */ }
                 if (!nowId.equals(row.get("landed").getAsString())) changedWhileRunning.add(row.get("item").getAsString() + ": " + row.get("landed").getAsString() + " -> " + nowId);
             }
             result.add("changedWhileRunning", changedWhileRunning);

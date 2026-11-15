@@ -2,16 +2,19 @@
   "about": "modaccel pack-check on the pinned packs in bench/pack-sweep/corpus.json, by python bench/pack_sweep.py. gaps ranks each gap by how many packs show it; history keeps each labelled sweep's pass rates.",
   "corpus": 24,
   "latest": {
-    "label": "round-2",
+    "label": "repairs",
     "date": "2026-11-15",
     "packs": 24,
     "ran": 24,
-    "started": 18,
-    "world made and reopened": 18,
-    "failed start with a named culprit": 6,
+    "started": 21,
+    "world made and reopened": 20,
+    "repaired": 4,
+    "passing with repairs": 24,
+    "repairs proven": 4,
+    "failed start with a named culprit": 0,
     "outcomes": {
-      "world made and reopened": 18,
-      "start failed": 6
+      "world made and reopened": 20,
+      "repaired: world made and reopened": 4
     }
   },
   "history": [
@@ -69,33 +72,25 @@
         "world made and reopened": 18,
         "start failed": 6
       }
+    },
+    {
+      "label": "repairs",
+      "date": "2026-11-15",
+      "packs": 24,
+      "ran": 24,
+      "started": 21,
+      "world made and reopened": 20,
+      "repaired": 4,
+      "passing with repairs": 24,
+      "repairs proven": 4,
+      "failed start with a named culprit": 0,
+      "outcomes": {
+        "world made and reopened": 20,
+        "repaired: world made and reopened": 4
+      }
     }
   ],
   "gaps": [
-    {
-      "gap": "problem with no proven repair: server-start",
-      "packs": [
-        "atm7-forge-1.18.2",
-        "atm9-forge-1.20.1",
-        "create-above-and-beyond-forge-1.16.5",
-        "create-astral-fabric-1.18.2",
-        "enigmatica6-forge-1.16.5",
-        "sodiumplus-quilt-1.20.1"
-      ],
-      "rank": 1
-    },
-    {
-      "gap": "server start failed, culprit named",
-      "packs": [
-        "atm7-forge-1.18.2",
-        "atm9-forge-1.20.1",
-        "create-above-and-beyond-forge-1.16.5",
-        "create-astral-fabric-1.18.2",
-        "enigmatica6-forge-1.16.5",
-        "sodiumplus-quilt-1.20.1"
-      ],
-      "rank": 2
-    },
     {
       "gap": "client-only mods not marked on CurseForge/Modrinth (left out of the server)",
       "packs": [
@@ -104,41 +99,37 @@
         "sodiumplus-quilt-1.20.1",
         "zombie-invade-100-days-forge-1.20.1"
       ],
-      "rank": 3
+      "rank": 1
     },
     {
-      "gap": "problem with no proven repair: unavailable-file",
+      "gap": "server start failed, culprit named",
       "packs": [
         "atm9-forge-1.20.1",
-        "create-above-and-beyond-forge-1.16.5",
         "create-astral-fabric-1.18.2",
-        "enigmatica6-forge-1.16.5"
+        "sodiumplus-quilt-1.20.1"
       ],
-      "rank": 4
-    },
-    {
-      "gap": "problem with no proven repair: placed-other-block",
-      "packs": [
-        "create_plus-forge-1.19.2",
-        "create_plus-neoforge-1.21.1",
-        "prominence-2-fabric-1.20.1"
-      ],
-      "rank": 5
+      "rank": 2
     },
     {
       "gap": "problem with no proven repair: changed-by-save",
       "packs": [
-        "fabulously-optimized-fabric-1.16.5",
-        "optimized-fps-forge-1.16.5"
+        "atm10-neoforge-1.21.1"
       ],
-      "rank": 6
+      "rank": 3
     },
     {
-      "gap": "problem with no proven repair: missing-mod",
+      "gap": "problem with no proven repair: placed-other-block",
       "packs": [
-        "atm9-forge-1.20.1"
+        "prominence-2-fabric-1.20.1"
       ],
-      "rank": 7
+      "rank": 4
+    },
+    {
+      "gap": "world did not reopen, no culprit named",
+      "packs": [
+        "create-above-and-beyond-forge-1.16.5"
+      ],
+      "rank": 5
     }
   ],
   "runs": [
@@ -149,7 +140,7 @@
       "loader": "fabric",
       "minecraft": "1.19.2",
       "exit": 0,
-      "seconds": 98.8,
+      "seconds": 98.3,
       "gaps": [],
       "mods": 54,
       "loaderUsed": "fabric 0.18.5",
@@ -159,13 +150,13 @@
       },
       "start": {
         "opened": true,
-        "seconds": 54.0623081,
+        "seconds": 66.9604493,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 36.6784114,
+        "seconds": 20.2434372,
         "failure": null,
         "suspects": null
       },
@@ -175,16 +166,34 @@
       "probe": {
         "dimensions": 3,
         "failed": 9,
-        "placed": 790
+        "placed": 785
       },
       "findings": {
         "note:placed-other-block": 1,
-        "note:not-checked": 1,
+        "note:not-checked": 2,
         "note:placement-error": 1
       },
       "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": true,
       "stages": [
         {
@@ -201,7 +210,7 @@
         },
         {
           "name": "static-checks",
-          "seconds": 1.0
+          "seconds": 1.1
         },
         {
           "name": "probe-stubs",
@@ -209,29 +218,29 @@
         },
         {
           "name": "probe-compile",
-          "seconds": 2.0
+          "seconds": 3.2
         },
         {
           "name": "probe-official-names",
-          "seconds": 1.1
+          "seconds": 2.6
         },
         {
           "name": "probe-intermediary-names",
-          "seconds": 0.7
+          "seconds": 1.1
         },
         {
           "name": "server-place",
-          "seconds": 54.1
+          "seconds": 67.0
         },
         {
           "name": "server-verify",
-          "seconds": 36.7
+          "seconds": 20.2
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T01:01:55",
-      "label": "round-2"
+      "started": "2026-11-15T07:31:13",
+      "label": "repairs"
     },
     {
       "id": "atm10-neoforge-1.21.1",
@@ -239,9 +248,15 @@
       "format": "curseforge-export",
       "loader": "neoforge",
       "minecraft": "1.21.1",
-      "exit": 0,
-      "seconds": 1110.6,
-      "gaps": [],
+      "exit": 1,
+      "seconds": 530.3,
+      "gaps": [
+        "problem with no proven repair: changed-by-save",
+        "problem with no proven repair: changed-by-save",
+        "problem with no proven repair: changed-by-save",
+        "problem with no proven repair: changed-by-save",
+        "problem with no proven repair: changed-by-save"
+      ],
       "mods": 499,
       "loaderUsed": "neoforge 21.1.266",
       "staticChecks": {
@@ -250,13 +265,13 @@
       },
       "start": {
         "opened": true,
-        "seconds": 710.3718225,
+        "seconds": 359.1291253,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 378.366812,
+        "seconds": 151.685719301,
         "failure": null,
         "suspects": null
       },
@@ -264,7 +279,9 @@
       "leftOutOfServer": 40,
       "keptForDependants": [],
       "probe": {
-        "dimensions": 28
+        "dimensions": 28,
+        "failed": 26,
+        "placed": 43538
       },
       "findings": {
         "note:duplicate-mod": 1,
@@ -272,12 +289,59 @@
         "warning:minecraft-mismatch": 1,
         "note:same-block-file": 3,
         "note:same-block-name": 1,
-        "note:not-checked": 1
+        "note:placed-other-block": 1,
+        "note:not-checked": 2,
+        "note:placement-error": 1,
+        "problem:changed-by-save": 5
       },
-      "problems": [],
+      "problems": [
+        {
+          "kind": "changed-by-save",
+          "summary": "Saving and reopening changed a block: regions_unexplored:small_desert_shrub became minecraft:air",
+          "jars": []
+        },
+        {
+          "kind": "changed-by-save",
+          "summary": "Saving and reopening changed a block: regions_unexplored:steppe_grass became minecraft:air",
+          "jars": []
+        },
+        {
+          "kind": "changed-by-save",
+          "summary": "Saving and reopening changed a block: regions_unexplored:baobab_sapling became minecraft:air",
+          "jars": []
+        },
+        {
+          "kind": "changed-by-save",
+          "summary": "Saving and reopening changed a block: regions_unexplored:blackwood_shrub became minecraft:air",
+          "jars": []
+        },
+        {
+          "kind": "changed-by-save",
+          "summary": "Saving and reopening changed a block: regions_unexplored:redwood_shrub became minecraft:air",
+          "jars": []
+        }
+      ],
       "refutedWarnings": 0,
-      "fix": null,
-      "ok": true,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
+      "ok": false,
       "stages": [
         {
           "name": "fetch",
@@ -289,7 +353,7 @@
         },
         {
           "name": "read",
-          "seconds": 1.9
+          "seconds": 1.2
         },
         {
           "name": "static-checks",
@@ -297,17 +361,17 @@
         },
         {
           "name": "server-place",
-          "seconds": 710.4
+          "seconds": 359.1
         },
         {
           "name": "server-verify",
-          "seconds": 378.4
+          "seconds": 151.7
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T01:42:56",
-      "label": "round-2"
+      "started": "2026-11-15T08:37:01",
+      "label": "repairs"
     },
     {
       "id": "atm7-forge-1.18.2",
@@ -315,12 +379,9 @@
       "format": "curseforge-export",
       "loader": "forge",
       "minecraft": "1.18.2",
-      "exit": 1,
-      "seconds": 283.4,
-      "gaps": [
-        "server start failed, culprit named",
-        "problem with no proven repair: server-start"
-      ],
+      "exit": 0,
+      "seconds": 419.2,
+      "gaps": [],
       "mods": 339,
       "loaderUsed": "forge 40.2.17",
       "staticChecks": {
@@ -328,188 +389,53 @@
         "findings": 1
       },
       "start": {
-        "opened": false,
-        "seconds": 274.7964201,
-        "failure": "[01:12:34] [Server thread/ERROR] [minecraft/MinecraftServer]: Encountered an unexpected exception\nCaused by: java.lang.NullPointerException: Cannot invoke \"String.isEmpty()\" because \"p_129298_\" is null\n[01:12:34] [Server thread/FATAL] [ne.mi.co.ForgeMod/]: Preparing crash report with UUID 1dc58016-83c4-4ebb-a1d0-b086c9f5dbd1",
-        "suspects": [
-          {
-            "mod": "ars_nouveau",
-            "jar": "ars_nouveau-1.18.2-2.9.0.jar",
-            "why": [
-              "the crash report suspects it",
-              "its mixin config ars_nouveau.mixins.json is in the failure",
-              "its code (com.hollingsworth.arsnouveau.common.block.tile.PortalTile) is in the stack: at com.hollingsworth.arsnouveau.common.block.tile.PortalTile.m_183515_(PortalTile.java:67) ~[ars_nouveau-1.18.2-2.9.0.jar%2365!/:2.9.0] {re:classloading}"
-            ]
-          },
-          {
-            "mod": "kubejs",
-            "jar": "kubejs-forge-1802.5.5-build.569.jar",
-            "why": [
-              "its mixin config kubejs-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "modernfix",
-            "jar": "modernfix-forge-5.14.0+mc1.18.2.jar",
-            "why": [
-              "its mixin config modernfix-common.mixins.json is in the failure",
-              "its mixin config modernfix-forge.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "balm",
-            "jar": "balm-3.2.6.jar",
-            "why": [
-              "its mixin config balm.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "terrablender",
-            "jar": "TerraBlender-forge-1.18.2-1.1.0.102.jar",
-            "why": [
-              "its mixin config terrablender.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "byg",
-            "jar": "Oh_The_Biomes_You'll_Go-forge-1.18.2-1.4.7.jar",
-            "why": [
-              "its mixin config byg.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "elementalcraft",
-            "jar": "elementalcraft-1.18.2-4.4.30b.jar",
-            "why": [
-              "its mixin config elementalcraft.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "tombstone",
-            "jar": "tombstone-1.18.2-7.6.8.jar",
-            "why": [
-              "its mixin config tombstone.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "rhino",
-            "jar": "rhino-forge-1802.2.1-build.255.jar",
-            "why": [
-              "its mixin config rhino-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "connectivity",
-            "jar": "connectivity-1.18.2-3.2.jar",
-            "why": [
-              "its mixin config connectivity.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "supplementaries",
-            "jar": "supplementaries-1.18.2-1.5.18.jar",
-            "why": [
-              "its mixin config supplementaries.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "botania",
-            "jar": "Botania-1.18.2-435.jar",
-            "why": [
-              "its mixin config botania_xplat.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "immersiveengineering",
-            "jar": "ImmersiveEngineering-1.18.2-8.4.0-161.jar",
-            "why": [
-              "its mixin config immersiveengineering.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "betterdeserttemples",
-            "jar": "YungsBetterDesertTemples-1.18.2-Forge-1.3.1.jar",
-            "why": [
-              "its mixin config betterdeserttemples.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "enhancedcelestials",
-            "jar": "Enhanced_Celestials-forge-1.18.2-2.0.7.jar",
-            "why": [
-              "its mixin config enhancedcelestials.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "create",
-            "jar": "create-1.18.2-0.5.1.f.jar",
-            "why": [
-              "its mixin config create.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "lootr",
-            "jar": "lootr-1.18.2-0.3.27.69.jar",
-            "why": [
-              "its mixin config lootr.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "architectury",
-            "jar": "architectury-4.11.93-forge.jar",
-            "why": [
-              "its mixin config architectury.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "phosphophyllite",
-            "jar": "phosphophyllite-1.18.2-0.6.0-beta.1.6.jar",
-            "why": [
-              "its mixin config phosphophyllite.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "ftbchunks",
-            "jar": "ftb-chunks-forge-1802.3.17-build.265.jar",
-            "why": [
-              "its mixin config ftbchunks-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "securitycraft",
-            "jar": "[1.18.2] SecurityCraft v1.9.8.jar",
-            "why": [
-              "its mixin config securitycraft.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "moreminecarts",
-            "jar": "moreminecarts-1.4.7.jar",
-            "why": [
-              "its code (com.alc.moreminecarts.tile_entities.OrbStasisTile) is in the stack: at com.alc.moreminecarts.tile_entities.OrbStasisTile.m_183515_(OrbStasisTile.java:33) ~[moreminecarts-1.4.7.jar%23236!/:1.4.7] {re:classloading}"
-            ]
-          }
-        ]
+        "opened": true,
+        "seconds": 279.6894581,
+        "failure": null,
+        "suspects": null
       },
-      "reopen": null,
+      "reopen": {
+        "opened": true,
+        "seconds": 133.0004468,
+        "failure": null,
+        "suspects": null
+      },
       "clientOnlyLeftOut": 0,
       "leftOutOfServer": 26,
       "keptForDependants": [],
-      "probe": {},
+      "probe": {
+        "dimensions": 15,
+        "failed": 5,
+        "placed": 20645
+      },
       "findings": {
         "note:same-block-name": 1,
-        "problem:server-start": 1
+        "note:placed-other-block": 2,
+        "note:not-checked": 2,
+        "note:placement-error": 1
       },
-      "problems": [
-        {
-          "kind": "server-start",
-          "summary": "The pack's server did not finish starting a new world. The log names ars_nouveau (ars_nouveau-1.18.2-2.9.0.jar), kubejs (kubejs-forge-1802.5.5-build.569.jar), modernfix (modernfix-forge-5.14.0+mc1.18.2.jar), balm (balm-3.2.6.jar).",
-          "jars": []
-        }
-      ],
+      "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
-      "ok": false,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
+      "ok": true,
       "stages": [
         {
           "name": "fetch",
@@ -521,21 +447,25 @@
         },
         {
           "name": "read",
-          "seconds": 1.4
+          "seconds": 1.3
         },
         {
           "name": "static-checks",
-          "seconds": 1.4
+          "seconds": 1.3
         },
         {
           "name": "server-place",
-          "seconds": 274.8
+          "seconds": 279.7
+        },
+        {
+          "name": "server-verify",
+          "seconds": 133.0
         }
       ],
-      "outcome": "start failed",
+      "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T01:12:52",
-      "label": "round-2"
+      "started": "2026-11-15T08:04:47",
+      "label": "repairs"
     },
     {
       "id": "atm9-forge-1.20.1",
@@ -543,25 +473,22 @@
       "format": "curseforge-export",
       "loader": "forge",
       "minecraft": "1.20.1",
-      "exit": 1,
-      "seconds": 47.6,
+      "exit": 0,
+      "seconds": 784.6,
       "gaps": [
         "server start failed, culprit named",
-        "problem with no proven repair: unavailable-file",
-        "problem with no proven repair: missing-mod",
-        "problem with no proven repair: server-start",
         "client-only mods not marked on CurseForge/Modrinth (left out of the server)"
       ],
       "mods": 435,
       "loaderUsed": "forge 47.4.0",
       "staticChecks": {
         "modIds": 452,
-        "findings": 8
+        "findings": 9
       },
       "start": {
         "opened": false,
-        "seconds": 36.9670099,
-        "failure": "[01:13:59] [main/FATAL] [ne.mi.fm.ModLoader/CORE]: Error during pre-loading phase\n[01:13:59] [main/FATAL] [ne.mi.se.lo.ServerModLoader/]: Crash report saved to .\\crash-reports\\crash-2026-11-15_01.13.59-fml.txt\njava.lang.Exception: Mod Loading has failed\nException message: MISSING EXCEPTION MESSAGE\nforge-1.20.1-47.4.0-universal.jar                 |Forge                         |forge                         |47.4.0              |NONE      |Manifest: 84:ce:76:e8:45:35:e4:0e:63:86:df:47:59:80:0f:67:6c:c1:5f:6e:5f:4d:b3:54:47:1a:9f:7f:ed:5e:f2:90[01:13:59] [main/ERROR] [minecraft/Main]: Failed to start the minecraft server",
+        "seconds": 19.2381785,
+        "failure": "[08:09:17] [main/FATAL] [ne.mi.fm.ModLoader/CORE]: Error during pre-loading phase\n[08:09:17] [main/FATAL] [ne.mi.se.lo.ServerModLoader/]: Crash report saved to .\\crash-reports\\crash-2026-11-15_08.09.17-fml.txt\njava.lang.Exception: Mod Loading has failed\nException message: MISSING EXCEPTION MESSAGE\nforge-1.20.1-47.4.0-universal.jar                 |Forge                         |forge                         |47.4.0              |NONE      |Manifest: 84:ce:76:e8:45:35:e4:0e:63:86:df:47:59:80:0f:67:6c:c1:5f:6e:5f:4d:b3:54:47:1a:9f:7f:ed:5e:f2:90[08:09:17] [main/ERROR] [minecraft/Main]: Failed to start the minecraft server",
         "suspects": [
           {
             "mod": "cataclysm",
@@ -586,6 +513,7 @@
         "warning:dependency-version": 1,
         "note:same-block-file": 2,
         "note:same-block-name": 1,
+        "problem:known-fault": 1,
         "note:client-only": 1,
         "problem:server-start": 1
       },
@@ -603,40 +531,106 @@
           ]
         },
         {
+          "kind": "known-fault",
+          "summary": "project 1001614, file 5922047: CurseForge no longer lists it: A player cannot install the pack as published: a mod file its manifest lists is no longer served by CurseForge.",
+          "jars": []
+        },
+        {
           "kind": "server-start",
           "summary": "The pack's server did not finish starting a new world. The log names cataclysm (L_Enders_Cataclysm-3.16.jar).",
           "jars": []
         }
       ],
       "refutedWarnings": 0,
-      "fix": null,
-      "ok": false,
+      "fix": {
+        "applied": [
+          "unavailable-curseforge-file"
+        ],
+        "notes": [
+          "unavailable-curseforge-file: file 5922047 of project 1001614 is served no more; the same project's lionfishapi-2.7.jar (file 7923140) for Minecraft 1.20.1 stands in, checked by its size and its own metadata, and Modrinth has a file with the same SHA-1 (FoVacERa 2.7)"
+        ],
+        "proven": true,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [
+          {
+            "check": "dimension-save",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "missing-mod",
+            "shipped": 1,
+            "repaired": 0
+          },
+          {
+            "check": "probe-error",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "server-start",
+            "shipped": 1,
+            "repaired": 0
+          },
+          {
+            "check": "unavailable-file",
+            "shipped": 1,
+            "repaired": 0
+          },
+          {
+            "check": "world-reopen",
+            "shipped": 0,
+            "repaired": 0
+          }
+        ],
+        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T16-08-52.532354400Z-da3f9344\\atm9-forge-1.20.1 (modaccel fixed).zip",
+        "recheck": {
+          "newWorld": {
+            "opened": true,
+            "seconds": 476.0228084
+          },
+          "reopen": {
+            "opened": true,
+            "seconds": 294.9972029
+          }
+        }
+      },
+      "ok": true,
       "stages": [
         {
           "name": "fetch",
-          "seconds": 0.7
+          "seconds": 0.5
         },
         {
           "name": "modrinth-sides",
-          "seconds": 0.3
+          "seconds": 0.2
         },
         {
           "name": "read",
-          "seconds": 3.1
+          "seconds": 1.5
         },
         {
           "name": "static-checks",
-          "seconds": 2.8
+          "seconds": 2.3
         },
         {
           "name": "server-place",
-          "seconds": 37.0
+          "seconds": 19.2
+        },
+        {
+          "name": "repaired-server-place",
+          "seconds": 476.0
+        },
+        {
+          "name": "repaired-server-verify",
+          "seconds": 295.0
         }
       ],
-      "outcome": "start failed",
+      "outcome": "repaired: world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T01:14:02",
-      "label": "round-2"
+      "started": "2026-11-15T08:21:57",
+      "label": "repairs"
     },
     {
       "id": "create-above-and-beyond-forge-1.16.5",
@@ -644,85 +638,155 @@
       "format": "curseforge-export",
       "loader": "forge",
       "minecraft": "1.16.5",
-      "exit": 1,
-      "seconds": 18.7,
+      "exit": 0,
+      "seconds": 751.5,
       "gaps": [
-        "server start failed, culprit named",
-        "problem with no proven repair: unavailable-file",
-        "problem with no proven repair: server-start"
+        "world did not reopen, no culprit named"
       ],
       "mods": 133,
       "loaderUsed": "forge 36.2.20",
       "staticChecks": {
         "modIds": 136,
-        "findings": 10
+        "findings": 11
       },
       "start": {
-        "opened": false,
-        "seconds": 12.381506,
-        "failure": "[00:35:20] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: \tat org.spongepowered.asm.launch.MixinLaunchPluginLegacy.initializeLaunch(MixinLaunchPluginLegacy.java:195)\n[00:35:20] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: \tat cpw.mods.modlauncher.LaunchPluginHandler.lambda$announceLaunch$9(LaunchPluginHandler.java:97)\n[00:35:20] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: \tat java.util.HashMap.forEach(HashMap.java:1290)\n[00:35:20] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: \tat cpw.mods.modlauncher.LaunchPluginHandler.announceLaunch(LaunchPluginHandler.java:97)\n[00:35:20] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: \tat cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:52)\n[00:35:20] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: \tat cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:72)\n[00:35:20] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: \tat cpw.mods.modlauncher.Launcher.run(Launcher.java:82)\n[00:35:20] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: \tat cpw.mods.modlauncher.Launcher.main(Launcher.java:66)\n[00:35:20] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: \tat net.minecraftforge.server.ServerMain$Runner.runLauncher(ServerMain.java:63)\n[00:35:20] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: \tat net.minecraftforge.server.ServerMain$Runner.access$100(ServerMain.java:60)\n[00:35:20] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: \tat net.minecraftforge.server.ServerMain.main(ServerMain.java:57)\n",
-        "suspects": [
-          {
-            "mod": "antiqueatlas",
-            "jar": "antiqueatlas-6.0.1-forge-mc1.16.5.jar",
-            "why": [
-              "its mixin config antiqueatlas.mixins.json is in the failure"
-            ]
-          }
-        ]
+        "opened": true,
+        "seconds": 100.3234933,
+        "failure": null,
+        "suspects": null
       },
-      "reopen": null,
+      "reopen": {
+        "opened": false,
+        "seconds": 645.4746291,
+        "failure": "Caused by: java.io.FileNotFoundException: https://raw.githubusercontent.com/Samarium150/StructuresCompass/main/docs/update.json\nCaused by: java.lang.IllegalStateException: Expected BEGIN_OBJECT but was STRING at line 1 column 1 path $\nCaused by: java.io.FileNotFoundException: https://version-check.covers1624.net/check/?mod=ProjectRed&mc=1.16.5\nCaused by: java.io.IOException: Server returned HTTP response code: 403 for URL: https://mrcrayfish.com/modupdatejson?id=catalogue\nCaused by: java.io.FileNotFoundException: https://mc-curse-update-checker.herokuapp.com/222908\nCaused by: java.io.FileNotFoundException: https://mc-curse-update-checker.herokuapp.com/284745",
+        "suspects": []
+      },
       "clientOnlyLeftOut": 0,
       "leftOutOfServer": 3,
       "keptForDependants": [],
-      "probe": {},
+      "probe": {
+        "dimensions": 4,
+        "failed": 1,
+        "placed": 5065
+      },
       "findings": {
         "problem:unavailable-file": 1,
-        "warning:minecraft-mismatch": 8,
+        "note:minecraft-mismatch": 8,
         "note:same-block-name": 1,
-        "problem:server-start": 1
+        "problem:known-fault": 1,
+        "note:placed-other-block": 1,
+        "note:not-checked": 2,
+        "note:placement-error": 1,
+        "problem:world-reopen": 1
       },
       "problems": [
         {
           "kind": "unavailable-file",
-          "summary": "3 mod file(s) the pack lists cannot be downloaded any more, so a player cannot install the pack as published; the rest is checked without them: project 457570, file 3546348: CurseForge no longer lists it; project 267193, file 3507658: CurseForge no longer lists it; project 236542, file 3302417: Curs",
+          "summary": "3 mod file(s) the pack lists cannot be downloaded any more, so a player cannot install the pack as published; the rest is checked without them: project 236542, file 3302417: CurseForge no longer lists it; project 457570, file 3546348: CurseForge no longer lists it; project 267193, file 3507658: Curs",
           "jars": []
         },
         {
-          "kind": "server-start",
-          "summary": "The pack's server did not finish starting a new world. The log names antiqueatlas (antiqueatlas-6.0.1-forge-mc1.16.5.jar).",
+          "kind": "known-fault",
+          "summary": "project 236542, file 3302417: CurseForge no longer lists it; project 457570, file 3546348: CurseForge no longer lists it; project 267193, file 3507658: CurseForge no longer lists it: A player cannot install the pack as published: a mod file its manifest lists is no longer served by CurseForge.",
+          "jars": []
+        },
+        {
+          "kind": "world-reopen",
+          "summary": "A world this pack made opens once and then fails to open again.",
           "jars": []
         }
       ],
       "refutedWarnings": 0,
-      "fix": null,
-      "ok": false,
+      "fix": {
+        "applied": [
+          "unavailable-curseforge-file"
+        ],
+        "notes": [
+          "unavailable-curseforge-file: project 236542 serves no file for Minecraft 1.16.5 on forge to stand in for file 3302417; it is left out of the pack, which was checked without it",
+          "unavailable-curseforge-file: file 3546348 of project 457570 is served no more; the same project's configured-1.5.3-1.16.5.jar (file 3946491) for Minecraft 1.16.5 stands in, checked by its size and its own metadata",
+          "unavailable-curseforge-file: file 3507658 of project 267193 is served no more; the same project's Chunk Pregenerator-1.16-3.5.0.jar (file 3946416) for Minecraft 1.16.5 stands in, checked by its size and its own metadata"
+        ],
+        "proven": true,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [
+          {
+            "check": "dimension-save",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "probe-error",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "server-start",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "unavailable-file",
+            "shipped": 1,
+            "repaired": 0
+          },
+          {
+            "check": "world-reopen",
+            "shipped": 1,
+            "repaired": 0
+          }
+        ],
+        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T15-38-01.113566700Z-ee1cfdc9\\create-above-and-beyond-forge-1.16.5 (modaccel fixed).zip",
+        "recheck": {
+          "newWorld": {
+            "opened": true,
+            "seconds": 91.2631948
+          },
+          "reopen": {
+            "opened": true,
+            "seconds": 78.9624272
+          }
+        }
+      },
+      "ok": true,
       "stages": [
         {
           "name": "fetch",
-          "seconds": 0.6
+          "seconds": 0.4
         },
         {
           "name": "modrinth-sides",
-          "seconds": 0.3
+          "seconds": 0.1
         },
         {
           "name": "read",
-          "seconds": 1.8
+          "seconds": 0.9
         },
         {
           "name": "static-checks",
           "seconds": 0.9
         },
         {
+          "name": "repaired-server-place",
+          "seconds": 91.3
+        },
+        {
           "name": "server-place",
-          "seconds": 12.4
+          "seconds": 100.3
+        },
+        {
+          "name": "repaired-server-verify",
+          "seconds": 79.0
+        },
+        {
+          "name": "server-verify",
+          "seconds": 645.5
         }
       ],
-      "outcome": "start failed",
+      "outcome": "repaired: world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:35:22",
-      "label": "round-2"
+      "started": "2026-11-15T07:50:33",
+      "label": "repairs"
     },
     {
       "id": "create-astral-fabric-1.18.2",
@@ -730,27 +794,25 @@
       "format": "curseforge-export",
       "loader": "fabric",
       "minecraft": "1.18.2",
-      "exit": 1,
-      "seconds": 18.6,
+      "exit": 0,
+      "seconds": 242.2,
       "gaps": [
-        "server start failed, culprit named",
-        "problem with no proven repair: unavailable-file",
-        "problem with no proven repair: server-start"
+        "server start failed, culprit named"
       ],
       "mods": 204,
       "loaderUsed": "fabric 0.18.4",
       "staticChecks": {
-        "modIds": 326,
-        "findings": 4
+        "modIds": 332,
+        "findings": 6
       },
       "start": {
         "opened": false,
-        "seconds": 3.2169937,
-        "failure": "[01:13:10] [main/WARN]: Mod resolution failed\n[01:13:10] [main/ERROR]: Incompatible mods found!",
+        "seconds": 3.9297094,
+        "failure": "[08:05:08] [main/WARN]: Mod resolution failed\n[08:05:08] [main/ERROR]: Incompatible mods found!",
         "suspects": [
           {
             "mod": "astralvinery",
-            "jar": "",
+            "jar": "astralvinery-1.2.0.jar",
             "why": [
               "the loader names it: - Mod 'AstralVinery' (astralvinery) 1.2.0 requires version 1.1.4 of vinery, which is missing!"
             ]
@@ -767,7 +829,9 @@
       "findings": {
         "problem:unavailable-file": 1,
         "warning:duplicate-mod": 2,
+        "problem:missing-mod": 1,
         "note:same-block-name": 1,
+        "problem:known-fault": 2,
         "note:client-side-kept": 1,
         "problem:server-start": 1
       },
@@ -778,56 +842,148 @@
           "jars": []
         },
         {
+          "kind": "missing-mod",
+          "summary": "[astralvinery-1.2.0.jar] require mod id vinery, which no jar in the pack provides.",
+          "jars": [
+            "astralvinery-1.2.0.jar"
+          ]
+        },
+        {
+          "kind": "known-fault",
+          "summary": "project 704465, file 4332470: CurseForge no longer lists it: A player cannot install the pack as published: a mod file its manifest lists is no longer served by CurseForge.",
+          "jars": []
+        },
+        {
           "kind": "server-start",
-          "summary": "The pack's server did not finish starting a new world. The log names astralvinery.",
+          "summary": "The pack's server did not finish starting a new world. The log names astralvinery (astralvinery-1.2.0.jar).",
+          "jars": []
+        },
+        {
+          "kind": "known-fault",
+          "summary": "astralvinery-1.2.0.jar requires vinery 1.1.4, which no jar in the pack provides: The game does not start: the loader stops because a mod requires a library no jar in the pack provides.",
           "jars": []
         }
       ],
       "refutedWarnings": 0,
-      "fix": null,
-      "ok": false,
+      "fix": {
+        "applied": [
+          "unavailable-curseforge-file",
+          "missing-library"
+        ],
+        "notes": [
+          "unavailable-curseforge-file: project 704465 serves no file for Minecraft 1.18.2 on fabric to stand in for file 4332470; it is left out of the pack, which was checked without it",
+          "missing-library: no source serves vinery in a version for Minecraft 1.18.2 on fabric that its dependants accept (checked: the dependants' own Modrinth releases, Modrinth's releases for this game version, CurseForge's files); [astralvinery-1.2.0.jar], which need it and which no other mod needs, are left out of the pack"
+        ],
+        "proven": true,
+        "rounds": [
+          {
+            "round": 1,
+            "after": "the repaired pack's start failed",
+            "added": [
+              "missing-library"
+            ]
+          }
+        ],
+        "remaining": [],
+        "comparison": [
+          {
+            "check": "dimension-save",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "missing-mod",
+            "shipped": 1,
+            "repaired": 0
+          },
+          {
+            "check": "probe-error",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "server-start",
+            "shipped": 1,
+            "repaired": 0
+          },
+          {
+            "check": "unavailable-file",
+            "shipped": 1,
+            "repaired": 0
+          },
+          {
+            "check": "world-reopen",
+            "shipped": 0,
+            "repaired": 0
+          }
+        ],
+        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T16-04-48.921148400Z-240daf02\\create-astral-fabric-1.18.2 (modaccel fixed).zip",
+        "recheck": {
+          "newWorld": {
+            "opened": true,
+            "seconds": 137.9143708
+          },
+          "reopen": {
+            "opened": true,
+            "seconds": 68.4868661
+          }
+        }
+      },
+      "ok": true,
       "stages": [
         {
           "name": "fetch",
-          "seconds": 0.4
-        },
-        {
-          "name": "modrinth-sides",
-          "seconds": 0.1
-        },
-        {
-          "name": "read",
-          "seconds": 1.1
-        },
-        {
-          "name": "static-checks",
-          "seconds": 1.4
-        },
-        {
-          "name": "probe-stubs",
           "seconds": 0.5
         },
         {
-          "name": "probe-compile",
-          "seconds": 1.4
+          "name": "modrinth-sides",
+          "seconds": 0.2
         },
         {
-          "name": "probe-official-names",
-          "seconds": 0.7
+          "name": "read",
+          "seconds": 1.2
         },
         {
-          "name": "probe-intermediary-names",
+          "name": "static-checks",
+          "seconds": 2.0
+        },
+        {
+          "name": "probe-stubs",
           "seconds": 0.6
         },
         {
+          "name": "probe-compile",
+          "seconds": 1.8
+        },
+        {
+          "name": "probe-official-names",
+          "seconds": 0.8
+        },
+        {
+          "name": "probe-intermediary-names",
+          "seconds": 0.7
+        },
+        {
+          "name": "repaired-server-place",
+          "seconds": 3.9
+        },
+        {
           "name": "server-place",
-          "seconds": 3.2
+          "seconds": 3.9
+        },
+        {
+          "name": "repaired-server-place",
+          "seconds": 137.9
+        },
+        {
+          "name": "repaired-server-verify",
+          "seconds": 68.5
         }
       ],
-      "outcome": "start failed",
+      "outcome": "repaired: world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T01:13:12",
-      "label": "round-2"
+      "started": "2026-11-15T08:08:51",
+      "label": "repairs"
     },
     {
       "id": "create_plus-forge-1.19.2",
@@ -835,12 +991,9 @@
       "format": "mrpack",
       "loader": "forge",
       "minecraft": "1.19.2",
-      "exit": 1,
-      "seconds": 253.9,
-      "gaps": [
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block"
-      ],
+      "exit": 0,
+      "seconds": 184.5,
+      "gaps": [],
       "mods": 286,
       "loaderUsed": "forge 43.5.1",
       "staticChecks": {
@@ -849,13 +1002,13 @@
       },
       "start": {
         "opened": true,
-        "seconds": 192.0625802,
+        "seconds": 119.7427093,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 50.4950296,
+        "seconds": 48.325616,
         "failure": null,
         "suspects": null
       },
@@ -867,32 +1020,38 @@
       "probe": {
         "dimensions": 3,
         "failed": 0,
-        "placed": 6131
+        "placed": 4625
       },
       "findings": {
         "note:duplicate-mod": 1,
         "note:same-block-file": 2,
         "note:same-block-name": 1,
         "note:client-side-kept": 1,
-        "note:placed-other-block": 2,
-        "problem:placed-other-block": 2,
-        "note:not-checked": 1
+        "note:placed-other-block": 3,
+        "note:not-checked": 2
       },
-      "problems": [
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing minecraft:pumpkin_pie put down delightful:pumpkin_pie instead of create_central_kitchen:pumpkin_pie: a block from another mod.",
-          "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing supplementaries:tater_in_a_jar put down quark:tiny_potato instead of supplementaries:tater_in_a_jar: a block from another mod.",
-          "jars": []
-        }
-      ],
+      "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
-      "ok": false,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
+      "ok": true,
       "stages": [
         {
           "name": "fetch",
@@ -900,45 +1059,45 @@
         },
         {
           "name": "modrinth-sides",
-          "seconds": 0.2
-        },
-        {
-          "name": "read",
-          "seconds": 0.8
-        },
-        {
-          "name": "static-checks",
-          "seconds": 1.0
-        },
-        {
-          "name": "probe-stubs",
           "seconds": 0.7
         },
         {
+          "name": "read",
+          "seconds": 1.6
+        },
+        {
+          "name": "static-checks",
+          "seconds": 2.0
+        },
+        {
+          "name": "probe-stubs",
+          "seconds": 1.3
+        },
+        {
           "name": "probe-compile",
-          "seconds": 3.2
+          "seconds": 4.5
         },
         {
           "name": "probe-official-names",
-          "seconds": 1.0
+          "seconds": 1.2
         },
         {
           "name": "probe-srg-names",
-          "seconds": 0.8
+          "seconds": 1.1
         },
         {
           "name": "server-place",
-          "seconds": 192.1
+          "seconds": 119.7
         },
         {
           "name": "server-verify",
-          "seconds": 50.5
+          "seconds": 48.3
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:45:30",
-      "label": "round-2"
+      "started": "2026-11-15T07:12:38",
+      "label": "repairs"
     },
     {
       "id": "create_plus-neoforge-1.21.1",
@@ -946,11 +1105,9 @@
       "format": "mrpack",
       "loader": "neoforge",
       "minecraft": "1.21.1",
-      "exit": 1,
-      "seconds": 192.5,
-      "gaps": [
-        "problem with no proven repair: placed-other-block"
-      ],
+      "exit": 0,
+      "seconds": 112.6,
+      "gaps": [],
       "mods": 150,
       "loaderUsed": "neoforge 21.1.233",
       "staticChecks": {
@@ -959,13 +1116,13 @@
       },
       "start": {
         "opened": true,
-        "seconds": 72.1075241,
+        "seconds": 58.0143087,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 81.7841898,
+        "seconds": 48.0863669,
         "failure": null,
         "suspects": null
       },
@@ -975,7 +1132,7 @@
       "probe": {
         "dimensions": 3,
         "failed": 0,
-        "placed": 4254
+        "placed": 4253
       },
       "findings": {
         "warning:loader-mismatch": 3,
@@ -984,58 +1141,69 @@
         "note:loader-version": 1,
         "note:same-block-file": 1,
         "note:same-block-name": 1,
-        "note:placed-other-block": 2,
-        "problem:placed-other-block": 1,
-        "note:not-checked": 1
+        "note:placed-other-block": 3,
+        "note:not-checked": 2
       },
-      "problems": [
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing supplementaries:tater_in_a_jar put down quark:tiny_potato instead of supplementaries:tater_in_a_jar: a block from another mod.",
-          "jars": []
-        }
-      ],
+      "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
-      "ok": false,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
+      "ok": true,
       "stages": [
         {
           "name": "fetch",
-          "seconds": 0.7
-        },
-        {
-          "name": "modrinth-sides",
           "seconds": 0.2
         },
         {
+          "name": "modrinth-sides",
+          "seconds": 0.1
+        },
+        {
           "name": "read",
-          "seconds": 1.7
+          "seconds": 0.5
         },
         {
           "name": "static-checks",
-          "seconds": 16.0
+          "seconds": 1.2
         },
         {
           "name": "probe-stubs",
-          "seconds": 3.3
+          "seconds": 0.6
         },
         {
           "name": "probe-compile",
-          "seconds": 6.3
+          "seconds": 1.8
         },
         {
           "name": "server-place",
-          "seconds": 72.1
+          "seconds": 58.0
         },
         {
           "name": "server-verify",
-          "seconds": 81.8
+          "seconds": 48.1
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:48:46",
-      "label": "round-2"
+      "started": "2026-11-15T07:14:32",
+      "label": "repairs"
     },
     {
       "id": "enigmatica6-forge-1.16.5",
@@ -1043,171 +1211,98 @@
       "format": "curseforge-export",
       "loader": "forge",
       "minecraft": "1.16.5",
-      "exit": 1,
-      "seconds": 305.8,
-      "gaps": [
-        "server start failed, culprit named",
-        "problem with no proven repair: unavailable-file",
-        "problem with no proven repair: server-start"
-      ],
-      "mods": 359,
+      "exit": 0,
+      "seconds": 432.5,
+      "gaps": [],
+      "mods": 360,
       "loaderUsed": "forge 36.2.39",
       "staticChecks": {
-        "modIds": 362,
-        "findings": 16
+        "modIds": 363,
+        "findings": 15
       },
       "start": {
-        "opened": false,
-        "seconds": 293.9641909,
-        "failure": "[00:36:46] [modloading-worker-10/FATAL] [powah/Config]: Ignored air or unregistered block registry name tconstruct:blazing_blood.\n[00:40:11] [Server thread/FATAL] [ne.mi.co.ForgeMod/]: Preparing crash report with UUID ab70963c-48d9-4671-8332-ca8a1494c458\n[00:40:11] [Server thread/ERROR] [minecraft/MinecraftServer]: Encountered an unexpected exception\nCaused by: java.lang.NullPointerException",
-        "suspects": [
-          {
-            "mod": "betterendforge",
-            "jar": "betterendforge-1.16.5-2.5.jar",
-            "why": [
-              "its mixin config betterendforge.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "structure_gel",
-            "jar": "structure_gel-1.16.5-1.7.8.jar",
-            "why": [
-              "its mixin config structure_gel.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "byg",
-            "jar": "byg-1.3.6.jar",
-            "why": [
-              "its mixin config byg.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "resourcefulbees",
-            "jar": "ResourcefulBees-1.16.5-0.10.7.jar",
-            "why": [
-              "its mixin config resourcefulbees.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "roadrunner",
-            "jar": "RoadRunner-mc1.16.5-1.5.2.jar",
-            "why": [
-              "its mixin config roadrunner.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "kubejs",
-            "jar": "kubejs-forge-1605.3.19-build.299.jar",
-            "why": [
-              "its mixin config kubejs-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "connectivity",
-            "jar": "connectivity-2.4-1.16.5.jar",
-            "why": [
-              "its mixin config connectivity.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "ftbchunks",
-            "jar": "ftb-chunks-forge-1605.3.4-build.220.jar",
-            "why": [
-              "its mixin config ftbchunks-common.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "architects_palette",
-            "jar": "Architects-Palette-1.16.4-1.1.5.jar",
-            "why": [
-              "its mixin config architects_palette.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "abnormals_core",
-            "jar": "abnormals_core-1.16.5-3.3.1.jar",
-            "why": [
-              "its mixin config abnormals_core.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "immersiveengineering",
-            "jar": "ImmersiveEngineering-1.16.5-5.1.0-148.jar",
-            "why": [
-              "its mixin config immersiveengineering.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "quark",
-            "jar": "Quark-r2.4-322.jar",
-            "why": [
-              "its mixin config quark.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "bloodmagic",
-            "jar": "BloodMagic-1.16.4-3.1.13-39.jar",
-            "why": [
-              "its code (wayoftime.bloodmagic.tile.TileSpectral) is in the stack: at wayoftime.bloodmagic.tile.TileSpectral.serialize(TileSpectral.java:85) ~[bloodmagic:1.16.4-3.1.13-39] {re:classloading}"
-            ]
-          }
-        ]
+        "opened": true,
+        "seconds": 263.6477155,
+        "failure": null,
+        "suspects": null
       },
-      "reopen": null,
+      "reopen": {
+        "opened": true,
+        "seconds": 155.4206656,
+        "failure": null,
+        "suspects": null
+      },
       "clientOnlyLeftOut": 0,
       "leftOutOfServer": 21,
       "keptForDependants": [],
-      "probe": {},
+      "probe": {
+        "dimensions": 8,
+        "failed": 1,
+        "placed": 18261
+      },
       "findings": {
-        "problem:unavailable-file": 1,
-        "warning:minecraft-mismatch": 7,
-        "warning:loader-version": 2,
+        "note:minecraft-mismatch": 6,
+        "warning:minecraft-mismatch": 1,
+        "note:loader-version": 2,
         "note:same-block-file": 5,
         "note:same-block-name": 1,
-        "problem:server-start": 1
+        "note:placed-other-block": 2,
+        "note:not-checked": 2,
+        "note:placement-error": 1,
+        "warning:block-entity-unsendable": 1
       },
-      "problems": [
-        {
-          "kind": "unavailable-file",
-          "summary": "1 mod file(s) the pack lists cannot be downloaded any more, so a player cannot install the pack as published; the rest is checked without them: MasterfulMachinery-1.16.5-0.1.68-B1105.jar (project 423476, file 4082604): CurseForge does not serve its download",
-          "jars": []
-        },
-        {
-          "kind": "server-start",
-          "summary": "The pack's server did not finish starting a new world. The log names betterendforge (betterendforge-1.16.5-2.5.jar), structure_gel (structure_gel-1.16.5-1.7.8.jar), byg (byg-1.3.6.jar), resourcefulbees (ResourcefulBees-1.16.5-0.10.7.jar).",
-          "jars": []
-        }
-      ],
+      "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
-      "ok": false,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
+      "ok": true,
       "stages": [
         {
           "name": "fetch",
-          "seconds": 0.5
+          "seconds": 0.1
         },
         {
           "name": "modrinth-sides",
-          "seconds": 0.2
+          "seconds": 0.4
         },
         {
           "name": "read",
-          "seconds": 1.9
+          "seconds": 1.7
         },
         {
           "name": "static-checks",
-          "seconds": 1.2
+          "seconds": 1.6
         },
         {
           "name": "server-place",
-          "seconds": 294.0
+          "seconds": 263.6
+        },
+        {
+          "name": "server-verify",
+          "seconds": 155.4
         }
       ],
-      "outcome": "start failed",
+      "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:40:31",
-      "label": "round-2"
+      "started": "2026-11-15T07:57:46",
+      "label": "repairs"
     },
     {
       "id": "fabulously-optimized-cf-fabric-26.3",
@@ -1216,23 +1311,23 @@
       "loader": "fabric",
       "minecraft": "26.3",
       "exit": 0,
-      "seconds": 50.4,
+      "seconds": 33.8,
       "gaps": [],
       "mods": 50,
       "loaderUsed": "fabric 0.20.1",
       "staticChecks": {
-        "modIds": 152,
+        "modIds": 155,
         "findings": 1
       },
       "start": {
         "opened": true,
-        "seconds": 27.2558186,
+        "seconds": 19.6643262,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 19.7764726,
+        "seconds": 11.738963,
         "failure": null,
         "suspects": null
       },
@@ -1254,7 +1349,25 @@
       },
       "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": true,
       "stages": [
         {
@@ -1271,21 +1384,21 @@
         },
         {
           "name": "static-checks",
-          "seconds": 0.7
+          "seconds": 0.6
         },
         {
           "name": "server-place",
-          "seconds": 27.3
+          "seconds": 19.7
         },
         {
           "name": "server-verify",
-          "seconds": 19.8
+          "seconds": 11.7
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T01:43:48",
-      "label": "round-2"
+      "started": "2026-11-15T08:37:36",
+      "label": "repairs"
     },
     {
       "id": "fabulously-optimized-fabric-1.16.5",
@@ -1293,27 +1406,24 @@
       "format": "mrpack",
       "loader": "fabric",
       "minecraft": "1.16.5",
-      "exit": 1,
-      "seconds": 67.9,
-      "gaps": [
-        "problem with no proven repair: changed-by-save",
-        "problem with no proven repair: changed-by-save"
-      ],
+      "exit": 0,
+      "seconds": 64.4,
+      "gaps": [],
       "mods": 41,
       "loaderUsed": "fabric 0.13.3",
       "staticChecks": {
-        "modIds": 115,
+        "modIds": 116,
         "findings": 1
       },
       "start": {
         "opened": true,
-        "seconds": 39.3250317,
+        "seconds": 34.5492643,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 16.1482067,
+        "seconds": 19.4081809,
         "failure": null,
         "suspects": null
       },
@@ -1325,31 +1435,38 @@
       "probe": {
         "dimensions": 3,
         "failed": 8,
-        "placed": 649
+        "placed": 645
       },
       "findings": {
         "warning:declared-conflict": 1,
         "note:client-side-kept": 1,
         "note:placed-other-block": 1,
-        "note:not-checked": 1,
+        "note:not-checked": 2,
         "note:placement-error": 1,
-        "problem:changed-by-save": 2
+        "note:settled-after-save": 1
       },
-      "problems": [
-        {
-          "kind": "changed-by-save",
-          "summary": "Saving and reopening changed a block: minecraft:kelp became minecraft:water",
-          "jars": []
-        },
-        {
-          "kind": "changed-by-save",
-          "summary": "Saving and reopening changed a block: minecraft:cactus became minecraft:air",
-          "jars": []
-        }
-      ],
+      "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
-      "ok": false,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
+      "ok": true,
       "stages": [
         {
           "name": "fetch",
@@ -1365,19 +1482,19 @@
         },
         {
           "name": "static-checks",
-          "seconds": 0.5
-        },
-        {
-          "name": "probe-stubs",
           "seconds": 1.2
         },
         {
+          "name": "probe-stubs",
+          "seconds": 2.3
+        },
+        {
           "name": "probe-compile",
-          "seconds": 1.1
+          "seconds": 1.5
         },
         {
           "name": "probe-official-names",
-          "seconds": 1.6
+          "seconds": 1.2
         },
         {
           "name": "probe-intermediary-names",
@@ -1385,17 +1502,17 @@
         },
         {
           "name": "server-place",
-          "seconds": 39.3
+          "seconds": 34.5
         },
         {
           "name": "server-verify",
-          "seconds": 16.1
+          "seconds": 19.4
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:34:08",
-      "label": "round-2"
+      "started": "2026-11-15T07:29:33",
+      "label": "repairs"
     },
     {
       "id": "optimized-fps-forge-1.16.5",
@@ -1403,11 +1520,9 @@
       "format": "mrpack",
       "loader": "forge",
       "minecraft": "1.16.5",
-      "exit": 1,
-      "seconds": 52.7,
+      "exit": 0,
+      "seconds": 48.0,
       "gaps": [
-        "problem with no proven repair: changed-by-save",
-        "problem with no proven repair: changed-by-save",
         "client-only mods not marked on CurseForge/Modrinth (left out of the server)"
       ],
       "mods": 21,
@@ -1418,13 +1533,13 @@
       },
       "start": {
         "opened": true,
-        "seconds": 26.2423099,
+        "seconds": 26.5896347,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 20.1972548,
+        "seconds": 16.1107098,
         "failure": null,
         "suspects": null
       },
@@ -1434,118 +1549,35 @@
       "probe": {
         "dimensions": 3,
         "failed": 0,
-        "placed": 657
+        "placed": 653
       },
       "findings": {
         "note:client-only": 1,
         "note:placed-other-block": 1,
-        "note:not-checked": 1,
-        "problem:changed-by-save": 2
-      },
-      "problems": [
-        {
-          "kind": "changed-by-save",
-          "summary": "Saving and reopening changed a block: minecraft:kelp became minecraft:water",
-          "jars": []
-        },
-        {
-          "kind": "changed-by-save",
-          "summary": "Saving and reopening changed a block: minecraft:cactus became minecraft:air",
-          "jars": []
-        }
-      ],
-      "refutedWarnings": 0,
-      "fix": null,
-      "ok": false,
-      "stages": [
-        {
-          "name": "fetch",
-          "seconds": 0.1
-        },
-        {
-          "name": "modrinth-sides",
-          "seconds": 0.0
-        },
-        {
-          "name": "read",
-          "seconds": 0.2
-        },
-        {
-          "name": "static-checks",
-          "seconds": 0.1
-        },
-        {
-          "name": "probe-stubs",
-          "seconds": 0.5
-        },
-        {
-          "name": "probe-compile",
-          "seconds": 1.0
-        },
-        {
-          "name": "probe-official-names",
-          "seconds": 1.1
-        },
-        {
-          "name": "probe-srg-names",
-          "seconds": 0.9
-        },
-        {
-          "name": "server-place",
-          "seconds": 26.2
-        },
-        {
-          "name": "server-verify",
-          "seconds": 20.2
-        }
-      ],
-      "outcome": "world made and reopened",
-      "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:35:02",
-      "label": "round-2"
-    },
-    {
-      "id": "optimized-fps-forge-1.18.2",
-      "name": "Optimized fps 1.18.2",
-      "format": "mrpack",
-      "loader": "forge",
-      "minecraft": "1.18.2",
-      "exit": 0,
-      "seconds": 62.4,
-      "gaps": [],
-      "mods": 23,
-      "loaderUsed": "forge 40.2.21",
-      "staticChecks": {
-        "modIds": 27,
-        "findings": 0
-      },
-      "start": {
-        "opened": true,
-        "seconds": 37.1865045,
-        "failure": null,
-        "suspects": null
-      },
-      "reopen": {
-        "opened": true,
-        "seconds": 16.1227508,
-        "failure": null,
-        "suspects": null
-      },
-      "clientOnlyLeftOut": 0,
-      "leftOutOfServer": 13,
-      "keptForDependants": [],
-      "probe": {
-        "dimensions": 3,
-        "failed": 0,
-        "placed": 767
-      },
-      "findings": {
-        "note:placed-other-block": 1,
-        "note:not-checked": 1
+        "note:not-checked": 2,
+        "note:settled-after-save": 1
       },
       "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": true,
       "stages": [
         {
@@ -1566,23 +1598,23 @@
         },
         {
           "name": "probe-stubs",
-          "seconds": 0.8
+          "seconds": 0.5
         },
         {
           "name": "probe-compile",
-          "seconds": 3.2
+          "seconds": 0.8
         },
         {
           "name": "probe-official-names",
-          "seconds": 1.5
+          "seconds": 0.8
         },
         {
           "name": "probe-srg-names",
-          "seconds": 1.1
+          "seconds": 0.7
         },
         {
           "name": "server-place",
-          "seconds": 37.2
+          "seconds": 26.6
         },
         {
           "name": "server-verify",
@@ -1591,8 +1623,116 @@
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:53:23",
-      "label": "round-2"
+      "started": "2026-11-15T07:38:00",
+      "label": "repairs"
+    },
+    {
+      "id": "optimized-fps-forge-1.18.2",
+      "name": "Optimized fps 1.18.2",
+      "format": "mrpack",
+      "loader": "forge",
+      "minecraft": "1.18.2",
+      "exit": 0,
+      "seconds": 90.6,
+      "gaps": [],
+      "mods": 23,
+      "loaderUsed": "forge 40.2.21",
+      "staticChecks": {
+        "modIds": 27,
+        "findings": 0
+      },
+      "start": {
+        "opened": true,
+        "seconds": 61.8150593,
+        "failure": null,
+        "suspects": null
+      },
+      "reopen": {
+        "opened": true,
+        "seconds": 22.1943457,
+        "failure": null,
+        "suspects": null
+      },
+      "clientOnlyLeftOut": 0,
+      "leftOutOfServer": 13,
+      "keptForDependants": [],
+      "probe": {
+        "dimensions": 3,
+        "failed": 0,
+        "placed": 761
+      },
+      "findings": {
+        "note:placed-other-block": 1,
+        "note:not-checked": 2
+      },
+      "problems": [],
+      "refutedWarnings": 0,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
+      "ok": true,
+      "stages": [
+        {
+          "name": "fetch",
+          "seconds": 0.1
+        },
+        {
+          "name": "modrinth-sides",
+          "seconds": 0.0
+        },
+        {
+          "name": "read",
+          "seconds": 0.1
+        },
+        {
+          "name": "static-checks",
+          "seconds": 0.2
+        },
+        {
+          "name": "probe-stubs",
+          "seconds": 0.6
+        },
+        {
+          "name": "probe-compile",
+          "seconds": 1.8
+        },
+        {
+          "name": "probe-official-names",
+          "seconds": 0.9
+        },
+        {
+          "name": "probe-srg-names",
+          "seconds": 0.8
+        },
+        {
+          "name": "server-place",
+          "seconds": 61.8
+        },
+        {
+          "name": "server-verify",
+          "seconds": 22.2
+        }
+      ],
+      "outcome": "world made and reopened",
+      "leftoverServersStopped": 0,
+      "started": "2026-11-15T07:19:42",
+      "label": "repairs"
     },
     {
       "id": "optimized-fps-neoforge-1.20.4",
@@ -1601,7 +1741,7 @@
       "loader": "neoforge",
       "minecraft": "1.20.4",
       "exit": 0,
-      "seconds": 72.5,
+      "seconds": 66.5,
       "gaps": [],
       "mods": 13,
       "loaderUsed": "neoforge 20.4.232",
@@ -1611,13 +1751,13 @@
       },
       "start": {
         "opened": true,
-        "seconds": 48.3205185,
+        "seconds": 40.9860833,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 18.1114111,
+        "seconds": 20.2068772,
         "failure": null,
         "suspects": null
       },
@@ -1635,7 +1775,25 @@
       },
       "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": true,
       "stages": [
         {
@@ -1656,25 +1814,25 @@
         },
         {
           "name": "probe-stubs",
-          "seconds": 0.7
+          "seconds": 0.6
         },
         {
           "name": "probe-compile",
-          "seconds": 2.9
+          "seconds": 2.4
         },
         {
           "name": "server-place",
-          "seconds": 48.3
+          "seconds": 41.0
         },
         {
           "name": "server-verify",
-          "seconds": 18.1
+          "seconds": 20.2
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:54:37",
-      "label": "round-2"
+      "started": "2026-11-15T07:20:51",
+      "label": "repairs"
     },
     {
       "id": "prominence-2-fabric-1.20.1",
@@ -1683,20 +1841,8 @@
       "loader": "fabric",
       "minecraft": "1.20.1",
       "exit": 1,
-      "seconds": 617.9,
+      "seconds": 370.2,
       "gaps": [
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block",
-        "problem with no proven repair: placed-other-block",
         "problem with no proven repair: placed-other-block",
         "problem with no proven repair: placed-other-block",
         "problem with no proven repair: placed-other-block",
@@ -1708,102 +1854,46 @@
       "mods": 687,
       "loaderUsed": "fabric 0.19.3",
       "staticChecks": {
-        "modIds": 707,
-        "findings": 10
+        "modIds": 714,
+        "findings": 7
       },
       "start": {
         "opened": true,
-        "seconds": 462.1285083,
+        "seconds": 247.836939,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 133.7666237,
+        "seconds": 106.9124178,
         "failure": null,
         "suspects": null
       },
       "clientOnlyLeftOut": 0,
-      "leftOutOfServer": 108,
+      "leftOutOfServer": 107,
       "keptForDependants": [
         "SimplyTooltips-fabric-0.1.5-1.20.1.jar",
         "athena-fabric-1.20.1-3.1.2.jar",
+        "mobhealthbar-fabric-1.20.x-2.3.0.jar",
         "modmenu-7.2.2.jar"
       ],
       "probe": {
         "dimensions": 31,
         "failed": 4,
-        "placed": 16653
+        "placed": 16648
       },
       "findings": {
         "warning:duplicate-mod": 1,
-        "note:missing-mod": 2,
-        "warning:missing-mod": 1,
         "note:dependency-version": 1,
         "note:same-block-file": 4,
         "note:same-block-name": 1,
         "note:client-side-kept": 1,
-        "note:placed-other-block": 7,
-        "problem:placed-other-block": 19,
-        "note:not-checked": 1,
+        "note:placed-other-block": 19,
+        "problem:placed-other-block": 7,
+        "note:not-checked": 2,
         "note:placement-error": 1
       },
       "problems": [
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing croptopia:salt_ore put down expandeddelight:salt_ore instead of croptopia:salt_ore: a block from another mod.",
-          "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing modern_industrialization:bauxite_ore put down techreborn:bauxite_ore instead of modern_industrialization:bauxite_ore: a block from another mod.",
-          "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing modern_industrialization:deepslate_bauxite_ore put down techreborn:deepslate_bauxite_ore instead of modern_industrialization:deepslate_bauxite_ore: a block from another mod.",
-          "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing modern_industrialization:iridium_ore put down techreborn:iridium_ore instead of modern_industrialization:iridium_ore: a block from another mod.",
-          "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing modern_industrialization:deepslate_iridium_ore put down techreborn:deepslate_iridium_ore instead of modern_industrialization:deepslate_iridium_ore: a block from another mod.",
-          "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing modern_industrialization:lead_ore put down techreborn:lead_ore instead of modern_industrialization:lead_ore: a block from another mod.",
-          "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing modern_industrialization:deepslate_lead_ore put down techreborn:deepslate_lead_ore instead of modern_industrialization:deepslate_lead_ore: a block from another mod.",
-          "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing modern_industrialization:salt_ore put down expandeddelight:salt_ore instead of modern_industrialization:salt_ore: a block from another mod.",
-          "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing modern_industrialization:deepslate_salt_ore put down expandeddelight:deepslate_salt_ore instead of modern_industrialization:deepslate_salt_ore: a block from another mod.",
-          "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing modern_industrialization:tin_ore put down techreborn:tin_ore instead of modern_industrialization:tin_ore: a block from another mod.",
-          "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing modern_industrialization:deepslate_tin_ore put down techreborn:deepslate_tin_ore instead of modern_industrialization:deepslate_tin_ore: a block from another mod.",
-          "jars": []
-        },
         {
           "kind": "placed-other-block",
           "summary": "Placing powah:energy_cable_starter put down techreborn:glassfiber_cable instead of powah:energy_cable_starter: a block from another mod.",
@@ -1838,15 +1928,28 @@
           "kind": "placed-other-block",
           "summary": "Placing powah:energy_cable_nitro put down techreborn:glassfiber_cable instead of powah:energy_cable_nitro: a block from another mod.",
           "jars": []
-        },
-        {
-          "kind": "placed-other-block",
-          "summary": "Placing techreborn:deepslate_tungsten_ore put down modern_industrialization:deepslate_tungsten_ore instead of techreborn:deepslate_tungsten_ore: a block from another mod.",
-          "jars": []
         }
       ],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": false,
       "stages": [
         {
@@ -1855,45 +1958,45 @@
         },
         {
           "name": "modrinth-sides",
-          "seconds": 0.2
+          "seconds": 0.1
         },
         {
           "name": "read",
-          "seconds": 2.1
+          "seconds": 1.6
         },
         {
           "name": "static-checks",
-          "seconds": 6.1
+          "seconds": 4.0
         },
         {
           "name": "probe-stubs",
-          "seconds": 0.7
+          "seconds": 0.6
         },
         {
           "name": "probe-compile",
-          "seconds": 2.3
+          "seconds": 1.7
         },
         {
           "name": "probe-official-names",
-          "seconds": 2.0
+          "seconds": 0.9
         },
         {
           "name": "probe-intermediary-names",
-          "seconds": 1.0
+          "seconds": 0.6
         },
         {
           "name": "server-place",
-          "seconds": 462.1
+          "seconds": 247.8
         },
         {
           "name": "server-verify",
-          "seconds": 133.8
+          "seconds": 106.9
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T01:24:22",
-      "label": "round-2"
+      "started": "2026-11-15T08:28:09",
+      "label": "repairs"
     },
     {
       "id": "rapid_optimization-neoforge-1.21.4",
@@ -1902,7 +2005,7 @@
       "loader": "neoforge",
       "minecraft": "1.21.4",
       "exit": 0,
-      "seconds": 53.8,
+      "seconds": 89.0,
       "gaps": [],
       "mods": 20,
       "loaderUsed": "neoforge 21.4.156",
@@ -1912,13 +2015,13 @@
       },
       "start": {
         "opened": true,
-        "seconds": 30.1591275,
+        "seconds": 51.3657266,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 18.1447164,
+        "seconds": 30.6359276,
         "failure": null,
         "suspects": null
       },
@@ -1936,7 +2039,25 @@
       },
       "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": true,
       "stages": [
         {
@@ -1957,25 +2078,25 @@
         },
         {
           "name": "probe-stubs",
-          "seconds": 0.6
+          "seconds": 0.8
         },
         {
           "name": "probe-compile",
-          "seconds": 2.4
+          "seconds": 2.8
         },
         {
           "name": "server-place",
-          "seconds": 30.2
+          "seconds": 51.4
         },
         {
           "name": "server-verify",
-          "seconds": 18.1
+          "seconds": 30.6
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:55:33",
-      "label": "round-2"
+      "started": "2026-11-15T07:22:25",
+      "label": "repairs"
     },
     {
       "id": "rapid_optimization-neoforge-26.1.2",
@@ -1984,7 +2105,7 @@
       "loader": "neoforge",
       "minecraft": "26.1.2",
       "exit": 0,
-      "seconds": 79.8,
+      "seconds": 84.4,
       "gaps": [],
       "mods": 22,
       "loaderUsed": "neoforge 26.1.2.122",
@@ -1994,13 +2115,13 @@
       },
       "start": {
         "opened": true,
-        "seconds": 48.0601912,
+        "seconds": 33.2106407,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 24.0169001,
+        "seconds": 39.859322,
         "failure": null,
         "suspects": null
       },
@@ -2018,7 +2139,25 @@
       },
       "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": true,
       "stages": [
         {
@@ -2027,37 +2166,37 @@
         },
         {
           "name": "modrinth-sides",
-          "seconds": 0.1
-        },
-        {
-          "name": "read",
           "seconds": 0.4
         },
         {
+          "name": "read",
+          "seconds": 0.6
+        },
+        {
           "name": "static-checks",
-          "seconds": 0.7
+          "seconds": 1.2
         },
         {
           "name": "probe-stubs",
-          "seconds": 0.8
+          "seconds": 1.2
         },
         {
           "name": "probe-compile",
-          "seconds": 3.2
+          "seconds": 4.8
         },
         {
           "name": "server-place",
-          "seconds": 48.1
+          "seconds": 33.2
         },
         {
           "name": "server-verify",
-          "seconds": 24.0
+          "seconds": 39.9
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:56:54",
-      "label": "round-2"
+      "started": "2026-11-15T07:23:51",
+      "label": "repairs"
     },
     {
       "id": "rapid_optimization-neoforge-26.3",
@@ -2066,7 +2205,7 @@
       "loader": "neoforge",
       "minecraft": "26.3",
       "exit": 0,
-      "seconds": 50.8,
+      "seconds": 52.7,
       "gaps": [],
       "mods": 21,
       "loaderUsed": "neoforge 26.3.0.100",
@@ -2076,13 +2215,13 @@
       },
       "start": {
         "opened": true,
-        "seconds": 25.3561796,
+        "seconds": 27.650268,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 20.1426036,
+        "seconds": 18.1430215,
         "failure": null,
         "suspects": null
       },
@@ -2100,7 +2239,25 @@
       },
       "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": true,
       "stages": [
         {
@@ -2117,29 +2274,29 @@
         },
         {
           "name": "static-checks",
-          "seconds": 0.3
-        },
-        {
-          "name": "probe-stubs",
           "seconds": 0.5
         },
         {
+          "name": "probe-stubs",
+          "seconds": 0.7
+        },
+        {
           "name": "probe-compile",
-          "seconds": 2.3
+          "seconds": 3.4
         },
         {
           "name": "server-place",
-          "seconds": 25.4
+          "seconds": 27.7
         },
         {
           "name": "server-verify",
-          "seconds": 20.1
+          "seconds": 18.1
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:57:46",
-      "label": "round-2"
+      "started": "2026-11-15T07:24:46",
+      "label": "repairs"
     },
     {
       "id": "skyblock-enhanced-fabric-1.21.5",
@@ -2148,23 +2305,23 @@
       "loader": "fabric",
       "minecraft": "1.21.5",
       "exit": 0,
-      "seconds": 71.5,
+      "seconds": 108.9,
       "gaps": [],
       "mods": 63,
       "loaderUsed": "fabric 0.18.3",
       "staticChecks": {
-        "modIds": 262,
+        "modIds": 263,
         "findings": 0
       },
       "start": {
         "opened": true,
-        "seconds": 34.5714708,
+        "seconds": 36.6144791,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 26.4599973,
+        "seconds": 61.5268752,
         "failure": null,
         "suspects": null
       },
@@ -2182,16 +2339,34 @@
       },
       "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": true,
       "stages": [
         {
           "name": "fetch",
-          "seconds": 0.2
+          "seconds": 0.1
         },
         {
           "name": "modrinth-sides",
-          "seconds": 0.0
+          "seconds": 0.1
         },
         {
           "name": "read",
@@ -2199,11 +2374,11 @@
         },
         {
           "name": "static-checks",
-          "seconds": 2.2
+          "seconds": 1.9
         },
         {
           "name": "probe-stubs",
-          "seconds": 0.6
+          "seconds": 0.9
         },
         {
           "name": "probe-compile",
@@ -2211,25 +2386,25 @@
         },
         {
           "name": "probe-official-names",
-          "seconds": 1.5
+          "seconds": 1.6
         },
         {
           "name": "probe-intermediary-names",
-          "seconds": 0.9
+          "seconds": 1.7
         },
         {
           "name": "server-place",
-          "seconds": 34.6
+          "seconds": 36.6
         },
         {
           "name": "server-verify",
-          "seconds": 26.5
+          "seconds": 61.5
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T01:00:13",
-      "label": "round-2"
+      "started": "2026-11-15T07:28:26",
+      "label": "repairs"
     },
     {
       "id": "sodiumplus-quilt-1.20.1",
@@ -2237,23 +2412,22 @@
       "format": "mrpack",
       "loader": "quilt",
       "minecraft": "1.20.1",
-      "exit": 1,
-      "seconds": 64.9,
+      "exit": 0,
+      "seconds": 157.4,
       "gaps": [
         "server start failed, culprit named",
-        "problem with no proven repair: server-start",
         "client-only mods not marked on CurseForge/Modrinth (left out of the server)"
       ],
       "mods": 94,
       "loaderUsed": "quilt 0.24.0",
       "staticChecks": {
-        "modIds": 317,
+        "modIds": 318,
         "findings": 6
       },
       "start": {
         "opened": false,
-        "seconds": 55.3341105,
-        "failure": "[01:02:43] [main/ERROR]: Failed to start the minecraft server\njava.lang.RuntimeException: Could not execute entrypoint stage 'server' due to errors, provided by 'distanthorizons'!\nCaused by: java.lang.ExceptionInInitializerError\nCaused by: java.lang.NullPointerException: Cannot invoke \"com.seibel.distanthorizons.core.wrapperInterfaces.config.IConfigGui.addOnScreenChangeListener(java.lang.Runnable)\" because \"com.seibel.distanthorizons.core.config.eventHandlers.presets.AbstractPresetConfigEventHandler.configGui\" is null",
+        "seconds": 57.6664163,
+        "failure": "[07:32:01] [main/ERROR]: Failed to start the minecraft server\njava.lang.RuntimeException: Could not execute entrypoint stage 'server' due to errors, provided by 'distanthorizons'!\nCaused by: java.lang.ExceptionInInitializerError\nCaused by: java.lang.NullPointerException: Cannot invoke \"com.seibel.distanthorizons.core.wrapperInterfaces.config.IConfigGui.addOnScreenChangeListener(java.lang.Runnable)\" because \"com.seibel.distanthorizons.core.config.eventHandlers.presets.AbstractPresetConfigEventHandler.configGui\" is null",
         "suspects": [
           {
             "mod": "distanthorizons",
@@ -2262,34 +2436,6 @@
               "the loader names it: java.lang.RuntimeException: Could not execute entrypoint stage 'server' due to errors, provided by 'distanthorizons'!",
               "its code (com.seibel.distanthorizons.fabric.FabricDedicatedServerMain) is in the stack: at com.seibel.distanthorizons.fabric.FabricDedicatedServerMain.onInitializeServer(FabricDedicatedServerMain.java:33) ~[distanthorizons-2.0.1-a.i0:0/:?]",
               "its code (com.seibel.distanthorizons.core.config.eventHandlers.presets.AbstractPresetConfigEventHandler) is in the stack: at com.seibel.distanthorizons.core.config.eventHandlers.presets.AbstractPresetConfigEventHandler.<init>(AbstractPresetConfigEventHandler.java:59) ~[distanthorizons-2.0.1-a.i0:0/:..."
-            ]
-          },
-          {
-            "mod": "memoryleakfix",
-            "jar": "memoryleakfix-fabric-1.17+-1.1.5.jar",
-            "why": [
-              "its mixin config memoryleakfix-fabric.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "supermartijn642configlib",
-            "jar": "supermartijn642configlib-1.1.8a-fabric-mc1.20.jar",
-            "why": [
-              "its mixin config supermartijn642configlib.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "creativecore",
-            "jar": "CreativeCore_FABRIC_v2.11.24_mc1.20.1.jar",
-            "why": [
-              "its mixin config creativecore.fabric.mixins.json is in the failure"
-            ]
-          },
-          {
-            "mod": "quilt_testing",
-            "jar": "qfapi-7.5.0_qsl-6.1.2_fapi-0.91.0_mc-1.20.1.jar!testing-6.1.2+1.20.1.jar",
-            "why": [
-              "a mixin handler of this mod is in the stack"
             ]
           }
         ]
@@ -2304,18 +2450,75 @@
         "warning:dependency-version": 4,
         "warning:minecraft-mismatch": 1,
         "note:client-only": 1,
-        "problem:server-start": 1
+        "problem:server-start": 1,
+        "problem:known-fault": 1
       },
       "problems": [
         {
           "kind": "server-start",
-          "summary": "The pack's server did not finish starting a new world. The log names distanthorizons (DistantHorizons-2.0.1-a-1.20.1.jar), memoryleakfix (memoryleakfix-fabric-1.17+-1.1.5.jar), supermartijn642configlib (supermartijn642configlib-1.1.8a-fabric-mc1.20.jar), creativecore (CreativeCore_FABRIC_v2.11.24_mc",
+          "summary": "The pack's server did not finish starting a new world. The log names distanthorizons (DistantHorizons-2.0.1-a-1.20.1.jar).",
+          "jars": []
+        },
+        {
+          "kind": "known-fault",
+          "summary": "distanthorizons (DistantHorizons-2.0.1-a-1.20.1.jar) stopped the server at start-up, and a server does not need it (modrinth-index mods/DistantHorizons-2.0.1-a-1.20.1.jar, sides from modrinth distanthorizons): The server does not start: a mod's own start-up code fails on a dedicated server, though t",
           "jars": []
         }
       ],
       "refutedWarnings": 0,
-      "fix": null,
-      "ok": false,
+      "fix": {
+        "applied": [
+          "server-optional-mod-stops-server"
+        ],
+        "notes": [
+          "server-optional-mod-stops-server: DistantHorizons-2.0.1-a-1.20.1.jar is left out of the server; players keep it"
+        ],
+        "proven": true,
+        "rounds": [
+          {
+            "round": 1,
+            "after": "the shipped pack's start failed",
+            "added": [
+              "server-optional-mod-stops-server"
+            ]
+          }
+        ],
+        "remaining": [],
+        "comparison": [
+          {
+            "check": "dimension-save",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "probe-error",
+            "shipped": 0,
+            "repaired": 0
+          },
+          {
+            "check": "server-start",
+            "shipped": 1,
+            "repaired": 0
+          },
+          {
+            "check": "world-reopen",
+            "shipped": 0,
+            "repaired": 0
+          }
+        ],
+        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T15-31-14.312652100Z-9065f4e6\\Sodium Plus 2.2.11 (modaccel fixed).mrpack",
+        "recheck": {
+          "newWorld": {
+            "opened": true,
+            "seconds": 64.6660491
+          },
+          "reopen": {
+            "opened": true,
+            "seconds": 26.403131
+          }
+        }
+      },
+      "ok": true,
       "stages": [
         {
           "name": "fetch",
@@ -2327,37 +2530,45 @@
         },
         {
           "name": "read",
-          "seconds": 0.6
+          "seconds": 0.5
         },
         {
           "name": "static-checks",
-          "seconds": 1.2
+          "seconds": 1.0
         },
         {
           "name": "probe-stubs",
-          "seconds": 0.9
+          "seconds": 0.6
         },
         {
           "name": "probe-compile",
-          "seconds": 2.5
+          "seconds": 1.6
         },
         {
           "name": "probe-official-names",
-          "seconds": 1.1
-        },
-        {
-          "name": "probe-intermediary-names",
           "seconds": 0.8
         },
         {
+          "name": "probe-intermediary-names",
+          "seconds": 0.7
+        },
+        {
           "name": "server-place",
-          "seconds": 55.3
+          "seconds": 57.7
+        },
+        {
+          "name": "repaired-server-place",
+          "seconds": 64.7
+        },
+        {
+          "name": "repaired-server-verify",
+          "seconds": 26.4
         }
       ],
-      "outcome": "start failed",
+      "outcome": "repaired: world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T01:03:01",
-      "label": "round-2"
+      "started": "2026-11-15T07:33:52",
+      "label": "repairs"
     },
     {
       "id": "ukupvp-quilt-1.18.2",
@@ -2366,7 +2577,7 @@
       "loader": "quilt",
       "minecraft": "1.18.2",
       "exit": 0,
-      "seconds": 86.8,
+      "seconds": 110.8,
       "gaps": [],
       "mods": 40,
       "loaderUsed": "quilt 0.17.4",
@@ -2376,13 +2587,13 @@
       },
       "start": {
         "opened": true,
-        "seconds": 46.2210955,
+        "seconds": 79.3613181,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 32.3218176,
+        "seconds": 24.2438718,
         "failure": null,
         "suspects": null
       },
@@ -2392,16 +2603,143 @@
       "probe": {
         "dimensions": 3,
         "failed": 8,
-        "placed": 759
+        "placed": 753
       },
       "findings": {
         "note:placed-other-block": 1,
-        "note:not-checked": 1,
+        "note:not-checked": 2,
         "note:placement-error": 1
       },
       "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
+      "ok": true,
+      "stages": [
+        {
+          "name": "fetch",
+          "seconds": 0.1
+        },
+        {
+          "name": "modrinth-sides",
+          "seconds": 0.0
+        },
+        {
+          "name": "read",
+          "seconds": 0.1
+        },
+        {
+          "name": "static-checks",
+          "seconds": 0.6
+        },
+        {
+          "name": "probe-stubs",
+          "seconds": 0.7
+        },
+        {
+          "name": "probe-compile",
+          "seconds": 2.0
+        },
+        {
+          "name": "probe-official-names",
+          "seconds": 1.0
+        },
+        {
+          "name": "probe-intermediary-names",
+          "seconds": 0.8
+        },
+        {
+          "name": "server-place",
+          "seconds": 79.4
+        },
+        {
+          "name": "server-verify",
+          "seconds": 24.2
+        }
+      ],
+      "outcome": "world made and reopened",
+      "leftoverServersStopped": 0,
+      "started": "2026-11-15T07:37:10",
+      "label": "repairs"
+    },
+    {
+      "id": "ukupvp-quilt-1.19.2",
+      "name": "ukus-pvp-modpack",
+      "format": "mrpack",
+      "loader": "quilt",
+      "minecraft": "1.19.2",
+      "exit": 0,
+      "seconds": 85.0,
+      "gaps": [],
+      "mods": 55,
+      "loaderUsed": "quilt 0.17.10",
+      "staticChecks": {
+        "modIds": 259,
+        "findings": 0
+      },
+      "start": {
+        "opened": true,
+        "seconds": 54.6497976,
+        "failure": null,
+        "suspects": null
+      },
+      "reopen": {
+        "opened": true,
+        "seconds": 22.1661092,
+        "failure": null,
+        "suspects": null
+      },
+      "clientOnlyLeftOut": 0,
+      "leftOutOfServer": 33,
+      "keptForDependants": [],
+      "probe": {
+        "dimensions": 3,
+        "failed": 9,
+        "placed": 785
+      },
+      "findings": {
+        "note:placed-other-block": 1,
+        "note:not-checked": 2,
+        "note:placement-error": 1
+      },
+      "problems": [],
+      "refutedWarnings": 0,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": true,
       "stages": [
         {
@@ -2418,7 +2756,7 @@
         },
         {
           "name": "static-checks",
-          "seconds": 0.7
+          "seconds": 0.8
         },
         {
           "name": "probe-stubs",
@@ -2430,7 +2768,7 @@
         },
         {
           "name": "probe-official-names",
-          "seconds": 1.2
+          "seconds": 1.1
         },
         {
           "name": "probe-intermediary-names",
@@ -2438,108 +2776,17 @@
         },
         {
           "name": "server-place",
-          "seconds": 46.2
+          "seconds": 54.6
         },
         {
           "name": "server-verify",
-          "seconds": 32.3
+          "seconds": 22.2
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T01:08:07",
-      "label": "round-2"
-    },
-    {
-      "id": "ukupvp-quilt-1.19.2",
-      "name": "ukus-pvp-modpack",
-      "format": "mrpack",
-      "loader": "quilt",
-      "minecraft": "1.19.2",
-      "exit": 0,
-      "seconds": 215.0,
-      "gaps": [],
-      "mods": 55,
-      "loaderUsed": "quilt 0.17.10",
-      "staticChecks": {
-        "modIds": 259,
-        "findings": 0
-      },
-      "start": {
-        "opened": true,
-        "seconds": 180.4467961,
-        "failure": null,
-        "suspects": null
-      },
-      "reopen": {
-        "opened": true,
-        "seconds": 28.2132284,
-        "failure": null,
-        "suspects": null
-      },
-      "clientOnlyLeftOut": 0,
-      "leftOutOfServer": 33,
-      "keptForDependants": [],
-      "probe": {
-        "dimensions": 3,
-        "failed": 9,
-        "placed": 790
-      },
-      "findings": {
-        "note:placed-other-block": 1,
-        "note:not-checked": 1,
-        "note:placement-error": 1
-      },
-      "problems": [],
-      "refutedWarnings": 0,
-      "fix": null,
-      "ok": true,
-      "stages": [
-        {
-          "name": "fetch",
-          "seconds": 0.1
-        },
-        {
-          "name": "modrinth-sides",
-          "seconds": 0.0
-        },
-        {
-          "name": "read",
-          "seconds": 0.2
-        },
-        {
-          "name": "static-checks",
-          "seconds": 0.7
-        },
-        {
-          "name": "probe-stubs",
-          "seconds": 0.6
-        },
-        {
-          "name": "probe-compile",
-          "seconds": 1.7
-        },
-        {
-          "name": "probe-official-names",
-          "seconds": 0.8
-        },
-        {
-          "name": "probe-intermediary-names",
-          "seconds": 0.6
-        },
-        {
-          "name": "server-place",
-          "seconds": 180.4
-        },
-        {
-          "name": "server-verify",
-          "seconds": 28.2
-        }
-      ],
-      "outcome": "world made and reopened",
-      "leftoverServersStopped": 0,
-      "started": "2026-11-15T01:06:38",
-      "label": "round-2"
+      "started": "2026-11-15T07:35:19",
+      "label": "repairs"
     },
     {
       "id": "vanilla-perfected-fabric-26.3",
@@ -2548,23 +2795,23 @@
       "loader": "fabric",
       "minecraft": "26.3",
       "exit": 0,
-      "seconds": 72.8,
+      "seconds": 105.0,
       "gaps": [],
       "mods": 78,
       "loaderUsed": "fabric 0.19.5",
       "staticChecks": {
-        "modIds": 221,
+        "modIds": 223,
         "findings": 0
       },
       "start": {
         "opened": true,
-        "seconds": 36.873433,
+        "seconds": 58.2643744,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 30.1963147,
+        "seconds": 39.7653168,
         "failure": null,
         "suspects": null
       },
@@ -2582,12 +2829,30 @@
       },
       "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": true,
       "stages": [
         {
           "name": "fetch",
-          "seconds": 0.3
+          "seconds": 0.4
         },
         {
           "name": "modrinth-sides",
@@ -2595,33 +2860,33 @@
         },
         {
           "name": "read",
-          "seconds": 0.5
-        },
-        {
-          "name": "static-checks",
-          "seconds": 0.9
-        },
-        {
-          "name": "probe-stubs",
           "seconds": 0.6
         },
         {
+          "name": "static-checks",
+          "seconds": 1.3
+        },
+        {
+          "name": "probe-stubs",
+          "seconds": 0.7
+        },
+        {
           "name": "probe-compile",
-          "seconds": 1.5
+          "seconds": 1.9
         },
         {
           "name": "server-place",
-          "seconds": 36.9
+          "seconds": 58.3
         },
         {
           "name": "server-verify",
-          "seconds": 30.2
+          "seconds": 39.8
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:59:00",
-      "label": "round-2"
+      "started": "2026-11-15T07:26:33",
+      "label": "repairs"
     },
     {
       "id": "zombie-invade-100-days-forge-1.20.1",
@@ -2630,7 +2895,7 @@
       "loader": "forge",
       "minecraft": "1.20.1",
       "exit": 0,
-      "seconds": 210.9,
+      "seconds": 216.1,
       "gaps": [
         "client-only mods not marked on CurseForge/Modrinth (left out of the server)"
       ],
@@ -2642,13 +2907,13 @@
       },
       "start": {
         "opened": true,
-        "seconds": 119.3255867,
+        "seconds": 144.3120541,
         "failure": null,
         "suspects": null
       },
       "reopen": {
         "opened": true,
-        "seconds": 70.6080367,
+        "seconds": 62.3900042,
         "failure": null,
         "suspects": null
       },
@@ -2669,54 +2934,56 @@
       },
       "problems": [],
       "refutedWarnings": 0,
-      "fix": null,
+      "fix": {
+        "applied": [],
+        "notes": [],
+        "proven": null,
+        "rounds": [],
+        "remaining": [],
+        "comparison": [],
+        "fixedExport": null,
+        "recheck": {
+          "newWorld": {
+            "opened": null,
+            "seconds": null
+          },
+          "reopen": {
+            "opened": null,
+            "seconds": null
+          }
+        }
+      },
       "ok": true,
       "stages": [
         {
           "name": "fetch",
-          "seconds": 0.5
+          "seconds": 0.4
         },
         {
           "name": "modrinth-sides",
-          "seconds": 0.6
+          "seconds": 0.5
         },
         {
           "name": "read",
-          "seconds": 2.2
-        },
-        {
-          "name": "static-checks",
-          "seconds": 2.2
-        },
-        {
-          "name": "probe-stubs",
           "seconds": 1.3
         },
         {
-          "name": "probe-compile",
-          "seconds": 7.0
-        },
-        {
-          "name": "probe-official-names",
-          "seconds": 1.8
-        },
-        {
-          "name": "probe-srg-names",
-          "seconds": 1.4
+          "name": "static-checks",
+          "seconds": 2.8
         },
         {
           "name": "server-place",
-          "seconds": 119.3
+          "seconds": 144.3
         },
         {
           "name": "server-verify",
-          "seconds": 70.6
+          "seconds": 62.4
         }
       ],
       "outcome": "world made and reopened",
       "leftoverServersStopped": 0,
-      "started": "2026-11-15T00:52:18",
-      "label": "round-2"
+      "started": "2026-11-15T07:18:10",
+      "label": "repairs"
     }
   ]
 }

@@ -321,7 +321,8 @@ final class PackRepairs {
                     if ("server-optional".equals(spec.get("side")) && !side.equals("optional") && !side.equals("unsupported")) continue;
                     hits.add(
                         new Hit(
-                            id + " (" + provider.jar() + ") stopped the server at start-up, and " + side.replace("optional", "a server does not need it").replace("unsupported", "a server cannot run it") +
+                            id + " (" + provider.jar() + ") stopped the server at start-up, and " +
+                            side.replace("optional", "a server does not need it").replace("unsupported", "a server cannot run it") +
                             " (" + mod.source() + ")",
                             Json.map("mod", id, "jar", provider.jar())
                         )
@@ -590,13 +591,15 @@ final class PackRepairs {
                 List.of("versions:" + facts.pack().minecraft())
             )
         );
-        if (PackCheck.modrinthJson("search?limit=5&query=" + URLEncoder.encode(id, StandardCharsets.UTF_8) + "&facets=" + URLEncoder.encode(facets, StandardCharsets.UTF_8)) instanceof Map<?, ?> found && found.get("hits") instanceof List<?> hits) {
+        String search = "search?limit=5&query=" + URLEncoder.encode(id, StandardCharsets.UTF_8) + "&facets=" + URLEncoder.encode(facets, StandardCharsets.UTF_8);
+        if (PackCheck.modrinthJson(search) instanceof Map<?, ?> found && found.get("hits") instanceof List<?> hits) {
             for (Object hit : hits) if (hit instanceof Map<?, ?> h) projects.add(String.valueOf(h.get("project_id")));
         }
         String loaders = URLEncoder.encode(Json.write(modrinthLoaders(facts.pack().loader())), StandardCharsets.UTF_8);
         String games = URLEncoder.encode(Json.write(List.of(facts.pack().minecraft())), StandardCharsets.UTF_8);
         for (String project : projects) {
-            if (!(PackCheck.modrinthJson("project/" + URLEncoder.encode(project, StandardCharsets.UTF_8) + "/version?loaders=" + loaders + "&game_versions=" + games) instanceof List<?> versions)) continue;
+            String path = "project/" + URLEncoder.encode(project, StandardCharsets.UTF_8) + "/version?loaders=" + loaders + "&game_versions=" + games;
+            if (!(PackCheck.modrinthJson(path) instanceof List<?> versions)) continue;
             List<Map<String, Object>> sorted = new ArrayList<>();
             for (Object v : versions) if (v instanceof Map<?, ?> version) sorted.add(Json.object(version));
             sorted.sort(Comparator.comparing(v -> Json.text(v, "date_published", "")));
@@ -673,7 +676,8 @@ final class PackRepairs {
             Facts facts = new Facts(pack, before, loader, unavailable, log);
             if (applies(fix, facts).isEmpty()) throw new AssertionError(id + ": its test does not match it");
             if (fix.get("loader") instanceof String only && !only.equals("*")) for (String other : loaders.keySet()) {
-                Facts elsewhere = new Facts(new PackCheck.Pack("test", "", minecraft, other, "", jars, List.of(mods.getParent()), mods.getParent(), true, "test"), before, loaders.get(other), unavailable, log);
+                var otherPack = new PackCheck.Pack("test", "", minecraft, other, "", jars, List.of(mods.getParent()), mods.getParent(), true, "test");
+                Facts elsewhere = new Facts(otherPack, before, loaders.get(other), unavailable, log);
                 if (!other.equals(loaderId) && !applies(fix, elsewhere).isEmpty()) throw new AssertionError(id + " also matches on " + other);
             }
             var action = Json.object(fix.get("action"));
