@@ -1,0 +1,74 @@
+name: Finish a plan
+description: Timings and failure receipts as artifacts; on main, save the plan's caches when its key missed.
+inputs:
+  plan:
+    required: true
+  workspace:
+    default: .
+  prefix:
+    default: ''
+  hit:
+    description: the setup action's cache-hit; main saves only when its key missed
+    default: 'false'
+  name:
+    description: artifact name stem
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Check timings
+      uses: actions/upload-artifact@v4
+      with:
+        name: timings-${{ inputs.name }}
+        path: ${{ runner.temp }}/timings.json
+        if-no-files-found: ignore
+    - name: Outcome receipts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: outcomes-${{ inputs.name }}
+        path: |
+          ${{ inputs.workspace }}/.runs
+          ${{ inputs.workspace }}/.modaccel
+          ${{ runner.temp }}/lanes/real-mods-results
+          ${{ runner.temp }}/lanes/real-mods/*/logs
+        include-hidden-files: true
+        if-no-files-found: ignore
+    - name: Stop Gradle daemons and servers so the cache can be read
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" = Windows ]; then
+          powershell -NoProfile -Command "Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force"
+        else
+          pkill -f java || true
+        fi
+    - name: Anything downloaded worth caching
+      id: worth
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      shell: bash
+      # A run whose downloads failed (GitHub's 504s on 2026-11-08) saved a near-empty cache under the key, and every
+      # later run restored it and downloaded again, so a passing outage kept failing CI.
+      run: |
+        size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
+        kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/jdks ~/.modaccel/servers ~/.modaccel/tools)
+        echo "kb=$kb" >> "$GITHUB_OUTPUT"
+        if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB was downloaded, so the cache is not saved"; fi
+    - name: Save the plan's downloads (main only)
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main' && inputs.hit != 'true' && fromJSON(steps.worth.outputs.kb || '0') >= 51200
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          ~/.gradle/jdks
+          ~/.modaccel/jdks
+          ~/.modaccel/servers
+          ~/.modaccel/tools
+        key: ${{ inputs.plan }}-${{ runner.os }}-${{ hashFiles(format('{0}.github/actions/setup/keys/{1}', inputs.prefix, inputs.plan)) }}-${{ hashFiles(format('{0}build.gradle', inputs.prefix), format('{0}settings.gradle', inputs.prefix), format('{0}gradle.properties', inputs.prefix), format('{0}gradle/wrapper/gradle-wrapper.properties', inputs.prefix), format('{0}bench/server-plugins/manifest.json', inputs.prefix), format('{0}knowledge/mcprotocollib.json', inputs.prefix), format('{0}knowledge/viaproxy.json', inputs.prefix), format('{0}bench/real-mods/manifest.json', inputs.prefix)) }}
+    - name: Save the compiled launcher (main only)
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ inputs.workspace }}/.modaccel/cli
+        key: launcher-${{ runner.os }}-${{ hashFiles(format('{0}tools/cli/*.java', inputs.prefix)) }}

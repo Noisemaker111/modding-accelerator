@@ -1,0 +1,50 @@
+name: Setup a plan
+description: Java 25, Python 3.12 and the plan's caches. Restore only; .github/actions/finish saves them on main.
+inputs:
+  plan:
+    description: core, server or stonecutter (tools/ci/lanes.py)
+    required: true
+  workspace:
+    description: the checkout's path
+    default: .
+  prefix:
+    description: the checkout's path with a trailing slash, for hashFiles; empty for the workspace root
+    default: ''
+outputs:
+  cache-hit:
+    description: whether the cache key matched exactly
+    value: ${{ steps.cache.outputs.cache-hit }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v6
+      with:
+        distribution: temurin
+        java-version: '25'
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+    # One cache per plan and system, keyed by the pins of what the plan downloads. A pull request restores main's
+    # (the exact key, or main's latest for the plan when a pin changed) and never writes one.
+    - name: Downloads cached by main
+      id: cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          ~/.gradle/jdks
+          ~/.modaccel/jdks
+          ~/.modaccel/servers
+          ~/.modaccel/tools
+        key: ${{ inputs.plan }}-${{ runner.os }}-${{ hashFiles(format('{0}.github/actions/setup/keys/{1}', inputs.prefix, inputs.plan)) }}-${{ hashFiles(format('{0}build.gradle', inputs.prefix), format('{0}settings.gradle', inputs.prefix), format('{0}gradle.properties', inputs.prefix), format('{0}gradle/wrapper/gradle-wrapper.properties', inputs.prefix), format('{0}bench/server-plugins/manifest.json', inputs.prefix), format('{0}knowledge/mcprotocollib.json', inputs.prefix), format('{0}knowledge/viaproxy.json', inputs.prefix), format('{0}bench/real-mods/manifest.json', inputs.prefix)) }}
+        restore-keys: |
+          ${{ inputs.plan }}-${{ runner.os }}-
+    # The source launcher's compiled classes, by the hash of tools/cli (Bootstrap.java keys its own folder the same way).
+    - name: Compiled launcher cached by main
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ inputs.workspace }}/.modaccel/cli
+        key: launcher-${{ runner.os }}-${{ hashFiles(format('{0}tools/cli/*.java', inputs.prefix)) }}
+        restore-keys: |
+          launcher-${{ runner.os }}-
