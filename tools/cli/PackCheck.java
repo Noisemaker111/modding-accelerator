@@ -66,6 +66,12 @@ final class PackCheck {
     final Modaccel.Options options;
     final Modaccel.Report report;
     final List<Object> findings = new ArrayList<>();
+    /** Mod files the pack lists that its source no longer serves: a player's launcher cannot get them either. */
+    final List<String> unavailable = new ArrayList<>();
+
+    synchronized void unavailable(String what) {
+        unavailable.add(what);
+    }
     PackMods.Scan scan = new PackMods.Scan();
     PackLoaders.Loader loader;
     /** Jars a server start showed to be client-only, on this run or an earlier one (client-only.json); every start leaves them out. */
@@ -123,6 +129,19 @@ final class PackCheck {
         scan = PackMods.scan(pack.mods(), loader.metadata(pack.minecraft()));
         pack = pack.withMods(sides(pack.mods(), scan));
         PackChecks.Context statics = new PackChecks.Context(pack, scan, loader, findings);
+        if (!unavailable.isEmpty()) findings.add(
+            Json.map(
+                "kind",
+                "unavailable-file",
+                "severity",
+                "problem",
+                "summary",
+                unavailable.size() + " mod file(s) the pack lists cannot be downloaded any more, so a player cannot install the pack as published; the rest is checked without them: " +
+                String.join("; ", unavailable),
+                "files",
+                new ArrayList<>(unavailable)
+            )
+        );
         PackChecks.run("static", statics);
         List<Map<String, Object>> fixes = PackRepairs.match(harness, pack, scan, findings);
         report.stages.add(Json.map("name", "static-checks", "seconds", (System.nanoTime() - started) / 1e9));
@@ -252,7 +271,13 @@ final class PackCheck {
                     Path metaFile = folder.resolve("file.json");
                     if (!Files.isRegularFile(metaFile)) {
                         Files.createDirectories(folder);
-                        Files.write(metaFile, get(CURSEFORGE + file[0] + "/files/" + file[1]));
+                        byte[] answer = get(CURSEFORGE + file[0] + "/files/" + file[1]);
+                        // CurseForge answers {"data": null} for a file it no longer serves: not kept, so it is asked again next time.
+                        if (!(Json.parse(new String(answer, StandardCharsets.UTF_8)) instanceof Map<?, ?> m && m.get("data") instanceof Map<?, ?>)) {
+                            unavailable("project " + file[0] + ", file " + file[1] + ": CurseForge no longer lists it");
+                            return null;
+                        }
+                        Files.write(metaFile, answer);
                     }
                     var data = Json.object(Json.read(metaFile).get("data"));
                     String name = Json.text(data, "fileName", file[1] + ".jar");
@@ -263,7 +288,14 @@ final class PackCheck {
                     long length = ((Number) data.get("fileLength")).longValue();
                     if (onDisk.containsKey(file[1])) name = target.getFileName().toString();
                     else if (!Files.isRegularFile(target) || Files.size(target) != length) {
-                        byte[] bytes = get(CURSEFORGE + file[0] + "/files/" + file[1] + "/download");
+                        byte[] bytes;
+                        try {
+                            bytes = get(CURSEFORGE + file[0] + "/files/" + file[1] + "/download");
+                        } catch (IOException gone) {
+                            if (!gone.getMessage().startsWith("HTTP 404")) throw gone;
+                            unavailable(name + " (project " + file[0] + ", file " + file[1] + "): CurseForge does not serve its download");
+                            return null;
+                        }
                         if (bytes.length != length) throw new IOException(name + ": CurseForge said " + length + " bytes, sent " + bytes.length);
                         Path temporary = Files.createTempFile(folder, "download-", ".tmp");
                         Files.write(temporary, bytes);
@@ -283,7 +315,10 @@ final class PackCheck {
                 })
             );
             List<Mod> mods = new ArrayList<>();
-            for (Future<Mod> job : jobs) mods.add(job.get());
+            for (Future<Mod> job : jobs) {
+                Mod mod = job.get();
+                if (mod != null) mods.add(mod);
+            }
             report.stages.add(
                 Json.map(
                     "name",
