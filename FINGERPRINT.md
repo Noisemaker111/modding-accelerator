@@ -63,8 +63,14 @@ These show as leaves two baseline runs disagree on. A comparison leaves them out
 - **perf-optimize:** every experiment with a world gets a built-in `fingerprint` gate (opt out with `"fingerprint": false`,
   tune with `"fingerprint": {"ticks": 200, "every": 50, "radius": 8}`). Each launch opens the saved world frozen, runs the
   same seeded ticks with checkpoints over the chunks round the player and spawn, and lets the world run on for measuring.
-  Leaves two baseline launches disagree on are left out and named; every other leaf of each candidate must equal its
-  paired baseline's. A mod needs no hand-written gate; `--only fingerprint` decides on this gate alone.
+  Every launch must start from the saved state (the same game time at the first checkpoint). A leaf two baseline launches
+  disagree on makes its family unstable (the same section and block-entity type, at any position and checkpoint): which
+  container an item lands in, when a mod orders equal targets by identity hash, is then left to the conserved totals
+  (item, block and entity counts), which stay exact. Chunk tickets at the first checkpoint are what loading left. Every
+  other leaf of each candidate must equal its paired baseline's. A mod needs no hand-written gate; `--only fingerprint`
+  decides on this gate alone, and `fingerprint-diff --baseline B1,B2 --candidate C1,C2` decides it on recorded launches.
+  It sees what the world does as saved; a fault that shows only when the world changes (a cache that goes stale when a
+  network is rewired) needs a gate whose scenario makes that change.
 - **port --check fingerprint:** the fingerprint on `--from` before any file changes and on `--to` after the port must match.
 - **convert:** the same, on one game version, before and after the loader changes (every leaf the mod owns).
 - **pack-check --fingerprint:** two more server starts make and reopen the fingerprint world with every mod of the pack.

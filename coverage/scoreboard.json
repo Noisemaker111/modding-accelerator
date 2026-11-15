@@ -32,12 +32,12 @@
     },
     "perf": {
       "name": "perf diffs the generic fingerprint gate decides as the hand gates did",
-      "value": 0,
+      "value": 4,
       "of": 6,
       "runner": "python bench/perf_sweep.py run",
       "source": "coverage/sweeps/perf.json",
-      "date": null,
-      "note": "not yet run with behaviour fingerprints"
+      "date": "2026-11-15",
+      "ran": 5
     }
   }
 }
