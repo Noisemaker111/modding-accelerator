@@ -200,6 +200,12 @@
    "compare": "exact"
   },
   {
+   "name": "store",
+   "file": "store-merge.java",
+   "thread": "control",
+   "compare": "exact"
+  },
+  {
    "name": "mapped",
    "file": "mapped.java",
    "thread": "control",

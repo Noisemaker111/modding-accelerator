@@ -1,0 +1,206 @@
+diff --git a/src/main/java/dev/diorama/data/TileStore.java b/src/main/java/dev/diorama/data/TileStore.java
+index 8a7a422d..9db65926 100644
+--- a/src/main/java/dev/diorama/data/TileStore.java
++++ b/src/main/java/dev/diorama/data/TileStore.java
+@@ -16,6 +16,7 @@ import java.io.InputStream;
+ import java.io.OutputStream;
+ import java.nio.ByteBuffer;
+ import java.nio.ByteOrder;
++import java.nio.IntBuffer;
+ import java.nio.file.Files;
+ import java.nio.file.Path;
+ import java.nio.file.StandardCopyOption;
+@@ -106,12 +107,40 @@ public final class TileStore {
+ 	/**
+ 	 * A saved tile: its pixels, its spots (level 0) or chunks (overviews) where it has any, and its
+ 	 * block light where it was baked with it. Never modified.
++	 *
++	 * <p>The pixels and spots are kept outside the Java heap ({@link #keep}). A tile stays in the
++	 * cache for seconds, and each re-bake replaces it: as megabyte arrays on the heap, every young
++	 * collection copied the tiles from one survivor space to the next until they were promoted, which
++	 * was most of what those pauses copied. Their memory is freed with the buffer once nothing holds
++	 * it; readers get a copy of their own ({@link #ints}), which dies young.
+ 	 */
+-	private record Tile(int[] pixels, int @Nullable [] spots, byte @Nullable [] chunks, byte @Nullable [] blockLight) {
+-		boolean same(Tile other) {
+-			return java.util.Arrays.equals(this.pixels, other.pixels) && java.util.Arrays.equals(this.spots, other.spots)
+-				&& java.util.Arrays.equals(this.chunks, other.chunks) && java.util.Arrays.equals(this.blockLight, other.blockLight);
++	private record Tile(IntBuffer pixels, @Nullable IntBuffer spots, byte @Nullable [] chunks, byte @Nullable [] blockLight) {
++		/** Whether this tile holds exactly these, with no chunks: a merge that would change nothing. */
++		boolean same(int[] pixels, @Nullable IntBuffer keptSpots, int @Nullable [] spots, byte @Nullable [] blockLight) {
++			boolean sameSpots = spots == null ? keptSpots == this.spots : this.spots != null && this.spots.equals(IntBuffer.wrap(spots));
++			return sameSpots && this.pixels.equals(IntBuffer.wrap(pixels)) && this.chunks == null
++				&& java.util.Arrays.equals(this.blockLight, blockLight);
++		}
++	}
++
++	/** {@code ints} outside the Java heap, where no collection copies them; null for null. Read with {@link #ints}. */
++	private static @Nullable IntBuffer keep(int @Nullable [] ints) {
++		if (ints == null) {
++			return null;
++		}
++		IntBuffer kept = ByteBuffer.allocateDirect(ints.length * Integer.BYTES).order(ByteOrder.nativeOrder()).asIntBuffer();
++		kept.put(0, ints);
++		return kept;
++	}
++
++	/** A copy of kept ints, the caller's own; null for null. Any thread: it reads by index, so the buffer never changes. */
++	private static int @Nullable [] ints(@Nullable IntBuffer kept) {
++		if (kept == null) {
++			return null;
+ 		}
++		int[] out = new int[kept.capacity()];
++		kept.get(0, out);
++		return out;
+ 	}
+ 
+ 	/** A saved tile's pixels, its {@link BlockLight} and its {@link dev.diorama.bake.TileSpots}, either null where it was saved without. */
+@@ -247,7 +276,7 @@ public final class TileStore {
+ 		if (shrunk == null) {
+ 			return false;
+ 		}
+-		Tile tile = new Tile(shrunk.pixels(), null, this.shrinkChunks(key, repair), shrunk.blockLight());
++		Tile tile = new Tile(keep(shrunk.pixels()), null, this.shrinkChunks(key, repair), shrunk.blockLight());
+ 		// Under io too, so a read loading this tile from disk can't cache the old pixels over these.
+ 		synchronized (this.io) {
+ 			synchronized (this) {
+@@ -324,22 +353,34 @@ public final class TileStore {
+ 
+ 	/**
+ 	 * The saved pixels of a tile, or null if there are none, including every bake handed over so
+-	 * far. Not on the render thread: it can wait for the disk. Don't modify the array.
++	 * far. Not on the render thread: it can wait for the disk. The array is the caller's own copy.
+ 	 */
+ 	public int @Nullable [] read(TileKey key) {
+ 		synchronized (this.io) {
+ 			this.merge(key);
+ 			Tile tile = this.saved(key);
+-			return tile == null ? null : tile.pixels;
++			return tile == null ? null : ints(tile.pixels);
++		}
++	}
++
++	/**
++	 * One saved pixel of a tile, {@code index} as in {@link #read}, or 0 (nothing known) where the tile
++	 * has none: without copying the tile, for a caller that looks at a few. Like {@link #read}.
++	 */
++	public int pixel(TileKey key, int index) {
++		synchronized (this.io) {
++			this.merge(key);
++			Tile tile = this.saved(key);
++			return tile == null ? 0 : tile.pixels.get(index);
+ 		}
+ 	}
+ 
+-	/** The same with the tile's block light, read together so the two always match. Don't modify the arrays. */
++	/** The same with the tile's block light, read together so the two always match. Don't modify the light. */
+ 	public @Nullable Saved readSaved(TileKey key) {
+ 		synchronized (this.io) {
+ 			this.merge(key);
+ 			Tile tile = this.saved(key);
+-			return tile == null ? null : new Saved(tile.pixels, tile.blockLight, tile.spots);
++			return tile == null ? null : new Saved(ints(tile.pixels), tile.blockLight, ints(tile.spots));
+ 		}
+ 	}
+ 
+@@ -365,7 +406,7 @@ public final class TileStore {
+ 				}
+ 				anyTile = true;
+ 				if (child.lod() == 0) {
+-					children[dy * 2 + dx] = TileChunks.fromSpots(child, tile.spots);
++					children[dy * 2 + dx] = TileChunks.fromSpots(child, ints(tile.spots));
+ 				} else if (tile.chunks == null) {
+ 					complete = false;
+ 					if (repair) {
+@@ -404,7 +445,7 @@ public final class TileStore {
+ 			return null;
+ 		}
+ 		if (key.lod() == 0) {
+-			return TileChunks.fromSpots(key, tile.spots);
++			return TileChunks.fromSpots(key, ints(tile.spots));
+ 		}
+ 		if (tile.chunks == null) {
+ 			this.askChunks(key);
+@@ -448,7 +489,7 @@ public final class TileStore {
+ 		synchronized (this.io) {
+ 			this.merge(key);
+ 			Tile tile = this.saved(key);
+-			return tile == null ? null : tile.spots;
++			return tile == null ? null : ints(tile.spots);
+ 		}
+ 	}
+ 
+@@ -519,7 +560,7 @@ public final class TileStore {
+ 					pixels = image.mips()[0];
+ 					light = image.blockLight();
+ 				} else {
+-					pixels = saved == null ? new int[size * size] : saved.pixels.clone();
++					pixels = saved == null ? new int[size * size] : ints(saved.pixels);
+ 					light = saved == null || saved.blockLight == null ? null : saved.blockLight.clone();
+ 					for (TileImage.Patch patch : image.patches()) {
+ 						int[] block = patch.mips()[0];
+@@ -540,13 +581,16 @@ public final class TileStore {
+ 						}
+ 					}
+ 				}
+-				Tile merged = new Tile(pixels, mergeSpots(saved == null ? null : saved.spots, image), null, light);
+-				if (saved != null ? saved.same(merged) : nothingKnown(pixels)) {
++				// The bake's own spots, or the saved ones where it has none: those stay the kept buffer.
++				int[] spots = image.spots() == null ? null : mergeSpots(saved == null ? null : ints(saved.spots), image);
++				IntBuffer keptSpots = spots == null && saved != null ? saved.spots : null;
++				// Compared before anything is kept: most re-bakes change nothing.
++				if (saved != null ? saved.same(pixels, keptSpots, spots, light) : nothingKnown(pixels)) {
+ 					count(true);
+ 					continue;
+ 				}
+ 				count(false);
+-				saved = merged;
++				saved = new Tile(keep(pixels), spots == null ? keptSpots : keep(spots), null, light);
+ 				changed = true;
+ 			}
+ 			synchronized (this) {
+@@ -974,7 +1018,7 @@ public final class TileStore {
+ 			// The stream's checksum is only checked at its end: reading on to it makes damage anywhere
+ 			// above, a block's name included, throw instead of reading as a block left out.
+ 			inflated.transferTo(OutputStream.nullOutputStream());
+-			return new Tile(pixels, spots, chunks, light);
++			return new Tile(keep(pixels), keep(spots), chunks, light);
+ 		} catch (IOException e) {
+ 			Diorama.LOGGER.warn("Couldn't read saved tile {}", file, e);
+ 			return null;
+@@ -1020,8 +1064,8 @@ public final class TileStore {
+ 	 */
+ 	private boolean store(TileKey key, Tile tile) {
+ 		Path file = this.file(key);
+-		int[] pixels = tile.pixels;
+-		int[] spots = tile.spots;
++		int[] pixels = ints(tile.pixels);
++		int[] spots = ints(tile.spots);
+ 		byte[] chunks = tile.chunks;
+ 		byte[] light = tile.blockLight;
+ 		try {
+diff --git a/src/main/java/dev/diorama/render/MapMemory.java b/src/main/java/dev/diorama/render/MapMemory.java
+index b1dfd664..4208734b 100644
+--- a/src/main/java/dev/diorama/render/MapMemory.java
++++ b/src/main/java/dev/diorama/render/MapMemory.java
+@@ -411,14 +411,12 @@ public final class MapMemory {
+ 			double u = this.facing.x(worldX, worldZ);
+ 			double v = this.facing.z(worldX, worldZ) * this.sin - top * this.cos;
+ 			TileKey key = new TileKey(TileKey.SURFACE, (int) Math.floor(u / Projection.TILE_UNITS), (int) Math.floor(v / Projection.TILE_UNITS));
+-			int[] pixels = this.store.read(key);
+-			if (pixels != null) {
+-				int size = Projection.TILE_PIXELS;
+-				int x = (int) Math.min(size - 1L, (long) ((u - key.minU()) * Projection.PIXELS_PER_UNIT));
+-				int y = (int) Math.min(size - 1L, (long) ((v - key.minV()) * Projection.PIXELS_PER_UNIT));
+-				if ((pixels[y * size + x] >>> 24) != 0) {
+-					return true;
+-				}
++			int size = Projection.TILE_PIXELS;
++			int x = (int) Math.min(size - 1L, (long) ((u - key.minU()) * Projection.PIXELS_PER_UNIT));
++			int y = (int) Math.min(size - 1L, (long) ((v - key.minV()) * Projection.PIXELS_PER_UNIT));
++			// One pixel of the saved tile, without a copy of all of it; a tile with none reads as nothing known.
++			if ((this.store.pixel(key, y * size + x) >>> 24) != 0) {
++				return true;
+ 			}
+ 		}
+ 		return false;
