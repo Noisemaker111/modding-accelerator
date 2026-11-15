@@ -1739,6 +1739,13 @@
      },
      "below": "1.21.2"
     }
+   ],
+   "tests": [
+    {
+     "name": "Listener",
+     "from": "package demo;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.entity.living.LivingDeathEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Listener {\n\t@SubscribeEvent\n\tpublic static void onDeath(LivingDeathEvent event) {\n\t\tevent.getEntity().discard();\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.LivingDeathEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Listener {\n\t@SubscribeEvent\n\tpublic static void onDeath(LivingDeathEvent event) {\n\t\tevent.getEntity().discard();\n\t}\n}\n"
+    }
    ]
   },
   {
@@ -1805,7 +1812,14 @@
    "test": {
     "fabric": "package demo.api;\n\nimport net.fabricmc.fabric.api.event.Event;\nimport net.fabricmc.fabric.api.event.EventFactory;\nimport net.fabricmc.loader.api.FabricLoader;\n\npublic interface Opened {\n\tEvent<Opened> EVENT = EventFactory.createArrayBacked(Opened.class, listeners -> name -> {\n\t\tfor (Opened listener : listeners) listener.opened(name);\n\t});\n\n\tvoid opened(String name);\n\n\tstatic boolean dev() {\n\t\treturn net.fabricmc.loader.api.FabricLoader.getInstance().getAllMods().size() > 1;\n\t}\n}\n",
     "neoforge": "package demo.api;\n\nimport demo.fabricbridge.fabric.api.event.Event;\nimport demo.fabricbridge.fabric.api.event.EventFactory;\nimport demo.fabricbridge.loader.api.FabricLoader;\n\npublic interface Opened {\n\tEvent<Opened> EVENT = EventFactory.createArrayBacked(Opened.class, listeners -> name -> {\n\t\tfor (Opened listener : listeners) listener.opened(name);\n\t});\n\n\tvoid opened(String name);\n\n\tstatic boolean dev() {\n\t\treturn demo.fabricbridge.loader.api.FabricLoader.getInstance().getAllMods().size() > 1;\n\t}\n}\n"
-   }
+   },
+   "tests": [
+    {
+     "name": "Opened",
+     "from": "package demo;\n\nimport net.fabricmc.fabric.api.event.Event;\nimport net.fabricmc.fabric.api.event.EventFactory;\nimport net.fabricmc.loader.api.FabricLoader;\n\npublic interface Opened {\n\tEvent<Opened> EVENT = EventFactory.createArrayBacked(Opened.class, listeners -> name -> {\n\t\tfor (Opened listener : listeners) listener.opened(name);\n\t});\n\n\tvoid opened(String name);\n\n\tstatic boolean dev() {\n\t\treturn net.fabricmc.loader.api.FabricLoader.getInstance().getAllMods().size() > 1;\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.fabricbridge.fabric.api.event.Event;\nimport demo.fabricbridge.fabric.api.event.EventFactory;\nimport demo.fabricbridge.loader.api.FabricLoader;\n\npublic interface Opened {\n\tEvent<Opened> EVENT = EventFactory.createArrayBacked(Opened.class, listeners -> name -> {\n\t\tfor (Opened listener : listeners) listener.opened(name);\n\t});\n\n\tvoid opened(String name);\n\n\tstatic boolean dev() {\n\t\treturn demo.fabricbridge.loader.api.FabricLoader.getInstance().getAllMods().size() > 1;\n\t}\n}\n"
+    }
+   ]
   }
  ]
 }

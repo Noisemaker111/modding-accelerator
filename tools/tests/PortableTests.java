@@ -1607,6 +1607,73 @@ public final class PortableTests {
             "undoing both conversions restores the NeoForge mod and leaves no folder the bridge emptied"
         );
 
+        // Each bridge's own before/after tests (bridges[].tests): the source as a file of a small mod of the bridge's
+        // from-loader, converted (no compile), must read as the test's "to"; converted back, as its "from" (or "back").
+        int bridgeTests = 0;
+        Map<String, String> bridgeAnswers = new LinkedHashMap<>(answers);
+        bridgeAnswers.put(
+            "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml",
+            "<metadata><versioning><versions><version>0.116.18+1.21.1</version><version>0.161.0+26.3</version><version>0.166.2+26.3</version><version>0.150.0+26.1.2</version></versions></versioning></metadata>"
+        );
+        for (Object item : LoaderRules.list(rules.get("bridges"))) {
+            var b = Json.object(item);
+            boolean fromNeo = "neoforge".equals(b.get("from"));
+            for (Object t : LoaderRules.list(b.get("tests"))) {
+                var test = Json.object(t);
+                String name = Json.text(test, "name", "Use");
+                Path dir = scratch.resolve("bridge-test-" + b.get("id") + "-" + bridgeTests);
+                Map<String, String> mod = new LinkedHashMap<>();
+                mod.put("gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+                mod.put("settings.gradle", "rootProject.name = 'demo'\n");
+                String game = Json.text(test, "minecraft", "26.3");
+                if (fromNeo) {
+                    mod.put("gradle.properties", "minecraft_version=" + game + "\nneo_version=" + ("1.21.1".equals(game) ? "21.1.250" : "26.3.0.103") + "\nmod_id=demo\n");
+                    mod.put("build.gradle", "plugins {\n\tid 'net.neoforged.moddev' version '2.0.148'\n}\n\nneoForge {\n\tversion = project.neo_version\n}\n\ndependencies {\n}\n");
+                    mod.put("src/main/resources/META-INF/neoforge.mods.toml", "modLoader=\"javafml\"\nloaderVersion=\"[1,)\"\nlicense=\"MIT\"\n\n[[mods]]\nmodId=\"demo\"\nversion=\"1.0.0\"\n");
+                    mod.put("src/main/java/demo/Demo.java", "package demo;\n\nimport net.neoforged.fml.common.Mod;\n\n@Mod(\"demo\")\npublic class Demo {\n}\n");
+                } else {
+                    mod.put("gradle.properties", "minecraft_version=" + game + "\nloader_version=0.19.5\nfabric_api_version=0.161.0+26.3\n");
+                    mod.put("build.gradle", "plugins {\n\tid 'net.fabricmc.fabric-loom' version '1.18.2'\n}\n\ndependencies {\n\tminecraft \"com.mojang:minecraft:${project.minecraft_version}\"\n\timplementation \"net.fabricmc:fabric-loader:${project.loader_version}\"\n\timplementation \"net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}\"\n}\n");
+                    mod.put("src/main/resources/fabric.mod.json", "{\n\t\"schemaVersion\": 1,\n\t\"id\": \"demo\",\n\t\"version\": \"1.0.0\",\n\t\"entrypoints\": {\n\t\t\"main\": [\"demo.Demo\"]\n\t}\n}\n");
+                    mod.put("src/main/java/demo/Demo.java", "package demo;\n\nimport net.fabricmc.api.ModInitializer;\n\npublic class Demo implements ModInitializer {\n\t@Override\n\tpublic void onInitialize() {\n\t}\n}\n");
+                }
+                mod.put("src/main/java/demo/" + name + ".java", Json.text(test, "from", ""));
+                for (var file : mod.entrySet()) {
+                    Path path = dir.resolve(file.getKey());
+                    Files.createDirectories(path.getParent());
+                    Files.writeString(path, file.getValue());
+                }
+                ProjectModel model = new ProjectModel(dir);
+                for (var answer : bridgeAnswers.entrySet()) {
+                    Path cache = model.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+                    Files.createDirectories(cache.getParent());
+                    Files.writeString(cache, answer.getValue());
+                }
+                String to = fromNeo ? "fabric" : "neoforge", origin = fromNeo ? "neoforge" : "fabric";
+                Map<String, Object> forward = new Convert(new Build(model, home, "", new Modaccel.Report(dir, "convert"))).run(
+                    new Modaccel.Options(new String[] { "convert", "--to", to }),
+                    false
+                );
+                String converted = Files.readString(dir.resolve("src/main/java/demo/" + name + ".java"));
+                if (!converted.equals(Json.text(test, "to", ""))) throw new AssertionError(
+                    "bridge " + b.get("id") + " test " + name + " to " + to + " gave:\n" + converted + "\n" + forward.get("details")
+                );
+                for (String mixin : LoaderRules.strings(test.get("mixins"))) if (
+                    !String.valueOf(forward.get("details")).contains(mixin)
+                ) throw new AssertionError("bridge " + b.get("id") + " test " + name + " did not list the bridge mixin " + mixin + ":\n" + forward.get("details"));
+                Map<String, Object> returned = new Convert(new Build(model, home, "", new Modaccel.Report(dir, "convert"))).run(
+                    new Modaccel.Options(new String[] { "convert", "--to", origin }),
+                    false
+                );
+                String again = Files.readString(dir.resolve("src/main/java/demo/" + name + ".java"));
+                if (!again.equals(Json.text(test, "back", Json.text(test, "from", "")))) throw new AssertionError(
+                    "bridge " + b.get("id") + " test " + name + " back to " + origin + " gave:\n" + again + "\n" + returned.get("details")
+                );
+                bridgeTests++;
+            }
+        }
+        check(bridgeTests >= 0, "every bridge test converts its source both ways (" + bridgeTests + " tests)");
+
         // A mod written for Fabric first keeps the Fabric API classes no rule rewrites through the Fabric bridge on NeoForge.
         Map<String, Object> fabricBridge = null;
         for (Object b : LoaderRules.list(rules.get("bridges"))) if ("fabric-on-neoforge".equals(Json.object(b).get("id"))) fabricBridge = Json.object(b);
