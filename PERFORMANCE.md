@@ -343,7 +343,8 @@ in every launch:
 4. runs every gate and stops the game.
 
 The metric is a timing probe's `inclusiveMsPerTick` (or another statistic of its
-exact row, such as `meanInclusiveMs`) or any numeric `report.json` path such as
+exact row, such as `meanInclusiveMs`), the CPU time of threads whose names match
+(`{"threadCpu": "^mymod-worker"}`, below), or any numeric `report.json` path such as
 `metrics.tick_ms.mean`. Choose a server-side or timed metric when launches are
 hidden: hidden clients are throttled, so FPS and frame intervals are not
 representative. Speedup is baseline ÷ candidate per pair; the report gives
@@ -447,6 +448,15 @@ are complete experiments for real NeoForge mods. `self-test` checks that every
 
 More experiment fields, for a mod whose cost is spread over threads:
 
+- `"metric": {"threadCpu": "^diorama-baker"}` is the operating system's CPU time, in ms per
+  second of the window, of every thread whose name matches (`threadCpuTime` in `report.json`:
+  each thread's ThreadMXBean CPU time at the window's end less at its start; a thread started
+  during the window counts from zero). It is exact, and only time on a processor counts. Prefer
+  it for a mod's own threads: on a busy machine execution samples also count a preempted thread
+  that is in Java code, so a sampled metric overstates a gain when the arms meet different load.
+  Shared threads (`Render thread`, `Server thread`) run the game's work too, so their CPU time
+  is a scope that shows a candidate didn't add to them, not a metric. `perf-template` writes it
+  for a mod's own threads and keeps their sampled CPU as a scope.
 - `"metric": {"mod": "diorama"}` is the mod's whole sampled CPU (`sampledCpuMsPerSecond`
   of its attribution row), every thread included. Add `"threads": "^(mymod-worker|Render thread)"`
   to count only the mod's threads whose names match: a mod's background job that takes up

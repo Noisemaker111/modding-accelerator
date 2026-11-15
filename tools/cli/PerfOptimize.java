@@ -114,15 +114,15 @@ final class PerfOptimize {
         }
         Map<String, Object> measure = Json.object(experiment.get("measure"));
         Map<String, Object> metric = Json.object(measure.get("metric"));
-        if (!metric.containsKey("probe") && !metric.containsKey("report") && !metric.containsKey("mod")) {
-            throw new IllegalArgumentException("measure.metric needs probe (a timing label), mod (a mod id's attribution row) or report (a report.json path such as metrics.tick_ms.mean)");
+        if (!metric.containsKey("probe") && !metric.containsKey("report") && !metric.containsKey("mod") && !metric.containsKey("threadCpu")) {
+            throw new IllegalArgumentException("measure.metric needs threadCpu (a thread-name pattern), probe (a timing label), mod (a mod id's attribution row) or report (a report.json path such as metrics.tick_ms.mean)");
         }
         Set<String> scopeNames = new HashSet<>();
         for (Object item : Json.array(measure.getOrDefault("scopes", List.of()))) {
             Map<String, Object> scope = Json.object(item);
             if (Json.text(scope, "name", "").isBlank() || !scopeNames.add(scope.get("name").toString())) throw new IllegalArgumentException("measure.scopes need unique names");
-            if (!scope.containsKey("probe") && !scope.containsKey("report") && !scope.containsKey("mod")) {
-                throw new IllegalArgumentException("Scope " + scope.get("name") + " needs probe, mod or report");
+            if (!scope.containsKey("probe") && !scope.containsKey("report") && !scope.containsKey("mod") && !scope.containsKey("threadCpu")) {
+                throw new IllegalArgumentException("Scope " + scope.get("name") + " needs threadCpu, probe, mod or report");
             }
         }
         for (Object item : Json.array(experiment.getOrDefault("reset", List.of()))) {
@@ -430,6 +430,22 @@ final class PerfOptimize {
     }
 
     static double metric(Map<String, Object> report, Map<String, Object> metric) {
+        if (metric.containsKey("threadCpu")) {
+            // The operating system's CPU time of the threads whose names match, over the window: exact, and a
+            // preempted thread's wait is not counted, as it is in execution samples on a busy machine.
+            java.util.regex.Pattern threads = java.util.regex.Pattern.compile(metric.get("threadCpu").toString());
+            String statistic = Json.text(metric, "statistic", "cpuMsPerSecond");
+            double total = 0;
+            int matched = 0;
+            for (Object item : Json.array(report.getOrDefault("threadCpuTime", List.of()))) {
+                Map<String, Object> row = Json.object(item);
+                if (!threads.matcher(row.get("thread").toString()).find()) continue;
+                matched++;
+                total += ((Number) row.get(statistic)).doubleValue();
+            }
+            if (matched == 0) throw new IllegalStateException("No thread matching " + metric.get("threadCpu") + " has CPU time in " + report.get("recording"));
+            return total;
+        }
         if (metric.containsKey("report")) {
             Object value = PerfAdvice.value(report, metric.get("report").toString());
             if (!(value instanceof Number number) || !Double.isFinite(number.doubleValue())) {

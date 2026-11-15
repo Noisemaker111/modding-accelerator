@@ -30,10 +30,46 @@
   "warmup": 0,
   "probes": "scopes.json",
   "metric": {
-   "mod": "diorama",
-   "threads": "^(diorama-baker|Render thread)"
+   "threadCpu": "^diorama-baker"
   },
   "scopes": [
+   {
+    "name": "liveMappingSampledCpu",
+    "mod": "diorama",
+    "threads": "^(diorama-baker|Render thread)"
+   },
+   {
+    "name": "dioramaThreadsCpuTime",
+    "threadCpu": "^diorama-"
+   },
+   {
+    "name": "importCpuTime",
+    "threadCpu": "^diorama-saved-chunks"
+   },
+   {
+    "name": "renderThreadCpuTime",
+    "threadCpu": "^Render thread$"
+   },
+   {
+    "name": "serverThreadCpuTime",
+    "threadCpu": "^Server thread$"
+   },
+   {
+    "name": "serverTickMs",
+    "report": "metrics.tick_ms.mean"
+   },
+   {
+    "name": "gcPauseTotalMs",
+    "report": "gcPauseTotalMs"
+   },
+   {
+    "name": "gcPauseMeanMs",
+    "report": "metrics.gc_pause_ms.mean"
+   },
+   {
+    "name": "heapUsedMeanBytes",
+    "report": "metrics.heap_used_bytes.mean"
+   },
    {
     "name": "dioramaAllThreadsCpu",
     "mod": "diorama"
