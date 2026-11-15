@@ -622,6 +622,15 @@ final class Target {
 
     /** One build script without the settings buildDslFollows names. */
     static String removedDsl(String text, boolean gradle8) {
+        return removedDsl(text, gradle8, false);
+    }
+
+    /**
+     * Also, for Gradle 9: project-level sourceCompatibility and targetCompatibility belong to the java extension
+     * (AppleSkin 1.20.1 -> 1.21.1 moves to Gradle 9 with Loom 1.18 and stopped on them).
+     */
+    static String removedDsl(String text, boolean gradle8, boolean gradle9) {
+        if (gradle9) text = text.replaceAll("(?m)^(sourceCompatibility|targetCompatibility)([ \\t]*=)", "java.$1$2");
         if (gradle8) text = text.replaceAll("(?m)^([ \\t]*)classifier(\\s*=\\s*|\\s+)([\"'])", "$1archiveClassifier = $3");
         return text.replaceAll("(?m)^[ \\t]*shareCaches\\(\\)[ \\t]*\\r?\\n", "");
     }
@@ -629,7 +638,8 @@ final class Target {
     private static void buildDslFollows(Setup setup, Build build, boolean unused) throws Exception {
         Path wrapper = build.project.root.resolve("gradle/wrapper/gradle-wrapper.properties");
         Matcher gradle = Pattern.compile("gradle-([0-9]+)\\.").matcher(Files.isRegularFile(wrapper) ? setup.text(wrapper) : "");
-        boolean gradle8 = gradle.find() && Integer.parseInt(gradle.group(1)) >= 8;
+        int major = gradle.find() ? Integer.parseInt(gradle.group(1)) : 0;
+        boolean gradle8 = major >= 8, gradle9 = major >= 9;
         for (Path script : build.project.inputs()) {
             // build.gradle and the scripts it applies (ModMenu's gradle/*.gradle via apply from:), not settings.
             String file = script.getFileName().toString();
@@ -640,7 +650,7 @@ final class Target {
             } catch (java.nio.charset.CharacterCodingException notText) {
                 continue; // a script in another encoding (owo-lib has one); nothing to rewrite in it
             }
-            String text = removedDsl(before, gradle8);
+            String text = removedDsl(before, gradle8, gradle9);
             if (text.equals(before)) continue;
             setup.originals.putIfAbsent(script, before);
             setup.texts.put(script, text);
@@ -856,7 +866,8 @@ final class Target {
     }
 
     private static void setProperty(Setup setup, Path properties, String key, String value) throws IOException {
-        Matcher line = Pattern.compile("(?m)^([ \\t]*" + Pattern.quote(key) + "[ \\t]*=[ \\t]*)(\\S*)").matcher(
+        // The whole value: a range such as ">=1.21.4 <1.21.5" is one property (Trash Cans' minecraft_dependency).
+        Matcher line = Pattern.compile("(?m)^([ \\t]*" + Pattern.quote(key) + "[ \\t]*=[ \\t]*)([^\\r\\n]*?)[ \\t]*$").matcher(
             setup.text(properties)
         );
         if (!line.find()) throw new IOException(

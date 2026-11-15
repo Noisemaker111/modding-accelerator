@@ -942,7 +942,8 @@ public final class VersionMap {
     record Err(String file, int line, String message, String source, int caret, String symbol, String location) {}
 
     static List<Err> readErrors(Path log) throws IOException {
-        List<String> lines = Files.readAllLines(log, StandardCharsets.UTF_8);
+        // javac on Windows writes in the console's code page: bytes that are not UTF-8 never stop the repair (owo-lib).
+        List<String> lines = new String(Files.readAllBytes(log), StandardCharsets.UTF_8).lines().toList();
         // Gradle indents javac's lines in multi-project builds.
         // A path starts like one (Port.FILE): Gradle's summary repeats errors with the previous line glued on, and those are skipped.
         Pattern head = Pattern.compile(

@@ -1320,6 +1320,11 @@ public final class PortableTests {
             "classifier and shareCaches() rewritten for Gradle 8 and Loom 1.x"
         );
         check(Target.removedDsl("    classifier \"dev\"\n", false).equals("    classifier \"dev\"\n"), "a classifier stays on Gradle 7");
+        check(
+            Target.removedDsl("sourceCompatibility = JavaVersion.VERSION_17\ntargetCompatibility = JavaVersion.VERSION_17\njava { withSourcesJar() }\n", true, true)
+                .equals("java.sourceCompatibility = JavaVersion.VERSION_17\njava.targetCompatibility = JavaVersion.VERSION_17\njava { withSourcesJar() }\n"),
+            "Gradle 9: project-level compatibility settings move to the java extension"
+        );
         // Architectury Loom is Loom: its version is read like Fabric Loom's, so a port can raise it (BetterF3 1.5-SNAPSHOT).
         check(
             "1.5-SNAPSHOT".equals(ProjectModel.loomVersion(new Properties(), List.of("plugins {\n    id \"dev.architectury.loom\" version \"1.5-SNAPSHOT\" apply false\n}\n"))),
