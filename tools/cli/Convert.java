@@ -2549,6 +2549,7 @@ final class Convert {
                 Matcher.quoteReplacement("import " + bridgePackage + "." + c.getValue() + ";")
             );
             out = eventClassesInListeners(file, out);
+            out = sideQueries(out);
             if (!out.equals(text)) {
                 write(file, out);
                 applied.computeIfAbsent("neoforge-bridge", k -> new ArrayList<>()).add(file);
@@ -2574,6 +2575,19 @@ final class Convert {
             bridgePackage +
             " holds NeoForge's registration, event bus, mod container, config and lifecycle events written on Fabric's API, for the code that uses them."
         );
+    }
+
+    /**
+     * NeoForge's Dist answers isClient() and isDedicatedServer(); on Fabric the side is EnvType, which has neither (the
+     * physical-side rule makes Dist EnvType). The side the bridge's FMLEnvironment and FMLLoader give is compared instead.
+     */
+    static String sideQueries(String text) {
+        Matcher m = Pattern.compile(
+            "\\b(FMLEnvironment\\.getDist\\(\\)|FMLEnvironment\\.dist|FMLLoader\\.getCurrent\\(\\)\\.getDist\\(\\)|FMLLoader\\.getDist\\(\\))\\.(isClient|isDedicatedServer)\\(\\)"
+        ).matcher(text);
+        if (!m.find()) return text;
+        String out = m.reset().replaceAll(r -> Matcher.quoteReplacement("(" + r.group(1) + " == EnvType." + (r.group(2).equals("isClient") ? "CLIENT" : "SERVER") + ")"));
+        return LoaderRules.addImport(out, "net.fabricmc.api.EnvType");
     }
 
     /** The mixin config of the bridge's mixins this mod needs (src/main/resources), or null when it needs none. */

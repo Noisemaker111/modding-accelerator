@@ -1487,7 +1487,11 @@
     "net.neoforged.neoforge.server.ServerLifecycleHooks": "ServerLifecycleHooks",
     "net.neoforged.fml.event.IModBusEvent": "IModBusEvent",
     "net.neoforged.fml.loading.FMLEnvironment": "FMLEnvironment",
-    "net.neoforged.fml.ModList": "ModList"
+    "net.neoforged.fml.ModList": "ModList",
+    "net.neoforged.fml.loading.FMLLoader": "FMLLoader",
+    "net.neoforged.fml.ModLoadingContext": "ModLoadingContext",
+    "net.neoforged.fml.ModLoader": "ModLoader",
+    "net.neoforged.fml.util.ObfuscationReflectionHelper": "ObfuscationReflectionHelper"
    },
    "symbols": {
     "neoforge": [
@@ -1575,7 +1579,25 @@
      "fml|net.neoforged.fml.loading.FMLEnvironment#isProduction",
      "fml|net.neoforged.fml.ModList#get",
      "fml|net.neoforged.fml.ModList#isLoaded",
-     "fml|net.neoforged.fml.ModList#getModContainerById"
+     "fml|net.neoforged.fml.ModList#getModContainerById",
+     "fml|net.neoforged.fml.loading.FMLLoader#getCurrent",
+     "fml|net.neoforged.fml.loading.FMLLoader#getDist",
+     "fml|net.neoforged.fml.loading.FMLLoader#isProduction",
+     "fml|net.neoforged.fml.loading.FMLLoader#getGameDir",
+     "fml|net.neoforged.fml.ModLoadingContext#get",
+     "fml|net.neoforged.fml.ModLoadingContext#getActiveContainer",
+     "fml|net.neoforged.fml.ModLoadingContext#getActiveNamespace",
+     "fml|net.neoforged.fml.ModLoadingContext#registerExtensionPoint",
+     "fml|net.neoforged.fml.ModLoader#postEvent",
+     "fml|net.neoforged.fml.ModLoader#postEventWithReturn",
+     "fml|net.neoforged.fml.ModLoader#postEventWrapContainerInModOrder",
+     "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#getPrivateValue",
+     "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#setPrivateValue",
+     "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#findMethod",
+     "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#findConstructor",
+     "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#findField",
+     "distmarker|net.neoforged.api.distmarker.Dist#isClient",
+     "distmarker|net.neoforged.api.distmarker.Dist#isDedicatedServer"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -1616,7 +1638,8 @@
      "fabric-api|net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#registerKeyMapping",
      "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
      "fabric-loader|net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
-     "fabric-loader|net.fabricmc.loader.api.FabricLoader#isModLoaded"
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#isModLoaded",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getGameDir"
     ]
    },
    "test": {
@@ -1745,6 +1768,12 @@
      "name": "Listener",
      "from": "package demo;\n\nimport net.neoforged.bus.api.SubscribeEvent;\nimport net.neoforged.fml.common.EventBusSubscriber;\nimport net.neoforged.neoforge.event.entity.living.LivingDeathEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Listener {\n\t@SubscribeEvent\n\tpublic static void onDeath(LivingDeathEvent event) {\n\t\tevent.getEntity().discard();\n\t}\n}\n",
      "to": "package demo;\n\nimport demo.loaderbridge.SubscribeEvent;\nimport demo.loaderbridge.EventBusSubscriber;\nimport demo.loaderbridge.LivingDeathEvent;\n\n@EventBusSubscriber(modid = \"demo\")\npublic final class Listener {\n\t@SubscribeEvent\n\tpublic static void onDeath(LivingDeathEvent event) {\n\t\tevent.getEntity().discard();\n\t}\n}\n"
+    },
+    {
+     "name": "Side",
+     "from": "package demo;\n\nimport net.neoforged.fml.ModLoadingContext;\nimport net.neoforged.fml.loading.FMLLoader;\nimport net.neoforged.fml.util.ObfuscationReflectionHelper;\n\npublic final class Side {\n\tstatic boolean client() {\n\t\treturn FMLLoader.getCurrent().getDist().isClient();\n\t}\n\n\tstatic String id() {\n\t\treturn ModLoadingContext.get().getActiveContainer().getModId();\n\t}\n\n\tstatic Object field(Object target) {\n\t\treturn ObfuscationReflectionHelper.getPrivateValue(Object.class, target, \"x\");\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.loaderbridge.ModLoadingContext;\nimport demo.loaderbridge.FMLLoader;\nimport demo.loaderbridge.ObfuscationReflectionHelper;\nimport net.fabricmc.api.EnvType;\n\npublic final class Side {\n\tstatic boolean client() {\n\t\treturn (FMLLoader.getCurrent().getDist() == EnvType.CLIENT);\n\t}\n\n\tstatic String id() {\n\t\treturn ModLoadingContext.get().getActiveContainer().getModId();\n\t}\n\n\tstatic Object field(Object target) {\n\t\treturn ObfuscationReflectionHelper.getPrivateValue(Object.class, target, \"x\");\n\t}\n}\n",
+     "back": "package demo;\n\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.fml.ModLoadingContext;\nimport net.neoforged.fml.loading.FMLLoader;\nimport net.neoforged.fml.util.ObfuscationReflectionHelper;\n\npublic final class Side {\n\tstatic boolean client() {\n\t\treturn (FMLLoader.getCurrent().getDist() == Dist.CLIENT);\n\t}\n\n\tstatic String id() {\n\t\treturn ModLoadingContext.get().getActiveContainer().getModId();\n\t}\n\n\tstatic Object field(Object target) {\n\t\treturn ObfuscationReflectionHelper.getPrivateValue(Object.class, target, \"x\");\n\t}\n}\n"
     }
    ]
   },

@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "5e7159181a6b6348d3ed7f3cdc9c5f9078dc8142ef1ddb5c2f620cc6150ef3b2",
+ "rules_sha256": "60336003b39ff5394158c56ed68e8338030017b1df475d92798fcf340dce88e4",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -930,6 +930,10 @@
     "found": true
    },
    {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getGameDir",
+    "found": true
+   },
+   {
     "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister#createBlocks",
     "found": true
    },
@@ -1267,6 +1271,78 @@
    },
    {
     "symbol": "fml|net.neoforged.fml.ModList#getModContainerById",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.loading.FMLLoader#getCurrent",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.loading.FMLLoader#getDist",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.loading.FMLLoader#isProduction",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.loading.FMLLoader#getGameDir",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModLoadingContext#get",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModLoadingContext#getActiveContainer",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModLoadingContext#getActiveNamespace",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModLoadingContext#registerExtensionPoint",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModLoader#postEvent",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModLoader#postEventWithReturn",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModLoader#postEventWrapContainerInModOrder",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#getPrivateValue",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#setPrivateValue",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#findMethod",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#findConstructor",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.util.ObfuscationReflectionHelper#findField",
+    "found": true
+   },
+   {
+    "symbol": "distmarker|net.neoforged.api.distmarker.Dist#isClient",
+    "found": true
+   },
+   {
+    "symbol": "distmarker|net.neoforged.api.distmarker.Dist#isDedicatedServer",
     "found": true
    }
   ],
