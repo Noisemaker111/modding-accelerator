@@ -1666,6 +1666,7 @@ final class Convert {
             entrypoints.computeIfAbsent("client", k -> new ArrayList<>()).add(name);
         }
         rewriteSources("neoforge", "fabric");
+        dropNeoForgeTabOrder();
         if (bridgeUsed) applyBridge();
         if (menu != null) {
             String file = classFile(menu);
@@ -1708,6 +1709,46 @@ final class Convert {
         write("src/main/resources/fabric.mod.json", fabricJson(toml, mod, entrypoints, minecraft, menu != null));
         delete(metaFile);
         leftovers(List.of("net.neoforged."));
+    }
+
+    /**
+     * NeoForge adds withTabsBefore and withTabsAfter to the game's creative tab builder to order tabs; Fabric's builder has
+     * neither, so the calls go (the tab keeps its items and title, and takes the next free place) and a note says so.
+     */
+    void dropNeoForgeTabOrder() throws Exception {
+        int dropped = 0;
+        for (String file : javaFiles()) {
+            String text = read(file);
+            String out = dropCalls(text, List.of("withTabsBefore", "withTabsAfter"));
+            if (!out.equals(text)) {
+                write(file, out);
+                dropped++;
+                applied.computeIfAbsent("creative-tab-order", k -> new ArrayList<>()).add(file);
+            }
+        }
+        if (dropped > 0) notes.add(
+            "Creative tab order: NeoForge's withTabsBefore and withTabsAfter have no Fabric counterpart, so the converted tabs take the next free place (" +
+            dropped +
+            " file(s))."
+        );
+    }
+
+    /** Removes chained calls .name(...) (balanced arguments, code only) from a text. */
+    static String dropCalls(String text, List<String> names) {
+        boolean[] code = LoaderRules.code(text);
+        Matcher m = Pattern.compile("\\s*\\.\\s*(?:" + String.join("|", names) + ")\\s*\\(").matcher(text);
+        StringBuilder out = new StringBuilder();
+        int last = 0;
+        while (m.find()) {
+            int open = m.end() - 1;
+            if (!code[open] || open < last) continue;
+            int end = LoaderRules.close(text, code, open);
+            if (end < 0) continue;
+            out.append(text, last, m.start());
+            last = end;
+        }
+        out.append(text, last, text.length());
+        return out.toString();
     }
 
     // ---- the NeoForge bridge on Fabric ---------------------------------------------------------------------
@@ -2413,7 +2454,13 @@ final class Convert {
             (remap ? "id 'net.fabricmc.fabric-loom-remap' version '" : "id 'net.fabricmc.fabric-loom' version '") +
             loom +
             "'" +
+            (neoGradle && block(gradle, "idea") != null && !gradle.matches("(?s).*id\\s*\\(?\\s*['\"]idea['\"].*")
+                    ? "\n" + plugin.group(1) + "id 'idea'"
+                    : "") +
             gradle.substring(plugin.end());
+        if (neoGradle && gradle.contains("\n" + plugin.group(1) + "id 'idea'")) notes.add(
+            "Build: NeoGradle applies Gradle's idea plugin itself and Loom does not, so the build's idea block gets it from its plugins block."
+        );
         int[] neo = block(gradle, "neoForge");
         StringBuilder loomBlock = new StringBuilder();
         if (neo != null) {

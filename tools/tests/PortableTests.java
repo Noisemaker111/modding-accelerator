@@ -1076,6 +1076,13 @@ public final class PortableTests {
             ),
             "a dependency's loader word changes only as a whole part of its artifact name; loader-neutral artifacts are told apart"
         );
+        check(
+            Convert.dropCalls(
+                "CreativeModeTab.builder()\n\t.title(t)\n\t.withTabsBefore(CreativeModeTabs.COMBAT)\n\t.icon(() -> f(\".withTabsAfter(\"))\n\t.build()",
+                List.of("withTabsBefore", "withTabsAfter")
+            ).equals("CreativeModeTab.builder()\n\t.title(t)\n\t.icon(() -> f(\".withTabsAfter(\"))\n\t.build()"),
+            "NeoForge's tab order calls leave a builder chain whole, and a string that names one is kept"
+        );
         List<String> removed = new ArrayList<>();
         String script = Convert.dropLoomTypes(
             "import net.fabricmc.loom.task.prod.ClientProductionRunTask\nimport java.util.List\n\nplugins {\n\tid 'java'\n}\n\n" +
