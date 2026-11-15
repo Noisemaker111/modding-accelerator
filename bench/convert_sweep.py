@@ -58,16 +58,24 @@ for (var registry : net.minecraft.core.registries.BuiltInRegistries.REGISTRY) {
 return out.toString();
 """
 
-# For a mod that registers nothing: which of its mixins Mixin applied to which game classes. Every target of the mixin
-# configs whose package is the mod's is loaded (not initialised); a merged method carries @MixinMerged naming its mixin,
-# and an accessor or interface mixin is an interface the target now implements.
+# For a mod that registers nothing: which of its mixins Mixin applied to which game classes. The configs Mixin selected
+# live in its active transformer's processor (Mixins.getConfigs() is empty once they are selected). Every target of a
+# config whose package is the mod's is loaded (not initialised); a merged method carries @MixinMerged (kept at run time)
+# naming its mixin, and an accessor or interface mixin is an interface the target now implements.
 MIXIN_SNIPPET = """
 java.util.Set<String> out = new java.util.TreeSet<>();
-ClassLoader loader = Thread.currentThread().getContextClassLoader();
-for (var config : org.spongepowered.asm.mixin.Mixins.getConfigs()) {
-    String pkg = config.getConfig().getMixinPackage();
+ClassLoader loader = net.minecraft.server.MinecraftServer.class.getClassLoader();
+Object transformer = org.spongepowered.asm.mixin.MixinEnvironment.getCurrentEnvironment().getActiveTransformer();
+java.lang.reflect.Field processorField = transformer.getClass().getDeclaredField("processor");
+processorField.setAccessible(true);
+Object processor = processorField.get(transformer);
+java.lang.reflect.Field configsField = processor.getClass().getDeclaredField("configs");
+configsField.setAccessible(true);
+for (Object item : (java.util.List<?>) configsField.get(processor)) {
+    var config = (org.spongepowered.asm.mixin.extensibility.IMixinConfig) item;
+    String pkg = config.getMixinPackage();
     if (pkg == null || !(PACKAGES)) continue;
-    for (String target : config.getConfig().getTargets()) {
+    for (String target : config.getTargets()) {
         String name = target.replace('/', '.');
         try {
             Class<?> c = Class.forName(name, false, loader);
