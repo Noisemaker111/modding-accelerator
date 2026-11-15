@@ -272,14 +272,14 @@
     {
       "from": "fabric",
       "to": "neoforge",
-      "status": "unbuilt",
-      "detail": "Different metadata, entrypoints, events, registries and mixin namespaces. First step: one small mod, measured."
+      "status": "behaviour",
+      "detail": "modaccel convert, no hand edits. Auto Omen 0.1.0 (Fabric 26.3) to NeoForge 26.3.0.103 in 22 s including the compile; its own in-game raid self test passed 23 of 23 checks on NeoForge, the same 23 as on Fabric. Pride Flags 1.0.9 (Fabric 26.1.2) to NeoForge 26.1.2.126 in 182 s on a cold cache; its converted data generation wrote the same 189 files as Fabric's (block loot gains vanilla's random_sequence), and in the game its 13 blocks and 26 items registered, flags ignite 30 and burn 60, the village shepherd chest gained 26 loot pools, 48 recipes loaded and the flags rendered."
     },
     {
       "from": "neoforge",
       "to": "fabric",
-      "status": "unbuilt",
-      "detail": "Same work in reverse; no adapter exists yet."
+      "status": "behaviour",
+      "detail": "modaccel convert, no hand edits, Minecraft 26.1 and later only. The NeoForge Auto Omen made by the conversion above went back to Fabric (Loom 1.18.4, Fabric API 0.166.2+26.3) with every Java file byte for byte the original, and passed its own in-game raid self test, 23 of 23. No mod written for NeoForge first has been converted yet."
     },
     {
       "from": "fabric",

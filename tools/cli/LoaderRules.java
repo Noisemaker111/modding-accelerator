@@ -29,8 +29,14 @@ final class LoaderRules {
     final String from, to, modid;
 
     LoaderRules(Map<String, Object> rules, String from, String to, String modid) {
-        if (!Set.of("fabric", "neoforge").contains(from) || !Set.of("fabric", "neoforge").contains(to) || from.equals(to)) {
-            throw new IllegalArgumentException("Loader rules run between fabric and neoforge, not " + from + " to " + to);
+        if (
+            !Set.of("fabric", "neoforge").contains(from) ||
+            !Set.of("fabric", "neoforge").contains(to) ||
+            from.equals(to)
+        ) {
+            throw new IllegalArgumentException(
+                "Loader rules run between fabric and neoforge, not " + from + " to " + to
+            );
         }
         this.rules = rules;
         this.from = from;
@@ -122,7 +128,8 @@ final class LoaderRules {
             } else if (c == '$') {
                 int j = i + 1;
                 while (j < pattern.length() && ident(pattern.charAt(j))) j++;
-                if (pattern.startsWith(".name", j) && (j + 5 == pattern.length() || !ident(pattern.charAt(j + 5)))) j += 5;
+                if (pattern.startsWith(".name", j) && (j + 5 == pattern.length() || !ident(pattern.charAt(j + 5)))) j +=
+                    5;
                 out.add(pattern.substring(i, j));
                 i = j;
             } else if (ident(c)) {
@@ -211,7 +218,11 @@ final class LoaderRules {
             if (at < 0) break;
             from = at + 1;
             if (!code[at]) continue;
-            if (ident(anchor.charAt(0)) && at > 0 && (ident(s.charAt(at - 1)) || (first == 0 && s.charAt(at - 1) == '.'))) continue;
+            if (
+                ident(anchor.charAt(0)) &&
+                at > 0 &&
+                (ident(s.charAt(at - 1)) || (first == 0 && s.charAt(at - 1) == '.'))
+            ) continue;
             int start = at;
             if (first > 0) {
                 // A pattern that opens with holes (a statement's target) starts at the statement's start.
@@ -250,7 +261,7 @@ final class LoaderRules {
             else if (c == ')' || c == ']' || c == '}') depth--;
             else if (depth == 0 && !(ident(c) || c == '.' || c == '"' || c == '\'')) return false;
         }
-        return !expression.startsWith("new ") || expression.endsWith(")") && depth == 0;
+        return !expression.startsWith("new ") || (expression.endsWith(")") && depth == 0);
     }
 
     /** Fills a template's holes. A hole written before "." is parenthesised when it is not simple; $x.name is x's last name. */
@@ -339,7 +350,9 @@ final class LoaderRules {
             last = m.end();
         }
         if (insert < 0 && last >= 0) {
-            if (last > 0 && text.charAt(last - 1) != '\n') return text.substring(0, last) + "\n" + line + text.substring(last);
+            if (last > 0 && text.charAt(last - 1) != '\n') return (
+                text.substring(0, last) + "\n" + line + text.substring(last)
+            );
             insert = last;
         }
         if (insert < 0) {
@@ -366,7 +379,9 @@ final class LoaderRules {
     static String dropImport(String text, String name) {
         String simple = name.substring(name.lastIndexOf('.') + 1);
         if (uses(text, simple)) return text;
-        return tidy(Pattern.compile("(?m)^import\\s+" + Pattern.quote(name) + "\\s*;[^\\n]*\\n?").matcher(text).replaceAll(""));
+        return tidy(
+            Pattern.compile("(?m)^import\\s+" + Pattern.quote(name) + "\\s*;[^\\n]*\\n?").matcher(text).replaceAll("")
+        );
     }
 
     /** After imports are removed: no run of blank lines between the package line and the code. */
@@ -380,7 +395,14 @@ final class LoaderRules {
         String simple = written.contains(".") ? written.substring(0, written.indexOf('.')) : written;
         String head = outer.substring(outer.lastIndexOf('.') + 1);
         if (!simple.equals(head)) return false;
-        return imported(text, outer) || Pattern.compile("(?m)^import\\s+" + Pattern.quote(outer.substring(0, outer.lastIndexOf('.'))) + "\\.\\*\\s*;").matcher(text).find();
+        return (
+            imported(text, outer) ||
+            Pattern.compile(
+                "(?m)^import\\s+" + Pattern.quote(outer.substring(0, outer.lastIndexOf('.'))) + "\\.\\*\\s*;"
+            )
+                .matcher(text)
+                .find()
+        );
     }
 
     static List<Object> list(Object value) {
@@ -405,7 +427,9 @@ final class LoaderRules {
         String source = Json.text(rule, from, ""), target = Json.text(rule, to, "");
         String text = result.text;
         if (!imported(text, source)) return;
-        String sourceSimple = source.substring(source.lastIndexOf('.') + 1), targetSimple = target.substring(target.lastIndexOf('.') + 1);
+        String sourceSimple = source.substring(source.lastIndexOf('.') + 1), targetSimple = target.substring(
+            target.lastIndexOf('.') + 1
+        );
         Map<String, Object> members = Json.object(rule.get("members"));
         Map<String, String> map = new LinkedHashMap<>();
         for (var entry : members.entrySet()) {
@@ -414,7 +438,9 @@ final class LoaderRules {
         }
         StringBuilder out = new StringBuilder();
         boolean[] code = code(text);
-        Matcher m = Pattern.compile("(?<![\\w$.])" + Pattern.quote(sourceSimple) + "(?:\\s*\\.\\s*([A-Z_][A-Z0-9_]*))?(?![\\w$])").matcher(text);
+        Matcher m = Pattern.compile(
+            "(?<![\\w$.])" + Pattern.quote(sourceSimple) + "(?:\\s*\\.\\s*([A-Z_][A-Z0-9_]*))?(?![\\w$])"
+        ).matcher(text);
         int last = 0;
         while (m.find()) {
             if (!code[m.start()]) continue;
@@ -426,7 +452,9 @@ final class LoaderRules {
         }
         out.append(text, last, text.length());
         text = out.toString();
-        text = Pattern.compile("(?m)^import\\s+" + Pattern.quote(source) + "\\s*;[^\\n]*\\n?").matcher(text).replaceAll("");
+        text = Pattern.compile("(?m)^import\\s+" + Pattern.quote(source) + "\\s*;[^\\n]*\\n?")
+            .matcher(text)
+            .replaceAll("");
         text = addImport(text, target);
         if (!text.equals(result.text)) {
             result.text = text;
@@ -439,9 +467,9 @@ final class LoaderRules {
         Matcher m = METHOD.matcher(text);
         int start = -1;
         while (m.find() && m.start() < index) start = m.start();
-        if (start < 0) return new int[] {0, text.length()};
+        if (start < 0) return new int[] { 0, text.length() };
         int open = text.indexOf('{', start), end = close(text, code(text), open);
-        return end < 0 || end < index ? new int[] {0, text.length()} : new int[] {start, end};
+        return end < 0 || end < index ? new int[] { 0, text.length() } : new int[] { start, end };
     }
 
     /**
@@ -449,7 +477,13 @@ final class LoaderRules {
      * is inlined, so the rule's pattern sees registry.add(...) as FlammableBlockRegistry.getDefaultInstance().add(...).
      */
     static String inline(String text, String type, String value) {
-        Pattern declaration = Pattern.compile("(?m)^[ \\t]*(?:final\\s+)?" + Pattern.quote(type) + "\\s+(\\w+)\\s*=\\s*" + Pattern.quote(value) + "\\s*;[ \\t]*\\n");
+        Pattern declaration = Pattern.compile(
+            "(?m)^[ \\t]*(?:final\\s+)?" +
+            Pattern.quote(type) +
+            "\\s+(\\w+)\\s*=\\s*" +
+            Pattern.quote(value) +
+            "\\s*;[ \\t]*\\n"
+        );
         while (true) {
             Matcher m = declaration.matcher(text);
             boolean done = true;
@@ -459,7 +493,9 @@ final class LoaderRules {
                 int[] span = scopeSpan(text, m.start());
                 String rest = text.substring(m.end(), span[1]);
                 boolean[] code = code(rest);
-                Matcher use = Pattern.compile("(?<![\\w$.])" + Pattern.quote(name) + "(?![\\w$])(\\s*\\.)?").matcher(rest);
+                Matcher use = Pattern.compile("(?<![\\w$.])" + Pattern.quote(name) + "(?![\\w$])(\\s*\\.)?").matcher(
+                    rest
+                );
                 boolean onlyReceiver = true;
                 StringBuilder out = new StringBuilder();
                 int last = 0;
@@ -505,11 +541,16 @@ final class LoaderRules {
         for (String name : needed) text = dropImport(text, name);
         result.text = text;
         result.applied.add(Json.text(rule, "id", "expression"));
-        if (rule.get("accessTransformers") instanceof Map<?, ?> at) result.accessTransformers.addAll(strings(Json.object(at).get(to)));
+        if (rule.get("accessTransformers") instanceof Map<?, ?> at) result.accessTransformers.addAll(
+            strings(Json.object(at).get(to))
+        );
     }
 
     String modBus() {
-        return render(Json.text(Json.object(Json.object(rules.get("buses")).get("mod")), "neoforge", ""), Map.of("$modid", quote(modid)));
+        return render(
+            Json.text(Json.object(Json.object(rules.get("buses")).get("mod")), "neoforge", ""),
+            Map.of("$modid", quote(modid))
+        );
     }
 
     static String quote(String value) {
@@ -538,7 +579,11 @@ final class LoaderRules {
             if (from.equals("neoforge")) {
                 // The listener must register the same field or variable the first statement assigned.
                 String assigned = holes.get("$target"), registered = holes.get("$target.name");
-                if (registered != null && assigned != null && !assigned.matches("(?s).*\\b" + Pattern.quote(registered) + "\\s*$")) continue;
+                if (
+                    registered != null &&
+                    assigned != null &&
+                    !assigned.matches("(?s).*\\b" + Pattern.quote(registered) + "\\s*$")
+                ) continue;
             }
             String indent = indent(text, match.start());
             String rendered = render(target, holes).replace("\n", "\n" + indent);
@@ -629,7 +674,9 @@ final class LoaderRules {
         return false;
     }
 
-    static final Pattern METHOD = Pattern.compile("(?m)^[ \\t]*(?:(?:public|protected|private|static|final|synchronized|abstract|default)\\s+)*(?:<[^>]*>\\s*)?[\\w.<>\\[\\],? ]+\\s+\\w+\\s*\\([^;{}]*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\{");
+    static final Pattern METHOD = Pattern.compile(
+        "(?m)^[ \\t]*(?:(?:public|protected|private|static|final|synchronized|abstract|default)\\s+)*(?:<[^>]*>\\s*)?[\\w.<>\\[\\],? ]+\\s+\\w+\\s*\\([^;{}]*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\{"
+    );
 
     /** The method around index: from its declaration to its closing brace (the whole text when none is found). */
     static String scope(String text, int index) {
@@ -655,7 +702,7 @@ final class LoaderRules {
     static String[] eventParts(String event) {
         int hash = event.indexOf('#');
         String owner = event.substring(0, hash), member = event.substring(hash + 1);
-        return new String[] {owner, member};
+        return new String[] { owner, member };
     }
 
     void eventToNeoForge(Result result, Map<String, Object> rule) {
@@ -678,7 +725,15 @@ final class LoaderRules {
             Callback callback = callback(match.holes().get("$callback"), params);
             String where = ownerSimple + "." + member.replaceAll("\\(.*", "(...)");
             if (callback == null || callback.params().size() != params.size()) {
-                result.left.add(new Left(line(text, match.start()), where, "the listener is not a lambda or method reference with " + params.size() + " parameter(s); convert it by hand"));
+                result.left.add(
+                    new Left(
+                        line(text, match.start()),
+                        where,
+                        "the listener is not a lambda or method reference with " +
+                        params.size() +
+                        " parameter(s); convert it by hand"
+                    )
+                );
                 continue;
             }
             String ev = fresh(scope(text, match.start()), "event", "neoEvent", "loaderEvent");
@@ -713,14 +768,28 @@ final class LoaderRules {
                 prelude.add("var " + name + " = " + render(String.valueOf(arg), holes) + ";");
             }
             if (missing != null) {
-                result.left.add(new Left(line(text, match.start()), where, "the listener uses " + missing + ", which " + reference(eventClass) + " has no counterpart for"));
+                result.left.add(
+                    new Left(
+                        line(text, match.start()),
+                        where,
+                        "the listener uses " + missing + ", which " + reference(eventClass) + " has no counterpart for"
+                    )
+                );
                 continue;
             }
             List<String> body = new ArrayList<>(prelude);
             body.addAll(lines);
-            String busExpression = bus.equals("mod") ? modBus() : Json.text(Json.object(Json.object(rules.get("buses")).get("game")), "neoforge", "");
+            String busExpression = bus.equals("mod")
+                ? modBus()
+                : Json.text(Json.object(Json.object(rules.get("buses")).get("game")), "neoforge", "");
             String indent = indent(text, match.start());
-            String listener = busExpression + ".addListener(" + reference(eventClass) + ".class, " + bracedLambda(ev, body, indent, unit) + ")";
+            String listener =
+                busExpression +
+                ".addListener(" +
+                reference(eventClass) +
+                ".class, " +
+                bracedLambda(ev, body, indent, unit) +
+                ")";
             out.append(text, last, match.start()).append(listener);
             last = match.end();
             changed = true;
@@ -760,13 +829,23 @@ final class LoaderRules {
             List<String> arguments = split(text.substring(open + 1, end - 1));
             String listener;
             String ev;
-            if (arguments.size() == 2 && arguments.get(0).replaceAll("\\s", "").equals(ref + ".class")) listener = arguments.get(1);
-            else if (arguments.size() == 1 && arguments.get(0).strip().matches("(?s)^\\(\\s*" + Pattern.quote(ref) + "\\s+\\w+\\s*\\)\\s*->.*")) listener = arguments.get(0);
+            if (arguments.size() == 2 && arguments.get(0).replaceAll("\\s", "").equals(ref + ".class")) listener =
+                arguments.get(1);
+            else if (
+                arguments.size() == 1 &&
+                arguments.get(0).strip().matches("(?s)^\\(\\s*" + Pattern.quote(ref) + "\\s+\\w+\\s*\\)\\s*->.*")
+            ) listener = arguments.get(0);
             else continue;
             Callback callback = callback(listener, List.of("event"));
             int start = chainStart(text, code, calls.start());
             if (callback == null || callback.params().size() != 1) {
-                result.left.add(new Left(line(text, start), ref + " listener", "the listener is not a one-parameter lambda or method reference; convert it by hand"));
+                result.left.add(
+                    new Left(
+                        line(text, start),
+                        ref + " listener",
+                        "the listener is not a one-parameter lambda or method reference; convert it by hand"
+                    )
+                );
                 continue;
             }
             ev = callback.params().get(0);
@@ -780,7 +859,17 @@ final class LoaderRules {
                 List<Match> guard = find(first, "if (!(" + render(filter, holes) + ")) return;");
                 if (guard.isEmpty()) guard = find(first, "if (!" + render(filter, holes) + ") return;");
                 if (guard.isEmpty()) {
-                    if (!shared(eventClass)) result.left.add(new Left(line(text, start), ref + " listener", "Fabric's " + ownerSimple + " event needs " + filter.replace("$event", "the event") + " checked first; the listener does not"));
+                    if (!shared(eventClass)) result.left.add(
+                        new Left(
+                            line(text, start),
+                            ref + " listener",
+                            "Fabric's " +
+                            ownerSimple +
+                            " event needs " +
+                            filter.replace("$event", "the event") +
+                            " checked first; the listener does not"
+                        )
+                    );
                     continue;
                 }
                 holes.putAll(guard.get(0).holes());
@@ -791,7 +880,9 @@ final class LoaderRules {
                 Object arg = i < args.size() ? args.get(i) : null;
                 String name = null;
                 if (arg != null && !lines.isEmpty()) {
-                    Matcher declared = Pattern.compile("^var\\s+(\\w+)\\s*=\\s*" + Pattern.quote(render(String.valueOf(arg), holes)) + "\\s*;$").matcher(lines.get(0).strip());
+                    Matcher declared = Pattern.compile(
+                        "^var\\s+(\\w+)\\s*=\\s*" + Pattern.quote(render(String.valueOf(arg), holes)) + "\\s*;$"
+                    ).matcher(lines.get(0).strip());
                     if (declared.find()) {
                         name = declared.group(1);
                         lines.remove(0);
@@ -799,7 +890,10 @@ final class LoaderRules {
                 }
                 names.add(name);
             }
-            for (int i = 0; i < params.size(); i++) if (names.get(i) == null) names.set(i, fresh(scope(text, start), params.get(i), params.get(i) + "Value"));
+            for (int i = 0; i < params.size(); i++) if (names.get(i) == null) names.set(
+                i,
+                fresh(scope(text, start), params.get(i), params.get(i) + "Value")
+            );
             for (Object item : list(neo.get("rewrite"))) {
                 var rewrite = Json.object(item);
                 int index = ((Number) rewrite.get("param")).intValue();
@@ -824,20 +918,45 @@ final class LoaderRules {
                 Object arg = i < args.size() ? args.get(i) : null;
                 if (arg != null && String.valueOf(arg).equals("$event") && mentions(lines, ev)) {
                     String joined = String.join("\n", lines);
-                    lines = new ArrayList<>(joined.replaceAll("(?<![\\w$.])" + Pattern.quote(ev) + "(?![\\w$])", names.get(i)).lines().toList());
+                    lines = new ArrayList<>(
+                        joined
+                            .replaceAll("(?<![\\w$.])" + Pattern.quote(ev) + "(?![\\w$])", names.get(i))
+                            .lines()
+                            .toList()
+                    );
                 }
             }
             if (mentions(lines, ev)) {
-                result.left.add(new Left(line(text, start), ref + " listener", "the listener reads " + ev + " in a way Fabric's " + ownerSimple + "." + member.replaceAll("\\(.*", "") + " has no parameter for"));
+                result.left.add(
+                    new Left(
+                        line(text, start),
+                        ref + " listener",
+                        "the listener reads " +
+                        ev +
+                        " in a way Fabric's " +
+                        ownerSimple +
+                        "." +
+                        member.replaceAll("\\(.*", "") +
+                        " has no parameter for"
+                    )
+                );
                 continue;
             }
             String head = names.size() == 1 ? names.get(0) : "(" + String.join(", ", names) + ")";
             String indent = indent(text, start);
             String lambda;
-            if (lines.size() == 1 && expressionStatement(lines.get(0))) lambda = head + " -> " + lines.get(0).substring(0, lines.get(0).length() - 1);
+            if (lines.size() == 1 && expressionStatement(lines.get(0))) lambda =
+                head + " -> " + lines.get(0).substring(0, lines.get(0).length() - 1);
             else lambda = bracedLambda(head, lines, indent, unit);
             String method = render(member, holes);
-            out.append(text, last, start).append(ownerSimple).append('.').append(method).append(".register(").append(lambda).append(')');
+            out
+                .append(text, last, start)
+                .append(ownerSimple)
+                .append('.')
+                .append(method)
+                .append(".register(")
+                .append(lambda)
+                .append(')');
             last = end;
             changed = true;
         }
@@ -846,19 +965,31 @@ final class LoaderRules {
         text = out.toString();
         text = addImport(text, owner);
         text = dropImport(text, outer(eventClass));
-        for (Object b : Json.object(rules.get("buses")).values()) for (String name : strings(Json.object(b).get("imports"))) text = dropImport(text, name);
+        for (Object b : Json.object(rules.get("buses")).values()) for (String name : strings(
+            Json.object(b).get("imports")
+        )) text = dropImport(text, name);
         for (String name : strings(neo.get("imports"))) text = dropImport(text, name);
         result.text = text;
         result.applied.add(Json.text(rule, "id", "event"));
     }
 
-    static final Pattern STATEMENT_KEYWORD = Pattern.compile("^(?:if|for|while|do|switch|try|return|throw|synchronized|var|final|break|continue|yield|class|record|assert|int|long|boolean|double|float|char|byte|short)\\b");
-    static final Pattern DECLARATION = Pattern.compile("^[A-Za-z_$][\\w$.]*(?:<[^;]*>)?(?:\\[\\])*\\s+[A-Za-z_$][\\w$]*\\s*(?:=|;)");
+    static final Pattern STATEMENT_KEYWORD = Pattern.compile(
+        "^(?:if|for|while|do|switch|try|return|throw|synchronized|var|final|break|continue|yield|class|record|assert|int|long|boolean|double|float|char|byte|short)\\b"
+    );
+    static final Pattern DECLARATION = Pattern.compile(
+        "^[A-Za-z_$][\\w$.]*(?:<[^;]*>)?(?:\\[\\])*\\s+[A-Za-z_$][\\w$]*\\s*(?:=|;)"
+    );
 
     /** True for one statement that can be a lambda's expression body: a call, an assignment, an increment. */
     static boolean expressionStatement(String line) {
         String s = line.strip();
-        return s.endsWith(";") && !s.contains("\n") && !STATEMENT_KEYWORD.matcher(s).find() && !DECLARATION.matcher(s).find() && !s.startsWith("{");
+        return (
+            s.endsWith(";") &&
+            !s.contains("\n") &&
+            !STATEMENT_KEYWORD.matcher(s).find() &&
+            !DECLARATION.matcher(s).find() &&
+            !s.startsWith("{")
+        );
     }
 
     /** Every match of pattern in text replaced by template, left to right, each with its own holes and the shared ones. */
@@ -877,7 +1008,9 @@ final class LoaderRules {
     /** True when more than one event rule turns into this NeoForge event, told apart by their checks. */
     boolean shared(String eventClass) {
         int count = 0;
-        for (Object rule : list(rules.get("events"))) if (eventClass.equals(Json.text(Json.object(Json.object(rule).get("neoforge")), "event", ""))) count++;
+        for (Object rule : list(rules.get("events"))) if (
+            eventClass.equals(Json.text(Json.object(Json.object(rule).get("neoforge")), "event", ""))
+        ) count++;
         return count > 1;
     }
 
@@ -937,10 +1070,14 @@ final class LoaderRules {
 
     /** Fabric's datagen provider bases, the vanilla class each wraps, and the kind that decides how GatherDataEvent registers it. */
     static final Map<String, String[]> DATAGEN = Map.of(
-        "FabricModelProvider", new String[] {"model", "net.minecraft.client.data.models.ModelProvider"},
-        "FabricBlockLootSubProvider", new String[] {"blockLoot", "net.minecraft.data.loot.BlockLootSubProvider"},
-        "FabricRecipeProvider", new String[] {"recipe", "net.minecraft.data.recipes.RecipeProvider"},
-        "FabricAdvancementProvider", new String[] {"advancement", "net.minecraft.data.advancements.AdvancementSubProvider"}
+        "FabricModelProvider",
+        new String[] { "model", "net.minecraft.client.data.models.ModelProvider" },
+        "FabricBlockLootSubProvider",
+        new String[] { "blockLoot", "net.minecraft.data.loot.BlockLootSubProvider" },
+        "FabricRecipeProvider",
+        new String[] { "recipe", "net.minecraft.data.recipes.RecipeProvider" },
+        "FabricAdvancementProvider",
+        new String[] { "advancement", "net.minecraft.data.advancements.AdvancementSubProvider" }
     );
 
     /** A converted provider: its kind, and its new text. */
@@ -959,31 +1096,92 @@ final class LoaderRules {
         if (kind == null) return new Provider("", text);
         String unit = unit(text);
         text = text.replaceAll("\\bFabricPackOutput\\b", "PackOutput");
-        text = Pattern.compile("(?m)^import\\s+net\\.fabricmc\\.fabric\\.api\\.(?:client\\.)?datagen\\.v1\\.[\\w.]+\\s*;[^\\n]*\\n?").matcher(text).replaceAll("");
+        text = Pattern.compile(
+            "(?m)^import\\s+net\\.fabricmc\\.fabric\\.api\\.(?:client\\.)?datagen\\.v1\\.[\\w.]+\\s*;[^\\n]*\\n?"
+        )
+            .matcher(text)
+            .replaceAll("");
         text = addImport(text, "net.minecraft.data.PackOutput");
         String simple = kind[1].substring(kind[1].lastIndexOf('.') + 1);
         switch (kind[0]) {
             case "model" -> {
                 text = text.replaceFirst("\\bextends\\s+FabricModelProvider\\b", "extends ModelProvider");
-                text = text.replaceFirst("\\bsuper\\(\\s*(\\w+)\\s*\\)\\s*;", "super($1, " + Matcher.quoteReplacement(quote(modid)) + ");");
-                text = text.replaceAll("(?m)^([ \\t]*)@Override[ \\t]*\\n[ \\t]*(public\\s+void\\s+generate(?:BlockStateModels|ItemModels)\\s*\\()", "$1$2");
-                text = beforeLastBrace(text, unit + "@Override\n" + unit + "protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {\n" + unit + unit + "generateBlockStateModels(blockModels);\n" + unit + unit + "generateItemModels(itemModels);\n" + unit + "}\n");
+                text = text.replaceFirst(
+                    "\\bsuper\\(\\s*(\\w+)\\s*\\)\\s*;",
+                    "super($1, " + Matcher.quoteReplacement(quote(modid)) + ");"
+                );
+                text = text.replaceAll(
+                    "(?m)^([ \\t]*)@Override[ \\t]*\\n[ \\t]*(public\\s+void\\s+generate(?:BlockStateModels|ItemModels)\\s*\\()",
+                    "$1$2"
+                );
+                text = beforeLastBrace(
+                    text,
+                    unit +
+                    "@Override\n" +
+                    unit +
+                    "protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {\n" +
+                    unit +
+                    unit +
+                    "generateBlockStateModels(blockModels);\n" +
+                    unit +
+                    unit +
+                    "generateItemModels(itemModels);\n" +
+                    unit +
+                    "}\n"
+                );
                 text = addImport(text, "net.minecraft.client.data.models.BlockModelGenerators");
                 text = addImport(text, "net.minecraft.client.data.models.ItemModelGenerators");
             }
             case "blockLoot" -> {
                 text = text.replaceFirst("\\bextends\\s+FabricBlockLootSubProvider\\b", "extends BlockLootSubProvider");
-                text = text.replaceFirst("\\(\\s*PackOutput\\s+\\w+\\s*,\\s*CompletableFuture<\\s*HolderLookup\\.Provider\\s*>\\s+(\\w+)\\s*\\)(\\s*\\{\\s*)super\\(\\s*\\w+\\s*,\\s*\\w+\\s*\\)\\s*;", "(HolderLookup.Provider $1)$2super(Set.of(), FeatureFlags.REGISTRY.allFlags(), $1);");
-                text = beforeLastBrace(text, unit + "/** The mod's own blocks: Fabric checks only those for a missing loot table. */\n" + unit + "@Override\n" + unit + "protected Iterable<Block> getKnownBlocks() {\n" + unit + unit + "return BuiltInRegistries.BLOCK.stream().filter(block -> BuiltInRegistries.BLOCK.getKey(block).getNamespace().equals(" + quote(modid) + ")).toList();\n" + unit + "}\n");
-                for (String name : List.of("java.util.Set", "net.minecraft.world.flag.FeatureFlags", "net.minecraft.core.registries.BuiltInRegistries", "net.minecraft.world.level.block.Block")) text = addImport(text, name);
+                text = text.replaceFirst(
+                    "\\(\\s*PackOutput\\s+\\w+\\s*,\\s*CompletableFuture<\\s*HolderLookup\\.Provider\\s*>\\s+(\\w+)\\s*\\)(\\s*\\{\\s*)super\\(\\s*\\w+\\s*,\\s*\\w+\\s*\\)\\s*;",
+                    "(HolderLookup.Provider $1)$2super(Set.of(), FeatureFlags.REGISTRY.allFlags(), $1);"
+                );
+                text = beforeLastBrace(
+                    text,
+                    unit +
+                    "/** The mod's own blocks: Fabric checks only those for a missing loot table. */\n" +
+                    unit +
+                    "@Override\n" +
+                    unit +
+                    "protected Iterable<Block> getKnownBlocks() {\n" +
+                    unit +
+                    unit +
+                    "return BuiltInRegistries.BLOCK.stream().filter(block -> BuiltInRegistries.BLOCK.getKey(block).getNamespace().equals(" +
+                    quote(modid) +
+                    ")).toList();\n" +
+                    unit +
+                    "}\n"
+                );
+                for (String name : List.of(
+                    "java.util.Set",
+                    "net.minecraft.world.flag.FeatureFlags",
+                    "net.minecraft.core.registries.BuiltInRegistries",
+                    "net.minecraft.world.level.block.Block"
+                )) text = addImport(text, name);
                 text = dropImport(text, "java.util.concurrent.CompletableFuture");
             }
             case "recipe" -> {
                 text = text.replaceFirst("\\bextends\\s+FabricRecipeProvider\\b", "extends RecipeProvider.Runner");
-                if (!Pattern.compile("public\\s+String\\s+getName\\s*\\(").matcher(text).find()) text = beforeLastBrace(text, unit + "@Override\n" + unit + "public String getName() {\n" + unit + unit + "return \"Recipes\";\n" + unit + "}\n");
+                if (!Pattern.compile("public\\s+String\\s+getName\\s*\\(").matcher(text).find()) text = beforeLastBrace(
+                    text,
+                    unit +
+                    "@Override\n" +
+                    unit +
+                    "public String getName() {\n" +
+                    unit +
+                    unit +
+                    "return \"Recipes\";\n" +
+                    unit +
+                    "}\n"
+                );
             }
             default -> {
-                text = text.replaceFirst("\\bextends\\s+FabricAdvancementProvider\\b", "implements AdvancementSubProvider");
+                text = text.replaceFirst(
+                    "\\bextends\\s+FabricAdvancementProvider\\b",
+                    "implements AdvancementSubProvider"
+                );
                 text = text.replaceFirst("(?m)^[ \\t]*super\\(\\s*\\w+\\s*,\\s*\\w+\\s*\\)\\s*;[ \\t]*\\n", "");
                 text = text.replaceAll("\\bvoid\\s+generateAdvancement\\s*\\(", "void generate(");
             }
@@ -1005,16 +1203,26 @@ final class LoaderRules {
      */
     static String datagenEntry(String text, Map<String, String> kinds, List<String> unknown) {
         text = text.replaceAll("\\s+implements\\s+DataGeneratorEntrypoint\\s*(?=\\{)", " ");
-        text = text.replaceAll("(?m)^([ \\t]*)@Override[ \\t]*\\n[ \\t]*(public\\s+void\\s+onInitializeDataGenerator\\s*\\()", "$1$2");
-        Matcher param = Pattern.compile("onInitializeDataGenerator\\s*\\(\\s*FabricDataGenerator\\s+(\\w+)\\s*\\)").matcher(text);
+        text = text.replaceAll(
+            "(?m)^([ \\t]*)@Override[ \\t]*\\n[ \\t]*(public\\s+void\\s+onInitializeDataGenerator\\s*\\()",
+            "$1$2"
+        );
+        Matcher param = Pattern.compile(
+            "onInitializeDataGenerator\\s*\\(\\s*FabricDataGenerator\\s+(\\w+)\\s*\\)"
+        ).matcher(text);
         if (!param.find()) return null;
         String event = param.group(1);
         text = text.replace(param.group(), "onInitializeDataGenerator(GatherDataEvent " + event + ")");
-        Matcher pack = Pattern.compile("(?m)^[ \\t]*(?:final\\s+)?(?:FabricDataGenerator\\.Pack|var)\\s+(\\w+)\\s*=\\s*" + Pattern.quote(event) + "\\.createPack\\(\\)\\s*;[ \\t]*\\n\\s*").matcher(text);
+        Matcher pack = Pattern.compile(
+            "(?m)^[ \\t]*(?:final\\s+)?(?:FabricDataGenerator\\.Pack|var)\\s+(\\w+)\\s*=\\s*" +
+            Pattern.quote(event) +
+            "\\.createPack\\(\\)\\s*;[ \\t]*\\n\\s*"
+        ).matcher(text);
         List<String> receivers = new ArrayList<>(List.of(Pattern.quote(event) + "\\.createPack\\(\\)"));
         if (pack.find()) {
             receivers.add(Pattern.quote(pack.group(1)));
-            text = text.substring(0, pack.start()) + LoaderRules.indent(text, pack.start()) + text.substring(pack.end());
+            text =
+                text.substring(0, pack.start()) + LoaderRules.indent(text, pack.start()) + text.substring(pack.end());
         }
         for (String receiver : receivers) {
             Matcher add = Pattern.compile(receiver + "\\.addProvider\\(\\s*(\\w+)::new\\s*\\)").matcher(text);
@@ -1022,12 +1230,20 @@ final class LoaderRules {
             int last = 0;
             while (add.find()) {
                 String provider = add.group(1), kind = kinds.get(provider);
-                String call = kind == null ? null : switch (kind) {
-                    case "model", "recipe" -> event + ".createProvider(" + provider + "::new)";
-                    case "blockLoot" -> event + ".createProvider((output, lookup) -> new LootTableProvider(output, Set.of(), List.of(new LootTableProvider.SubProviderEntry(" + provider + "::new, LootContextParamSets.BLOCK)), lookup))";
-                    case "advancement" -> event + ".createProvider((output, lookup) -> new AdvancementProvider(output, lookup, List.of(new " + provider + "(output, lookup))))";
-                    default -> null;
-                };
+                String call = kind == null
+                    ? null
+                    : switch (kind) {
+                        case "model", "recipe" -> event + ".createProvider(" + provider + "::new)";
+                        case "blockLoot" -> event +
+                        ".createProvider((output, lookup) -> new LootTableProvider(output, Set.of(), List.of(new LootTableProvider.SubProviderEntry(" +
+                        provider +
+                        "::new, LootContextParamSets.BLOCK)), lookup))";
+                        case "advancement" -> event +
+                        ".createProvider((output, lookup) -> new AdvancementProvider(output, lookup, List.of(new " +
+                        provider +
+                        "(output, lookup))))";
+                        default -> null;
+                    };
                 if (call == null) {
                     unknown.add(provider);
                     continue;
@@ -1038,10 +1254,20 @@ final class LoaderRules {
             out.append(text.substring(last));
             text = out.toString();
         }
-        text = Pattern.compile("(?m)^import\\s+net\\.fabricmc\\.fabric\\.api\\.datagen\\.v1\\.[\\w.]+\\s*;[^\\n]*\\n?").matcher(text).replaceAll("");
+        text = Pattern.compile("(?m)^import\\s+net\\.fabricmc\\.fabric\\.api\\.datagen\\.v1\\.[\\w.]+\\s*;[^\\n]*\\n?")
+            .matcher(text)
+            .replaceAll("");
         text = addImport(text, "net.neoforged.neoforge.data.event.GatherDataEvent");
-        if (kinds.containsValue("blockLoot")) for (String name : List.of("java.util.List", "java.util.Set", "net.minecraft.data.loot.LootTableProvider", "net.minecraft.world.level.storage.loot.parameters.LootContextParamSets")) if (text.contains("LootTableProvider")) text = addImport(text, name);
-        if (text.contains("new AdvancementProvider(")) for (String name : List.of("java.util.List", "net.minecraft.data.advancements.AdvancementProvider")) text = addImport(text, name);
+        if (kinds.containsValue("blockLoot")) for (String name : List.of(
+            "java.util.List",
+            "java.util.Set",
+            "net.minecraft.data.loot.LootTableProvider",
+            "net.minecraft.world.level.storage.loot.parameters.LootContextParamSets"
+        )) if (text.contains("LootTableProvider")) text = addImport(text, name);
+        if (text.contains("new AdvancementProvider(")) for (String name : List.of(
+            "java.util.List",
+            "net.minecraft.data.advancements.AdvancementProvider"
+        )) text = addImport(text, name);
         return tidy(text);
     }
 
@@ -1052,7 +1278,11 @@ final class LoaderRules {
 
     /** A Mod Menu entry class, made to stand alone: its factory becomes a Function<Screen, Screen>. */
     static String modMenuToNeoForge(String text) {
-        text = tidy(Pattern.compile("(?m)^import\\s+com\\.terraformersmc\\.modmenu\\.api\\.\\w+\\s*;[^\\n]*\\n?").matcher(text).replaceAll(""));
+        text = tidy(
+            Pattern.compile("(?m)^import\\s+com\\.terraformersmc\\.modmenu\\.api\\.\\w+\\s*;[^\\n]*\\n?")
+                .matcher(text)
+                .replaceAll("")
+        );
         text = text.replaceAll("\\s+implements\\s+ModMenuApi\\s*(?=\\{)", " ");
         text = text.replaceAll("(implements\\s+)ModMenuApi\\s*,\\s*", "$1");
         text = text.replaceAll(",\\s*ModMenuApi(?=[\\s,{])", "");
@@ -1064,7 +1294,10 @@ final class LoaderRules {
     /** The Mod Menu entry class back as a ModMenuApi. */
     static String modMenuToFabric(String text) {
         if (!text.contains(SCREEN_FUNCTION + " getModConfigScreenFactory()")) return text;
-        text = text.replace("public " + SCREEN_FUNCTION + " getModConfigScreenFactory()", "@Override\n\tpublic ConfigScreenFactory<?> getModConfigScreenFactory()");
+        text = text.replace(
+            "public " + SCREEN_FUNCTION + " getModConfigScreenFactory()",
+            "@Override\n\tpublic ConfigScreenFactory<?> getModConfigScreenFactory()"
+        );
         text = text.replaceAll("(?m)^([ \\t]*)@Override\\n\\t(public ConfigScreenFactory)", "$1@Override\n$1$2");
         text = text.replaceFirst("(class\\s+\\w+)\\s*\\{", "$1 implements ModMenuApi {");
         text = addImport(text, "com.terraformersmc.modmenu.api.ModMenuApi");
