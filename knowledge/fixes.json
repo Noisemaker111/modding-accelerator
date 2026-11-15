@@ -5946,7 +5946,7 @@
         "replace": "scrollAmount()"
       },
       "scope": "log",
-      "when": "\\bextends\\s+\\w*(?:SelectionList|ScrollArea|ContainerObjectSelectionList)\\b|\\b\\w*(?:SelectionList|ScrollArea)\\b",
+      "when": "",
       "note": "1.21.4 moved scrolling from AbstractSelectionList into the new AbstractScrollArea, whose getter is scrollAmount() (the same double).",
       "verified": "Mojang's 1.21.4 client mappings: net.minecraft.client.gui.components.AbstractScrollArea has double scrollAmount(); the route map lists AbstractSelectionList.getScrollAmount ()D as removed in 1.21.3 -> 1.21.4",
       "test": {
