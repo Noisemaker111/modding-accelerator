@@ -5855,6 +5855,66 @@
         "after": "package snownee.jade.gui.config;\n\npublic class OptionsList extends ContainerObjectSelectionList<OptionsList.Entry> {\n\t\t\tl = Mth.clamp(l, 32, this.height - 8);\n\t\t\tint m = (int) this.getScrollAmount() * (this.height - l) / this.maxScrollAmount() + this.getY();\n\t\t\tif (m < this.getY()) {\n",
         "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/config/OptionsList.java:204"
       }
+    },
+    {
+      "id": "identifier-constructor-of",
+      "provenance": "hand",
+      "jump": "1.20.6 -> 1.21 (yarn)",
+      "match": "Identifier\\([^)]*\\) has private access in Identifier|constructor Identifier in class Identifier cannot be applied",
+      "apply": {
+        "find": "new Identifier\\(",
+        "replace": "Identifier.of("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21 made Identifier's constructors private. Identifier.of(namespace, path) and Identifier.of(id) are the same two constructors, for any argument expressions (the older identifier-constructor rules only took string literals).",
+      "verified": "Port sweep 2026-11-14 (bench/sweep.py): Continuity 1.20.1 -> 1.21.1 left 5 Identifier constructor errors with variable arguments; the 1.21 yarn Identifier class has of(String) and of(String,String) and private constructors",
+      "test": {
+        "error": "ContinuityClient.java:40: error: Identifier(String,String) has private access in Identifier\n",
+        "before": "package me.pepperbell.continuity.client;\n\npublic final class ContinuityClient {\n\tpublic static Identifier asId(String path) {\n\t\treturn new Identifier(ID, path);\n\t}\n\tstatic Identifier parsed(String id) {\n\t\treturn new Identifier(id);\n\t}\n}\n",
+        "after": "package me.pepperbell.continuity.client;\n\npublic final class ContinuityClient {\n\tpublic static Identifier asId(String path) {\n\t\treturn Identifier.of(ID, path);\n\t}\n\tstatic Identifier parsed(String id) {\n\t\treturn Identifier.of(id);\n\t}\n}\n",
+        "from": "written for this rule (the shape of Continuity 1.20.1's ContinuityClient.asId)"
+      }
+    },
+    {
+      "id": "resource-location-constructor-two-arg",
+      "provenance": "hand",
+      "jump": "1.20.6 -> 1.21 (mojmap)",
+      "match": "ResourceLocation\\(String,String\\) has private access in ResourceLocation|constructor ResourceLocation in class ResourceLocation cannot be applied",
+      "apply": {
+        "find": "new ResourceLocation\\(((?:[^(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^()]|\\([^()]*\\))*\\))+),((?:[^(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^()]|\\([^()]*\\))*\\))+)\\)",
+        "replace": "ResourceLocation.fromNamespaceAndPath($1,$2)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21 made ResourceLocation's constructors private; the two-argument one is ResourceLocation.fromNamespaceAndPath(namespace, path). Arguments may be any expression with up to two levels of parentheses.",
+      "verified": "Written from the 1.21 game's ResourceLocation (fromNamespaceAndPath, parse, private constructors) for the 1.20.x -> 1.21 NeoForge ports of the sweep corpus",
+      "test": {
+        "error": "ModItems.java:12: error: ResourceLocation(String,String) has private access in ResourceLocation\n",
+        "before": "package mod;\n\nclass ModItems {\n\tstatic final ResourceLocation ID = new ResourceLocation(MOD_ID, \"knife\");\n\tstatic ResourceLocation of(String path) { return new ResourceLocation(Mod.id(), path.toLowerCase(java.util.Locale.ROOT)); }\n}\n",
+        "after": "package mod;\n\nclass ModItems {\n\tstatic final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(MOD_ID, \"knife\");\n\tstatic ResourceLocation of(String path) { return ResourceLocation.fromNamespaceAndPath(Mod.id(), path.toLowerCase(java.util.Locale.ROOT)); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "resource-location-constructor-one-arg",
+      "provenance": "hand",
+      "jump": "1.20.6 -> 1.21 (mojmap)",
+      "match": "ResourceLocation\\(String\\) has private access in ResourceLocation|constructor ResourceLocation in class ResourceLocation cannot be applied",
+      "apply": {
+        "find": "new ResourceLocation\\(((?:[^(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^()]|\\([^()]*\\))*\\))+)\\)",
+        "replace": "ResourceLocation.parse($1)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21 made ResourceLocation's constructors private; the one-argument (namespace:path) constructor is ResourceLocation.parse(id), which throws on an invalid id the same way.",
+      "verified": "Written from the 1.21 game's ResourceLocation (parse) for the 1.20.x -> 1.21 NeoForge ports of the sweep corpus",
+      "test": {
+        "error": "Config.java:30: error: ResourceLocation(String) has private access in ResourceLocation\n",
+        "before": "package mod;\n\nclass Config {\n\tItem item(String name) { return BuiltInRegistries.ITEM.get(new ResourceLocation(name)); }\n}\n",
+        "after": "package mod;\n\nclass Config {\n\tItem item(String name) { return BuiltInRegistries.ITEM.get(ResourceLocation.parse(name)); }\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }
