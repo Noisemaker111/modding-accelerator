@@ -20,6 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 JAR = "build/distributions/mmt.jar"
 ZIP = "build/distributions/mmt-portable.zip"
+FIXTURE = "fixtures/prism-lab"  # Prism Lab, the demo mod the mod-project checks run on
 WINDOWS = os.name == "nt"
 SEP = ";" if WINDOWS else ":"
 
@@ -50,11 +51,12 @@ def port_preflight():
 
 def legacy_agent():
     """Windows: the legacy launch agent in JAVA_TOOL_OPTIONS keeps system properties strings, and Gradle still runs."""
-    prepared = subprocess.run(java("-jar", JAR, "legacy-agent", "--json"), cwd=ROOT, capture_output=True, text=True)
+    prepared = subprocess.run(java("-jar", JAR, "legacy-agent", "--root", FIXTURE, "--json"), cwd=ROOT,
+                              capture_output=True, text=True)
     agent = json.loads(prepared.stdout.strip().splitlines()[-1])["result"]["agent"]
     env = {"JAVA_TOOL_OPTIONS": f'"-javaagent:{agent}=legacy" -Dmmt.background=true -Dmmt.quiet=true'}
     yield java("tools/tests/LegacyAgentPropertiesTest.java"), env
-    yield java("-jar", JAR, "fast", "--refresh", "--json"), env
+    yield java("-jar", JAR, "fast", "--root", FIXTURE, "--refresh", "--json"), env
 
 
 # name -> (needs the jar, systems or None for all, commands or a generator of them)
@@ -65,8 +67,8 @@ CHECKS = {
     "checkout-data": (True, None, checkout_data),
     "port-preflight": (False, None, port_preflight),
     "zip": (True, None, [java("tools/tests/PackageAcceptanceTest.java", ZIP, ZIP + ".sha256", tempfile.gettempdir())]),
-    "fast": (True, None, [java("-jar", JAR, "fast", "--json")]),
-    "hidden-window": (True, None, [java("tools/tests/BackgroundWindowsTest.java", ".", JAR)]),
+    "fast": (True, None, [java("-jar", JAR, "fast", "--root", FIXTURE, "--json")]),
+    "hidden-window": (True, None, [java("tools/tests/BackgroundWindowsTest.java", FIXTURE, JAR)]),
     "fastlane-isolation": (True, None, [java("tools/tests/FastLaneIsolationTest.java", ".", JAR)]),
     "runtime-natives": (True, ("posix",), [java("tools/tests/RuntimeNativesTest.java", ".", JAR)]),
     "launcher": (False, ("nt",), [[sys.executable, "tools/ci/launcher_experiments.py"]]),

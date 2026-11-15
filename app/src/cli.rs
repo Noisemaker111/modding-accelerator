@@ -28,12 +28,14 @@ pub struct Launcher {
 }
 
 impl Launcher {
-    /// Looks in `MMT_HOME`, then beside this program, then in the folders above it (so a
-    /// development build in `app/target/release` finds the checkout it was built from).
+    /// Looks in `MMT_HOME` (or the old `MODACCEL_HOME`), then beside this program, then in the folders
+    /// above it (so a development build in `app/target/release` finds the checkout it was built from).
     pub fn find() -> Result<Launcher, String> {
         let mut candidates = Vec::new();
-        if let Some(home) = std::env::var_os("MMT_HOME") {
-            candidates.push(PathBuf::from(home));
+        for variable in ["MMT_HOME", "MODACCEL_HOME"] {
+            if let Some(home) = std::env::var_os(variable) {
+                candidates.push(PathBuf::from(home));
+            }
         }
         if let Ok(exe) = std::env::current_exe() {
             let mut dir = exe.parent().map(Path::to_path_buf);

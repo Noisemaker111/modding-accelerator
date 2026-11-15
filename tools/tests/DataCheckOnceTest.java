@@ -32,7 +32,7 @@ public final class DataCheckOnceTest {
         String java = ProcessHandle.current().info().command().orElse("java");
         Path copy = Files.createTempDirectory("mmt-once");
         try {
-            for (String name : MOD_FILES) copyTree(harness.resolve(name), copy.resolve(name));
+            for (String name : MOD_FILES) copyTree(harness.resolve("fixtures/prism-lab").resolve(name), copy.resolve(name));
             Set<Long> seen = ConcurrentHashMap.newKeySet();
             Process run = new ProcessBuilder(
                 java,

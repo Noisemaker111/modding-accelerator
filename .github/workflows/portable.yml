@@ -38,7 +38,7 @@ jobs:
             ~/.gradle/wrapper
             ~/.gradle/jdks
             ~/.mmt/jdks
-          key: ci-${{ runner.os }}-${{ hashFiles('build.gradle', 'settings.gradle', 'gradle.properties', 'gradle/wrapper/gradle-wrapper.properties') }}
+          key: ci-${{ runner.os }}-${{ hashFiles('fixtures/prism-lab/build.gradle', 'fixtures/prism-lab/settings.gradle', 'fixtures/prism-lab/gradle.properties', 'fixtures/prism-lab/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: ci-${{ runner.os }}-
       - name: Offline checks
         run: python bench/run_tests.py
@@ -90,7 +90,7 @@ jobs:
             ~/.gradle/wrapper
             ~/.gradle/jdks
             ~/.mmt/jdks
-          key: ci-${{ runner.os }}-${{ hashFiles('portable workspace/build.gradle', 'portable workspace/settings.gradle', 'portable workspace/gradle.properties', 'portable workspace/gradle/wrapper/gradle-wrapper.properties') }}
+          key: ci-${{ runner.os }}-${{ hashFiles('portable workspace/fixtures/prism-lab/build.gradle', 'portable workspace/fixtures/prism-lab/settings.gradle', 'portable workspace/fixtures/prism-lab/gradle.properties', 'portable workspace/fixtures/prism-lab/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: ci-${{ runner.os }}-
       - name: Offline checks
         working-directory: portable workspace

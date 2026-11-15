@@ -55,7 +55,12 @@ set "_MMT_IMAGE=jre"
 if not exist "%~dp0mmt.jar" set "_MMT_IMAGE=jdk"
 set "_MMT_JRE=%LOCALAPPDATA%\mmt\%_MMT_IMAGE%"
 if exist "%_MMT_JRE%\current\bin\java.exe" goto :usejre
+rem A runtime downloaded under the old name (modaccel) is reused rather than downloaded again.
+if exist "%LOCALAPPDATA%\modaccel\%_MMT_IMAGE%\current\bin\java.exe" set "_MMT_JRE=%LOCALAPPDATA%\modaccel\%_MMT_IMAGE%"
+if exist "%_MMT_JRE%\current\bin\java.exe" goto :usejre
+set "_MMT_JRE=%LOCALAPPDATA%\mmt\%_MMT_IMAGE%"
 if defined MMT_NO_DOWNLOAD goto :nojava
+if defined MODACCEL_NO_DOWNLOAD goto :nojava
 set "_MMT_BOOTSTRAP=%~dp0bootstrap-jre.ps1"
 if not exist "%_MMT_BOOTSTRAP%" set "_MMT_BOOTSTRAP=%~dp0tools\bootstrap-jre.ps1"
 if not exist "%_MMT_BOOTSTRAP%" goto :nojava

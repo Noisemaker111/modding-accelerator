@@ -249,7 +249,8 @@ final class Installation {
         Map<String, byte[]> contents = new LinkedHashMap<>();
         contents.put("mmt.jar", Files.readAllBytes(target));
         contents.put("mmt.jar.sha256", Files.readAllBytes(directory.resolve("mmt.jar.sha256")));
-        for (String file : List.of("mmt", "mmt.cmd", "LICENSE", "NOTICE", "PERFORMANCE.md")) contents.put(
+        // modaccel and modaccel.cmd are the old names: they print a one-line note and forward to mmt.
+        for (String file : List.of("mmt", "mmt.cmd", "modaccel", "modaccel.cmd", "LICENSE", "NOTICE", "PERFORMANCE.md")) contents.put(
             file,
             Files.readAllBytes(harness.resolve(file))
         );
@@ -308,7 +309,7 @@ final class Installation {
                 p + 46 + nameLength + u16(archive, p + 30) + u16(archive, p + 32);
             if (next > limit) throw new IOException("Invalid ZIP central directory entry length");
             String name = new String(archive, p + 46, nameLength, java.nio.charset.StandardCharsets.UTF_8);
-            if (name.equals("mmt") || name.equals(DESKTOP_LINUX)) {
+            if (name.equals("mmt") || name.equals("modaccel") || name.equals(DESKTOP_LINUX)) {
                 archive[p + 5] = 3; // made by Unix
                 int mode = 0100755 << 16;
                 for (int i = 0; i < 4; i++) archive[p + 38 + i] = (byte) (mode >>> (i * 8));
