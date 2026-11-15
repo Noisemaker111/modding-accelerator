@@ -55,16 +55,6 @@ final class Game {
         );
     }
 
-    /** Ends the game this checkout's last start recorded, if it still runs: perf-optimize's arms when it is interrupted. */
-    static void end(Path root) {
-        try {
-            Map<String, Object> session = Json.read(new ProjectModel(root).state().resolve("agent.json"));
-            if (alive(session)) ProcessHandle.of(((Number) session.get("pid")).longValue()).ifPresent(game ->
-                Run.end(List.of(game))
-            );
-        } catch (Exception noGame) {}
-    }
-
     /** Why there's no game to talk to: the last one crashed or exited, or none was started. */
     String noGame(String then) throws Exception {
         Map<String, Object> last = recorded();

@@ -163,11 +163,6 @@ final class PerfOptimize {
         if (!Boolean.TRUE.equals(checked.get("ok"))) throw new IllegalArgumentException(PerfCheck.text(checked));
         snapshot = snapshot(experiment, experimentDir, out.resolve("experiment"));
         System.err.println("perf-optimize: to end after the pair in progress and keep the run's record, create " + out.resolve("stop"));
-        // The arms' games are started by child commands and outlive them; an interrupted run ends them too.
-        Thread endGames = new Thread(() -> {
-            for (String arm : ARMS) Game.end(out.resolve(arm));
-        }, "perf-optimize-end-games");
-        Runtime.getRuntime().addShutdownHook(endGames);
         try {
             for (String arm : ARMS) {
                 Path tree = out.resolve(arm);
@@ -237,7 +232,6 @@ final class PerfOptimize {
                     }
                 }
             }
-            try { Runtime.getRuntime().removeShutdownHook(endGames); } catch (IllegalStateException shuttingDown) { }
         }
         boolean accepted = Boolean.TRUE.equals(result.get("accepted"));
         if (accepted && !options.has("dry-run")) {
