@@ -262,6 +262,12 @@ final class Convert {
         leftovers(List.of("net.fabricmc.", "com.terraformersmc.modmenu."));
     }
 
+    /** A static field whose initializer registers something: Registry.register, buildAndRegister, registerBlock ... */
+    static final Pattern STATIC_REGISTRATION = Pattern.compile("(?m)^[ \\t]*(?:(?:public|protected|private)\\s+)?static\\s+(?:final\\s+)?[^;=(){}]+=[^;]*?\\b\\w*[Rr]egister\\w*\\s*\\(");
+
+    /** The file of the NeoForge @Mod class each Fabric entrypoint became, by its Fabric interface. */
+    final Map<String, String> modClasses = new HashMap<>();
+
     static final Pattern CLASS = Pattern.compile("(?m)^([ \\t]*)((?:public\\s+|final\\s+|abstract\\s+)*)class\\s+(\\w+)([^{]*)\\{");
 
     /** Makes a Fabric entrypoint class a NeoForge @Mod class whose constructor runs the entrypoint where NeoForge lets mods register. */
@@ -293,9 +299,15 @@ final class Convert {
             leave(file, LoaderRules.line(text, c.start()), "entrypoint " + name, "it does not implement " + api);
             return;
         }
-        String indent = c.group(1), inner = indent + unit;
+        String indent = c.group(1);
+        String inner = indent + unit;
         String annotation = dist == null ? "@Mod(" + LoaderRules.quote(modid) + ")" : "@Mod(value = " + LoaderRules.quote(modid) + ", dist = Dist." + dist + ")";
-        boolean noArgs = Pattern.compile("\\b" + simple + "\\s*\\(\\s*\\)\\s*\\{").matcher(text).find();
+        // NeoForge loads a @Mod class before any registry is open. An entry class that registers in a static field
+        // (a game rule, a block) must not be that class: a small generated holder runs it once registries are open.
+        boolean holder = STATIC_REGISTRATION.matcher(text).find();
+        String modClass = holder ? simple + "NeoForge" : simple, call = holder ? "new " + simple + "()." + method + "()" : method + "()";
+        if (holder) inner = unit;
+        boolean noArgs = !holder && Pattern.compile("\\b" + simple + "\\s*\\(\\s*\\)\\s*\\{").matcher(text).find();
         StringBuilder ctor = new StringBuilder();
         boolean client = "CLIENT".equals(dist);
         // Fabric runs main entrypoints where mods register, and client ones once Minecraft exists, before its options load.
@@ -304,19 +316,37 @@ final class Convert {
         ctor.append('\n').append(inner).append(client
             ? "/** Runs the Fabric client entrypoint at NeoForge's first client event, once Minecraft exists and before its options load. */\n"
             : "/** Runs the Fabric entrypoint where NeoForge lets a mod register: inside its first registry event. */\n");
-        ctor.append(inner).append("public ").append(simple).append("(IEventBus modBus").append(dist == null ? "" : ", ModContainer container").append(") {\n");
+        ctor.append(inner).append("public ").append(modClass).append("(IEventBus modBus").append(dist == null ? "" : ", ModContainer container").append(") {\n");
         if (noArgs) ctor.append(inner).append(unit).append("this();\n");
         if (extra != null) ctor.append(inner).append(unit).append(extra).append('\n');
-        if (client) ctor.append(inner).append(unit).append("modBus.addListener(EventPriority.HIGHEST, RegisterKeyMappingsEvent.class, event -> ").append(method).append("());\n");
+        if (client) ctor.append(inner).append(unit).append("modBus.addListener(EventPriority.HIGHEST, RegisterKeyMappingsEvent.class, event -> ").append(call).append(");\n");
         else {
             ctor.append(inner).append(unit).append("modBus.addListener(").append(dist == null ? "" : "EventPriority.LOW, ").append("RegisterEvent.class, event -> {\n");
-            ctor.append(inner).append(unit).append(unit).append("if (event.getRegistryKey().equals(Registries.ATTRIBUTE)) ").append(method).append("();\n");
+            ctor.append(inner).append(unit).append(unit).append("if (event.getRegistryKey().equals(Registries.ATTRIBUTE)) ").append(call).append(";\n");
             ctor.append(inner).append(unit).append("});\n");
         }
         ctor.append(inner).append("}\n");
         String declaration = c.group(1) + c.group(2) + "class " + simple + (cleaned.isBlank() ? " " : " " + cleaned.strip() + " ") + "{";
-        String out = text.substring(0, c.start()) + indent + annotation + "\n" + declaration + text.substring(c.end());
+        String out = text.substring(0, c.start()) + (holder ? "" : indent + annotation + "\n") + declaration + text.substring(c.end());
         out = out.replaceAll("(?m)^([ \\t]*)@Override[ \\t]*\\n[ \\t]*(public\\s+void\\s+" + method + "\\s*\\()", "$1$2");
+        out = Pattern.compile("(?m)^import\\s+net\\.fabricmc\\.api\\." + api + "\\s*;[^\\n]*\\n?").matcher(out).replaceAll("");
+        List<String> needed = new ArrayList<>(List.of("net.neoforged.fml.common.Mod", "net.neoforged.bus.api.IEventBus"));
+        if (client) needed.add("net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent");
+        else needed.addAll(List.of("net.neoforged.neoforge.registries.RegisterEvent", "net.minecraft.core.registries.Registries"));
+        if (dist != null) needed.addAll(List.of("net.neoforged.api.distmarker.Dist", "net.neoforged.fml.ModContainer", "net.neoforged.bus.api.EventPriority"));
+        if (extra != null && extra.contains("GatherDataEvent")) needed.add("net.neoforged.neoforge.data.event.GatherDataEvent");
+        if (holder) {
+            write(file, LoaderRules.tidy(out));
+            Matcher pkg = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(text);
+            String generated = (pkg.find() ? "package " + pkg.group(1) + ";\n\n" : "") + "/** NeoForge's entry for " + simple + ", which registers in its static fields: it may load only once NeoForge opens the registries. */\n" + annotation + "\npublic final class " + modClass + " {\n" + ctor.substring(1) + "}\n";
+            for (String name2 : needed) generated = LoaderRules.addImport(generated, name2);
+            String holderFile = file.substring(0, file.lastIndexOf('/') + 1) + modClass + ".java";
+            write(holderFile, generated);
+            modClasses.put(api, holderFile);
+            notes.add(simple + " registers in its static fields, so its NeoForge @Mod class is the generated " + modClass + ", which runs " + simple + "." + method + "() once the registries are open.");
+            applied.computeIfAbsent("entrypoint-" + api, k -> new ArrayList<>()).add(holderFile);
+            return;
+        }
         // The constructor goes just before the entry method it runs, with its own blank line.
         Matcher entry = Pattern.compile("(?m)^[ \\t]*(?:/\\*\\*(?:[^*]|\\*(?!/))*\\*/\\s*)?public\\s+void\\s+" + method + "\\s*\\(").matcher(out);
         if (entry.find()) out = out.substring(0, entry.start()) + ctor.substring(1) + "\n" + out.substring(entry.start());
@@ -324,14 +354,9 @@ final class Convert {
             int open = out.indexOf('{', out.indexOf(annotation) + annotation.length()) + 1;
             out = out.substring(0, open) + ctor + out.substring(open);
         }
-        out = Pattern.compile("(?m)^import\\s+net\\.fabricmc\\.api\\." + api + "\\s*;[^\\n]*\\n?").matcher(out).replaceAll("");
-        List<String> needed = new ArrayList<>(List.of("net.neoforged.fml.common.Mod", "net.neoforged.bus.api.IEventBus"));
-        if (client) needed.add("net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent");
-        else needed.addAll(List.of("net.neoforged.neoforge.registries.RegisterEvent", "net.minecraft.core.registries.Registries"));
-        if (dist != null) needed.addAll(List.of("net.neoforged.api.distmarker.Dist", "net.neoforged.fml.ModContainer", "net.neoforged.bus.api.EventPriority"));
-        if (extra != null && extra.contains("GatherDataEvent")) needed.add("net.neoforged.neoforge.data.event.GatherDataEvent");
         for (String name2 : needed) out = LoaderRules.addImport(out, name2);
         write(file, out);
+        modClasses.put(api, file);
         applied.computeIfAbsent("entrypoint-" + api, k -> new ArrayList<>()).add(file);
     }
 
@@ -397,7 +422,7 @@ final class Convert {
         String register = "container.registerExtensionPoint(IConfigScreenFactory.class, (modContainer, parent) -> new " + menu + "().getModConfigScreenFactory().apply(parent));";
         String client = null;
         for (Object item : Json.array(entrypoints.getOrDefault("client", List.of()))) client = item instanceof String s ? s : Json.text(Json.object(item), "value", "");
-        String clientFile = client == null ? null : classFile(client);
+        String clientFile = client == null ? null : modClasses.getOrDefault("ClientModInitializer", classFile(client));
         if (clientFile == null) {
             leave(file, 0, "Mod Menu entry " + menu, "the mod has no client entrypoint to register NeoForge's config screen from");
             return;
@@ -834,6 +859,19 @@ final class Convert {
                 text = text.substring(0, text.lastIndexOf('\n', menuLine.start()) + 1) + text.substring(menuLine.end());
                 text = LoaderRules.dropImport(text, "net.neoforged.neoforge.client.gui.IConfigScreenFactory");
             }
+            Matcher made = Pattern.compile("/\\*\\* NeoForge's entry for (\\w+), which registers in its static fields").matcher(text);
+            if (made.find()) {
+                String target = file.substring(0, file.lastIndexOf('/') + 1) + made.group(1) + ".java";
+                if (!Files.isRegularFile(project.root.resolve(target)) || !text.contains("new " + made.group(1) + "()." + method + "()")) {
+                    leave(file, 0, "@Mod class " + made.group(1) + "NeoForge", "it names an entry class this conversion cannot find");
+                    continue;
+                }
+                delete(file);
+                write(target, implementFabric(read(target), made.group(1), api, method));
+                entrypoints.computeIfAbsent(dist == null ? "main" : dist.equals("CLIENT") ? "client" : "server", k -> new ArrayList<>()).add(name.substring(0, name.lastIndexOf('.') + 1) + made.group(1));
+                applied.computeIfAbsent("entrypoint-" + api, k -> new ArrayList<>()).add(target);
+                continue;
+            }
             String converted = entryToFabric(file, text, annotation, api, method);
             if (converted == null) continue;
             write(file, converted);
@@ -887,6 +925,13 @@ final class Convert {
         int lineStart = out.lastIndexOf('\n', out.indexOf(annotation.group()) ) + 1;
         int lineEnd = out.indexOf('\n', out.indexOf(annotation.group())) + 1;
         out = out.substring(0, lineStart) + out.substring(lineEnd);
+        out = implementFabric(out, simple, api, method);
+        for (String name : List.of("net.neoforged.fml.common.Mod", "net.neoforged.bus.api.IEventBus", "net.neoforged.neoforge.registries.RegisterEvent", "net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent", "net.minecraft.core.registries.Registries", "net.neoforged.api.distmarker.Dist", "net.neoforged.fml.ModContainer", "net.neoforged.bus.api.EventPriority")) out = LoaderRules.dropImport(out, name);
+        return out;
+    }
+
+    /** The class implements the Fabric entrypoint interface again, with @Override on its entry method. */
+    static String implementFabric(String out, String simple, String api, String method) {
         Matcher c = CLASS.matcher(out);
         while (c.find()) if (c.group(3).equals(simple)) {
             String heritage = c.group(4);
@@ -895,9 +940,7 @@ final class Convert {
             break;
         }
         out = out.replaceFirst("(?m)^([ \\t]*)(public\\s+void\\s+" + method + "\\s*\\()", "$1@Override\n$1$2");
-        out = LoaderRules.addImport(out, "net.fabricmc.api." + api);
-        for (String name : List.of("net.neoforged.fml.common.Mod", "net.neoforged.bus.api.IEventBus", "net.neoforged.neoforge.registries.RegisterEvent", "net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent", "net.minecraft.core.registries.Registries", "net.neoforged.api.distmarker.Dist", "net.neoforged.fml.ModContainer", "net.neoforged.bus.api.EventPriority")) out = LoaderRules.dropImport(out, name);
-        return out;
+        return LoaderRules.addImport(out, "net.fabricmc.api." + api);
     }
 
     String fabricJson(Map<String, Object> toml, Map<String, Object> mod, Map<String, List<String>> entrypoints, String minecraft, boolean menu) {

@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "e7ffd6374b40aebfdd176d5069c2dfcbe5c9521bbfea0804196d980a2417998a",
+ "rules_sha256": "67236c4d5181af59f49e2551b5a751cd39b3ed1c7e9e03c5406be4fad413eb34",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -269,6 +269,40 @@
    },
    {
     "symbol": "minecraft|net.minecraft.world.item.CreativeModeTab$Builder",
+    "found": true
+   }
+  ],
+  "game-rule-boolean": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder#forBoolean",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder#category",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder#buildAndRegister",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.core.registries.BuiltInRegistries#GAME_RULE",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.gamerules.GameRule#<init>",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.gamerules.GameRuleType#BOOL",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.gamerules.GameRuleTypeVisitor#visitBoolean",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.flag.FeatureFlagSet#of",
     "found": true
    }
   ],

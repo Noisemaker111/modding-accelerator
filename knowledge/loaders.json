@@ -335,6 +335,45 @@
     "fabric": "import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;\nimport net.minecraft.world.item.CreativeModeTab;\nclass A { CreativeModeTab TAB = FabricCreativeModeTab.builder().title(NAME).build(); }",
     "neoforge": "import net.minecraft.world.item.CreativeModeTab;\nclass A { CreativeModeTab TAB = CreativeModeTab.builder().title(NAME).build(); }"
    }
+  },
+  {
+   "id": "game-rule-boolean",
+   "about": "Fabric's GameRuleBuilder.forBoolean(default).category(c).buildAndRegister(id) builds the GameRule vanilla's own GameRules.registerBoolean builds (BOOL type, bool() argument, Codec.BOOL, visitBoolean, 1 or 0 as the command result, no required features) and registers it under the mod's id; NeoForge mods register that GameRule themselves.",
+   "fabric": "GameRuleBuilder.forBoolean($default).category($category).buildAndRegister($id)",
+   "neoforge": "Registry.register(BuiltInRegistries.GAME_RULE, $id, new GameRule<>($category, GameRuleType.BOOL, BoolArgumentType.bool(), GameRuleTypeVisitor::visitBoolean, Codec.BOOL, value -> value ? 1 : 0, $default, FeatureFlagSet.of()))",
+   "imports": {
+    "fabric": [
+     "net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder"
+    ],
+    "neoforge": [
+     "com.mojang.brigadier.arguments.BoolArgumentType",
+     "com.mojang.serialization.Codec",
+     "net.minecraft.core.Registry",
+     "net.minecraft.core.registries.BuiltInRegistries",
+     "net.minecraft.world.flag.FeatureFlagSet",
+     "net.minecraft.world.level.gamerules.GameRule",
+     "net.minecraft.world.level.gamerules.GameRuleType",
+     "net.minecraft.world.level.gamerules.GameRuleTypeVisitor"
+    ]
+   },
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder#forBoolean",
+     "fabric-api|net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder#category",
+     "fabric-api|net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder#buildAndRegister"
+    ],
+    "neoforge": [
+     "minecraft|net.minecraft.core.registries.BuiltInRegistries#GAME_RULE",
+     "minecraft|net.minecraft.world.level.gamerules.GameRule#<init>",
+     "minecraft|net.minecraft.world.level.gamerules.GameRuleType#BOOL",
+     "minecraft|net.minecraft.world.level.gamerules.GameRuleTypeVisitor#visitBoolean",
+     "minecraft|net.minecraft.world.flag.FeatureFlagSet#of"
+    ]
+   },
+   "test": {
+    "fabric": "import net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder;\nimport net.minecraft.world.level.gamerules.GameRule;\nclass A {\n    static final GameRule<Boolean> CALM = GameRuleBuilder.forBoolean(true).category(GameRuleCategory.MOBS).buildAndRegister(Identifier.fromNamespaceAndPath(\"demo\", \"calm\"));\n}",
+    "neoforge": "import com.mojang.brigadier.arguments.BoolArgumentType;\nimport com.mojang.serialization.Codec;\nimport net.minecraft.core.Registry;\nimport net.minecraft.core.registries.BuiltInRegistries;\nimport net.minecraft.world.flag.FeatureFlagSet;\nimport net.minecraft.world.level.gamerules.GameRule;\nimport net.minecraft.world.level.gamerules.GameRuleType;\nimport net.minecraft.world.level.gamerules.GameRuleTypeVisitor;\nclass A {\n    static final GameRule<Boolean> CALM = Registry.register(BuiltInRegistries.GAME_RULE, Identifier.fromNamespaceAndPath(\"demo\", \"calm\"), new GameRule<>(GameRuleCategory.MOBS, GameRuleType.BOOL, BoolArgumentType.bool(), GameRuleTypeVisitor::visitBoolean, Codec.BOOL, value -> value ? 1 : 0, true, FeatureFlagSet.of()));\n}"
+   }
   }
  ],
  "types": [
