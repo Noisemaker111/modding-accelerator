@@ -1094,7 +1094,16 @@ final class Game {
             task.equals(Json.read(recipe).get("task")) &&
             jbr == Boolean.TRUE.equals(Json.read(recipe).get("jbr")) &&
             replayable(Json.read(recipe));
-        if (!saved && (jbr || java != null)) {
+        // A game Gradle launches is the Gradle daemon's child, not this command's, and outlives it. So Gradle only
+        // prepares and records the launch, and this command starts the game itself, unless this task's last recipe
+        // could not be replayed (NeoGradle 7, ForgeGradle 6): then preparing first would only cost a second Gradle run.
+        boolean gradleOnly =
+            !jbr &&
+            java == null &&
+            Files.exists(recipe) &&
+            task.equals(Json.read(recipe).get("task")) &&
+            !replayable(Json.read(recipe));
+        if (!saved && !gradleOnly) {
             Run.Result prepared = build.gradle(
                 List.of(
                     "-Dmodaccel.recompile=true",
@@ -1113,11 +1122,14 @@ final class Game {
                 jbr ? "prepare-jbr-launch" : "prepare-launch"
             );
             if (
-                prepared.exit() != 0 || !Files.exists(recipe) || (jbr && Json.read(recipe).get("jbrExecutable") == null)
+                prepared.exit() != 0 ||
+                !Files.exists(recipe) ||
+                !fingerprint.equals(Json.read(recipe).get("fingerprint")) ||
+                (jbr && Json.read(recipe).get("jbrExecutable") == null)
             ) throw new IOException(
                 "Could not prepare the " + (jbr ? "JetBrains Runtime " : "") + "launch.\n" + Run.failure(prepared.log())
             );
-            if (!replayable(Json.read(recipe))) throw new IOException(
+            if (!replayable(Json.read(recipe)) && (jbr || java != null)) throw new IOException(
                 "This build's " +
                 task +
                 " supplies its classpath only while Gradle runs it, so the recorded launch cannot be started on " +
@@ -1126,7 +1138,7 @@ final class Game {
                 (jbr ? "--jbr" : "--java") +
                 "."
             );
-            saved = true;
+            saved = replayable(Json.read(recipe));
         }
         if (saved) {
             var launch = Json.read(recipe);
@@ -1200,6 +1212,8 @@ final class Game {
             .redirectOutput(log.toFile());
         builder.environment().putAll(environment);
         Process process = builder.start();
+        // Until the session is recorded, a failed, timed-out or interrupted start ends the game it started.
+        Run.Owned owned = new Run.Owned(process.toHandle(), log);
         process
             .onExit()
             .thenAccept(ended ->
@@ -1213,20 +1227,26 @@ final class Game {
         try {
             value = awaitFirstFrame(ready, log, saved);
         } catch (Exception failure) {
-            process.descendants().forEach(ProcessHandle::destroy);
-            process.destroy();
+            owned.close();
             throw new IOException(startupFailure(failure, log));
         } finally {
             watch.close();
         }
-        long pid = ((Number) value.get("pid")).longValue();
-        value.put(
-            "processStart",
-            ProcessHandle.of(pid).flatMap(p -> p.info().startInstant()).map(Instant::toString).orElseThrow()
-        );
-        if (java != null) value.put("java", java.toString());
-        value.put("log", log.toString());
-        Json.save(build.project.state().resolve("agent.json"), value);
+        try {
+            long pid = ((Number) value.get("pid")).longValue();
+            value.put(
+                "processStart",
+                ProcessHandle.of(pid).flatMap(p -> p.info().startInstant()).map(Instant::toString).orElseThrow()
+            );
+            if (java != null) value.put("java", java.toString());
+            value.put("log", log.toString());
+            Json.save(build.project.state().resolve("agent.json"), value);
+        } catch (Exception failure) {
+            owned.close();
+            throw failure;
+        }
+        // Recorded: later reload, eval, game-status and game-stop use it; a hidden one quits when left unused.
+        owned.handOff();
         if (Files.exists(recipe)) {
             var launch = Json.read(recipe);
             if (fingerprint.equals(launch.get("fingerprint"))) {

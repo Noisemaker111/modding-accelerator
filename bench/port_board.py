@@ -2,6 +2,8 @@
 
     python bench/port_board.py                    every case in bench/port-cases.json
     python bench/port_board.py --only ID,ID       some of them
+    python bench/port_board.py --changed          only the cases crossing a rule this branch changed (the local check)
+    python bench/port_board.py --rules ID,ID      only the cases crossing these rules' updates
     python bench/port_board.py --list             the cases and what is recorded for each, running nothing
     python bench/port_board.py --record           also write a ledger row and a measure point for each result that changed
 
@@ -12,13 +14,15 @@ run got. Below it, the errors still left across every mod are grouped by the gam
 biggest first: that is the next rule to write.
 
 Change a rule in knowledge/fixes.json or the porter, run the board, and read the difference. It exits 1 when
-a port got worse than what is recorded or could not run. Ports run one at a time, because NeoForge mods share
+a port got worse than what is recorded, has an error its last run did not (listed below the table), or could
+not run. Locally, before merge, run --changed; the whole corpus runs in the cloud (tools/cloud-run ports). Ports run one at a time, because NeoForge mods share
 one decompiled game per version and the second finds the first one's setup. A port only reaches "builds";
 whether it loads and behaves in the game is a game check (see the port-a-mod skill).
 """
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -122,10 +126,24 @@ def recorded(case, book, ledger):
     return errors, status
 
 
-def verdict(run, rec_errors, rec_status):
-    """better | same | worse | new | failed, comparing this run with the record."""
+def error_key(error):
+    """An error as the same error across runs: its file and what it is about, not its line, which edits move."""
+    return f"{error.get('file', '?')}: {record.subject(error)}"
+
+
+def new_errors(run, last):
+    """Errors this run has that the last run of the same case did not: a rule that broke code shows here even when the count fell."""
+    if run["built"] or not last or "errorSet" not in last:
+        return []
+    return sorted({error_key(e) for e in run.get("unresolved", [])} - set(last["errorSet"]))
+
+
+def verdict(run, rec_errors, rec_status, last=None):
+    """better | same | worse | new | failed, comparing this run with the record and its errors with the last run's."""
     if run["errors"] is None and not run["built"]:
         return "failed"
+    if new_errors(run, last):
+        return "worse"
     if rec_status is None and rec_errors is None:
         return "new"
     was_built = rec_status in ("build", "load", "behaviour")
@@ -148,6 +166,38 @@ def words(run):
     return f"{run['errors']} error{'s' if run['errors'] != 1 else ''}"
 
 
+def version_key(v):
+    return tuple(int(p) for p in re.findall(r"\d+", v))
+
+
+def crosses(jump, case):
+    """Whether a rule's jump ("1.21.5 -> 1.21.6 (yarn)") overlaps the case's port, in the same direction."""
+    found = [version_key(v) for v in re.findall(r"\d+(?:\.\d+)+", jump.split("(")[0])]
+    if len(found) < 2:
+        return True
+    a, b = found[0], found[-1]
+    frm, to = version_key(case["from"]), version_key(case["to"])
+    return (a < b) == (frm < to) and max(min(a, b), min(frm, to)) < min(max(a, b), max(frm, to))
+
+
+def changed_rules(base):
+    """Ids of the rules in knowledge/fixes.json that differ from the base branch's: the rules this branch touched."""
+    old = subprocess.run(["git", "show", f"{base}:knowledge/fixes.json"], cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+    if old.returncode:
+        raise SystemExit(f"git show {base}:knowledge/fixes.json failed: {old.stderr.strip()}")
+    before = {r["id"]: r for r in json.loads(old.stdout)["rules"]}
+    return [r["id"] for r in json.loads((ROOT / "knowledge" / "fixes.json").read_text(encoding="utf-8"))["rules"] if before.get(r["id"]) != r]
+
+
+def touched_by(cases, rule_ids):
+    """The cases whose port crosses the update one of these rules is for (and, for a loader rule, on that loader)."""
+    rules = {r["id"]: r for r in json.loads((ROOT / "knowledge" / "fixes.json").read_text(encoding="utf-8"))["rules"]}
+    unknown = [i for i in rule_ids if i not in rules]
+    if unknown:
+        raise SystemExit(f"No rule {', '.join(unknown)} in knowledge/fixes.json")
+    return [c for c in cases if any(crosses(rules[i]["jump"], c) and rules[i].get("loader", c["loader"]) == c["loader"] for i in rule_ids)]
+
+
 def board(cases, results, book, ledger, previous):
     lines = ["| Port | Recorded | Last run | Now | | Time |", "|---|---|---|---|---|---|"]
     mark = {"better": "better", "same": "same", "worse": "**worse**", "new": "new", "failed": "**did not run**"}
@@ -157,10 +207,14 @@ def board(cases, results, book, ledger, previous):
         rec = (f"{rec_errors} error{'s' if rec_errors != 1 else ''}" if rec_errors is not None and RANK.get(rec_status, 0) < 1 else "") or (rec_status or "—")
         took = f"{run['seconds'] / 60:.1f} min" if run["seconds"] >= 120 else f"{run['seconds']:.0f} s"
         lines.append(f"| {c['mod']}, {c['loader']} {c['from']} → {c['to']} | {rec} | {words(previous.get(c['id']))} | {words(run)} | "
-                     f"{mark[verdict(run, rec_errors, rec_status)]} | {took} |")
+                     f"{mark[verdict(run, rec_errors, rec_status, previous.get(c['id']))]} | {took} |")
     failed = [(c, results[c["id"]]) for c in cases if results[c["id"]]["errors"] is None and not results[c["id"]]["built"]]
     if failed:
         lines += ["", "Did not run:"] + [f"- {c['id']}: {' '.join(str(r['reason']).split())[:300]}" for c, r in failed]
+    for c in cases:
+        fresh = new_errors(results[c["id"]], previous.get(c["id"]))
+        if fresh:
+            lines += ["", f"New errors in {c['id']} (not in its last run):"] + [f"- {e}" for e in fresh]
     return "\n".join(lines)
 
 
@@ -184,6 +238,9 @@ def main(argv=None, book=None, ledger=None):
     """book and ledger are what is recorded; the tests pass their own so they do not depend on today's numbers."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--only", help="comma-separated case ids")
+    ap.add_argument("--rules", help="comma-separated rule ids: only the cases whose port crosses one of their updates")
+    ap.add_argument("--changed", nargs="?", const="origin/main", metavar="BASE",
+                    help="only the cases crossing a rule this branch changed in knowledge/fixes.json (against BASE, default origin/main)")
     ap.add_argument("--list", action="store_true", help="print the cases and what is recorded, run nothing")
     ap.add_argument("--record", action="store_true", help="write a ledger row and a measure point for each result that differs from the record")
     ap.add_argument("--modaccel", type=Path, default=default_modaccel(), help="the modaccel to test (default: this checkout's); another worktree's for an A/B run")
@@ -203,6 +260,12 @@ def main(argv=None, book=None, ledger=None):
             print(f"No case {', '.join(unknown)}. Cases: {', '.join(c['id'] for c in cases)}", file=sys.stderr)
             return 2
         cases = [c for c in cases if c["id"] in want]
+    if args.rules or args.changed:
+        ids = [x.strip() for x in args.rules.split(",")] if args.rules else changed_rules(args.changed)
+        cases = touched_by(cases, ids)
+        print(f"rules {', '.join(ids) or '(none changed)'}: {len(cases)} case(s) cross their updates", file=sys.stderr)
+        if not cases:
+            return 0
     book = book or M.Book()
     ledger = ledger or record.load_json(record.LEDGER)
     last = args.cache / "latest.json"
@@ -229,14 +292,15 @@ def main(argv=None, book=None, ledger=None):
 
     args.cache.mkdir(parents=True, exist_ok=True)
     keep = dict(previous)
-    keep.update({k: {"built": v["built"], "errors": v["errors"], "seconds": v["seconds"]} for k, v in results.items()})
+    keep.update({k: {"built": v["built"], "errors": v["errors"], "seconds": v["seconds"],
+                     "errorSet": sorted({error_key(e) for e in v.get("unresolved", [])})} for k, v in results.items()})
     last.write_text(json.dumps(keep, indent=1), encoding="utf-8")
 
     worst = 0
     for c in cases:
         run = results[c["id"]]
         rec_errors, rec_status = recorded(c, book, ledger)
-        v = verdict(run, rec_errors, rec_status)
+        v = verdict(run, rec_errors, rec_status, previous.get(c["id"]))
         if v in ("worse", "failed"):
             worst = 1
         if args.record and v in ("better", "worse", "new"):

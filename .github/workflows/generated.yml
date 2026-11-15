@@ -3,7 +3,8 @@ name: Generated files
 # ROADMAP.md and docs/ (the website) are written from coverage/ by two scripts. This runs them on main
 # after every push and commits the result when it changed, so a branch never regenerates them: a PR that
 # only edits coverage/ cannot conflict on a 480 KB page, and the site is never behind the data.
-# The commit is made with the workflow's own token, which starts no other workflow.
+# The commit is pushed with the DOCS_DEPLOY_KEY deploy key, the main ruleset's only bypass. That push runs CI on it
+# and not this workflow again (its paths leave out ROADMAP.md and docs/).
 
 on:
   push:
@@ -17,7 +18,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: generated-files
@@ -28,7 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # main is protected (required checks: linux, windows). The deploy key is the ruleset's only bypass, so this
+      # job pushes over SSH with it; the regenerated files are written from coverage/ that CI already checked.
       - uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.DOCS_DEPLOY_KEY }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -57,5 +62,5 @@ jobs:
             git add ROADMAP.md docs
             git commit -m "Regenerate ROADMAP.md and the website from coverage/"
           done
-          echo "::error::Could not push the regenerated files to main. If main is protected, allow this workflow to push, or run python bench/bench_page.py and python bench/porting_map.py by hand."
+          echo "::error::Could not push the regenerated files to main. Check that the DOCS_DEPLOY_KEY secret holds a write deploy key and that the main ruleset lets deploy keys bypass it."
           exit 1

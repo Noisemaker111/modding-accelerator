@@ -6,7 +6,6 @@
 	"environment": "*",
 	"entrypoints": {
 		"fabric-gametest": [
-			"com.prismlab.gametest.PrismGameTest",
 			"com.prismlab.gametest.PrismBlockGameTest"
 		],
 		"fabric-client-gametest": [

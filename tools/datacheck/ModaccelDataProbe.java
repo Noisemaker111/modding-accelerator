@@ -194,8 +194,13 @@ public final class ModaccelDataProbe {
             Path file = Path.of(System.getProperty("modaccel.datacheck.state")), temporary = file.resolveSibling(file.getFileName() + ".tmp");
             Files.writeString(temporary, json(state), StandardCharsets.UTF_8);
             Files.move(temporary, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            // Like a hidden game, a loaded game or spare no data-check has asked anything for 15 minutes ends.
+            server.setSoTimeout(15 * 60 * 1000);
             while (true) {
-                try (java.net.Socket socket = server.accept()) {
+                java.net.Socket accepted;
+                try { accepted = server.accept(); }
+                catch (java.net.SocketTimeoutException unused) { return; }
+                try (java.net.Socket socket = accepted) {
                     var reader = new java.io.BufferedReader(new java.io.InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                     var reply = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
                     String[] request = String.valueOf(reader.readLine()).split(" ", 3);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Runs modaccel pack-check on a pinned corpus of public modpacks and ranks what it gets wrong or cannot do.
 
-    python bench/pack_sweep.py run [--only ID,ID] [--jobs 1] [--fix] [--label NAME] [--modaccel CHECKOUT] [--record]
+    python bench/pack_sweep.py run [--only ID,ID] [--jobs 1] [--fix] [--focus MODID,MODID] [--corpus FILE] [--label NAME] [--modaccel CHECKOUT] [--record]
     python bench/pack_sweep.py table [--label NAME]
 
 bench/pack-sweep/corpus.json pins each pack: a Modrinth .mrpack by version and SHA-512, or a CurseForge export by
@@ -9,6 +9,9 @@ project and file id and length (its SHA-256 is recorded in the corpus on first d
 into .runs/pack-sweep/packs/ID, runs modaccel pack-check --pack FILE --json (with --fix when asked), and records per
 pack: whether it ran at all, the server start, the mod the start's failure was blamed on, the new world and the
 reopened world, client-only mods left out, every finding by kind and severity, and the stage timings.
+--focus passes pack-check's minimal repro (only those mods and their required ones start); --corpus reads another pinned
+list, such as bench/pack-sweep/repro.json (packs a known fault in knowledge/pack-fixes.json was found in). Neither writes
+coverage/sweeps/pack.json.
 
 Each pack's gaps are classified: the version or loader pack-check could not run (probe compile, loader install, pack
 input), a start that failed with or without a named culprit, a world that did not reopen, warnings the game refuted
@@ -77,7 +80,7 @@ def leftover_servers(instance):
 
 
 def pack_check(path, args):
-    command = MODACCEL + ["pack-check", "--pack", str(path), "--json"] + (["--fix"] if args.fix else [])
+    command = MODACCEL + ["pack-check", "--pack", str(path), "--json"] + (["--fix"] if args.fix else []) + (["--focus", args.focus] if args.focus else [])
     started = time.monotonic()
     # MODACCEL_TRACE: a pack-check that stops with an error prints its stack into the pack's log.
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
@@ -127,6 +130,7 @@ def analyse(pack, code, result, seconds):
         record["gaps"].append(refusal_gap(record["error"]))
         return record
     record["mods"] = result.get("mods")
+    record["focus"] = result.get("focus")
     record["loaderUsed"] = result.get("loader")
     record["staticChecks"] = result.get("staticChecks")
     game = result.get("game") or {}
@@ -255,7 +259,7 @@ def run_one(pack, args, corpus):
     else:
         if not pack.get("sha512") and not pack.get("sha256"):
             pack["sha256"] = sha256
-            CORPUS.write_text(json.dumps(corpus, indent=2) + "\n", encoding="utf-8")
+            args.corpus.write_text(json.dumps(corpus, indent=2) + "\n", encoding="utf-8")
         code, result, seconds, raw = pack_check(path, args)
         record = analyse(pack, code, result, seconds)
         record["leftoverServersStopped"] = leftover_servers(((result.get("game") or {}).get("instance")) if isinstance(result, dict) else None)
@@ -277,6 +281,8 @@ def main():
     run.add_argument("--only", default="")
     run.add_argument("--jobs", type=int, default=1, help="ignored: one pack at a time, since each server takes up to 6 GB")
     run.add_argument("--fix", action="store_true", help="pack-check --fix: a repaired server beside the shipped one")
+    run.add_argument("--focus", default="", help="pack-check --focus: only these mod ids and their required mods start (a minimal repro)")
+    run.add_argument("--corpus", type=Path, default=CORPUS, help="the pinned packs (default bench/pack-sweep/corpus.json)")
     # pack-check judges each start by its log (a stuck start stops itself), so this only bounds a whole --fix run of the biggest packs.
     run.add_argument("--timeout", type=int, default=4 * 3600)
     run.add_argument("--label", default="latest")
@@ -292,7 +298,8 @@ def main():
         return 0
     if args.modaccel:
         MODACCEL[0] = str(Path(args.modaccel).resolve() / ("modaccel.cmd" if WINDOWS else "modaccel"))
-    corpus = json.loads(CORPUS.read_text(encoding="utf-8"))
+    args.corpus = args.corpus.resolve()
+    corpus = json.loads(args.corpus.read_text(encoding="utf-8"))
     packs = corpus["packs"]
     if args.only:
         wanted = set(args.only.split(","))
@@ -314,14 +321,14 @@ def main():
         ranked, rates = write(load_records(), args.label)
     else:
         ranked, rates = summarize(load_records(), args.label)
-        print(f"Partial run (--only): {OUT.relative_to(ROOT)} is left as it is; pass --record to write it.")
+        print(f"Partial, focused or other-corpus run: {OUT.relative_to(ROOT)} is left as it is (--record writes a partial run).")
     print(table(ranked, rates))
     return 0
 
 
 def records_coverage(args):
-    """Whether a run writes the tracked coverage file: a run of the whole corpus, or one asked to with --record."""
-    return not args.only or args.record
+    """Whether a run writes the tracked coverage file: a whole run of the corpus, or a partial one asked to with --record; never a focused or other-corpus run."""
+    return (not args.only or args.record) and not getattr(args, "focus", "") and getattr(args, "corpus", CORPUS) == CORPUS
 
 
 if __name__ == "__main__":

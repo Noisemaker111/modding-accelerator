@@ -1,0 +1,150 @@
+name: Cloud pack sweep
+# modaccel pack-check on GitHub's runners instead of an agent's PC: one ubuntu-latest job per pinned pack
+# (bench/pack-sweep/corpus.json, or repro.json for the packs known faults were found in), at most 12 at once so
+# other CI keeps runners. Dispatch with tools/cloud-run (python tools/cloud-run.py packs). Each job uploads its
+# record, pack-check's log and the server logs; the summary job ranks the gaps (python bench/pack_sweep.py table).
+# A pack's failed start is a result, not a failed job: a job fails only when pack-check could not be run at all.
+# Nothing is cached: the repository's caches are past GitHub's 10 GB limit, a pack's mods (ATM10's are gigabytes)
+# would evict the PR caches, and a runner downloads a JDK or loader in seconds. No retries: a failed run is read.
+run-name: "Cloud pack sweep: ${{ inputs.packs }}${{ inputs.focus && format(' --focus {0}', inputs.focus) || '' }}${{ inputs.fix && ' --fix' || '' }} ${{ inputs.request }}"
+on:
+  workflow_dispatch:
+    inputs:
+      packs:
+        description: Pack ids from the corpus, comma-separated, or all
+        default: all
+      corpus:
+        description: The pinned packs
+        default: bench/pack-sweep/corpus.json
+      fix:
+        description: pack-check --fix (a repaired server beside the shipped one)
+        type: boolean
+        default: false
+      focus:
+        description: pack-check --focus MODID,MODID (a minimal repro), empty for the whole pack
+        default: ''
+      label:
+        description: The sweep's label
+        default: cloud
+      request:
+        description: Set by tools/cloud-run to find the run it started
+        default: ''
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      packs: ${{ steps.plan.outputs.packs }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        env:
+          PACKS: ${{ inputs.packs }}
+          CORPUS: ${{ inputs.corpus }}
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, os
+          # Biggest pack first: with at most 12 jobs at once, All the Mods 10 must not wait behind the small ones.
+          corpus = json.load(open(os.environ["CORPUS"], encoding="utf-8"))["packs"]
+          packs = [p["id"] for p in sorted(corpus, key=lambda p: -p.get("bytes", 0))]
+          wanted = [x.strip() for x in os.environ["PACKS"].split(",") if x.strip()]
+          if wanted != ["all"]:
+              unknown = [x for x in wanted if x not in packs]
+              if unknown:
+                  raise SystemExit(f"No pack {unknown} in {os.environ['CORPUS']}; it has {packs}")
+              packs = wanted
+          print("packs=" + json.dumps(packs))
+          EOF
+  pack:
+    needs: plan
+    name: ${{ matrix.pack }}
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        pack: ${{ fromJSON(needs.plan.outputs.packs) }}
+    runs-on: ubuntu-latest
+    # All the Mods 10 took 40 min with --fix on a 24-thread PC (coverage/sweeps/pack.json: 22 min for one start); a
+    # 4-core runner is slower. pack_sweep.py's own limit stops pack-check 10 minutes before the job's.
+    timeout-minutes: 150
+    env:
+      PACK: ${{ matrix.pack }}
+      CORPUS: ${{ inputs.corpus }}
+      LABEL: ${{ inputs.label }}
+      FOCUS: ${{ inputs.focus }}
+      FIX: ${{ inputs.fix && '--fix' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: pack-check
+        run: |
+          python bench/pack_sweep.py run --only "$PACK" --corpus "$CORPUS" --label "$LABEL" --timeout 8400 $FIX ${FOCUS:+--focus "$FOCUS"}
+          python3 - <<'EOF'
+          import json, os, sys
+          r = json.load(open(f".runs/pack-sweep/runs/{os.environ['PACK']}.json", encoding="utf-8"))
+          stages = ", ".join(f"{s['name']} {s['seconds']} s" for s in r.get("stages", []))
+          line = f"{r['id']}: {r['outcome']} in {r.get('seconds')} s; mods {r.get('mods')}; gaps {r['gaps']}"
+          print(line + "\n" + stages)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write(f"**{line}**\n\n{stages}\n\nfocus: {json.dumps(r.get('focus'))}\n\nfix: {json.dumps(r.get('fix'))}\n")
+          sys.exit(1 if r["outcome"] == "did not run" else 0)
+          EOF
+      - name: Record, pack-check output and server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pack-${{ matrix.pack }}
+          path: |
+            .runs/pack-sweep/runs
+            .runs/pack-sweep/logs
+            .runs/portable/*/*.log
+            .runs/portable/*/*.json
+            .runs/portable/*/*.mrpack
+            .runs/portable/*/*.zip
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
+  summary:
+    needs: pack
+    if: always() && needs.pack.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pack-*
+          path: .runs/artifacts
+      - name: Rank the gaps
+        env:
+          LABEL: ${{ inputs.label }}
+        run: |
+          mkdir -p .runs/pack-sweep/runs
+          cp .runs/artifacts/*/pack-sweep/runs/*.json .runs/pack-sweep/runs/
+          python bench/pack_sweep.py table --label "$LABEL" | tee summary.md
+          python3 - <<'EOF' >> summary.md
+          import json, pathlib
+          print("\n| Pack | Outcome | Mods | Seconds | Stages |\n|---|---|---|---|---|")
+          for p in sorted(pathlib.Path(".runs/pack-sweep/runs").glob("*.json")):
+              r = json.loads(p.read_text(encoding="utf-8"))
+              focus = f" (focus: {r['focus']['jars']} of {r['focus']['of']} jars)" if r.get("focus") else ""
+              stages = ", ".join(f"{s['name']} {s['seconds']}" for s in r.get("stages", []) if s["name"].startswith(("server", "repaired")))
+              print(f"| {r['id']} | {r['outcome']}{focus} | {r.get('mods')} | {r.get('seconds')} | {stages} |")
+          EOF
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+          cp coverage/sweeps/pack.json pack.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: summary
+          path: |
+            summary.md
+            pack.json
+          retention-days: 14
