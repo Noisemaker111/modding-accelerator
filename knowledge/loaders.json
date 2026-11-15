@@ -1740,6 +1740,72 @@
      "below": "1.21.2"
     }
    ]
+  },
+  {
+   "id": "fabric-on-neoforge",
+   "about": "For mods written for Fabric first: the Fabric API and Fabric Loader classes the code uses that no rule rewrites, written for this project on NeoForge's API with Fabric's names and members, in knowledge/bridges/fabric-on-neoforge (a file at fabric/api/event/Event.java mirrors net.fabricmc.fabric.api.event.Event). convert copies the bridge under the main entrypoint's package (net.fabricmc.X becomes PACKAGE.fabricbridge.X, so converted mods never share a package), points the mirrored imports at it, and each @Mod constructor it writes calls FabricBridge.init(modBus) first, so the bridge can listen for the NeoForge events its Fabric callbacks are posted from. Fabric's events (Event, EventFactory) keep Fabric's phase ordering. FabricLoader reads NeoForge's mod list: a converted mod is found by the Fabric id it keeps (modproperties fabricId), and the entrypoints and custom values of fabric.mod.json are kept in modproperties (fabric.entrypoints.KEY, fabric.custom). The way back points the imports at Fabric's classes again and removes the bridge.",
+   "from": "fabric",
+   "to": "neoforge",
+   "minecraft": "26.1",
+   "folder": "knowledge/bridges/fabric-on-neoforge",
+   "symbols": {
+    "fabric": [
+     "fabric-api|net.fabricmc.fabric.api.event.Event#invoker",
+     "fabric-api|net.fabricmc.fabric.api.event.Event#register",
+     "fabric-api|net.fabricmc.fabric.api.event.Event#addPhaseOrdering",
+     "fabric-api|net.fabricmc.fabric.api.event.Event#DEFAULT_PHASE",
+     "fabric-api|net.fabricmc.fabric.api.event.EventFactory#createArrayBacked",
+     "fabric-api|net.fabricmc.fabric.api.event.EventFactory#createWithPhases",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getInstance",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#isModLoaded",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getModContainer",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getAllMods",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEntrypoints",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEntrypointContainers",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getConfigDir",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getGameDir",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
+     "fabric-loader|net.fabricmc.loader.api.ModContainer#getMetadata",
+     "fabric-loader|net.fabricmc.loader.api.ModContainer#findPath",
+     "fabric-loader|net.fabricmc.loader.api.ModContainer#getRootPaths",
+     "fabric-loader|net.fabricmc.loader.api.Version#getFriendlyString",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getId",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getName",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getVersion",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getAuthors",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getCustomValue",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#containsCustomValue",
+     "fabric-loader|net.fabricmc.loader.api.metadata.CustomValue#getAsObject",
+     "fabric-loader|net.fabricmc.loader.api.metadata.CustomValue$CvObject#get",
+     "fabric-loader|net.fabricmc.loader.api.metadata.Person#getName",
+     "fabric-loader|net.fabricmc.loader.api.metadata.ContactInformation#get",
+     "fabric-loader|net.fabricmc.loader.api.entrypoint.EntrypointContainer#getEntrypoint",
+     "fabric-loader|net.fabricmc.loader.api.entrypoint.EntrypointContainer#getProvider"
+    ],
+    "neoforge": [
+     "fml|net.neoforged.fml.ModList#getMods",
+     "fml|net.neoforged.fml.ModList#getModContainerById",
+     "fml|net.neoforged.fml.ModList#isLoaded",
+     "fml|net.neoforged.fml.ModContainer#getModInfo",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getModProperties",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getOwningFile",
+     "fml|net.neoforged.neoforgespi.language.IModInfo#getLogoFile",
+     "fml|net.neoforged.neoforgespi.language.IModFileInfo#getLicense",
+     "fml|net.neoforged.neoforgespi.locating.IModFile#getContents",
+     "fml|net.neoforged.fml.jarcontents.JarContents#getContentRoots",
+     "fml|net.neoforged.fml.loading.FMLEnvironment#getDist",
+     "fml|net.neoforged.fml.loading.FMLEnvironment#isProduction",
+     "fml|net.neoforged.fml.loading.FMLPaths#CONFIGDIR",
+     "fml|net.neoforged.fml.loading.FMLPaths#GAMEDIR",
+     "bus|net.neoforged.bus.api.IEventBus#addListener",
+     "minecraft|net.minecraft.resources.Identifier#fromNamespaceAndPath"
+    ]
+   },
+   "test": {
+    "fabric": "package demo.api;\n\nimport net.fabricmc.fabric.api.event.Event;\nimport net.fabricmc.fabric.api.event.EventFactory;\nimport net.fabricmc.loader.api.FabricLoader;\n\npublic interface Opened {\n\tEvent<Opened> EVENT = EventFactory.createArrayBacked(Opened.class, listeners -> name -> {\n\t\tfor (Opened listener : listeners) listener.opened(name);\n\t});\n\n\tvoid opened(String name);\n\n\tstatic boolean dev() {\n\t\treturn net.fabricmc.loader.api.FabricLoader.getInstance().getAllMods().size() > 1;\n\t}\n}\n",
+    "neoforge": "package demo.api;\n\nimport demo.fabricbridge.fabric.api.event.Event;\nimport demo.fabricbridge.fabric.api.event.EventFactory;\nimport demo.fabricbridge.loader.api.FabricLoader;\n\npublic interface Opened {\n\tEvent<Opened> EVENT = EventFactory.createArrayBacked(Opened.class, listeners -> name -> {\n\t\tfor (Opened listener : listeners) listener.opened(name);\n\t});\n\n\tvoid opened(String name);\n\n\tstatic boolean dev() {\n\t\treturn demo.fabricbridge.loader.api.FabricLoader.getInstance().getAllMods().size() > 1;\n\t}\n}\n"
+   }
   }
  ]
 }

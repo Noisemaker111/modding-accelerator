@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "712db2900d826eac68df2f648b159f34141527d5cfa717f4eeef1cd0a8fa8de4",
+ "rules_sha256": "cf459d36fcaa71ebf78a6abed37199ccdc5842e44d3c1e2c031502bbae57eba4",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -1681,6 +1681,200 @@
    },
    {
     "symbol": "fml-21.1|net.neoforged.fml.ModList#getModContainerById",
+    "found": true
+   }
+  ],
+  "fabric-on-neoforge": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.Event#invoker",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.Event#register",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.Event#addPhaseOrdering",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.Event#DEFAULT_PHASE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.EventFactory#createArrayBacked",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.EventFactory#createWithPhases",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getInstance",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#isModLoaded",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getModContainer",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getAllMods",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEntrypoints",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEntrypointContainers",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getConfigDir",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getGameDir",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.ModContainer#getMetadata",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.ModContainer#findPath",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.ModContainer#getRootPaths",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.Version#getFriendlyString",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getId",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getName",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getVersion",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getAuthors",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#getCustomValue",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.ModMetadata#containsCustomValue",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.CustomValue#getAsObject",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.CustomValue$CvObject#get",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.Person#getName",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.metadata.ContactInformation#get",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.entrypoint.EntrypointContainer#getEntrypoint",
+    "found": true
+   },
+   {
+    "symbol": "fabric-loader|net.fabricmc.loader.api.entrypoint.EntrypointContainer#getProvider",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModList#getMods",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModList#getModContainerById",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModList#isLoaded",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModContainer#getModInfo",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.neoforgespi.language.IModInfo#getModProperties",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.neoforgespi.language.IModInfo#getOwningFile",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.neoforgespi.language.IModInfo#getLogoFile",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.neoforgespi.language.IModFileInfo#getLicense",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.neoforgespi.locating.IModFile#getContents",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.jarcontents.JarContents#getContentRoots",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.loading.FMLEnvironment#getDist",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.loading.FMLEnvironment#isProduction",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.loading.FMLPaths#CONFIGDIR",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.loading.FMLPaths#GAMEDIR",
+    "found": true
+   },
+   {
+    "symbol": "bus|net.neoforged.bus.api.IEventBus#addListener",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.resources.Identifier#fromNamespaceAndPath",
     "found": true
    }
   ]

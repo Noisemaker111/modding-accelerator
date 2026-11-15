@@ -1606,6 +1606,79 @@ public final class PortableTests {
             Files.readString(neo.resolve("src/main/java/demo/Demo.java")).equals(Json.text(bridgeTest, "neoforge", "")),
             "undoing both conversions restores the NeoForge mod and leaves no folder the bridge emptied"
         );
+
+        // A mod written for Fabric first keeps the Fabric API classes no rule rewrites through the Fabric bridge on NeoForge.
+        Map<String, Object> fabricBridge = null;
+        for (Object b : LoaderRules.list(rules.get("bridges"))) if ("fabric-on-neoforge".equals(Json.object(b).get("id"))) fabricBridge = Json.object(b);
+        check(fabricBridge != null, "knowledge/loaders.json has the Fabric bridge");
+        Map<String, Object> fabricBridgeTest = Json.object(fabricBridge.get("test"));
+        Path fab = scratch.resolve("convert-fabric-bridge-mod");
+        Map<String, String> fabFiles = new LinkedHashMap<>();
+        fabFiles.put("gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+        fabFiles.put("settings.gradle", "rootProject.name = 'demo'\n");
+        fabFiles.put("gradle.properties", "minecraft_version=26.3\nloader_version=0.19.5\nfabric_api_version=0.161.0+26.3\n");
+        fabFiles.put(
+            "build.gradle",
+            "plugins {\n\tid 'net.fabricmc.fabric-loom' version '1.18.2'\n}\n\ndependencies {\n\tminecraft \"com.mojang:minecraft:${project.minecraft_version}\"\n" +
+            "\timplementation \"net.fabricmc:fabric-loader:${project.loader_version}\"\n\timplementation \"net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}\"\n}\n"
+        );
+        fabFiles.put(
+            "src/main/resources/fabric.mod.json",
+            "{\n\t\"schemaVersion\": 1,\n\t\"id\": \"demo\",\n\t\"version\": \"1.0.0\",\n\t\"entrypoints\": {\n\t\t\"main\": [\"demo.Demo\"],\n\t\t\"demo\": [\"demo.api.Plugin\"]\n\t},\n\t\"custom\": {\n\t\t\"demo\": {\n\t\t\t\"badge\": true\n\t\t}\n\t}\n}\n"
+        );
+        fabFiles.put(
+            "src/main/java/demo/Demo.java",
+            "package demo;\n\nimport net.fabricmc.api.ModInitializer;\n\npublic class Demo implements ModInitializer {\n\t@Override\n\tpublic void onInitialize() {\n\t}\n}\n"
+        );
+        fabFiles.put("src/main/java/demo/api/Opened.java", Json.text(fabricBridgeTest, "fabric", ""));
+        fabFiles.put("src/main/java/demo/api/Plugin.java", "package demo.api;\n\npublic class Plugin {\n}\n");
+        for (var file : fabFiles.entrySet()) {
+            Path path = fab.resolve(file.getKey());
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, file.getValue());
+        }
+        ProjectModel fabProject = new ProjectModel(fab);
+        for (var answer : answers.entrySet()) {
+            Path cache = fabProject.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+            Files.createDirectories(cache.getParent());
+            Files.writeString(cache, answer.getValue());
+        }
+        Convert fabConvert = new Convert(new Build(fabProject, home, "", new Modaccel.Report(fab, "convert")));
+        Map<String, Object> fabToNeo = fabConvert.run(new Modaccel.Options(new String[] { "convert", "--to", "neoforge" }), false);
+        String opened = Files.readString(fab.resolve("src/main/java/demo/api/Opened.java"));
+        String fabToml = Files.readString(fab.resolve("src/main/resources/META-INF/neoforge.mods.toml"));
+        String fabEntry = Files.readString(fab.resolve("src/main/java/demo/Demo.java"));
+        check(
+            opened.equals(Json.text(fabricBridgeTest, "neoforge", "")) &&
+            Files.readString(fab.resolve("src/main/java/demo/fabricbridge/fabric/api/event/EventFactory.java")).startsWith("package demo.fabricbridge.fabric.api.event;") &&
+            Files.readString(fab.resolve("src/main/java/demo/fabricbridge/FabricBridge.java")).contains("return \"demo\";") &&
+            fabEntry.contains("FabricBridge.init(modBus);") &&
+            fabEntry.contains("import demo.fabricbridge.FabricBridge;") &&
+            fabToml.contains("\"fabric.entrypoints.demo\" = [\"demo.api.Plugin\"]") &&
+            fabToml.contains("\"fabric.custom\" = \"{") &&
+            Json.array(fabToNeo.get("left")).isEmpty(),
+            "Fabric API classes no rule rewrites go to the Fabric bridge on NeoForge, the @Mod constructor starts it, and the mod's own entrypoints and custom values stay in modproperties:\n" +
+            opened +
+            fabToml +
+            fabToNeo.get("details")
+        );
+        Map<String, Object> fabBack = new Convert(new Build(fabProject, home, "", new Modaccel.Report(fab, "convert"))).run(
+            new Modaccel.Options(new String[] { "convert", "--to", "fabric" }),
+            false
+        );
+        String fabBackJson = Files.readString(fab.resolve("src/main/resources/fabric.mod.json"));
+        check(
+            Files.readString(fab.resolve("src/main/java/demo/api/Opened.java")).equals(Json.text(fabricBridgeTest, "fabric", "")) &&
+            Files.readString(fab.resolve("src/main/java/demo/Demo.java")).equals(fabFiles.get("src/main/java/demo/Demo.java")) &&
+            !Files.exists(fab.resolve("src/main/java/demo/fabricbridge")) &&
+            fabBackJson.contains("\"demo\": [\n\t\t\t\"demo.api.Plugin\"\n\t\t]") &&
+            fabBackJson.contains("\"badge\": true"),
+            "back to Fabric, the bridge's classes are Fabric's again, the bridge is gone, and the kept entrypoints and custom values are fabric.mod.json's again:\n" +
+            Files.readString(fab.resolve("src/main/java/demo/api/Opened.java")) +
+            Files.readString(fab.resolve("src/main/java/demo/Demo.java")) +
+            fabBackJson +
+            fabBack.get("details")
+        );
     }
 
     public static void main(String[] args) throws Exception {
