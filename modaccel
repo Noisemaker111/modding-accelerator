@@ -1,0 +1,4 @@
+#!/bin/sh
+# Compatibility launcher: modaccel is now mmt (Minecraft Modding Tools). Forwards every argument.
+echo "modaccel is now mmt (Minecraft Modding Tools): run ./mmt instead; this name will be removed." >&2
+exec "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/mmt" "$@"
