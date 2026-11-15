@@ -130,6 +130,7 @@ final class Target {
             Dependencies.resolve(setup, "neoforge");
             applyReplacements(setup, build, pins);
             neoGradleFollows(setup, build, to);
+            modDevFollows(setup, build, to);
             toolchain(setup, build, to);
             runTypeRename(setup, build, to);
             parchmentFollows(setup, build, to);
@@ -375,6 +376,77 @@ final class Target {
                 setup.unchecked.add(Json.map("artifact", "net.neoforged:neoforge (sibling project)", "version", to, "reason", none.getMessage()));
             }
         }
+    }
+
+    /**
+     * ModDevGradle follows a forward port to the newest release of its line on maven.neoforged.net. An old release cannot set
+     * up a newer game: Farmer's Delight's moddev 1.0.0 moved to 1.21.4 failed every build on com.mojang:jtracy, a library
+     * 1.21.4 added. The line is kept, so the build script's DSL stays the one it was written for; Gradle rises to what the
+     * plugin's own module metadata asks. A backport keeps its build tools.
+     */
+    static void modDevFollows(Setup setup, Build build, String to) throws Exception {
+        String from = "";
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (
+            setup.pins.containsKey(key)
+        ) {
+            from = setup.pins.get(key);
+            break;
+        }
+        if (!from.isEmpty() && Versions.compare(to, from) <= 0) return;
+        Pattern pluginLine = Pattern.compile(
+            "(id\\s*\\(?\\s*[\"']net\\.neoforged\\.moddev[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"'])([^\"']+)([\"'])"
+        );
+        Path properties = build.project.root.resolve("gradle.properties");
+        List<Path> files = new ArrayList<>();
+        Object own = setup.project.get("buildFile");
+        if (own != null) files.add(Path.of(own.toString()));
+        for (String name : List.of("build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts")) files.add(build.project.root.resolve(name));
+        files.add(properties);
+        for (Path file : new LinkedHashSet<>(files)) {
+            if (!Files.isRegularFile(file)) continue;
+            Matcher pin = file.equals(properties)
+                ? Pattern.compile(
+                    "(?m)^([ \\t]*(?:moddev_version|moddevgradle_version|mdg_version|moddevVersion)[ \\t]*=[ \\t]*)(\\S+)()[ \\t]*$"
+                ).matcher(setup.text(file))
+                : pluginLine.matcher(setup.text(file));
+            if (!pin.find() || !pin.group(2).matches("\\d+\\.\\d+\\.\\d+(?:-beta)?")) continue;
+            String current = pin.group(2), newest = newestInLine(
+                fetch(build, "https://maven.neoforged.net/releases/net/neoforged/moddev-gradle/maven-metadata.xml"),
+                current.substring(0, current.indexOf('.'))
+            );
+            if (newest == null || Versions.compare(newest, current) <= 0) return;
+            setup.replace(file, pin.group(0), pin.group(1) + newest + pin.group(3));
+            setup.applied.add(
+                Json.map(
+                    "file",
+                    file.toString(),
+                    "change",
+                    "ModDevGradle " + current + " -> " + newest + " for " + to,
+                    "evidence",
+                    "the newest ModDevGradle " + current.substring(0, current.indexOf('.')) + ".x on maven.neoforged.net"
+                )
+            );
+            gradleFollows(
+                setup,
+                build,
+                "https://maven.neoforged.net/releases/net/neoforged/moddev-gradle/" + newest + "/moddev-gradle-" + newest + ".module",
+                "ModDevGradle " + newest,
+                "ModDevGradle " + newest
+            );
+            return;
+        }
+    }
+
+    /** The newest final release of one major line in a maven-metadata.xml (pre-releases only when the line has nothing else). */
+    static String newestInLine(String xml, String major) {
+        String release = null, any = null;
+        Matcher version = Pattern.compile("<version>(" + Pattern.quote(major) + "\\.[^<]+)</version>").matcher(xml);
+        while (version.find()) {
+            String v = version.group(1);
+            if (any == null || Versions.compare(v, any) > 0) any = v;
+            if (!v.matches(".*-(?:beta|alpha|rc|SNAPSHOT).*") && (release == null || Versions.compare(v, release) > 0)) release = v;
+        }
+        return release != null ? release : any;
     }
 
     /** Parchment's newest release of parameter names for exactly this Minecraft version, or "" when it publishes none. */

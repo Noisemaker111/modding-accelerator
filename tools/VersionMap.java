@@ -1295,9 +1295,14 @@ public final class VersionMap {
                         Path dir,
                         java.nio.file.attribute.BasicFileAttributes attrs
                     ) {
+                        // A folder with its own settings.gradle is another Gradle build, not part of this port.
+                        boolean separate =
+                            !dir.getFileName().toString().equals("buildSrc") &&
+                            !dir.getFileName().toString().equals("build-logic") &&
+                            (Files.isRegularFile(dir.resolve("settings.gradle")) || Files.isRegularFile(dir.resolve("settings.gradle.kts")));
                         return (
                                 !dir.equals(repo) &&
-                                (EXCLUDED.contains(dir.getFileName().toString()) || Files.exists(dir.resolve(".git")))
+                                (EXCLUDED.contains(dir.getFileName().toString()) || Files.exists(dir.resolve(".git")) || separate)
                             )
                             ? FileVisitResult.SKIP_SUBTREE
                             : FileVisitResult.CONTINUE;

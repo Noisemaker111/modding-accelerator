@@ -1271,6 +1271,42 @@ public final class PortableTests {
             Port.restorePending(deadProject);
             check(Files.readString(dead.resolve("build.gradle")).equals(script), "restorePending puts the script back byte for byte");
         }
+        // A port's tier never claims more than happened: a build that did not compile is compile-failed, whatever Mixin said
+        // before (Farmer's Delight 1.21.1 -> 1.21.4 once said compile-and-mixin-applied with compiled false).
+        check(Port.tier(false, Json.map("ok", true), false).equals("compile-failed"), "no compile, no mixin claim");
+        check(Port.tier(true, null, false).equals("compiled-mixins-failed"), "compiled but mixins unchecked");
+        check(Port.tier(true, Json.map("ok", false), true).equals("compiled-mixins-failed"), "compiled, mixins failed");
+        check(Port.tier(true, Json.map("ok", true), false).equals("compile-and-mixin-applied"), "compiled and mixins applied");
+        check(Port.tier(true, Json.map("ok", true), true).equals("build-and-mixin-applied"), "built and mixins applied");
+        // ModDevGradle moves to the newest release of its own line (1.0.0 -> 1.0.24, not 2.x), releases before betas.
+        String modDev = "<versions><version>1.0.0</version><version>2.0.0-beta</version><version>1.0.23</version><version>1.0.24</version><version>2.0.148</version><version>1.1.0-beta</version></versions>";
+        check("1.0.24".equals(Target.newestInLine(modDev, "1")), "ModDevGradle 1.x line: " + Target.newestInLine(modDev, "1"));
+        check("2.0.148".equals(Target.newestInLine(modDev, "2")), "ModDevGradle 2.x line");
+        check("3.0.0-beta".equals(Target.newestInLine("<version>3.0.0-beta</version>", "3")), "a line with only betas gives its newest beta");
+        // A folder with its own settings.gradle is a separate build the port never touches (ZAA's forge1201/, neoforge1201/).
+        {
+            Path zaa = Files.createDirectories(scratch.resolve("separate-builds"));
+            Files.writeString(zaa.resolve("settings.gradle"), "rootProject.name = 'zaa'\n");
+            Files.writeString(zaa.resolve("build.gradle"), "plugins { id 'java' }\n");
+            Files.createDirectories(zaa.resolve("forge1201/src/main/java/a"));
+            Files.writeString(zaa.resolve("forge1201/settings.gradle"), "rootProject.name = 'zaa-forge'\n");
+            Files.writeString(zaa.resolve("forge1201/build.gradle"), "minecraft { runs { data { } } }\n");
+            Files.writeString(zaa.resolve("forge1201/src/main/java/a/A.java"), "package a; class A {}\n");
+            Files.createDirectories(zaa.resolve("buildSrc"));
+            Files.writeString(zaa.resolve("buildSrc/settings.gradle"), "\n");
+            Files.writeString(zaa.resolve("buildSrc/build.gradle"), "\n");
+            Files.createDirectories(zaa.resolve("src/main/java/b"));
+            Files.writeString(zaa.resolve("src/main/java/b/B.java"), "package b; class B {}\n");
+            ProjectModel separate = new ProjectModel(zaa);
+            check(separate.inputs().stream().noneMatch(p -> p.toString().contains("forge1201")), "a separate build's scripts are not this build's inputs");
+            check(separate.inputs().stream().anyMatch(p -> p.endsWith(Path.of("buildSrc", "build.gradle"))), "buildSrc stays part of the build");
+            check(Port.sources(separate).stream().noneMatch(p -> p.toString().contains("forge1201")), "a separate build's sources are not ported");
+            check(Port.sources(separate).stream().anyMatch(p -> p.endsWith(Path.of("b", "B.java"))), "the build's own sources are ported");
+        }
+        // Rules mined from other people's mods run only with --learn-from-mods; the rule book's own rules always run.
+        check(!Port.ownRule(Json.map("provenance", "third-party-mods"), false), "third-party rules are off by default");
+        check(Port.ownRule(Json.map("provenance", "third-party-mods"), true), "--learn-from-mods turns them on");
+        check(Port.ownRule(Json.map("provenance", "hand"), false), "our own rules always run");
         // Old Loom states its minimum Gradle only as a constant of its bootstrap class: class constants are read from the
         // class file itself (an int and a String constant of the JDK's own classes), and a major line becomes its newest release.
         try (var integer = Object.class.getResourceAsStream("/java/lang/Integer.class"); var jar = Object.class.getResourceAsStream("/java/util/jar/JarFile.class")) {

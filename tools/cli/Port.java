@@ -105,16 +105,8 @@ final class Port {
      * original waits in pendingOriginals until the port's transaction backs it up (or restorePending puts it back).
      */
     static List<String> removeDevPlugin(ProjectModel project, String id) throws IOException {
-        List<Path> scripts;
-        try (var walk = Files.walk(project.root, 3)) {
-            scripts = walk
-                .filter(p -> p.getFileName().toString().matches("build\\.gradle(\\.kts)?"))
-                .filter(p -> {
-                    for (Path part : project.root.relativize(p)) if (ProjectModel.IGNORED.contains(part.toString())) return false;
-                    return true;
-                })
-                .toList();
-        }
+        // The build's own scripts only: a separate build in a subfolder is not part of this port (ProjectModel.inputs).
+        List<Path> scripts = project.inputs().stream().filter(p -> p.getFileName().toString().matches("build\\.gradle(\\.kts)?")).toList();
         Pattern declaration = Pattern.compile(
             "(?m)^[ \\t]*(?:id\\s*\\(?\\s*[\"']" +
             Pattern.quote(id) +
@@ -441,7 +433,8 @@ final class Port {
                     return (
                             !dir.equals(project.root) &&
                             (ProjectModel.IGNORED.contains(dir.getFileName().toString()) ||
-                                Files.exists(dir.resolve(".git")))
+                                Files.exists(dir.resolve(".git")) ||
+                                ProjectModel.separateBuild(dir))
                         )
                         ? FileVisitResult.SKIP_SUBTREE
                         : FileVisitResult.CONTINUE;
@@ -477,6 +470,7 @@ final class Port {
             !from.matches("[A-Za-z0-9._+\\-]+") || !to.matches("[A-Za-z0-9._+\\-]+")
         ) throw new IllegalArgumentException("Invalid Minecraft version");
         targetVersion = to;
+        learnFromMods = options.has("learn-from-mods");
         Map<String, Object> refusal = Route.blocked(build.harness, from, to);
         if (refusal != null) return refusal;
         // --direct keeps the one-jump map (A -> B joined in one diff); an explicit --map is used as given.
@@ -947,7 +941,7 @@ final class Port {
                 "ok",
                 passed,
                 "tier",
-                built ? "build-and-mixin-applied" : "compile-and-mixin-applied",
+                tier(compiled, mixins, built),
                 "compiled",
                 compiled,
                 "errorsBefore",
@@ -1109,6 +1103,17 @@ final class Port {
         } finally {
             finishTransaction(build.project, transaction, before, removed);
         }
+    }
+
+    /**
+     * What a port reached, never more: a source that did not compile is "compile-failed" (Farmer's Delight's failed
+     * 1.21.4 builds were once reported as compile-and-mixin-applied), mixins Mixin did not apply are
+     * "compiled-mixins-failed", and only a packaged build is "build-and-mixin-applied".
+     */
+    static String tier(boolean compiled, Map<String, Object> mixins, boolean built) {
+        if (!compiled) return "compile-failed";
+        if (mixins == null || !Boolean.TRUE.equals(mixins.get("ok"))) return "compiled-mixins-failed";
+        return built ? "build-and-mixin-applied" : "compile-and-mixin-applied";
     }
 
     /** Report every target dependency as resolved, selected, or blocked without changing the project. */
@@ -1653,6 +1658,17 @@ final class Port {
     }
 
     /** How many of the rules a port applied came from each source (knowledge/fixes.json "provenance"). */
+    /** Whether port --learn-from-mods was given: only then do rules mined from other people's mods run. */
+    boolean learnFromMods;
+
+    /**
+     * The rule book's own rules always run; the older rules mined from third-party mods (provenance third-party-mods)
+     * only with --learn-from-mods. Rules are never taken from other people's mods by default.
+     */
+    static boolean ownRule(Map<String, Object> rule, boolean learnFromMods) {
+        return learnFromMods || !"third-party-mods".equals(Json.text(rule, "provenance", ""));
+    }
+
     Map<String, Object> provenance(Set<String> ids) throws IOException {
         Map<String, Object> counts = new TreeMap<>();
         if (ids.isEmpty()) return counts;
@@ -1783,7 +1799,7 @@ final class Port {
         List<Path> all = ownedJava();
         for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
             var rule = Json.object(item);
-            if (!rule.containsKey("silent") || !loaderFits(rule)) continue;
+            if (!rule.containsKey("silent") || !loaderFits(rule) || !ownRule(rule, learnFromMods)) continue;
             List<String> covered = route == null
                 ? List.of()
                 : route.stepsCovered(Json.text(rule, "jump", ""), namespace);
@@ -2118,6 +2134,7 @@ final class Port {
             var rule = Json.object(item);
             if (
                 rule.containsKey("silent") ||
+                !ownRule(rule, learnFromMods) ||
                 !loaderFits(rule) ||
                 !Pattern.compile(rule.get("match").toString()).matcher(errors).find()
             ) continue;

@@ -5915,6 +5915,157 @@
         "after": "package mod;\n\nclass Config {\n\tItem item(String name) { return BuiltInRegistries.ITEM.get(ResourceLocation.parse(name)); }\n}\n",
         "from": "written for this rule"
       }
+    },
+    {
+      "id": "registry-access-lookup-or-throw",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method registryOrThrow\\(",
+      "apply": {
+        "find": "\\.registryOrThrow\\(",
+        "replace": ".lookupOrThrow("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 renamed RegistryAccess.registryOrThrow(ResourceKey) to lookupOrThrow(ResourceKey), same descriptor and return type.",
+      "verified": "Game-derived route map (tools/GameDiff.java, Mojang's 1.21.1 and 1.21.2 jars and mappings): net.minecraft.core.RegistryAccess registryOrThrow (Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/core/Registry; renamed to lookupOrThrow in 1.21.1 -> 1.21.2",
+      "test": {
+        "error": "Spawns.java:20: error: cannot find symbol\n  symbol:   method registryOrThrow(ResourceKey<Registry<Biome>>)\n",
+        "before": "package mod;\n\nclass Spawns {\n\tRegistry<Biome> biomes(Level level) { return level.registryAccess().registryOrThrow(Registries.BIOME); }\n}\n",
+        "after": "package mod;\n\nclass Spawns {\n\tRegistry<Biome> biomes(Level level) { return level.registryAccess().lookupOrThrow(Registries.BIOME); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "scroll-area-scroll-amount",
+      "provenance": "hand",
+      "jump": "1.21.3 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+method getScrollAmount\\(\\)",
+      "apply": {
+        "find": "\\bgetScrollAmount\\(\\)",
+        "replace": "scrollAmount()"
+      },
+      "scope": "log",
+      "when": "\\bextends\\s+\\w*(?:SelectionList|ScrollArea|ContainerObjectSelectionList)\\b|\\b\\w*(?:SelectionList|ScrollArea)\\b",
+      "note": "1.21.4 moved scrolling from AbstractSelectionList into the new AbstractScrollArea, whose getter is scrollAmount() (the same double).",
+      "verified": "Mojang's 1.21.4 client mappings: net.minecraft.client.gui.components.AbstractScrollArea has double scrollAmount(); the route map lists AbstractSelectionList.getScrollAmount ()D as removed in 1.21.3 -> 1.21.4",
+      "test": {
+        "error": "OptionsList.java:40: error: cannot find symbol\n  symbol: method getScrollAmount()\n",
+        "before": "package mod;\n\nclass OptionsList extends ContainerObjectSelectionList<OptionsList.Entry> {\n\tint top() { return (int) this.getScrollAmount() + getY(); }\n}\n",
+        "after": "package mod;\n\nclass OptionsList extends ContainerObjectSelectionList<OptionsList.Entry> {\n\tint top() { return (int) this.scrollAmount() + getY(); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "command-source-permission-level",
+      "provenance": "hand",
+      "jump": "1.21.10 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+method hasPermission\\(int\\)",
+      "apply": {
+        "find": "\\.hasPermission\\(((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\)",
+        "replace": ".permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId($1)))",
+        "ensureImports": [
+          "net.minecraft.server.permissions.Permission",
+          "net.minecraft.server.permissions.PermissionLevel"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.11 replaced the int permission level with permission sets: CommandSourceStack.permissions() returns a PermissionSet, whose hasPermission takes a Permission; HasCommandLevel wraps a PermissionLevel, and PermissionLevel.byId(int) keeps the old number exactly.",
+      "verified": "Mojang's 26.1 client jar (same API as 1.21.11): CommandSourceStack.permissions() -> PermissionSet; PermissionSet.hasPermission(Permission); record Permission$HasCommandLevel(PermissionLevel); PermissionLevel.byId(int). The route map lists CommandSourceStack.hasPermission (I)Z removed in 1.21.10 -> 1.21.11",
+      "test": {
+        "error": "ZombieCommand.java:30: error: cannot find symbol\n  symbol:   method hasPermission(int)\n",
+        "before": "package mod;\n\nclass ZombieCommand {\n\tstatic void register(CommandDispatcher<CommandSourceStack> d) {\n\t\td.register(Commands.literal(\"zaa\").requires(source -> source.hasPermission(2)));\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.server.permissions.PermissionLevel;\nimport net.minecraft.server.permissions.Permission;\n\nclass ZombieCommand {\n\tstatic void register(CommandDispatcher<CommandSourceStack> d) {\n\t\td.register(Commands.literal(\"zaa\").requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(2)))));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "player-permission-level",
+      "provenance": "hand",
+      "jump": "1.21.10 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+method hasPermissions\\(int\\)",
+      "apply": {
+        "find": "\\.hasPermissions\\(((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\)",
+        "replace": ".permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId($1)))",
+        "ensureImports": [
+          "net.minecraft.server.permissions.Permission",
+          "net.minecraft.server.permissions.PermissionLevel"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.11 removed Player.hasPermissions(int); Player.permissions() returns the player's PermissionSet, asked the same way as a command source's.",
+      "verified": "Mojang's 26.1 client jar: Player.permissions() -> PermissionSet; the route map lists Entity/Player.hasPermissions (I)Z removed in 1.21.10 -> 1.21.11",
+      "test": {
+        "error": "Events.java:12: error: cannot find symbol\n  symbol:   method hasPermissions(int)\n",
+        "before": "package mod;\n\nclass Events {\n\tboolean admin(Player player) { return player.hasPermissions(4); }\n}\n",
+        "after": "package mod;\nimport net.minecraft.server.permissions.PermissionLevel;\nimport net.minecraft.server.permissions.Permission;\n\nclass Events {\n\tboolean admin(Player player) { return player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(4))); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "game-profile-record-name",
+      "provenance": "hand",
+      "jump": "1.21.8 -> 1.21.9 (mojmap)",
+      "match": "symbol:\\s+method getName\\(\\)\\s+location: (?:variable \\w+ of type|class) GameProfile",
+      "apply": {
+        "find": "\\b(\\w*[Pp]rofile(?:\\(\\))?)\\.getName\\(\\)",
+        "replace": "$1.name()"
+      },
+      "scope": "log",
+      "when": "\\bGameProfile\\b",
+      "note": "1.21.9 ships authlib 7, whose GameProfile is a record: getName() is name().",
+      "verified": "Mojang's version manifests: 1.21.8 uses com.mojang:authlib:6.0.58, 1.21.9 uses 7.0.61; authlib 7.0.61's com.mojang.authlib.GameProfile declares UUID id() and String name() and no getName()/getId()",
+      "test": {
+        "error": "Names.java:9: error: cannot find symbol\n  symbol:   method getName()\n  location: variable profile of type GameProfile\n",
+        "before": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.getName() + \" \" + player.getGameProfile().getId(); }\n}\n",
+        "after": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.name() + \" \" + player.getGameProfile().getId(); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "game-profile-record-id",
+      "provenance": "hand",
+      "jump": "1.21.8 -> 1.21.9 (mojmap)",
+      "match": "symbol:\\s+method getId\\(\\)\\s+location: (?:variable \\w+ of type|class) GameProfile",
+      "apply": {
+        "find": "\\b(\\w*[Pp]rofile(?:\\(\\))?)\\.getId\\(\\)",
+        "replace": "$1.id()"
+      },
+      "scope": "log",
+      "when": "\\bGameProfile\\b",
+      "note": "1.21.9 ships authlib 7, whose GameProfile is a record: getId() is id().",
+      "verified": "Mojang's version manifests: 1.21.8 uses com.mojang:authlib:6.0.58, 1.21.9 uses 7.0.61; authlib 7.0.61's com.mojang.authlib.GameProfile declares UUID id() and String name() and no getName()/getId()",
+      "test": {
+        "error": "Names.java:9: error: cannot find symbol\n  symbol:   method getId()\n  location: class GameProfile\n",
+        "before": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.getName() + \" \" + player.getGameProfile().getId(); }\n}\n",
+        "after": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.getName() + \" \" + player.getGameProfile().id(); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "entity-types-constants",
+      "provenance": "hand",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+variable [A-Z][A-Z0-9_]*\\s+location: (?:class|interface) EntityType\\b",
+      "apply": {
+        "find": "\\bEntityType\\.([A-Z][A-Z0-9_]*)\\b",
+        "replace": "EntityTypes.$1",
+        "ensureImports": [
+          "net.minecraft.world.entity.EntityTypes"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.2 moved every vanilla entity type constant from EntityType into the new class EntityTypes (EntityType.PIG is EntityTypes.PIG).",
+      "verified": "Mojang's 26.2 client jar: net.minecraft.world.entity.EntityTypes declares the EntityType constants (PIG, ALLAY, ...) and EntityType declares none; in 26.1.2 EntityType declared them and EntityTypes did not exist",
+      "test": {
+        "error": "ModSpawns.java:15: error: cannot find symbol\n  symbol:   variable ZOMBIE\n  location: class EntityType\n",
+        "before": "package mod;\n\nclass ModSpawns {\n\tboolean zombie(Entity e) { return e.getType() == EntityType.ZOMBIE || e.getType() == EntityType.HUSK; }\n}\n",
+        "after": "package mod;\nimport net.minecraft.world.entity.EntityTypes;\n\nclass ModSpawns {\n\tboolean zombie(Entity e) { return e.getType() == EntityTypes.ZOMBIE || e.getType() == EntityTypes.HUSK; }\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }
