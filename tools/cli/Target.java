@@ -168,12 +168,29 @@ final class Target {
                 .newDocumentBuilder()
                 .parse(new ByteArrayInputStream(xml.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
                 .getElementsByTagName("version");
-            String api = "";
+            List<String> published = new ArrayList<>();
             for (int i = 0; i < nodes.getLength(); i++) {
                 String value = nodes.item(i).getTextContent();
-                if (value.endsWith("+" + to)) api = value;
+                if (value.endsWith("+" + to)) published.add(value);
             }
-            if (api.isEmpty()) throw new IOException("No published Fabric API for " + to);
+            if (published.isEmpty()) throw new IOException("No published Fabric API for " + to);
+            // "+1.18" builds span 1.18 to 1.18.2 and the newest needs 1.18.2: take the newest whose own fabric.mod.json
+            // accepts the target game, read from the jar (a few of the newest are tried; an unreadable one is skipped).
+            String api = published.get(published.size() - 1);
+            for (int i = published.size() - 1, tried = 0; i >= 0 && tried < 12; i--, tried++) {
+                String candidate = published.get(i);
+                try {
+                    String accepts = Dependencies.minecraftConstraint(
+                        download(build, "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/" + candidate + "/fabric-api-" + candidate + ".jar")
+                    );
+                    if (accepts.isEmpty() || Versions.matches(accepts, to)) {
+                        api = candidate;
+                        break;
+                    }
+                } catch (Exception unread) {
+                    break;
+                }
+            }
             for (String key : List.of("fabric_version", "fabric_api_version")) if (
                 pins.containsKey(key)
             ) setup.replacements.put(key, api);
