@@ -8,5 +8,7 @@ final class Hooks {
     private Hooks() {}
 
     static void common(IEventBus modBus) {
+        Networking.common(modBus);
+        Attachments.common(modBus);
     }
 }

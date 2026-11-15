@@ -253,6 +253,84 @@ final class LoaderRules {
         return found;
     }
 
+    /**
+     * Every match of an expression pattern that opens with a receiver and a call ($target.getAttached($type)): the
+     * receiver is the expression just before the dot (a name, a call chain, a bracketed expression), never more of
+     * the statement, so `a && !player.getAttached(T)` takes `player`.
+     */
+    static List<Match> findCalls(String s, String pattern) {
+        boolean[] code = code(s);
+        List<String> pieces = pieces(pattern);
+        List<Match> found = new ArrayList<>();
+        String name = pieces.get(2);
+        int from = 0;
+        while (true) {
+            int at = s.indexOf(name, from);
+            if (at < 0) break;
+            from = at + 1;
+            if (!code[at] || (at > 0 && ident(s.charAt(at - 1)))) continue;
+            int dot = at - 1;
+            while (dot >= 0 && Character.isWhitespace(s.charAt(dot))) dot--;
+            if (dot < 0 || s.charAt(dot) != '.' || !code[dot]) continue;
+            int start = receiverStart(s, code, dot);
+            String receiver = s.substring(start, dot).strip();
+            if (receiver.isEmpty()) continue;
+            Map<String, String> holes = new LinkedHashMap<>();
+            holes.put(pieces.get(0), receiver);
+            int end = matchFrom(s, code, pieces, 1, dot, holes);
+            if (end < 0) continue;
+            found.add(new Match(skipSpace(s, code, start), end, holes));
+            from = end;
+        }
+        return found;
+    }
+
+    /** True when an expression pattern opens with a receiver hole and a call on it: $x.name(. */
+    static boolean opensWithCall(String pattern) {
+        List<String> pieces = pieces(pattern);
+        return pieces.size() > 3 && pieces.get(0).startsWith("$") && !pieces.get(0).endsWith(".name") && pieces.get(1).equals(".") && ident(pieces.get(2).charAt(0)) && pieces.get(3).equals("(");
+    }
+
+    /** Where the receiver before the dot at index dot starts: names, calls and brackets joined by dots, and a new before them. */
+    static int receiverStart(String s, boolean[] code, int dot) {
+        int start = dot;
+        int i = dot - 1;
+        while (true) {
+            while (i >= 0 && Character.isWhitespace(s.charAt(i))) i--;
+            boolean bracketed = false;
+            while (i >= 0 && code[i] && (s.charAt(i) == ')' || s.charAt(i) == ']')) {
+                int depth = 0;
+                int k = i;
+                for (; k >= 0; k--) {
+                    if (!code[k]) continue;
+                    char c = s.charAt(k);
+                    if (c == ')' || c == ']') depth++;
+                    else if (c == '(' || c == '[') {
+                        depth--;
+                        if (depth == 0) break;
+                    }
+                }
+                if (k < 0) return start;
+                bracketed = true;
+                start = k;
+                i = k - 1;
+                while (i >= 0 && Character.isWhitespace(s.charAt(i))) i--;
+            }
+            int end = i;
+            while (i >= 0 && ident(s.charAt(i))) i--;
+            if (i < end) start = i + 1;
+            else if (!bracketed) return start;
+            int before = i;
+            while (before >= 0 && Character.isWhitespace(s.charAt(before))) before--;
+            if (i < end && before >= 0 && s.charAt(before) == '.' && code[before]) {
+                i = before - 1;
+                continue;
+            }
+            if (i < end && before >= 2 && s.startsWith("new", before - 2) && (before < 3 || !ident(s.charAt(before - 3)))) start = before - 2;
+            return start;
+        }
+    }
+
     static int statementStart(String s, boolean[] code, int at) {
         int depth = 0;
         for (int i = at - 1; i >= 0; i--) {
@@ -543,7 +621,7 @@ final class LoaderRules {
         if (rule.get("inline") instanceof Map<?, ?> inline && Json.object(inline).get(from) instanceof Map<?, ?> how) {
             text = inline(text, Json.text(Json.object(how), "type", ""), Json.text(Json.object(how), "value", ""));
         }
-        List<Match> matches = find(text, source);
+        List<Match> matches = opensWithCall(source) ? findCalls(text, source) : find(text, source);
         if (matches.isEmpty()) return;
         StringBuilder out = new StringBuilder();
         int last = 0;

@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "5e7159181a6b6348d3ed7f3cdc9c5f9078dc8142ef1ddb5c2f620cc6150ef3b2",
+ "rules_sha256": "4f422cc06a91f3a4a3595ee89d9b2102ad47910f74ea83c907e67e8718c693c4",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -36,6 +36,11 @@
    "coordinate": "net.neoforged.fancymodloader:loader:4.0.44",
    "url": "https://maven.neoforged.net/releases/net/neoforged/fancymodloader/loader/4.0.44/loader-4.0.44.jar",
    "sha256": "f2096cd86d605c0484971fc712208e0dc6cecfe53e056db61d44a98cadc19499"
+  },
+  "forgeconfigapiport-fabric": {
+   "coordinate": "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:26.3.1",
+   "url": "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/fuzs/forgeconfigapiport/forgeconfigapiport-fabric/26.3.1/forgeconfigapiport-fabric-26.3.1.jar",
+   "sha256": "e8bdc3a1fff1c832437984911cdd3a51d8eda6b69400474088f856c2b3ea6f44"
   },
   "minecraft": {
    "coordinate": "minecraft:client:26.3",
@@ -333,6 +338,144 @@
    },
    {
     "symbol": "minecraft|net.minecraft.world.flag.FeatureFlagSet#of",
+    "found": true
+   }
+  ],
+  "attachment-get": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttached",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull",
+    "found": true
+   }
+  ],
+  "attachment-get-or-throw": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrThrow",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull",
+    "found": true
+   }
+  ],
+  "attachment-get-or-set": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrSet",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData",
+    "found": true
+   }
+  ],
+  "attachment-get-or-create-with": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData",
+    "found": true
+   }
+  ],
+  "attachment-get-or-create": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData",
+    "found": true
+   }
+  ],
+  "attachment-get-or-else": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrElse",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull",
+    "found": true
+   }
+  ],
+  "attachment-get-or-get": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrGet",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull",
+    "found": true
+   }
+  ],
+  "attachment-set": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#setAttached",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData",
+    "found": true
+   }
+  ],
+  "attachment-has": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#hasAttached",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#hasData",
+    "found": true
+   }
+  ],
+  "attachment-remove": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#removeAttached",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#removeData",
+    "found": true
+   }
+  ],
+  "attachment-modify": [
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#modifyAttached",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData",
+    "found": true
+   }
+  ],
+  "config-type-common": [
+   {
+    "symbol": "forgeconfigapiport-fabric|net.neoforged.fml.config.ModConfig$Type#COMMON",
+    "found": true
+   },
+   {
+    "symbol": "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry#register",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.config.ModConfig$Type#LOCAL",
+    "found": true
+   }
+  ],
+  "config-type-server": [
+   {
+    "symbol": "forgeconfigapiport-fabric|net.neoforged.fml.config.ModConfig$Type#SERVER",
+    "found": true
+   },
+   {
+    "symbol": "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry#register",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.config.ModConfig$Type#SYNCED",
     "found": true
    }
   ],
@@ -1814,6 +1957,726 @@
     "found": true
    },
    {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#register",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#registerLarge",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#serverboundPlay",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#clientboundPlay",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#registerGlobalReceiver",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#unregisterGlobalReceiver",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#getGlobalReceivers",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#canSend",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#createClientboundPacket",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#getSender",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking#send",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking$PlayPayloadHandler#receive",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking$Context#server",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking$Context#player",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking$Context#responseSender",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking$Context#packetContext",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PacketSender#createPacket",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PacketSender#sendPacket",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PacketSender#disconnect",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PlayerLookup#all",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PlayerLookup#level",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PlayerLookup#tracking",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.PlayerLookup#around",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#SERVER_INSTANCE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#REGISTRY_ACCESS",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#GAME_PROFILE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#CONNECTION",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#get",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#orElseThrow",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#orElse",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#set",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#runWithContext",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#supplyWithContext",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#runWithoutContext",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#supplyWithoutContext",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext#key",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext$ReadKey",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.networking.v1.context.PacketContext$Key",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#registerGlobalReceiver",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#unregisterGlobalReceiver",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#getGlobalReceivers",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#canSend",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#createServerboundPacket",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#getSender",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking#send",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking$PlayPayloadHandler#receive",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking$Context#client",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking$Context#player",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking$Context#responseSender",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking$Context#packetContext",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#INIT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#JOIN",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents#DISCONNECT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents$Init#onPlayInit",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents$Join#onPlayReady",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents$Disconnect#onPlayDisconnect",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback#EVENT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback#register",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#getActiveDispatcher",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#refreshCommandCompletions",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#literal",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.ClientCommands#argument",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#sendFeedback",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#sendError",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getClient",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getPlayer",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getEntity",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getPosition",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getRotation",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#getMeta",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource#attended",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents#TAGS_LOADED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents$TagsLoaded#onTagsLoaded",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STARTED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STOPPING",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents$ClientStarted#onClientStarted",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents$ClientStopping#onClientStopping",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents#ENTITY_LOAD",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents#ENTITY_UNLOAD",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents$Load#onLoad",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents$Unload#onUnload",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#BEFORE_INIT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#AFTER_INIT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#remove",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#beforeExtract",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#afterBackground",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#afterForeground",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#afterExtract",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#beforeTick",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents#afterTick",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$BeforeInit#beforeInit",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$AfterInit#afterInit",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$Remove#onRemove",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$BeforeExtract#beforeExtract",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$AfterBackground#afterBackground",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$AfterForeground#afterForeground",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$AfterExtract#afterExtract",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$BeforeTick#beforeTick",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$AfterTick#afterTick",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#addFirst",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#addLast",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#attachElementBefore",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#attachElementAfter",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#removeElement",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry#replaceElement",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement#extractRenderState",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MISC_OVERLAYS",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#CROSSHAIR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SPECTATOR_MENU",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HOTBAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#ARMOR_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HEALTH_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#FOOD_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#AIR_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MOUNT_HEALTH",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#INFO_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#EXPERIENCE_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#HELD_ITEM_TOOLTIP",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SPECTATOR_TOOLTIP",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#MOB_EFFECTS",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#BOSS_BAR",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SLEEP",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#DEMO_TIMER",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SCOREBOARD",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#OVERLAY_MESSAGE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#TITLE_AND_SUBTITLE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#CHAT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#PLAYER_LIST",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements#SUBTITLES",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#registerKeyMapping",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper#getBoundKeyOf",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#REGISTRY_LOOKUP_KEY",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#FEATURE_FLAG_SET_KEY",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#get",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#registerReloadListener",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.resource.v1.ResourceLoader#addListenerOrdering",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#BOSSES",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#MINECARTS",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#BOATS",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#ITEM_FRAMES",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#CAPTURING_NOT_SUPPORTED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.tag.convention.v2.ConventionalEntityTypeTags#TELEPORTING_NOT_SUPPORTED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#create",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#createDefaulted",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#createPersistent",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#builder",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#persistent",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#copyOnDeath",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#initializer",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#syncWith",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#buildAndRegister",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#identifier",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#persistenceCodec",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#isPersistent",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#initializer",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#isSynced",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentType#copyOnDeath",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate#all",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate#targetOnly",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate#allButTarget",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#NBT_ATTACHMENT_KEY",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttached",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrThrow",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrSet",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrElse",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrGet",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#setAttached",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#hasAttached",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#removeAttached",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#modifyAttached",
+    "found": true
+   },
+   {
+    "symbol": "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry#INSTANCE",
+    "found": true
+   },
+   {
+    "symbol": "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry#register",
+    "found": true
+   },
+   {
+    "symbol": "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents#loading",
+    "found": true
+   },
+   {
+    "symbol": "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents#reloading",
+    "found": true
+   },
+   {
+    "symbol": "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents#unloading",
+    "found": true
+   },
+   {
+    "symbol": "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Loading#onModConfigLoading",
+    "found": true
+   },
+   {
+    "symbol": "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Reloading#onModConfigReloading",
+    "found": true
+   },
+   {
+    "symbol": "forgeconfigapiport-fabric|fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents$Unloading#onModConfigUnloading",
+    "found": true
+   },
+   {
     "symbol": "fml|net.neoforged.fml.ModList#getMods",
     "found": true
    },
@@ -1875,6 +2738,502 @@
    },
    {
     "symbol": "minecraft|net.minecraft.resources.Identifier#fromNamespaceAndPath",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.NeoForge#EVENT_BUS",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent#registrar",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#optional",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playToServer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playToClient",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.registration.PayloadRegistrar#playBidirectional",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.handling.IPayloadContext#player",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.handling.IPayloadHandler#handle",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.network.PacketDistributor#sendToPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.network.ClientPacketDistributor#sendToServer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent#register",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.ICommonPacketListener#hasChannel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.ICommonPacketListener#getConnection",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent#getPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingIn",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent$LoggingOut#getPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getDispatcher",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterClientCommandsEvent#getBuildContext",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent#getRegistries",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.TagsUpdatedEvent$ClientPacketReceived",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RenderFrameEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.GameShuttingDownEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityEvent#getEntity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityJoinLevelEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent#getScreen",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Init$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getGuiGraphics",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseX",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getMouseY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render#getPartialTick",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Background",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Render$Foreground",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ScreenEvent$Closing",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientTickEvent$Pre",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.ClientTickEvent$Post",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelowAll",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAboveAll",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerBelow",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#registerAbove",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#replaceLayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterGuiLayersEvent#wrapLayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.GuiLayer#render",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CAMERA_OVERLAYS",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CROSSHAIR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#HOTBAR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#ARMOR_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#PLAYER_HEALTH",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#FOOD_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#AIR_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#VEHICLE_HEALTH",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CONTEXTUAL_INFO_BAR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EXPERIENCE_LEVEL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SELECTED_ITEM_NAME",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SPECTATOR_TOOLTIP",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#EFFECTS",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#BOSS_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SLEEP_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#DEMO_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SCOREBOARD_SIDEBAR",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#OVERLAY_MESSAGE",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TITLE",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#CHAT",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#TAB_LIST",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.gui.VanillaGuiLayers#SUBTITLE_OVERLAY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent#register",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.extensions.IKeyMappingExtension#getKey",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.AddServerReloadListenersEvent#getServerResources",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.event.AddClientReloadListenersEvent",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#addListener",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#addDependency",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.SortedReloadListenerEvent#getRegistry",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.AttachmentType#builder",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#serialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#copyOnDeath",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#sync",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#build",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#removeData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#hasData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.NeoForgeRegistries#ATTACHMENT_TYPES",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.NeoForgeRegistries$Keys#ATTACHMENT_TYPES",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.RegisterEvent#register",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.RegisterEvent#getRegistryKey",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$Clone#getOriginal",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$Clone#isWasDeath",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModContainer#registerConfig",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.ModContainer#getEventBus",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.config.ModConfig$Type",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.config.IConfigSpec",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.config.ModConfigEvent#getConfig",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.config.ModConfigEvent$Loading",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.config.ModConfigEvent$Reloading",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.event.config.ModConfigEvent$Unloading",
+    "found": true
+   },
+   {
+    "symbol": "bus|net.neoforged.bus.api.EventPriority#HIGHEST",
+    "found": true
+   },
+   {
+    "symbol": "bus|net.neoforged.bus.api.EventPriority#LOWEST",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.network.protocol.common.custom.CustomPacketPayload$TypeAndCodec",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.network.Connection#send",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.network.Connection#disconnect",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.network.ServerCommonPacketListenerImpl#send",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.network.ServerCommonPacketListenerImpl#disconnect",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.level.ChunkMap#getPlayers",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.player.LocalPlayer#connection",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientPacketListener#getSuggestionsProvider",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientSuggestionProvider#customSuggestion",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientSuggestionProvider#suggestRegistryElements",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.multiplayer.ClientSuggestionProvider#permissions",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.Gui#screen",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.Gui#hud",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.gui.Hud#getChat",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.ReloadableServerResources#fullRegistries",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.ReloadableServerRegistries$Holder#lookup",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.packs.resources.PreparableReloadListener#prepareSharedState",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.packs.resources.PreparableReloadListener$SharedState#set",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.packs.resources.PreparableReloadListener$StateKey",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.packs.resources.PreparableReloadListener$PreparationBarrier#wait",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.server.packs.resources.ReloadableResourceManager#registerReloadListener",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.tags.TagKey#create",
     "found": true
    }
   ]
