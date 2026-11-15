@@ -114,6 +114,57 @@ public class ModConfigSpec implements IConfigSpec {
         public Object getDefault() {
             return value.getDefault();
         }
+
+        @SuppressWarnings("unchecked")
+        public <V extends Comparable<? super V>> Range<V> getRange() {
+            return (Range<V>) value.bounds;
+        }
+    }
+
+    /** NeoForge's ModConfigSpec.Range: the inclusive bounds of a defineInRange value. */
+    public static class Range<V extends Comparable<? super V>> implements Predicate<Object> {
+
+        private final Class<? extends V> clazz;
+        private final V min;
+        private final V max;
+
+        Range(Class<V> clazz, V min, V max) {
+            this.clazz = clazz;
+            this.min = min;
+            this.max = max;
+        }
+
+        public static Range<Integer> of(int min, int max) {
+            return new Range<>(Integer.class, min, max);
+        }
+
+        public Class<? extends V> getClazz() {
+            return clazz;
+        }
+
+        public V getMin() {
+            return min;
+        }
+
+        public V getMax() {
+            return max;
+        }
+
+        @Override
+        public boolean test(Object t) {
+            if (!clazz.isInstance(t)) return false;
+            V c = clazz.cast(t);
+            return c.compareTo(min) >= 0 && c.compareTo(max) <= 0;
+        }
+
+        @Override
+        public String toString() {
+            if (clazz == Integer.class) {
+                if (max.equals(Integer.MAX_VALUE)) return "> " + min;
+                if (min.equals(Integer.MIN_VALUE)) return "< " + max;
+            }
+            return min + " ~ " + max;
+        }
     }
 
     /** The values as NightConfig's commented config, kept in step with them. */
@@ -209,7 +260,7 @@ public class ModConfigSpec implements IConfigSpec {
         }
 
         public <V extends Comparable<? super V>> ConfigValue<V> defineInRange(List<String> path, Supplier<V> defaultSupplier, V min, V max, Class<V> type) {
-            return add(new ConfigValue<>(this, path(path), defaultSupplier, o -> type.isInstance(o) && min.compareTo(type.cast(o)) <= 0 && max.compareTo(type.cast(o)) >= 0, takeComment(), "Range: " + min + " ~ " + max));
+            return add(new ConfigValue<>(this, path(path), defaultSupplier, o -> type.isInstance(o) && min.compareTo(type.cast(o)) <= 0 && max.compareTo(type.cast(o)) >= 0, takeComment(), "Range: " + min + " ~ " + max)).bounded(new Range<>(type, min, max));
         }
 
         public <T> ConfigValue<T> defineInList(String path, T defaultValue, Collection<? extends T> acceptable) {
@@ -332,7 +383,7 @@ public class ModConfigSpec implements IConfigSpec {
         }
 
         public DoubleValue defineInRange(List<String> path, Supplier<Double> defaultSupplier, double min, double max) {
-            return add(new DoubleValue(this, path(path), defaultSupplier, o -> o instanceof Double d && d >= min && d <= max, takeComment(), "Range: " + min + " ~ " + max));
+            return add(new DoubleValue(this, path(path), defaultSupplier, o -> o instanceof Double d && d >= min && d <= max, takeComment(), "Range: " + min + " ~ " + max)).bounded(new Range<>(Double.class, min, max));
         }
 
         public IntValue defineInRange(String path, int defaultValue, int min, int max) {
@@ -348,7 +399,7 @@ public class ModConfigSpec implements IConfigSpec {
         }
 
         public IntValue defineInRange(List<String> path, Supplier<Integer> defaultSupplier, int min, int max) {
-            return add(new IntValue(this, path(path), defaultSupplier, o -> o instanceof Integer i && i >= min && i <= max, takeComment(), "Range: " + (min == Integer.MIN_VALUE ? "< " + max : max == Integer.MAX_VALUE ? "> " + min : min + " ~ " + max)));
+            return add(new IntValue(this, path(path), defaultSupplier, o -> o instanceof Integer i && i >= min && i <= max, takeComment(), "Range: " + (min == Integer.MIN_VALUE ? "< " + max : max == Integer.MAX_VALUE ? "> " + min : min + " ~ " + max))).bounded(new Range<>(Integer.class, min, max));
         }
 
         public LongValue defineInRange(String path, long defaultValue, long min, long max) {
@@ -364,7 +415,7 @@ public class ModConfigSpec implements IConfigSpec {
         }
 
         public LongValue defineInRange(List<String> path, Supplier<Long> defaultSupplier, long min, long max) {
-            return add(new LongValue(this, path(path), defaultSupplier, o -> o instanceof Long l && l >= min && l <= max, takeComment(), "Range: " + min + " ~ " + max));
+            return add(new LongValue(this, path(path), defaultSupplier, o -> o instanceof Long l && l >= min && l <= max, takeComment(), "Range: " + min + " ~ " + max)).bounded(new Range<>(Long.class, min, max));
         }
 
         public Builder comment(String comment) {
@@ -429,6 +480,8 @@ public class ModConfigSpec implements IConfigSpec {
         final String comment, range;
         ModConfigSpec spec;
         T value;
+        /** The range a defineInRange value keeps to (ValueSpec.getRange), or null. */
+        Range<?> bounds;
 
         ConfigValue(Builder parent, List<String> path, Supplier<T> defaultSupplier, Predicate<Object> validator, String comment, String range) {
             this.parent = parent;
@@ -469,6 +522,13 @@ public class ModConfigSpec implements IConfigSpec {
         }
 
         public void clearCache() {}
+
+        /** This value with the range it keeps to. */
+        @SuppressWarnings("unchecked")
+        <V extends ConfigValue<?>> V bounded(Range<?> range) {
+            this.bounds = range;
+            return (V) this;
+        }
 
         /** The file's value in this value's type, or null when it cannot be one. */
         @SuppressWarnings("unchecked")

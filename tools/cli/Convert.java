@@ -549,6 +549,23 @@ final class Convert {
         return out;
     }
 
+    /** The Java files of the source sets whose name starts with test (src/test/java ...), which javaFiles() leaves out. */
+    List<String> testJavaFiles() throws IOException {
+        List<String> out = new ArrayList<>();
+        Path src = project.root.resolve("src").toAbsolutePath().normalize();
+        if (!Files.isDirectory(src)) return out;
+        try (var list = Files.list(src)) {
+            for (Path set : list.sorted().toList()) {
+                Path java = set.resolve("java");
+                if (!set.getFileName().toString().startsWith("test") || !Files.isDirectory(java)) continue;
+                try (var walk = Files.walk(java)) {
+                    for (Path file : walk.filter(p -> p.toString().endsWith(".java")).sorted().toList()) out.add(relative(file));
+                }
+            }
+        }
+        return out;
+    }
+
     /** The source file of a class, in any source set; null when none has it. */
     String classFile(String name) throws IOException {
         String path = name.replace('.', '/') + ".java";
@@ -2555,12 +2572,19 @@ final class Convert {
     void applyBridge() throws Exception {
         Map<String, Object> classes = Json.object(bridge.get("classes"));
         Path templates = build.harness.resolve(Json.text(bridge, "folder", ""));
-        for (String file : javaFiles()) {
+        // The mod's tests use the same NeoForge classes as its code, so their imports and qualified names move too.
+        List<String> sources = new ArrayList<>(javaFiles());
+        sources.addAll(testJavaFiles());
+        for (String file : sources) {
             String text = read(file);
             String out = text;
             for (var c : classes.entrySet()) out = out.replaceAll(
                 "(?m)^import\\s+" + Pattern.quote(c.getKey()) + "\\s*;",
                 Matcher.quoteReplacement("import " + bridgePackage + "." + c.getValue() + ";")
+            );
+            for (var c : classes.entrySet()) out = out.replaceAll(
+                "(?<![\\w.])" + Pattern.quote(c.getKey()) + "(?![\\w$])",
+                Matcher.quoteReplacement(bridgePackage + "." + c.getValue())
             );
             out = eventClassesInListeners(file, out);
             if (!out.equals(text)) {
@@ -2807,7 +2831,9 @@ final class Convert {
             for (var c : Json.object(b.get("classes")).entrySet()) back.put(String.valueOf(c.getValue()), c.getKey());
         }
         String folder = "src/main/java/" + pkg.replace('.', '/') + "/";
-        for (String file : javaFiles()) {
+        List<String> sources = new ArrayList<>(javaFiles());
+        sources.addAll(testJavaFiles());
+        for (String file : sources) {
             if (file.startsWith(folder)) continue;
             String text = read(file), out = text;
             Matcher entry = BRIDGED_ENTRY.matcher(out);
@@ -2821,6 +2847,10 @@ final class Convert {
             for (var c : back.entrySet()) out = out.replaceAll(
                 "(?m)^import\\s+" + Pattern.quote(pkg + "." + c.getKey()) + "\\s*;",
                 Matcher.quoteReplacement("import " + c.getValue() + ";")
+            );
+            for (var c : back.entrySet()) out = out.replaceAll(
+                "(?<![\\w.])" + Pattern.quote(pkg + "." + c.getKey()) + "(?![\\w$])",
+                Matcher.quoteReplacement(c.getValue())
             );
             out = LoaderRules.dropImport(LoaderRules.dropImport(out, pkg + ".Bridge"), pkg + ".ClientBridge");
             out = WRITTEN_EVENT_CLASS.matcher(out).replaceAll(".addListener($1");
