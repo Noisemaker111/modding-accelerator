@@ -83,7 +83,7 @@
         "Mod '[^']*' \\(([a-z0-9_\\-]+)\\)",
         "from mod ([a-z0-9_\\-]+)\\]"
       ],
-      "clientOnly": ["in environment type SERVER", "NoClassDefFoundError: net/minecraft/client/", "ClassNotFoundException: net.minecraft.client."]
+      "clientOnly": ["in environment type SERVER", "NoClassDefFoundError: net/minecraft/client/", "ClassNotFoundException: net.minecraft.client.", "NoClassDefFoundError: net/fabricmc/fabric/api/client/"]
     },
     "quilt": {
       "style": "launch-jar",
@@ -103,7 +103,7 @@
         "Mod '[^']*' \\(([a-z0-9_\\-]+)\\)",
         "from mod ([a-z0-9_\\-]+)\\]"
       ],
-      "clientOnly": ["in environment type SERVER", "NoClassDefFoundError: net/minecraft/client/", "ClassNotFoundException: net.minecraft.client."]
+      "clientOnly": ["in environment type SERVER", "NoClassDefFoundError: net/minecraft/client/", "ClassNotFoundException: net.minecraft.client.", "NoClassDefFoundError: net/fabricmc/fabric/api/client/"]
     }
   }
 }

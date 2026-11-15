@@ -323,7 +323,7 @@ final class PackMods {
                 } catch (RuntimeException unreadable) {
                     return true;
                 }
-            } else if (Versions.matches(r, semantic(version))) return true;
+            } else if (Versions.matches(r.replaceAll("\\+[^\\s]*", ""), semantic(version))) return true;
         }
         return false;
     }

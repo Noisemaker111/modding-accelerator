@@ -539,6 +539,14 @@ final class PackChecks {
                 Matcher m = pattern.matcher(lines.get(i));
                 if (m.find()) named.add(m.group(1));
             }
+            // Quilt and Fabric name the mod a few lines into the block ("... provided by 'lilac'!").
+            if (named.isEmpty()) for (Pattern pattern : loader.modNamed()) {
+                Matcher m = pattern.matcher(block);
+                if (m.find() && scan.providers.containsKey(m.group(1))) {
+                    named.add(m.group(1));
+                    break;
+                }
+            }
             // A line of its own (a mod printing the error it caught) names no mod: only a mod's failure block counts.
             if (named.isEmpty() && end > i + 1) for (String line : lines.subList(i + 1, end)) {
                 Matcher frame = FRAME.matcher(line);
