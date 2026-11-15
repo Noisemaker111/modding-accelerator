@@ -71,7 +71,12 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
    - an `expect` gate asserts the live workload still did its job after the captures (`bench/pipez/count.java`: every
      item conserved and both sides of every row moving), so a candidate cannot win by doing less;
    - cover every branch the candidate touches (Pipez: NEAREST, FURTHEST and ROUND_ROBIN distribution, inverted and
-     plain filters, full destinations, an upgrade whose speed depends on the game time).
+     plain filters, full destinations, an upgrade whose speed depends on the game time);
+   - **every cache candidate needs a gate that changes the cached source mid-run.** A gate on a network that never
+     changes cannot tell a correct cache from one that is never refreshed. Change what the cache is made from after
+     the candidate has filled it, then keep hashing (`bench/pipez/trace-rewire.java`: at round 5 a pipe and a barrel
+     join a line). Prove it with a stale candidate that fills the cache once and never again
+     (`bench/pipez/sabotage-stale-cache.diff`): it must fail this gate while the other gates still pass.
    Run the exact gate in two separate launches and compare: it must return the same text. Then **break it once on
    purpose**: a candidate that changes behaviour slightly (Pipez: nearest-first sorted the other way) must fail the
    exact gate. `perf-optimize` stops at the second pair (an `expect` gate at the first), so this costs two pairs.
