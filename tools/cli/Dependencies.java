@@ -100,6 +100,7 @@ final class Dependencies {
             if (
                 group.startsWith("net.fabricmc") ||
                 group.startsWith("loom_mappings_") || // Loom's own remapped copy of a dependency listed by its real coordinate too
+                group.matches("[a-z0-9_]+_v[0-9]+\\..*") ||
                 group.equals("com.mojang") ||
                 old.isEmpty() ||
                 !seen.add(group + ":" + name + ":" + old)
@@ -243,6 +244,11 @@ final class Dependencies {
             for (String v : versions) if (v.replaceAll("[0-9]+", "0").equals(shape) && (chosen == null || numbers(v).compareTo(numbers(chosen)) > 0)) chosen = v;
             Set<String> owners = propertyKeys(setup.build.project, old);
             if (chosen == null) {
+                // A compile-only integration written out by name keeps its old coordinate, as any compile-only one does
+                // (Jade and AppleSkin compile against JEI's API): the build decides whether it still compiles.
+                Object script = setup.project.get("buildFile");
+                boolean literal = script != null && Files.isRegularFile(Path.of(script.toString())) && setup.text(Path.of(script.toString())).contains(name);
+                if (compileOnly(configuration) && literal) return false;
                 setup.blockers.add(
                     blocker(group, name, old, binary, "its artifact name carries the Minecraft version, and " + renamed + " publishes no release in the project's repositories", configuration, setup.to)
                 );
