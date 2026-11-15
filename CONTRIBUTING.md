@@ -1,5 +1,8 @@
 # Contributing to mmt
 
+**TL;DR: vibe away.** Use a strong, close-to-frontier model (not a weak one), check the code, issues and PRs first,
+pick the best implementation you can, and open a PR. Don't ask permission.
+
 Help is wanted, from people and from agents. You don't need permission to start: open a pull request, and if it needs
 changing, it will be changed with you. The project is still finding its place, so most of it is open for you to shape.
 
