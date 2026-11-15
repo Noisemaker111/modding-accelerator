@@ -137,7 +137,9 @@
       "check": "unavailable-file",
       "symptom": "A player cannot install the pack as published: a mod file its manifest lists is no longer served by CurseForge.",
       "cause": "CurseForge removes files (an author deletes a version, a project is archived); an export keeps naming the old file id, and CurseForge publishes no hash, so the same bytes cannot be found anywhere else.",
-      "evidence": [],
+      "evidence": [
+        "pack-check --fix on Create Astral 2.1.5b, 2026-11-15: CurseForge project 704465 (Vinery) serves no file for Fabric 1.18.2 to stand in for file 4332470, so the fixed export leaves its manifest entry out (with missing-library leaving out the add-on that needed it); the repaired pack makes and reopens a world"
+      ],
       "action": {
         "type": "substitute-file",
         "how": "The same CurseForge project's file for the pack's game version and loader, the nearest newer one first: checked against the size CurseForge publishes, its own metadata (a mod for this loader and game version, inside every range the pack's mods require its ids in), and against Modrinth's SHA-1 where Modrinth has it. A project with no such file is left out of the fixed pack with a note; the pack was checked without it."
@@ -192,7 +194,9 @@
       "check": "server-start",
       "symptom": "The game does not start: the loader stops because a mod requires a library no jar in the pack provides.",
       "cause": "The library's file is no longer served by the pack's host, or the pack never listed it.",
-      "evidence": [],
+      "evidence": [
+        "pack-check --fix on Create Astral 2.1.5b (CurseForge export, Fabric 0.18.4, 1.18.2, 204 files), 2026-11-15: Vinery's file 4332470 is gone from CurseForge (project 704465 serves nothing for 1.18.2 any more), and the shipped pack's server stops with \"Mod 'AstralVinery' (astralvinery) 1.2.0 requires version 1.1.4 of vinery, which is missing\". Astral Vinery's own Modrinth release names Vinery 1.1.4, but that file declares minecraft ~1.19.2, so it is refused; with Astral Vinery (an add-on nothing else requires) left out, the repaired pack makes a new world, places 12,073 block items, opens the world again and reads all 11,890 placed blocks back"
+      ],
       "action": {
         "type": "fetch-dependency",
         "how": "The version the dependant's own Modrinth release names (found by the dependant jar's SHA-1), else the oldest Modrinth release for the pack's game version and loader that every dependant accepts; checked against Modrinth's SHA-512 and its own metadata. When no source serves it in a version that fits, the mods that need it and that no other mod needs are left out of the pack with a note (an optional mod a player cannot install anyway); a library other mods depend on through them is not, and nothing changes.",
