@@ -219,7 +219,10 @@ def port_run(mod, to, kind, tag, timeout, game, jobs, base=None):
     classify(rec)
     if game and rec["build"]:
         with jobs:
-            game_checks(mod, rec, WORK / "clones" / mod["id"])
+            try:
+                game_checks(mod, rec, WORK / "clones" / mod["id"])
+            except Exception as e:   # a sweep bug must not lose the port result
+                rec["load"] = {"ok": False, "step": "sweep", "detail": f"the sweep's game check failed: {e!r}"[:400]}
     out_file.parent.mkdir(parents=True, exist_ok=True)
     out_file.write_text(json.dumps(rec, indent=1, ensure_ascii=False), encoding="utf-8")
     return rec
@@ -683,7 +686,11 @@ def main(argv=None):
                 m, jumps = queue.pop(0)
             base = baseline(m, args.tag, args.timeout, jobs)
             for to, kind in jumps:   # one mod's jumps share its clone, so they run in turn
-                rec = port_run(m, to, kind, args.tag, args.timeout, not args.no_game, jobs, base)
+                try:
+                    rec = port_run(m, to, kind, args.tag, args.timeout, not args.no_game, jobs, base)
+                except Exception as e:
+                    print(f"sweep error on {m['id']} -> {to}: {e!r}", file=sys.stderr, flush=True)
+                    continue
                 with lock:
                     done[0] += 1
                     state = "builds" if rec["build"] else (f"{rec['errorsAfter']} errors" if rec.get("errorsAfter") is not None else f"stopped: {(rec.get('blocker') or {}).get('class')}")

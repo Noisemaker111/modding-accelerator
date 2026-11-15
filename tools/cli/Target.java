@@ -997,13 +997,8 @@ final class Target {
             );
             if (constraint.contains("${") || constraint.equals(toRange(setup.to))) continue;
             if (Versions.matches(constraint, setup.to)) continue;
-            if (!constraint.matches("~?[0-9]+(?:\\.[0-9]+){1,2}")) throw new IOException(
-                "Fabric manifest depends.minecraft has a complex constraint " +
-                constraint +
-                " in " +
-                file +
-                "; update its owner manually."
-            );
+            // A range that excludes the target (">=26.3" ported to 26.2, ">=1.20.1 <1.21" to 1.21.6) would make Fabric refuse
+            // the ported mod, so it becomes the target release, as a plain version does; the edit is one literal in the receipt.
             setup.replace(file, before, retargetMinecraft(before, constraint, setup.to, file));
         }
     }
