@@ -221,6 +221,7 @@ def run_one(pack, args, corpus):
         logs.mkdir(parents=True, exist_ok=True)
         (logs / f"{pack['id']}.out").write_text(raw, encoding="utf-8")
     record["started"] = datetime.datetime.now().isoformat(timespec="seconds")
+    record["label"] = args.label
     runs = WORK / "runs"
     runs.mkdir(parents=True, exist_ok=True)
     (runs / f"{pack['id']}.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
@@ -236,6 +237,7 @@ def main():
     run.add_argument("--fix", action="store_true", help="pack-check --fix: a repaired server beside the shipped one")
     run.add_argument("--timeout", type=int, default=5400)
     run.add_argument("--label", default="latest")
+    run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
     run.add_argument("--modaccel", default="")
     t = sub.add_parser("table")
     t.add_argument("--label", default="latest")
@@ -251,6 +253,9 @@ def main():
     if args.only:
         wanted = set(args.only.split(","))
         packs = [p for p in packs if p["id"] in wanted]
+    if args.resume:
+        done = {r["id"] for r in load_records() if r.get("label") == args.label}
+        packs = [p for p in packs if p["id"] not in done]
     jobs = max(1, min(2 if not args.fix else 1, args.jobs))
     with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
         futures = {pool.submit(run_one, p, args, corpus): p for p in packs}

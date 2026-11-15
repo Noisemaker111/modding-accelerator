@@ -1285,6 +1285,53 @@ public final class PortableTests {
             restored && !Files.exists(root.resolve("src/main/resources/META-INF/neoforge.mods.toml")),
             "undoing both conversions restores every file byte for byte and removes the files they made"
         );
+
+        // A mod written for NeoForge first goes to Fabric through the NeoForge bridge (knowledge/loaders.json "bridges").
+        Map<String, Object> bridgeRule = null;
+        for (Object b : LoaderRules.list(rules.get("bridges"))) if ("neoforge-on-fabric".equals(Json.object(b).get("id"))) bridgeRule = Json.object(b);
+        check(bridgeRule != null, "knowledge/loaders.json has the NeoForge bridge");
+        Map<String, Object> bridgeTest = Json.object(bridgeRule.get("test"));
+        Path neo = scratch.resolve("convert-neoforge-mod");
+        Map<String, String> neoFiles = new LinkedHashMap<>();
+        neoFiles.put("gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+        neoFiles.put("settings.gradle", "rootProject.name = 'demo'\n");
+        neoFiles.put("gradle.properties", "minecraft_version=26.3\nneo_version=26.3.0.103\nmod_id=demo\n");
+        neoFiles.put(
+            "build.gradle",
+            "plugins {\n\tid 'net.neoforged.moddev' version '2.0.148'\n}\n\nneoForge {\n\tversion = project.neo_version\n\truns {\n\t\tclient {\n\t\t\tclient()\n\t\t}\n\t}\n\tmods {\n\t\t\"demo\" {\n\t\t\tsourceSet(sourceSets.main)\n\t\t}\n\t}\n}\n\ndependencies {\n}\n"
+        );
+        neoFiles.put(
+            "src/main/resources/META-INF/neoforge.mods.toml",
+            "modLoader=\"javafml\"\nloaderVersion=\"[1,)\"\nlicense=\"MIT\"\n\n[[mods]]\nmodId=\"${mod_id}\"\nversion=\"1.0.0\"\ndisplayName=\"Demo\"\n"
+        );
+        neoFiles.put("src/main/java/demo/Demo.java", Json.text(bridgeTest, "neoforge", ""));
+        for (var file : neoFiles.entrySet()) {
+            Path path = neo.resolve(file.getKey());
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, file.getValue());
+        }
+        ProjectModel neoProject = new ProjectModel(neo);
+        for (var answer : answers.entrySet()) {
+            Path cache = neoProject.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+            Files.createDirectories(cache.getParent());
+            Files.writeString(cache, answer.getValue());
+        }
+        Map<String, Object> bridged = new Convert(new Build(neoProject, home, "", new Modaccel.Report(neo, "convert"))).run(
+            new Modaccel.Options(new String[] { "convert", "--to", "fabric", "--dry-run" })
+        );
+        String bridgedEntry = Files.readString(neo.resolve("src/main/java/demo/Demo.java"));
+        String fabricJson = Files.readString(neo.resolve("src/main/resources/fabric.mod.json"));
+        check(
+            bridgedEntry.equals(Json.text(bridgeTest, "fabric", "")) &&
+            Files.readString(neo.resolve("src/main/java/demo/loaderbridge/DeferredRegister.java")).startsWith("package demo.loaderbridge;") &&
+            Files.isRegularFile(neo.resolve("src/main/java/demo/loaderbridge/ClientEntrypoint.java")) &&
+            fabricJson.contains("\"demo.Demo\"") &&
+            fabricJson.contains("\"demo.loaderbridge.ClientEntrypoint\"") &&
+            Json.array(bridged.get("left")).isEmpty(),
+            "a NeoForge @Mod class becomes a Fabric entrypoint through the NeoForge bridge, its listeners typed and its imports on the bridge:\n" +
+            bridgedEntry +
+            bridged.get("details")
+        );
     }
 
     public static void main(String[] args) throws Exception {

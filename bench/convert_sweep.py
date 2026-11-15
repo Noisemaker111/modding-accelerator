@@ -97,7 +97,11 @@ def pristine(mod):
 
 def fresh_copy(src, name):
     dest = WORK / "work" / name
-    rmtree(dest)
+    try:
+        rmtree(dest)
+    except OSError:
+        # A Gradle daemon or a game from an earlier run can still hold files there: use a new folder.
+        dest = WORK / "work" / f"{name}-{int(time.time())}"
     shutil.copytree(extended(src), extended(dest), ignore=shutil.ignore_patterns(".git", ".gradle", "build", ".modaccel-sweep-commit"))
     return dest
 
@@ -266,7 +270,7 @@ def parse_registries(text):
 
 def run_one(mod, args, concepts):
     to = OTHER[mod["loader"]]
-    record = {"id": mod["id"], "name": mod["name"], "from": mod["loader"], "to": to, "commit": mod["commit"],
+    record = {"id": mod["id"], "name": mod["name"], "label": args.label, "from": mod["loader"], "to": to, "commit": mod["commit"],
               "features": mod["features"], "started": datetime.datetime.now().isoformat(timespec="seconds")}
     try:
         src = pristine(mod)
@@ -476,6 +480,7 @@ def main():
     run.add_argument("--no-game", action="store_true")
     run.add_argument("--no-back", action="store_true")
     run.add_argument("--label", default="latest")
+    run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")
     run.add_argument("--modaccel", default="", help="run another modaccel checkout (e.g. the baseline) instead of this one")
     t = sub.add_parser("table")
     t.add_argument("--label", default="latest")
@@ -490,6 +495,9 @@ def main():
     if args.only:
         wanted = set(args.only.split(","))
         mods = [m for m in mods if m["id"] in wanted]
+    if args.resume:
+        done = {r["id"] for r in load_records() if r.get("label") == args.label}
+        mods = [m for m in mods if m["id"] not in done]
     concepts = load_concepts()
     WORK.mkdir(parents=True, exist_ok=True)
     with concurrent.futures.ThreadPoolExecutor(max(1, min(2, args.jobs))) as pool:
