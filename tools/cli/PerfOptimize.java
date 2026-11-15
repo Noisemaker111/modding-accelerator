@@ -444,6 +444,15 @@ final class PerfOptimize {
                 total += ((Number) row.get(statistic)).doubleValue();
             }
             if (matched == 0) throw new IllegalStateException("No thread matching " + metric.get("threadCpu") + " has CPU time in " + report.get("recording"));
+            if (metric.containsKey("perCall")) {
+                // CPU ms per call of a counted probe: what each unit of work cost, when the arms finish different amounts in the window.
+                Object calls = Json.object(report.getOrDefault("probeCalls", Map.of())).get(metric.get("perCall").toString());
+                double seconds = ((Number) report.getOrDefault("seconds", 0)).doubleValue();
+                if (!(calls instanceof Number n) || n.longValue() <= 0 || seconds <= 0) {
+                    throw new IllegalStateException("Probe " + metric.get("perCall") + " counted no calls in " + report.get("recording"));
+                }
+                return total * seconds / n.doubleValue();
+            }
             return total;
         }
         if (metric.containsKey("report")) {

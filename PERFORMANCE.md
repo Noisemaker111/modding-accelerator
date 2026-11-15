@@ -455,7 +455,10 @@ More experiment fields, for a mod whose cost is spread over threads:
   it for a mod's own threads: on a busy machine execution samples also count a preempted thread
   that is in Java code, so a sampled metric overstates a gain when the arms meet different load.
   Shared threads (`Render thread`, `Server thread`) run the game's work too, so their CPU time
-  is a scope that shows a candidate didn't add to them, not a metric. `perf-template` writes it
+  is a scope that shows a candidate didn't add to them, not a metric. `"perCall": "label"` divides
+  by the calls a counted probe saw (ms per call): when a faster build finishes more work inside the
+  window, the per-window figure understates its gain and per-call wall-time scopes rise with the
+  extra work, so read both. `perf-template` writes it
   for a mod's own threads and keeps their sampled CPU as a scope.
 - `"metric": {"mod": "diorama"}` is the mod's whole sampled CPU (`sampledCpuMsPerSecond`
   of its attribution row), every thread included. Add `"threads": "^(mymod-worker|Render thread)"`

@@ -34,6 +34,11 @@
   },
   "scopes": [
    {
+    "name": "bakerMsPerMesh",
+    "threadCpu": "^diorama-baker",
+    "perCall": "gpuMesh"
+   },
+   {
     "name": "liveMappingSampledCpu",
     "mod": "diorama",
     "threads": "^(diorama-baker|Render thread)"
@@ -197,6 +202,13 @@
   {
    "name": "reuseLive",
    "file": "reuse-live.java",
+   "thread": "control",
+   "compare": "expect",
+   "expect": "true"
+  },
+  {
+   "name": "slabsRing",
+   "file": "slabs-ring.java",
    "thread": "control",
    "compare": "expect",
    "expect": "true"

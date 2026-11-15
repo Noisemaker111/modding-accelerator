@@ -1,0 +1,670 @@
+diff --git a/src/main/java/dev/diorama/bake/GpuMesher.java b/src/main/java/dev/diorama/bake/GpuMesher.java
+index 1edd4d05..8ce1084f 100644
+--- a/src/main/java/dev/diorama/bake/GpuMesher.java
++++ b/src/main/java/dev/diorama/bake/GpuMesher.java
+@@ -235,9 +235,9 @@ public final class GpuMesher {
+ 		 * Adds {@code count} shadow caster faces of column {@code x} as {@link #copyCasters} packed them,
+ 		 * with the same {@code zBase} and {@code minY}, as {@code add} would.
+ 		 */
+-		void addCasters(int x, int[] faces, int count, int zBase, int minY) {
++		void addCasters(int x, int[] faces, int at, int count, int zBase, int minY) {
+ 			long to = this.reserve(count);
+-			int k = 0;
++			int k = at;
+ 			for (int f = 0; f < count; f++) {
+ 				int packed = faces[k++];
+ 				boolean whole = (packed & 1) == 0;
+@@ -277,12 +277,12 @@ public final class GpuMesher {
+ 		/**
+ 		 * Packs faces {@code from} to {@code to}, all of them shadow casters of one x, as {@link #addCasters}
+ 		 * takes them: one int a face, {@code (z - zBase) << 16 | (y - minY) << 3 | face << 1}, and where its
+-		 * box isn't the whole cube, bit 0 set and lo and hi after it. Null if one doesn't fit, or isn't
+-		 * what {@link #add} makes of a caster.
++		 * box isn't the whole cube, bit 0 set and lo and hi after it, into {@code out}, which holds at
++		 * least three ints a face. Returns how many it wrote, or -1 if a face doesn't fit, or isn't what
++		 * {@link #add} makes of a caster.
+ 		 */
+-		int @Nullable [] copyCasters(int from, int to, int zBase, int minY) {
++		int copyCasters(int from, int to, int zBase, int minY, int[] out) {
+ 			java.nio.IntBuffer data = this.memory.data;
+-			int[] out = new int[(to - from) * 3];
+ 			int k = 0;
+ 			for (int f = from; f < to; f++) {
+ 				int i = f * STRIDE;
+@@ -293,7 +293,7 @@ public final class GpuMesher {
+ 				int hi = data.get(i + 9);
+ 				if (y < 0 || y > 0x1FFF || z < 0 || z > 0x7FFF || face < 0 || face > 3
+ 					|| (data.get(i + 4) | data.get(i + 5) | data.get(i + 6) | data.get(i + 7) | data.get(i + 10) | data.get(i + 11) | data.get(i + 12) | data.get(i + 13)) != 0) {
+-					return null;
++					return -1;
+ 				}
+ 				boolean whole = lo == ShapeFaces.FULL_LO && hi == ShapeFaces.FULL_HI;
+ 				out[k++] = z << 16 | y << 3 | face << 1 | (whole ? 0 : 1);
+@@ -302,7 +302,7 @@ public final class GpuMesher {
+ 					out[k++] = hi;
+ 				}
+ 			}
+-			return java.util.Arrays.copyOf(out, k);
++			return k;
+ 		}
+ 
+ 		/**
+@@ -641,13 +641,23 @@ public final class GpuMesher {
+ 		/** Takes a column as the tile's last mesh had it, if nothing it depends on has changed; see {@link MeshColumns}. */
+ 		boolean reuse(int x, MeshColumns.Column was) {
+ 			Mesh mesh = this.mesh;
++			Slabs.Run faces = was.faces;
++			Slabs.Run spots = was.spots;
+ 			if (!MeshColumns.matches(was, this.reader, this.helper.savedSpots(), x - this.x0)) {
+ 				return false;
+ 			}
+-			int at = 0;
+ 			Quads[] lists = {mesh.opaque, mesh.water, mesh.tinted};
++			int[] before = {mesh.opaque.count, mesh.water.count, mesh.tinted.count};
++			int at = faces.offset;
+ 			for (int l = 0; l < 3; l++) {
+-				at = lists[l].addCopied(x, was.faces, at, was.counts[l], this.zBase, this.reader.minY());
++				at = lists[l].addCopied(x, faces.ints(), at, was.counts[l], this.zBase, this.reader.minY());
++			}
++			if (!Slabs.valid(faces) || spots != null && !Slabs.valid(spots)) {
++				// Its arrays were written over while it was read: take nothing, walk it.
++				for (int l = 0; l < 3; l++) {
++					lists[l].count = before[l];
++				}
++				return false;
+ 			}
+ 			mesh.traceInstead |= was.traceInstead;
+ 			mesh.lowestY = Math.min(mesh.lowestY, was.lowestY);
+@@ -659,8 +669,14 @@ public final class GpuMesher {
+ 				this.fz0 = Math.min(this.fz0, was.z0);
+ 				this.fz1 = Math.max(this.fz1, was.z1);
+ 			}
+-			this.keep.columns[x - (this.x0 - 1)] = was;
+-			this.keep.size += was.faces.length + was.deps.length;
++			// Kept again, copied forward first if its arrays are about to leave the store's window.
++			Slabs.Run keptFaces = Slabs.renew(faces);
++			Slabs.Run keptSpots = spots == null ? null : Slabs.renew(spots);
++			if (keptFaces != null && (spots == null || keptSpots != null)) {
++				MeshColumns.Column column = keptFaces == faces && keptSpots == spots ? was : was.with(keptFaces, keptSpots);
++				this.keep.columns[x - (this.x0 - 1)] = column;
++				this.keep.add(column);
++			}
+ 			return true;
+ 		}
+ 
+@@ -1122,13 +1138,14 @@ public final class GpuMesher {
+ 				column.counts[l] = lists[l].count - before[l];
+ 				total += column.counts[l];
+ 			}
+-			int[] packed = new int[total * 7];
++			int[] packed = MeshColumns.scratch(total * 7);
+ 			int at = 0;
+ 			for (int l = 0; l < 3 && at >= 0; l++) {
+ 				at = lists[l].copyOut(before[l], lists[l].count, packed, at, zBase, reader.minY());
+ 			}
+ 			if (at >= 0) {
+-				column.faces = java.util.Arrays.copyOf(packed, at);
++				// Kept before spotColumn, which packs in the same scratch array.
++				column.faces = Slabs.keep(packed, 0, at);
+ 				column.traceInstead = columnTrace;
+ 				column.lowestY = columnLowest;
+ 				column.reached = cy0 <= cy1;
+@@ -1144,7 +1161,7 @@ public final class GpuMesher {
+ 				column.usesSpots = unknown;
+ 				column.spots = unknown ? MeshColumns.spotColumn(helper.savedSpots(), x - x0) : null;
+ 				keep.columns[x - (x0 - 1)] = column;
+-				keep.size += column.faces.length + column.deps.length;
++				keep.add(column);
+ 			}
+ 		}
+ 			this.fx0 = fx0;
+@@ -1459,12 +1476,22 @@ public final class GpuMesher {
+ 		MeshColumns.CasterTile keep = settings == null ? null : new MeshColumns.CasterTile(settings, cx1 - cx0 + 1);
+ 		for (int x = cx0; x <= cx1 && mesh.lowestY != Integer.MAX_VALUE; x++) {
+ 			MeshColumns.CasterRow was = kept == null ? null : kept.rows[x - cx0];
++			Slabs.Run wasFaces = was == null ? null : was.faces;
+ 			if (was != null && MeshColumns.matches(was, reader, x)) {
+-				mesh.casters.addCasters(x, was.faces, was.count, was.cz0 << 4, reader.minY());
+-				highest = Math.max(highest, was.highest);
+-				keep.rows[x - cx0] = was;
+-				keep.size += was.faces.length + was.chunks.length;
+-				continue;
++				int countBefore = mesh.casters.count;
++				mesh.casters.addCasters(x, wasFaces.ints(), wasFaces.offset, was.count, was.cz0 << 4, reader.minY());
++				if (Slabs.valid(wasFaces)) {
++					highest = Math.max(highest, was.highest);
++					Slabs.Run keptFaces = Slabs.renew(wasFaces);
++					if (keptFaces != null) {
++						MeshColumns.CasterRow row = keptFaces == wasFaces ? was : was.with(keptFaces);
++						keep.rows[x - cx0] = row;
++						keep.add(row);
++					}
++					continue;
++				}
++				// Its array was written over while it was read: take nothing, work the row out.
++				mesh.casters.count = countBefore;
+ 			}
+ 			int first = mesh.casters.count;
+ 			int highestBefore = highest;
+@@ -1542,15 +1569,16 @@ public final class GpuMesher {
+ 			}
+ 			int rowHighest = highest;
+ 			highest = Math.max(highestBefore, rowHighest);
+-			int[] packed = keep == null ? null : mesh.casters.copyCasters(first, mesh.casters.count, (cz0 >> 4) << 4, reader.minY());
+-			if (packed != null) {
++			int[] packed = keep == null ? null : MeshColumns.scratch((mesh.casters.count - first) * 3);
++			int length = packed == null ? -1 : mesh.casters.copyCasters(first, mesh.casters.count, (cz0 >> 4) << 4, reader.minY(), packed);
++			if (length >= 0) {
+ 				MeshColumns.CasterRow row = new MeshColumns.CasterRow();
+ 				row.count = mesh.casters.count - first;
+-				row.faces = packed;
++				row.faces = Slabs.keep(packed, 0, length);
+ 				row.highest = rowHighest;
+ 				MeshColumns.depend(row, reader, x, cz0, cz1);
+ 				keep.rows[x - cx0] = row;
+-				keep.size += row.faces.length + row.chunks.length;
++				keep.add(row);
+ 			}
+ 		}
+ 		if (keep != null) {
+diff --git a/src/main/java/dev/diorama/bake/MeshColumns.java b/src/main/java/dev/diorama/bake/MeshColumns.java
+index b40701da..5cdf0dfc 100644
+--- a/src/main/java/dev/diorama/bake/MeshColumns.java
++++ b/src/main/java/dev/diorama/bake/MeshColumns.java
+@@ -40,7 +40,7 @@ final class MeshColumns {
+ 	/** One column as last meshed; see {@link #matches}. */
+ 	static final class Column {
+ 		/** Its faces, packed (see {@code Quads.copyOut}): opaque, then water, then plants and glass. */
+-		int[] faces;
++		Slabs.Run faces;
+ 		final int[] counts = new int[3];
+ 		boolean traceInstead;
+ 		int lowestY;
+@@ -62,7 +62,29 @@ final class MeshColumns {
+ 		 * where there were none.
+ 		 */
+ 		boolean usesSpots;
+-		int @Nullable [] spots;
++		Slabs.@Nullable Run spots;
++
++		/** The same column with its ints in other runs; nothing writes a kept column once a tile holds it. */
++		Column with(Slabs.Run faces, Slabs.@Nullable Run spots) {
++			Column copy = new Column();
++			copy.faces = faces;
++			System.arraycopy(this.counts, 0, copy.counts, 0, 3);
++			copy.traceInstead = this.traceInstead;
++			copy.lowestY = this.lowestY;
++			copy.reached = this.reached;
++			copy.y0 = this.y0;
++			copy.y1 = this.y1;
++			copy.z0 = this.z0;
++			copy.z1 = this.z1;
++			copy.cx0 = this.cx0;
++			copy.cz0 = this.cz0;
++			copy.cxCount = this.cxCount;
++			copy.czCount = this.czCount;
++			copy.deps = this.deps;
++			copy.usesSpots = this.usesSpots;
++			copy.spots = spots;
++			return copy;
++		}
+ 	}
+ 
+ 	/** Per chunk: its blocks, block light and sky light tokens, and its tints (null where none were blended). */
+@@ -73,16 +95,28 @@ final class MeshColumns {
+ 		final int x0;
+ 		final @Nullable Column[] columns;
+ 		long size;
++		/** The oldest {@link Slabs} array its columns' ints are in. */
++		long oldest = Slabs.serial();
+ 
+ 		Tile(Settings settings, int x0, int width) {
+ 			this.settings = settings;
+ 			this.x0 = x0;
+ 			this.columns = new Column[width];
+ 		}
++
++		/** Notes a column kept in it. */
++		void add(Column column) {
++			this.size += column.faces.length + column.deps.length;
++			this.oldest = Math.min(this.oldest, column.faces.serial);
++			if (column.spots != null) {
++				this.oldest = Math.min(this.oldest, column.spots.serial);
++			}
++		}
+ 	}
+ 
+ 	static synchronized @Nullable Tile get(TileKey key) {
+-		return TILES.get(key);
++		Tile tile = TILES.get(key);
++		return tile != null && Slabs.live(tile.oldest) ? tile : null;
+ 	}
+ 
+ 	static synchronized void put(TileKey key, Tile tile) {
+@@ -100,6 +134,14 @@ final class MeshColumns {
+ 			ints -= t.size;
+ 			it.remove();
+ 		}
++		// Tiles whose ints are in arrays the store has moved on from: dropped, so the arrays can go.
++		for (it = TILES.values().iterator(); it.hasNext(); ) {
++			Tile t = it.next();
++			if (!Slabs.live(t.oldest)) {
++				ints -= t.size;
++				it.remove();
++			}
++		}
+ 	}
+ 
+ 	/** What a tile's shadow casters depend on besides the chunks: their region, as {@link GpuMesher}'s casters work it out. */
+@@ -108,24 +150,44 @@ final class MeshColumns {
+ 
+ 	/** One x of a tile's shadow casters as last meshed: its faces, z by z, packed (see {@code Quads.copyCasters}), and the chunks they came from. */
+ 	static final class CasterRow {
+-		int[] faces;
++		Slabs.Run faces;
+ 		int count;
+ 		int highest;
+ 		/** The chunks of x - 1 and x, z by z from {@link #cz0}, by blocks token; {@link ChunkBakeData#MISSING} where none. */
+ 		int cz0;
+ 		int czCount;
+ 		Object[] chunks;
++
++		/** The same row with its faces in another run. */
++		CasterRow with(Slabs.Run faces) {
++			CasterRow copy = new CasterRow();
++			copy.faces = faces;
++			copy.count = this.count;
++			copy.highest = this.highest;
++			copy.cz0 = this.cz0;
++			copy.czCount = this.czCount;
++			copy.chunks = this.chunks;
++			return copy;
++		}
+ 	}
+ 
+ 	static final class CasterTile {
+ 		final CasterSettings settings;
+ 		final @Nullable CasterRow[] rows;
+ 		long size;
++		/** The oldest {@link Slabs} array its rows' ints are in. */
++		long oldest = Slabs.serial();
+ 
+ 		CasterTile(CasterSettings settings, int width) {
+ 			this.settings = settings;
+ 			this.rows = new CasterRow[width];
+ 		}
++
++		/** Notes a row kept in it. */
++		void add(CasterRow row) {
++			this.size += row.faces.length + row.chunks.length;
++			this.oldest = Math.min(this.oldest, row.faces.serial);
++		}
+ 	}
+ 
+ 	private static final java.util.LinkedHashMap<TileKey, CasterTile> CASTERS = new java.util.LinkedHashMap<>(64, 0.75F, true);
+@@ -133,7 +195,7 @@ final class MeshColumns {
+ 
+ 	static synchronized @Nullable CasterTile casters(TileKey key, CasterSettings settings) {
+ 		CasterTile tile = CASTERS.get(key);
+-		return tile != null && tile.settings.equals(settings) ? tile : null;
++		return tile != null && tile.settings.equals(settings) && Slabs.live(tile.oldest) ? tile : null;
+ 	}
+ 
+ 	static synchronized void put(TileKey key, CasterTile tile) {
+@@ -151,6 +213,13 @@ final class MeshColumns {
+ 			casterInts -= t.size;
+ 			it.remove();
+ 		}
++		for (it = CASTERS.values().iterator(); it.hasNext(); ) {
++			CasterTile t = it.next();
++			if (!Slabs.live(t.oldest)) {
++				casterInts -= t.size;
++				it.remove();
++			}
++		}
+ 	}
+ 
+ 	/**
+@@ -222,33 +291,47 @@ final class MeshColumns {
+ 		column.deps = deps;
+ 	}
+ 
+-	/** The saved spots of the tile's block column {@code column}, top row first, or null where there are none. */
+-	static int @Nullable [] spotColumn(int @Nullable [] spots, int column) {
++	/** The saved spots of the tile's block column {@code column}, top row first, kept, or null where there are none. */
++	static Slabs.@Nullable Run spotColumn(int @Nullable [] spots, int column) {
+ 		if (spots == null || column < 0 || column >= TileSpots.COLUMNS) {
+ 			return null;
+ 		}
+-		int[] out = new int[TileSpots.ROWS];
++		int[] out = scratch(TileSpots.ROWS);
+ 		for (int row = 0; row < TileSpots.ROWS; row++) {
+ 			out[row] = spots[row * TileSpots.COLUMNS + column];
+ 		}
+-		return out;
++		return Slabs.keep(out, 0, TileSpots.ROWS);
+ 	}
+ 
+-	static boolean sameSpots(int @Nullable [] kept, int @Nullable [] spots, int column) {
++	static boolean sameSpots(Slabs.@Nullable Run kept, int @Nullable [] spots, int column) {
+ 		if (spots == null || column < 0 || column >= TileSpots.COLUMNS) {
+ 			return kept == null;
+ 		}
+ 		if (kept == null) {
+ 			return false;
+ 		}
++		int[] slab = kept.ints();
++		int at = kept.offset;
+ 		for (int row = 0; row < TileSpots.ROWS; row++) {
+-			if (spots[row * TileSpots.COLUMNS + column] != kept[row]) {
++			if (spots[row * TileSpots.COLUMNS + column] != slab[at + row]) {
+ 				return false;
+ 			}
+ 		}
+ 		return true;
+ 	}
+ 
++	private static final ThreadLocal<int[]> SCRATCH = ThreadLocal.withInitial(() -> new int[4096]);
++
++	/** This thread's array of at least {@code length} ints, for packing a run before {@link Slabs#keep} copies it. */
++	static int[] scratch(int length) {
++		int[] scratch = SCRATCH.get();
++		if (scratch.length < length) {
++			scratch = new int[Math.max(length, scratch.length * 2)];
++			SCRATCH.set(scratch);
++		}
++		return scratch;
++	}
++
+ 	/**
+ 	 * Whether every chunk the column reached holds what it did, as this reader has them, and the
+ 	 * saved spots it read, if any, are the same: {@code spots} as the tile's block column {@code column}.
+diff --git a/src/main/java/dev/diorama/bake/Slabs.java b/src/main/java/dev/diorama/bake/Slabs.java
+new file mode 100644
+index 00000000..b506e202
+--- /dev/null
++++ b/src/main/java/dev/diorama/bake/Slabs.java
+@@ -0,0 +1,138 @@
++package dev.diorama.bake;
++
++import java.lang.invoke.VarHandle;
++
++/**
++ * Where {@link MeshColumns} and {@link SpotColumns} keep their ints: a ring of a few large arrays,
++ * filled in turn. Kept as small arrays, every young collection copied what the last bakes had kept
++ * from one survivor space to the next until it was old enough to promote, which made each pause
++ * longer. An array this large is allocated where the collector never moves it ({@code G1} puts one
++ * at least half a region long straight into the old generation), and the ring allocates each only
++ * once: allocating such arrays as they filled started a collection each time.
++ *
++ * <p>Each pass over an array has a serial number, and only the last {@link #WINDOW} are in use. A
++ * tile whose ints are in an older one is dropped ({@link #live}), and a kept run about to leave the
++ * window is copied forward when a bake takes it again ({@link #renew}). An array is written over
++ * only once it has left the window, but a bake that took a tile just before may still be reading
++ * it: so a reader checks {@link #valid} after reading a run, as {@link java.util.concurrent.locks.StampedLock}
++ * readers do, and works the column out instead if the array was written over meanwhile.
++ */
++final class Slabs {
++	/** Arrays in use at once; together about 40 MB, what the kept tiles were allowed before. */
++	static final int WINDOW;
++	/** Ints per array: one heap region of the collector, at least 1M ints (4 MB). */
++	static final int SLAB_INTS;
++
++	static {
++		long region = 0;
++		try {
++			var bean = java.lang.management.ManagementFactory.getPlatformMXBean(com.sun.management.HotSpotDiagnosticMXBean.class);
++			region = Long.parseLong(bean.getVMOption("G1HeapRegionSize").getValue());
++		} catch (Throwable unknown) {
++			// Another collector, or no such option: any large array will do.
++		}
++		// Just under a whole number of regions, at least 4 MB, so an array fills its regions and is
++		// humongous (at least half of one).
++		long regionInts = Math.max(1L << 10, region / Integer.BYTES);
++		long regions = region <= 0 ? 1 : ((1L << 20) + regionInts - 1) / regionInts;
++		long ints = region <= 0 ? 1L << 20 : regions * regionInts - 64;
++		// Larger regions (heaps of 32 GB and more) would make the window too coarse: there an array
++		// of 8 MB is promoted like any other, once.
++		SLAB_INTS = (int) Math.min(ints, (1L << 21) - 64);
++		WINDOW = (int) Math.max(4, (40L << 20) / ((long) SLAB_INTS * Integer.BYTES));
++	}
++
++	/** One array of the ring and the serial of the pass that writes it now. */
++	static final class Slab {
++		final int[] ints = new int[SLAB_INTS];
++		volatile long serial = -1;
++	}
++
++	/** A run of ints kept in an array of the store, by the pass {@link #serial}. */
++	static final class Run {
++		final Slab slab;
++		final int offset;
++		final int length;
++		final long serial;
++
++		Run(Slab slab, int offset, int length, long serial) {
++			this.slab = slab;
++			this.offset = offset;
++			this.length = length;
++			this.serial = serial;
++		}
++
++		/** The array; read from {@link #offset}, then check {@link Slabs#valid}. */
++		int[] ints() {
++			return this.slab.ints;
++		}
++	}
++
++	private static final Slab[] RING = new Slab[WINDOW];
++	private static Slab current;
++	private static int used;
++	/** The current pass's serial: the first is 0. */
++	private static long serial = -1;
++
++	private Slabs() {
++	}
++
++	/** Keeps {@code length} ints of {@code from} from {@code at}. */
++	static synchronized Run keep(int[] from, int at, int length) {
++		if (length > SLAB_INTS) {
++			throw new IllegalArgumentException("Run of " + length + " ints is larger than a slab");
++		}
++		if (current == null || used + length > SLAB_INTS) {
++			serial++;
++			int slot = (int) (serial % WINDOW);
++			if (RING[slot] == null) {
++				RING[slot] = new Slab();
++			}
++			current = RING[slot];
++			// Readers of the pass this one writes over see a new serial once anything is written.
++			current.serial = serial;
++			VarHandle.fullFence();
++			used = 0;
++		}
++		System.arraycopy(from, at, current.ints, used, length);
++		Run run = new Run(current, used, length, serial);
++		used += length;
++		return run;
++	}
++
++	/**
++	 * Whether what was just read of {@code run} is what was kept: its array hasn't been written over
++	 * since. Call after reading.
++	 */
++	static boolean valid(Run run) {
++		VarHandle.acquireFence();
++		return run.slab.serial == run.serial;
++	}
++
++	/** The serial new runs get now; a tile kept now is no older than this. */
++	static synchronized long serial() {
++		return serial;
++	}
++
++	/** Whether ints kept in pass {@code serial} may still be used. */
++	static synchronized boolean live(long serial) {
++		return serial > Slabs.serial - WINDOW;
++	}
++
++	/** Whether a run is in one of the two passes that leave the window next, so a bake that takes it again should keep a copy. */
++	private static synchronized boolean aging(Run run) {
++		return run.serial <= serial - WINDOW + 2;
++	}
++
++	/**
++	 * {@code run}, or a copy of it in the current array when it is about to leave the window; null
++	 * if its array was written over before the copy was made.
++	 */
++	static Run renew(Run run) {
++		if (!aging(run)) {
++			return run;
++		}
++		Run copy = keep(run.slab.ints, run.offset, run.length);
++		return valid(run) ? copy : null;
++	}
++}
+diff --git a/src/main/java/dev/diorama/bake/SpotColumns.java b/src/main/java/dev/diorama/bake/SpotColumns.java
+index a729f7d5..6bc85be0 100644
+--- a/src/main/java/dev/diorama/bake/SpotColumns.java
++++ b/src/main/java/dev/diorama/bake/SpotColumns.java
+@@ -29,22 +29,45 @@ final class SpotColumns {
+ 
+ 	/** One column, all its rows; see {@link #matches}. */
+ 	static final class Column {
+-		final int[] spots = new int[TileSpots.ROWS];
++		/** Its spots, all {@link TileSpots#ROWS} rows. */
++		Slabs.Run spots;
+ 		/** The chunks its rays read, z from cz0, by token, {@link ChunkBakeData#MISSING} where none. */
+ 		int cz0;
+ 		Object[] chunks;
+ 		boolean usesSaved;
+-		int @Nullable [] saved;
++		Slabs.@Nullable Run saved;
++
++		/** The same column with its ints in other runs; nothing writes a kept column once a tile holds it. */
++		Column with(Slabs.Run spots, Slabs.@Nullable Run saved) {
++			Column copy = new Column();
++			copy.spots = spots;
++			copy.cz0 = this.cz0;
++			copy.chunks = this.chunks;
++			copy.usesSaved = this.usesSaved;
++			copy.saved = saved;
++			return copy;
++		}
+ 	}
+ 
+ 	static final class Tile {
+ 		final Settings settings;
+ 		final @Nullable Column[] columns = new Column[TileSpots.COLUMNS];
+ 		long size;
++		/** The oldest {@link Slabs} array its columns' ints are in. */
++		long oldest = Slabs.serial();
+ 
+ 		Tile(Settings settings) {
+ 			this.settings = settings;
+ 		}
++
++		/** Notes a column kept in it. */
++		void add(Column column) {
++			this.size += TileSpots.ROWS + column.chunks.length;
++			this.oldest = Math.min(this.oldest, column.spots.serial);
++			if (column.saved != null) {
++				this.oldest = Math.min(this.oldest, column.saved.serial);
++			}
++		}
+ 	}
+ 
+ 	static Settings settings(MapPick pick, Looks looks) {
+@@ -53,7 +76,7 @@ final class SpotColumns {
+ 
+ 	static synchronized @Nullable Tile get(TileKey key, Settings settings) {
+ 		Tile tile = TILES.get(key);
+-		return tile != null && tile.settings.equals(settings) ? tile : null;
++		return tile != null && tile.settings.equals(settings) && Slabs.live(tile.oldest) ? tile : null;
+ 	}
+ 
+ 	static synchronized void put(TileKey key, Tile tile) {
+@@ -71,6 +94,14 @@ final class SpotColumns {
+ 			ints -= t.size;
+ 			it.remove();
+ 		}
++		// Tiles whose ints are in arrays the store has moved on from: dropped, so the arrays can go.
++		for (it = TILES.values().iterator(); it.hasNext(); ) {
++			Tile t = it.next();
++			if (!Slabs.live(t.oldest)) {
++				ints -= t.size;
++				it.remove();
++			}
++		}
+ 	}
+ 
+ 	/** Whether the column's chunks and the saved spots it read are the same now, as this pick reads them. */
+diff --git a/src/main/java/dev/diorama/bake/TileSpots.java b/src/main/java/dev/diorama/bake/TileSpots.java
+index aa390689..07935544 100644
+--- a/src/main/java/dev/diorama/bake/TileSpots.java
++++ b/src/main/java/dev/diorama/bake/TileSpots.java
+@@ -122,19 +122,35 @@ public final class TileSpots {
+ 		for (int column = column0; column < column0 + columns; column++) {
+ 			int x = x0 + column;
+ 			SpotColumns.Column was = kept == null ? null : kept.columns[column];
++			Slabs.Run wasSpots = was == null ? null : was.spots;
++			Slabs.Run wasSaved = was == null ? null : was.saved;
+ 			if (was != null && SpotColumns.matches(was, pick, x, saved, column)) {
++				int[] slab = wasSpots.ints();
++				int at = wasSpots.offset;
++				boolean knownHere = false;
+ 				for (int row = row0; row < row0 + rows; row++) {
+ 					int i = row * COLUMNS + column;
+-					spots[i] = was.spots[row];
+-					known |= spots[i] != UNKNOWN;
++					spots[i] = slab[at + row];
++					knownHere |= spots[i] != UNKNOWN;
+ 				}
+-				if (keep != null) {
+-					keep.columns[column] = was;
+-					keep.size += ROWS + was.chunks.length;
++				// Unless its arrays were written over while it was read: then the column is picked below.
++				if (Slabs.valid(wasSpots) && (wasSaved == null || Slabs.valid(wasSaved))) {
++					known |= knownHere;
++					if (keep != null) {
++						// Kept again, copied forward first if its arrays are about to leave the store's window.
++						Slabs.Run keptSpots = Slabs.renew(wasSpots);
++						Slabs.Run keptSaved = wasSaved == null ? null : Slabs.renew(wasSaved);
++						if (keptSpots != null && (wasSaved == null || keptSaved != null)) {
++							SpotColumns.Column kept2 = keptSpots == wasSpots && keptSaved == wasSaved ? was : was.with(keptSpots, keptSaved);
++							keep.columns[column] = kept2;
++							keep.add(kept2);
++						}
++					}
++					continue;
+ 				}
+-				continue;
+ 			}
+ 			SpotColumns.Column made = keep == null ? null : new SpotColumns.Column();
++			int[] madeSpots = made == null ? null : MeshColumns.scratch(ROWS);
+ 			int z0 = Integer.MAX_VALUE;
+ 			int z1 = Integer.MIN_VALUE;
+ 			boolean unknown = false;
+@@ -148,18 +164,20 @@ public final class TileSpots {
+ 				};
+ 				known |= spots[i] != UNKNOWN;
+ 				if (made != null) {
+-					made.spots[row] = spots[i];
++					madeSpots[row] = spots[i];
+ 					z0 = Math.min(z0, pick.lastZ);
+ 					z1 = Math.max(z1, pick.firstZ);
+ 					unknown |= pick.readUnknown;
+ 				}
+ 			}
+ 			if (made != null) {
++				// Kept before spotColumn, which packs in the same scratch array.
++				made.spots = Slabs.keep(madeSpots, 0, ROWS);
+ 				SpotColumns.depend(made, pick, x, z0, z1);
+ 				made.usesSaved = unknown;
+ 				made.saved = unknown ? MeshColumns.spotColumn(saved, column) : null;
+ 				keep.columns[column] = made;
+-				keep.size += ROWS + made.chunks.length;
++				keep.add(made);
+ 			}
+ 		}
+ 		if (keep != null) {

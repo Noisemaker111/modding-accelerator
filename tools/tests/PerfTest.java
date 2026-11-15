@@ -465,6 +465,8 @@ public final class PerfTest {
         report.put("threadCpuTime", List.of(Json.map("thread", "m-baker-1", "cpuMsPerSecond", 7.0, "cpuMs", 70.0),
             Json.map("thread", "m-baker-2", "cpuMsPerSecond", 5.0, "cpuMs", 50.0), Json.map("thread", "Render thread", "cpuMsPerSecond", 400.0, "cpuMs", 4000.0)));
         check(PerfOptimize.metric(report, Json.map("threadCpu", "^m-baker")) == 12.0, "a threadCpu metric sums the matching threads' CPU time");
+        report.put("probeCalls", Json.map("mesh", 40L));
+        check(PerfOptimize.metric(report, Json.map("threadCpu", "^m-baker", "perCall", "mesh")) == 3.0, "perCall divides the window's CPU time by a counted probe's calls");
         boolean none = false;
         try { PerfOptimize.metric(report, Json.map("threadCpu", "^nobody")); }
         catch (IllegalStateException expected) { none = true; }

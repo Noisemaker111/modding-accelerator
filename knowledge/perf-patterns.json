@@ -897,6 +897,78 @@
      ]
     }
    }
+  },
+  {
+   "id": "keep-cached-ints-in-a-ring-of-region-sized-arrays",
+   "symptom": {
+    "text": "A cache of packed results kept for seconds between passes (here camera faces, shadow-caster rows and spawn-spot columns kept per tile column) is built as many small primitive arrays; the bakes got faster but every young collection got longer, because the kept arrays are copied from one survivor space to the next before they are promoted.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.copy\\w*\\(",
+      "minShare": 0.02
+     }
+    ]
+   },
+   "change": "Copy what the cache keeps into a ring of a few arrays, each one collector region long (at least half a G1 region, so it is allocated in the old generation and never copied), allocated once and filled in turn; a kept record holds (array, offset, length, the pass that wrote it). Entries in a pass older than the ring are dropped, an entry about to leave is copied forward when it is taken again, and since an array is written over once it leaves the ring, every read is checked afterwards against the array's pass (a StampedLock-style validation) and the work is redone if it changed. Allocating a new large array whenever one filled started a young collection and a concurrent cycle each time; the ring allocates each once.",
+   "gain": {
+    "scope": "gcPauseMeanMs (mean young pause; slab-ring run 2026-11-15T14-55-52.903860400Z-7f0da1ec against the same build keeping small arrays, 4 pairs)",
+    "cold": {
+     "geometricMean": 1.119,
+     "low": 1.1,
+     "high": 1.13,
+     "pairs": 4
+    },
+    "warm": {
+     "geometricMean": 1.19,
+     "low": 1.13,
+     "high": 1.24,
+     "pairs": 4
+    }
+   },
+   "gate": {
+    "name": "reuse-live + slabs-ring + bake-digest",
+    "compare": "expect + expect + exact",
+    "detail": "every live tile meshed and picked with reuse off and on comes out identical after a flight that went round the ring; going round once more, a run kept before reads as stale and every tile still matches; the frozen bake digest is unchanged"
+   },
+   "provenIn": {
+    "mod": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "record": "2026-11-15T15-58-01.240561200Z-9aa457c6",
+    "patch": "bench/diorama/slab-ring.patch",
+    "scope": "gcPauseMeanMs"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Cache.copyOut(II)I",
+       "samples": 5
+      },
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 95
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Cache.copyOut(II)I",
+       "samples": 1
+      },
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 99
+      }
+     ]
+    }
+   }
   }
  ]
 }
