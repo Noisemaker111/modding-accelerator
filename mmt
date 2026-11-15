@@ -1,0 +1,32 @@
+#!/bin/sh
+# POSIX launcher: orchestration lives in Java, independent of the calling shell.
+set -eu
+mmt_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+mmt_java=java
+if [ -n "${JAVA_HOME:-}" ] && { [ -f "$mmt_dir/mmt.jar" ] && [ -x "$JAVA_HOME/bin/java" ] || [ -x "$JAVA_HOME/bin/javac" ]; }; then
+    mmt_java="$JAVA_HOME/bin/java"
+else
+    for mmt_jdk in "$mmt_dir"/.tools/jdk-* "$HOME"/.mmt/jdks/* "$HOME"/.jdks/*; do
+        if [ -x "$mmt_jdk/bin/javac" ]; then mmt_java="$mmt_jdk/bin/java"; break; fi
+    done
+fi
+if ! command -v "$mmt_java" >/dev/null 2>&1 && [ ! -x "$mmt_java" ]; then
+    echo "mmt requires Java 17 or newer. Install Java, or set JAVA_HOME to its installation directory." >&2
+    exit 2
+fi
+# Java 8 to 16 cannot run mmt and would fail with a class-version stack trace: say so instead.
+mmt_version=$("$mmt_java" -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\)[."].*/\1/p' | head -n 1)
+case "$mmt_version" in
+    1|9|1[0-6])
+        echo "$mmt_java is older than Java 17, which mmt needs. Install Java 17 or newer, or set JAVA_HOME to it." >&2
+        exit 2 ;;
+esac
+if [ -f "$mmt_dir/mmt.jar" ]; then
+    case "${1:-}" in
+        ui|node|suite|world|look|mp|scenario|status|stop|restart|lint|bench)
+            echo "This older command is available only in a source checkout. Use portable commands such as port --from VERSION --to VERSION --fix, ui-check, world-check, mp-check, or game-status." >&2
+            exit 2 ;;
+    esac
+    exec "$mmt_java" "-Dmmt.home=$mmt_dir" -jar "$mmt_dir/mmt.jar" "$@"
+fi
+exec "$mmt_java" "$mmt_dir/tools/cli/Bootstrap.java" "$mmt_dir" "$@"

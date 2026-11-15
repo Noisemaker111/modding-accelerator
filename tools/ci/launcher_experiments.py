@@ -1,4 +1,4 @@
-"""The source launcher (modaccel.cmd on Windows, ./modaccel elsewhere) checks every shipped perf experiment offline.
+"""The source launcher (mmt.cmd on Windows, ./mmt elsewhere) checks every shipped perf experiment offline.
 
 Windows broke perf-optimize twice in ways only a verifier running it there saw (#76, 877ec25): this runs the real
 launcher from a checkout whose path has a space, with the experiment path in the system's own separators. Without the
@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def main():
-    launcher = [str(ROOT / "modaccel.cmd")] if os.name == "nt" else [str(ROOT / "modaccel")]
+    launcher = [str(ROOT / "mmt.cmd")] if os.name == "nt" else [str(ROOT / "mmt")]
     failures, checked = [], 0
     for experiment in sorted(ROOT.glob("bench/*/experiment*.json")):
         path = str(experiment.relative_to(ROOT)).replace("/", os.sep)

@@ -8,8 +8,8 @@ return server.submit(() -> {
     net.minecraft.world.entity.monster.zombie.Zombie zombie = null;
     net.minecraft.world.entity.Entity pig = null;
     for (var e : level.getAllEntities()) {
-        if (e.entityTags().contains("modaccel_za") && e instanceof net.minecraft.world.entity.monster.zombie.Zombie z) zombie = z;
-        if (e.entityTags().contains("modaccel_pig")) pig = e;
+        if (e.entityTags().contains("mmt_za") && e instanceof net.minecraft.world.entity.monster.zombie.Zombie z) zombie = z;
+        if (e.entityTags().contains("mmt_pig")) pig = e;
     }
     if (zombie == null || pig == null) throw new AssertionError("The summoned zombie or pig is gone (zombie " + zombie + ", pig " + pig + ").");
     java.util.List<String> goals = new java.util.ArrayList<>(), targets = new java.util.ArrayList<>();

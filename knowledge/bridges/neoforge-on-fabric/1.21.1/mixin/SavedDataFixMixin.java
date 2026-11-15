@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 /**
  * NeoForge 21.1's DimensionDataStorage patch: saved data whose SavedData.Factory has no DataFixTypes (NeoForge's
- * two-argument Factory constructor, which modaccel convert writes as the three-argument one with null) is read back
+ * two-argument Factory constructor, which mmt convert writes as the three-argument one with null) is read back
  * as it was written, with no data fixing, where the game would fail on the null.
  */
 @Mixin(DimensionDataStorage.class)

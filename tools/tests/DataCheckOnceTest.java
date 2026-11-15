@@ -7,10 +7,10 @@ import java.util.concurrent.*;
 /**
  * data-check --once through the packaged command, on a copy of the Prism Lab demo mod (the repo root):
  * the command must take the switch, check the mod with the game's own code, and leave no game behind.
- * Every process modaccel starts is recorded while it runs; once it returns, only its Gradle daemons
+ * Every process mmt starts is recorded while it runs; once it returns, only its Gradle daemons
  * (and their workers) may still be alive, and no loaded or spare game may be recorded for the project.
  *
- *   java tools/tests/DataCheckOnceTest.java HARNESS MODACCEL_JAR
+ *   java tools/tests/DataCheckOnceTest.java HARNESS MMT_JAR
  *
  * It downloads the mod's dependencies on first use and starts the game's code, so it runs by hand or in
  * bench/data_check_linux.sh, not on the PR.
@@ -30,7 +30,7 @@ public final class DataCheckOnceTest {
     public static void main(String[] args) throws Exception {
         Path harness = Path.of(args[0]).toAbsolutePath(), jar = Path.of(args[1]).toAbsolutePath();
         String java = ProcessHandle.current().info().command().orElse("java");
-        Path copy = Files.createTempDirectory("modaccel-once");
+        Path copy = Files.createTempDirectory("mmt-once");
         try {
             for (String name : MOD_FILES) copyTree(harness.resolve(name), copy.resolve(name));
             Set<Long> seen = ConcurrentHashMap.newKeySet();
@@ -46,7 +46,7 @@ public final class DataCheckOnceTest {
             )
                 .redirectErrorStream(true)
                 .start();
-            // The game runs for seconds; record every process modaccel starts while it runs.
+            // The game runs for seconds; record every process mmt starts while it runs.
             Thread watch = new Thread(() -> {
                 while (run.isAlive()) {
                     run.descendants().forEach(p -> seen.add(p.pid()));
@@ -71,7 +71,7 @@ public final class DataCheckOnceTest {
                 "the game's own code read the mod's items: " + tail(last)
             );
 
-            Path state = copy.resolve(".modaccel/portable");
+            Path state = copy.resolve(".mmt/portable");
             for (String file : List.of("data-check.json", "data-check-spare.json")) check(
                 !Files.exists(state.resolve(file)),
                 "no " + file + " is left: --once keeps no loaded or spare game"
@@ -95,7 +95,7 @@ public final class DataCheckOnceTest {
                     .ifPresent(p -> left.add(pid + " " + p.info().command().orElse("?")));
             }
             check(started > 0, "the run's own processes were seen (the watch works): " + seen);
-            check(left.isEmpty(), "nothing modaccel started is still running except its Gradle daemons: " + left);
+            check(left.isEmpty(), "nothing mmt started is still running except its Gradle daemons: " + left);
             System.out.println(
                 "data-check --once: passed on the demo mod, " +
                 started +

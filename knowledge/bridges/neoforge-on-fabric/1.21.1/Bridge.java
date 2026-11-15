@@ -13,7 +13,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ObjectShare;
 
 /**
- * What a NeoForge @Mod class's constructor received, and NeoForge's start-up order, for the Fabric entrypoint modaccel
+ * What a NeoForge @Mod class's constructor received, and NeoForge's start-up order, for the Fabric entrypoint mmt
  * convert made of it: the entrypoint gets its mod bus and container from here, registers its @EventBusSubscriber
  * classes here, and ends with common(), which registers the mod's DeferredRegisters, hooks NeoForge's game events to
  * the Fabric callbacks that fire at the same moments, and posts FMLCommonSetupEvent. The client entrypoint ends with
@@ -68,8 +68,8 @@ public final class Bridge {
 
     // ---- player interaction, block and lifecycle hooks ----
 
-    private static final String LOAD_STAGES = "modaccel:neoforge_bridge_load_stages";
-    private static final String LOAD_DONE = "modaccel:neoforge_bridge_load_done";
+    private static final String LOAD_STAGES = "mmt:neoforge_bridge_load_stages";
+    private static final String LOAD_DONE = "mmt:neoforge_bridge_load_done";
     static boolean loadHooked;
 
     /**

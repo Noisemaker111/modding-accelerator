@@ -5,7 +5,7 @@ import java.util.*;
 /**
  * A run reports what really ran and never leaves the project worse: test counts, no tests, one command at a time,
  * interrupted-port undo, read-only files.
- * From the stranger playthrough (an outside modder using modaccel on Diorama and F3Nope): a message that hid the
+ * From the stranger playthrough (an outside modder using mmt on Diorama and F3Nope): a message that hid the
  * cause, or a pass that should have failed. Every case runs the real code path on real files (or real tool output)
  * and checks what a person would read.
  */
@@ -22,7 +22,7 @@ public final class ProjectSafetyTests {
             Thread.sleep(6000);
             return;
         }
-        Path scratch = Files.createTempDirectory("modaccel stranger");
+        Path scratch = Files.createTempDirectory("mmt stranger");
         try {
             testCounts(scratch);
             noTests(scratch);
@@ -40,7 +40,7 @@ public final class ProjectSafetyTests {
 
     /** fast printed raw counts; a failing test's name and message were only in the XML. */
     static void testCounts(Path scratch) throws Exception {
-        Path project = scratch.resolve("counts"), results = project.resolve("build/modaccel/test-results/run1/test");
+        Path project = scratch.resolve("counts"), results = project.resolve("build/mmt/test-results/run1/test");
         write(
             results.resolve("TEST-dev.PinMathTest.xml"),
             """
@@ -87,7 +87,7 @@ public final class ProjectSafetyTests {
         write(tests.resolve("dev/PinTest.java"), "class PinTest { @org.junit.jupiter.api.Test void t() {} }");
         String untagged = FastLane.noTests(model, true);
         require(
-            untagged.contains("none is tagged @Tag(\"pure\")") && untagged.contains("modaccel test"),
+            untagged.contains("none is tagged @Tag(\"pure\")") && untagged.contains("mmt test"),
             "untagged tests are named as the reason, with the way out: " + untagged
         );
         require(!FastLane.noTests(model, false).contains("pure"), "test (all tests) does not talk about pure tags");
@@ -101,7 +101,7 @@ public final class ProjectSafetyTests {
         try (ProjectLock held = ProjectLock.acquire(project, "compile")) {
             String other = child("lock", project.root.toString());
             require(
-                other.contains("Another modaccel command (compile, process " + ProcessHandle.current().pid()) &&
+                other.contains("Another mmt command (compile, process " + ProcessHandle.current().pid()) &&
                 other.contains("this one did nothing"),
                 "a second command is refused and names the first: " + other
             );
@@ -172,7 +172,7 @@ public final class ProjectSafetyTests {
             "the next command warns about the half-finished port: " + warning
         );
         require(
-            new Modaccel.Options(new String[] { "port", "--root", ".", "--undo" }).get("undo", "").equals("latest"),
+            new Mmt.Options(new String[] { "port", "--root", ".", "--undo" }).get("undo", "").equals("latest"),
             "--undo alone means the newest port"
         );
         Map<String, Object> undone = Port.undo(project, "latest");
@@ -206,7 +206,7 @@ public final class ProjectSafetyTests {
             );
         }
         require(Files.readString(file).equals("minecraft_version=1.21.5\n"), "nothing was written");
-        String plain = Modaccel.plainError(
+        String plain = Mmt.plainError(
             new java.io.IOException("Port failed", new java.nio.file.AccessDeniedException(file.toString()))
         );
         require(

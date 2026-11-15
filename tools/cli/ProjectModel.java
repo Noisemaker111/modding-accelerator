@@ -12,7 +12,7 @@ public final class ProjectModel {
     static final Set<String> IGNORED = Set.of(
         ".git",
         ".gradle",
-        ".modaccel",
+        ".mmt",
         ".runs",
         ".tools",
         "build",
@@ -71,7 +71,7 @@ public final class ProjectModel {
     }
 
     Path state() {
-        return root.resolve(".modaccel/portable");
+        return root.resolve(".mmt/portable");
     }
 
     String wrapperVersion() throws IOException {
@@ -247,13 +247,13 @@ public final class ProjectModel {
             "authoritative",
             false,
             "next",
-            "Run modaccel setup to evaluate the build without changing its scripts."
+            "Run mmt setup to evaluate the build without changing its scripts."
         );
     }
 
     /**
      * A folder below the root with its own settings.gradle is another Gradle build that this one never includes
-     * (ZAA keeps a Forge 1.20.1 and a NeoForge 1.20.1 copy in forge1201/ and neoforge1201/): nothing modaccel reads or
+     * (ZAA keeps a Forge 1.20.1 and a NeoForge 1.20.1 copy in forge1201/ and neoforge1201/): nothing mmt reads or
      * writes for this build is in it. buildSrc and build-logic belong to the build.
      */
     static boolean separateBuild(Path dir) {

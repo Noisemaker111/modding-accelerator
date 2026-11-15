@@ -43,7 +43,7 @@ def sources(key):
     CACHE.mkdir(parents=True, exist_ok=True)
     file = CACHE / f"{key}-{artifact}-{version}-sources.jar"
     if not file.is_file():
-        request = urllib.request.Request(url, headers={"User-Agent": "modaccel-bridge-tags"})
+        request = urllib.request.Request(url, headers={"User-Agent": "mmt-bridge-tags"})
         with urllib.request.urlopen(request, timeout=300) as response:
             file.write_bytes(response.read())
     with zipfile.ZipFile(io.BytesIO(file.read_bytes())) as jar:

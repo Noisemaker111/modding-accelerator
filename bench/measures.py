@@ -1,4 +1,4 @@
-"""Every number modaccel shows, in one format: coverage/measures.json, tied to coverage/roadmap.json.
+"""Every number mmt shows, in one format: coverage/measures.json, tied to coverage/roadmap.json.
 
 A measure is one thing measured the same way each time (same work, same cache condition), with all
 its points and the target it is heading for. The roadmap page, ROADMAP.md and PR tables all read

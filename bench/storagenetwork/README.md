@@ -24,7 +24,7 @@ slots, checking each slot against 18 newly built filter matchers.
 
 ## Run it
 
-Windows uses `modaccel.cmd`. From the Mod Accel checkout:
+Windows uses `mmt.cmd`. From the Minecraft Modding Tools checkout:
 
 ```sh
 git clone --branch trunk/1.21.1 https://github.com/Lothrazar/Storage-Network .runs/storagenetwork
@@ -33,15 +33,15 @@ git -C .runs/storagenetwork checkout 3deabb24f282260cda30bc0d95b22a38cfd5a2ff
 # and commit that in the clone (give the clone a local git user.name and user.email first).
 
 # Once: make the world (superflat, fixed seed, peaceful) and the base, then keep the save.
-./modaccel ui-check --root .runs/storagenetwork --jit full
-./modaccel eval --root .runs/storagenetwork --file bench/storagenetwork/create-world.java
-./modaccel eval --root .runs/storagenetwork --until "mc.player != null"   # wait until the new world has loaded
-./modaccel eval --root .runs/storagenetwork --file bench/storagenetwork/scene.java --thread control
-./modaccel eval --root .runs/storagenetwork --code "mc.getSingleplayerServer().submit(() -> mc.getSingleplayerServer().saveEverything(true, true, true)).join()" --thread control
-./modaccel game-stop --root .runs/storagenetwork
+./mmt ui-check --root .runs/storagenetwork --jit full
+./mmt eval --root .runs/storagenetwork --file bench/storagenetwork/create-world.java
+./mmt eval --root .runs/storagenetwork --until "mc.player != null"   # wait until the new world has loaded
+./mmt eval --root .runs/storagenetwork --file bench/storagenetwork/scene.java --thread control
+./mmt eval --root .runs/storagenetwork --code "mc.getSingleplayerServer().submit(() -> mc.getSingleplayerServer().saveEverything(true, true, true)).join()" --thread control
+./mmt game-stop --root .runs/storagenetwork
 mkdir -p .runs/storagenetwork-world && cp -r .runs/storagenetwork/run/saves/ssn-base .runs/storagenetwork-world/ssn-base
 
-./modaccel perf-optimize --root .runs/storagenetwork --experiment bench/storagenetwork/experiment.json \
+./mmt perf-optimize --root .runs/storagenetwork --experiment bench/storagenetwork/experiment.json \
   --patch bench/storagenetwork/dimension-key-cache.diff --runs 8 --dry-run --out .runs/storagenetwork-opt/dimension-key-cache
 ```
 

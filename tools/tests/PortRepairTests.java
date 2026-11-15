@@ -215,7 +215,7 @@ public final class PortRepairTests {
         );
         ProjectModel project = new ProjectModel(root);
         Port port = new Port(
-            new Build(project, home, "", new Modaccel.Report(root, "port")),
+            new Build(project, home, "", new Mmt.Report(root, "port")),
             Json.map("projects", List.of())
         );
         port.transaction = project.state().resolve("ports/accessor");
@@ -246,8 +246,8 @@ public final class PortRepairTests {
         check(
             source.contains("@Mixin(HungerManager.class)") &&
             source.contains("@Accessor(\"exhaustion\")") &&
-            source.contains("float modaccel$getExhaustion();") &&
-            !source.contains("modaccel$setExhaustion"),
+            source.contains("float mmt$getExhaustion();") &&
+            !source.contains("mmt$setExhaustion"),
             "the accessor mixin reads the field in the main mixin package, with no setter the mod never used"
         );
         check(
@@ -258,7 +258,7 @@ public final class PortRepairTests {
         );
         String repaired = Files.readString(hud);
         check(
-            repaired.contains("return ((HungerManagerAccessor) player.getHungerManager()).modaccel$getExhaustion();") &&
+            repaired.contains("return ((HungerManagerAccessor) player.getHungerManager()).mmt$getExhaustion();") &&
             repaired.contains("return payload.getExhaustion();") &&
             repaired.contains("import mod.mixin.HungerManagerAccessor;"),
             "only the call javac reported goes through the accessor; the mod's own getter of the same name is kept"
@@ -312,7 +312,7 @@ public final class PortRepairTests {
         Files.writeString(hunt, original);
         ProjectModel project = new ProjectModel(root);
         Port port = new Port(
-            new Build(project, home, "", new Modaccel.Report(root, "port")),
+            new Build(project, home, "", new Mmt.Report(root, "port")),
             Json.map("projects", List.of())
         );
         port.transaction = project.state().resolve("ports/accessor-no-mixins");
@@ -333,22 +333,22 @@ public final class PortRepairTests {
             "an accessor on a subclass's receiver (a ZombieHorse for AbstractHorse's field) runs in a mod with no mixins config"
         );
         port.flushImports();
-        Path config = root.resolve("src/main/resources/zombiemod.modaccel.mixins.json"), accessor = java.resolve(
+        Path config = root.resolve("src/main/resources/zombiemod.mmt.mixins.json"), accessor = java.resolve(
             "mixin/AbstractHorseAccessor.java"
         );
         check(
             Files.isRegularFile(config) &&
             Json.text(Json.read(config), "package", "").equals("mod.mixin") &&
             Files.readString(config).contains("\"AbstractHorseAccessor\"") &&
-            Files.readString(toml).contains("[[mixins]]\nconfig=\"zombiemod.modaccel.mixins.json\""),
+            Files.readString(toml).contains("[[mixins]]\nconfig=\"zombiemod.mmt.mixins.json\""),
             "the port adds a mixins config named for the mod id from its gradle.properties, lists it in neoforge.mods.toml and lists the accessor in it"
         );
         check(
             Files.readString(accessor).contains(
-                "void modaccel$setOwner(net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity> value);"
+                "void mmt$setOwner(net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity> value);"
             ) &&
             Files.readString(hunt).contains(
-                "((AbstractHorseAccessor) zombieHorse).modaccel$setOwner(java.util.Optional.ofNullable(owner).map("
+                "((AbstractHorseAccessor) zombieHorse).mmt$setOwner(java.util.Optional.ofNullable(owner).map("
             ),
             "the removed setter's UUID is passed as the field's EntityReference through the accessor's setter"
         );
@@ -395,7 +395,7 @@ public final class PortRepairTests {
         );
         check(
             handler.contains(
-                "private void getTooltipFromItem(Item.TooltipContext modaccel$tooltipContext0, PlayerEntity player, TooltipType context, CallbackInfoReturnable<List> info)"
+                "private void getTooltipFromItem(Item.TooltipContext mmt$tooltipContext0, PlayerEntity player, TooltipType context, CallbackInfoReturnable<List> info)"
             ) &&
             handler.startsWith("import net.minecraft.item.Item;\n"),
             "a handler gets the parameter its target gained, in Mixin's order, and keeps its own names: " +
@@ -435,7 +435,7 @@ public final class PortRepairTests {
                 project.loomVersion().equals("1.8-SNAPSHOT"),
                 "the Loom version is read from " + (property ? "the property the plugin line names" : "the plugin line")
             );
-            Build build = new Build(project, home, "", new Modaccel.Report(root, "port"));
+            Build build = new Build(project, home, "", new Mmt.Report(root, "port"));
             Target.Setup setup = new Target.Setup(build, Json.map(), "1.21.6", List.of());
             check(Target.loomEdit(setup, build, "1.8-SNAPSHOT", "1.10.5"), "a stated Loom version can be raised");
             Path changed = root.resolve(property ? "gradle.properties" : "build.gradle");
@@ -510,7 +510,7 @@ public final class PortRepairTests {
             );
             Files.writeString(root.resolve("gradle.properties"), c.props());
             Files.writeString(root.resolve("build.gradle"), c.build());
-            Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
+            Build build = new Build(new ProjectModel(root), home, "", new Mmt.Report(root, "port"));
             Target.Setup setup = new Target.Setup(
                 build,
                 Json.map(),
@@ -537,7 +537,7 @@ public final class PortRepairTests {
         );
         Files.writeString(plain.resolve("gradle.properties"), "other=1\n");
         Files.writeString(plain.resolve("build.gradle"), "plugins { }\n");
-        Build plainBuild = new Build(new ProjectModel(plain), home, "", new Modaccel.Report(plain, "port"));
+        Build plainBuild = new Build(new ProjectModel(plain), home, "", new Mmt.Report(plain, "port"));
         Target.Setup untouched = new Target.Setup(plainBuild, Json.map(), "26.3", List.of());
         check(
             !Target.parchmentEdit(untouched, plainBuild, "26.3", null) && untouched.edits().isEmpty(),
@@ -566,7 +566,7 @@ public final class PortRepairTests {
                 root.resolve("src/main/resources/META-INF/neoforge.mods.toml"),
                 "[[mods]]\nmodId=\"${mod_id}\"\n"
             );
-            Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
+            Build build = new Build(new ProjectModel(root), home, "", new Mmt.Report(root, "port"));
             // The two lookups NeoGradle's planning makes, answered from the metadata cache Target.fetch reads first.
             Map<String, String> answers = Map.of(
                 "https://maven.neoforged.net/releases/net/neoforged/gradle/userdev/maven-metadata.xml",
@@ -629,7 +629,7 @@ public final class PortRepairTests {
                 root.resolve("src/test/java/demo/CommandsTest.java"),
                 "package demo;\n\nimport org.junit.jupiter.api.Test;\n\nclass CommandsTest {\n    @Test\n    void tree() {}\n}\n"
             );
-            Build build = new Build(new ProjectModel(root), home, "", new Modaccel.Report(root, "port"));
+            Build build = new Build(new ProjectModel(root), home, "", new Mmt.Report(root, "port"));
             String pom = "https://maven.neoforged.net/releases/net/neoforged/neoforge/26.3.0.103/neoforge-26.3.0.103.pom";
             Path cached = build.project
                 .state()

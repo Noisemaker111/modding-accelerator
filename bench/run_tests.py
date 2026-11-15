@@ -18,8 +18,8 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-JAR = "build/distributions/modaccel.jar"
-ZIP = "build/distributions/modaccel-portable.zip"
+JAR = "build/distributions/mmt.jar"
+ZIP = "build/distributions/mmt-portable.zip"
 WINDOWS = os.name == "nt"
 SEP = ";" if WINDOWS else ":"
 
@@ -52,7 +52,7 @@ def legacy_agent():
     """Windows: the legacy launch agent in JAVA_TOOL_OPTIONS keeps system properties strings, and Gradle still runs."""
     prepared = subprocess.run(java("-jar", JAR, "legacy-agent", "--json"), cwd=ROOT, capture_output=True, text=True)
     agent = json.loads(prepared.stdout.strip().splitlines()[-1])["result"]["agent"]
-    env = {"JAVA_TOOL_OPTIONS": f'"-javaagent:{agent}=legacy" -Dmodaccel.background=true -Dmodaccel.quiet=true'}
+    env = {"JAVA_TOOL_OPTIONS": f'"-javaagent:{agent}=legacy" -Dmmt.background=true -Dmmt.quiet=true'}
     yield java("tools/tests/LegacyAgentPropertiesTest.java"), env
     yield java("-jar", JAR, "fast", "--refresh", "--json"), env
 

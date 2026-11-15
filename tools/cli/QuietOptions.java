@@ -22,7 +22,7 @@ final class QuietOptions {
 
     static final Map<String, String> VALUES = new LinkedHashMap<>();
     /** The values quiet replaced, one {@code key:value} per line; a bare {@code key} was absent before. */
-    static final String SAVED = "modaccel-quiet.txt";
+    static final String SAVED = "mmt-quiet.txt";
 
     static {
         VALUES.put("narrator", "0");
@@ -45,7 +45,7 @@ final class QuietOptions {
             restore(directory(args));
         } catch (Exception error) {
             // The game still starts; it only keeps the quiet values.
-            System.err.println("MODACCEL_QUIET_RESTORE_ERROR " + error);
+            System.err.println("MMT_QUIET_RESTORE_ERROR " + error);
         }
     }
 

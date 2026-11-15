@@ -1,4 +1,4 @@
-package modaccel.packprobe;
+package mmt.packprobe;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -21,9 +21,9 @@ import net.minecraft.world.level.dimension.LevelStem;
  * pack-check compiles the probe with the variant in tools/packcheck/game/ whose folder names the newest version at or
  * below the pack's, so one probe source serves every version; each variant keeps the same methods.
  */
-final class ModaccelPackGame {
+final class MmtPackGame {
 
-    private ModaccelPackGame() {}
+    private MmtPackGame() {}
 
     static Iterable<Item> items() {
         return Registry.ITEM;
@@ -98,7 +98,7 @@ final class ModaccelPackGame {
                     row.addProperty("write", message.length() > 600 ? message.substring(0, 600) + "..." : message);
                 } else row.addProperty("savedBytes", written.result().get().toString().length());
             } catch (Throwable failure) {
-                row.addProperty("error", ModaccelPackProbe.stack(failure));
+                row.addProperty("error", MmtPackProbe.stack(failure));
             }
             out.add(row);
         }

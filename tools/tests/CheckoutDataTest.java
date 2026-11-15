@@ -4,7 +4,7 @@ import java.util.*;
 /**
  * The data this repository commits, read from the checkout (not the package): kept perf runs, the pattern library's
  * citations of them, and the bench experiments' files. Run by bench/run_tests.py against the packaged jar's classes:
- *     java -cp build/distributions/modaccel.jar:CLASSES CheckoutDataTest .
+ *     java -cp build/distributions/mmt.jar:CLASSES CheckoutDataTest .
  */
 public final class CheckoutDataTest {
     static int checks;

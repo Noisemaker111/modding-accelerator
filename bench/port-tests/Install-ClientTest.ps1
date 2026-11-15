@@ -30,4 +30,4 @@ fabricApi {
 New-Item -ItemType Directory -Force $javaDir, $resources | Out-Null
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'PortClientTest.java') -Destination $javaDir
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'fabric.mod.json') -Destination $resources
-Write-Host 'Installed client test. Run modaccel port -Fix -Log <original failing log> -Task runClientGameTest.'
+Write-Host 'Installed client test. Run mmt port -Fix -Log <original failing log> -Task runClientGameTest.'

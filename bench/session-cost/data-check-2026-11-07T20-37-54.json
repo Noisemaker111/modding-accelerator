@@ -82,7 +82,7 @@
    {
     "level": "WARN",
     "logger": "prismlab",
-    "message": "modaccel spare test: the changed code ran",
+    "message": "mmt spare test: the changed code ran",
     "thrown": null
    }
   ],

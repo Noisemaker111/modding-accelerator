@@ -5,7 +5,7 @@ import java.util.zip.*;
 public class JdkDownloadsTest {
 
     public static void main(String[] args) throws Exception {
-        Path root = Files.createTempDirectory("modaccel-jdk-test-");
+        Path root = Files.createTempDirectory("mmt-jdk-test-");
         Path archive = root.resolve("test.zip");
         try {
             Files.writeString(archive, "interrupted download");

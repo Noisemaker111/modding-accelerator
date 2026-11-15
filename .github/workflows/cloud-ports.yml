@@ -1,8 +1,8 @@
 name: Cloud port board
 # The porting scoreboard (python bench/port_board.py) on GitHub's runners: one ubuntu-latest job per case in
-# bench/port-cases.json, each a fresh clone ported with modaccel port --fix, at most 12 at once. Dispatch with
+# bench/port-cases.json, each a fresh clone ported with mmt port --fix, at most 12 at once. Dispatch with
 # tools/cloud-run (python tools/cloud-run.py ports). A job fails when its port got worse than what is recorded or
-# could not run, as port_board.py exits. Each uploads its board row, the port's receipt and modaccel's logs; the
+# could not run, as port_board.py exits. Each uploads its board row, the port's receipt and mmt's logs; the
 # summary job joins the rows. No Gradle cache: every case has its own Gradle and game setup (about 1 GB each), and
 # the repository's caches are already past GitHub's 10 GB limit, so a case's setup is measured cold. No retries.
 run-name: "Cloud port board: ${{ inputs.cases }} ${{ inputs.request }}"

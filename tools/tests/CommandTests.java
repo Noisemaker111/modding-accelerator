@@ -183,12 +183,12 @@ public final class CommandTests {
             "run-"
         );
         List<String> unlisted = new ArrayList<>();
-        for (String command : new TreeSet<>(Modaccel.COMMANDS)) {
+        for (String command : new TreeSet<>(Mmt.COMMANDS)) {
             String word = "(?<![\\w-])" + java.util.regex.Pattern.quote(command) + "(?![\\w-])";
-            boolean listed = java.util.regex.Pattern.compile(word).matcher(Modaccel.help()).find();
-            if (!listed && !Modaccel.INTERNAL.contains(command)) unlisted.add(command);
+            boolean listed = java.util.regex.Pattern.compile(word).matcher(Mmt.help()).find();
+            if (!listed && !Mmt.INTERNAL.contains(command)) unlisted.add(command);
         }
-        check(unlisted.isEmpty(), "help lists every command modaccel runs; missing: " + unlisted);
+        check(unlisted.isEmpty(), "help lists every command mmt runs; missing: " + unlisted);
         String restartTimes = ServerCheck.text(
             Json.map(
                 "ok",

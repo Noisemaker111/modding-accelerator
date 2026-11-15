@@ -1,20 +1,20 @@
 # Diorama CPU performance experiments
 
 These snippets measure the real Diorama implementations inside its development
-client through `modaccel eval`. They target Diorama 0.10.1, commit
+client through `mmt eval`. They target Diorama 0.10.1, commit
 `7aa1484cd5dfe4ec19d246a58fb23bbc48a8bc6e`, on Fabric / Minecraft 1.21.1.
 They require that source checkout and its JDK 25 build environment.
 
 ## Measure ordinary play and decide a change
 
 `play/` measures what Diorama costs while a player flies over new land with the minimap
-showing, in hidden test clients, and decides a candidate patch with `modaccel perf-optimize`.
+showing, in hidden test clients, and decides a candidate patch with `mmt perf-optimize`.
 
 ```sh
 git clone https://github.com/SunkenInTime/diorama .runs/diorama
 git -C .runs/diorama checkout 7aa1484cd5dfe4ec19d246a58fb23bbc48a8bc6e
 python bench/diorama/play/prepare_world.py --root .runs/diorama
-./modaccel perf-optimize --root .runs/diorama --experiment bench/diorama/play/experiment.json \
+./mmt perf-optimize --root .runs/diorama --experiment bench/diorama/play/experiment.json \
   --patch CANDIDATE.diff --runs 6 --label NAME --session NAME --dry-run
 ```
 
@@ -347,17 +347,17 @@ Hidden clients present about 8 frames a second whatever `maxFps` and vsync say, 
 work (minimap drawing, GPU tile readback) runs less often than in a visible game; the per-call
 render scopes stay comparable, totals per second do not. Measure frames visibly with `perf`.
 
-Start a development client with `modaccel perf --root DIORAMA_SOURCE
+Start a development client with `mmt perf --root DIORAMA_SOURCE
 --project :1.21.1`, enter a **disposable mapped world**, and allow initial mapping
-to settle. Then, from the Mod Accel checkout:
+to settle. Then, from the Minecraft Modding Tools checkout:
 
 ```sh
-./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/bake.java --json
-./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/mipmaps.java --json
-./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/density.java --json
+./mmt eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/bake.java --json
+./mmt eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/mipmaps.java --json
+./mmt eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/density.java --json
 ```
 
-Windows uses `modaccel.cmd`. Each result's `value` is a JSON string containing
+Windows uses `mmt.cmd`. Each result's `value` is a JSON string containing
 the samples. Run in that order: the bake experiment retains a real terrain tile
 in the session for the mipmap comparison. These temporarily block the render
 thread; resulting frame stalls are **benchmark-induced**, not ordinary gameplay.
@@ -377,11 +377,11 @@ thread; resulting frame stalls are **benchmark-induced**, not ordinary gameplay.
 `opaque-mipmaps.patch` is an experimental patch for that Diorama commit. Run the
 comparison against the unmodified source first; applying it changes the baseline
 that `mipmaps.java` calls. Apply only in a separate Diorama checkout with
-`git apply /path/to/opaque-mipmaps.patch`, build through modaccel, and validate the
+`git apply /path/to/opaque-mipmaps.patch`, build through mmt, and validate the
 target game versions before distributing a modified mod. This repository does
 not publish or replace Diorama releases.
 
-Capture ordinary rendering separately with `modaccel perf`. Record the world,
+Capture ordinary rendering separately with `mmt perf`. Record the world,
 camera, map view, quality, renderer, JVM, and loaded mods with each comparison.
 Same-JVM timings are descriptive, not independent-trial regression evidence.
 CPU collection/layout excludes icon drawing, entity ticking, and networking.
@@ -393,7 +393,7 @@ radar collection and waypoint layout. These are coarse scopes; ray-by-ray timing
 would add substantial overhead to the hottest inner loop.
 
 ```sh
-./modaccel perf --root DIORAMA_SOURCE --project :1.21.1 --probes bench/diorama/timing.json --duration 15
+./mmt perf --root DIORAMA_SOURCE --project :1.21.1 --probes bench/diorama/timing.json --duration 15
 ```
 
 The report includes inclusive/self milliseconds, completed call counts, exceptional
@@ -419,11 +419,11 @@ Prepare a clean, disposable Diorama checkout with an unchanged reference baker:
 
 ```sh
 python3 bench/diorama/prepare_comparison.py --root DIORAMA_SOURCE --patch bench/diorama/air-runs.patch
-./modaccel game-stop --root DIORAMA_SOURCE --project :1.21.1
-./modaccel compile --root DIORAMA_SOURCE --project :1.21.1
-./modaccel world-check --root DIORAMA_SOURCE --project :1.21.1 --world DISPOSABLE_WORLD
-./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/compare.java
-./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/equivalence.java
+./mmt game-stop --root DIORAMA_SOURCE --project :1.21.1
+./mmt compile --root DIORAMA_SOURCE --project :1.21.1
+./mmt world-check --root DIORAMA_SOURCE --project :1.21.1 --world DISPOSABLE_WORLD
+./mmt eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/compare.java
+./mmt eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/equivalence.java
 ```
 
 Wait until the world is mapped. The comparison requires a tile with at least 50%
@@ -449,7 +449,7 @@ Remove the reference before packaging the modified mod:
 
 ```sh
 python3 bench/diorama/prepare_comparison.py --root DIORAMA_SOURCE --remove-reference
-./modaccel compile --root DIORAMA_SOURCE --project :1.21.1 --task :1.21.1:remapJar
+./mmt compile --root DIORAMA_SOURCE --project :1.21.1 --task :1.21.1:remapJar
 ```
 
 The cleanup refuses to delete an edited reference and leaves the candidate changes
@@ -475,8 +475,8 @@ samples and compare original and candidate output. Run `compare-saved.java` with
 Additional differential checks:
 
 ```sh
-./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/equivalence-boundaries.java
-./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/equivalence-fixture.java
+./mmt eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/equivalence-boundaries.java
+./mmt eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/equivalence-fixture.java
 ```
 
 Run `equivalence-boundaries.java` with each `facingIndex` from 0 through 3. It checks
@@ -506,7 +506,7 @@ reported as unavailable. Run with GPU baking enabled on the target hardware. Thi
 checks one surface tile without fog or saved data and makes no speed claim.
 
 ```sh
-./modaccel eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/gpu_exact.java
+./mmt eval --root DIORAMA_SOURCE --project :1.21.1 --file bench/diorama/gpu_exact.java
 # Allow frames to run; then repeat the same command to retrieve the result.
 python3 bench/diorama/budget.py CAPTURE/report.json --study PAIRED_SAMPLES.json --target 100
 ```

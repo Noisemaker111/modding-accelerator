@@ -1,5 +1,5 @@
 name: Cloud perf A/B
-# modaccel perf-optimize on one GitHub runner instead of an agent's loaded PC: baseline and candidate launch in
+# mmt perf-optimize on one GitHub runner instead of an agent's loaded PC: baseline and candidate launch in
 # turn (A, B, A, B: --arms sequential) on the same 4-core ubuntu-latest machine, each a fresh hidden client on a
 # virtual display (Xvfb) with Mesa's software OpenGL. Dispatch with tools/cloud-run (python tools/cloud-run.py perf).
 # Defaults are the Diorama play experiment (bench/diorama/README.md) with tint-carry-over.patch. It never applies the
@@ -65,7 +65,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            ~/.modaccel/jdks
+            ~/.mmt/jdks
           key: cloud-perf-never-saved
           restore-keys: ${{ inputs.gradle-cache }}
       - name: Virtual display with software OpenGL
@@ -79,7 +79,7 @@ jobs:
         run: |
           git clone -q --filter=blob:none "$REPO" "$ROOT_DIR"
           git -C "$ROOT_DIR" checkout -q "$COMMIT"
-          ./modaccel preferences --background on --quiet on
+          ./mmt preferences --background on --quiet on
       - name: Prepare
         if: inputs.prepare != ''
         run: |
@@ -89,12 +89,12 @@ jobs:
       - name: Baseline and candidate in turn
         run: |
           set -o pipefail
-          ./modaccel perf-optimize --root "$ROOT_DIR" --experiment "$EXPERIMENT" --patch "$PATCH" --runs "$RUNS" \
+          ./mmt perf-optimize --root "$ROOT_DIR" --experiment "$EXPERIMENT" --patch "$PATCH" --runs "$RUNS" \
             --arms sequential --dry-run --label cloud --out .runs/cloud-perf | tee perf.txt
           { echo '```'; cat perf.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Stop the game
         if: always()
-        run: ./modaccel game-stop --root "$ROOT_DIR" || true
+        run: ./mmt game-stop --root "$ROOT_DIR" || true
       - name: Report, record and game logs
         if: always()
         uses: actions/upload-artifact@v4

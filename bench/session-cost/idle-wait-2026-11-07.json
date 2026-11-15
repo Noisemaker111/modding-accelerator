@@ -726,7 +726,7 @@
   "mpCheck": {
    "label": "mp-idle-wait",
    "command": [
-    ".\\modaccel.cmd",
+    ".\\mmt.cmd",
     "mp-check",
     "--root",
     "modding-accelerator",

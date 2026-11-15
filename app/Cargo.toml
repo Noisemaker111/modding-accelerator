@@ -1,13 +1,13 @@
 [package]
-name = "modaccel-desktop"
+name = "mmt-desktop"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
-description = "Minecraft Modding Tools: a desktop app that drives the modaccel CLI"
+description = "Minecraft Modding Tools: a desktop app that drives the mmt CLI"
 publish = false
 
 [[bin]]
-name = "modaccel-desktop"
+name = "mmt-desktop"
 path = "src/main.rs"
 
 [dependencies]

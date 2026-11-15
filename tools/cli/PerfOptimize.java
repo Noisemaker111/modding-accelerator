@@ -22,7 +22,7 @@ final class PerfOptimize {
     final Path home, root, out, experimentFile, patch;
     Map<String, Path> snapshot = Map.of();
     final Map<String, Object> experiment;
-    final Modaccel.Options options;
+    final Mmt.Options options;
     final int runs, minRuns;
     final double minSpeedup;
     final boolean parallel;
@@ -30,7 +30,7 @@ final class PerfOptimize {
     final AtomicInteger stepNumber = new AtomicInteger();
     final PerfRecord record;
 
-    PerfOptimize(Path home, Modaccel.Options options) throws Exception {
+    PerfOptimize(Path home, Mmt.Options options) throws Exception {
         this.home = home;
         this.options = options;
         root = Path.of(options.get("root", ".")).toAbsolutePath().normalize();
@@ -69,7 +69,7 @@ final class PerfOptimize {
         };
     }
 
-    static Map<String, Object> run(Path home, Modaccel.Options options) throws Exception {
+    static Map<String, Object> run(Path home, Mmt.Options options) throws Exception {
         if (options.values.containsKey("replay")) return replay(options);
         if (options.has("check-only")) {
             Path experimentFile = Path.of(options.get("experiment", "")).toAbsolutePath();
@@ -84,7 +84,7 @@ final class PerfOptimize {
     }
 
     /** Finished runs (comma-separated output folders) decided again with the stopping rule, with the wall time saved. */
-    static Map<String, Object> replay(Modaccel.Options options) throws Exception {
+    static Map<String, Object> replay(Mmt.Options options) throws Exception {
         List<Object> replays = new ArrayList<>();
         StringBuilder details = new StringBuilder();
         double before = 0;
@@ -184,7 +184,7 @@ final class PerfOptimize {
             record.step("setup", "worktrees", (System.nanoTime() - setupStart) / 1e9);
             if (Boolean.TRUE.equals(experiment.get("tests"))) {
                 Map<String, Object> tests = new LinkedHashMap<>();
-                for (String arm : ARMS) tests.put(arm, modaccel(arms.get(arm), arm + "-tests", List.of("fast"), 3600).get("ok"));
+                for (String arm : ARMS) tests.put(arm, mmt(arms.get(arm), arm + "-tests", List.of("fast"), 3600).get("ok"));
                 result.put("tests", tests);
             }
             List<Object> measured = new ArrayList<>();
@@ -220,7 +220,7 @@ final class PerfOptimize {
         } finally {
             record.share = 1;
             for (Path tree : arms.values()) {
-                try { modaccel(tree, "final-game-stop", List.of("game-stop"), 120); } catch (Exception ignored) { }
+                try { mmt(tree, "final-game-stop", List.of("game-stop"), 120); } catch (Exception ignored) { }
                 if (!options.has("keep")) {
                     try { git(root, "worktree", "remove", "--force", tree.toString()); }
                     catch (Exception error) {
@@ -340,7 +340,7 @@ final class PerfOptimize {
         // "jit": "full" measures with the JIT players have, not the C1 a hidden test client starts with.
         if ("full".equals(experiment.get("jit"))) launch.addAll(List.of("--jit", "full"));
         long started = System.nanoTime();
-        Map<String, Object> launched = modaccel(tree, arm + "-launch", launch, 1800);
+        Map<String, Object> launched = mmt(tree, arm + "-launch", launch, 1800);
         row.put("launchSeconds", (System.nanoTime() - started) / 1e9);
         record.modFromLaunch(launched);
         if (!Boolean.TRUE.equals(launched.get("ok"))) throw new IOException(arm + " run " + run + " did not start: " + launched.get("error"));
@@ -355,7 +355,7 @@ final class PerfOptimize {
             Map<String, Object> measure = Json.object(experiment.get("measure"));
             Map<String, Object> captures = new LinkedHashMap<>();
             // Launches follow the user's window and sound preferences, so the game may be hidden; attach by PID.
-            Object pid = Json.object(modaccel(tree, arm + "-status", List.of("game-status"), 120).get("result")).get("pid");
+            Object pid = Json.object(mmt(tree, arm + "-status", List.of("game-status"), 120).get("result")).get("pid");
             if (pid == null) throw new IOException(arm + " run " + run + ": no running game to measure");
             for (String phase : List.of("cold", "warm")) {
                 Path capture = dir.resolve(phase);
@@ -381,7 +381,7 @@ final class PerfOptimize {
                     args.add("--probes");
                     args.add(file(experimentDir, measure.get("probes").toString()).toString());
                 }
-                Map<String, Object> captured = modaccel(tree, arm + "-" + phase, args, 900);
+                Map<String, Object> captured = mmt(tree, arm + "-" + phase, args, 900);
                 if (!Boolean.TRUE.equals(captured.get("ok")) && Files.isRegularFile(capture.resolve("capture.jfr"))
                     && "complete".equals(Performance.properties(capture.resolve("status.properties")).getProperty("state"))) {
                     // The recording finished but the command lost track of it: render the report from what was saved.
@@ -410,7 +410,7 @@ final class PerfOptimize {
                 String name = gate.get("name").toString();
                 if (Boolean.TRUE.equals(gate.get("frame"))) {
                     if (gate.containsKey("file")) eval(tree, arm + "-frame-setup", file(experimentDir, gate.get("file").toString()), Json.text(gate, "thread", "game"));
-                    Map<String, Object> shot = modaccel(tree, arm + "-frame", List.of("ui-check"), 600);
+                    Map<String, Object> shot = mmt(tree, arm + "-frame", List.of("ui-check"), 600);
                     if (!Boolean.TRUE.equals(shot.get("ok"))) throw new IOException("Frame capture failed: " + shot.get("error"));
                     Path png = Path.of(Json.text(Json.object(Json.object(shot.get("result")).get("capture")), "path", ""));
                     Path kept = dir.resolve("frame-" + name + ".png");
@@ -423,7 +423,7 @@ final class PerfOptimize {
             }
             row.put("gates", gates);
         } finally {
-            modaccel(tree, arm + "-game-stop", List.of("game-stop"), 300);
+            mmt(tree, arm + "-game-stop", List.of("game-stop"), 300);
         }
         row.put("seconds", (System.nanoTime() - started) / 1e9);
         return row;
@@ -729,22 +729,22 @@ final class PerfOptimize {
     }
 
     Map<String, Object> eval(Path tree, String name, Path file, String thread) throws Exception {
-        Map<String, Object> answer = modaccel(tree, name, List.of("eval", "--file", file.toString(), "--thread", thread, "--timeout", "120"), 300);
+        Map<String, Object> answer = mmt(tree, name, List.of("eval", "--file", file.toString(), "--thread", thread, "--timeout", "120"), 300);
         if (!Boolean.TRUE.equals(answer.get("ok"))) throw new IOException(name + " (" + file.getFileName() + ") failed: " + answer.get("error"));
         return Json.object(answer.get("result"));
     }
 
-    /** Runs a modaccel command as a child process, so each step keeps its own receipt and lock. */
+    /** Runs a mmt command as a child process, so each step keeps its own receipt and lock. */
     /**
-     * A child modaccel JVM that writes its answer in UTF-8, as childOutput reads it. Redirected to a file, Java's stdout
+     * A child mmt JVM that writes its answer in UTF-8, as childOutput reads it. Redirected to a file, Java's stdout
      * otherwise uses the platform charset (windows-1252): Storage Network's second candidate died when a capture matched
      * a known pattern whose text holds a middle dot. Java 18+ reads stdout.encoding, Java 17 sun.stdout.encoding.
      */
     static List<String> childJava(Path home) throws Exception {
         return new ArrayList<>(List.of(ProcessHandle.current().info().command().orElse("java"),
             "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-Dsun.stdout.encoding=UTF-8", "-Dsun.stderr.encoding=UTF-8",
-            "-Dmodaccel.resources=" + home,
-            "-cp", Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(), "Modaccel"));
+            "-Dmmt.resources=" + home,
+            "-cp", Path.of(Mmt.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(), "Mmt"));
     }
 
     /** A child's output as UTF-8; a byte that is not UTF-8 becomes U+FFFD rather than ending the run. */
@@ -752,7 +752,7 @@ final class PerfOptimize {
         return new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
     }
 
-    Map<String, Object> modaccel(Path tree, String name, List<String> args, int timeout) throws Exception {
+    Map<String, Object> mmt(Path tree, String name, List<String> args, int timeout) throws Exception {
         List<String> command = childJava(home);
         command.add(args.get(0));
         // perf selects its game by --attach; every other step works on the arm's checkout.
@@ -896,7 +896,7 @@ final class PerfOptimize {
         String data = Json.write(result).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029");
         return """
             <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>Mod Accel · Optimization</title>
+            <title>Minecraft Modding Tools · Optimization</title>
             <style>:root{color-scheme:light dark;font:15px system-ui}body{max-width:1100px;margin:auto;padding:24px 16px}
             td,th{padding:8px;text-align:left;border-bottom:1px solid #8884}table{border-collapse:collapse;width:100%}
             .ok{color:#2a8a4a}.bad{color:#c0392b}pre{white-space:pre-wrap;overflow-wrap:anywhere}.scroll{overflow:auto}</style>

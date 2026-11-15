@@ -5,10 +5,10 @@
 
 A bridge (knowledge/loaders.json "bridges", files in knowledge/bridges/ID) is written on the other loader's API and only
 compiles inside a converted mod. This check makes that mod from a pinned NeoForge MDK of bench/convert-sweep/corpus.json:
-  neoforge-on-fabric: the MDK converted to Fabric by modaccel convert (which copies the bridge in), then every bridge file
+  neoforge-on-fabric: the MDK converted to Fabric by mmt convert (which copies the bridge in), then every bridge file
                       and version-layer file, and a mixin config listing every bridge mixin, so the mixin processor sees them;
   fabric-on-neoforge: the MDK as it is (NeoForge), with every bridge file copied in under its package.
-and runs modaccel compile on it, against the loaders' own published jars. The work folder is .runs/bridge-check/; the
+and runs mmt compile on it, against the loaders' own published jars. The work folder is .runs/bridge-check/; the
 result is printed as JSON (exit 0 when it compiled). Launches nothing; at most one Gradle build runs.
 """
 import argparse
@@ -81,9 +81,9 @@ def main():
     if not (args.keep and work.is_dir()):
         convert_sweep.rmtree(work)
         shutil.copytree(convert_sweep.extended(src), convert_sweep.extended(work),
-                        ignore=shutil.ignore_patterns(".git", ".gradle", "build", ".modaccel-sweep-commit"))
+                        ignore=shutil.ignore_patterns(".git", ".gradle", "build", ".mmt-sweep-commit"))
         if to_fabric:
-            code, result, _ = convert_sweep.modaccel(["convert", "--root", str(work), "--to", "fabric", "--no-compile", "--json"], 3600)
+            code, result, _ = convert_sweep.mmt(["convert", "--root", str(work), "--to", "fabric", "--no-compile", "--json"], 3600)
             if code not in (0, 1) or "error" in result and "from" not in result:
                 print(json.dumps({"ok": False, "stage": "convert", "result": result}, indent=1))
                 return 1
@@ -126,9 +126,9 @@ def main():
             text = toml.read_text(encoding="utf-8")
             if name not in text:
                 toml.write_text(text + f'\n[[mixins]]\nconfig = "{name}"\n', encoding="utf-8")
-    code, result, seconds = convert_sweep.modaccel(["compile", "--root", str(work), "--json"], 3600)
+    code, result, seconds = convert_sweep.mmt(["compile", "--root", str(work), "--json"], 3600)
     errors = []
-    # javac's errors are in the compile log of this run (the receipt's folder), not in the JSON modaccel prints.
+    # javac's errors are in the compile log of this run (the receipt's folder), not in the JSON mmt prints.
     logs = sorted((work / ".runs" / "portable").glob("*/*compile*.log"), key=lambda p: p.stat().st_mtime)
     if code != 0 and logs:
         for e in convert_sweep.compile_errors(logs[-1].read_text(encoding="utf-8", errors="replace")):
@@ -137,7 +137,7 @@ def main():
            "files": len(files), "mixins": len(mixins), "seconds": round(seconds, 1), "work": str(work), "errors": errors[:200]}
     if code != 0 and not errors:
         out["result"] = {k: v for k, v in result.items() if k in ("error", "details", "log")} or str(result)[-3000:]
-    convert_sweep.modaccel(["game-stop", "--root", str(work), "--json"], 300)
+    convert_sweep.mmt(["game-stop", "--root", str(work), "--json"], 300)
     print(json.dumps(out, indent=1))
     return 0 if code == 0 else 1
 

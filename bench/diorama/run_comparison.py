@@ -10,7 +10,7 @@ compare.java) and each --gate snippet (equivalence*.java, which throw on any dif
 record.json in --out and .runs/perf-records/: phases, machine load, gates, and the paired speedup with a
 95% bootstrap interval. Same-JVM timings are descriptive, so the verdict is "observed" when every gate
 passed and "rejected" when one did not; perf-optimize decides acceptance. Snippet paths are relative to
-this folder. Use modaccel.cmd on Windows; this finds the right launcher itself.
+this folder. Use mmt.cmd on Windows; this finds the right launcher itself.
 """
 import argparse
 import json
@@ -29,11 +29,11 @@ import perf_sessions as P  # noqa: E402
 
 
 def launcher():
-    return str(ROOT / ("modaccel.cmd" if os.name == "nt" else "modaccel"))
+    return str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))
 
 
-def modaccel(args, root, project):
-    """Runs one modaccel command with --json; returns (seconds, parsed output)."""
+def mmt(args, root, project):
+    """Runs one mmt command with --json; returns (seconds, parsed output)."""
     start = time.monotonic()
     done = subprocess.run([launcher(), *args, "--root", str(root), "--project", project, "--json"],
                           capture_output=True, text=True, encoding="utf-8", errors="replace")
@@ -94,12 +94,12 @@ def main(argv=None):
     record["machine"]["load"].append({"when": "start", "systemCpu": cpu_load()})
     failures = []
     if not args.skip_build:
-        seconds, result = modaccel(["compile"], root, args.project)
+        seconds, result = mmt(["compile"], root, args.project)
         P.step(record, "build", "compile", seconds)
         if not result.get("ok"):
             failures.append("compile failed: " + str(result.get("result", {}).get("error", ""))[:300])
     if not failures:
-        seconds, result = modaccel(["world-check", "--world", args.world] if args.world else ["game-status"], root, args.project)
+        seconds, result = mmt(["world-check", "--world", args.world] if args.world else ["game-status"], root, args.project)
         P.step(record, "launch", "world-check" if args.world else "game-status", seconds)
         mods = (result.get("result") or {}).get("modsLoaded") or {}
         for mod in mods.get("mods") or []:
@@ -109,7 +109,7 @@ def main(argv=None):
             failures.append("no game: " + str((result.get("result") or {}).get("error", ""))[:300])
     ratios, values = [], {}
     for snippet in ([] if failures else args.compare):
-        seconds, result = modaccel(["eval", "--file", str((HERE / snippet).resolve()), "--timeout", "120"], root, args.project)
+        seconds, result = mmt(["eval", "--file", str((HERE / snippet).resolve()), "--timeout", "120"], root, args.project)
         P.step(record, "measure", snippet, seconds)
         value = (result.get("result") or {}).get("value")
         if not result.get("ok") or value is None:
@@ -120,7 +120,7 @@ def main(argv=None):
         ratios += [s["baselineMs"] / s["candidateMs"] for s in data.get("samples", []) if s.get("candidateMs")]
         record["gates"].append({"name": snippet + " outputs", "compare": "exact", "passed": True, "failures": []})
     for snippet in ([] if failures else args.gate):
-        seconds, result = modaccel(["eval", "--file", str((HERE / snippet).resolve()), "--timeout", "120"], root, args.project)
+        seconds, result = mmt(["eval", "--file", str((HERE / snippet).resolve()), "--timeout", "120"], root, args.project)
         P.step(record, "gates", snippet, seconds)
         passed = bool(result.get("ok"))
         reason = [] if passed else [str((result.get("result") or {}).get("error", ""))[:300]]

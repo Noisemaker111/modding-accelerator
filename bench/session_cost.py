@@ -1,4 +1,4 @@
-"""What one game session costs: memory, CPU and time for a real client, dedicated server or any modaccel
+"""What one game session costs: memory, CPU and time for a real client, dedicated server or any mmt
 command, measured from the operating system while the command runs. Step 33's baseline, and the meter
 later steps are judged with.
 
@@ -12,14 +12,14 @@ client: stops any game for PROJECT and its Gradle daemons, then per run: ui-chec
 daemon), the hidden game left idle for --idle seconds, ui-check again warm, game-stop and ui-check from the
 saved launch (the fast path every later start takes), and mp-check (a dedicated server started for it).
 After each start it counts the game's windows that are visible on screen (Windows; unknown elsewhere). Every Java process that appears while a command runs is sampled twice a second:
-the game (the pid in .modaccel/portable/agent.json), the dedicated server (the pid mp-check reports) and
+the game (the pid in .mmt/portable/agent.json), the dedicated server (the pid mp-check reports) and
 the rest (Gradle daemons and tooling). Memory is the working set (resident set on Linux and macOS), with
 the operating system's own peak where it keeps one. GPU memory is not included.
 
 warm: the checks a loaded hidden game answers, each --runs times: a screen opened and captured at 1280x720
 (ui-check --screen), a save loaded and captured (world-check --world), and a scenario: a scripted step in that
 world (eval) then the frame captured (ui-check). Each
-check's time and the game's windows on screen after it. Run it with modaccel preferences --background on.
+check's time and the game's windows on screen after it. Run it with mmt preferences --background on.
 
 projects: COUNT projects checked at the same time, as when many mods are worked on at once. Each is a copy of
 --root's mod (src, Gradle files) in .runs/session-cost/projects/, prepared one after another (Gradle records its
@@ -28,8 +28,8 @@ then, once their spare games are ready, at once again with their games loaded. R
 the CPU of everything that started, and the memory of every loaded and spare game together.
 
 parallel: starts COUNT hidden clients at once from the project's verified saved launch
-(.modaccel/portable/launch.json, written by a ui-check), each with its own game folder, state folder and
-token under .modaccel/sessions/, drives each through the real agent to a 1280x720 framebuffer capture,
+(.mmt/portable/launch.json, written by a ui-check), each with its own game folder, state folder and
+token under .mmt/sessions/, drives each through the real agent to a 1280x720 framebuffer capture,
 measures them idle together, then quits them. It answers how many sessions this machine holds.
 
 Results go to .runs/session-cost/<time>.json. --record keeps a copy without local paths in
@@ -278,10 +278,10 @@ class Sampler:
         self.busy = machine_busy(self.machine, machine_times())
 
 
-# ---- running modaccel --------------------------------------------------------------------------
+# ---- running mmt --------------------------------------------------------------------------
 
-def modaccel(args, root):
-    exe = [str(HARNESS / "modaccel.cmd")] if WINDOWS else [str(HARNESS / "modaccel")]
+def mmt(args, root):
+    exe = [str(HARNESS / "mmt.cmd")] if WINDOWS else [str(HARNESS / "mmt")]
     start = time.perf_counter()
     done = subprocess.run(exe + args + ["--root", str(root), "--json"], capture_output=True, text=True, encoding="utf-8", errors="replace")
     wall = time.perf_counter() - start
@@ -298,7 +298,7 @@ def stage(report, name):
 
 
 def game_pid(root):
-    f = Path(root) / ".modaccel" / "portable" / "agent.json"
+    f = Path(root) / ".mmt" / "portable" / "agent.json"
     try:
         return json.loads(f.read_text(encoding="utf-8"))["pid"]
     except (OSError, ValueError, KeyError):
@@ -350,10 +350,10 @@ def client(args):
     runs = []
     for n in range(args.runs):
         print(f"run {n + 1}/{args.runs}: stopping any game and its Gradle daemons", flush=True)
-        modaccel(["game-stop"], root)
+        mmt(["game-stop"], root)
         time.sleep(3)
         with Sampler() as s:
-            cold = modaccel(["ui-check"], root)
+            cold = mmt(["ui-check"], root)
         need(cold, "cold ui-check")
         pid = game_pid(root)
         shown = visible_windows([pid])
@@ -362,13 +362,13 @@ def client(args):
         print(f"  cold ui-check {row['cold']['wall']} s, game {row['cold']['game']}", flush=True)
         row["idle"] = idle(pid, args.idle)
         print(f"  idle {row['idle']}", flush=True)
-        warm = modaccel(["ui-check"], root)
+        warm = mmt(["ui-check"], root)
         need(warm, "warm ui-check")
         row["warm"] = {"wall": round(warm["_wall"], 1), "check": round(warm.get("seconds", 0), 2)}
         # the fast path after the first launch: game-stop, then start again from the saved launch
-        modaccel(["game-stop"], root)
+        mmt(["game-stop"], root)
         with Sampler() as s3:
-            saved = modaccel(["ui-check"], root)
+            saved = mmt(["ui-check"], root)
         need(saved, "saved-launch ui-check")
         spid = game_pid(root)
         shown = visible_windows([spid])
@@ -378,20 +378,20 @@ def client(args):
         print(f"  warm ui-check {row['warm']['wall']} s", flush=True)
         if not args.no_server:
             with Sampler() as s2:
-                mp = modaccel(["mp-check"], root)
+                mp = mmt(["mp-check"], root)
             need(mp, "mp-check")
             # the result's server pid is the Gradle launcher; the server is the JVM listening on the port
             spid = stage(mp, "server-start").get("pid")
             row["mp"] = {"wall": round(mp["_wall"], 1), **split(s2, game_pid(root), spid)}
             print(f"  mp-check {row['mp']['wall']} s, server {row['mp']['server']}", flush=True)
-        modaccel(["game-stop"], root)
+        mmt(["game-stop"], root)
         runs.append(row)
     return {"root": str(root), "runs": runs}
 
 
 def warm(args):
     root = Path(args.root).resolve()
-    first = modaccel(["ui-check"], root)
+    first = mmt(["ui-check"], root)
     need(first, "ui-check to load the game")
     pid = game_pid(root)
     # A scenario: a scripted step in the loaded world (the player turned and moved), then the frame captured.
@@ -405,7 +405,7 @@ def warm(args):
         for name, commands in checks:
             wall = check = 0.0
             for command in commands:
-                report = modaccel(command, root)
+                report = mmt(command, root)
                 need(report, name + " (" + command[0] + ")")
                 wall += report["_wall"]
                 check += report.get("seconds", 0)
@@ -414,7 +414,7 @@ def warm(args):
         print(f"  run {n + 1}/{args.runs}: " + ", ".join(f"{k} {v['wall']} s ({v['visibleWindows']} windows)" for k, v in row.items()), flush=True)
         runs.append(row)
     busy = machine_busy(m0, machine_times())
-    modaccel(["game-stop"], root)
+    mmt(["game-stop"], root)
     medians = {name: median(runs, name, "wall") for name, _ in checks}
     windows = max((r[name]["visibleWindows"] or 0) for r in runs for name, _ in checks) if runs else None
     return {"root": str(root), "warm": runs, "medians": medians, "mostWindowsOnScreen": windows, "game": game_pid(root) or pid,
@@ -426,18 +426,18 @@ MOD_FILES = ["src", "gradle", "build.gradle", "settings.gradle", "gradle.propert
 
 def state_pid(root, name):
     try:
-        return json.loads((Path(root) / ".modaccel" / "portable" / name).read_text(encoding="utf-8"))["pid"]
+        return json.loads((Path(root) / ".mmt" / "portable" / name).read_text(encoding="utf-8"))["pid"]
     except (OSError, ValueError, KeyError):
         return None
 
 
 def together(roots, command):
-    """One modaccel command on every root at the same moment; the reports in root order and what started meanwhile."""
+    """One mmt command on every root at the same moment; the reports in root order and what started meanwhile."""
     with Sampler() as sampler:
         threads, reports = [], [None] * len(roots)
 
         def one(i):
-            reports[i] = modaccel(command, roots[i])
+            reports[i] = mmt(command, roots[i])
         for i in range(len(roots)):
             threads.append(threading.Thread(target=one, args=(i,)))
             threads[-1].start()
@@ -462,11 +462,11 @@ def projects(args):
     print(f"preparing {len(roots)} projects one after another", flush=True)
     first = []
     for root in roots:
-        r = need(modaccel(["data-check", "--once"], root), "preparing " + root.name)
+        r = need(mmt(["data-check", "--once"], root), "preparing " + root.name)
         first.append({"wall": round(r["_wall"], 1), "stages": {s["name"]: round(s.get("seconds", 0), 1) for s in r.get("stages", []) if s.get("seconds", 0) >= 1}})
         print(f"  {root.name} first check {first[-1]['wall']} s {first[-1]['stages']}", flush=True)
     for root in roots:
-        modaccel(["game-stop"], root)
+        mmt(["game-stop"], root)
     m0 = machine_times()
     fresh, s1 = together(roots, ["data-check"])
     for r, root in zip(fresh, roots):
@@ -490,12 +490,12 @@ def projects(args):
     result["machineBusyPercent"] = machine_busy(m0, machine_times())
     print(f"  at once with games loaded: longest {max(x['wall'] for x in result['warm'])} s; loaded games {result['loadedGB']} GB, spares {result['spareGB']} GB", flush=True)
     for root in roots:
-        modaccel(["game-stop"], root)
+        mmt(["game-stop"], root)
     return result
 
 
 def ask(session, request, timeout=150):
-    """One request to a running game's agent, the same line protocol modaccel uses."""
+    """One request to a running game's agent, the same line protocol mmt uses."""
     with socket.create_connection(("127.0.0.1", session["port"]), timeout=5) as sock:
         sock.settimeout(timeout)
         sock.sendall((json.dumps({**request, "token": session["token"]}) + "\n").encode("utf-8"))
@@ -513,12 +513,12 @@ def ask(session, request, timeout=150):
 
 def parallel(args):
     root = Path(args.root).resolve()
-    recipe = json.loads((root / ".modaccel" / "portable" / "launch.json").read_text(encoding="utf-8"))
+    recipe = json.loads((root / ".mmt" / "portable" / "launch.json").read_text(encoding="utf-8"))
     if not recipe.get("verified") or "-cp" not in recipe["arguments"]:
-        raise SystemExit("No verified, replayable saved launch: run modaccel ui-check on the project once first.")
+        raise SystemExit("No verified, replayable saved launch: run mmt ui-check on the project once first.")
     if game_pid(root):
-        print("note: a modaccel game is already running for this project; it is not counted", flush=True)
-    base = root / ".modaccel" / "sessions"
+        print("note: a mmt game is already running for this project; it is not counted", flush=True)
+    base = root / ".mmt" / "sessions"
     template = Path(recipe["directory"])
     sessions = []
     for i in range(args.count):
@@ -531,10 +531,10 @@ def parallel(args):
         token = str(uuid.uuid4())
         argv, it = [], iter(recipe["arguments"])
         for a in it:
-            if a.startswith("-Dmodaccel.token="):
-                a = "-Dmodaccel.token=" + token
-            elif a.startswith("-Dmodaccel.state="):
-                a = "-Dmodaccel.state=" + str(folder)
+            if a.startswith("-Dmmt.token="):
+                a = "-Dmmt.token=" + token
+            elif a.startswith("-Dmmt.state="):
+                a = "-Dmmt.state=" + str(folder)
             elif a == "-cp":  # Windows caps a command line at 32767 characters
                 cp = next(it)
                 (folder / "cp.args").write_text('-cp\n"' + cp.replace("\\", "\\\\") + '"\n', encoding="utf-8")
@@ -565,7 +565,7 @@ def parallel(args):
         for x in pending:
             x["failed"] = f"no first frame within {args.timeout} s"
         started = [x for x in sessions if "port" in x]
-        shots = root / "build" / "modaccel" / "shots"
+        shots = root / "build" / "mmt" / "shots"
         for x in started:
             try:
                 ask(x, {"command": "resize", "width": 1280, "height": 720})
@@ -632,7 +632,7 @@ def idle_many(pids, seconds):
 
 def run(args):
     cmd = args.command[1:] if args.command[:1] == ["--"] else args.command
-    # Windows cannot start a .cmd (modaccel.cmd, gradlew.bat) by its bare name; which() finds it the way a shell would
+    # Windows cannot start a .cmd (mmt.cmd, gradlew.bat) by its bare name; which() finds it the way a shell would
     cmd = [shutil.which(cmd[0]) or cmd[0]] + cmd[1:]
     start = time.perf_counter()
     with Sampler() as s:
@@ -674,7 +674,7 @@ def record(result, name):
                     % (n, max(x["wall"] for x in result["fresh"]), result["loadedGB"], result["spareGB"])))
     elif "warm" in result:
         n = len(result["warm"])
-        note = "hidden game, %d windows on screen, the whole modaccel command; machine %s%% busy" % (result["mostWindowsOnScreen"], result["machineBusyPercent"])
+        note = "hidden game, %d windows on screen, the whole mmt command; machine %s%% busy" % (result["mostWindowsOnScreen"], result["machineBusyPercent"])
         add.append(("test.screen-check.fabric", result["medians"]["screen"], n, "ui-check --screen, " + note))
         add.append(("test.scenario.fabric", result["medians"]["scenario"], n, "eval step then ui-check capture, " + note))
     elif "runs" in result:

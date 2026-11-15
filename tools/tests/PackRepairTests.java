@@ -6,15 +6,15 @@ import java.util.*;
 /**
  * Every repair in pack-fixes.json passes its own test, a repair written wrong does not, and a rule reads only the
  * failure's own lines.
- * Needs no game and no network (modaccel.pack.offline; mod sides are pre-cached).
+ * Needs no game and no network (mmt.pack.offline; mod sides are pre-cached).
  */
 public final class PackRepairTests extends PackCheckFixtures {
 
     public static void main(String[] args) throws Exception {
-        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("modaccel-pack");
+        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("mmt-pack");
         String home = System.getProperty("user.home");
         System.setProperty("user.home", scratch.resolve("home").toString());
-        System.setProperty("modaccel.pack.offline", "true");
+        System.setProperty("mmt.pack.offline", "true");
         try {
             List<String> repairs = PackRepairs.selfTest(harness, scratch.resolve("repairs"));
             rules(harness, scratch.resolve("rules"));

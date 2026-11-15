@@ -3,7 +3,7 @@
 #
 # Linux start scripts should use lf
 /gradlew        text eol=lf
-/modaccel       text eol=lf
+/mmt       text eol=lf
 /tools/cloud-run text eol=lf
 *.yml          text eol=lf
 

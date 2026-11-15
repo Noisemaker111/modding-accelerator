@@ -32,7 +32,7 @@ import net.minecraft.util.Unit;
 import org.jspecify.annotations.Nullable;
 
 /**
- * How NeoForge's transfer API crosses to Fabric API's Transfer API in the bridge (modaccel convert). Not a NeoForge class.
+ * How NeoForge's transfer API crosses to Fabric API's Transfer API in the bridge (mmt convert). Not a NeoForge class.
  *
  * <p>Items: a ResourceHandler of ItemResource is a Storage of ItemVariant (a SlottedStorage, one slot per index) and back;
  * Capabilities.Item.BLOCK is Fabric's ItemStorage.SIDED and Capabilities.Item.ITEM is ItemStorage.ITEM, so Fabric mods

@@ -2,7 +2,7 @@ import dev.diorama.bake.Mipmaps;
 import dev.diorama.Projection;
 import java.lang.management.ManagementFactory;
 
-// Run with modaccel eval --file. Does not replace Diorama's implementation.
+// Run with mmt eval --file. Does not replace Diorama's implementation.
 class Candidate {
     static volatile long sink;
     static int average(int p0, int p1, int p2, int p3) {

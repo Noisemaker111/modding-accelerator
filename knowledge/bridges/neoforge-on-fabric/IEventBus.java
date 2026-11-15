@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 
 /**
  * NeoForge's net.neoforged.bus.api.IEventBus. NeoForge reads a listener's event type from its generic signature;
- * modaccel convert writes the type into each addListener call instead (the Class overloads), so the forms without
+ * mmt convert writes the type into each addListener call instead (the Class overloads), so the forms without
  * a Class are never called on Fabric.
  */
 public interface IEventBus {

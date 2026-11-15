@@ -54,10 +54,10 @@ import org.geysermc.mcprotocollib.protocol.packet.login.clientbound.ClientboundL
  * loaded, and a protocol-level bot player (MCProtocolLib) that joins it. Every step is a line of the
  * scenario; every expect-* step must see the effect itself (chat the bot received, an entity or block the
  * server sent to the bot, an item in its inventory, a server log line, an RCON answer, an HTTP answer).
- * Secrets named ${secret:NAME} come from the environment or .modaccel/secrets.properties and are masked in
- * everything this writes. Usage: ModaccelServerCheck <spec.json>
+ * Secrets named ${secret:NAME} come from the environment or .mmt/secrets.properties and are masked in
+ * everything this writes. Usage: MmtServerCheck <spec.json>
  */
-public final class ModaccelServerCheck {
+public final class MmtServerCheck {
     // ---------- spec, results, masking ----------
     static Map<String, Object> spec;
     static Path root, logDir;
@@ -113,7 +113,7 @@ public final class ModaccelServerCheck {
     }
     static String stack(Throwable error) { StringWriter out = new StringWriter(); error.printStackTrace(new PrintWriter(out)); return out.toString(); }
 
-    /** Names in ${secret:NAME}: the environment first, then .modaccel/secrets.properties. Missing ones fail before anything starts. */
+    /** Names in ${secret:NAME}: the environment first, then .mmt/secrets.properties. Missing ones fail before anything starts. */
     static String loadSecrets(Scenario scenario) throws IOException {
         Properties file = new Properties();
         Path secretsFile = Path.of(spec.get("secretsFile").toString());
@@ -129,7 +129,7 @@ public final class ModaccelServerCheck {
         return "This scenario needs secret" + (missing.size() == 1 ? " " : "s ") + String.join(", ", missing) + ", and "
                 + (missing.size() == 1 ? "it is" : "they are") + " not set, so nothing ran and nothing passed. Set "
                 + (missing.size() == 1 ? "it" : "each") + " as an environment variable, or add a line NAME=value to " + secretsFile
-                + " (keep that file out of git: .modaccel/ is modaccel's local folder).";
+                + " (keep that file out of git: .mmt/ is mmt's local folder).";
     }
 
     // ---------- the scenario ----------
@@ -296,8 +296,8 @@ public final class ModaccelServerCheck {
             builder.environment().put("MC_PORT", Integer.toString(server.port));
             builder.environment().put("RCON_PORT", Integer.toString(server.rconPort));
             builder.environment().put("RCON_PASSWORD", server.rconPassword);
-            builder.environment().put("MODACCEL_RESTART_PORT", Integer.toString(control.getLocalPort()));
-            builder.environment().put("MODACCEL_RESTART_TOKEN", token);
+            builder.environment().put("MMT_RESTART_PORT", Integer.toString(control.getLocalPort()));
+            builder.environment().put("MMT_RESTART_TOKEN", token);
             Process process = builder.start();
             Thread output = pump(process.getInputStream(), log, lines);
             long deadline = System.nanoTime() + (long) (e.seconds() * 1e9);
@@ -675,16 +675,16 @@ public final class ModaccelServerCheck {
             props.put("server-ip", "127.0.0.1"); props.put("server-port", Integer.toString(port));
             props.put("online-mode", "false"); props.put("enforce-secure-profile", "false"); props.put("prevent-proxy-connections", "false");
             props.put("enable-rcon", "true"); props.put("rcon.port", Integer.toString(rconPort)); props.put("rcon.password", rconPassword); props.put("broadcast-rcon-to-ops", "false");
-            props.put("level-seed", "modaccel"); props.put("level-type", flatWorld(Json.text(s, "minecraft", ""))); props.put("generate-structures", "false");
+            props.put("level-seed", "mmt"); props.put("level-type", flatWorld(Json.text(s, "minecraft", ""))); props.put("generate-structures", "false");
             props.put("gamemode", "creative"); props.put("difficulty", "peaceful"); props.put("spawn-protection", "0"); props.put("allow-flight", "true");
-            props.put("view-distance", "4"); props.put("simulation-distance", "4"); props.put("max-players", "4"); props.put("motd", "modaccel server-check");
+            props.put("view-distance", "4"); props.put("simulation-distance", "4"); props.put("max-players", "4"); props.put("motd", "mmt server-check");
             props.put("white-list", "false"); props.put("enforce-whitelist", "false"); props.put("enable-status", "true"); props.put("sync-chunk-writes", "false"); props.put("network-compression-threshold", "-1");
             for (var e : serverProperties.entrySet()) props.put(e.getKey(), e.getValue().replace(":", "\\:"));
-            StringBuilder text = new StringBuilder("# Written by modaccel server-check for a throwaway local test server.\n");
+            StringBuilder text = new StringBuilder("# Written by mmt server-check for a throwaway local test server.\n");
             props.forEach((k, v) -> text.append(k).append('=').append(v).append('\n'));
             Files.writeString(dir.resolve("server.properties"), text, StandardCharsets.UTF_8);
-            // EULA accepted by modaccel only for this throwaway, offline, localhost-only test server.
-            Files.writeString(dir.resolve("eula.txt"), "# Accepted by modaccel server-check for a throwaway local test server (offline mode, 127.0.0.1 only).\neula=true\n", StandardCharsets.UTF_8);
+            // EULA accepted by mmt only for this throwaway, offline, localhost-only test server.
+            Files.writeString(dir.resolve("eula.txt"), "# Accepted by mmt server-check for a throwaway local test server (offline mode, 127.0.0.1 only).\neula=true\n", StandardCharsets.UTF_8);
             List<String> command = new ArrayList<>();
             for (Object o : Json.array(s.get("command"))) command.add(o.toString());
             ProcessBuilder builder = new ProcessBuilder(command).directory(dir.toFile()).redirectErrorStream(true);
@@ -725,7 +725,7 @@ public final class ModaccelServerCheck {
                 rcon = new Socket(); rcon.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), rconPort), 5000); rcon.setSoTimeout(15000);
                 rin = new DataInputStream(new BufferedInputStream(rcon.getInputStream())); rout = rcon.getOutputStream();
                 send(3, rconPassword); int[] answer = new int[1]; read(answer);
-                if (answer[0] == -1) throw new ScenarioError("The server refused modaccel's RCON password.");
+                if (answer[0] == -1) throw new ScenarioError("The server refused mmt's RCON password.");
             }
             int id = send(2, command.startsWith("/") ? command.substring(1) : command);
             int[] answer = new int[1]; String body = read(answer);
@@ -767,7 +767,7 @@ public final class ModaccelServerCheck {
         for (Process p : helpers) { p.descendants().forEach(ProcessHandle::destroyForcibly); p.destroyForcibly(); }
     }
     /**
-     * Paper writes its own logs/latest.log and plugins write their data folders, outside modaccel's masked copy:
+     * Paper writes its own logs/latest.log and plugins write their data folders, outside mmt's masked copy:
      * with a secret in play, mask every text file the server left, and drop compressed old logs we cannot rewrite.
      */
     static void maskServerFiles(Path dir) {
@@ -869,7 +869,7 @@ public final class ModaccelServerCheck {
             Thread.sleep(500); // the first inventory and chunk packets follow the spawn position
             return bot;
         }
-        void leave() { if (session != null && session.isConnected()) session.disconnect("modaccel server-check finished"); }
+        void leave() { if (session != null && session.isConnected()) session.disconnect("mmt server-check finished"); }
 
         @Override public void packetReceived(Session s, Packet packet) {
             try { handle(s, packet); } catch (Throwable error) { System.err.println("bot: " + packet.getClass().getSimpleName() + ": " + error); }

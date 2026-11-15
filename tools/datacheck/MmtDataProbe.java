@@ -59,7 +59,7 @@ import org.apache.logging.log4j.core.config.Property;
  *
  * Written against Minecraft 26.x (Mojang names); data-check compiles it against the mod's own launch.
  */
-public final class ModaccelDataProbe {
+public final class MmtDataProbe {
     record Loaded(ReloadableServerResources resources, LayeredRegistryAccess<RegistryLayer> registries) {}
 
     static volatile PrintWriter out;
@@ -68,21 +68,21 @@ public final class ModaccelDataProbe {
     static boolean started;
 
     /**
-     * Starts the game's code once, reads the data, and then, with -Dmodaccel.datacheck.serve=true, stays
+     * Starts the game's code once, reads the data, and then, with -Dmmt.datacheck.serve=true, stays
      * loaded: each later check loads the data packs again from disk (as /reload does), which is all a
      * changed recipe, loot table or tag needs.
      *
-     * With -Dmodaccel.datacheck.spare=true it stops before the mods' entrypoints instead and waits: Bootstrap
+     * With -Dmmt.datacheck.spare=true it stops before the mods' entrypoints instead and waits: Bootstrap
      * (most of a start) is done, and the project's classes are read from disk only when its code first runs.
      * When the code changes, data-check checks that no class this JVM already read has changed and sends
      * "go": the mods start and the data loads, and the spare becomes the loaded game. data-check decides
      * which JVM may answer, not this class.
      */
     public static void run() throws Exception {
-        open(System.getProperty("modaccel.datacheck.out"));
+        open(System.getProperty("mmt.datacheck.out"));
         capture();
-        boolean serve = Boolean.getBoolean("modaccel.datacheck.serve");
-        if (Boolean.getBoolean("modaccel.datacheck.spare")) {
+        boolean serve = Boolean.getBoolean("mmt.datacheck.serve");
+        if (Boolean.getBoolean("mmt.datacheck.spare")) {
             try { boot(); } finally { close(); }
             serve(); return;
         }
@@ -105,7 +105,7 @@ public final class ModaccelDataProbe {
 
     static List<Path> outputs() {
         List<Path> outputs = new ArrayList<>();
-        for (String output : System.getProperty("modaccel.datacheck.outputs", "").split(java.io.File.pathSeparator))
+        for (String output : System.getProperty("mmt.datacheck.outputs", "").split(java.io.File.pathSeparator))
             if (!output.isBlank()) outputs.add(Path.of(output).toAbsolutePath().normalize());
         return outputs;
     }
@@ -125,8 +125,8 @@ public final class ModaccelDataProbe {
     /** One check: the data packs a new world enables, loaded from disk by WorldLoader, then the report. */
     static void check() throws Exception {
         // data-check's own helper mod (fabric.addMods) is not one of the game's.
-        emit("mods", "ours", new ArrayList<>(ours), "loaded", FabricLoader.getInstance().getAllMods().stream().filter(m -> !m.getMetadata().getId().equals("modaccel_datacheck")).count());
-        Path packs = Files.createTempDirectory("modaccel-datacheck");
+        emit("mods", "ours", new ArrayList<>(ours), "loaded", FabricLoader.getInstance().getAllMods().stream().filter(m -> !m.getMetadata().getId().equals("mmt_datacheck")).count());
+        Path packs = Files.createTempDirectory("mmt-datacheck");
         PackRepository repository = ServerPacksSource.createPackRepository(packs, new DirectoryValidator(path -> true));
         repository.reload();
         WorldDataConfiguration config = MinecraftServer.configurePackRepository(repository, WorldDataConfiguration.DEFAULT, true, false);
@@ -182,16 +182,16 @@ public final class ModaccelDataProbe {
      * Stays loaded and answers one request per connection on 127.0.0.1: "TOKEN check OUTFILE", "TOKEN quit",
      * and for a spare "TOKEN loaded" (the project's classes this JVM has already read, one JSON line) and
      * "TOKEN go OUTFILE" (start the mods, then check). The port, token, pid and CPU so far go to
-     * -Dmodaccel.datacheck.state, which data-check reads.
+     * -Dmmt.datacheck.state, which data-check reads.
      */
     static void serve() throws Exception {
-        String token = System.getProperty("modaccel.datacheck.token");
+        String token = System.getProperty("mmt.datacheck.token");
         try (java.net.ServerSocket server = new java.net.ServerSocket(0, 4, java.net.InetAddress.getLoopbackAddress())) {
             Map<String, Object> state = new LinkedHashMap<>();
             state.put("pid", ProcessHandle.current().pid()); state.put("port", server.getLocalPort()); state.put("token", token);
-            state.put("fingerprint", System.getProperty("modaccel.datacheck.fingerprint", ""));
+            state.put("fingerprint", System.getProperty("mmt.datacheck.fingerprint", ""));
             state.put("started", started); state.put("cpu", cpu());
-            Path file = Path.of(System.getProperty("modaccel.datacheck.state")), temporary = file.resolveSibling(file.getFileName() + ".tmp");
+            Path file = Path.of(System.getProperty("mmt.datacheck.state")), temporary = file.resolveSibling(file.getFileName() + ".tmp");
             Files.writeString(temporary, json(state), StandardCharsets.UTF_8);
             Files.move(temporary, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
             // Like a hidden game, a loaded game or spare no data-check has asked anything for 15 minutes ends.
@@ -261,7 +261,7 @@ public final class ModaccelDataProbe {
     /** The game's own warnings and errors (any logger) from here on, kept with the logger's name. */
     static void capture() {
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
-        AbstractAppender appender = new AbstractAppender("modaccel-datacheck", null, null, true, Property.EMPTY_ARRAY) {
+        AbstractAppender appender = new AbstractAppender("mmt-datacheck", null, null, true, Property.EMPTY_ARRAY) {
             @Override public void append(LogEvent event) {
                 if (!event.getLevel().isMoreSpecificThan(Level.WARN)) return;
                 Map<String, Object> e = new LinkedHashMap<>();
@@ -298,6 +298,6 @@ public final class ModaccelDataProbe {
             for (Object item : list) { if (!first) b.append(','); first = false; b.append(json(item)); }
             return b.append(']').toString();
         }
-        return ModaccelDataCheck.quote(value.toString());
+        return MmtDataCheck.quote(value.toString());
     }
 }

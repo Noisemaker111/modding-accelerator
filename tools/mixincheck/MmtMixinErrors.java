@@ -9,11 +9,11 @@ import java.util.*;
  * returns WARN so the run carries on and every target class is still loaded and checked.
  *
  * It lives in Mixin's own package and uses nothing outside the JDK and Mixin, because Mixin loads
- * it with Mixin's class loader: under NeoForge that is a module layer that cannot see modaccel's
+ * it with Mixin's class loader: under NeoForge that is a module layer that cannot see mmt's
  * classes, so it is defined there directly. It appends one JSON line per failure to the file
- * named by -Dmodaccel.mixincheck.out, the same file ModaccelMixinCheck writes.
+ * named by -Dmmt.mixincheck.out, the same file MmtMixinCheck writes.
  */
-public final class ModaccelMixinErrors implements IMixinErrorHandler {
+public final class MmtMixinErrors implements IMixinErrorHandler {
     @Override public ErrorAction onPrepareError(IMixinConfig config, Throwable th, IMixinInfo mixin, ErrorAction action) {
         report("prepare", null, config, th, mixin, action); return ErrorAction.WARN;
     }
@@ -52,8 +52,8 @@ public final class ModaccelMixinErrors implements IMixinErrorHandler {
             }
         } catch (Throwable ignored) { }
         line.append('}');
-        try (Writer out = new OutputStreamWriter(new FileOutputStream(System.getProperty("modaccel.mixincheck.out"), true), "UTF-8")) { out.write(line.append('\n').toString()); }
-        catch (IOException failure) { System.err.println("modaccel mixin check could not record: " + line); }
+        try (Writer out = new OutputStreamWriter(new FileOutputStream(System.getProperty("mmt.mixincheck.out"), true), "UTF-8")) { out.write(line.append('\n').toString()); }
+        catch (IOException failure) { System.err.println("mmt mixin check could not record: " + line); }
     }
     static Field find(Class<?> type, String name) {
         for (Class<?> c = type; c != null; c = c.getSuperclass()) try { return c.getDeclaredField(name); } catch (NoSuchFieldException next) { }

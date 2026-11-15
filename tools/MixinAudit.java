@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  *   java -cp <classes> MixinAudit --root <repo> [--classpath <file>] [--jar <jar>]...
  *                                     [--src <dir>]... [--quiet]
  *
- * The classpath file is the one the build already writes (.modaccel/classpath.txt, one path per
+ * The classpath file is the one the build already writes (.mmt/classpath.txt, one path per
  * entry separated by ';'); the mapped Minecraft jar is taken from it. Without --classpath the
  * jars under <root>/.gradle/loom-cache/minecraftMaven are used.
  *

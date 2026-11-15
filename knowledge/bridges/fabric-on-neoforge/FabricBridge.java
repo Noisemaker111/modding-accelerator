@@ -10,7 +10,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.loading.FMLEnvironment;
 
 /**
- * The Fabric bridge on NeoForge (modaccel convert): the Fabric API classes this mod's code uses that no rule rewrites,
+ * The Fabric bridge on NeoForge (mmt convert): the Fabric API classes this mod's code uses that no rule rewrites,
  * written on NeoForge's API with Fabric's names and members, under this package (net.fabricmc.X is ${package}.X). The
  * mod's @Mod constructors call init(modBus) first; it hands the mod's bus to every part of the bridge that is posted
  * from a NeoForge mod-bus event (payload registration, GUI layers, key mappings, capabilities ...). Game-bus events are

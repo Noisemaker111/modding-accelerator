@@ -1,4 +1,4 @@
-package modaccel.datacheck.mixin;
+package mmt.datacheck.mixin;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -26,13 +26,13 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 abstract class SkipShapeCache {
     @Redirect(method = "<init>", require = 0,
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/Block;getCollisionShape(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/phys/shapes/CollisionContext;)Lnet/minecraft/world/phys/shapes/VoxelShape;"))
-    private VoxelShape modaccel$noCollision(Block block, BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) { return Shapes.empty(); }
+    private VoxelShape mmt$noCollision(Block block, BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) { return Shapes.empty(); }
 
     @Redirect(method = "<init>", require = 0,
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;getCollisionShape(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/phys/shapes/VoxelShape;"))
-    private VoxelShape modaccel$noCollisionAgain(BlockState state, BlockGetter level, BlockPos pos) { return Shapes.empty(); }
+    private VoxelShape mmt$noCollisionAgain(BlockState state, BlockGetter level, BlockPos pos) { return Shapes.empty(); }
 
     @Redirect(method = "<init>", require = 0,
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/SupportType;isSupporting(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;)Z"))
-    private boolean modaccel$notSturdy(SupportType type, BlockState state, BlockGetter level, BlockPos pos, Direction face) { return false; }
+    private boolean mmt$notSturdy(SupportType type, BlockState state, BlockGetter level, BlockPos pos, Direction face) { return false; }
 }

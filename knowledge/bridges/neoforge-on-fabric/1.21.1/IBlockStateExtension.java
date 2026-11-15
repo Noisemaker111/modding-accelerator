@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * NeoForge 21.1's net.neoforged.neoforge.common.extensions.IBlockStateExtension, whose methods NeoForge adds to BlockState:
- * here as static methods taking the state first, which modaccel convert's rules write in place of the calls
+ * here as static methods taking the state first, which mmt convert's rules write in place of the calls
  * (state.getLightEmission(level, pos) becomes IBlockStateExtension.getLightEmission(state, level, pos)). Each returns
  * what NeoForge's default (IBlockExtension's) returns; a block cannot override them on Fabric.
  */

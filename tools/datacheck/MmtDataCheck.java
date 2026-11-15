@@ -7,18 +7,18 @@ import java.nio.charset.StandardCharsets;
 /**
  * Starts the game's code without starting the game, so data-check can read what the game would load.
  *
- * modaccel starts this in place of the game's main class, inside the mod's own dev launch (same Java,
+ * mmt starts this in place of the game's main class, inside the mod's own dev launch (same Java,
  * class path, loader properties), like mixin-check. It sets Fabric Loader's Knot up the way
  * fabric-loader-junit does, on the dedicated-server side (the side that loads data packs), then runs
- * ModaccelDataProbe through Knot's class loader so the probe sees the game exactly as the game does:
+ * MmtDataProbe through Knot's class loader so the probe sees the game exactly as the game does:
  * Mixin applied, mods loaded. No window, no world, no network.
  *
- * Output: one JSON object per line, appended to the file named by -Dmodaccel.datacheck.out.
+ * Output: one JSON object per line, appended to the file named by -Dmmt.datacheck.out.
  */
-public final class ModaccelDataCheck {
+public final class MmtDataCheck {
 
     public static void main(String[] args) throws Throwable {
-        String out = System.getProperty("modaccel.datacheck.out");
+        String out = System.getProperty("mmt.datacheck.out");
         new FileOutputStream(out).close();
         ClassLoader game;
         try {
@@ -36,7 +36,7 @@ public final class ModaccelDataCheck {
         Thread.currentThread().setContextClassLoader(game);
         int code = 0;
         try {
-            Class.forName("ModaccelDataProbe", true, game).getMethod("run").invoke(null);
+            Class.forName("MmtDataProbe", true, game).getMethod("run").invoke(null);
         } catch (Throwable failure) {
             Throwable cause = failure instanceof java.lang.reflect.InvocationTargetException
                 ? failure.getCause()

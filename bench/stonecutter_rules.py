@@ -10,7 +10,7 @@ can be restored without guessing. Every rule carries:
 
     python bench/stonecutter_rules.py          # rewrite the source=stonecutter rules in knowledge/fixes.json
 
-PortRepairTests (modaccel self-test) re-checks every example, match, rewrite and jump in Java, with the
+PortRepairTests (mmt self-test) re-checks every example, match, rewrite and jump in Java, with the
 same code Port uses.
 """
 import sys

@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * NeoForge 21.1's net.neoforged.neoforge.common.extensions.IEntityExtension, whose methods NeoForge adds to Entity: here
- * as static methods taking the entity first, which modaccel convert's rules write in place of the calls
+ * as static methods taking the entity first, which mmt convert's rules write in place of the calls
  * (entity.getPersistentData() becomes IEntityExtension.getPersistentData(entity)). The persistent data is kept, as on
  * NeoForge, in the entity's (or block entity's) saved data: a Fabric API persistent data attachment
  * (neoforge:persistent_data/MODID, NeoForge's data, as NeoForge writes it under NeoForgeData) holds the tag, so each

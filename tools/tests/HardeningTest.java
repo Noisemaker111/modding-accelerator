@@ -4,13 +4,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 
-/** Each case triggers a failure modaccel used to report badly (or as a pass) and checks the message. */
+/** Each case triggers a failure mmt used to report badly (or as a pass) and checks the message. */
 public final class HardeningTest {
 
     static int count;
 
     public static void main(String[] args) throws Exception {
-        Path scratch = Files.createTempDirectory("modaccel-hardening");
+        Path scratch = Files.createTempDirectory("mmt-hardening");
         try {
             missingDependency(scratch);
             nonCompilerFailure(scratch);
@@ -459,19 +459,19 @@ public final class HardeningTest {
     static void timeouts(Path scratch) throws Exception {
         require(
             Build.gradleTimeout(" 3600 ") == 3600 && Build.gradleTimeout("") == Build.GRADLE_TIMEOUT,
-            "MODACCEL_GRADLE_TIMEOUT overrides the default, and blank means the default"
+            "MMT_GRADLE_TIMEOUT overrides the default, and blank means the default"
         );
         try {
             Build.gradleTimeout("soon");
             throw new AssertionError("bad timeout accepted");
         } catch (IllegalArgumentException expected) {
-            require(expected.getMessage().contains("MODACCEL_GRADLE_TIMEOUT"), "a bad value names the variable");
+            require(expected.getMessage().contains("MMT_GRADLE_TIMEOUT"), "a bad value names the variable");
         }
         String message = Build.timeoutMessage(2700, true, scratch.resolve("metadata.log"));
         require(
             message.contains("2700 s") &&
             message.contains("cold first setup") &&
-            message.contains("MODACCEL_GRADLE_TIMEOUT=5400") &&
+            message.contains("MMT_GRADLE_TIMEOUT=5400") &&
             message.contains("metadata.log"),
             "the timeout message names the limit, the cold setup and how to raise it: " + message
         );
@@ -520,7 +520,7 @@ public final class HardeningTest {
 
     /**
      * A command that dies before handing its game off takes the game with it: the game it started itself, and one
-     * a Gradle daemon started that the log names (MODACCEL_PID). A handed-off game stays for reload and eval.
+     * a Gradle daemon started that the log names (MMT_PID). A handed-off game stays for reload and eval.
      * Hidden games left behind by dead commands ran for 13 hours.
      */
     static void failedStartEndsGame(Path scratch) throws Exception {
@@ -533,7 +533,7 @@ public final class HardeningTest {
             ).readLine().split(" ");
             // Started here, not by the failing command, once it owns its start: like a game the Gradle daemon started.
             outside = java(Sleep.class);
-            Files.writeString(log, "> Task :runClient\nMODACCEL_PID " + outside.pid() + "\n");
+            Files.writeString(log, "> Task :runClient\nMMT_PID " + outside.pid() + "\n");
             launcher.getOutputStream().close();
             require(launcher.waitFor(60, java.util.concurrent.TimeUnit.SECONDS), "the failing launcher exits");
             owned = ProcessHandle.of(Long.parseLong(pids[0])).orElse(null);

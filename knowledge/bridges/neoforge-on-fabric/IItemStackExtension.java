@@ -5,7 +5,7 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * NeoForge's net.neoforged.neoforge.common.extensions.IItemStackExtension, whose methods NeoForge adds to ItemStack:
- * here as static methods taking the stack first, which modaccel convert's rules write in place of the calls
+ * here as static methods taking the stack first, which mmt convert's rules write in place of the calls
  * (stack.getEquipmentSlot() becomes IItemStackExtension.getEquipmentSlot(stack)). Each returns what NeoForge's default
  * returns; an item cannot override them on Fabric.
  */

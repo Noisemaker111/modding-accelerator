@@ -7,8 +7,8 @@ import org.objectweb.asm.*;
 /**
  * Applies personal launch preferences before the client opens windows or reads settings.
  * What the hidden-window transform did is left in two string system properties, so the agent's
- * status (and modaccel) can tell a hidden window from one that failed to hide:
- * modaccel.background.applied lists each window library rewritten, modaccel.background.error the failure.
+ * status (and mmt) can tell a hidden window from one that failed to hide:
+ * mmt.background.applied lists each window library rewritten, mmt.background.error the failure.
  */
 final class GameLaunchAgent {
     private GameLaunchAgent() {}
@@ -19,26 +19,26 @@ final class GameLaunchAgent {
         installed = true;
         instrumentation.addTransformer(new ClassFileTransformer() {
             public byte[] transform(ClassLoader loader, String name, Class<?> type, ProtectionDomain domain, byte[] bytes) {
-                if (Boolean.getBoolean("modaccel.background")) {
+                if (Boolean.getBoolean("mmt.background")) {
                     try {
                         byte[] background = BackgroundWindows.transform(name, bytes);
                         if (background != null) {
-                            String applied = System.getProperty("modaccel.background.applied", "");
-                            System.setProperty("modaccel.background.applied", applied.isEmpty() ? name : applied + "," + name);
+                            String applied = System.getProperty("mmt.background.applied", "");
+                            System.setProperty("mmt.background.applied", applied.isEmpty() ? name : applied + "," + name);
                             return background;
                         }
                     } catch (Throwable error) {
-                        System.err.println("MODACCEL_BACKGROUND_ERROR " + error);
-                        String earlier = System.getProperty("modaccel.background.error", "");
-                        System.setProperty("modaccel.background.error", (earlier.isEmpty() ? "" : earlier + "; ") + error.getMessage());
+                        System.err.println("MMT_BACKGROUND_ERROR " + error);
+                        String earlier = System.getProperty("mmt.background.error", "");
+                        System.setProperty("mmt.background.error", (earlier.isEmpty() ? "" : earlier + "; ") + error.getMessage());
                         return null;
                     }
                 }
                 try {
                     // Every launch, so one that is not quiet restores the options a quiet one replaced.
                     if (!"net/minecraft/client/main/Main".equals(name)) return null;
-                    System.getProperties().put("modaccel.launch.quiet", new Consumer<Object>() {
-                        public void accept(Object args) { QuietOptions.launchArgs((String[]) args, Boolean.getBoolean("modaccel.quiet")); }
+                    System.getProperties().put("mmt.launch.quiet", new Consumer<Object>() {
+                        public void accept(Object args) { QuietOptions.launchArgs((String[]) args, Boolean.getBoolean("mmt.quiet")); }
                     });
                     ClassReader reader = new ClassReader(bytes);
                     ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
@@ -52,7 +52,7 @@ final class GameLaunchAgent {
                                 @Override public void visitCode() {
                                     super.visitCode();
                                     super.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "getProperties", "()Ljava/util/Properties;", false);
-                                    super.visitLdcInsn("modaccel.launch.quiet");
+                                    super.visitLdcInsn("mmt.launch.quiet");
                                     super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Properties", "get", "(Ljava/lang/Object;)Ljava/lang/Object;", false);
                                     super.visitTypeInsn(Opcodes.CHECKCAST, "java/util/function/Consumer");
                                     super.visitVarInsn(Opcodes.ALOAD, 0);
@@ -64,7 +64,7 @@ final class GameLaunchAgent {
                     if (hooks[0] != 1) throw new IllegalStateException("Minecraft client entry point is unsupported");
                     return writer.toByteArray();
                 } catch (Throwable error) {
-                    System.err.println("MODACCEL_QUIET_ERROR " + error);
+                    System.err.println("MMT_QUIET_ERROR " + error);
                     return null;
                 }
             }

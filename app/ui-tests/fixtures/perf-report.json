@@ -414,7 +414,7 @@
    "percent": 12.195121951219512
   },
   {
-   "name": "modaccel-perf-capture",
+   "name": "mmt-perf-capture",
    "samples": 4,
    "percent": 9.75609756097561
   },
@@ -546,7 +546,7 @@
     "samples": 0
    },
    {
-    "thread": "modaccel-perf-capture",
+    "thread": "mmt-perf-capture",
     "meanCpuPercentOfMachine": 0.0675361545290798,
     "intervals": 1,
     "samples": 4

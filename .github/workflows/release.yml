@@ -41,17 +41,17 @@ jobs:
       - name: Package
         run: java tools/cli/Bootstrap.java . package --json
       - name: Self-test from the package
-        run: java -jar build/distributions/modaccel.jar self-test --root . --json
+        run: java -jar build/distributions/mmt.jar self-test --root . --json
       - name: Extracted ZIP acceptance
-        run: java tools/tests/PackageAcceptanceTest.java build/distributions/modaccel-portable.zip build/distributions/modaccel-portable.zip.sha256 "${{ runner.temp }}"
+        run: java tools/tests/PackageAcceptanceTest.java build/distributions/mmt-portable.zip build/distributions/mmt-portable.zip.sha256 "${{ runner.temp }}"
       - name: Draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           out="${{ runner.temp }}/assets"; mkdir -p "$out"
-          cp build/distributions/modaccel.jar "$out/modaccel-$VERSION.jar"
-          cp build/distributions/modaccel-portable.zip "$out/modaccel-$VERSION-portable.zip"
+          cp build/distributions/mmt.jar "$out/mmt-$VERSION.jar"
+          cp build/distributions/mmt-portable.zip "$out/mmt-$VERSION-portable.zip"
           cd "$out"
           for f in *.jar *.zip; do sha256sum "$f" > "$f.sha256"; done
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft --generate-notes \
-            --title "Modding Accelerator $VERSION" $(case "$VERSION" in *-*) echo --prerelease;; esac) *
+            --title "Minecraft Modding Tools $VERSION" $(case "$VERSION" in *-*) echo --prerelease;; esac) *

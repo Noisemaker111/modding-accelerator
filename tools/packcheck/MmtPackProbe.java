@@ -1,4 +1,4 @@
-package modaccel.packprobe;
+package mmt.packprobe;
 
 import com.google.gson.*;
 import java.io.*;
@@ -29,7 +29,7 @@ import net.minecraft.world.phys.Vec3;
  * game only; pack-check renames it to the loader's runtime names (none, SRG or intermediary) before it goes in the
  * mods folder. Nothing here names a loader class: the loader is reached by reflection, so one source serves Forge,
  * NeoForge, Fabric and Quilt. Forge and NeoForge construct this class through @Mod; Fabric and Quilt call
- * ModaccelPackProbeFabric, which calls start().
+ * MmtPackProbeFabric, which calls start().
  *
  * A watcher thread waits for the server to finish starting, then runs the work on the server thread in slices of
  * 40 ms, the way a tick handler would.
@@ -40,18 +40,18 @@ import net.minecraft.world.phys.Vec3;
  * verify: on the next start of the same world, each listed block is read back after the save and reload.
  * open: the world opened; only its dimensions are written and read back.
  *
- * Properties: modaccel.probe.mode (place|verify|open), modaccel.probe.out (result JSON), modaccel.probe.placed
- * (the place run's list, read by verify), modaccel.probe.only (comma-separated item ids; default every block item).
+ * Properties: mmt.probe.mode (place|verify|open), mmt.probe.out (result JSON), mmt.probe.placed
+ * (the place run's list, read by verify), mmt.probe.only (comma-separated item ids; default every block item).
  */
-@net.minecraftforge.fml.common.Mod("modaccel_pack_probe")
-@net.neoforged.fml.common.Mod("modaccel_pack_probe")
-public final class ModaccelPackProbe {
+@net.minecraftforge.fml.common.Mod("mmt_pack_probe")
+@net.neoforged.fml.common.Mod("mmt_pack_probe")
+public final class MmtPackProbe {
     static final int COLUMNS = 64, SPACING = 3;
     /** Block.setBlock flags, the same numbers in every version (1.16 does not name them): update neighbours and clients, clients only, no shape updates. */
     static final int UPDATE_ALL = 3, UPDATE_CLIENTS = 2, UPDATE_KNOWN_SHAPE = 16;
     static Work running;
 
-    public ModaccelPackProbe() { start(); }
+    public MmtPackProbe() { start(); }
 
     /** Once per game, whichever loader calls first. */
     static synchronized void start() {
@@ -65,7 +65,7 @@ public final class ModaccelPackProbe {
         volatile boolean finished;
 
         Work() {
-            Thread watcher = new Thread(this::watch, "modaccel-pack-probe");
+            Thread watcher = new Thread(this::watch, "mmt-pack-probe");
             watcher.setDaemon(true);
             watcher.start();
         }
@@ -73,7 +73,7 @@ public final class ModaccelPackProbe {
         void watch() {
             try {
                 long since = System.nanoTime();
-                while ((server = findServer()) == null || !ModaccelPackGame.ready(server) || server.getTickCount() < 1) {
+                while ((server = findServer()) == null || !MmtPackGame.ready(server) || server.getTickCount() < 1) {
                     if (server != null && !server.isRunning() && server.getTickCount() > 0) return;
                     Thread.sleep(250);
                     if (System.nanoTime() - since > TimeUnit.MINUTES.toNanos(60)) return;
@@ -106,12 +106,12 @@ public final class ModaccelPackProbe {
         }
 
         void started() {
-            String mode = System.getProperty("modaccel.probe.mode", "place");
+            String mode = System.getProperty("mmt.probe.mode", "place");
             result.addProperty("mode", mode);
             result.addProperty("loader", loader());
             result.add("mods", mods());
-            result.add("dimensions", ModaccelPackGame.dimensions(server));
-            System.out.println("MODACCEL-PROBE-STARTED " + mode);
+            result.add("dimensions", MmtPackGame.dimensions(server));
+            System.out.println("MMT-PROBE-STARTED " + mode);
             if (mode.equals("open")) { finish(true); return; }
             // The world opened. Load the test area through the normal chunk system before touching it, so no
             // block update in the middle of a tick has to wait for chunk generation.
@@ -121,7 +121,7 @@ public final class ModaccelPackProbe {
             // forced chunks, so a big pack whose probe began past those 300 ticks loaded its grid into a level that never called
             // onLoad: Ender IO 8.2.13's capacitor bank, whose caches onLoad makes, then stopped All the Mods 10's reopen. The
             // spawn chunk, already loaded, is forced the saved way, so the level ticks like one a player is in.
-            BlockPos spawn = ModaccelPackGame.spawn(level);
+            BlockPos spawn = MmtPackGame.spawn(level);
             level.setChunkForced(spawn.getX() >> 4, spawn.getZ() >> 4, true);
             BlockPos origin = origin(level);
             area = new HashSet<>();
@@ -132,7 +132,7 @@ public final class ModaccelPackProbe {
             toForce = new ArrayDeque<>();
             for (int x = (origin.getX() >> 4) - 1; x <= (origin.getX() + COLUMNS * SPACING >> 4) + 1; x++)
                 for (int z = (origin.getZ() >> 4) - 1; z <= (origin.getZ() + rows * SPACING >> 4) + 1; z++) {
-                    toForce.add(ModaccelPackGame.chunkKey(x, z)); area.add(ModaccelPackGame.chunkKey(x, z));
+                    toForce.add(MmtPackGame.chunkKey(x, z)); area.add(MmtPackGame.chunkKey(x, z));
                 }
             result.addProperty("areaChunks", area.size());
             waitingSince = System.nanoTime();
@@ -146,11 +146,11 @@ public final class ModaccelPackProbe {
                     long budget = System.nanoTime() + 40_000_000L;
                     do {
                         long chunk = toForce.poll();
-                        ModaccelPackGame.forceChunk(level, net.minecraft.world.level.ChunkPos.getX(chunk), net.minecraft.world.level.ChunkPos.getZ(chunk));
+                        MmtPackGame.forceChunk(level, net.minecraft.world.level.ChunkPos.getX(chunk), net.minecraft.world.level.ChunkPos.getZ(chunk));
                     } while (!toForce.isEmpty() && System.nanoTime() < budget);
                     if (System.nanoTime() - lastProgress > 30_000_000_000L) {
                         lastProgress = System.nanoTime();
-                        System.out.println("MODACCEL-PROBE-PROGRESS loading the test area: " + (area.size() - toForce.size()) + " of " + area.size() + " chunks");
+                        System.out.println("MMT-PROBE-PROGRESS loading the test area: " + (area.size() - toForce.size()) + " of " + area.size() + " chunks");
                     }
                     waitingSince = System.nanoTime();
                     return;
@@ -160,22 +160,22 @@ public final class ModaccelPackProbe {
                         if (System.nanoTime() - waitingSince > 300_000_000_000L) throw new IllegalStateException("The test area's chunks did not load in 300 s");
                         if (System.nanoTime() - lastProgress > 30_000_000_000L) {
                             lastProgress = System.nanoTime();
-                            System.out.println("MODACCEL-PROBE-PROGRESS loading the test area");
+                            System.out.println("MMT-PROBE-PROGRESS loading the test area");
                         }
                         return;
                     }
                     result.addProperty("areaLoadSeconds", (System.nanoTime() - waitingSince) / 1e9);
                     area = null;
-                    if (System.getProperty("modaccel.probe.mode", "place").equals("verify")) { verify(server, result); finish(true); return; }
+                    if (System.getProperty("mmt.probe.mode", "place").equals("verify")) { verify(server, result); finish(true); return; }
                     placement = new Placement(level, result);
-                    items = ModaccelPackGame.items().iterator();
+                    items = MmtPackGame.items().iterator();
                 }
                 long budget = System.nanoTime() + 40_000_000L;
                 while (items.hasNext() && System.nanoTime() < budget) placement.place(items.next());
                 // A line every 30 s while placing, so pack-check sees a long run of a big pack is still working.
                 if (System.nanoTime() - lastProgress > 30_000_000_000L) {
                     lastProgress = System.nanoTime();
-                    System.out.println("MODACCEL-PROBE-PROGRESS " + placement.tried + " block items placed");
+                    System.out.println("MMT-PROBE-PROGRESS " + placement.tried + " block items placed");
                 }
                 if (!items.hasNext()) { placement.finish(); finish(true); }
             } catch (Throwable failure) {
@@ -189,16 +189,16 @@ public final class ModaccelPackProbe {
             finished = true;
             result.addProperty("ok", ok);
             try {
-                Path out = Paths.get(System.getProperty("modaccel.probe.out", "modaccel-probe.json"));
+                Path out = Paths.get(System.getProperty("mmt.probe.out", "mmt-probe.json"));
                 Files.createDirectories(out.toAbsolutePath().getParent());
                 Files.write(out, new GsonBuilder().setPrettyPrinting().create().toJson(result).getBytes(StandardCharsets.UTF_8));
-                System.out.println("MODACCEL-PROBE-DONE " + out.toAbsolutePath());
+                System.out.println("MMT-PROBE-DONE " + out.toAbsolutePath());
             } catch (IOException unwritable) { unwritable.printStackTrace(); }
             // A normal stop: the world is saved, so the next start can read it back. In singleplayer, halting the built-in
             // server leaves the game on its saving screen, so the client closes itself, which saves and stops that server.
             if (server != null && !server.isDedicatedServer())
-                try { Class.forName("modaccel.packprobe.ModaccelPackOpener").getDeclaredMethod("finished").invoke(null); return; }
-                catch (ReflectiveOperationException | LinkageError absent) { System.out.println("MODACCEL-PROBE-NO-OPENER"); }
+                try { Class.forName("mmt.packprobe.MmtPackOpener").getDeclaredMethod("finished").invoke(null); return; }
+                catch (ReflectiveOperationException | LinkageError absent) { System.out.println("MMT-PROBE-NO-OPENER"); }
             if (server != null) server.halt(false);
         }
     }
@@ -241,13 +241,13 @@ public final class ModaccelPackProbe {
     }
 
     static Object call(String type, String method) {
-        try { return Class.forName(type, true, ModaccelPackProbe.class.getClassLoader()).getMethod(method).invoke(null); }
+        try { return Class.forName(type, true, MmtPackProbe.class.getClassLoader()).getMethod(method).invoke(null); }
         catch (ReflectiveOperationException | LinkageError | RuntimeException absent) { return null; }
     }
 
     static String loader() {
         for (String[] known : new String[][] { { "net.neoforged.fml.ModList", "neoforge" }, { "net.minecraftforge.fml.ModList", "forge" }, { "org.quiltmc.loader.api.QuiltLoader", "quilt" }, { "net.fabricmc.loader.api.FabricLoader", "fabric" } })
-            try { Class.forName(known[0], false, ModaccelPackProbe.class.getClassLoader()); return known[1]; }
+            try { Class.forName(known[0], false, MmtPackProbe.class.getClassLoader()); return known[1]; }
             catch (ClassNotFoundException | LinkageError absent) { /* next */ }
         return "unknown";
     }
@@ -256,14 +256,14 @@ public final class ModaccelPackProbe {
     static ServerPlayer fakePlayer(ServerLevel level) throws ReflectiveOperationException {
         for (String[] factory : new String[][] { { "net.neoforged.neoforge.common.util.FakePlayerFactory", "getMinecraft" }, { "net.minecraftforge.common.util.FakePlayerFactory", "getMinecraft" }, { "net.fabricmc.fabric.api.entity.FakePlayer", "get" } }) {
             try {
-                Class<?> type = Class.forName(factory[0], true, ModaccelPackProbe.class.getClassLoader());
+                Class<?> type = Class.forName(factory[0], true, MmtPackProbe.class.getClassLoader());
                 for (Method method : type.getMethods())
                     if (method.getName().equals(factory[1]) && method.getParameterCount() == 1 && method.getParameterTypes()[0].isInstance(level))
                         return (ServerPlayer) method.invoke(null, level);
             } catch (ClassNotFoundException | LinkageError absent) { /* next */ }
         }
         // No loader fake player (a Fabric pack without Fabric API): a plain player that is never added to the world.
-        com.mojang.authlib.GameProfile profile = new com.mojang.authlib.GameProfile(UUID.fromString("41c82c87-7afb-4024-ba57-13d2c99cae77"), "[modaccel]");
+        com.mojang.authlib.GameProfile profile = new com.mojang.authlib.GameProfile(UUID.fromString("41c82c87-7afb-4024-ba57-13d2c99cae77"), "[mmt]");
         for (java.lang.reflect.Constructor<?> constructor : ServerPlayer.class.getConstructors()) {
             Class<?>[] types = constructor.getParameterTypes();
             if (types.length == 3) return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile);
@@ -284,23 +284,23 @@ public final class ModaccelPackProbe {
     }
 
     static BlockPos origin(ServerLevel level) {
-        BlockPos spawn = ModaccelPackGame.spawn(level);
-        int top = ModaccelPackGame.top(level);
+        BlockPos spawn = MmtPackGame.spawn(level);
+        int top = MmtPackGame.top(level);
         return new BlockPos(spawn.getX() - COLUMNS * SPACING / 2, top - 8, spawn.getZ() - COLUMNS * SPACING / 2);
     }
 
     static Set<String> only() {
         Set<String> only = new HashSet<>();
-        for (String id : System.getProperty("modaccel.probe.only", "").split(",")) if (!id.trim().isEmpty()) only.add(id.trim());
+        for (String id : System.getProperty("mmt.probe.only", "").split(",")) if (!id.trim().isEmpty()) only.add(id.trim());
         return only;
     }
     static boolean chosen(Item item, Set<String> only) {
-        return item instanceof BlockItem && (only.isEmpty() || only.contains(ModaccelPackGame.itemId(item)));
+        return item instanceof BlockItem && (only.isEmpty() || only.contains(MmtPackGame.itemId(item)));
     }
     /** Rows of the test grid: one cell per chosen block item. */
     static int rows() {
         Set<String> only = only(); int count = 0;
-        for (Item item : ModaccelPackGame.items()) if (chosen(item, only)) count++;
+        for (Item item : MmtPackGame.items()) if (chosen(item, only)) count++;
         return Math.max(1, (count + COLUMNS - 1) / COLUMNS);
     }
 
@@ -322,18 +322,18 @@ public final class ModaccelPackProbe {
         void place(Item item) {
             if (!chosen(item, only)) return;
             // An item in no creative tab is not one a player places (unless asked for by --only): left alone, and counted.
-            if (only.isEmpty() && !ModaccelPackGame.listed(item)) { hidden++; return; }
+            if (only.isEmpty() && !MmtPackGame.listed(item)) { hidden++; return; }
             // A developer's debug block (Applied Energistics 2's debug chunk loader loads chunks while its own chunk loads, which
             // hangs the next start) is a tool for the mod's author, not pack content.
-            if (only.isEmpty() && ModaccelPackGame.itemId(item).split(":", 2)[1].matches("(.*_)?debug(_.*)?")) { hidden++; return; }
+            if (only.isEmpty() && MmtPackGame.itemId(item).split(":", 2)[1].matches("(.*_)?debug(_.*)?")) { hidden++; return; }
             BlockItem blockItem = (BlockItem) item;
-            String id = ModaccelPackGame.itemId(item);
+            String id = MmtPackGame.itemId(item);
             tried++;
             Block expected = blockItem.getBlock();
-            String expectedId = ModaccelPackGame.blockId(expected);
+            String expectedId = MmtPackGame.blockId(expected);
             JsonObject row = new JsonObject();
             row.addProperty("item", id);
-            row.addProperty("itemMod", ModaccelPackGame.itemNamespace(item));
+            row.addProperty("itemMod", MmtPackGame.itemNamespace(item));
             row.addProperty("expected", expectedId);
             try {
                 BlockState landed = null; BlockPos support = origin.offset((cell % COLUMNS) * SPACING, 0, (cell / COLUMNS) * SPACING), at = null;
@@ -362,9 +362,9 @@ public final class ModaccelPackProbe {
                     BlockState before = level.getBlockState(target);
                     ItemStack stack = new ItemStack(item);
                     player.setItemInHand(InteractionHand.MAIN_HAND, stack);
-                    ModaccelPackGame.moveTo(player, standing.x, standing.y, standing.z, yaw, pitch);
+                    MmtPackGame.moveTo(player, standing.x, standing.y, standing.z, yaw, pitch);
                     answer = player.gameMode.useItemOn(player, level, stack, InteractionHand.MAIN_HAND, new BlockHitResult(point, face, clicked, false));
-                    used = surface.contains(":") ? surface : surface + " (" + ModaccelPackGame.blockId(base) + ")";
+                    used = surface.contains(":") ? surface : surface + " (" + MmtPackGame.blockId(base) + ")";
                     BlockState now = level.getBlockState(target);
                     if (now != before) { landed = now; at = target; break; }
                     BlockState after = level.getBlockState(support);
@@ -374,7 +374,7 @@ public final class ModaccelPackProbe {
                 row.addProperty("support", used);
                 row.addProperty("answer", String.valueOf(answer));
                 if (landed == null) { unplaced.add(row); clear(level, support); return; }
-                String landedId = ModaccelPackGame.blockId(landed.getBlock());
+                String landedId = MmtPackGame.blockId(landed.getBlock());
                 row.addProperty("landed", landedId);
                 row.addProperty("state", landed.toString());
                 row.addProperty("x", at.getX()); row.addProperty("y", at.getY()); row.addProperty("z", at.getZ());
@@ -415,7 +415,7 @@ public final class ModaccelPackProbe {
             for (JsonElement element : placed) {
                 JsonObject row = element.getAsJsonObject();
                 BlockState now = level.getBlockState(new BlockPos(row.get("x").getAsInt(), row.get("y").getAsInt(), row.get("z").getAsInt()));
-                String nowId = ModaccelPackGame.blockId(now.getBlock());
+                String nowId = MmtPackGame.blockId(now.getBlock());
                 row.addProperty("saved", nowId);
                 // A block still waiting for a scheduled tick when the world saves (coral out of water, a cactus beside a block)
                 // changes by the game's own rules when that tick runs after the reload; the save is not what changed it.
@@ -444,7 +444,7 @@ public final class ModaccelPackProbe {
         ServerLevel level = server.overworld();
         // new JsonParser().parse: the Gson of 1.16 has no static parseString.
         @SuppressWarnings("deprecation")
-        JsonObject before = new JsonParser().parse(new String(Files.readAllBytes(Paths.get(System.getProperty("modaccel.probe.placed"))), StandardCharsets.UTF_8)).getAsJsonObject();
+        JsonObject before = new JsonParser().parse(new String(Files.readAllBytes(Paths.get(System.getProperty("mmt.probe.placed"))), StandardCharsets.UTF_8)).getAsJsonObject();
         JsonArray changed = new JsonArray(), settled = new JsonArray();
         int read = 0, kept = 0;
         if (!before.has("placed")) throw new IllegalStateException("the first start placed nothing to read back" + (before.has("error") ? ": " + before.get("error").getAsString().split("\n")[0] : ""));
@@ -453,7 +453,7 @@ public final class ModaccelPackProbe {
             BlockPos at = new BlockPos(row.get("x").getAsInt(), row.get("y").getAsInt(), row.get("z").getAsInt());
             BlockState now = level.getBlockState(at);
             read++;
-            String nowId = ModaccelPackGame.blockId(now.getBlock());
+            String nowId = MmtPackGame.blockId(now.getBlock());
             String saved = row.get("saved").getAsString();
             if (nowId.equals(saved)) { kept++; continue; }
             JsonObject change = new JsonObject();
@@ -481,7 +481,7 @@ public final class ModaccelPackProbe {
     /** Every loaded mod and its version, from whichever loader is present. */
     static JsonArray mods() {
         JsonArray mods = new JsonArray();
-        ClassLoader loader = ModaccelPackProbe.class.getClassLoader();
+        ClassLoader loader = MmtPackProbe.class.getClassLoader();
         try {
             for (String list : Arrays.asList("net.neoforged.fml.ModList", "net.minecraftforge.fml.ModList")) {
                 Class<?> type;

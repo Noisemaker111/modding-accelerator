@@ -15,7 +15,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 
 /**
  * NeoForge's net.neoforged.neoforge.common.extensions.IPlayerExtension, for its openMenu methods: NeoForge adds them to
- * Player, so modaccel convert writes player.openMenu(provider, data) as IPlayerExtension.openMenu(player, provider, data).
+ * Player, so mmt convert writes player.openMenu(provider, data) as IPlayerExtension.openMenu(player, provider, data).
  * On a server player the menu opens through Fabric API's ExtendedMenuProvider with the bytes the writer wrote, which
  * IMenuTypeExtension's menu types read back; on the client player nothing happens and the result is empty, as on NeoForge.
  * Unlike NeoForge, Fabric API refuses a menu whose type is not one IMenuTypeExtension.create made when it is opened here.

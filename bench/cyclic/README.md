@@ -26,7 +26,7 @@ in turn: 92% of its samples.
 
 ## Run it
 
-Windows uses `modaccel.cmd`. From the Mod Accel checkout:
+Windows uses `mmt.cmd`. From the Minecraft Modding Tools checkout:
 
 ```sh
 git clone --branch trunk/1.21.1 https://github.com/Lothrazar/Cyclic .runs/cyclic
@@ -35,15 +35,15 @@ git -C .runs/cyclic checkout b2213600474fa088702dec68a783549e44dfa6ae
 # that in the clone (give the clone a local git user.name and user.email first).
 
 # Once: make the world (superflat, fixed seed, peaceful) and the base, then keep the save.
-./modaccel ui-check --root .runs/cyclic --jit full
-./modaccel eval --root .runs/cyclic --file bench/cyclic/create-world.java
-./modaccel eval --root .runs/cyclic --until "mc.player != null"   # wait until the new world has loaded
-./modaccel eval --root .runs/cyclic --file bench/cyclic/scene.java --thread control
-./modaccel eval --root .runs/cyclic --code "mc.getSingleplayerServer().submit(() -> mc.getSingleplayerServer().saveEverything(true, true, true)).join()" --thread control
-./modaccel game-stop --root .runs/cyclic
+./mmt ui-check --root .runs/cyclic --jit full
+./mmt eval --root .runs/cyclic --file bench/cyclic/create-world.java
+./mmt eval --root .runs/cyclic --until "mc.player != null"   # wait until the new world has loaded
+./mmt eval --root .runs/cyclic --file bench/cyclic/scene.java --thread control
+./mmt eval --root .runs/cyclic --code "mc.getSingleplayerServer().submit(() -> mc.getSingleplayerServer().saveEverything(true, true, true)).join()" --thread control
+./mmt game-stop --root .runs/cyclic
 mkdir -p .runs/cyclic-world && cp -r .runs/cyclic/run/saves/cyclic-base .runs/cyclic-world/cyclic-base
 
-./modaccel perf-optimize --root .runs/cyclic --experiment bench/cyclic/experiment.json \
+./mmt perf-optimize --root .runs/cyclic --experiment bench/cyclic/experiment.json \
   --patch bench/cyclic/cache-matched-recipe.diff --runs 8 --dry-run --out .runs/cyclic-opt/cache-matched-recipe
 ```
 

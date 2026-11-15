@@ -4,12 +4,12 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Notes' (MattCzyr) own features, checked in the real NeoForge 1.21.6+ client through modaccel's eval: holding its key
+ * Notes' (MattCzyr) own features, checked in the real NeoForge 1.21.6+ client through mmt's eval: holding its key
  * opens its notes screen, a note saved through its own code is read back from disk with the same text, and once pinned
  * its own HUD layer (notes:pinned_note) draws that text. 1.21.6 drops any GUI text whose colour has no alpha byte, so a
  * port that left 0xffffff in the layer compiles, loads and draws nothing. Not in PR CI (it starts the game); run it
  * locally on the ported checkout:
- *   java tools/tests/NotesPinCheck.java <checkout> <modaccel.jar> <Notes 1.21.6 checkout>
+ *   java tools/tests/NotesPinCheck.java <checkout> <mmt.jar> <Notes 1.21.6 checkout>
  * It then breaks Notes on purpose in the same checkout (the pinned note is drawn with alpha 0), requires that run to fail
  * at the comparison, and puts the source back whatever happens.
  */
@@ -23,7 +23,7 @@ public final class NotesPinCheck {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 3) throw new IllegalArgumentException(
-            "Usage: java NotesPinCheck.java <checkout> <modaccel.jar> <Notes checkout>"
+            "Usage: java NotesPinCheck.java <checkout> <mmt.jar> <Notes checkout>"
         );
         Path home = Path.of(args[0]).toRealPath(), jar = Path.of(args[1]).toAbsolutePath().normalize(), root = Path.of(
             args[2]
@@ -76,7 +76,7 @@ public final class NotesPinCheck {
     /** The PASS line on success, null when one of Notes' effects was missing; anything else going wrong throws. */
     static String check(Path home, Path jar, Path root) throws Exception {
         Path snippets = home.resolve("tools/tests/notes-pin"), world = home.resolve("tools/tests/za-ai");
-        modaccel(home, jar, root, "game-stop"); // a client left from an older build would be refused
+        mmt(home, jar, root, "game-stop"); // a client left from an older build would be refused
         try {
             step(home, jar, root, "ui-check");
             if (!value(step(home, jar, root, "eval", "--code", "mc.level != null")).equals("true")) {
@@ -104,7 +104,7 @@ public final class NotesPinCheck {
                 );
             }
             step(home, jar, root, "eval", "--file", snippets.resolve("press-key.java").toString());
-            Run opened = modaccel(
+            Run opened = mmt(
                 home,
                 jar,
                 root,
@@ -124,14 +124,14 @@ public final class NotesPinCheck {
                 );
                 return null;
             }
-            Run saved = modaccel(home, jar, root, "eval", "--file", snippets.resolve("save-pin.java").toString());
+            Run saved = mmt(home, jar, root, "eval", "--file", snippets.resolve("save-pin.java").toString());
             if (missing(saved)) return null;
             System.out.println("  saved and pinned " + value(saved));
-            Run drawn = modaccel(home, jar, root, "eval", "--file", snippets.resolve("check.java").toString());
+            Run drawn = mmt(home, jar, root, "eval", "--file", snippets.resolve("check.java").toString());
             return missing(drawn) ? null : value(drawn);
         } finally {
-            modaccel(home, jar, root, "eval", "--file", snippets.resolve("clean-up.java").toString());
-            modaccel(home, jar, root, "game-stop");
+            mmt(home, jar, root, "eval", "--file", snippets.resolve("clean-up.java").toString());
+            mmt(home, jar, root, "game-stop");
         }
     }
 
@@ -146,9 +146,9 @@ public final class NotesPinCheck {
     }
 
     static Run step(Path home, Path jar, Path root, String... args) throws Exception {
-        Run run = modaccel(home, jar, root, args);
+        Run run = mmt(home, jar, root, args);
         if (run.exit() != 0) throw new AssertionError(
-            "modaccel " + String.join(" ", args) + " failed with exit " + run.exit() + ":\n" + run.output()
+            "mmt " + String.join(" ", args) + " failed with exit " + run.exit() + ":\n" + run.output()
         );
         return run;
     }
@@ -164,23 +164,23 @@ public final class NotesPinCheck {
         return text.substring(a + (start.endsWith(":") ? start.length() : 0), b < 0 ? text.length() : b);
     }
 
-    static Run modaccel(Path home, Path jar, Path root, String... args) throws Exception {
+    static Run mmt(Path home, Path jar, Path root, String... args) throws Exception {
         String java = Path.of(
             System.getProperty("java.home"),
             "bin",
             System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows") ? "java.exe" : "java"
         ).toString();
-        List<String> command = new ArrayList<>(List.of(java, "-Dmodaccel.home=" + home, "-jar", jar.toString()));
+        List<String> command = new ArrayList<>(List.of(java, "-Dmmt.home=" + home, "-jar", jar.toString()));
         command.addAll(List.of(args));
         command.addAll(List.of("--root", root.toString(), "--json"));
-        Path output = Files.createTempFile("modaccel-notes-", ".log");
+        Path output = Files.createTempFile("mmt-notes-", ".log");
         long start = System.nanoTime();
         Process process = new ProcessBuilder(command)
             .directory(home.toFile())
             .redirectErrorStream(true)
             .redirectOutput(output.toFile())
             .start();
-        // Longer than modaccel's own 20-minute game start limit, so its reason is reported rather than this kill.
+        // Longer than mmt's own 20-minute game start limit, so its reason is reported rather than this kill.
         if (!process.waitFor(25, TimeUnit.MINUTES)) {
             process.descendants().forEach(ProcessHandle::destroyForcibly);
             process.destroyForcibly();

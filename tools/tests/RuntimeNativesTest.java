@@ -16,7 +16,7 @@ public final class RuntimeNativesTest {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) throw new IllegalArgumentException(
-            "Usage: java RuntimeNativesTest.java <checkout> <modaccel.jar>"
+            "Usage: java RuntimeNativesTest.java <checkout> <mmt.jar>"
         );
         Path home = Path.of(args[0]).toRealPath(), jar = Path.of(args[1]).toAbsolutePath().normalize();
         if (!Files.isRegularFile(jar)) throw new IOException("Missing package: " + jar);
@@ -45,7 +45,7 @@ public final class RuntimeNativesTest {
 
         Run setup = run(home, jar, root, "setup");
         if (setup.exit() != 0) throw new AssertionError("setup stopped on a runtime-only file:\n" + setup.output());
-        String model = Files.readString(root.resolve(".modaccel/portable/model.json"), StandardCharsets.UTF_8);
+        String model = Files.readString(root.resolve(".mmt/portable/model.json"), StandardCharsets.UTF_8);
         if (
             !model.contains("\"runtimeUnresolved\"") || !model.contains("lwjgl-freetype-3.3.3-natives-macos-patch.jar")
         ) throw new AssertionError("the model does not name the missing runtime file:\n" + model);
@@ -64,7 +64,7 @@ public final class RuntimeNativesTest {
         String java = Path.of(System.getProperty("java.home"), "bin", isWindows() ? "java.exe" : "java").toString();
         Path output = Files.createTempFile(root, verb + "-", ".log");
         Process process = new ProcessBuilder(
-            List.of(java, "-Dmodaccel.home=" + home, "-jar", jar.toString(), verb, "--root", root.toString(), "--json")
+            List.of(java, "-Dmmt.home=" + home, "-jar", jar.toString(), verb, "--root", root.toString(), "--json")
         )
             .directory(home.toFile())
             .redirectErrorStream(true)

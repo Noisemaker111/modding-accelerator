@@ -15,13 +15,13 @@ import net.fabricmc.loader.api.FabricLoader;
 /**
  * NeoForge's net.neoforged.fml.InterModComms: messages one mod queues for another (sendTo, usually in
  * InterModEnqueueEvent) and the receiver reads once (getMessages, usually in InterModProcessEvent). The same members as
- * FML's. The queues live in Fabric Loader's ObjectShare (key modaccel:neoforge_bridge_imc, as plain Java objects), so
+ * FML's. The queues live in Fabric Loader's ObjectShare (key mmt:neoforge_bridge_imc, as plain Java objects), so
  * every converted mod, each with its own copy of this bridge, reads and writes the same queues. Difference: sendTo
  * without a sender names this converted mod (FML names the mod whose code is running).
  */
 public class InterModComms {
 
-    private static final String SHARE_KEY = "modaccel:neoforge_bridge_imc";
+    private static final String SHARE_KEY = "mmt:neoforge_bridge_imc";
 
     public record IMCMessage(String senderModId, String modId, String method, Supplier<?> messageSupplier) {}
 

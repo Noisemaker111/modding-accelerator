@@ -52,7 +52,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * How Fabric API's Transfer and lookup APIs (mirrored under fabric.api) and Team Reborn Energy's EnergyStorage cross to
- * NeoForge's capabilities and transfer API in the bridge (modaccel convert). Not a Fabric class.
+ * NeoForge's capabilities and transfer API in the bridge (mmt convert). Not a Fabric class.
  *
  * <p>Lookups: BlockApiLookup.get names a lookup; the bridge makes it a NeoForge BlockCapability. ItemStorage.SIDED is
  * Capabilities.Item.BLOCK, FluidStorage.SIDED is Capabilities.Fluid.BLOCK and Team Reborn's EnergyStorage.SIDED is
@@ -862,7 +862,7 @@ public final class TransferBridge {
         }
 
         private void late() {
-            if (registered) org.slf4j.LoggerFactory.getLogger("modaccel-bridge").warn("A provider for lookup {} was registered after RegisterCapabilitiesEvent; NeoForge will not see it.", id);
+            if (registered) org.slf4j.LoggerFactory.getLogger("mmt-bridge").warn("A provider for lookup {} was registered after RegisterCapabilitiesEvent; NeoForge will not see it.", id);
         }
 
         synchronized void register(RegisterCapabilitiesEvent event, boolean fallback) {

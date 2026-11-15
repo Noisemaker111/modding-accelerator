@@ -177,7 +177,7 @@ final class Convert {
                     );
                     else {
                         var client = Json.object(downloads.get("client"));
-                        Path file = Path.of(System.getProperty("user.home"), ".modaccel", "minecraft", minecraft, "client.jar");
+                        Path file = Path.of(System.getProperty("user.home"), ".mmt", "minecraft", minecraft, "client.jar");
                         if (!Files.isRegularFile(file)) {
                             Files.createDirectories(file.getParent());
                             PackCheck.download(Json.text(client, "url", ""), file, Json.text(client, "sha1", ""));
@@ -253,7 +253,7 @@ final class Convert {
         this.project = build.project;
     }
 
-    Map<String, Object> run(Modaccel.Options options) throws Exception {
+    Map<String, Object> run(Mmt.Options options) throws Exception {
         return run(options, true);
     }
 
@@ -261,7 +261,7 @@ final class Convert {
     boolean compiling;
 
     /** compile false writes the conversion without compiling it (self-test, which has no network). */
-    Map<String, Object> run(Modaccel.Options options, boolean compile) throws Exception {
+    Map<String, Object> run(Mmt.Options options, boolean compile) throws Exception {
         compiling = compile && !options.has("no-compile") && !options.has("dry-run");
         if (options.values.containsKey("undo")) return Port.undo(project, options.get("undo", ""), FOLDER);
         String to = options.get("to", "").toLowerCase(Locale.ROOT);
@@ -272,7 +272,7 @@ final class Convert {
             ". It converts one-module Fabric and NeoForge mods."
         );
         if (!Set.of("fabric", "neoforge").contains(to)) throw new IllegalArgumentException(
-            "convert needs --to fabric or --to neoforge. Forge, Quilt and Paper are not converted yet; see modaccel help convert."
+            "convert needs --to fabric or --to neoforge. Forge, Quilt and Paper are not converted yet; see mmt help convert."
         );
         if (to.equals(from)) throw new IllegalArgumentException("This project is already a " + from + " mod.");
         if (
@@ -352,11 +352,11 @@ final class Convert {
      * project outside it, so even the release lookups it caches and its receipt stay out of the project's folder. The
      * copy is removed afterwards; the result lists what would change and be left.
      */
-    static Map<String, Object> preview(Path root, Path harness, Modaccel.Options options) throws Exception {
-        Path copy = Files.createTempDirectory("modaccel-convert-preview-");
+    static Map<String, Object> preview(Path root, Path harness, Mmt.Options options) throws Exception {
+        Path copy = Files.createTempDirectory("mmt-convert-preview-");
         try {
             copyProject(root, copy);
-            Convert convert = new Convert(new Build(new ProjectModel(copy), harness, "", new Modaccel.Report(copy, "convert")));
+            Convert convert = new Convert(new Build(new ProjectModel(copy), harness, "", new Mmt.Report(copy, "convert")));
             Map<String, Object> result = convert.run(options);
             result.put(
                 "details",
@@ -368,9 +368,9 @@ final class Convert {
         }
     }
 
-    /** The project's sources and build, without Git, Gradle's and modaccel's own state (but with its cached release lookups). */
+    /** The project's sources and build, without Git, Gradle's and mmt's own state (but with its cached release lookups). */
     static void copyProject(Path from, Path to) throws IOException {
-        Set<String> skip = Set.of(".git", ".gradle", "build", ".runs", ".modaccel", "run", "out", "bin");
+        Set<String> skip = Set.of(".git", ".gradle", "build", ".runs", ".mmt", "run", "out", "bin");
         try (var walk = Files.walk(from)) {
             for (Path p : walk.toList()) {
                 Path rel = from.relativize(p);
@@ -380,10 +380,10 @@ final class Convert {
                 else Files.copy(p, target, StandardCopyOption.REPLACE_EXISTING);
             }
         }
-        Path metadata = from.resolve(".modaccel/portable/metadata");
+        Path metadata = from.resolve(".mmt/portable/metadata");
         if (Files.isDirectory(metadata)) try (var walk = Files.walk(metadata)) {
             for (Path p : walk.filter(Files::isRegularFile).toList()) {
-                Path target = to.resolve(".modaccel/portable/metadata").resolve(metadata.relativize(p).toString());
+                Path target = to.resolve(".mmt/portable/metadata").resolve(metadata.relativize(p).toString());
                 Files.createDirectories(target.getParent());
                 Files.copy(p, target, StandardCopyOption.REPLACE_EXISTING);
             }
@@ -1011,7 +1011,7 @@ final class Convert {
     final Map<String, String> fabricBridgeReplaces = new LinkedHashMap<>();
 
     /** The marker of a dependency the Fabric bridge stands in for, kept as a comment in the NeoForge build for the way back. */
-    static final String BRIDGED_DEPENDENCY = "// modaccel convert, Fabric bridge stands in for: ";
+    static final String BRIDGED_DEPENDENCY = "// mmt convert, Fabric bridge stands in for: ";
 
     /** Those dependency statements, as the marked comments the NeoForge build keeps. */
     final List<String> bridgedDependencies = new ArrayList<>();
@@ -1388,7 +1388,7 @@ final class Convert {
         applied.computeIfAbsent("datagen-entrypoint", k -> new ArrayList<>()).add(file);
         datagenOutput = "src/main/generated";
         if (complete && unknown.isEmpty()) notes.add(
-            "Data generation: modaccel compile --task :runClientData writes the generated files to the folder the Fabric datagen used."
+            "Data generation: mmt compile --task :runClientData writes the generated files to the folder the Fabric datagen used."
         );
         return (
             "modBus.addListener(GatherDataEvent.Client.class, event -> new " +
@@ -2450,7 +2450,7 @@ final class Convert {
                 bridgeFolder() + "/ClientEntrypoint.java",
                 "package " +
                 bridgePackage +
-                ";\n\n/** The client entrypoint modaccel convert added: NeoForge's client subscribers and FMLClientSetupEvent. */\npublic final class ClientEntrypoint implements net.fabricmc.api.ClientModInitializer {\n\n\t@Override\n\tpublic void onInitializeClient() {\n" +
+                ";\n\n/** The client entrypoint mmt convert added: NeoForge's client subscribers and FMLClientSetupEvent. */\npublic final class ClientEntrypoint implements net.fabricmc.api.ClientModInitializer {\n\n\t@Override\n\tpublic void onInitializeClient() {\n" +
                 body +
                 "\t\tClientBridge.client(" +
                 LoaderRules.quote(modid) +
@@ -2778,7 +2778,7 @@ final class Convert {
             in = indent + unit;
         }
         StringBuilder entry = new StringBuilder();
-        entry.append(indent).append("/** NeoForge's constructor of this @Mod class, run as Fabric's entrypoint (modaccel convert, NeoForge bridge). */\n");
+        entry.append(indent).append("/** NeoForge's constructor of this @Mod class, run as Fabric's entrypoint (mmt convert, NeoForge bridge). */\n");
         entry.append(indent).append("public void ").append(method).append("() {\n").append(locals);
         // Dist.isClient() and isDedicatedServer() on the side parameter: Fabric's EnvType has neither, so the side is compared.
         for (String side : sides) body = body
@@ -3201,7 +3201,7 @@ final class Convert {
     // ---- back through the NeoForge bridge ---------------------------------------------------------------------
 
     static final Pattern BRIDGED_ENTRY = Pattern.compile(
-        "(?m)^([ \\t]*)/\\*\\* NeoForge's constructor of this @Mod class, run as Fabric's entrypoint \\(modaccel convert, NeoForge bridge\\)\\. \\*/\\n[ \\t]*@Override\\n[ \\t]*public void (onInitialize|onInitializeClient|onInitializeServer)\\(\\) \\{"
+        "(?m)^([ \\t]*)/\\*\\* NeoForge's constructor of this @Mod class, run as Fabric's entrypoint \\(mmt convert, NeoForge bridge\\)\\. \\*/\\n[ \\t]*@Override\\n[ \\t]*public void (onInitialize|onInitializeClient|onInitializeServer)\\(\\) \\{"
     );
 
     static final Pattern BRIDGED_LOCAL = Pattern.compile(
@@ -4221,7 +4221,7 @@ final class Convert {
         if (Boolean.TRUE.equals(result.get("compiled"))) out
             .append("The converted source compiles on ")
             .append(result.get("to"))
-            .append(". Prove it works in the game next: modaccel ui-check or world-check with --assert.\n");
+            .append(". Prove it works in the game next: mmt ui-check or world-check with --assert.\n");
         else if (Boolean.FALSE.equals(result.get("compiled"))) {
             out.append("The converted source does not compile yet.");
             if (result.get("compileError") != null) out.append(' ').append(result.get("compileError"));
@@ -4239,7 +4239,7 @@ final class Convert {
             out.append('\n');
         }
         if (dryRun) out.append("Dry run: nothing was written. Run it without --dry-run to convert and compile.");
-        else out.append("Undo: modaccel convert --undo ").append(result.get("undoConvert"));
+        else out.append("Undo: mmt convert --undo ").append(result.get("undoConvert"));
         return out.toString();
     }
 }

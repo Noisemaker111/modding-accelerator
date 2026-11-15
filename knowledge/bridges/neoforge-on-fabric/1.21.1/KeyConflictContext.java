@@ -8,7 +8,7 @@ import net.minecraft.client.KeyMapping;
  * screen Fabric API's screen events last initialised and did not remove), IN_GAME while none is.
  *
  * NeoForge adds constructors to KeyMapping that take a conflict context (and a KeyModifier); the game on Fabric has
- * none, so modaccel convert writes new KeyMapping(name, KeyConflictContext.X, ...) as KeyConflictContext.X.keyMapping(name,
+ * none, so mmt convert writes new KeyMapping(name, KeyConflictContext.X, ...) as KeyConflictContext.X.keyMapping(name,
  * ...), one method per NeoForge constructor, which makes a KeyMapping whose isDown() is true only while its context and
  * modifier are active and whose consumeClick() drops the clicks made while they are not. The game's controls screen still
  * treats every key mapping as UNIVERSAL.

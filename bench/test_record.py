@@ -1,6 +1,6 @@
 """bench/record.py and bench/port_board.py do what their help says, on made-up receipts and a made-up mod.
 
-No game, no Gradle, no network: the board runs against a stand-in for modaccel (a Python file that prints a
+No game, no Gradle, no network: the board runs against a stand-in for mmt (a Python file that prints a
 port result) and a mod repository made in a temporary folder.
 """
 import contextlib
@@ -91,7 +91,7 @@ with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
     check(s["target"] == "2027-06-01" and s["moved"][-1] == nxt["target"], "a moved target keeps its old date")
     check(raises(lambda: record.set_step(copy.deepcopy(road), "no-such", "start"), "No step"), "an unknown step is refused")
 
-    # ---- the board, against a stand-in modaccel and a mod made here
+    # ---- the board, against a stand-in mmt and a mod made here
     mod = tmp / "upstream"
     mod.mkdir()
     git = lambda *a, cwd=mod: subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid", "-c", "commit.gpgsign=false", *a], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
@@ -131,7 +131,7 @@ print(json.dumps({"command": "port", "seconds": 1, "receipt": str(root / "result
         (tmp / "errors.txt").write_text(str(errors))
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            code = port_board.main(["--cases", str(cases), "--cache", str(tmp / "cache"), "--modaccel", str(stub), *extra], book=fake_book, ledger=fake_ledger)
+            code = port_board.main(["--cases", str(cases), "--cache", str(tmp / "cache"), "--mmt", str(stub), *extra], book=fake_book, ledger=fake_ledger)
         return code, out.getvalue()
 
     code, text = board(recorded_errors)

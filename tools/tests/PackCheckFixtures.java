@@ -18,7 +18,7 @@ class PackCheckFixtures {
     static PackCheck check(Path harness, Path scratch, String... options) {
         List<String> args = new ArrayList<>(List.of("pack-check"));
         args.addAll(List.of(options));
-        return new PackCheck(harness, new Modaccel.Options(args.toArray(String[]::new)), new Modaccel.Report(scratch, "pack-check"));
+        return new PackCheck(harness, new Mmt.Options(args.toArray(String[]::new)), new Mmt.Report(scratch, "pack-check"));
     }
 
     static String toml(String id, String version, String dependencies) {
