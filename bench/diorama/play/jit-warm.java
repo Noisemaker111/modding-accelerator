@@ -92,6 +92,8 @@ class Pinned implements ChunkSource {
     public int topY() { return from.topY(); }
     public boolean isSeen(int x, int y, int z) { return true; }
 }
+// The whole snippet answers one control request, which gives up after 135 s (Game.requestOnce).
+long warmStarted = System.currentTimeMillis();
 var session = MapSession.get();
 if (session == null || mc.level == null) throw new IllegalStateException("Enter the experiment world first");
 var looks = BlockLooks.get();
@@ -135,7 +137,9 @@ Thread.sleep(10_000);
 // baseline launch built 4 GPU meshes in its cold minute. A check turned off as too slow is asked again, as
 // Diorama's settings do, at most three times.
 int retries = 0;
-long deadline = System.currentTimeMillis() + 180_000;
+// Bounded by the request: stop 15 s before the 135 s the control connection waits, and leave a GPU that is not
+// on yet to the gates (mapped.java), instead of the request timing out and ending the run as an error.
+long deadline = warmStarted + 120_000;
 while (!dev.diorama.render.gpu.GpuBakeCheck.trusted(dev.diorama.render.gpu.GpuBakeCheck.SKY) && System.currentTimeMillis() < deadline) {
     var off = dev.diorama.render.gpu.GpuBakeCheck.off();
     if (off == dev.diorama.render.gpu.GpuBakeCheck.Off.TOO_SLOW && retries < 3) {
