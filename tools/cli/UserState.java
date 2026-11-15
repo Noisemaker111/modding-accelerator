@@ -64,6 +64,7 @@ final class UserState {
             var lock = channel.lock()
         ) {
             if (Files.isRegularFile(to.resolve(MARKER))) return null;
+            System.err.println("mmt: copying " + from + " to " + to + " once; a large pack cache can take a few minutes.");
             long[] counts = new long[3];
             Files.walkFileTree(from, new SimpleFileVisitor<>() {
                 @Override

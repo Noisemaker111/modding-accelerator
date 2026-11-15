@@ -1,7 +1,7 @@
 # Minecraft Modding Tools
 
 `mmt` tests Minecraft mods/plugins, ports mod source between versions, and diagnoses modpacks.
-The root is also Prism Lab, the demo mod fixture. Scope: `README.md`, `SCOPE.md`. Traps: `KNOWN_ISSUES.md`.
+Prism Lab, the demo mod fixture, is `fixtures/prism-lab/`. Scope: `README.md`, `SCOPE.md`. Traps: `KNOWN_ISSUES.md`.
 
 ## Commands
 

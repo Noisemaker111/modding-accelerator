@@ -3,14 +3,9 @@
 <h1 align="center">Minecraft Modding Tools</h1>
 
 <p align="center">
-  <b>Test a Minecraft mod in seconds, port it to any version, and make modpacks work together.</b><br>
-  One command, <code>mmt</code>. You never open the game to check a change, and never diagnose a conflict by hand.
+  <b>Prove a Minecraft mod works in the game, then port it, convert it, fit it into a modpack, or make it faster.</b><br>
+  One command, <code>mmt</code>, and a desktop app over the same commands.
 </p>
-
-mmt has a Java 17+ CLI and Java game probes, Python bench tools, a JavaScript porting map, Groovy Gradle files, and shell/Windows launchers; older PowerShell tooling remains in the repo.<br>
-It drives Gradle builds for Fabric (Loom), NeoForge (ModDevGradle/NeoGradle), Forge (ForgeGradle), and Paper/Bukkit plugins; plugin checks use MockBukkit or real Paper with MCProtocolLib and ViaProxy.<br>
-The CLI runs on Windows, Linux and macOS; game checks have platform limits below. The root Gradle project is Prism Lab, a Java 25 Fabric demo mod, not the CLI.<br>
-Version tags build a standalone JAR and portable ZIP with SHA-256 files in a draft GitHub release for manual publication.
 
 <p align="center">
   <a href="https://github.com/Noisemaker111/modding-accelerator/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/Noisemaker111/modding-accelerator?include_prereleases&label=download&color=5d9c3f"></a>
@@ -20,114 +15,144 @@ Version tags build a standalone JAR and portable ZIP with SHA-256 files in a dra
 
 <p align="center">
   <a href="https://noisemaker111.github.io/modding-accelerator/"><b>Website</b></a> ·
-  <a href="https://github.com/Noisemaker111/modding-accelerator/issues">Issues</a> ·
   <a href="https://noisemaker111.github.io/modding-accelerator/#porting">Porting map</a> ·
-  <a href="SCOPE.md">What is supported</a>
+  <a href="SCOPE.md">What works where</a> ·
+  <a href="https://github.com/Noisemaker111/modding-accelerator/issues">Issues</a>
 </p>
+
+**The foundation: a mod counts as working only when the game shows it working.** A build that compiles, or a client
+that loads the mod, proves nothing about what the mod does. Every command below ends in the real game, hidden and muted:
+the mod's own state asserted in a client (`--assert`, `--expect-value`), a plugin scenario on a real Paper server, a
+modpack's world made, filled and reopened on its own server, or a performance change measured against the unchanged mod
+with its output compared exactly.
 
 ## What it does
 
-| | Goal | You run | Today |
-|:-:|---|---|---|
-| 1 | **Test a mod in seconds** | `fast` `data-check` `ui-check` `world-check` `mp-check` `server-check` | Works. Logic tests, the game's data and real-game checks all run with no game window |
-| 2 | **Port a mod to any Minecraft version** | `port` `explain` | Works for Fabric and NeoForge, 1.14.4 to 26.3. Proven mods port with no hand edits, 1.21.1 → 26.3 included |
-| 3 | **Make modpacks work together** | `pack-check` | Works for Forge, NeoForge, Fabric and Quilt packs on their real servers, with two proven repairs |
-| 4 | **Change loader or platform** | `convert` | Works for Fabric ↔ NeoForge on one Minecraft version: real Fabric mods run on NeoForge, and NeoForge's 26.3 MDK runs on Fabric, with no hand edits. Swept on 35 real mods. Forge, Quilt and Paper are not converted yet |
+| Goal | You run | Where it stands |
+|---|---|---|
+| **Test** a mod in the real game, with no window on screen | `fast` `data-check` `mixin-check` `ui-check` `world-check` `mp-check` `server-check` | Works for Fabric and NeoForge mods and Paper plugins; Forge mods load in a client |
+| **Port** a mod to another Minecraft version, finishing on its own | `port --fix` `explain` | Fabric and NeoForge, 1.14.4 to 26.3. 7 routes of 3 mods proven in the game with no hand edits |
+| **Switch loader** | `convert` | Fabric ↔ NeoForge on one Minecraft version. Two Fabric mods and NeoForge's MDKs proven in the game |
+| **Make a modpack work**, with repairs | `pack-check --fix` | Forge, NeoForge, Fabric and Quilt packs on their real servers. 24 of 24 corpus packs pass, 3 of them repaired |
+| **Make a mod dramatically faster**, with nothing changed in what it does | `perf` `perf-optimize` | Accepted changes so far: Cyclic's auto-crafter 15.7×, Simple Storage Network 5–6×, Diorama 1.6–2.2× |
+| **Desktop app** for people who don't use a terminal | `mmt-desktop` | Windows and Linux, in the portable ZIP |
+
+**Our own rules, no AI.** Mappings come from the game and the loaders themselves: Mojang's client jars and mappings
+for every release on a route, NeoForge's and Fabric's own published jars. Rules for what a rename can't cover are
+written here, each with a before/after test, and never taken from other people's mods. The tool makes no AI or
+network-model calls; its rules are plain data in `knowledge/`.
 
 ## Quick start
 
 1. Download the portable ZIP from the [latest release](https://github.com/Noisemaker111/modding-accelerator/releases/latest) and check it against its `.sha256`.
 2. Extract it anywhere. It needs Java 17 or newer; on Windows, a machine with no Java downloads a checked runtime once.
-3. Point it at your project:
+3. Point it at your mod's source folder (the one with `gradlew`):
 
 ```sh
 ./mmt doctor --root my-mod          # what mmt sees in your project
 ./mmt fast --root my-mod            # compile and run your logic tests, no game
 ./mmt ui-check --root my-mod        # your mod in the real client, no window on screen
 ./mmt port --root my-mod --from 1.21.5 --to 1.21.6 --fix
+./mmt convert --root my-mod --to neoforge
 ./mmt pack-check --pack my-pack.mrpack --fix
+./mmt perf --root my-mod
 ```
 
-On Windows the command is `mmt.cmd`; from any shell, `java -jar mmt.jar`. `mmt help` lists every command and `mmt help COMMAND` explains one.
+On Windows the command is `mmt.cmd`; from any shell, `java -jar mmt.jar`. `mmt help` lists every command and
+`mmt help COMMAND` explains one. Games start muted; `mmt preferences --background on` also keeps their window hidden.
+
+The tool was called `modaccel` before. The `modaccel` and `modaccel.cmd` launchers still work: they print a one-line
+note and run `mmt`. On its first run `mmt` copies `~/.modaccel` into `~/.mmt` (your preferences byte for byte; big
+cache files are hard-linked where the disk allows) and keeps the old folder. A project's `.modaccel/` folder becomes
+`.mmt/`, and `MODACCEL_*` environment variables are still read when the `MMT_*` one is not set.
+
+## Test
+
+- **Logic:** `fast` runs your JUnit tests without the game.
+- **Data with no game:** `data-check` reads what the game loads for your mod (items, recipes, load errors) from the
+  game's own code. `mixin-check` lets Mixin itself apply every mixin.
+- **The real game:** `ui-check`, `world-check` and `mp-check` (a dedicated server plus a client) run your mod in a
+  hidden client and pass only when your assertion on the mod's own state passes. `eval` runs code in the running game;
+  `reload` swaps edited code into it.
+- **Plugins:** `server-check` starts a real Paper server, any version from 1.8, and a test player follows your scenario.
+  `plugin-check` is a quicker check on a fake server and proves less.
+
+## Port
+
+`port --fix` updates the build (loader, Loom or NeoGradle/ModDevGradle, Gradle, Java, dependencies), renames what the
+game renamed, applies the rule book, and recompiles until the mod builds. Then Mixin applies the mod's mixins, its own
+tests run and the jar is built; `--check COMMAND` runs the mod's own in-game check last, and the port counts only when
+it passes. Every edit can be undone with `port --undo`. `explain` shows each compiler error beside what that class
+looks like in both versions.
+
+- **Proven in the game with no hand edits:** AppleSkin 1.20.1 → 1.21.6 and 1.21.5 → 1.21.6 (Fabric), AppleSkin
+  1.21.6 → 26.3 (NeoForge), Zombie Apocalypse Addon 1.21.1 → 1.21.4, 1.21.6 and 26.3, and Notes 1.21 → 1.21.6
+  (NeoForge).
+  Receipts: `coverage/ledger.json`.
+- **Across a corpus:** `bench/sweep.py` ports 46 pinned open-source mods over 126 routes and starts each one that
+  builds in a hidden game. Latest sweep: 9 of 126 build, 7 load in the game, 1 passes its in-game behaviour check
+  (`bench/sweep/results/after2.json`). The rest stop at a named compiler error, which is where the next rule goes.
+
+## Switch loader
+
+`convert --to neoforge` (or `--to fabric`) moves a mod's build, metadata, entrypoints and code to the other loader on
+the same Minecraft version, through the rules in `knowledge/loaders.json`; `python bench/loader_api.py verify` finds
+every class and member a rule names in the loaders' and Mojang's own jars. What has no rule is listed with its file
+and line, never dropped. `convert --undo` restores every file.
+
+- **Proven in the game with no hand edits:** Auto Omen (Fabric 26.3) on NeoForge passes its own in-game raid self test,
+  23 of 23 checks. Pride Flags (Fabric 26.1.2) on NeoForge registers its 13 blocks and 26 items and renders its flags.
+  NeoForge's 26.3 and 1.21.1 MDKs run on Fabric through the NeoForge bridge, register what their NeoForge builds do,
+  and convert back.
+- **Across a corpus** of 35 pinned mods (`coverage/sweeps/convert.json`): 28 convert without a refusal, 5 compile,
+  5 load in the game with the same behaviour as the original, and 5 convert back and compile.
+
+## Make a modpack work
+
+`pack-check` takes a CurseForge export, a Modrinth `.mrpack`, or a CurseForge app, Prism/MultiMC or vanilla launcher
+instance, and runs it on its own Forge, NeoForge, Fabric or Quilt server, installed by that loader's official
+installer. A new world is made, every block item is placed as a player places it, and the world is opened again with
+each block read back. When a start fails, the log, crash report, mixin configs and stack name the mod responsible.
+`--focus MODID` starts only that mod and what it requires, to show one fault quickly.
+
+`--fix` applies a proven repair and starts the repaired pack beside the original; your pack changes only if the
+repaired one passes where the original failed. The repair rules (`knowledge/pack-fixes.json`) cover files a host no
+longer serves, missing and pinned libraries, server-optional mods that stop a server, and known faults in Biolith,
+Soulslike Weaponry and Ender IO; each names the evidence it came from.
+
+Across 24 pinned public packs (1.16.5 to 26.3, 13 to over 400 mods; `coverage/sweeps/pack.json`): 21 start as shipped
+with the world made and reopened, and all 24 pass with repairs.
+
+## Make a mod faster
+
+`perf` ranks every mod by CPU share, server ms per tick, render ms per frame, allocation, lock wait and I/O, and splits
+each mod into features (event handlers, mixins, blocks, entities, renderers). `perf-optimize` takes a candidate change
+you or your agent wrote, measures the unchanged and changed mod in alternating fresh launches, and accepts it only when
+every equivalence gate passes (behaviour assertions, exact output, pixel-exact 1280x720 frames) and the speedup's
+interval is above 1. It never writes code itself. The aim is 10× with nothing degraded.
+
+Accepted so far (`coverage/perf-runs.json`, summarised by `python bench/perf_sessions.py`): Cyclic's auto-crafter
+15.7× cold and 15.9× warm, Simple Storage Network 5.1× cold and 6.0× warm, Diorama 1.6× cold and up to 2.2× warm,
+Pipez 1.2–1.3×. Each accepted change became a reusable pattern in `knowledge/perf-patterns.json`. See
+[PERFORMANCE.md](PERFORMANCE.md).
 
 ## Desktop app
 
-The portable ZIP also holds Minecraft Modding Tools, a window over the same commands for people who don't use a terminal: `mmt-desktop.exe` on Windows, `mmt-desktop-linux` on Linux. Keep it in the extracted folder; it runs the launcher beside it, which finds or downloads Java as it does in a terminal.
-
-- **Bench:** open the mod's folder (or drop it on the window). It sits on the bench with a tag saying what `doctor` found (loader, Minecraft version) and a slip of what has been inspected so far.
-- **Checks:** an inspection sheet of stations, build, logic tests, game data, mixins, in the game, behaviour (`compile`, `fast`, `data-check`, `mixin-check`, `ui-check`), plus `world-check`, `mp-check`, `plugin-check` and `server-check`, with live output and Stop. A game check shows the game's own screenshot and is only tagged loaded until a behaviour check (`--assert`) passes; only then is it stamped works.
-- **Change version:** preview a `port`, apply it, and undo it; or `convert` the mod between Fabric and NeoForge on the same Minecraft version, with undo.
-- **Modpack:** `pack-check` on a CurseForge export, a Modrinth `.mrpack` or an instance folder (or drop it on the window), every mod laid out with the clashing ones flagged, then its repair and undo.
-- **Measure:** find the running game, measure it, and read frame rate, a frame-time chart, the cost of each mod and where the time went, then open the full HTML report.
-
-To build it from source, install Rust and run `cargo build --release` in `app/` (Linux also needs `libxkbcommon-dev` and `libwayland-dev`); `mmt package` then adds it to the ZIP. It also renders without a window for checking: `app/target/release/mmt-desktop --project . --screen checks --snap checks.png`, and `--list-scenes` names saved states to render.
-
-## What works today
-
-### 1 · Test a mod in seconds
-
-- **Logic:** `fast` runs your JUnit tests without the game.
-- **Data, no game:** `data-check` reads what the game loads for your mod (items, recipes, load errors) from the game's own code, with no game launched. `mixin-check` applies every mixin, with no game window.
-- **The real game:** `ui-check`, `world-check` and `mp-check` (a dedicated server plus a client) run your mod in a hidden client. `eval` runs code inside the running game and `reload` swaps edited code into it. The game stays running for them until `game-stop`; a hidden game nobody has used for 15 minutes quits on its own.
-- **Plugins:** `server-check` starts a real Paper server, any version from 1.8, and a test player follows your scenario. `plugin-check` is a faster check on a fake server.
-- **Not yet:** game checks are proven on Windows and partly on Linux, not on macOS. `data-check` covers Fabric 26.x. The test player can't join modded servers.
-
-### 2 · Port a mod to any Minecraft version
-
-- **Fabric and NeoForge**, any version from 1.14.4 to 26.3, forward or back, routed through the versions most mods use. Every edit can be undone with `port --undo`.
-- **One command does the whole move:** `port --fix` updates the build (loader, NeoGradle or Loom, Gradle, Java, dependencies). It renames what the game renamed, applies the rule book and recompiles until the mod builds. Then Mixin applies the mod's mixins, the mod's own tests run, and the jar is built. `--check COMMAND` runs the mod's own real-game check last. The port only counts as working once that check passes.
-- **Renames come from the game itself.** For Mojang-named mods, `tools/GameDiff.java` reads Mojang's client jars and mappings for every release on the route, 26.x included. It links each release to the next from their own bytecode, and links NeoForge's own published classes the same way. Yarn-named Fabric mods use Fabric's yarn tables, because their names are yarn's.
-- **The rule book** (`knowledge/fixes.json`) covers what a rename can't. Each rule carries a test `{error, before, after}` and its provenance: `hand` is written from a port's compiler errors against the game's own classes, and `third-party-mods` is the older set mined from other mods, which runs only with `--learn-from-mods`. New rules are never taken from other mods' code. `port` makes no AI or network-model calls; its rules are plain data.
-- **Proven with no hand edits and checked in the real game:** AppleSkin 1.20.1 → 1.21.6 and 1.21.5 ↔ 1.21.6 (Fabric), AppleSkin 1.21.6 → 26.3 (NeoForge), Zombie Apocalypse Addon 1.21.1 → 1.21.4, 1.21.6 and 26.3, and Notes 1.21 → 1.21.6. Receipts are in `coverage/ledger.json`.
-- **Measured across many mods:** `python bench/sweep.py run --tag NAME` ports a pinned corpus of 46 open-source mods (126 ports: adjacent releases, 1.20.x → 1.21.1, 1.21.x → 1.21.6 and → 26.3, 26.x either way), starts each one that builds in a hidden game, and `summary` ranks what blocks the most mods. Results are kept in `bench/sweep/results/`.
-- **`explain`** shows each compiler error beside what that class looks like in both versions.
-- **When a game member the mod reached through its access transformer turns private again**, the port writes the entry as the target game has it. **A mod's own subclass of a game class** follows the game's renames too.
-- **Not yet:** Jade 1.21.1 → 1.21.6 stops at 30 named errors, from 98. They are in Jade's own renderer and font mixins, which 1.21.5–1.21.6's render rewrite replaced, and in fog, entity variants and two Jade API types. Forge, Quilt, Paper plugins and versions before 1.14.4 are not ported.
-
-### 3 · Make modpacks work together
-
-- **`pack-check`** takes a CurseForge export, a Modrinth `.mrpack`, or a CurseForge app, Prism/MultiMC or vanilla launcher instance. It runs the pack on its own Forge, NeoForge, Fabric or Quilt server, installed by that loader's official installer, for any version the loader publishes.
-- **What it checks:** a new world is made, every block item is placed the way a player places it, and the same world is opened again with each block read back. Duplicate, missing and wrong-version mods, and mods for another game version or loader, are warnings until the server confirms or refutes them. When a start fails, the log, crash report, mixin configs and stack name the mod responsible. A server that logged `Done` finished starting: its start-up lines blame no mod, and if mmt's probe stays silent for 180 s after that, the result says so as mmt's own fault.
-- **`--fix`** applies a proven repair and starts the repaired pack's server beside the original. Your pack changes only if the repaired one passes where the original failed. Repairs so far: Biolith's saved climate list (Forge 1.20.1) and Soulslike Weaponry's pinned Projectile Damage (Forge 1.20.1).
-- **Proven in the game** on real public packs: Forge 1.19.2 and 1.20.1, NeoForge 1.21.1, Fabric 1.16.5, 1.20.1, 1.21.1 and 26.3, and Quilt 1.21.1.
-- **Sweep:** `python bench/pack_sweep.py run` checks 24 pinned public packs (`bench/pack-sweep/corpus.json`: CurseForge exports and `.mrpack`s, Forge, NeoForge, Fabric and Quilt, 1.16.5 to 26.3, 13 to over 400 mods) one at a time and ranks the gaps (`coverage/sweeps/pack.json`). A mod file CurseForge no longer serves is named as a problem and the rest of the pack is still checked.
-- **Client-only mods:** checks run on a server, so mods the pack's lists or their own metadata mark client-side are left out, except one a server mod requires: that one stays and the loader decides (Fabric and Quilt keep it out of the game and count the dependency as met). A mod that requires one the server showed to be client-only is left out with it.
-- **Files gone from their host:** an `.mrpack` file on a host the format does not allow, or no longer served, is fetched from Modrinth by the SHA-512 the pack pins, or from CurseForge's CDN when the pack names it there; the pinned hashes decide.
-- **Extending:** the probe's game code compiles for 1.16 to 26.x through per-version game layers. `tools/packcheck/CONTRIBUTING.md` explains how to add a loader, input, check or repair.
-
-### Make a mod faster without changing what it does
-
-- **Where the cost goes:** `perf --root my-mod` (or `perf` beside any running game or server) ranks every mod by CPU share, server ms per tick, render ms per frame, allocation, live heap of its own classes, lock wait and I/O, then splits each mod into features: event handlers, mixin handlers, blocks, entities, renderers, AI goals, screens. Sampled values are marked as estimates.
-- **Exact numbers:** the capture writes timing probes for each mod's hottest methods; capture again with `--probes` for exact calls and milliseconds per tick.
-- **Repeatable scenarios:** `perf-template --family mod-content --root my-mod` builds scenes and crowds of the mod's own blocks and entities, and runs them in the source client's own world.
-- **Accept or reject a change:** `perf-optimize` takes a candidate diff you or your own agent wrote, measures baseline and candidate in alternating fresh launches (cold and warm), and accepts it only if every equivalence gate passes (behaviour assertions, exact or tolerance-bounded output, pixel-exact 1280x720 frames) and the speedup interval is above 1. It never writes code itself.
-- **Not yet:** GPU time and VRAM, retained heap per mod, and mixin overwrites are not measured. Java 8/11 games are not supported.
-
-See [PERFORMANCE.md](PERFORMANCE.md). `python3 bench/performance.py` compares externally collected paired runs against regression budgets ([capture contract](bench/performance.md)).
-
-### 4 · Change loader or platform
-
-- **`convert --to neoforge`** (or `--to fabric`) moves a mod's source to the other loader on the same Minecraft version: the build (Loom ↔ ModDevGradle, with the newest loader releases for that version), the metadata (`fabric.mod.json` ↔ `META-INF/neoforge.mods.toml`), the entrypoints, and the code through the rules in `knowledge/loaders.json`: loader calls, events, key mappings, registration timing, flammability, creative tabs, loot tables, Mod Menu's config screen, Fabric data generation, access wideners ↔ access transformers (field types read from Mojang's own data), and dependencies on another mod (moved to that mod's build for the other loader when its own Maven repository publishes it). It reads NeoForge's MDK layouts (ModDevGradle or NeoGradle, metadata in `src/main/templates`) and moves the Gradle wrapper when the newest loader plugin needs it. It compiles the result; `convert --undo` restores every file.
-- **Our own rules, no AI.** Each rule is written here with a before/after test that `self-test` runs both ways, and names the classes and members it uses; `python bench/loader_api.py verify` finds every one in Fabric's, NeoForge's and Mojang's own published jars (`coverage/loader/api.json`). Nothing is taken from other mods' code. What has no rule is listed with its file and line, never dropped.
-- **Proven in the game with no hand edits:** Auto Omen (Fabric, 26.3) on NeoForge passes its own in-game raid self test, 23 of 23 checks, as it does on Fabric. Pride Flags (Fabric, 26.1.2) on NeoForge registers its 13 blocks and 26 items, keeps their flammability, adds its loot to village chests, loads its 48 recipes, and renders its flags from the models its converted data generation writes (189 files, the same as Fabric's but for vanilla's `random_sequence` in block loot).
-- **Mods written for NeoForge first** go to Fabric through the NeoForge bridge (`knowledge/bridges/neoforge-on-fabric`, Minecraft 26.1 and later, and 1.21.1 through its version layer): NeoForge's registration, event bus, mod container, config file and play payloads, its lifecycle events, and the game events Fabric API has a callback for at the same moment (player log in and out, respawn, clone and dimension change; living death and incoming damage; entity join; level load, unload and tick; datapack sync; item tooltips; key mappings), written on Fabric's API and copied into the mod. The NeoForge MDKs for 26.3 (ModDevGradle and NeoGradle) and 1.21.1 convert with no hand edits, load on Fabric in a hidden client and register the same entries as their NeoForge builds, and convert back to NeoForge, where they compile: the way back turns the bridge's entrypoints into `@Mod` constructors again and removes the bridge.
-- **Rules for a range of versions:** a rule can name the Minecraft versions it is written for (Fabric API's creative tab builder is `FabricItemGroup` before 26.1). The bridge's 1.21.1 layer is checked against NeoForge 21.1, Fabric API for 1.21.1 and Mojang's 1.21.1 mappings.
-- **Sweep:** `python bench/convert_sweep.py run` converts 35 pinned real mods (`bench/convert-sweep/corpus.json`) and ranks what is missing by loader concept (`coverage/sweeps/convert.json`).
-- **Not yet:** Forge, Quilt, and mods ↔ Paper plugins. The NeoForge bridge has no layer for 1.20.x or 1.21.2 to 1.21.11 yet; NeoForge events with no Fabric API callback at the same moment (entity ticks, block breaks, interactions) are not bridged. No rules yet for capabilities and transfer, NeoForge's extension methods on game classes, HUD layers, renderers, data attachments, client commands, datagen providers beyond models, loot, recipes and advancements, or Fabric networking on NeoForge.
-
-## What counts as working
-
-A check that only shows the mod loaded is not proof it works. Proof is a check on the mod's own code or state: `--assert`, `--expect-value`, or a server scenario's expect lines. Machine-readable port receipts live in `coverage/ledger.json`; status and plans belong in [PRs](https://github.com/Noisemaker111/modding-accelerator/pulls) and [issues](https://github.com/Noisemaker111/modding-accelerator/issues).
+The portable ZIP holds the app: `mmt-desktop.exe` on Windows, `mmt-desktop-linux` on Linux. Keep it in the extracted
+folder; it runs the `mmt` launcher beside it. Open a mod's folder (or drop it on the window) to run the checks with
+live output, preview, apply and undo a port or a loader switch, check and repair a modpack, and measure a running game.
+To build it, install Rust and run `cargo build --release` in `app/`; `mmt package` then adds it to the ZIP.
 
 ## Limits
 
-- **Source only.** A compiled mod JAR can't be ported. Compiled mods are only read when a modpack is checked.
-- **Deterministic ports.** A port uses the game's own jars and mappings, NeoForge's own artifacts and the tested rule book. A change no rule covers yet is named with the update that caused it, so the next rule can be written.
+- **Source only.** A compiled mod JAR can't be ported or converted; compiled mods are read only when a modpack is checked.
+- **Platforms.** Game checks are proven on Windows and partly on Linux, not on macOS. Forge, Quilt and Paper plugins
+  are not ported or converted. Java 8/11 games are not measured by `perf`. Details per platform: [SCOPE.md](SCOPE.md).
 
 ## More
 
-- [Issues](https://github.com/Noisemaker111/modding-accelerator/issues) and [PRs](https://github.com/Noisemaker111/modding-accelerator/pulls): plans, status and findings.
-- [`SCOPE.md`](SCOPE.md): which kinds of projects are supported, and how far.
-- [`AGENTS.md`](AGENTS.md): the rules for working in this repo.
+- [`SCOPE.md`](SCOPE.md): what works on each platform.
+- [`AGENTS.md`](AGENTS.md): how to work in this repo. [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md): setup traps.
 - [`bench/README.md`](bench/README.md): recording receipts and comparing measurements.
-- [Releases](https://github.com/Noisemaker111/modding-accelerator/releases): what changed in each version.
+- Plans, status and findings live in [issues](https://github.com/Noisemaker111/modding-accelerator/issues) and
+  [pull requests](https://github.com/Noisemaker111/modding-accelerator/pulls).
