@@ -75,14 +75,16 @@ final class Target {
         List<Object> projects = Json.array(model.get("projects"));
         // A multi-module mod on one loader (Cardinal Components' modules, owo-lib and its sentinel) keeps its versions in
         // the shared gradle.properties, so the root project's setup retargets every module.
+        // Plain helper projects with no loader (Twilight Forest's :tf-asm) are not mods to retarget.
+        List<Object> modProjects = projects.stream().filter(p -> !Support.loaders(Json.object(p)).isEmpty()).toList();
         Set<Set<String>> loaderSets = new HashSet<>();
-        for (Object p : projects) loaderSets.add(Support.loaders(Json.object(p)));
-        Object root = projects.stream().filter(p -> ":".equals(Json.object(p).get("path"))).findFirst().orElse(null);
-        boolean oneLoader = loaderSets.size() == 1 && loaderSets.iterator().next().size() == 1 && root != null;
+        for (Object p : modProjects) loaderSets.add(Support.loaders(Json.object(p)));
+        Object root = modProjects.stream().filter(p -> ":".equals(Json.object(p).get("path"))).findFirst().orElse(null);
+        boolean oneLoader = loaderSets.size() == 1 && loaderSets.iterator().next().size() == 1 && (root != null || modProjects.size() == 1);
         if (projects.size() != 1 && !oneLoader) throw new IOException(
             "Automatic target setup needs one selected project; choose --project."
         );
-        var project = Json.object(projects.size() == 1 ? projects.get(0) : root);
+        var project = Json.object(projects.size() == 1 ? projects.get(0) : modProjects.size() == 1 ? modProjects.get(0) : root);
         Set<String> loaders = Support.loaders(project);
         if (!loaders.equals(Set.of("fabric")) && !loaders.equals(Set.of("neoforge"))) throw new IOException(
             "Automatic target dependency setup requires one Fabric or NeoForge project; found " +

@@ -632,7 +632,7 @@
    "from": "1.21.1",
    "loader": "neoforge",
    "names": "mojmap",
-   "project": ":neoforge",
+   "project": "",
    "kinds": [
     "mixin-heavy",
     "multi-module",
