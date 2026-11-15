@@ -54,7 +54,7 @@ gh pr merge --squash
 
 ## Start here
 
-- CLI: `tools/cli/Modaccel.java` (entry/help), one class per command; `tools/tests/PortableTests.java` (self-test).
+- CLI: `tools/cli/Modaccel.java` (entry/help), one class per command; `tools/tests/` (self-test suites, listed in `Installation.SUITES`).
 - Game probes: `tools/{agent,datacheck,mixincheck,packcheck,plugincheck,servercheck}/`.
 - Modpacks: `tools/cli/PackCheck.java` runs the registries `PackInputs` (pack shapes), `PackLoaders` with `knowledge/pack-loaders.json` (loader servers), `PackMods` (jar metadata), `PackChecks` and `PackRepairs` with `knowledge/pack-fixes.json`; the loader-neutral probe is `tools/packcheck/`. Extending them: `tools/packcheck/CONTRIBUTING.md`.
 - Porter/rules: `tools/cli/Port.java`, `knowledge/fixes.json`, `coverage/changes/`. Run `python3 bench/port_board.py` when changing them; each rule needs a `test {error,before,after}`. Writer: `python3 bench/rule_test.py --help`.

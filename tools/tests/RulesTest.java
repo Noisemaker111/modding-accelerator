@@ -7,7 +7,7 @@ import java.util.regex.*;
  * selects it (a match on a compiler error, or "silent" saying what goes wrong when the compiler says
  * nothing), it rewrites something (find, literal or a named transform), its patterns compile, its
  * replacement only names groups its pattern has, and some route on the porting map runs it.
- * Every rule carries a test {error, before, after}; PortableTests runs it.
+ * Every rule carries a test {error, before, after}; PortRepairTests runs it.
  */
 public final class RulesTest {
 

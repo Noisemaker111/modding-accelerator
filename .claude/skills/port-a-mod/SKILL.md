@@ -54,9 +54,9 @@ Pick the next (mod, loader, from, to) from what is weakest on the map: a step wi
    - **Needs new code** (a removed system, a redesigned API): a guide in `knowledge/structural.json`, so a stopped port
      names it with the fix to write.
    - **Build setup** (Loom, Gradle, NeoForge or Fabric versions, Parchment, Java): the planner in
-     `tools/cli/Target.java`, with a `PortableTests` case. Anything in the build tied to the source version is suspect:
+     `tools/cli/Target.java`, with a `BuildScriptTests` or `PortRepairTests` case. Anything in the build tied to the source version is suspect:
      Parchment names for 1.21.5 once compiled the 26.3 game wrong and no world loaded.
-   - **The porter crashed or said something unclear**: fix it in `tools/cli`, with a `StrangerTest` or `PortableTests`
+   - **The porter crashed or said something unclear**: fix it in `tools/cli`, with an `ErrorMessageTests` or `PortTests`
      line.
    - **The network** (a timeout, a 504): not code. Rerun; if it keeps happening, make the failure retry or say so.
    Then run `python bench/port_board.py` again: it ports every pinned mod from its original source, so the error

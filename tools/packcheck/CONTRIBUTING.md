@@ -18,7 +18,7 @@ it the metadata file the loader reads. It renames it to the loader's run-time na
 when the installed game jar has SRG method names (Forge 1.20.1 does), otherwise Mojang names. Fabric and Quilt use
 intermediary.
 
-Run `modaccel self-test --only pack-check` after any change; it needs no network and no game.
+Run `modaccel self-test --only pack-metadata,pack-logs,pack-server,pack-repairs` after any change; it needs no network and no game.
 
 ## Add a game or loader version
 
@@ -55,7 +55,7 @@ A loader that fits neither style needs a `Style` subclass in `PackLoaders.java`,
 If it reads a metadata format pack-check does not know, add a reader in `PackMods.read` and the probe's own file
 beside `ModaccelPackProbe.java`. If its server keeps the running game somewhere new, add that lookup to `findServer`
 in the probe. If its run-time names differ, return them from `names()`. Add an alias and a launch test to
-`PackCheckTest.loaders`, then prove the loader on a real public pack (below).
+`PackServerTests.loaders`, then prove the loader on a real public pack (below).
 
 ## Which jars a server gets
 
@@ -73,7 +73,7 @@ as it initialises, a game class the installed server does not have (`PackMods.cl
 Implement `PackInputs.Input` and put it in `ALL` before any more general shape it overlaps with. `accepts` looks for a
 file only that shape has. `read` returns a `PackCheck.Pack`: game version, loader and version (through `loader()` and
 `overridden()`, so `--loader`/`--minecraft` still win), the mod jars with their sides, and the folders configs come
-from (`layers`). Downloads must be verified by hash. Add a case to `PackCheckTest.inputs`.
+from (`layers`). Downloads must be verified by hash. Add a case to `PackMetadataTests.inputs`.
 
 ## Add a check
 
@@ -87,7 +87,7 @@ Add a `new Check(id, stage, what, body)` to `PackChecks.ALL`. The id is the find
 - `note` is worth knowing and never fails the run.
 
 If the check needs something new from the game, add it to the probe's JSON, and keep the probe loader-neutral. Add
-a case to `PackCheckTest` with a real log or jar layout.
+a case to `PackLogTests` with a real log or jar layout.
 
 ## Add a repair
 

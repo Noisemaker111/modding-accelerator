@@ -57,7 +57,12 @@ final class Installation {
         "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinInfo.java",
         "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinConfig.java",
         "tools/GamePrep.java",
-        "tools/tests/PortableTests.java",
+        "tools/tests/PortTests.java",
+        "tools/tests/PortRepairTests.java",
+        "tools/tests/ConvertTests.java",
+        "tools/tests/BuildScriptTests.java",
+        "tools/tests/CommandTests.java",
+        "tools/tests/GameTests.java",
         "tools/tests/PerfTest.java",
         "tools/tests/JdkDownloadsTest.java",
         "tools/tests/DependenciesTest.java",
@@ -65,8 +70,14 @@ final class Installation {
         "tools/tests/HardeningTest.java",
         "tools/tests/MixinCheckTest.java",
         "tools/tests/TrustTest.java",
-        "tools/tests/StrangerTest.java",
-        "tools/tests/PackCheckTest.java",
+        "tools/tests/ModFileTests.java",
+        "tools/tests/ErrorMessageTests.java",
+        "tools/tests/ProjectSafetyTests.java",
+        "tools/tests/PackCheckFixtures.java",
+        "tools/tests/PackMetadataTests.java",
+        "tools/tests/PackLogTests.java",
+        "tools/tests/PackServerTests.java",
+        "tools/tests/PackRepairTests.java",
         "tools/tests/RulesTest.java",
         "knowledge/",
         "coverage/changes/index.json"
@@ -412,7 +423,12 @@ final class Installation {
     record Suite(String name, String main, boolean wantsHarness, boolean wantsScratch) {}
 
     static final List<Suite> SUITES = List.of(
-        new Suite("portable", "PortableTests", true, true),
+        new Suite("port", "PortTests", true, true),
+        new Suite("port-repair", "PortRepairTests", true, true),
+        new Suite("convert", "ConvertTests", true, true),
+        new Suite("build-script", "BuildScriptTests", true, true),
+        new Suite("command", "CommandTests", true, true),
+        new Suite("game", "GameTests", true, true),
         new Suite("perf", "PerfTest", true, true),
         new Suite("jdk", "JdkDownloadsTest", false, false),
         new Suite("dependency", "DependenciesTest", false, false),
@@ -420,8 +436,13 @@ final class Installation {
         new Suite("hardening", "HardeningTest", false, false),
         new Suite("trust", "TrustTest", false, false),
         new Suite("mixin-check", "MixinCheckTest", true, false),
-        new Suite("stranger", "StrangerTest", true, false),
-        new Suite("pack-check", "PackCheckTest", true, false),
+        new Suite("mod-files", "ModFileTests", true, false),
+        new Suite("error-messages", "ErrorMessageTests", true, false),
+        new Suite("project-safety", "ProjectSafetyTests", true, false),
+        new Suite("pack-metadata", "PackMetadataTests", true, false),
+        new Suite("pack-logs", "PackLogTests", true, false),
+        new Suite("pack-server", "PackServerTests", true, false),
+        new Suite("pack-repairs", "PackRepairTests", true, false),
         new Suite("rules", "RulesTest", true, false)
     );
 
@@ -454,6 +475,9 @@ final class Installation {
                 "UTF-8",
                 "-cp",
                 own.toString(),
+                // A suite may use a shared fixture class beside it (PackCheckFixtures); javac compiles it on demand.
+                "-sourcepath",
+                harness.resolve("tools/tests").toString(),
                 "-d",
                 classes.toString()
             )
