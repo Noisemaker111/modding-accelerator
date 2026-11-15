@@ -17,20 +17,15 @@ POSIX below; Windows uses `modaccel.cmd` and `python` instead of `./modaccel` an
 
 Use modaccel for builds and game launches; never raw Gradle or `--no-daemon`.
 Once per clone: `git config core.hooksPath .githooks`. Its pre-push hook runs the fast offline checks on what the push changes (`tools/ci/pre_push.py`, seconds).
-Full offline gate before pushing (game/network checks run in CI, `.github/workflows/portable.yml`):
-
-```sh
-./modaccel self-test &&
-for t in bench/test_*.py bench/diorama/test_*.py tools/ci/test_*.py; do python3 "$t" || break; done
-```
-
-CI runs `tools/ci/lanes.py` plans on all three systems; reproduce one with `python3 tools/ci/lanes.py core` (or `server`, `stonecutter`, `--seed N`).
+The PR's CI is the gate; don't wait on local heavy checks. It runs only the plans the diff reaches (`tools/ci/reach.py`) on all three systems.
+Reproduce a plan locally only to debug it: `python3 tools/ci/lanes.py core` (or `server`, `stonecutter`, `--seed N`).
 Never retry a failing check or widen its timeout: find why it failed.
 
 ## Branches and PRs
 
-One idea = one branch (`feat/<idea>`) = one PR. Commit to the idea's branch as you go.
-Open the PR as a draft (`gh pr create --draft --base main`) to get CI; mark it ready and merge (`gh pr merge --squash`) only when the idea is done and CI is green.
+One idea = one branch (`feat/<idea>`) = one PR. Work, build and run checks in the branch's own worktree, never in the main checkout:
+`git worktree add ../modding-accelerator-<idea> -b feat/<idea> origin/main`. Commit to the idea's branch as you go.
+Open the PR as a draft (`gh pr create --draft --base main`) to get CI; when the idea is done, wait for its checks (`gh pr checks --watch`), then mark it ready and merge (`gh pr merge --squash`) only if they pass.
 Parallel threads on one idea branch off the idea branch and merge back into it, not into `main`.
 An unrelated fix gets its own idea branch and PR; never tack it onto another PR. PR text: `.github/pull_request_template.md`.
 
