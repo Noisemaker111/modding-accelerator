@@ -358,7 +358,7 @@
      }
     ]
    },
-   "change": "Look the capabilities up through NeoForge BlockCapabilityCaches made with an invalidation listener, and keep the resolved node list (in the iteration order the per-tick HashSet gives) with each node's capabilities until the node set is replaced or a listener fires. Still check every position is loaded each tick (a chunk stops being loaded before its unload event), fall back to lookups for a node whose position moved, and to fresh lookups for the rest of a tick in which a cache is invalidated. A cache calls its listener only if it was queried since its last invalidation: query every cache a plan depends on when the plan is made.",
+   "change": "Look the capabilities up through NeoForge BlockCapabilityCaches made with an invalidation listener, and keep the resolved node list (in the iteration order the per-tick HashSet gives) with each node's capabilities until the node set is replaced or a listener fires. Still check every position is loaded each tick (a chunk stops being loaded before its unload event), fall back to lookups for a node whose position moved, and to fresh lookups for the rest of a tick in which a cache is invalidated. A cache calls its listener only if it was queried since its last invalidation: query every cache a plan depends on when the plan is made. A lookup also reads the node's chunk through ServerChunkCache.getChunk(x, z, FULL, true), which renews a one-tick ticket: that is what keeps a network's chunks loaded while its controller ticks. Make that read once per tick for every chunk holding a node when the plan is used, and before every answer taken from a cache, or far chunks unload and the network shrinks.",
    "gain": {
     "scope": "masterTick (inclusive ms per server tick of TileMain.tick, 315-node network, 256 storage barrels, 32 I/O cables)",
     "cold": {
@@ -372,12 +372,13 @@
      "low": 1.315,
      "high": 1.577,
      "pairs": 6
-    }
+    },
+    "note": "measured with the diff before its chunk reads were added; see provenIn.corrected"
    },
    "gate": {
-    "name": "transfers + moving",
+    "name": "transfers + moving + components + chunks + borders",
     "compare": "exact + expect",
-    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation"
+    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation; chunks: only the master's chunk forced, every chunk holding a node stays loaded and the network shows and exports all 768 cobblestone; borders: a double chest's other half and an export target in chunks no node is in stay exactly as loaded as without the change"
    },
    "provenIn": {
     "mod": "storagenetwork",
@@ -385,7 +386,12 @@
     "loader": "neoforge",
     "scope": "masterTick",
     "record": "2026-11-15T10-23-42.306325Z-5020354d",
-    "patch": "bench/storagenetwork/tick-only-acting-nodes.diff"
+    "patch": "bench/storagenetwork/tick-only-acting-nodes.diff",
+    "corrected": {
+     "record": "2026-11-15T15-24-24.789018800Z-fa04b24c",
+     "patch": "bench/storagenetwork/cumulative.diff",
+     "note": "The diff measured in record lost a side effect: its cached answers skipped the chunk reads the lookups made, so chunks a network kept loaded unloaded. The diff at patch makes those reads; it was re-measured with the other Storage Network changes (all five against the unmodified mod: cold 4.60x (95% 4.22-4.98), warm 4.74x (95% 3.94-5.74))."
+    }
    },
    "test": {
     "fires": {
@@ -426,7 +432,7 @@
      }
     ]
    },
-   "change": "Keep one NeoForge BlockCapabilityCache of Capabilities.ItemHandler.BLOCK per cable for its target position and side, used only while the target is loaded (a fresh lookup would load the chunk), and remade when the target position, side or level differs. Vanilla providers are cache-safe (chests invalidate when they join or leave a double chest; the composter forwards to its current state); third-party providers must invalidate by contract.",
+   "change": "Keep one NeoForge BlockCapabilityCache of Capabilities.ItemHandler.BLOCK per cable for its target position and side, used only while the target is loaded (a fresh lookup would load the chunk), and remade when the target position, side or level differs. Cache only NeoForge's answers for vanilla barrels and chests (an exact InvWrapper of a BarrelBlockEntity, ChestBlockEntity or CompoundContainer; chests invalidate when they join or leave a double chest), because their chunk reads are known, and make those reads before returning a cached answer: getChunk on the target's chunk, and for a chest whose type is not SINGLE on the chunk of the half it points at. Look any other target up every time: a provider can read other chunks, renewing their tickets, and a cache would skip that.",
    "gain": {
     "scope": "masterTick (inclusive ms per server tick of TileMain.tick, 315-node network, 256 storage barrels, 32 I/O cables)",
     "cold": {
@@ -440,12 +446,13 @@
      "low": 1.073,
      "high": 1.168,
      "pairs": 6
-    }
+    },
+    "note": "measured with the diff before its chunk reads were added; see provenIn.corrected"
    },
    "gate": {
-    "name": "transfers + moving",
+    "name": "transfers + moving + components + chunks + borders",
     "compare": "exact + expect",
-    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation"
+    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation; chunks: only the master's chunk forced, every chunk holding a node stays loaded and the network shows and exports all 768 cobblestone; borders: a double chest's other half and an export target in chunks no node is in stay exactly as loaded as without the change"
    },
    "provenIn": {
     "mod": "storagenetwork",
@@ -453,7 +460,12 @@
     "loader": "neoforge",
     "scope": "masterTick",
     "record": "2026-11-15T10-42-25.332386800Z-f0080703",
-    "patch": "bench/storagenetwork/cache-target-item-handlers.diff"
+    "patch": "bench/storagenetwork/cache-target-item-handlers.diff",
+    "corrected": {
+     "record": "2026-11-15T15-24-24.789018800Z-fa04b24c",
+     "patch": "bench/storagenetwork/cumulative.diff",
+     "note": "The diff measured in record lost a side effect: its cached answers skipped the chunk reads the lookups made, so chunks a network kept loaded unloaded. The diff at patch makes those reads; it was re-measured with the other Storage Network changes (all five against the unmodified mod: cold 4.60x (95% 4.22-4.98), warm 4.74x (95% 3.94-5.74))."
+    }
    },
    "test": {
     "fires": {
@@ -494,7 +506,7 @@
      }
     ]
    },
-   "change": "Decide each provider just before it is used, in the same storage and slot order, and stop when every request for the item is met (count 0, after which each later provider would only simulate). Do it only when the answer cannot differ from the up-front list: every storage and export target is a plain vanilla barrel or chest (an exact InvWrapper, slots independent, no loot table left to unpack), no inventory is behind two storages and no export target is a storage; otherwise list everything first as before.",
+   "change": "Decide each provider just before it is used, in the same storage and slot order, and stop when every request for the item is met (count 0, after which each later provider would only simulate). Do it only when the answer cannot differ from the up-front list: every storage and export target is a plain vanilla barrel or chest (an exact InvWrapper, slots independent, no loot table left to unpack), no inventory is behind two storages and no export target is a storage; otherwise list everything first as before. Decide whether an export target is plain without reading its chunk (from a cache that already holds a vanilla barrel or single chest; otherwise list everything first): the unmodified mod reads an export's target only when items move, and a read every export would keep that chunk loaded.",
    "gain": {
     "scope": "masterTick (inclusive ms per server tick of TileMain.tick, 315-node network, 256 storage barrels, 32 I/O cables)",
     "cold": {
@@ -508,12 +520,13 @@
      "low": 1.319,
      "high": 1.396,
      "pairs": 6
-    }
+    },
+    "note": "measured with the diff before its chunk reads were added; see provenIn.corrected"
    },
    "gate": {
-    "name": "transfers + moving",
+    "name": "transfers + moving + components + chunks + borders",
     "compare": "exact + expect",
-    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation"
+    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation; chunks: only the master's chunk forced, every chunk holding a node stays loaded and the network shows and exports all 768 cobblestone; borders: a double chest's other half and an export target in chunks no node is in stay exactly as loaded as without the change"
    },
    "provenIn": {
     "mod": "storagenetwork",
@@ -521,7 +534,12 @@
     "loader": "neoforge",
     "scope": "masterTick",
     "record": "2026-11-15T11-00-23.631737800Z-2726069f",
-    "patch": "bench/storagenetwork/scan-providers-until-requests-met.diff"
+    "patch": "bench/storagenetwork/scan-providers-until-requests-met.diff",
+    "corrected": {
+     "record": "2026-11-15T15-24-24.789018800Z-fa04b24c",
+     "patch": "bench/storagenetwork/cumulative.diff",
+     "note": "The diff measured in record lost a side effect: its cached answers skipped the chunk reads the lookups made, so chunks a network kept loaded unloaded. The diff at patch makes those reads; it was re-measured with the other Storage Network changes (all five against the unmodified mod: cold 4.60x (95% 4.22-4.98), warm 4.74x (95% 3.94-5.74))."
+    }
    },
    "test": {
     "fires": {

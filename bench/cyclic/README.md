@@ -37,6 +37,7 @@ git -C .runs/cyclic checkout b2213600474fa088702dec68a783549e44dfa6ae
 # Once: make the world (superflat, fixed seed, peaceful) and the base, then keep the save.
 ./modaccel ui-check --root .runs/cyclic --jit full
 ./modaccel eval --root .runs/cyclic --file bench/cyclic/create-world.java
+./modaccel eval --root .runs/cyclic --until "mc.player != null"   # wait until the new world has loaded
 ./modaccel eval --root .runs/cyclic --file bench/cyclic/scene.java --thread control
 ./modaccel eval --root .runs/cyclic --code "mc.getSingleplayerServer().submit(() -> mc.getSingleplayerServer().saveEverything(true, true, true)).join()" --thread control
 ./modaccel game-stop --root .runs/cyclic

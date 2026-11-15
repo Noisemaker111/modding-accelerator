@@ -158,7 +158,7 @@ public final class Modaccel {
             "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block",
             "check",
             "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch",
-            "min-runs", "min-speedup", "arms", "replay"
+            "min-runs", "min-speedup", "arms", "replay", "max-calls-per-tick"
         );
         final Map<String, String> values = new LinkedHashMap<>();
         final Set<String> flags = new HashSet<>();
@@ -814,15 +814,16 @@ public final class Modaccel {
     static String help(String command) {
         return switch (command) {
             case "perf" -> "Profile a running local Java 17+ game/server: modaccel perf [--attach PID | --instance FOLDER | --root SOURCE] [--duration 30] [--warmup 5] [--out FOLDER] [--json]\n" +
-                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root launches the client as your preferences say (hidden with background on, so frame timing is not representative).\n" +
+                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root profiles the client modaccel started as your preferences say, hidden or not, with no --allow-hidden needed (hidden: frame timing is not representative).\n" +
                 "Open report.html in the output folder. Frame/tick hooks depend on game mappings; missing metrics are explicit. GPU timing is not collected.\n" +
-                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden lets --attach profile a hidden, throttled game (frame timing not representative); --no-heap skips the post-capture class histogram.\n" +
+                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden lets --attach or --instance profile a hidden, throttled game (frame timing not representative; --root implies it); --no-heap skips the post-capture class histogram.\n" +
                 "--no-hooks records JFR only. --prepare prints a startup -javaagent argument when dynamic attach is disabled. Requires JDK 17+ and same OS user.\n" +
                 "Each capture writes record.json (--session NAME groups runs) and names known patterns from knowledge/perf-patterns.json that its hotspots match.\n" +
                 "--scenario FILE --rcon-port 25575 [--rcon-password-env MODACCEL_RCON_PASSWORD] [--repeat 1] [--seed 0] drives explicit test-world commands.\n" +
                 "Scenarios edit the selected local server world: use a disposable world. Each command requires an expected response. Repeats share one JVM.";
             case "perf-template" -> "Generate editable scenario files: modaccel perf-template --family transport|block-scene|entity-crowd|mod-content [--block MOD:BLOCK] [--entity MOD:ENTITY] [--counts 1,16,64] [--root SOURCE] [--out FOLDER]\n" +
-                "--family experiment --from CAPTURE --root SOURCE writes a perf-optimize experiment, probes and gate snippets to fill in from a perf --root capture.\n" +
+                "--family experiment --from CAPTURE --root SOURCE [--out .runs/MOD-experiment] [--max-calls-per-tick 256] writes a perf-optimize experiment, probes and gate snippets to fill in from a perf --root capture.\n" +
+                "Methods the capture timed above --max-calls-per-tick get no probe (capture again with perf --probes CAPTURE/probes.suggested.json for call counts); a probe metric counts Server thread calls only (serverInclusiveMsPerTick).\n" +
                 "mod-content reads the mod's lang files for its own blocks and entities. Generation does not edit a world. perf --root SOURCE --scenario FILE runs it in the source client's own world; other games need a disposable local server with RCON.";
             case "perf-diff" -> "Compare observed captures: modaccel perf-diff --baseline FOLDER_OR_REPORT --candidate FOLDER_OR_REPORT [--out FOLDER]\nDescriptive differences only; this does not establish equal workload, causality or statistical significance.";
             case "perf-optimize" -> "Accept or reject one candidate change with measured speedup: modaccel perf-optimize --root SOURCE --experiment EXPERIMENT.json --patch CANDIDATE.diff [--runs 5] [--out FOLDER] [--dry-run] [--keep]\n" +
