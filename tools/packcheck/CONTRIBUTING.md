@@ -5,10 +5,10 @@ registry, not the core (`tools/cli/PackCheck.java`); `modaccel pack-check --list
 
 | Add | Where | Test it in |
 |---|---|---|
-| Pack input (export, `.mrpack`, instance, folder) | `PackInputs.ALL`, before any shape it overlaps | `PackCheckTest.inputs` |
-| Loader | `knowledge/pack-loaders.json` (`style`, `aliases`, installer, `metadata`, `failed`, `clientOnly`); a new style is a `Style` in `PackLoaders.java` | `PackCheckTest.loaders` |
-| Jar metadata | `PackMods.read` | a jar layout in `PackCheckTest` |
-| Check | `new Check(id, stage, what, body)` in `PackChecks.ALL`; `problem` only for what the game showed, `warning` for a metadata prediction, `note` never fails | a real log or jar layout in `PackCheckTest` |
+| Pack input (export, `.mrpack`, instance, folder) | `PackInputs.ALL`, before any shape it overlaps | `PackMetadataTests.inputs` |
+| Loader | `knowledge/pack-loaders.json` (`style`, `aliases`, installer, `metadata`, `failed`, `clientOnly`); a new style is a `Style` in `PackLoaders.java` | `PackServerTests.loaders` |
+| Jar metadata | `PackMods.read` | a jar layout in `PackMetadataTests` |
+| Check | `new Check(id, stage, what, body)` in `PackChecks.ALL`; `problem` only for what the game showed, `warning` for a metadata prediction, `note` never fails | a real log or jar layout in `PackLogTests` |
 | Repair | `knowledge/pack-fixes.json` (`match`, `action`, `check`, `evidence`, `test`), only after a real run proved it; new matchers/actions in `PackRepairs.java` | its own `test`, run by `self-test` |
 | Game version whose API moved | a layer `tools/packcheck/game/VERSION/ModaccelPackGame.java`, listed in `Installation.RESOURCES` | `probe-compile` |
 
