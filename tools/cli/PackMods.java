@@ -125,7 +125,7 @@ final class PackMods {
         ZipEntry manifest = zip.getEntry("META-INF/MANIFEST.MF");
         if (manifest != null) try (var in = zip.getInputStream(manifest)) {
             var attributes = new java.util.jar.Manifest(in).getMainAttributes();
-            manifestVersion = String.valueOf(attributes.getValue("Implementation-Version"));
+            manifestVersion = Objects.requireNonNullElse(attributes.getValue("Implementation-Version"), "");
             modType = String.valueOf(attributes.getValue("FMLModType"));
             embedded = String.valueOf(attributes.getValue("Embedded-Dependencies-Mod"));
             String configs = attributes.getValue("MixinConfigs");
