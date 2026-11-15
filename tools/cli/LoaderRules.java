@@ -410,7 +410,11 @@ final class LoaderRules {
     }
 
     static boolean imported(String text, String name) {
-        return imports(text).containsValue(name);
+        if (imports(text).containsValue(name)) return true;
+        // A wildcard import of the class's package (import net.minecraft.world.item.*;) names it too.
+        String outer = outer(name);
+        if (!outer.contains(".")) return false;
+        return Pattern.compile("(?m)^import\\s+" + Pattern.quote(outer.substring(0, outer.lastIndexOf('.'))) + "\\.\\*\\s*;").matcher(text).find();
     }
 
     /** Adds an import of the class (its outer class for a nested one) unless the file has it or its package is the file's own. */
@@ -419,6 +423,8 @@ final class LoaderRules {
         Map<String, String> present = imports(text);
         if (outer.equals(present.get(simple))) return text;
         if (present.containsKey(simple)) return text;
+        // A wildcard import of its package already names it.
+        if (outer.contains(".") && imported(text, outer)) return text;
         Matcher pkg = Pattern.compile("(?m)^package\\s+([\\w.]+)\\s*;").matcher(text);
         if (pkg.find() && outer.equals(pkg.group(1) + "." + simple)) return text;
         String line = "import " + outer + ";\n";

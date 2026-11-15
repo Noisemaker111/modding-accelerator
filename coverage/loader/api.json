@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "7350a600692b68688223711165cc0e0115cb72e7201bfd4afd93fc215df033cc",
+ "rules_sha256": "6e616431d317455eabababb92f2d4ed8ea88b696260200b7118955506d780370",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -6115,6 +6115,18 @@
    {
     "symbol": "neoforge|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck",
     "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.Logging#CORE",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.Logging#LOADING",
+    "found": true
+   },
+   {
+    "symbol": "fml|net.neoforged.fml.Logging#SCAN",
+    "found": true
    }
   ],
   "neoforge-on-fabric@1.21.1": [
@@ -8280,6 +8292,10 @@
    },
    {
     "symbol": "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission",
+    "found": true
+   },
+   {
+    "symbol": "fml-21.1|net.neoforged.fml.Logging#CORE",
     "found": true
    }
   ],

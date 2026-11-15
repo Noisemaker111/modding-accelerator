@@ -2280,7 +2280,8 @@
     "net.neoforged.neoforge.client.event.AddClientReloadListenersEvent": "AddClientReloadListenersEvent",
     "net.neoforged.neoforge.client.gui.widget.ExtendedButton": "ExtendedButton",
     "net.neoforged.neoforgespi.language.IModInfo": "IModInfo",
-    "net.neoforged.neoforge.common.extensions.IBlockExtension": "IBlockExtension"
+    "net.neoforged.neoforge.common.extensions.IBlockExtension": "IBlockExtension",
+    "net.neoforged.fml.Logging": "Logging"
    },
    "symbols": {
     "neoforge": [
@@ -3197,7 +3198,10 @@
      "fml|net.neoforged.neoforgespi.language.IModInfo#getNamespace",
      "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$HarvestCheck#canHarvest",
      "neoforge|net.neoforged.neoforge.event.entity.player.PlayerEvent$HarvestCheck#setCanHarvest",
-     "neoforge|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck"
+     "neoforge|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck",
+     "fml|net.neoforged.fml.Logging#CORE",
+     "fml|net.neoforged.fml.Logging#LOADING",
+     "fml|net.neoforged.fml.Logging#SCAN"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -3948,7 +3952,8 @@
        "neoforge-21.1|net.neoforged.neoforge.client.gui.widget.ExtendedButton#renderWidget",
        "neoforge-21.1|net.neoforged.neoforge.client.settings.KeyModifier#getActiveModifier",
        "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#doPlayerHarvestCheck",
-       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission"
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockExtension#getLightEmission",
+       "fml-21.1|net.neoforged.fml.Logging#CORE"
       ],
       "fabric": [
        "fabric-api-1.21.1|net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#MODIFY_ENTRIES_ALL",
@@ -4599,6 +4604,11 @@
      "to": "package demo;\n\nimport demo.loaderbridge.Bridge;\nimport net.fabricmc.api.EnvType;\nimport net.fabricmc.api.ModInitializer;\nimport demo.loaderbridge.IEventBus;\nimport demo.loaderbridge.FMLLoader;\n\npublic class Sided implements ModInitializer {\n\tstatic boolean client;\n\n\t/** NeoForge's constructor of this @Mod class, run as Fabric's entrypoint (modaccel convert, NeoForge bridge). */\n\t@Override\n\tpublic void onInitialize() {\n\t\tIEventBus bus = Bridge.bus();\n\t\tEnvType dist = FMLLoader.getDist();\n\t\tif ((dist == EnvType.CLIENT)) client = true;\n\t\tBridge.common(\"demo\");\n\t}\n}\n",
      "back": "package demo;\n\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.common.Mod;\n\n@Mod(\"demo\")\npublic class Sided {\n\tstatic boolean client;\n\n\tpublic Sided(IEventBus bus, Dist dist) {\n\t\tif ((dist == Dist.CLIENT)) client = true;\n\t}\n}\n",
      "alone": true
+    },
+    {
+     "name": "Tabbed",
+     "from": "package demo;\n\nimport static net.neoforged.fml.Logging.CORE;\n\nimport net.minecraft.world.item.*;\nimport org.apache.logging.log4j.LogManager;\n\npublic final class Tabbed {\n\tstatic final CreativeModeTab TAB = CreativeModeTab.builder().build();\n\n\tstatic void warn() {\n\t\tLogManager.getLogger().warn(CORE, \"changed\");\n\t}\n}\n",
+     "to": "package demo;\n\nimport static demo.loaderbridge.Logging.CORE;\n\nimport net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;\nimport net.minecraft.world.item.*;\nimport org.apache.logging.log4j.LogManager;\n\npublic final class Tabbed {\n\tstatic final CreativeModeTab TAB = FabricCreativeModeTab.builder().build();\n\n\tstatic void warn() {\n\t\tLogManager.getLogger().warn(CORE, \"changed\");\n\t}\n}\n"
     }
    ],
    "mixins": [
