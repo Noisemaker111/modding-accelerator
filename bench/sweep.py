@@ -204,6 +204,11 @@ def port_run(mod, to, kind, tag, timeout, game, jobs, base=None):
             if mod.get("project"):
                 cmd += ["--project", mod["project"]]
             code, out, err = sh(cmd, timeout=timeout)
+            if "being used by another process" in out + err:
+                # Two jobs set up the same game in Loom's shared cache at once (Windows file lock): not the port's result.
+                rec["retried"] = "shared Gradle cache file locked by the other job"
+                checkout(mod)
+                code, out, err = sh(cmd, timeout=timeout)
             rec["seconds"] = {"port": round(time.time() - t0, 1)}
             receipt = last_json(out)
             if code is None:
