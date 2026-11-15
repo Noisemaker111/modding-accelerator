@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "040a7c1d84fce5510e20bbc9a034ecca4cf6e8b926379aee8a4549a096fef21d",
+ "rules_sha256": "85e61295a635173fb4f5c5c54821c137969ba2bee5e387e2e5b575a56eafe151",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
