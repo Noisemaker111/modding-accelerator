@@ -121,6 +121,12 @@ final class Target {
             for (String key : List.of("neo_version_range", "neoforge_version_range")) if (
                 pins.containsKey(key)
             ) setup.replacements.put(key, "[" + resolved + ",)");
+            // A multi-loader build keeps Fabric's versions beside NeoForge's: the sibling project must follow the same game.
+            try {
+                fabricPins(setup, build, pins, to);
+            } catch (IOException sibling) {
+                setup.unchecked.add(Json.map("artifact", "Fabric (sibling project)", "version", to, "reason", sibling.getMessage()));
+            }
             Dependencies.resolve(setup, "neoforge");
             applyReplacements(setup, build, pins);
             neoGradleFollows(setup, build, to);
@@ -144,94 +150,9 @@ final class Target {
             );
             return setup;
         }
-        for (String key : List.of("yarn_mappings", "yarn_version")) if (pins.containsKey(key)) {
-            // The unobfuscated game has no yarn: the port crosses into Mojang's names and drops the mappings line.
-            if (Versions.compare(to, "26.1") >= 0) continue;
-            var versions = Json.array(Json.parse(fetch(build, "https://meta.fabricmc.net/v2/versions/yarn/" + to)));
-            if (versions.isEmpty()) throw new IOException(
-                "No published Yarn mappings for " + to + "; mapping namespace changes need a guided migration."
-            );
-            String yarn = Json.text(Json.object(versions.get(0)), "version", "");
-            // A build that joins the game version to a build number (Cardinal Components: ${minecraft_version}+build.${yarn_mappings},
-            // yarn_mappings=1) keeps only the number in the property.
-            if (String.valueOf(pins.get(key)).matches("\\d+") && yarn.matches(".*\\+build\\.\\d+")) yarn = yarn.substring(yarn.lastIndexOf('.') + 1);
-            setup.replacements.put(key, yarn);
-        }
-        if (pins.containsKey("loader_version")) {
-            var versions = Json.array(Json.parse(fetch(build, "https://meta.fabricmc.net/v2/versions/loader/" + to)));
-            String loader = "";
-            for (Object item : versions) {
-                var value = Json.object(Json.object(item).get("loader"));
-                if (Boolean.TRUE.equals(value.get("stable"))) {
-                    loader = value.get("version").toString();
-                    break;
-                }
-            }
-            if (loader.isEmpty()) throw new IOException("No published stable Fabric loader for " + to);
-            setup.replacements.put("loader_version", loader);
-        }
-        if (pins.containsKey("fabric_version") || pins.containsKey("fabric_api_version")) {
-            String xml = fetch(
-                build,
-                "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml"
-            );
-            var factory = DocumentBuilderFactory.newInstance();
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            var nodes = factory
-                .newDocumentBuilder()
-                .parse(new ByteArrayInputStream(xml.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
-                .getElementsByTagName("version");
-            List<String> published = new ArrayList<>();
-            for (int i = 0; i < nodes.getLength(); i++) {
-                String value = nodes.item(i).getTextContent();
-                if (value.endsWith("+" + to)) published.add(value);
-            }
-            if (published.isEmpty()) throw new IOException("No published Fabric API for " + to);
-            // "+1.18" builds span 1.18 to 1.18.2 and the newest needs 1.18.2: take the newest whose own fabric.mod.json
-            // accepts the target game, read from the jar (a few of the newest are tried; an unreadable one is skipped).
-            String api = published.get(published.size() - 1);
-            for (int i = published.size() - 1, tried = 0; i >= 0 && tried < 12; i--, tried++) {
-                String candidate = published.get(i);
-                try {
-                    String accepts = Dependencies.minecraftConstraint(
-                        download(build, "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/" + candidate + "/fabric-api-" + candidate + ".jar")
-                    );
-                    if (accepts.isEmpty() || Versions.matches(accepts, to)) {
-                        api = candidate;
-                        break;
-                    }
-                } catch (Exception unread) {
-                    break;
-                }
-            }
-            for (String key : List.of("fabric_version", "fabric_api_version")) if (
-                pins.containsKey(key)
-            ) setup.replacements.put(key, api);
-            try {
-                String built = Dependencies.builtWithLoom(
-                    download(
-                        build,
-                        "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/" +
-                        api +
-                        "/fabric-api-" +
-                        api +
-                        ".jar"
-                    )
-                );
-                if (!built.isEmpty()) setup.loomBuilt.put("Fabric API " + api, built);
-            } catch (IOException unread) {
-                setup.unchecked.add(
-                    Json.map(
-                        "artifact",
-                        "net.fabricmc.fabric-api:fabric-api",
-                        "version",
-                        api,
-                        "reason",
-                        "Its jar could not be read for the Loom it needs: " + unread.getMessage()
-                    )
-                );
-            }
-        }
+        fabricPins(setup, build, pins, to);
+        // A multi-loader build keeps NeoForge's version beside Fabric's: the sibling project must follow the same game.
+        neoForgeSibling(setup, build, pins, to);
         Dependencies.resolve(setup);
         applyReplacements(setup, build, pins);
         loomFollows(setup, build, to);
@@ -347,6 +268,113 @@ final class Target {
             at = Math.min(text.length(), end + 1);
         }
         return out.append(text.substring(at)).toString();
+    }
+
+    /** Yarn, Fabric loader and Fabric API pins of a Fabric build, each moved to its release for the target game. */
+    static void fabricPins(Setup setup, Build build, Map<String, Object> pins, String to) throws Exception {
+        for (String key : List.of("yarn_mappings", "yarn_version")) if (pins.containsKey(key)) {
+            // The unobfuscated game has no yarn: the port crosses into Mojang's names and drops the mappings line.
+            if (Versions.compare(to, "26.1") >= 0) continue;
+            var versions = Json.array(Json.parse(fetch(build, "https://meta.fabricmc.net/v2/versions/yarn/" + to)));
+            if (versions.isEmpty()) throw new IOException(
+                "No published Yarn mappings for " + to + "; mapping namespace changes need a guided migration."
+            );
+            String yarn = Json.text(Json.object(versions.get(0)), "version", "");
+            // A build that joins the game version to a build number (Cardinal Components: ${minecraft_version}+build.${yarn_mappings},
+            // yarn_mappings=1) keeps only the number in the property.
+            if (String.valueOf(pins.get(key)).matches("\\d+") && yarn.matches(".*\\+build\\.\\d+")) yarn = yarn.substring(yarn.lastIndexOf('.') + 1);
+            setup.replacements.put(key, yarn);
+        }
+        if (pins.containsKey("loader_version")) {
+            var versions = Json.array(Json.parse(fetch(build, "https://meta.fabricmc.net/v2/versions/loader/" + to)));
+            String loader = "";
+            for (Object item : versions) {
+                var value = Json.object(Json.object(item).get("loader"));
+                if (Boolean.TRUE.equals(value.get("stable"))) {
+                    loader = value.get("version").toString();
+                    break;
+                }
+            }
+            if (loader.isEmpty()) throw new IOException("No published stable Fabric loader for " + to);
+            setup.replacements.put("loader_version", loader);
+        }
+        if (pins.containsKey("fabric_version") || pins.containsKey("fabric_api_version")) {
+            String xml = fetch(
+                build,
+                "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml"
+            );
+            var factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            var nodes = factory
+                .newDocumentBuilder()
+                .parse(new ByteArrayInputStream(xml.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+                .getElementsByTagName("version");
+            List<String> published = new ArrayList<>();
+            for (int i = 0; i < nodes.getLength(); i++) {
+                String value = nodes.item(i).getTextContent();
+                if (value.endsWith("+" + to)) published.add(value);
+            }
+            if (published.isEmpty()) throw new IOException("No published Fabric API for " + to);
+            // "+1.18" builds span 1.18 to 1.18.2 and the newest needs 1.18.2: take the newest whose own fabric.mod.json
+            // accepts the target game, read from the jar (a few of the newest are tried; an unreadable one is skipped).
+            String api = published.get(published.size() - 1);
+            for (int i = published.size() - 1, tried = 0; i >= 0 && tried < 12; i--, tried++) {
+                String candidate = published.get(i);
+                try {
+                    String accepts = Dependencies.minecraftConstraint(
+                        download(build, "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/" + candidate + "/fabric-api-" + candidate + ".jar")
+                    );
+                    if (accepts.isEmpty() || Versions.matches(accepts, to)) {
+                        api = candidate;
+                        break;
+                    }
+                } catch (Exception unread) {
+                    break;
+                }
+            }
+            for (String key : List.of("fabric_version", "fabric_api_version")) if (
+                pins.containsKey(key)
+            ) setup.replacements.put(key, api);
+            try {
+                String built = Dependencies.builtWithLoom(
+                    download(
+                        build,
+                        "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/" +
+                        api +
+                        "/fabric-api-" +
+                        api +
+                        ".jar"
+                    )
+                );
+                if (!built.isEmpty()) setup.loomBuilt.put("Fabric API " + api, built);
+            } catch (IOException unread) {
+                setup.unchecked.add(
+                    Json.map(
+                        "artifact",
+                        "net.fabricmc.fabric-api:fabric-api",
+                        "version",
+                        api,
+                        "reason",
+                        "Its jar could not be read for the Loom it needs: " + unread.getMessage()
+                    )
+                );
+            }
+        }
+    }
+
+    /** NeoForge pins kept beside a Fabric project's (Architectury and MultiLoader builds) move to NeoForge's release for the target. */
+    static void neoForgeSibling(Setup setup, Build build, Map<String, Object> pins, String to) throws Exception {
+        for (String key : List.of("neo_version", "neoforge_version", "neoForgeVersion", "neoforgeVersion")) if (pins.containsKey(key)) {
+            try {
+                String resolved = neoForgeVersion(build, to);
+                setup.replacements.put(key, resolved);
+                setup.applied.add(
+                    Json.map("artifact", "net.neoforged:neoforge", "to", resolved, "evidence", "the build's NeoForge project follows the same game: NeoForge " + resolved + " publishes for " + to)
+                );
+            } catch (IOException none) {
+                setup.unchecked.add(Json.map("artifact", "net.neoforged:neoforge (sibling project)", "version", to, "reason", none.getMessage()));
+            }
+        }
     }
 
     /** Parchment's newest release of parameter names for exactly this Minecraft version, or "" when it publishes none. */

@@ -347,6 +347,90 @@ final class Port {
         return file;
     }
 
+    /**
+     * A class javac cannot find in a file that does not import it (a rule wrote RenderLayer::getGuiTextured, a class moved
+     * package) is imported when exactly one class of the target game or loader has that simple name. Classes of the mod
+     * itself, and names two game classes share, are left to the compiler. Returns the files changed.
+     */
+    int importMissingClasses(Path log) throws Exception {
+        String errors = Files.readString(log);
+        Matcher reported = Pattern.compile(
+            "(?m)^\\s*" + FILE + ":[0-9]+: error: cannot find symbol\\R(?:.*\\R){0,2}?\\s*symbol:\\s+(?:class|variable) ([A-Z]\\w*)\\s*$"
+        ).matcher(errors);
+        Map<Path, Set<String>> wanted = new LinkedHashMap<>();
+        while (reported.find()) {
+            Path file = Path.of(reported.group(1));
+            if (!file.isAbsolute()) file = build.project.root.resolve(file);
+            file = file.normalize();
+            if (file.startsWith(build.project.root) && Files.isRegularFile(file)) wanted
+                .computeIfAbsent(file, f -> new LinkedHashSet<>())
+                .add(reported.group(2));
+        }
+        if (wanted.isEmpty()) return 0;
+        if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
+        int changed = 0;
+        for (var entry : wanted.entrySet()) {
+            String text = Files.readString(entry.getKey()), after = text;
+            for (String simple : entry.getValue()) {
+                if (Pattern.compile("(?m)^import\\s+[\\w.]+\\." + simple + "\\s*;").matcher(after).find()) continue;
+                if (Pattern.compile("\\b(?:class|interface|enum|record)\\s+" + simple + "\\b").matcher(after).find()) continue;
+                List<String> game = new ArrayList<>();
+                for (String name : supertypeIndex.bySimple.getOrDefault(simple, List.of())) if (
+                    !name.contains("$") &&
+                    (name.startsWith("net/minecraft/") || name.startsWith("com/mojang/") || name.startsWith("net/fabricmc/") || name.startsWith("net/neoforged/"))
+                ) game.add(name);
+                if (game.size() != 1) continue;
+                after = addImport(after, game.get(0).replace('/', '.'));
+            }
+            if (!after.equals(text)) {
+                Files.writeString(entry.getKey(), after);
+                changed++;
+            }
+        }
+        if (changed > 0) rulesApplied.putIfAbsent("import-missing-game-class", List.of());
+        return changed;
+    }
+
+    /** The route map this port uses (for mixin target names, which javac never checks). */
+    Path mapFile;
+    Map<String, List<String[]>> mapMethods;
+
+    /**
+     * The target's name for a method a mixin targets by its old name: Mixin says it found no 'initTabNavigation' in
+     * OptionsScreen, and the map renamed initTabNavigation to refreshWidgetPositions on Screen, OptionsScreen's supertype.
+     * Null unless exactly one new name fits the owner or one of its supertypes in the target.
+     */
+    String mixinTargetRename(String owner, String name) throws Exception {
+        if (mapFile == null || !Files.isRegularFile(mapFile)) return null;
+        if (mapMethods == null) {
+            mapMethods = new HashMap<>();
+            var map = Json.read(mapFile);
+            for (String list : List.of("methods", "methodsMoved", "signatures")) for (Object o : Json.array(map.get(list))) {
+                var m = Json.object(o);
+                String from = Json.text(m, "from", ""), to = Json.text(m, "to", "");
+                if (!from.equals(to)) mapMethods
+                    .computeIfAbsent(from, k -> new ArrayList<>())
+                    .add(new String[] { simpleName(Json.text(m, "owner", "")), to });
+            }
+        }
+        List<String[]> candidates = mapMethods.get(name);
+        if (candidates == null) return null;
+        if (supertypeIndex == null) supertypeIndex = new Explain.Index(classpath(model));
+        Set<String> owners = new HashSet<>();
+        Deque<String> queue = new ArrayDeque<>(List.of(owner));
+        while (!queue.isEmpty()) {
+            String next = queue.poll();
+            if (!owners.add(simpleName(next.replace('/', '.')))) continue;
+            Explain.ClassInfo info = supertypeIndex.info(next);
+            if (info == null) continue;
+            if (info.superName() != null) queue.add(info.superName());
+            queue.addAll(info.interfaces());
+        }
+        Set<String> names = new HashSet<>();
+        for (String[] c : candidates) if (owners.contains(c[0])) names.add(c[1]);
+        return names.size() == 1 ? names.iterator().next() : null;
+    }
+
     static List<Path> sources(ProjectModel project) throws IOException {
         List<Path> paths = new ArrayList<>(project.inputs());
         Files.walkFileTree(
@@ -612,6 +696,7 @@ final class Port {
             );
         }
         var mapInfo = Json.read(map);
+        mapFile = map;
         String mapFrom = routed ? chain.get(0) : from, mapTo = routed ? chain.get(chain.size() - 1) : to;
         if (
             !unobfuscated &&
@@ -804,6 +889,7 @@ final class Port {
                 if (!seen.add(state)) break;
                 roundsTried = round + 1;
                 applyRules(log);
+                importMissingClasses(log);
                 // Rules are not learned from other people's mods unless asked: the map comes from the game itself.
                 if (!corpusLoaded && options.has("learn-from-mods")) {
                     learned = Corpus.rules(build, model, tools, map, from, to, names);
@@ -1784,6 +1870,16 @@ final class Port {
         for (Object item : list) {
             var failure = Json.object(item);
             Path file = build.project.root.resolve(Json.text(failure, "file", "")).normalize();
+            // A mixin in another project of the build (an Architectury :common) is found by its class name.
+            if (Json.text(failure, "file", "").isEmpty() && !Json.text(failure, "mixin", "").isEmpty()) {
+                String tail = Json.text(failure, "mixin", "").replace('.', '/') + ".java";
+                for (Path source : sources(build.project)) if (source.toString().replace('\\', '/').endsWith("/" + tail)) {
+                    file = source;
+                    failure = new LinkedHashMap<>(failure);
+                    failure.put("file", build.project.root.relativize(source).toString());
+                    break;
+                }
+            }
             if (
                 Json.text(failure, "file", "").isEmpty() ||
                 !file.startsWith(build.project.root) ||
@@ -1793,6 +1889,7 @@ final class Port {
                 original,
                 Json.text(failure, "message", "")
             );
+            if (text.equals(original)) text = renameMixinTarget(original, Json.text(failure, "message", ""));
             if (!text.equals(original)) {
                 Files.writeString(file, text);
                 changed = true;
@@ -1801,6 +1898,21 @@ final class Port {
         }
         if (changed) build.report.stages.add(Json.map("name", "mixin-repair", "repaired", repaired));
         return changed;
+    }
+
+    /** A mixin target the game renamed, renamed in the mixin's method strings, from Mixin's words and the route map. */
+    String renameMixinTarget(String text, String message) throws IOException {
+        Matcher missing = Pattern.compile("could not find any targets matching '(\\w+)(?:\\([^']*)?' in ([\\w/$]+)").matcher(message);
+        if (!missing.find()) return text;
+        String to;
+        try {
+            to = mixinTargetRename(missing.group(2), missing.group(1));
+        } catch (Exception unread) {
+            return text;
+        }
+        if (to == null) return text;
+        rulesApplied.putIfAbsent("mixin-target-rename", List.of());
+        return text.replaceAll("\"" + Pattern.quote(missing.group(1)) + "(?:\\([^\"]*\\)[^\"]*)?\"", Matcher.quoteReplacement("\"" + to + "\""));
     }
 
     static String repairMixinSource(String text, String message) {
@@ -1997,6 +2109,11 @@ final class Port {
             file = file.normalize();
             if (file.startsWith(build.project.root)) logged.add(file);
         }
+        // A file javac reported while building this target is part of it, even when another project owns it (an
+        // Architectury :common compiled into :fabric).
+        Set<Path> withLogged = new LinkedHashSet<>(all);
+        for (Path file : logged) if (Files.isRegularFile(file) && file.toString().endsWith(".java")) withLogged.add(file);
+        all = new ArrayList<>(withLogged);
         for (Object item : Json.array(Json.read(build.harness.resolve("knowledge/fixes.json")).get("rules"))) {
             var rule = Json.object(item);
             if (
