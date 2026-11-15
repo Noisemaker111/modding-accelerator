@@ -58,6 +58,9 @@ def templates(b, layer):
             if i == 0 and "/" in rel and rel[0].isdigit():
                 continue
             out[rel] = f
+    # A layer leaves out the parts of the bridge written for newer games (Convert.dropped).
+    for rel in [r for r in out if any(r.startswith(prefix) for prefix in (layer or {}).get("drops", []))]:
+        del out[rel]
     return out
 
 
@@ -97,7 +100,8 @@ def main():
         target = pkg_dir / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(f.read_text(encoding="utf-8").replace("${package}", pkg).replace("${modid}", modid), encoding="utf-8")
-    mixins = (layer or {}).get("mixins") or b.get("mixins") or []
+    mixins = (layer or {}).get("mixins") if (layer or {}).get("mixins") is not None else b.get("mixins") or []
+    mixins = [m for m in mixins if "mixin/" + m["mixin"] + ".java" in files]
     if mixins:
         config = {"required": True, "minVersion": "0.8", "package": pkg + ".mixin",
                   "compatibilityLevel": "JAVA_21" if args.minecraft.startswith("1.") else "JAVA_25",
@@ -109,6 +113,13 @@ def main():
             meta_file = work / "src" / "main" / "resources" / "fabric.mod.json"
             meta = json.loads(meta_file.read_text(encoding="utf-8"))
             meta["mixins"] = [m for m in meta.get("mixins", []) if m != name] + [name]
+            # The interfaces the bridge's mixins add to game classes, injected by Loom for the compile (as convert writes them).
+            injected = {}
+            for m in mixins:
+                for target, interface in m.get("injects", {}).items():
+                    injected.setdefault(target, []).append((pkg + "." + interface).replace(".", "/"))
+            if injected:
+                meta.setdefault("custom", {})["loom:injected_interfaces"] = injected
             meta_file.write_text(json.dumps(meta, indent="\t"), encoding="utf-8")
         else:
             toml = next((work / "src" / "main").rglob("neoforge.mods.toml"))

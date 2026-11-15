@@ -1410,7 +1410,8 @@ final class Convert {
             .append(" = [")
             .append(String.join(", ", e.getValue().stream().map(Convert::tomlString).toList()))
             .append("]\n");
-        if (meta.get("custom") instanceof Map<?, ?> custom && !custom.isEmpty()) properties
+        Map<String, Object> custom = meta.get("custom") instanceof Map<?, ?> values ? withoutBridgeInterfaces(Json.object(values)) : Map.of();
+        if (!custom.isEmpty()) properties
             .append(tomlString("fabric.custom"))
             .append(" = ")
             .append(tomlString(Json.write(custom)))
@@ -2543,12 +2544,14 @@ final class Convert {
         Path templates = build.harness.resolve(Json.text(bridge, "folder", ""));
         Set<String> attachmentFields = new TreeSet<>();
         for (String file : javaFiles()) for (Matcher f = ATTACHMENT_FIELD.matcher(read(file)); f.find(); ) attachmentFields.add(f.group(1));
+        List<String> drops = LoaderRules.strings(bridgeLayer == null ? null : bridgeLayer.get("drops"));
         for (String file : javaFiles()) {
             String text = read(file);
             String out = text;
-            for (var c : classes.entrySet()) out = out.replaceAll(
-                "(?m)^import\\s+" + Pattern.quote(c.getKey()) + "\\s*;",
-                Matcher.quoteReplacement("import " + bridgePackage + "." + c.getValue() + ";")
+            // Plain, static and nested-class imports of a mirrored class (import static ...FluidType.BUCKET_VOLUME;).
+            for (var c : classes.entrySet()) if (!dropped(drops, String.valueOf(c.getValue()).replace('.', '/') + ".java")) out = out.replaceAll(
+                "(?m)^import(\\s+static)?\\s+" + Pattern.quote(c.getKey()) + "((?:\\.\\w+)*(?:\\.\\*)?)\\s*;",
+                "import$1 " + Matcher.quoteReplacement(bridgePackage + "." + c.getValue()) + "$2;"
             );
             out = eventClassesInListeners(file, out);
             out = sideQueries(out);
@@ -2560,6 +2563,7 @@ final class Convert {
             }
         }
         Map<String, Path> files = bridgeTemplates(templates, bridgeLayer == null ? null : build.harness.resolve(Json.text(bridgeLayer, "folder", "")));
+        files.keySet().removeIf(rel -> dropped(drops, rel));
         if (bridgeLayer != null) {
             notes.add(
                 "NeoForge bridge: the layer for Minecraft " +
@@ -2653,9 +2657,35 @@ final class Convert {
     /** The mixin config of the bridge's mixins this mod needs (src/main/resources), or null when it needs none. */
     String bridgeMixinConfig;
 
+    /** Interfaces the bridge's mixins add to game classes, by class (fabric.mod.json loom:injected_interfaces). */
+    final Map<String, List<String>> bridgeInjected = new LinkedHashMap<>();
+
+    /** fabric.mod.json's custom values without the NeoForge bridge's injected interfaces, which go with the bridge. */
+    static Map<String, Object> withoutBridgeInterfaces(Map<String, Object> custom) {
+        if (!(custom.get("loom:injected_interfaces") instanceof Map<?, ?> injected)) return custom;
+        Map<String, Object> out = new LinkedHashMap<>(custom), kept = new LinkedHashMap<>();
+        for (var e : Json.object(injected).entrySet()) {
+            List<Object> names = new ArrayList<>();
+            for (Object name : e.getValue() instanceof List<?> list ? Json.array(list) : List.of()) if (!String.valueOf(name).contains("/loaderbridge/")) names.add(name);
+            if (!names.isEmpty()) kept.put(e.getKey(), names);
+        }
+        if (kept.isEmpty()) out.remove("loom:injected_interfaces");
+        else out.put("loom:injected_interfaces", kept);
+        return out;
+    }
+
     /** A bridge template with the mod's own names written in. */
     String fillBridge(String template, String pkg) {
         return template.replace("${package}", pkg).replace("${modid}", modid == null ? "" : modid);
+    }
+
+    /**
+     * Whether a version layer leaves out one of the bridge's files (bridges[].layers[].drops: path prefixes under the
+     * bridge folder, such as "transfer/"): parts of the bridge written for a newer game than the layer's.
+     */
+    static boolean dropped(List<String> drops, String rel) {
+        for (String prefix : drops) if (rel.startsWith(prefix)) return true;
+        return false;
     }
 
     /**
@@ -2696,6 +2726,10 @@ final class Convert {
             ) needed = true;
             if (!needed) continue;
             (Boolean.TRUE.equals(mixin.get("client")) ? client : common).add(Json.text(mixin, "mixin", ""));
+            // A mixin that adds one of the bridge's interfaces to a game class: Loom injects it for the mod's compile.
+            if (mixin.get("injects") instanceof Map<?, ?> injects) for (var e : Json.object(injects).entrySet()) bridgeInjected
+                .computeIfAbsent(e.getKey(), k -> new ArrayList<>())
+                .add((pkg + "." + e.getValue()).replace('.', '/'));
         }
         if (common.isEmpty() && client.isEmpty()) return null;
         String name = (fabricId == null || fabricId.isEmpty() ? modid : fabricId) + "." + pkg.substring(pkg.lastIndexOf('.') + 1) + ".mixins.json";
@@ -2879,8 +2913,8 @@ final class Convert {
                 }
             }
             for (var c : back.entrySet()) out = out.replaceAll(
-                "(?m)^import\\s+" + Pattern.quote(pkg + "." + c.getKey()) + "\\s*;",
-                Matcher.quoteReplacement("import " + c.getValue() + ";")
+                "(?m)^import(\\s+static)?\\s+" + Pattern.quote(pkg + "." + c.getKey()) + "((?:\\.\\w+)*(?:\\.\\*)?)\\s*;",
+                "import$1 " + Matcher.quoteReplacement(c.getValue()) + "$2;"
             );
             out = LoaderRules.dropImport(LoaderRules.dropImport(out, pkg + ".Bridge"), pkg + ".ClientBridge");
             out = LoaderRules.dropImport(attachmentCallsBack(out), pkg + ".Attachments");
@@ -3057,6 +3091,18 @@ final class Convert {
         if (!breaks.isEmpty()) out.put("breaks", breaks);
         if (!conflicts.isEmpty()) out.put("conflicts", conflicts);
         if (fabricWidener != null) out.put("accessWidener", fabricWidener);
+        if (!bridgeInjected.isEmpty()) {
+            // The bridge's interfaces on game classes (Loom interface injection), which its mixins add at runtime.
+            custom = custom == null ? new LinkedHashMap<>() : new LinkedHashMap<>(custom);
+            Map<String, Object> injected = new LinkedHashMap<>();
+            if (custom.get("loom:injected_interfaces") instanceof Map<?, ?> existing) injected.putAll(Json.object(existing));
+            for (var e : bridgeInjected.entrySet()) {
+                List<Object> names = new ArrayList<>(injected.get(e.getKey()) instanceof List<?> l ? Json.array(l) : List.of());
+                for (String name : e.getValue()) if (!names.contains(name)) names.add(name);
+                injected.put(e.getKey(), names);
+            }
+            custom.put("loom:injected_interfaces", injected);
+        }
         if (custom != null) out.put("custom", custom);
         return pretty(out, "") + "\n";
     }

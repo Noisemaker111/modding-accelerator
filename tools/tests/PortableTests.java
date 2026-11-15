@@ -1674,6 +1674,13 @@ public final class PortableTests {
                 for (String mixin : LoaderRules.strings(test.get("mixins"))) if (
                     !String.valueOf(forward.get("details")).contains(mixin)
                 ) throw new AssertionError("bridge " + b.get("id") + " test " + name + " did not list the bridge mixin " + mixin + ":\n" + forward.get("details"));
+                // A bridge mixin that adds an interface to a game class: fabric.mod.json has Loom inject it for the compile.
+                for (String target : LoaderRules.strings(test.get("injects"))) {
+                    String meta = Files.readString(dir.resolve("src/main/resources/fabric.mod.json"));
+                    if (!meta.contains("\"loom:injected_interfaces\"") || !meta.contains("\"" + target + "\"")) throw new AssertionError(
+                        "bridge " + b.get("id") + " test " + name + " did not inject the bridge's interface into " + target + ":\n" + meta
+                    );
+                }
                 Map<String, Object> returned = new Convert(new Build(model, home, "", new Modaccel.Report(dir, "convert"))).run(
                     new Modaccel.Options(new String[] { "convert", "--to", origin }),
                     false
