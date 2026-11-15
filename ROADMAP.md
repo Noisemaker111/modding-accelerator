@@ -77,7 +77,7 @@ An author changes code and gets an answer about the mod's real behaviour in seco
 
 </details>
 
-<details><summary>Every number for this goal (31)</summary>
+<details><summary>Every number for this goal (33)</summary>
 
 | Measure | First | Now | Target | Status |
 |---|---|---|---|---|
@@ -112,6 +112,8 @@ An author changes code and gets an answer about the mod's real behaviour in seco
 | Paper versions the test player passed on | — | 6 versions (Oct 26) | 8 versions by Nov 20, step 26 | Baseline |
 | Paper versions the test player passes on in CI | — | 1 version (Oct 26) | — | Fact |
 | One-file edit, modaccel fast, warm | — | 4 s (Oct 23) | 4 s (hold) by Nov 27, step 34 | Met |
+| Diorama's live-mapping CPU (baker threads and render thread) during the play experiment's first 60 s flight capture, hidden client, production JIT, cold | 35.3 CPU-s (Nov 14) | 26.6 CPU-s (Nov 14) | — | Fact |
+| Diorama's live-mapping CPU (baker threads and render thread) during the play experiment's second 60 s flight capture, hidden client, production JIT, warm | 31.1 CPU-s (Nov 14) | 24.2 CPU-s (Nov 14) | — | Fact |
 
 </details>
 
