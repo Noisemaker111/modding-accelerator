@@ -6008,17 +6008,17 @@
       "id": "game-profile-record-name",
       "provenance": "hand",
       "jump": "1.21.8 -> 1.21.9 (mojmap)",
-      "match": "symbol:\\s+method getName\\(\\)\\s+location: (?:variable \\w+ of type|class) GameProfile",
+      "match": "symbol:\\s+method getName\\(\\)\\s+location: (?:variable \\w+ of type |class |interface )(?:[\\w.]+\\.)?GameProfile\\b",
       "apply": {
         "find": "\\b(\\w*[Pp]rofile(?:\\(\\))?)\\.getName\\(\\)",
         "replace": "$1.name()"
       },
       "scope": "log",
-      "when": "\\bGameProfile\\b",
+      "when": "",
       "note": "1.21.9 ships authlib 7, whose GameProfile is a record: getName() is name().",
       "verified": "Mojang's version manifests: 1.21.8 uses com.mojang:authlib:6.0.58, 1.21.9 uses 7.0.61; authlib 7.0.61's com.mojang.authlib.GameProfile declares UUID id() and String name() and no getName()/getId()",
       "test": {
-        "error": "Names.java:9: error: cannot find symbol\n  symbol:   method getName()\n  location: variable profile of type GameProfile\n",
+        "error": "Names.java:9: error: cannot find symbol\n  symbol:   method getName()\n  location: variable profile of type com.mojang.authlib.GameProfile\n",
         "before": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.getName() + \" \" + player.getGameProfile().getId(); }\n}\n",
         "after": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.name() + \" \" + player.getGameProfile().getId(); }\n}\n",
         "from": "written for this rule"
@@ -6028,17 +6028,17 @@
       "id": "game-profile-record-id",
       "provenance": "hand",
       "jump": "1.21.8 -> 1.21.9 (mojmap)",
-      "match": "symbol:\\s+method getId\\(\\)\\s+location: (?:variable \\w+ of type|class) GameProfile",
+      "match": "symbol:\\s+method getId\\(\\)\\s+location: (?:variable \\w+ of type |class |interface )(?:[\\w.]+\\.)?GameProfile\\b",
       "apply": {
         "find": "\\b(\\w*[Pp]rofile(?:\\(\\))?)\\.getId\\(\\)",
         "replace": "$1.id()"
       },
       "scope": "log",
-      "when": "\\bGameProfile\\b",
+      "when": "",
       "note": "1.21.9 ships authlib 7, whose GameProfile is a record: getId() is id().",
       "verified": "Mojang's version manifests: 1.21.8 uses com.mojang:authlib:6.0.58, 1.21.9 uses 7.0.61; authlib 7.0.61's com.mojang.authlib.GameProfile declares UUID id() and String name() and no getName()/getId()",
       "test": {
-        "error": "Names.java:9: error: cannot find symbol\n  symbol:   method getId()\n  location: class GameProfile\n",
+        "error": "Names.java:9: error: cannot find symbol\n  symbol:   method getId()\n  location: class com.mojang.authlib.GameProfile\n",
         "before": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.getName() + \" \" + player.getGameProfile().getId(); }\n}\n",
         "after": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.getName() + \" \" + player.getGameProfile().id(); }\n}\n",
         "from": "written for this rule"
