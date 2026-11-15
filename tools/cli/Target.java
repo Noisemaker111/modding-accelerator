@@ -139,6 +139,7 @@ final class Target {
             neoFormFollows(setup, build, to);
             toolchain(setup, build, to);
             gradleForJava25(setup, build, to);
+            buildDslFollows(setup, build);
             runTypeRename(setup, build, to);
             parchmentFollows(setup, build, to);
             unitTestsInFml(setup, build, to, resolved);
@@ -167,6 +168,7 @@ final class Target {
         applyReplacements(setup, build, pins);
         loomFollows(setup, build, to);
         unobfuscatedFabric(setup, build, to);
+        buildDslFollows(setup, build);
         toolchain(setup, build, to);
         gradleForJava25(setup, build, to);
         parchmentFollows(setup, build, to);
@@ -599,6 +601,36 @@ final class Target {
         setup.applied.add(
             Json.map("file", wrapper.toString(), "change", "Gradle " + url.group(2) + " -> " + gradle + " for " + to, "evidence", "Minecraft " + to + " builds on Java 25, which Gradle runs on from 9.1")
         );
+    }
+
+    /**
+     * Build-script settings the build tools the port moves to no longer have. Gradle 8 removed a jar task's classifier
+     * (archiveClassifier replaces it: ModMenu 1.16.5 on Gradle 8 stopped with "unknown property 'classifier'"), and Loom
+     * 1.x removed loom.shareCaches(), a cache-sharing switch with no effect on what is built (owo-lib). Only the build's own
+     * scripts are changed, and only when the port's Gradle is 8 or newer for the first.
+     */
+    static void buildDslFollows(Setup setup, Build build) throws Exception {
+        buildDslFollows(setup, build, true);
+    }
+
+    /** One build script without the settings buildDslFollows names. */
+    static String removedDsl(String text, boolean gradle8) {
+        if (gradle8) text = text.replaceAll("(?m)^([ \\t]*)classifier(\\s*=\\s*|\\s+)([\"'])", "$1archiveClassifier = $3");
+        return text.replaceAll("(?m)^[ \\t]*shareCaches\\(\\)[ \\t]*\\r?\\n", "");
+    }
+
+    private static void buildDslFollows(Setup setup, Build build, boolean unused) throws Exception {
+        Path wrapper = build.project.root.resolve("gradle/wrapper/gradle-wrapper.properties");
+        Matcher gradle = Pattern.compile("gradle-([0-9]+)\\.").matcher(Files.isRegularFile(wrapper) ? setup.text(wrapper) : "");
+        boolean gradle8 = gradle.find() && Integer.parseInt(gradle.group(1)) >= 8;
+        for (Path script : build.project.inputs()) {
+            if (!script.getFileName().toString().matches("build\\.gradle(\\.kts)?")) continue;
+            String before = setup.text(script), text = removedDsl(before, gradle8);
+            if (text.equals(before)) continue;
+            setup.originals.putIfAbsent(script, before);
+            setup.texts.put(script, text);
+            setup.applied.add(Json.map("file", script.toString(), "change", "build-script settings the new Gradle and Loom removed (classifier -> archiveClassifier, shareCaches())"));
+        }
     }
 
     /** Parchment's newest release of parameter names for exactly this Minecraft version, or "" when it publishes none. */

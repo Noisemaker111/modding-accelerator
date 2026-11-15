@@ -343,6 +343,19 @@ final class Build {
         Run.Result result = gradle(task, stage);
         // The first read downloads Gradle and the build's dependencies, and the wrapper gives up after one 10 s try:
         // on 2026-11-08 services.gradle.org timed out on CI for an hour. One more try after a pause rides that out.
+        // Loom states the Java it needs when it refuses to load ("outdated version of Java (11). Java 16 or higher is
+        // required": Polymer and Carpet's Loom 0.8/0.9 on Gradle 7.1, whose JDKs run 8 to 16). Gradle restarts on that Java.
+        if (result.exit() != 0) {
+            java.util.regex.Matcher needs = java.util.regex.Pattern.compile("outdated version of Java \\((\\d+)\\)\\. Java (\\d+) or higher is required").matcher(
+                new String(Files.readAllBytes(result.log()), java.nio.charset.StandardCharsets.UTF_8)
+            );
+            if (needs.find() && Integer.parseInt(needs.group(2)) > jdk.version()) {
+                Runtimes.Jdk needed = Runtimes.ensureExact(harness, Integer.parseInt(needs.group(2)));
+                report.stages.add(Json.map("name", "java-for-loom", "gradleJava", needed.version(), "evidence", needs.group(0)));
+                jdk = needed;
+                result = gradle(task, stage + "-java-" + needed.version());
+            }
+        }
         String unreachable = result.exit() == 0
             ? null
             : Run.unreachable(

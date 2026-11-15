@@ -1313,6 +1313,13 @@ public final class PortableTests {
         check(Target.forgeRelease(forge, "1.21.2") == null, "no Forge release for a game Forge skipped");
         // An exact game range is written [1.21.2]: Maven's rules refuse [1.21.2,1.21.2] (identical boundaries), and NeoForge refuses the mod.
         check(MavenRange.own("[1.21.2]", "1.21.2") && !MavenRange.own("[1.21.2]", "1.21.3"), "an exact range written the way Maven accepts it");
+        // Build-script settings Gradle 8 and Loom 1.x removed: a jar's classifier, loom.shareCaches(); a dependency's classifier: key stays.
+        check(
+            Target.removedDsl("task sourcesJar(type: Jar) {\n    classifier = 'sources'\n}\nloom {\n    shareCaches()\n}\ndependencies { implementation(group: 'a', name: 'b', classifier: 'api') }\n", true)
+                .equals("task sourcesJar(type: Jar) {\n    archiveClassifier = 'sources'\n}\nloom {\n}\ndependencies { implementation(group: 'a', name: 'b', classifier: 'api') }\n"),
+            "classifier and shareCaches() rewritten for Gradle 8 and Loom 1.x"
+        );
+        check(Target.removedDsl("    classifier \"dev\"\n", false).equals("    classifier \"dev\"\n"), "a classifier stays on Gradle 7");
         // A rename that changes what the member returns (getMaxBuildHeight -> getMaxY is one lower) leaves the map; the rest stays.
         {
             Path meaningMap = scratch.resolve("meaning-map.json");
