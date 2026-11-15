@@ -445,7 +445,7 @@ for (String n : new String[] {"net.minecraft.core.registries.BuiltInRegistries",
     try { regs = Class.forName(n, true, getClass().getClassLoader()); break; } catch (ClassNotFoundException next) {}
 }
 java.util.Set<String> have = new java.util.HashSet<>();
-for (String kind : new String[] {"BLOCK", "ITEM"}) {
+for (String kind : new String[] {"BLOCK", "ITEM", "ENTITY_TYPE"}) {
     Object reg = field(regs, kind);
     Object keys;
     try { keys = call(reg, "keySet"); } catch (Exception yarn) { keys = call(reg, "getIds"); }
@@ -491,6 +491,19 @@ def mod_metadata(work, mod):
         modid = props.get("mod_id") or props.get("modid") or props.get("archives_base_name")
     wanted = set()
     if modid:
+        # The mod's own English names: block.<modid>.x, item.<modid>.x and entity.<modid>.x are what it registers.
+        kinds = {"block": "BLOCK", "item": "ITEM", "entity": "ENTITY_TYPE"}
+        for p in work.rglob(f"assets/{modid}/lang/en_us.json"):
+            if any(x in ("build", ".gradle", "bin", "out") for x in p.relative_to(work).parts):
+                continue
+            try:
+                keys = json.loads(p.read_text(encoding="utf-8", errors="replace"))
+            except ValueError:
+                continue
+            for key in keys:
+                m = re.fullmatch(r"(block|item|entity)\." + re.escape(modid) + r"\.([a-z0-9_/]+)", key)
+                if m:
+                    wanted.add(f"{kinds[m.group(1)]} {modid}:{m.group(2)}")
         for kind, folder in (("BLOCK", "blockstates"), ("ITEM", "models/item")):
             for p in work.rglob(f"assets/{modid}/{folder}/*.json"):
                 if any(x in ("build", ".gradle", "bin", "out") for x in p.relative_to(work).parts):
@@ -532,7 +545,7 @@ def game_checks(mod, rec, work):
             code, out, err = sh(MODACCEL + ["eval", "--root", work, "--file", f, "--json"] + proj, timeout=600)
             res = last_json(out) or {}
             value = str((res.get("result") or res).get("value") or (res.get("result") or res).get("error") or err[-300:])
-            checks.append({"check": f"{len(wanted)} blocks and items from the mod's assets are registered", "ok": code == 0 and value.startswith("ok"), "detail": value[:400]})
+            checks.append({"check": f"{len(wanted)} blocks, items and entity types the mod's own assets name are in the game's registries", "ok": code == 0 and value.startswith("ok"), "detail": value[:400]})
         for b in mod.get("behaviour") or []:
             code, out, err = sh(MODACCEL + ["eval", "--root", work, "--code", b["code"], "--json"] + proj, timeout=600)
             res = last_json(out) or {}
@@ -578,8 +591,11 @@ def summary(runs, compare=None):
         b = r.get("baseline")
         return b if isinstance(b, (bool, type(None))) else b.get("ok")
 
-    lines.append("| Jump | Runs | Source builds | Builds | Loads | Behaviour (of checked) | Builds, of sources that build |")
-    lines.append("|---|---|---|---|---|---|---|")
+    def compiles(r):
+        return bool(r.get("build")) or r.get("errorsAfter") is not None
+
+    lines.append("| Jump | Runs | Source builds | Reach the compiler | Builds | Loads | Behaviour (of checked) | Builds, of sources that build |")
+    lines.append("|---|---|---|---|---|---|---|---|")
     for k in kinds + ["all"]:
         rs = runs if k == "all" else [r for r in runs if r.get("jump") == k]
         if not rs:
@@ -587,7 +603,7 @@ def summary(runs, compare=None):
         n, b, l, nb, bok = rates(rs)
         good = [r for r in rs if base_ok(r)]
         gb = sum(1 for r in good if r.get("build"))
-        lines.append(f"| {'**all**' if k == 'all' else k} | {n} | {len(good)} | {b} ({100 * b // n}%) | {l} | {bok} of {nb} | "
+        lines.append(f"| {'**all**' if k == 'all' else k} | {n} | {len(good)} | {sum(1 for r in rs if compiles(r))} | {b} ({100 * b // n}%) | {l} | {bok} of {nb} | "
                      f"{gb} of {len(good)}{f' ({100 * gb // len(good)}%)' if good else ''} |")
     lines.append("")
     # classes: runs blocked (a class present in a run that did not build), mods, errors
@@ -627,12 +643,12 @@ def summary(runs, compare=None):
         lines.append(f"| {c} | {str(api).replace('|', '/')[:90]} | {len(g['mods'])} | {g['errors']} | {', '.join(sorted(g['jumps'])[:3])} |")
     if compare:
         lines.append("")
-        lines.append("| Sweep | Runs | Builds | Loads | Behaviour | Errors left (runs that compiled to errors) |")
-        lines.append("|---|---|---|---|---|---|")
+        lines.append("| Sweep | Runs | Reach the compiler | Builds | Loads | Behaviour | Errors left in runs that reach it |")
+        lines.append("|---|---|---|---|---|---|---|")
         for tag, rs in compare:
             n, b, l, nb, bok = rates(rs)
             left = sum(r.get("errorsAfter") or 0 for r in rs)
-            lines.append(f"| {tag} | {n} | {b} | {l} | {bok} of {nb} | {left} |")
+            lines.append(f"| {tag} | {n} | {sum(1 for r in rs if (r.get('build') or r.get('errorsAfter') is not None))} | {b} | {l} | {bok} of {nb} | {left} |")
     return "\n".join(lines)
 
 

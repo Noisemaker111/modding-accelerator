@@ -1,5 +1,5 @@
 {
- "note": "The port sweep's corpus (python bench/sweep.py): open-source mods with public Gradle source, each pinned to a commit on the branch named, used only as test subjects. Nothing in the rule book is taken from their code. from is the Minecraft version the pinned source builds; loader and project say which loader's build is ported and started (multi-loader and Stonecutter builds); names is the mapping namespace of the source. jumps, when set, replaces the default jumps (sweep.py plan). Pinned on 2026-11-14 from each branch head.",
+ "note": "The port sweep's corpus (python bench/sweep.py): open-source mods with public Gradle source, each pinned to a commit on the branch named, used only as test subjects. Nothing in the rule book is taken from their code. from is the Minecraft version the pinned source builds; loader and project say which loader's build is ported and started (multi-loader and Stonecutter builds); names is the mapping namespace of the source. jumps, when set, replaces the default jumps (sweep.py plan). Pinned on 2026-11-14 from each branch head. behaviour, when set, lists checks of the mod's own state in the running game: an eval expression and the value it must print.",
  "mods": [
   {
    "id": "modmenu-1.16.5",
@@ -292,6 +292,13 @@
     "config",
     "library",
     "multi-module"
+   ],
+   "behaviour": [
+    {
+     "what": "MidnightLib registered its own config with MidnightConfig at start (MidnightConfig.configClass has midnightlib)",
+     "code": "((java.util.Map<?, ?>) field(Class.forName(\"eu.midnightdust.lib.config.MidnightConfig\", true, mc.getClass().getClassLoader()), \"configClass\")).containsKey(\"midnightlib\")",
+     "expect": "true"
+    }
    ]
   },
   {
