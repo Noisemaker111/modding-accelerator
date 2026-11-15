@@ -5,6 +5,7 @@ import java.util.*;
 final class PerfTemplates {
     static Map<String, Object> run(Modaccel.Options options) throws Exception {
         String family = options.get("family", "transport");
+        if (family.equals("experiment")) return experiment(options);
         List<Object> cases = new ArrayList<>();
         if (family.equals("transport")) {
             for (int length : List.of(1, 8, 32)) for (int stack : List.of(1, 4, 16)) cases.add(transport(length, stack));
@@ -20,7 +21,7 @@ final class PerfTemplates {
             for (String block : content.get("block")) cases.add(scene(8, block));
             for (String entity : content.get("entity")) for (int count : counts(options.get("counts", "16,64"))) cases.add(crowd(entity, count));
             if (cases.isEmpty()) throw new IllegalArgumentException("No blocks or entities of the mod were found in its lang files; use --family entity-crowd --entity ID or block-scene --block ID");
-        } else throw new IllegalArgumentException("--family must be transport, block-scene, entity-crowd or mod-content");
+        } else throw new IllegalArgumentException("--family must be transport, block-scene, entity-crowd, mod-content or experiment");
         Map<String, Object> template = Json.map("schema", 1, "name", family,
             "requirements", family.equals("transport")
                 ? "Minecraft 1.21.1 command syntax; disposable overworld; local RCON. Use duration >=20 and warmup 0. Fixed total: 16 stone items."
@@ -37,6 +38,86 @@ final class PerfTemplates {
         Json.save(file, template);
         return Json.map("ok", true, "scenario", file.toString(), "details", template.get("requirements"),
             "warning", template.get("region"));
+    }
+
+    /**
+     * A perf-optimize experiment for the mod a capture ranked, from that capture: the metric where the mod's cost
+     * is (a timing probe's ms per tick when the server thread carries it, else the mod's sampled CPU on its busiest
+     * threads), scopes for its next hottest methods, timing probes from the capture's suggestions, the full JIT, and
+     * gate snippets to write. The gates hold PerfCheck's template mark, so perf-optimize refuses to launch until
+     * they return something about the mod.
+     */
+    static Map<String, Object> experiment(Modaccel.Options options) throws Exception {
+        Path capture = Path.of(options.get("from", "")).toAbsolutePath();
+        if (!Files.isRegularFile(capture.resolve("report.json"))) throw new IllegalArgumentException("--from CAPTURE needs a perf capture folder with report.json");
+        Map<String, Object> report = Json.read(capture.resolve("report.json"));
+        String named = options.get("mod-package", "");
+        Map<String, Object> mod = null;
+        for (Object item : Json.array(Json.object(report.get("attribution")).get("mods"))) {
+            Map<String, Object> row = Json.object(item);
+            boolean chosen = named.isBlank() ? Boolean.TRUE.equals(row.get("yourMod")) : named.equals(row.get("id"));
+            if (chosen && mod == null) mod = row;
+        }
+        if (mod == null) throw new IllegalArgumentException("The capture marks no mod as yours; capture with perf --root SOURCE, or name its id with --mod-package ID");
+        String id = mod.get("id").toString();
+        List<Object> probes = new ArrayList<>();
+        if (Files.isRegularFile(capture.resolve("probes.suggested.json"))) {
+            for (Object item : Json.array(Json.read(capture.resolve("probes.suggested.json")).get("probes"))) {
+                Map<String, Object> probe = Json.object(item);
+                if (!id.equals(probe.get("mod")) || probes.size() >= 6) continue;
+                probes.add(Json.map("class", probe.get("class"), "method", probe.get("method"), "descriptor", probe.get("descriptor"),
+                    "label", probe.get("label"), "mode", "timing"));
+            }
+        }
+        List<Object> threads = Json.array(mod.getOrDefault("threads", List.of()));
+        String busiest = threads.isEmpty() ? "" : Json.object(threads.get(0)).get("name").toString();
+        Map<String, Object> metric;
+        List<Object> scopes = new ArrayList<>();
+        if (busiest.equals("Server thread") && !probes.isEmpty()) {
+            // Server work is the same on a hidden client; an exact probe is far less noisy than a few sampled ticks.
+            metric = Json.map("probe", Json.object(probes.get(0)).get("label"), "statistic", "inclusiveMsPerTick");
+            scopes.add(Json.map("name", id + "Cpu", "mod", id));
+        } else {
+            Set<String> names = new LinkedHashSet<>();
+            for (Object t : threads.subList(0, Math.min(3, threads.size()))) {
+                names.add(Json.object(t).get("name").toString().replaceAll("[^A-Za-z0-9 _-]", ".").replaceAll("[0-9]+", "\\\\d+"));
+            }
+            metric = names.isEmpty() ? Json.map("mod", id) : Json.map("mod", id, "threads", "^(" + String.join("|", names) + ")");
+        }
+        for (Object item : probes.subList(Math.min(1, probes.size()), probes.size())) {
+            String label = Json.object(item).get("label").toString();
+            scopes.add(Json.map("name", label, "probe", label, "statistic", "meanInclusiveMs"));
+        }
+        Path root = Path.of(options.get("root", ".")).toAbsolutePath();
+        String game = Files.isDirectory(root.resolve("runs/client")) ? "runs/client" : "run";
+        Map<String, Object> experiment = Json.map("schema", 1, "gameDirectory", game, "world", "perf", "worldSource", "world/perf",
+            "files", Json.map(game + "/options.txt", "options.txt"),
+            "setup", List.of(),
+            "measure", Json.map("seconds", 30, "warmup", 20, "probes", "probes.json", "metric", metric, "scopes", scopes),
+            "gates", List.of(Json.map("name", "behaviour", "file", "behaviour.java", "thread", "control", "compare", "expect", "expect", "true"),
+                Json.map("name", "digest", "file", "digest.java", "thread", "control", "compare", "exact")),
+            "jit", "full");
+        if (!options.get("project", "").isBlank()) experiment.put("project", options.get("project", ""));
+        PerfOptimize.validate(experiment);
+        Path out = Performance.output(options);
+        if (Files.exists(out.resolve("experiment.json"))) throw new IllegalArgumentException("Experiment already exists: " + out.resolve("experiment.json"));
+        Json.save(out.resolve("experiment.json"), experiment);
+        Json.save(out.resolve("probes.json"), Json.map("probes", probes));
+        Files.writeString(out.resolve("options.txt"), "pauseOnLostFocus:false\ntutorialStep:none\n");
+        Files.writeString(out.resolve("behaviour.java"), "// " + PerfCheck.TEMPLATE_MARK + ": delete this line once the snippet checks the mod.\n"
+            + "// Behaviour gate (expect \"true\"): after both captures, assert the workload did what it should, so a candidate\n"
+            + "// cannot win by doing less (items conserved, the feature still ran, nothing left waiting).\n"
+            + "return \"true\";\n");
+        String hot = String.join(", ", probes.stream().map(p -> Json.object(p).get("label").toString()).toList());
+        Files.writeString(out.resolve("digest.java"), "// " + PerfCheck.TEMPLATE_MARK + ": delete this line once the snippet hashes the changed code's output.\n"
+            + "// Exact gate: run the code the candidate changes on frozen inputs (an area far from the player, ticked by hand,\n"
+            + "// a fixed game time, no randomness) and return a hash of all it produced. Two baseline launches must agree.\n"
+            + "// Hot methods in the capture: " + hot + "\n"
+            + "return \"\";\n");
+        String details = "Wrote " + out.resolve("experiment.json") + " for " + id + ": metric " + Json.write(metric) + ", " + probes.size()
+            + " timing probes, " + scopes.size() + " scopes, full JIT.\nNext: make the world once and copy it to " + out.resolve("world/perf")
+            + " (or change world/worldSource), write behaviour.java and digest.java, then run perf-optimize --check-only.";
+        return Json.map("ok", true, "experiment", out.resolve("experiment.json").toString(), "mod", id, "metric", metric, "details", details);
     }
 
     static String id(String value, String option) {

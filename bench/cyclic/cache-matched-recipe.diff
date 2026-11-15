@@ -1,0 +1,50 @@
+diff --git a/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java b/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
+index bec056f71..a1b52ae1a 100644
+--- a/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
++++ b/src/main/java/com/lothrazar/cyclic/block/crafter/TileCrafter.java
+@@ -275,10 +275,45 @@ public class TileCrafter extends TileBlockEntityCyclic implements MenuProvider,
+     }
+   }
+ 
++  // The last scan's answer, kept while the grid holds equal stacks (item, count, components) and the server's
++  // recipes are the same set: RecipeManager replaces its map on every reload or replaceRecipes, so the identity
++  // of getRecipes() says when they change. A grid holding a filled map is always scanned: the map extending
++  // recipe's match reads the map's saved data from the level.
++  private java.util.Collection<RecipeHolder<?>> scannedRecipes;
++  private final ItemStack[] scannedGrid = new ItemStack[GRID_SIZE];
++  private RecipeHolder<CraftingRecipe> scannedResult;
++
++  private boolean gridMatchesScan() {
++    for (int i = 0; i < GRID_SIZE; i++) {
++      if (!ItemStack.matches(scannedGrid[i], this.gridCap.getStackInSlot(i))) {
++        return false;
++      }
++    }
++    return true;
++  }
++
+   private RecipeHolder<CraftingRecipe> findMatchingRecipe(ArrayList<ItemStack> itemStacksInGrid) {
+     for (int i = 0; i < this.gridCap.getSlots(); i++) {
+       craftMatrix.setItem(i, this.gridCap.getStackInSlot(i).copy());//fake items anyway. but also jus do a copy
+     }
++    java.util.Collection<RecipeHolder<?>> allRecipes = level.getRecipeManager().getRecipes();
++    if (scannedRecipes == allRecipes && gridMatchesScan()) {
++      return scannedResult;
++    }
++    RecipeHolder<CraftingRecipe> found = scanRecipes();
++    boolean cacheable = true;
++    for (int i = 0; i < GRID_SIZE; i++) {
++      scannedGrid[i] = craftMatrix.getItem(i).copy();
++      if (scannedGrid[i].is(net.minecraft.world.item.Items.FILLED_MAP)) {
++        cacheable = false;
++      }
++    }
++    scannedRecipes = cacheable ? allRecipes : null;
++    scannedResult = found;
++    return found;
++  }
++
++  private RecipeHolder<CraftingRecipe> scanRecipes() {
+     CraftingInput craftingInput = CraftingInput.of(3, 3, java.util.List.of(
+         craftMatrix.getItem(0), craftMatrix.getItem(1), craftMatrix.getItem(2),
+         craftMatrix.getItem(3), craftMatrix.getItem(4), craftMatrix.getItem(5),

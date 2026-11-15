@@ -47,6 +47,8 @@ saves/
 world/
 screenshots/
 options.txt
+# ...except the options a perf-optimize experiment copies into each launch
+!bench/**/options.txt
 server.properties
 usercache.json
 

@@ -176,8 +176,8 @@ final class PackLoaders {
         }
 
         /**
-         * Forge's own names (SRG: methods named m_12345_) when the game its install made has them, else the Mojang names
-         * newer Forge and every NeoForge since 1.20.2 run with. Read from the installed game itself: NeoForge calls its
+         * Forge's own names (SRG: methods named m_12345_, before 1.17 func_12345_a) when the game its install made has them,
+         * else the Mojang names newer Forge and every NeoForge since 1.20.2 run with. Read from the installed game itself: NeoForge calls its
          * Mojang-named jar -srg.jar too, so the file name proves nothing.
          */
         Names forgeNames(Path install, String minecraft) throws IOException {
@@ -192,12 +192,16 @@ final class PackLoaders {
                 ZipEntry type = zip.getEntry("net/minecraft/server/MinecraftServer.class");
                 if (type == null) return new Names("mojang", null);
                 String constants = new String(zip.getInputStream(type).readAllBytes(), StandardCharsets.ISO_8859_1);
-                if (!Pattern.compile("m_[0-9]+_").matcher(constants).find()) return new Names("mojang", null);
+                if (!Pattern.compile("m_[0-9]+_|func_[0-9]+_[a-z]").matcher(constants).find()) return new Names("mojang", null);
             }
-            Path mcp = PackCheck.file(
-                PackCheck.only(install.resolve("libraries/de/oceanlabs/mcp/mcp_config"), minecraft + "-"),
-                "-mappings-merged.txt"
-            );
+            // Official to SRG: MCP config's merged file from 1.17, its plain TSRG file before.
+            Path config = PackCheck.only(install.resolve("libraries/de/oceanlabs/mcp/mcp_config"), minecraft + "-");
+            Path mcp;
+            try {
+                mcp = PackCheck.file(config, "-mappings-merged.txt");
+            } catch (IOException older) {
+                mcp = PackCheck.file(config, "-mappings.txt");
+            }
             return new Names("srg", mcp);
         }
     }
@@ -353,6 +357,116 @@ final class PackLoaders {
         String[] parts = minecraft.split("\\.");
         if (parts.length >= 2 && parts[0].equals("1")) return parts[1] + "." + (parts.length > 2 ? parts[2] : "0");
         return minecraft;
+    }
+
+    // ------------------------------------------------------------------ the Java build a loader needs
+    /**
+     * The Java a loader's server runs on: the game's Java as installed, unless a rule in pack-loaders.json ("javaBuilds")
+     * applies. A rule names a JDK member the installed loader calls (read from its jars' bytecode) and an exact release
+     * that still has it; it applies when this Java's own class lacks the member. Old ModLauncher (Forge 1.16.5 36.2.20)
+     * calls ManifestEntryVerifier(Manifest), which Java 8 replaced in 8u321, and stops before any mod loads.
+     */
+    static Runtimes.Jdk javaFor(Context context, Path install) throws Exception {
+        for (Object r : Json.array(data(context.harness()).getOrDefault("javaBuilds", List.of()))) {
+            var rule = Json.object(r);
+            if (((Number) rule.get("java")).intValue() != context.java().version()) continue;
+            String call = Json.text(rule, "call", "");
+            if (caller(install.resolve("libraries").resolve(Json.text(rule, "libraries", "")), call) == null) continue;
+            if (jdkDeclares(context.java().home(), call)) continue;
+            return new Runtimes.Jdk(JdkDownloads.installRelease(context.java().version(), Json.text(rule, "release", "")), context.java().version());
+        }
+        return context.java();
+    }
+
+    /** The first class in the jars under folder that calls the method "owner.name:descriptor"; null when none does. */
+    static String caller(Path folder, String call) throws IOException {
+        if (!Files.isDirectory(folder)) return null;
+        String owner = call.substring(0, call.lastIndexOf('.', call.indexOf(':')));
+        byte[] needle = owner.getBytes(StandardCharsets.UTF_8);
+        List<Path> jars;
+        try (var walk = Files.walk(folder)) {
+            jars = walk.filter(p -> p.toString().endsWith(".jar")).sorted().toList();
+        }
+        for (Path jar : jars) try (var zip = new ZipFile(jar.toFile())) {
+            for (ZipEntry entry : Collections.list(zip.entries())) {
+                if (!entry.getName().endsWith(".class")) continue;
+                byte[] bytes = zip.getInputStream(entry).readAllBytes();
+                if (indexOf(bytes, needle) < 0) continue;
+                if (ClassRefs.read(bytes).methodRefs.contains(call)) return jar.getFileName() + "!" + entry.getName();
+            }
+        }
+        return null;
+    }
+
+    /** Whether a JDK 8 home's rt.jar declares the member "owner.name:descriptor"; true when it cannot tell (no rt.jar). */
+    static boolean jdkDeclares(Path home, String call) throws IOException {
+        int dot = call.lastIndexOf('.', call.indexOf(':'));
+        Path rt = Files.isRegularFile(home.resolve("jre/lib/rt.jar")) ? home.resolve("jre/lib/rt.jar") : home.resolve("lib/rt.jar");
+        if (!Files.isRegularFile(rt)) return true;
+        try (var zip = new ZipFile(rt.toFile())) {
+            ZipEntry entry = zip.getEntry(call.substring(0, dot) + ".class");
+            return entry != null && ClassRefs.read(zip.getInputStream(entry).readAllBytes()).declared.contains(call.substring(dot + 1));
+        }
+    }
+
+    static int indexOf(byte[] haystack, byte[] needle) {
+        outer:
+        for (int i = 0; i + needle.length <= haystack.length; i++) {
+            for (int j = 0; j < needle.length; j++) if (haystack[i + j] != needle[j]) continue outer;
+            return i;
+        }
+        return -1;
+    }
+
+    // ------------------------------------------------------------------ which game classes a server has
+    /**
+     * The game classes a loader's server has, in the names its code runs with. all: every game class the names know
+     * (client and server), or null for Mojang's names, where client classes are the ones under net/minecraft/client/
+     * and com/mojang/blaze3d/. A class the names know and the server lacks is client-only.
+     */
+    record GameClasses(Set<String> server, Set<String> all) {
+        boolean clientOnly(String type) {
+            if (type.startsWith("net/fabricmc/fabric/api/client/")) return true;
+            if (server.contains(type)) return false;
+            if (all != null) return all.contains(type);
+            return type.startsWith("net/minecraft/client/") || type.startsWith("com/mojang/blaze3d/");
+        }
+    }
+
+    static GameClasses gameClasses(Context context, Loader loader, Path install, String minecraft) throws Exception {
+        Vanilla game = Vanilla.get(context, minecraft);
+        Names names = loader.names(context, install, minecraft);
+        if (names.kind().equals("mojang") || names.mapping() == null) return new GameClasses(classes(game.mojang), null);
+        Map<String, String> map = classMap(names.mapping());
+        Set<String> server = new HashSet<>();
+        for (String type : classes(game.official)) if (map.containsKey(type)) server.add(map.get(type));
+        return new GameClasses(server, new HashSet<>(map.values()));
+    }
+
+    /** The classes in a jar, as internal names. */
+    static Set<String> classes(Path jar) throws IOException {
+        Set<String> out = new HashSet<>();
+        try (var zip = new ZipFile(jar.toFile())) {
+            for (ZipEntry entry : Collections.list(zip.entries())) {
+                String name = entry.getName();
+                if (name.endsWith(".class") && !name.startsWith("META-INF/")) out.add(name.substring(0, name.length() - 6));
+            }
+        }
+        return out;
+    }
+
+    /** A mapping file's classes, official name to the loader's: Tiny v1 and v2 (Fabric), TSRG and TSRG2 (Forge). */
+    static Map<String, String> classMap(Path mapping) throws IOException {
+        Map<String, String> map = new HashMap<>();
+        boolean tiny = false;
+        for (String line : Files.readAllLines(mapping, StandardCharsets.UTF_8)) {
+            if (line.isEmpty() || line.startsWith("\t") || line.startsWith(" ") || line.startsWith("#")) continue;
+            String[] t = line.split("\\s+");
+            if (t[0].equals("tiny") || t[0].equals("v1")) tiny = true;
+            else if (tiny && (t[0].equals("c") || t[0].equals("CLASS")) && t.length >= 3) map.put(t[1], t[2]);
+            else if (!tiny && !t[0].equals("tsrg2") && t.length >= 2 && !t[0].endsWith("/")) map.put(t[0], t[1]);
+        }
+        return map;
     }
 
     // ------------------------------------------------------------------ the game every loader builds on

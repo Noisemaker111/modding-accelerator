@@ -63,6 +63,17 @@ check(index == {"x.Top": {"A"}, "x.Nested": {"go"}}, f"nested module jars (how F
 check(L.split("neoforge|a.B$C#d") == ("neoforge", "a.B$C", "d") and L.split("fml|a.B") == ("fml", "a.B", ""), "a symbol is artifact|class#member")
 check(L.jar_url({"maven": "https://m", "coordinate": "net.x:y:1.0+26.3:universal"}) == "https://m/net/x/y/1.0%2B26.3/y-1.0+26.3-universal.jar", "a Maven coordinate becomes its jar's URL")
 
+mappings = b"""# {"id":"com.mojang"}
+net.minecraft.core.Holder -> jm:
+# {"fileName":"Holder.java","id":"sourceFile"}
+    java.lang.Object value() -> a
+    12:14:boolean is(net.minecraft.resources.ResourceLocation) -> a
+net.minecraft.resources.ResourceKey -> akq:
+    net.minecraft.resources.ResourceLocation location -> c
+"""
+named = L.index_mappings(mappings, {})
+check(named == {"net.minecraft.core.Holder": {"value", "is"}, "net.minecraft.resources.ResourceKey": {"location"}}, f"Mojang's mappings give an obfuscated release's class and member names: {named}")
+
 # ---- the committed rules ----------------------------------------------------------------------------
 
 rules = L.load_rules()

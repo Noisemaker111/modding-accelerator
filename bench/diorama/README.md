@@ -20,7 +20,9 @@ python bench/diorama/play/prepare_world.py --root .runs/diorama
 
 - `prepare_world.py` creates the save every launch copies (`.runs/diorama-play/diorama-play`):
   `create-world.java` (fixed seed, creative, no mobs, time and weather frozen), then one
-  flight over the whole path so every chunk is generated and saved.
+  flight over the whole path so every chunk is generated and saved. Every region file the
+  experiment's `files` copies gets its chunk nearest the origin generated too (`r.-1.1` is never
+  reached by the flight), and the copied save is checked for each of them.
 - Each launch starts with Diorama's map folder deleted (`reset`) and the production JIT
   (`"jit": "full"`) and turns server saving off (`save-off.java`). Right before the cold capture
   `fly.java` flies east for 30 s, right before the warm capture south for 30 s, at 16 blocks/s

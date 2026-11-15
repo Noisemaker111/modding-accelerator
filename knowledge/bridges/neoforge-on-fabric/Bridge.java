@@ -47,6 +47,7 @@ public final class Bridge {
     static synchronized void hook() {
         if (hooked) return;
         hooked = true;
+        GameEvents.hook();
         ServerLifecycleEvents.SERVER_STARTING.register(started -> server = started);
         ServerLifecycleEvents.SERVER_STOPPED.register(stopped -> server = null);
         ServerLifecycleEvents.SERVER_STARTING.register(server -> Bus.INSTANCE.post(new ServerStartingEvent(server)));
