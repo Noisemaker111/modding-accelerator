@@ -1637,7 +1637,8 @@
     "net.neoforged.neoforge.common.CommonHooks": "CommonHooks",
     "net.neoforged.neoforge.common.extensions.IEntityExtension": "IEntityExtension",
     "net.neoforged.neoforge.common.extensions.IBlockStateExtension": "IBlockStateExtension",
-    "net.neoforged.neoforge.common.extensions.IItemStackExtension": "IItemStackExtension"
+    "net.neoforged.neoforge.common.extensions.IItemStackExtension": "IItemStackExtension",
+    "net.neoforged.fml.config.IConfigSpec": "IConfigSpec"
    },
    "symbols": {
     "neoforge": [
@@ -1778,7 +1779,18 @@
      "neoforge|net.neoforged.neoforge.common.extensions.IBlockStateExtension#canEntityDestroy",
      "neoforge|net.neoforged.neoforge.common.extensions.IBlockExtension#canEntityDestroy",
      "neoforge|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot",
-     "neoforge|net.neoforged.neoforge.common.extensions.IItemExtension#getEquipmentSlot"
+     "neoforge|net.neoforged.neoforge.common.extensions.IItemExtension#getEquipmentSlot",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec#getSpec",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec#getValues",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec#afterReload",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#test",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#correct",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#getClazz",
+     "neoforge|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#getComment",
+     "fml|net.neoforged.fml.config.ModConfig#getLoadedConfig",
+     "fml|net.neoforged.fml.config.ModConfig#getFullPath",
+     "fml|net.neoforged.fml.config.IConfigSpec$ILoadedConfig#config",
+     "fml|net.neoforged.fml.config.IConfigSpec$ILoadedConfig#save"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -1976,7 +1988,13 @@
        "neoforge-21.1|net.neoforged.neoforge.common.extensions.IEntityExtension#getPersistentData",
        "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension#getLightEmission",
        "neoforge-21.1|net.neoforged.neoforge.common.extensions.IBlockStateExtension#canEntityDestroy",
-       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot"
+       "neoforge-21.1|net.neoforged.neoforge.common.extensions.IItemStackExtension#getEquipmentSlot",
+       "neoforge-21.1|net.neoforged.neoforge.common.ModConfigSpec#getSpec",
+       "neoforge-21.1|net.neoforged.neoforge.common.ModConfigSpec#getValues",
+       "neoforge-21.1|net.neoforged.neoforge.common.ModConfigSpec$ValueSpec#test",
+       "fml-21.1|net.neoforged.fml.config.ModConfig#getLoadedConfig",
+       "fml-21.1|net.neoforged.fml.config.ModConfig#getFullPath",
+       "fml-21.1|net.neoforged.fml.config.IConfigSpec$ILoadedConfig#config"
       ],
       "fabric": [
        "fabric-api-1.21.1|net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#MODIFY_ENTRIES_ALL",

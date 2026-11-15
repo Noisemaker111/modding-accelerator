@@ -704,6 +704,16 @@ final class Convert {
                 boolean yarn = properties(read("gradle.properties")).keySet().stream().anyMatch(k -> k.startsWith("yarn_"));
                 List<String> unconverted = new ArrayList<>();
                 List<String> lines = widenerToTransformer(text, !yarn, unconverted);
+                // Members NeoForge's own access transformer opens need no line of the mod's (the way back from Fabric).
+                Set<String> opened = new HashSet<>();
+                for (String line : neoforgeAccessTransformers(minecraft)) {
+                    String[] t = line.split("\\s+");
+                    if (t.length >= 3) opened.add(t[1] + " " + t[2]);
+                }
+                lines.removeIf(line -> {
+                    String[] t = line.split("\\s+");
+                    return t.length >= 3 && opened.contains(t[1] + " " + t[2]);
+                });
                 accessTransformers.addAll(lines);
                 for (String u : unconverted) leave(path, 0, u, "an access widener entry with no access transformer counterpart");
                 delete(path);
@@ -2219,9 +2229,19 @@ final class Convert {
         for (Object rule : LoaderRules.list(rules.get("expressions"))) if (
             Json.object(rule).get("accessTransformers") instanceof Map<?, ?> at
         ) known.addAll(LoaderRules.strings(Json.object(at).get("neoforge")));
-        if (exists(AT_FILE)) {
+        // NeoForge's own access transformer opened members for every mod; those the code names stay open on Fabric.
+        List<String> neoforgeAccess = usedNeoForgeAccess(minecraft);
+        if (exists(AT_FILE) || !neoforgeAccess.isEmpty()) {
             List<String> keep = new ArrayList<>();
-            for (String line : read(AT_FILE).lines().toList()) if (!known.contains(line.strip())) keep.add(line);
+            if (exists(AT_FILE)) for (String line : read(AT_FILE).lines().toList()) if (!known.contains(line.strip())) keep.add(line);
+            for (String line : neoforgeAccess) if (!keep.contains(line)) keep.add(line);
+            if (!neoforgeAccess.isEmpty()) notes.add(
+                "Access widener: " +
+                neoforgeAccess.size() +
+                " member(s) NeoForge's own access transformer opens for every mod, which the code uses: " +
+                String.join("; ", neoforgeAccess) +
+                "."
+            );
             if (!keep.stream().allMatch(l -> l.isBlank() || l.strip().startsWith("#"))) {
                 List<String> unconverted = new ArrayList<>();
                 String widener = transformerToWidener(
@@ -2236,7 +2256,7 @@ final class Convert {
                 widenerConverted = true;
                 applied.computeIfAbsent("access-widener", k -> new ArrayList<>()).add(AT_FILE);
             }
-            delete(AT_FILE);
+            if (exists(AT_FILE)) delete(AT_FILE);
         }
         toml.remove("[[accessTransformers]]");
         buildToFabric(minecraft, menu != null);
@@ -2342,6 +2362,67 @@ final class Convert {
 
     String bridgeFolder() {
         return "src/main/java/" + bridgePackage.replace('.', '/');
+    }
+
+    /**
+     * NeoForge's own access transformer lines for this game (the NeoForge bridge folder's .cfg files, or its version
+     * layer's), comments dropped: NeoForge applies them to the game for every mod.
+     */
+    List<String> neoforgeAccessTransformers(String minecraft) throws IOException {
+        for (Object item : LoaderRules.list(rules.get("bridges"))) {
+            var b = Json.object(item);
+            if (!"neoforge".equals(b.get("from")) || !"fabric".equals(b.get("to"))) continue;
+            Map<String, Object> layer = bridgeLayer(b, minecraft);
+            if (Versions.compare(minecraft, Json.text(b, "minecraft", "99")) < 0 && layer == null) continue;
+            List<String> out = new ArrayList<>();
+            for (Map<String, Object> from : layer == null ? List.of(b) : List.of(layer, b)) {
+                Path folder = build.harness.resolve(Json.text(from, "folder", ""));
+                if (!Files.isDirectory(folder)) continue;
+                try (var files = Files.list(folder)) {
+                    for (Path cfg : files.filter(p -> p.getFileName().toString().endsWith(".cfg")).sorted().toList()) {
+                        for (String line : Files.readString(cfg, StandardCharsets.UTF_8).lines().toList()) {
+                            String stripped = line.replaceAll("#.*$", "").strip();
+                            if (!stripped.isEmpty()) out.add(stripped);
+                        }
+                    }
+                }
+                // A version layer's own file stands in for the bridge's.
+                if (!out.isEmpty()) return out;
+            }
+            return out;
+        }
+        return List.of();
+    }
+
+    /**
+     * NeoForge's own access transformer lines for the members the converted code names (.member, ::member, or new
+     * Owner( for a constructor): the code was written with those open, so its Fabric access widener opens them too.
+     */
+    List<String> usedNeoForgeAccess(String minecraft) throws IOException {
+        List<String> lines = neoforgeAccessTransformers(minecraft);
+        if (lines.isEmpty()) return List.of();
+        StringBuilder all = new StringBuilder();
+        for (String file : javaFiles()) if (bridgePackage == null || !file.startsWith(bridgeFolder() + "/")) all.append(read(file)).append('\n');
+        String code = all.toString();
+        List<String> out = new ArrayList<>();
+        for (String line : lines) {
+            String[] t = line.split("\\s+");
+            if (t.length < 3) continue;
+            int paren = t[2].indexOf('(');
+            String member = paren < 0 ? t[2] : t[2].substring(0, paren);
+            String owner = t[1].substring(Math.max(t[1].lastIndexOf('.'), t[1].lastIndexOf('$')) + 1);
+            boolean named = Pattern.compile("(?<![\\w$])" + Pattern.quote(owner) + "(?![\\w$])").matcher(code).find();
+            boolean used;
+            if (member.equals("<init>")) used = Pattern.compile("\\bnew\\s+(?:[\\w.]+\\.)?" + Pattern.quote(owner) + "\\s*[(<]").matcher(code).find();
+            else if (paren >= 0) used = named && Pattern.compile("(?:\\.|::)\\s*" + Pattern.quote(member) + "\\s*\\(?(?![\\w$])").matcher(code).find();
+            else {
+                // A field is read on an instance whose class the file need not name (zombie.goalSelector): a long enough
+                // name is taken on its own, a short one (level) only where its class is named.
+                used = (named || member.length() >= 7) && Pattern.compile("\\.\\s*" + Pattern.quote(member) + "(?![\\w$(])").matcher(code).find();
+            }
+            if (used) out.add(line);
+        }
+        return out;
     }
 
     /**

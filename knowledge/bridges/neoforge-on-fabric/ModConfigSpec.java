@@ -1,5 +1,10 @@
 package ${package};
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.InMemoryCommentedFormat;
+import com.electronwill.nightconfig.core.InMemoryFormat;
+import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -23,14 +28,18 @@ import java.util.function.Supplier;
  * NeoForge's net.neoforged.neoforge.common.ModConfigSpec on Fabric: the same builder and values, kept in the same
  * TOML file NeoForge writes (config/MODID-TYPE.toml unless the mod names one). A missing or invalid value takes its
  * default and the file is written back corrected, as NeoForge corrects it. Translation keys and restart flags only
- * matter to NeoForge's config screen, which Fabric does not have, and are kept but unused.
+ * matter to NeoForge's config screen, which Fabric does not have, and are kept but unused. getSpec(), getValues() and
+ * ModConfig.getLoadedConfig() give the values as NightConfig configs, as NeoForge does, so a converted mod carries
+ * NightConfig (which NeoForge shipped) in its jar.
  */
-public class ModConfigSpec {
+public class ModConfigSpec implements IConfigSpec {
 
     final List<ConfigValue<?>> values;
     final Map<List<String>, String> levelComments;
     Path file;
     boolean loaded;
+    /** The loaded values as NightConfig's config, which ModConfig.getLoadedConfig() hands out (NeoForge keeps its values in one). */
+    CommentedConfig loadedConfig;
 
     ModConfigSpec(List<ConfigValue<?>> values, Map<List<String>, String> levelComments) {
         this.values = values;
@@ -50,7 +59,68 @@ public class ModConfigSpec {
         return levelComments.get(path);
     }
 
-    public void afterReload() {}
+    /** Every value's ValueSpec by its path, as NeoForge's spec config holds them. */
+    public UnmodifiableConfig getSpec() {
+        Config spec = Config.of(LinkedHashMap::new, InMemoryFormat.withUniversalSupport());
+        for (ConfigValue<?> value : values) spec.set(value.path, new ValueSpec(value));
+        return spec;
+    }
+
+    /** Every ConfigValue by its path, in the order they were defined. */
+    public UnmodifiableConfig getValues() {
+        Config all = Config.of(LinkedHashMap::new, InMemoryFormat.withUniversalSupport());
+        for (ConfigValue<?> value : values) all.set(value.path, value);
+        return all;
+    }
+
+    /** Takes the loaded config's values (as a mod changed them through ModConfig.getLoadedConfig()), as NeoForge's reload does. */
+    public void afterReload() {
+        if (loadedConfig == null) return;
+        for (ConfigValue<?> value : values) value.accept(loadedConfig.get(value.path));
+        syncLoadedConfig();
+    }
+
+    /** NeoForge's ModConfigSpec.ValueSpec: one value's comment, default and validation. */
+    public static class ValueSpec {
+
+        final ConfigValue<?> value;
+
+        ValueSpec(ConfigValue<?> value) {
+            this.value = value;
+        }
+
+        public String getComment() {
+            return value.comment;
+        }
+
+        public String getTranslationKey() {
+            return null;
+        }
+
+        public Class<?> getClazz() {
+            Object fallback = value.getDefault();
+            return fallback == null ? Object.class : fallback.getClass();
+        }
+
+        public boolean test(Object candidate) {
+            Object converted = value.convert(candidate);
+            return converted != null && value.validator.test(converted);
+        }
+
+        public Object correct(Object candidate) {
+            return test(candidate) ? value.convert(candidate) : getDefault();
+        }
+
+        public Object getDefault() {
+            return value.getDefault();
+        }
+    }
+
+    /** The values as NightConfig's commented config, kept in step with them. */
+    void syncLoadedConfig() {
+        if (loadedConfig == null) loadedConfig = CommentedConfig.of(LinkedHashMap::new, InMemoryCommentedFormat.withUniversalSupport());
+        for (ConfigValue<?> value : values) loadedConfig.set(value.path, value.get());
+    }
 
     /** Reads the file (or writes it with the defaults when there is none); values it lacks or rejects take their defaults. */
     void load(Path file) {
@@ -68,6 +138,7 @@ public class ModConfigSpec {
         boolean corrected = !exists;
         for (ConfigValue<?> value : values) corrected |= !value.accept(raw.get(value.path));
         loaded = true;
+        syncLoadedConfig();
         if (corrected) save();
     }
 
@@ -394,6 +465,7 @@ public class ModConfigSpec {
 
         public void set(T value) {
             this.value = value;
+            if (spec != null && spec.loadedConfig != null) spec.loadedConfig.set(path, value);
         }
 
         public void clearCache() {}
@@ -489,6 +561,7 @@ public class ModConfigSpec {
 
         @Override
         Object convert(Object raw) {
+            if (type.isInstance(raw)) return raw;
             if (raw instanceof String name) for (T constant : type.getEnumConstants()) if (constant.name().equalsIgnoreCase(name)) return constant;
             return null;
         }
