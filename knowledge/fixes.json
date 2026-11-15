@@ -6226,6 +6226,134 @@
         "after": "package mod;\n\nimport net.minecraft.world.InteractionResult;\n\nclass Stove {\n\tprotected InteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return InteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return InteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return InteractionResult.CONSUME_PARTIAL;\n\t\treturn InteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
         "from": "written for this rule"
       }
+    },
+    {
+      "id": "methods-return-nonnull-annotation-gone",
+      "provenance": "hand",
+      "jump": "1.21.10 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+class MethodsReturnNonnullByDefault|cannot find symbol\\s+import net\\.minecraft\\.MethodsReturnNonnullByDefault",
+      "apply": {
+        "find": "(?m)^[ \\t]*@(?:net\\.minecraft\\.)?MethodsReturnNonnullByDefault[ \\t]*\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.11 removed net.minecraft.MethodsReturnNonnullByDefault, a nullness marker (the game moved to JSpecify). The annotation goes; nothing read it.",
+      "verified": "Mojang's client mappings list net.minecraft.MethodsReturnNonnullByDefault in every release from 1.21.1 to 1.21.10 and not in 1.21.11 or the 26.1 jar; it was a nullness marker only, read by no code",
+      "test": {
+        "error": "package-info.java:2: error: cannot find symbol\n  symbol: class MethodsReturnNonnullByDefault\n",
+        "before": "@MethodsReturnNonnullByDefault\n@ParametersAreNonnullByDefault\npackage mod.client.model;\n\nimport net.minecraft.MethodsReturnNonnullByDefault;\nimport javax.annotation.ParametersAreNonnullByDefault;\n",
+        "after": "@ParametersAreNonnullByDefault\npackage mod.client.model;\n\nimport net.minecraft.MethodsReturnNonnullByDefault;\nimport javax.annotation.ParametersAreNonnullByDefault;\n",
+        "from": "written for this rule (the shape of Iron Chests' package-info.java)"
+      }
+    },
+    {
+      "id": "methods-return-nonnull-import-gone",
+      "provenance": "hand",
+      "jump": "1.21.10 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+class MethodsReturnNonnullByDefault|cannot find symbol\\s+import net\\.minecraft\\.MethodsReturnNonnullByDefault",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.MethodsReturnNonnullByDefault;[ \\t]*\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The import of the removed marker goes with it.",
+      "verified": "Mojang's client mappings list net.minecraft.MethodsReturnNonnullByDefault in every release from 1.21.1 to 1.21.10 and not in 1.21.11 or the 26.1 jar; it was a nullness marker only, read by no code",
+      "test": {
+        "error": "package-info.java:5: error: cannot find symbol\nimport net.minecraft.MethodsReturnNonnullByDefault;\n",
+        "before": "@MethodsReturnNonnullByDefault\n@ParametersAreNonnullByDefault\npackage mod.client.model;\n\nimport net.minecraft.MethodsReturnNonnullByDefault;\nimport javax.annotation.ParametersAreNonnullByDefault;\n",
+        "after": "@MethodsReturnNonnullByDefault\n@ParametersAreNonnullByDefault\npackage mod.client.model;\n\nimport javax.annotation.ParametersAreNonnullByDefault;\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "level-random-protected",
+      "provenance": "hand",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "random has protected access in (?:net\\.minecraft\\.world\\.level\\.)?Level\\b",
+      "apply": {
+        "find": "\\.random\\b(?!\\s*[(=\\[])",
+        "replace": ".getRandom()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.1 made Level.random protected; Level.getRandom() returns the same RandomSource. Only the lines javac reported change, so an entity's own random on another line is left alone.",
+      "verified": "Mojang's 1.21.11 client jar: Level.random (obfuscated dwo.y) is public final; Mojang's 26.1 jar: protected final RandomSource random, public RandomSource getRandom()",
+      "test": {
+        "error": "ModSpawner.java:4: error: random has protected access in Level\n",
+        "before": "package mod;\n\nclass ModSpawner {\n\tint roll(Level level) { return level.random.nextInt(10); }\n}\n",
+        "after": "package mod;\n\nclass ModSpawner {\n\tint roll(Level level) { return level.getRandom().nextInt(10); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "direction-property-create",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) DirectionProperty\\b",
+      "apply": {
+        "find": "\\bDirectionProperty\\.create\\(\\s*((?:\\\"[^\\\"]*\\\")|[\\w.]+)",
+        "replace": "EnumProperty.create($1, Direction.class",
+        "ensureImports": [
+          "net.minecraft.world.level.block.state.properties.EnumProperty",
+          "net.minecraft.core.Direction"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed DirectionProperty; a direction property is EnumProperty<Direction>, made with EnumProperty.create(name, Direction.class, ...). Any filter or value list that followed the name stays.",
+      "verified": "Mojang's 1.21.2 client mappings have no net.minecraft.world.level.block.state.properties.DirectionProperty; BlockStateProperties.FACING is an EnumProperty<Direction> (26.1 jar: public static final EnumProperty<Direction> FACING)",
+      "test": {
+        "error": "StoveBlock.java:20: error: cannot find symbol\n  symbol:   variable DirectionProperty\n",
+        "before": "package mod;\n\nclass StoveBlock {\n\tstatic final DirectionProperty FACING = DirectionProperty.create(\"facing\", Direction.Plane.HORIZONTAL);\n}\n",
+        "after": "package mod;\nimport net.minecraft.core.Direction;\nimport net.minecraft.world.level.block.state.properties.EnumProperty;\n\nclass StoveBlock {\n\tstatic final DirectionProperty FACING = EnumProperty.create(\"facing\", Direction.class, Direction.Plane.HORIZONTAL);\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "direction-property-type",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) DirectionProperty\\b",
+      "apply": {
+        "find": "(?m)^(?!import)(.*?)\\bDirectionProperty\\b(?!\\.)",
+        "replace": "$1EnumProperty<Direction>",
+        "ensureImports": [
+          "net.minecraft.world.level.block.state.properties.EnumProperty",
+          "net.minecraft.core.Direction"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2: a field or parameter typed DirectionProperty is an EnumProperty<Direction> (BlockStateProperties.HORIZONTAL_FACING keeps its name); its import goes.",
+      "verified": "Mojang's 26.1 jar (same since 1.21.2): BlockStateProperties.HORIZONTAL_FACING is public static final EnumProperty<Direction>",
+      "test": {
+        "error": "StoveBlock.java:20: error: cannot find symbol\n  symbol:   class DirectionProperty\n",
+        "before": "package mod;\n\nclass StoveBlock {\n\tpublic static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;\n}\n",
+        "after": "package mod;\nimport net.minecraft.core.Direction;\nimport net.minecraft.world.level.block.state.properties.EnumProperty;\n\nclass StoveBlock {\n\tpublic static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "direction-property-import-gone",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "cannot find symbol\\s+import net\\.minecraft\\.world\\.level\\.block\\.state\\.properties\\.DirectionProperty|symbol:\\s+class DirectionProperty\\b",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.world\\.level\\.block\\.state\\.properties\\.DirectionProperty;[ \\t]*\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed DirectionProperty, so its import goes (EnumProperty and Direction are imported where they are used).",
+      "verified": "Mojang's 1.21.2 client mappings have no DirectionProperty",
+      "test": {
+        "error": "StoveBlock.java:3: error: cannot find symbol\nimport net.minecraft.world.level.block.state.properties.DirectionProperty;\n",
+        "before": "package mod;\n\nimport net.minecraft.world.level.block.state.properties.DirectionProperty;\n\nclass StoveBlock {}\n",
+        "after": "package mod;\n\n\nclass StoveBlock {}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }
