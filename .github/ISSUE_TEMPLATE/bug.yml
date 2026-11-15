@@ -1,5 +1,5 @@
 name: Something went wrong
-description: A modaccel command failed, passed when it should not have, or said something confusing.
+description: A mmt command failed, passed when it should not have, or said something confusing.
 labels: [bug]
 body:
   - type: input
@@ -7,7 +7,7 @@ body:
     attributes:
       label: Command
       description: The exact command you ran.
-      placeholder: modaccel port --from 1.21.1 --to 1.21.6 --fix
+      placeholder: mmt port --from 1.21.1 --to 1.21.6 --fix
     validations:
       required: true
   - type: input
@@ -22,7 +22,7 @@ body:
     id: happened
     attributes:
       label: What happened
-      description: Paste the output. The receipt path modaccel prints at the end helps most.
+      description: Paste the output. The receipt path mmt prints at the end helps most.
       render: text
     validations:
       required: true
@@ -42,5 +42,5 @@ body:
   - type: input
     id: version
     attributes:
-      label: modaccel version
-      description: From `modaccel doctor`.
+      label: mmt version
+      description: From `mmt doctor`.

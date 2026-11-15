@@ -45,7 +45,7 @@ final class TestResults {
         for (Object item : Json.array(model.get("projects"))) {
             var project = Json.object(item);
             Path directory = Path.of(project.get("directory").toString()).resolve(
-                "build/modaccel/test-results/" + runId + "/" + task
+                "build/mmt/test-results/" + runId + "/" + task
             );
             if (!Files.isDirectory(directory)) continue;
             try (var stream = Files.list(directory)) {

@@ -22,7 +22,7 @@ public final class GameTests {
             "run-"
         );
         Path existingArgs = scratch.resolve("existing loom args.txt");
-        Files.writeString(existingArgs, "-Dmodaccel.launchProbe=existing-file\n");
+        Files.writeString(existingArgs, "-Dmmt.launchProbe=existing-file\n");
         String classpath =
             System.getProperty("java.class.path") +
             (File.pathSeparator + scratch.resolve("nonexistent # ' path")).repeat(1100);
@@ -54,9 +54,9 @@ public final class GameTests {
             !Game.c1(Json.map("background", false, "quiet", true), "ui-check"),
             "hidden test sessions compile with C1 alone; perf, hidden or not, and visible games use the full JIT"
         );
-        List<String> recordedHidden = List.of("-Xmx2G", "-XX:TieredStopAtLevel=1", "-Dmodaccel.token=old", "Main");
+        List<String> recordedHidden = List.of("-Xmx2G", "-XX:TieredStopAtLevel=1", "-Dmmt.token=old", "Main");
         check(
-            Game.savedArguments(recordedHidden, true, false, false, "new").equals(List.of("-Xmx2G", "-Dmodaccel.token=new", "Main")) &&
+            Game.savedArguments(recordedHidden, true, false, false, "new").equals(List.of("-Xmx2G", "-Dmmt.token=new", "Main")) &&
             Game.savedArguments(List.of("-Xmx2G", "Main"), false, false, true, "new").equals(List.of("-XX:TieredStopAtLevel=1", "-Xmx2G", "Main")) &&
             Game.savedArguments(recordedHidden, false, false, false, "new").contains("-XX:TieredStopAtLevel=1"),
             "a saved launch takes this launch's compiler, not the recorded one, and keeps a build's own flag"
@@ -170,21 +170,21 @@ public final class GameTests {
         );
         Preferences.change(
             prefs,
-            new Modaccel.Options(new String[] { "preferences", "--background", "on", "--quiet", "on" })
+            new Mmt.Options(new String[] { "preferences", "--background", "on", "--quiet", "on" })
         );
         check(
             Boolean.TRUE.equals(Preferences.read(prefs).get("background")) &&
             Boolean.TRUE.equals(Preferences.read(prefs).get("quiet")),
             "personal background and quiet choices survive a reload"
         );
-        Preferences.change(prefs, new Modaccel.Options(new String[] { "preferences", "--background", "off" }));
+        Preferences.change(prefs, new Mmt.Options(new String[] { "preferences", "--background", "off" }));
         check(
             Boolean.FALSE.equals(Preferences.read(prefs).get("background")) &&
             Boolean.TRUE.equals(Preferences.read(prefs).get("quiet")),
             "each personal choice can change without changing the other"
         );
         try {
-            Preferences.change(prefs, new Modaccel.Options(new String[] { "preferences", "--quiet", "maybe" }));
+            Preferences.change(prefs, new Mmt.Options(new String[] { "preferences", "--quiet", "maybe" }));
             throw new AssertionError("invalid preference accepted");
         } catch (IllegalArgumentException expected) {
             check(
@@ -192,7 +192,7 @@ public final class GameTests {
                 "an invalid choice leaves the saved preference intact"
             );
         }
-        Preferences.change(prefs, new Modaccel.Options(new String[] { "preferences", "--quiet", "off" }));
+        Preferences.change(prefs, new Mmt.Options(new String[] { "preferences", "--quiet", "off" }));
         check(
             Boolean.FALSE.equals(Preferences.read(prefs).get("quiet")),
             "a user can opt out of the muted game and the choice is kept"
@@ -502,10 +502,10 @@ public final class GameTests {
 
         public static void main(String[] args) {
             if (
-                !"existing-file".equals(System.getProperty("modaccel.launchProbe")) ||
+                !"existing-file".equals(System.getProperty("mmt.launchProbe")) ||
                 !Arrays.equals(args, new String[] { "@literal", "spaces and slash\\" })
             ) throw new AssertionError(
-                "launch arguments changed: " + System.getProperty("modaccel.launchProbe") + " " + Arrays.toString(args)
+                "launch arguments changed: " + System.getProperty("mmt.launchProbe") + " " + Arrays.toString(args)
             );
             System.out.println("LAUNCH_OK");
         }

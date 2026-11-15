@@ -32,7 +32,7 @@ One JVM property, appended to the node's existing dev launch command:
 ```
 
 In a `.bat`/`.cmd` every literal `%` must be doubled, so `%%` becomes `%%%%` (this is
-exactly what `modaccel.ps1` already does for `prismlab`).
+exactly what `mmt.ps1` already does for `prismlab`).
 
 Supporting properties, all optional:
 
@@ -59,7 +59,7 @@ cd bench\bridge
 ```
 
 `run-bridge.ps1` replays the node's ModDevGradle recipe
-(`build/moddev/clientWarmRunVmArgs.txt`, `.modaccel/neoforge-cp.args`,
+(`build/moddev/clientWarmRunVmArgs.txt`, `.mmt/neoforge-cp.args`,
 `build/moddev/clientWarmRunProgramArgs.txt`) directly, with a throwaway game directory
 in `bench\bridge\run`, and waits for the port. Logs: `client.log`, `client.err`.
 

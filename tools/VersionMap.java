@@ -24,13 +24,13 @@ import javax.tools.*;
  *   java tools/VersionMap.java --map map.json --fix <build log> --repo <dir> [--rules learned.json] [--dry-run]
  *   java tools/VersionMap.java --map map.json --learn <a.diff> [--learn <b.diff>...] --out learned.json
  *
- * Mappings download once into the cache (default ~/.modaccel/mappings). Versions from 26.1 ship
+ * Mappings download once into the cache (default ~/.mmt/mappings). Versions from 26.1 ship
  * unobfuscated and have no intermediary yet; they are reported, not guessed.
  * Exit: 0 ok, 2 usage or I/O error.
  */
 public final class VersionMap {
 
-    static Path cache = Path.of(System.getProperty("user.home"), ".modaccel", "mappings");
+    static Path cache = Path.of(System.getProperty("user.home"), ".mmt", "mappings");
     static final HttpClient HTTP = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
 
     public static void main(String[] args) throws Exception {
@@ -1257,7 +1257,7 @@ public final class VersionMap {
             ".gradle",
             ".git",
             "run",
-            ".modaccel",
+            ".mmt",
             ".tools",
             ".runs",
             ".lab",

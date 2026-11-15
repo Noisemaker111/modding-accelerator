@@ -12,7 +12,7 @@ import java.util.*;
  * expanded by the java launcher), the class and module paths, the main class with its arguments, and
  * the working directory. Nothing from the environment is recorded.
  */
-public final class ModaccelLaunchRecorder {
+public final class MmtLaunchRecorder {
 
     public static void premain(String output, java.lang.instrument.Instrumentation instrumentation) throws Exception {
         List<String> options = new ArrayList<String>(ManagementFactory.getRuntimeMXBean().getInputArguments());
@@ -31,7 +31,7 @@ public final class ModaccelLaunchRecorder {
         } finally {
             out.close();
         }
-        System.out.println("MODACCEL_RECORDED " + output);
+        System.out.println("MMT_RECORDED " + output);
         System.out.flush();
         Runtime.getRuntime().halt(0);
     }

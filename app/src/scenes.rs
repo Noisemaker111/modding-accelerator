@@ -1,4 +1,4 @@
-//! Named states for headless snapshots (`--scene NAME`), built from real modaccel answers saved
+//! Named states for headless snapshots (`--scene NAME`), built from real mmt answers saved
 //! in `ui-tests/fixtures` (paths made generic). Nothing here runs a command.
 
 use std::path::PathBuf;

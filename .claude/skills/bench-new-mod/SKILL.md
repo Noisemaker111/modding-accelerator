@@ -1,6 +1,6 @@
 ---
 name: bench-new-mod
-description: Take an unfamiliar Minecraft mod or plugin repo and find out everything about it with modaccel - its own workflow, a before/after bench, whether we support it, which versions it can run on, how we could help, and whether it joins the test suite. Use when Jon pastes a mod/plugin repo link or says "bench this mod", "try our thing on this", "new mod".
+description: Take an unfamiliar Minecraft mod or plugin repo and find out everything about it with mmt - its own workflow, a before/after bench, whether we support it, which versions it can run on, how we could help, and whether it joins the test suite. Use when Jon pastes a mod/plugin repo link or says "bench this mod", "try our thing on this", "new mod".
 ---
 
 1. Clone into `.runs/beta-trials/<name>` at a pinned commit. Read its build, run scripts, tests and mod metadata.

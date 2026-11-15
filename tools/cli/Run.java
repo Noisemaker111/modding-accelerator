@@ -27,13 +27,13 @@ final class Run {
     }
 
     /**
-     * With MODACCEL_PROGRESS set (the desktop app sets it), one stderr line per step while --json keeps its answer
-     * for the end: modaccel-progress {"step": what is running, "log": the file that step writes, or null}.
+     * With MMT_PROGRESS set (the desktop app sets it), one stderr line per step while --json keeps its answer
+     * for the end: mmt-progress {"step": what is running, "log": the file that step writes, or null}.
      */
     static void progress(String step, Path log) {
-        if (System.getenv("MODACCEL_PROGRESS") == null) return;
+        if (System.getenv("MMT_PROGRESS") == null) return;
         String file = log == null ? null : log.toAbsolutePath().toString();
-        System.err.println("modaccel-progress " + Json.write(Json.map("step", step, "log", file)));
+        System.err.println("mmt-progress " + Json.write(Json.map("step", step, "log", file)));
         System.err.flush();
     }
 
@@ -56,7 +56,7 @@ final class Run {
      * A game or server this command started and still answers for. Until handOff(), close() or this JVM's exit (a
      * failure, Ctrl-C, a parent's kill) ends it and everything it started: hidden games that outlived the command
      * that started them ran for 13 hours. A game a Gradle daemon started is no descendant of this command; it
-     * prints "MODACCEL_PID n" first thing (the in-game agent does), and the log it writes to is read for it.
+     * prints "MMT_PID n" first thing (the in-game agent does), and the log it writes to is read for it.
      */
     static final class Owned implements AutoCloseable {
 
@@ -69,7 +69,7 @@ final class Run {
         Owned(ProcessHandle process, Path log) {
             processes.add(process);
             this.log = log;
-            hook = new Thread(this::end, "modaccel-end-owned");
+            hook = new Thread(this::end, "mmt-end-owned");
             Runtime.getRuntime().addShutdownHook(hook);
         }
 
@@ -105,9 +105,9 @@ final class Run {
         }
     }
 
-    private static final Pattern ANNOUNCED = Pattern.compile("MODACCEL_PID (\\d+)");
+    private static final Pattern ANNOUNCED = Pattern.compile("MMT_PID (\\d+)");
 
-    /** Processes a log names with "MODACCEL_PID n" that still run and started after since (a reused pid did not). */
+    /** Processes a log names with "MMT_PID n" that still run and started after since (a reused pid did not). */
     static List<ProcessHandle> announced(Path log, Instant since) {
         List<ProcessHandle> found = new ArrayList<>();
         if (log == null) return found;

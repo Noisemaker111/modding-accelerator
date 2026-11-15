@@ -10,7 +10,7 @@ public final class Bootstrap {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) throw new IllegalArgumentException("Bootstrap needs the harness directory");
         Path harness = Path.of(args[0]).toAbsolutePath().normalize();
-        Path source = harness.resolve("tools/cli"), cache = harness.resolve(".modaccel/cli");
+        Path source = harness.resolve("tools/cli"), cache = harness.resolve(".mmt/cli");
         Files.createDirectories(cache);
         List<Path> files;
         try (var stream = Files.list(source)) {
@@ -39,7 +39,7 @@ public final class Bootstrap {
                 Files.createDirectories(output);
                 var compiler = ToolProvider.getSystemJavaCompiler();
                 if (compiler == null) throw new IllegalStateException(
-                    "A source checkout needs JDK 17 or newer. A packaged modaccel.jar also runs on a JRE."
+                    "A source checkout needs JDK 17 or newer. A packaged mmt.jar also runs on a JRE."
                 );
                 List<String> options = new ArrayList<>(
                     List.of("--release", "17", "-encoding", "UTF-8", "-d", output.toString())
@@ -49,12 +49,12 @@ public final class Bootstrap {
                 Files.writeString(stamp, modified);
             }
         }
-        System.setProperty("modaccel.home", harness.toString());
+        System.setProperty("mmt.home", harness.toString());
         try (
             var loader = new URLClassLoader(new URL[] { output.toUri().toURL() }, ClassLoader.getPlatformClassLoader())
         ) {
             loader
-                .loadClass("Modaccel")
+                .loadClass("Mmt")
                 .getMethod("main", String[].class)
                 .invoke(null, (Object) Arrays.copyOfRange(args, 1, args.length));
         }

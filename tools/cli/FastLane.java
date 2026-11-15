@@ -5,10 +5,10 @@ import java.util.*;
 /** Keep Gradle authoritative; reuse compiled outputs only after hashing their inputs AND bytes. */
 final class FastLane {
 
-    static Map<String, Object> run(Build build, Map<String, Object> model, Modaccel.Options options) throws Exception {
+    static Map<String, Object> run(Build build, Map<String, Object> model, Mmt.Options options) throws Exception {
         List<String> tasks = options.values.containsKey("task")
             ? List.of(options.get("task", ""))
-            : build.tasks(model, "modaccelPure");
+            : build.tasks(model, "mmtPure");
         if (tasks.isEmpty()) throw new IOException(
             "No test source set, so no logic has been verified. Add JUnit 5 tests under src/test/java (tag them @Tag(\"pure\") when Minecraft is on the test classpath)."
         );
@@ -95,7 +95,7 @@ final class FastLane {
         List<String> command = new ArrayList<>(
             List.of(jdk.java().toString(), "-cp", runner + File.pathSeparator + cp, "PureTests", result.toString())
         );
-        if (selection == Selection.ALL) command.add(1, "-Dmodaccel.allTests=true");
+        if (selection == Selection.ALL) command.add(1, "-Dmmt.allTests=true");
         command.addAll(roots);
         var run = Run.command(command, build.project.root, Map.of(), build.report.log("pure-tests"), 120);
         build.report.stage("pure-tests", run, Json.map("compiledOutputs", "verified reuse"));
@@ -174,8 +174,8 @@ final class FastLane {
 
     static Map<String, Object> gradle(Build build, Map<String, Object> model, List<String> tasks, Selection selection)
         throws Exception {
-        var arguments = new ArrayList<>(List.of("-Dmodaccel.recompile=true"));
-        if (selection == Selection.ALL) arguments.add("-Dmodaccel.allTests=true");
+        var arguments = new ArrayList<>(List.of("-Dmmt.recompile=true"));
+        if (selection == Selection.ALL) arguments.add("-Dmmt.allTests=true");
         arguments.addAll(tasks);
         var run = build.gradle(arguments, "pure-tests");
         var counts = TestResults.readTasks(model, tasks, build.report.id);
@@ -245,7 +245,7 @@ final class FastLane {
             "No tests ran: found " +
             files +
             " test file(s), but none is tagged @Tag(\"pure\"). fast runs only pure tests, since they run without the game;" +
-            " tag the ones that never touch a Minecraft class, or run modaccel test for all of them." +
+            " tag the ones that never touch a Minecraft class, or run mmt test for all of them." +
             example
         );
         return (

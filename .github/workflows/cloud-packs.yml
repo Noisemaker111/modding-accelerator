@@ -1,5 +1,5 @@
 name: Cloud pack sweep
-# modaccel pack-check on GitHub's runners instead of an agent's PC: one ubuntu-latest job per pinned pack
+# mmt pack-check on GitHub's runners instead of an agent's PC: one ubuntu-latest job per pinned pack
 # (bench/pack-sweep/corpus.json, or repro.json for the packs known faults were found in), at most 12 at once so
 # other CI keeps runners. Dispatch with tools/cloud-run (python tools/cloud-run.py packs). Each job uploads its
 # record, pack-check's log and the server logs; the summary job ranks the gaps (python bench/pack_sweep.py table).

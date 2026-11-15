@@ -8,7 +8,7 @@ import java.util.*;
  * the same shape every time, so sessions on different mods can be summed and compared
  * ({@code python bench/perf_sessions.py}) and accepted runs can be kept in coverage/perf-runs.json
  * ({@code python bench/record.py perf RECORD}). Written next to the run's output as record.json and
- * copied to .runs/perf-records/ in the modaccel checkout.
+ * copied to .runs/perf-records/ in the mmt checkout.
  */
 final class PerfRecord {
     static final List<String> KINDS = List.of("perf", "perf-optimize", "comparison");
@@ -20,7 +20,7 @@ final class PerfRecord {
     final List<Object> steps = new ArrayList<>();
     final List<Object> load = new ArrayList<>();
 
-    PerfRecord(String kind, Modaccel.Options options) {
+    PerfRecord(String kind, Mmt.Options options) {
         record.put("schema", 1);
         record.put("id", Instant.now().toString().replace(':', '-') + "-" + UUID.randomUUID().toString().substring(0, 8));
         record.put("kind", kind);
@@ -146,7 +146,7 @@ final class PerfRecord {
         return record;
     }
 
-    /** Writes record.json into the run's output and a copy into .runs/perf-records of the modaccel checkout. */
+    /** Writes record.json into the run's output and a copy into .runs/perf-records of the mmt checkout. */
     Path save(Path home, Path out) throws Exception {
         List<String> problems = validate(record);
         if (!problems.isEmpty()) record.put("problems", problems);

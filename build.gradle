@@ -28,7 +28,7 @@ loom {
 			client()
 			runDir "build/run/warm"
 			property("prismlab.lab.port", "27399")
-			vmArg "-javaagent:${projectDir}/.modaccel/agent.jar"
+			vmArg "-javaagent:${projectDir}/.mmt/agent.jar"
 			vmArg "-Dprismlab.agent.port=27398"
 			vmArg "-XX:+AllowEnhancedClassRedefinition"
 			vmArg "-XX:TieredStopAtLevel=1"
@@ -51,7 +51,7 @@ loom {
 			client()
 			runDir "build/run/mp"
 			property("prismlab.lab.port", "27389")
-			vmArg "-javaagent:${projectDir}/.modaccel/agent.jar"
+			vmArg "-javaagent:${projectDir}/.mmt/agent.jar"
 			vmArg "-Dprismlab.agent.port=27388"
 			vmArg "-XX:+AllowEnhancedClassRedefinition"
 			vmArg "-XX:TieredStopAtLevel=1"
@@ -65,7 +65,7 @@ loom {
 			client()
 			runDir "build/run/mp2"
 			property("prismlab.lab.port", "27379")
-			vmArg "-javaagent:${projectDir}/.modaccel/agent.jar"
+			vmArg "-javaagent:${projectDir}/.mmt/agent.jar"
 			vmArg "-Dprismlab.agent.port=27378"
 			vmArg "-XX:+AllowEnhancedClassRedefinition"
 			vmArg "-XX:TieredStopAtLevel=1"
@@ -171,7 +171,7 @@ publishing {
 // Classpath export for the retained tools/LabDaemon.java lane.
 // The portable CLI's FastLane reads the evaluated model from tools/cli/gradle.init.gradle instead.
 tasks.register("labClasspath") {
-	def out = layout.projectDirectory.file(".modaccel/classpath.txt")
+	def out = layout.projectDirectory.file(".mmt/classpath.txt")
 	def cp = sourceSets["test"].runtimeClasspath.asPath
 	doLast {
 		out.asFile.parentFile.mkdirs()

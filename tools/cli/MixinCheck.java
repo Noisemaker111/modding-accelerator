@@ -11,7 +11,7 @@ import java.util.regex.*;
  *
  * How: the build's client run task is recorded once (Fabric: the init script's launch record;
  * NeoForge: a recorder agent inside the launched JVM, because NeoGradle and ModDevGradle assemble
- * the launch inside exec). The same launch is then started with tools/mixincheck/ModaccelMixinCheck
+ * the launch inside exec). The same launch is then started with tools/mixincheck/MmtMixinCheck
  * in place of the game's main class: Fabric Loader's Knot is set up as fabric-loader-junit does,
  * NeoForge through its unit-test launch target (forgejunituserdev) as junit-fml does, and every
  * class the mod's mixin configs target is loaded, which is what makes Mixin apply them.
@@ -21,10 +21,10 @@ import java.util.regex.*;
 final class MixinCheck {
 
     static final List<String> SOURCES = List.of(
-        "tools/mixincheck/ModaccelMixinCheck.java",
-        "tools/mixincheck/ModaccelMixinErrors.java",
-        "tools/mixincheck/ModaccelLaunchRecorder.java",
-        "tools/mixincheck/ModaccelNeoForgeTarget.java"
+        "tools/mixincheck/MmtMixinCheck.java",
+        "tools/mixincheck/MmtMixinErrors.java",
+        "tools/mixincheck/MmtLaunchRecorder.java",
+        "tools/mixincheck/MmtNeoForgeTarget.java"
     );
     static final List<String> STUBS = List.of(
         "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinErrorHandler.java",
@@ -62,7 +62,7 @@ final class MixinCheck {
         return neoforge ? "neoforge" : fabric ? "fabric" : "";
     }
 
-    Map<String, Object> run(Modaccel.Options options) throws Exception {
+    Map<String, Object> run(Mmt.Options options) throws Exception {
         long begin = System.nanoTime();
         String loader = loader(model);
         Map<String, Object> mods = modMixins(null);
@@ -250,7 +250,7 @@ final class MixinCheck {
         return false;
     }
 
-    String clientTask(Modaccel.Options options) {
+    String clientTask(Mmt.Options options) {
         String task = options.get("client-task", "");
         if (!task.isEmpty()) return task;
         List<String> tasks = new ArrayList<>();
@@ -270,7 +270,7 @@ final class MixinCheck {
         for (String name : STUBS) stubs.add(build.harness.resolve(name));
         List<Path> all = new ArrayList<>(sources);
         all.addAll(stubs);
-        Path directory = build.harness.resolve(".modaccel/mixin-check/" + Fingerprints.files(all).substring(0, 16));
+        Path directory = build.harness.resolve(".mmt/mixin-check/" + Fingerprints.files(all).substring(0, 16));
         if (Files.exists(directory.resolve("ready"))) return directory;
         Runtimes.Jdk jdk = Runtimes.ensureAtLeast(build.harness, 17);
         Path stubClasses = directory.resolve("stubs"), classes = directory.resolve("classes");
@@ -311,8 +311,8 @@ final class MixinCheck {
             "The Mixin check's own classes did not compile. " + Run.tail(compiled.log())
         );
         // The recorder is a Java agent, so it needs a jar with a Premain-Class.
-        agentJar(directory.resolve("recorder.jar"), classes, "ModaccelLaunchRecorder");
-        agentJar(directory.resolve("neoforge-target.jar"), classes, "ModaccelNeoForgeTarget");
+        agentJar(directory.resolve("recorder.jar"), classes, "MmtLaunchRecorder");
+        agentJar(directory.resolve("neoforge-target.jar"), classes, "MmtNeoForgeTarget");
         Files.writeString(directory.resolve("ready"), "ok");
         return directory;
     }
@@ -377,14 +377,14 @@ final class MixinCheck {
         Files.deleteIfExists(recorded);
         List<String> arguments = new ArrayList<>(
             List.of(
-                "-Dmodaccel.captureTask=" + task,
-                "-Dmodaccel.launchFile=" + launchFile,
-                "-Dmodaccel.skipAssets=true",
-                "-Dmodaccel.fingerprint=" + fingerprint
+                "-Dmmt.captureTask=" + task,
+                "-Dmmt.launchFile=" + launchFile,
+                "-Dmmt.skipAssets=true",
+                "-Dmmt.fingerprint=" + fingerprint
             )
         );
-        if (viaAgent) arguments.add("-Dmodaccel.agent=" + tools.resolve("recorder.jar") + "=" + recorded);
-        else arguments.add("-Dmodaccel.recordOnly=true");
+        if (viaAgent) arguments.add("-Dmmt.agent=" + tools.resolve("recorder.jar") + "=" + recorded);
+        else arguments.add("-Dmmt.recordOnly=true");
         arguments.add(task);
         var prepared = build.gradle(arguments, "mixin-check-prepare");
         Map<String, Object> saved;
@@ -524,7 +524,7 @@ final class MixinCheck {
                 continue;
             }
             if (
-                option.startsWith("-Dmodaccel.") ||
+                option.startsWith("-Dmmt.") ||
                 option.startsWith("-Dsun.java.command") ||
                 option.equals("-Dfabric.noGui=true")
             ) continue;
@@ -611,31 +611,31 @@ final class MixinCheck {
         command.addAll(
             List.of(
                 "-Dmixin.debug.injectors=true",
-                "-Dmodaccel.mixincheck.out=" + out,
-                "-Dmodaccel.mixincheck.configs=" + String.join(",", configs),
-                "-Dmodaccel.mixincheck.side=" + side,
-                "-Dmodaccel.mixincheck.loader=" + loader
+                "-Dmmt.mixincheck.out=" + out,
+                "-Dmmt.mixincheck.configs=" + String.join(",", configs),
+                "-Dmmt.mixincheck.side=" + side,
+                "-Dmmt.mixincheck.loader=" + loader
             )
         );
         String main = launch.main();
         List<String> arguments = new ArrayList<>(launch.arguments());
         if (loader.equals("fabric")) {
-            main = fabricMain(launch, "ModaccelMixinCheck", command);
+            main = fabricMain(launch, "MmtMixinCheck", command);
         } else if (main.startsWith(FML_STARTUP)) {
             // FancyModLoader 12 (NeoForge 26.x) starts through net.neoforged.fml.startup: the check calls the same
             // startup the Client and Server mains call, with the recorded arguments, and loads the targets instead.
-            main = "ModaccelMixinCheck";
-            command.add("-Dmodaccel.mixincheck.fml=startup");
+            main = "MmtMixinCheck";
+            command.add("-Dmmt.mixincheck.fml=startup");
         } else {
             if (!main.equals(NEO_MAIN)) throw new IOException(
                 "Unrecognised NeoForge dev launch (main class " +
                 main +
                 "); the Mixin check knows BootstrapLauncher and FancyModLoader's net.neoforged.fml.startup."
             );
-            main = "ModaccelMixinCheck";
+            main = "MmtMixinCheck";
             // NeoForge's unit-test launch target sets up FML, its mods and Mixin with no early window, as junit-fml does.
             // It is fixed to the server side and then bootstraps the game; the agent makes it build the game layer
-            // for the side being checked and return (see ModaccelNeoForgeTarget).
+            // for the side being checked and return (see MmtNeoForgeTarget).
             command.add("-javaagent:" + tools.resolve("neoforge-target.jar") + "=" + side);
             List<String> kept = new ArrayList<>(List.of("--launchTarget", junitTarget(launch)));
             for (int i = 0; i + 1 < arguments.size(); i++) if (
@@ -712,7 +712,7 @@ final class MixinCheck {
         return name.find() ? name.group(1) : null;
     }
 
-    // --- The recorded launch, started with one of modaccel's classes in place of the game (mixin-check, data-check) ---
+    // --- The recorded launch, started with one of mmt's classes in place of the game (mixin-check, data-check) ---
 
     /** The launch's Java and JVM options for SIDE, each agent loaded once, the loader's GUI off. */
     static List<String> options(Launch launch, String side) {
@@ -744,7 +744,7 @@ final class MixinCheck {
         ) throw new IOException(
             "Unrecognised Fabric dev launch (main class " +
             main +
-            "); modaccel knows Knot, Loom's dev launch injector and Architectury's transformer."
+            "); mmt knows Knot, Loom's dev launch injector and Architectury's transformer."
         );
         return main;
     }

@@ -22,10 +22,10 @@ replay_*.log
 *.hprof
 *.jfr
 
-# modaccel's own working folders. Scratch output belongs in .runs/, not the repo root.
+# mmt's own working folders. Scratch output belongs in .runs/, not the repo root.
 .tools/
 .runs/
-.modaccel/
+.mmt/
 .workers/
 .lab/
 logs/
@@ -53,8 +53,8 @@ server.properties
 usercache.json
 
 # Harness copies the older Windows lane installs into a version node
-versions/*/modaccel.ps1
-versions/*/modaccel.cmd
+versions/*/mmt.ps1
+versions/*/mmt.cmd
 versions/*/tools/
 versions/*/check.ps1
 versions/*/lint.ps1

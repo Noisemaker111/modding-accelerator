@@ -8,7 +8,7 @@ import net.fabricmc.api.EnvType;
 
 /**
  * NeoForge's net.neoforged.fml.common.EventBusSubscriber. NeoForge finds these classes by scanning the mod; on Fabric,
- * modaccel convert lists them at conversion time and the mod's entrypoint registers each one's static @SubscribeEvent
+ * mmt convert lists them at conversion time and the mod's entrypoint registers each one's static @SubscribeEvent
  * methods (value CLIENT: the client entrypoint). Dist became Fabric's EnvType with the rest of the mod.
  */
 @Retention(RetentionPolicy.RUNTIME)

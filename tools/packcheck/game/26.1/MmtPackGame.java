@@ -1,4 +1,4 @@
-package modaccel.packprobe;
+package mmt.packprobe;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,29 +15,29 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
 /**
- * The game calls pack-check's probe makes that changed between Minecraft versions, for Minecraft 1.18 to 1.19.2: the registries are
- * static fields of Registry, and the dimensions live in the world's generation settings.
+ * The game calls pack-check's probe makes that changed between Minecraft versions, for Minecraft 26.1 and later: chunk positions
+ * pack into a long with ChunkPos.pack.
  * pack-check compiles the probe with the variant in tools/packcheck/game/ whose folder names the newest version at or
  * below the pack's, so one probe source serves every version; each variant keeps the same methods.
  */
-final class ModaccelPackGame {
+final class MmtPackGame {
 
-    private ModaccelPackGame() {}
+    private MmtPackGame() {}
 
     static Iterable<Item> items() {
-        return Registry.ITEM;
+        return BuiltInRegistries.ITEM;
     }
 
     static String itemId(Item item) {
-        return Registry.ITEM.getKey(item).toString();
+        return BuiltInRegistries.ITEM.getKey(item).toString();
     }
 
     static String itemNamespace(Item item) {
-        return Registry.ITEM.getKey(item).getNamespace();
+        return BuiltInRegistries.ITEM.getKey(item).getNamespace();
     }
 
     static String blockId(Block block) {
-        return String.valueOf(Registry.BLOCK.getKey(block));
+        return String.valueOf(BuiltInRegistries.BLOCK.getKey(block));
     }
 
     /** The server finished starting. */
@@ -46,7 +46,7 @@ final class ModaccelPackGame {
     }
 
     static BlockPos spawn(ServerLevel level) {
-        return level.getSharedSpawnPos();
+        return level.getRespawnData().pos();
     }
 
     /** The highest block a level can hold. */
@@ -55,29 +55,21 @@ final class ModaccelPackGame {
     }
 
     static long chunkKey(int x, int z) {
-        return net.minecraft.world.level.ChunkPos.asLong(x, z);
+        return net.minecraft.world.level.ChunkPos.pack(x, z);
     }
 
-    /**
-     * Whether a player can find the item in a creative tab. An item in none is a block a mod places itself (a portal, a
-     * spectral block) or a debug block (Applied Energistics 2's chunk loader, whose reload loads chunks while chunks load).
-     */
+    /** From 1.19.3 creative tabs list their items when built, not on the item; every block item is placed. */
     static boolean listed(Item item) {
-        return item.getItemCategory() != null;
+        return true;
     }
 
-    /**
-     * Keeps a chunk loaded through the chunk system's own ticket, which loads it and its neighbours off the server
-     * thread. Level.setChunkForced loads it at once on the server thread first, before its neighbours exist, and a mod
-     * that reads a neighbour while the chunk finishes (Immersive Engineering's fluid hook) then loads chunk after chunk
-     * there: All the Mods 10's watchdog stopped that after 300 s.
-     */
+    /** Keeps a chunk loaded; pack-check then waits for it to load. */
     static void forceChunk(ServerLevel level, int x, int z) {
-        level.getChunkSource().updateChunkForced(new net.minecraft.world.level.ChunkPos(x, z), true);
+        level.setChunkForced(x, z, true);
     }
 
     static void moveTo(ServerPlayer player, double x, double y, double z, float yaw, float pitch) {
-        player.moveTo(x, y, z, yaw, pitch);
+        player.snapTo(x, y, z, yaw, pitch);
     }
 
     /**
@@ -88,10 +80,10 @@ final class ModaccelPackGame {
         JsonArray out = new JsonArray();
         var access = server.registryAccess();
         var ops = net.minecraft.resources.RegistryOps.create(net.minecraft.nbt.NbtOps.INSTANCE, access);
-        var stems = server.getWorldData().worldGenSettings().dimensions();
+        var stems = access.lookupOrThrow(net.minecraft.core.registries.Registries.LEVEL_STEM);
         for (var entry : stems.entrySet()) {
             JsonObject row = new JsonObject();
-            row.addProperty("dimension", entry.getKey().location().toString());
+            row.addProperty("dimension", entry.getKey().identifier().toString());
             try {
                 var written = net.minecraft.world.level.dimension.LevelStem.CODEC.encodeStart(ops, entry.getValue());
                 if (written.error().isPresent()) {
@@ -109,7 +101,7 @@ final class ModaccelPackGame {
                 // Find the smallest saved part that fails on its own, so the report names it.
                 if (read.error().isPresent()) row.addProperty("failingPart", failingPart(ops, tag));
             } catch (Throwable failure) {
-                row.addProperty("error", ModaccelPackProbe.stack(failure));
+                row.addProperty("error", MmtPackProbe.stack(failure));
             }
             out.add(row);
         }
@@ -131,20 +123,20 @@ final class ModaccelPackGame {
         }
         if (!(tag instanceof net.minecraft.nbt.CompoundTag compound)) return;
         if (compound.contains("biome") && compound.get("parameters") instanceof net.minecraft.nbt.CompoundTag parameters) {
-            for (String key : parameters.getAllKeys()) {
+            for (String key : parameters.keySet()) {
                 double limit = key.equals("offset") ? 1 : 2, low = key.equals("offset") ? 0 : -2;
                 List<Double> values = new ArrayList<>();
                 var value = parameters.get(key);
-                if (value instanceof net.minecraft.nbt.NumericTag number) values.add(number.getAsDouble());
-                if (value instanceof net.minecraft.nbt.ListTag pair) for (var v : pair) if (v instanceof net.minecraft.nbt.NumericTag n) values.add(n.getAsDouble());
+                if (value instanceof net.minecraft.nbt.NumericTag number) values.add(number.doubleValue());
+                if (value instanceof net.minecraft.nbt.ListTag pair) for (var v : pair) if (v instanceof net.minecraft.nbt.NumericTag n) values.add(n.doubleValue());
                 for (double v : values) if (v < low || v > limit) {
-                    String biome = compound.getString("biome");
+                    String biome = compound.getStringOr("biome", "");
                     if (seen.add(biome)) found.add(biome + " " + key + "=" + v);
                 }
             }
             return;
         }
-        for (String key : compound.getAllKeys()) outOfRange(compound.get(key), found, seen);
+        for (String key : compound.keySet()) outOfRange(compound.get(key), found, seen);
     }
 
     /** The path inside a saved dimension whose own codec rejects it: generator, then biome_source, then settings. */
@@ -153,7 +145,7 @@ final class ModaccelPackGame {
         StringBuilder found = new StringBuilder();
         if (generator.contains("biome_source")) {
             var read = net.minecraft.world.level.biome.BiomeSource.CODEC.parse(ops, generator.get("biome_source"));
-            if (read.error().isPresent()) found.append("generator.biome_source (").append(generator.getCompound("biome_source").getString("type")).append("): ").append(read.error().get().message()).append('\n');
+            if (read.error().isPresent()) found.append("generator.biome_source (").append(generator.getCompoundOrEmpty("biome_source").getStringOr("type", "")).append("): ").append(read.error().get().message()).append('\n');
         }
         if (generator.contains("settings")) {
             var read = net.minecraft.world.level.levelgen.NoiseGeneratorSettings.CODEC.parse(ops, generator.get("settings"));

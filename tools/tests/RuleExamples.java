@@ -9,7 +9,7 @@ import java.util.stream.Stream;
  * Finds, for a port rule, the first place in real mod source that the rule rewrites, and runs the porter's own
  * rewrite on it. bench/rule_test.py drives this: it turns each answer into the rule's test {error, before, after}.
  *
- *   java -cp modaccel.jar:classes RuleExamples request.json response.json
+ *   java -cp mmt.jar:classes RuleExamples request.json response.json
  *
  * request:  {"rules": [rule, ...], "samples": {id: text the rule's match should find}, "sources": [{"dir", "names", "label"}],
  *            "after": [rule, ...]}   rules an earlier round of the same port runs first; each file is read as they leave it

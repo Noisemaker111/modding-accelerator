@@ -2,27 +2,27 @@
 <#
   lab - one command for checking a Minecraft mod.
 
-    .\modaccel              fast lane: compile + pure logic tests              about a second
-    .\modaccel world        registry check in a JVM, then a real server world   about 25s
-    .\modaccel node -Expect 64   the block probe must report exactly 64        about 3s (no -Expect: must match the last run)
-    .\modaccel ui           UI check inside the already-running client        about a second (cold: one client start)
-    .\modaccel scenario     scripted steps in the warm world + screenshots    0.2-3s
-    .\modaccel suite        every case in scenarios\*.txt, one warm client    seconds
-    .\modaccel diff         references your code makes that a jar lacks      1-2s
-    .\modaccel port -Log <log>   the compiler's own errors, grouped by file    instant
-    .\modaccel port -Fix -Log <log>   apply the known fixes for those errors, rebuild, repeat   seconds per round
-    .\modaccel port -Check -To <mc>   can this repo build at all?     10-90s
-    .\modaccel look         full client game test from a fresh client         about 35s
-    .\modaccel all          fast + world + ui, stops at the first failure
-    .\modaccel watch        fast lane again on every save
-    .\modaccel doctor       JDK, versions, fast lane and warm client state
-    .\modaccel logs         recent runs with timings
-    .\modaccel mp           dedicated server + hidden client + scenario     first run: server + client boot
-    .\modaccel mp -Cold     the same, after stopping a server that predates src
-    .\modaccel status       what is running, on which port, for how long     instant
-    .\modaccel -Version 1.21.11 ui   the same check on another Minecraft node
-    .\modaccel -Repo C:\mods\foo fast   the same lane on another repo (this one by default)
-    .\modaccel stop         stop the fast lane, both clients and the server
+    .\mmt              fast lane: compile + pure logic tests              about a second
+    .\mmt world        registry check in a JVM, then a real server world   about 25s
+    .\mmt node -Expect 64   the block probe must report exactly 64        about 3s (no -Expect: must match the last run)
+    .\mmt ui           UI check inside the already-running client        about a second (cold: one client start)
+    .\mmt scenario     scripted steps in the warm world + screenshots    0.2-3s
+    .\mmt suite        every case in scenarios\*.txt, one warm client    seconds
+    .\mmt diff         references your code makes that a jar lacks      1-2s
+    .\mmt port -Log <log>   the compiler's own errors, grouped by file    instant
+    .\mmt port -Fix -Log <log>   apply the known fixes for those errors, rebuild, repeat   seconds per round
+    .\mmt port -Check -To <mc>   can this repo build at all?     10-90s
+    .\mmt look         full client game test from a fresh client         about 35s
+    .\mmt all          fast + world + ui, stops at the first failure
+    .\mmt watch        fast lane again on every save
+    .\mmt doctor       JDK, versions, fast lane and warm client state
+    .\mmt logs         recent runs with timings
+    .\mmt mp           dedicated server + hidden client + scenario     first run: server + client boot
+    .\mmt mp -Cold     the same, after stopping a server that predates src
+    .\mmt status       what is running, on which port, for how long     instant
+    .\mmt -Version 1.21.11 ui   the same check on another Minecraft node
+    .\mmt -Repo C:\mods\foo fast   the same lane on another repo (this one by default)
+    .\mmt stop         stop the fast lane, both clients and the server
 #>
 param(
 	[Parameter(Position = 0)]
@@ -67,7 +67,7 @@ param(
 $ErrorActionPreference = 'Continue'
 # Two folders, kept apart on purpose. The harness (this script, tools\, knowledge\) stays where it
 # is installed; the repo is whatever -Repo names, and every repo path below - build\, src\, gradlew,
-# .modaccel and .runs - belongs to it. With no -Repo the two are the same folder.
+# .mmt and .runs - belongs to it. With no -Repo the two are the same folder.
 $harness = $PSScriptRoot
 if (-not $harness) { $harness = Split-Path -Parent $MyInvocation.MyCommand.Path }
 $harness = $harness.TrimEnd('\')
@@ -92,7 +92,7 @@ if ($Repo) {
 $toolHome = Join-Path $harness '.tools'
 Set-Location $root
 
-$lab = Join-Path $root '.modaccel'
+$lab = Join-Path $root '.mmt'
 $runs = Join-Path $root '.runs'
 $logs = Join-Path $runs 'logs'
 $pidFile = Join-Path $lab 'daemon.pid'
@@ -106,7 +106,7 @@ if (Test-Path $nodeVmArgs) {
 	$declared = [regex]::Match((Get-Content $nodeVmArgs -Raw), 'prismlab\.lab\.port=(\d+)').Groups[1].Value
 	if ($declared) { $clientPort = [int]$declared }
 }
-$declaredPort = Join-Path $root '.modaccel\client.port'
+$declaredPort = Join-Path $root '.mmt\client.port'
 if (Test-Path $declaredPort) {
 	$fromFile = [int]((Get-Content $declaredPort -Raw).Trim())
 	if ($fromFile -gt 0) { $clientPort = $fromFile }
@@ -180,15 +180,15 @@ if (Test-Path $wrapperProps) {
 
 $clientVerbs = @('check', 'watch', 'restart', 'ui', 'node', 'suite', 'scenario', 'mp', 'look', 'bench', 'all')
 if ($Verb -in $clientVerbs) {
-	$preferenceJson = & (Join-Path $harness 'modaccel.cmd') preferences --json
+	$preferenceJson = & (Join-Path $harness 'mmt.cmd') preferences --json
 	if ($LASTEXITCODE -ne 0) { Write-Host 'Could not read game launch preferences.' -ForegroundColor Red; exit 2 }
 	$preferences = $preferenceJson | ConvertFrom-Json
 	if ($preferences.background -or $preferences.quiet) {
-		$preparedJson = & (Join-Path $harness 'modaccel.cmd') legacy-agent --root $root --json
+		$preparedJson = & (Join-Path $harness 'mmt.cmd') legacy-agent --root $root --json
 		if ($LASTEXITCODE -ne 0) { Write-Host 'Could not prepare the requested background or quiet game launch:' -ForegroundColor Red; Write-Host $preparedJson; exit 2 }
 		$prepared = $preparedJson | ConvertFrom-Json
 		$agentOption = '"-javaagent:' + $prepared.result.agent + '=legacy"'
-		$env:JAVA_TOOL_OPTIONS = (($env:JAVA_TOOL_OPTIONS, $agentOption, "-Dmodaccel.background=$($preferences.background.ToString().ToLowerInvariant())", "-Dmodaccel.quiet=$($preferences.quiet.ToString().ToLowerInvariant())") | Where-Object { $_ }) -join ' '
+		$env:JAVA_TOOL_OPTIONS = (($env:JAVA_TOOL_OPTIONS, $agentOption, "-Dmmt.background=$($preferences.background.ToString().ToLowerInvariant())", "-Dmmt.quiet=$($preferences.quiet.ToString().ToLowerInvariant())") | Where-Object { $_ }) -join ' '
 	}
 }
 
@@ -315,7 +315,7 @@ function Send-Line {
 }
 
 # --- bridge: a client that belongs to someone else's mod ----------------------
-# The standalone jar in bench\bridge (or .modaccel\bridge.jar, which install.ps1 copies) is the
+# The standalone jar in bench\bridge (or .mmt\bridge.jar, which install.ps1 copies) is the
 # control socket for a client whose own mod has none. It is added through -Dfml.modFolders, so
 # the host mod's sources, build files and launch scripts are never edited.
 
@@ -352,7 +352,7 @@ function Test-ForgeRepo {
 }
 
 function Get-ForgeBridgeJar {
-	# .modaccel\bridge-forge.jar is what install.ps1 copies; the harness build output and a jar
+	# .mmt\bridge-forge.jar is what install.ps1 copies; the harness build output and a jar
 	# an earlier run already put in mods\ are the fallbacks, so a hand-installed repo still works.
 	$installed = Join-Path $lab 'bridge-forge.jar'
 	if (Test-Path $installed) { return (Resolve-Path $installed).Path }
@@ -417,7 +417,7 @@ function Split-ForgeArgs {
 }
 
 function Get-ForgeLaunch {
-	# The captured command line, from .modaccel\forge.args (tools\capture-launch.ps1) or a
+	# The captured command line, from .mmt\forge.args (tools\capture-launch.ps1) or a
 	# forge-launch.txt capture note in the repo or next to it. Returns the tokens after java.exe.
 	foreach ($file in @(
 			(Join-Path $lab 'forge.args'),
@@ -637,7 +637,7 @@ function Start-Daemon {
 	$argFile = Join-Path $lab 'daemon.args'
 	Set-Content $argFile ($args | ForEach-Object { '"' + ($_ -replace '\\', '\\') + '"' }) -Encoding utf8NoBOM
 	# Detach through cmd start, like the warm client. Start-Process with redirected output hands the
-	# daemon this shell's own output handles, so whoever captures `modaccel fast` (an agent's shell,
+	# daemon this shell's own output handles, so whoever captures `mmt fast` (an agent's shell,
 	# a pipe, CI) would wait on the resident JVM forever after the check had already finished.
 	$launcher = Join-Path $lab 'start-daemon.cmd'
 	Set-Content $launcher ("@echo off`r`ncd /d `"$root`"`r`n`"$java`" @`"$argFile`" > `"$(Join-Path $lab 'daemon.out')`" 2> `"$(Join-Path $lab 'daemon.err')`"`r`nexit")
@@ -656,7 +656,7 @@ function Start-Daemon {
 		if ($daemon -and -not (Get-Process -Id $daemon.ProcessId -ErrorAction SilentlyContinue)) { break }
 		Start-Sleep -Milliseconds 150
 	}
-	Write-Host 'Fast lane did not start. See .modaccel\daemon.err' -ForegroundColor Red
+	Write-Host 'Fast lane did not start. See .mmt\daemon.err' -ForegroundColor Red
 	return $false
 }
 
@@ -710,7 +710,7 @@ function Test-PortOpen {
 
 function Start-WarmClient {
 	if ((Test-PortOpen) -and -not (Test-WarmClient)) {
-		Write-Host "Port $clientPort is held by another repo's lab client. Run .\modaccel stop in that repo, or close its window." -ForegroundColor Red
+		Write-Host "Port $clientPort is held by another repo's lab client. Run .\mmt stop in that repo, or close its window." -ForegroundColor Red
 		return $false
 	}
 	if ($bridgeListener -and $clientPort -ne $hostPort -and -not (Test-PortOpen)) {
@@ -718,7 +718,7 @@ function Start-WarmClient {
 		# one on the same folder conflicts, so say what to do instead of starting it.
 		$old = Get-LabAnswer -Port $hostPort
 		if ($old -and ($old | ConvertFrom-Json).root -eq $root) {
-			Write-Host "A client for this repo is already running on port $hostPort without the bridge. Run .\modaccel stop, then again: it restarts once with the bridge." -ForegroundColor Yellow
+			Write-Host "A client for this repo is already running on port $hostPort without the bridge. Run .\mmt stop, then again: it restarts once with the bridge." -ForegroundColor Yellow
 			return $false
 		}
 	}
@@ -772,13 +772,13 @@ function Start-WarmClient {
 	$forge = if ($forgeRepo) { Get-ForgeLaunch } else { $null }
 	if ($forgeRepo) {
 		# ForgeGradle (Forge) writes no launch recipe: the whole command is one inline line, captured
-		# once into .modaccel\forge.args (tools\capture-launch.ps1). Replaying it skips Gradle, and the
+		# once into .mmt\forge.args (tools\capture-launch.ps1). Replaying it skips Gradle, and the
 		# bridge joins as a jar in the game folder, which for ForgeGradle is the repo root.
 		if (-not $forge) {
 			Write-Host 'Forge: this repo has no captured launch, so the client cannot start without Gradle.' -ForegroundColor Yellow
 			Write-Host '       once: .\gradlew runClient, then in another window:' -ForegroundColor Yellow
-			Write-Host '       .\tools\capture-launch.ps1 -Match forgeclientuserdev -Out .modaccel\forge.args' -ForegroundColor Yellow
-			Write-Host '       close that client, then .\modaccel ui replays the line (no Gradle).' -ForegroundColor DarkGray
+			Write-Host '       .\tools\capture-launch.ps1 -Match forgeclientuserdev -Out .mmt\forge.args' -ForegroundColor Yellow
+			Write-Host '       close that client, then .\mmt ui replays the line (no Gradle).' -ForegroundColor DarkGray
 			return $false
 		}
 		if (-not $forgeJar) {
@@ -870,7 +870,7 @@ function Start-WarmClient {
 	# A pid from an earlier run may name a process that is gone, or one that is someone else's.
 	Remove-Item $clientPid -Force -ErrorAction SilentlyContinue
 	Start-Process -FilePath 'cmd.exe' -ArgumentList @('/c', 'start', '""', '/b', $launcher) -WorkingDirectory $root -WindowStyle Hidden
-	# modaccel expands $root, so this repo's recipe paths only appear in this repo's game JVM.
+	# mmt expands $root, so this repo's recipe paths only appear in this repo's game JVM.
 	$rootPattern = [regex]::Escape($root)
 	# gradlew.bat hands off to java and exits, so the port is the only reliable signal.
 	$deadline = (Get-Date).AddSeconds(300)
@@ -891,7 +891,7 @@ function Start-WarmClient {
 		}
 		Start-Sleep -Milliseconds 250
 	}
-	Write-Host 'Warm client did not come up. See .modaccel\client.log' -ForegroundColor Red
+	Write-Host 'Warm client did not come up. See .mmt\client.log' -ForegroundColor Red
 	return $false
 }
 
@@ -1063,7 +1063,7 @@ function Invoke-Ui {
 	if (-not $result) {
 		# A render exception takes the whole client down, so there is no answer and no frame.
 		# Name that instead of printing a transport error plus an old path.
-		$why = if ($line) { "the client answered with no result: $line" } else { 'the client died before it answered (see .modaccel\client.log)' }
+		$why = if ($line) { "the client answered with no result: $line" } else { 'the client died before it answered (see .mmt\client.log)' }
 		Write-Run -Tier $Command -Ok $false -Seconds $seconds -Summary "$why | no screenshot was written by this run"
 		return $false
 	}
@@ -1267,7 +1267,7 @@ if ($Version -and $Version -ne '26.3') {
 		'status' { & pwsh -NoProfile -File $driver status; exit $LASTEXITCODE }
 		'stop' { & pwsh -NoProfile -File $driver stop; exit $LASTEXITCODE }
 		'scenario' {
-			if (-not $Steps) { Write-Host 'usage: modaccel -Version <node> scenario -Steps "..."' -ForegroundColor Red; exit 2 }
+			if (-not $Steps) { Write-Host 'usage: mmt -Version <node> scenario -Steps "..."' -ForegroundColor Red; exit 2 }
 			& pwsh -NoProfile -File $driver scenario $Steps; exit $LASTEXITCODE
 		}
 		'suite' {
@@ -1341,7 +1341,7 @@ switch ($Verb) {
 	}
 	'diff' {
 		if (-not $Old -or -not $New) {
-			Write-Host 'usage: modaccel diff -Old <old minecraft jar> -New <new minecraft jar>' -ForegroundColor Red
+			Write-Host 'usage: mmt diff -Old <old minecraft jar> -New <new minecraft jar>' -ForegroundColor Red
 			exit 2
 		}
 		$classes = Join-Path $root 'build\classes\java\main'
@@ -1355,7 +1355,7 @@ switch ($Verb) {
 	'port' {
 		if ($Api) {
 			if (-not $Old -or -not $New) {
-				Write-Host 'usage: modaccel port -Api <old minecraft jar> <new minecraft jar>' -ForegroundColor Red
+				Write-Host 'usage: mmt port -Api <old minecraft jar> <new minecraft jar>' -ForegroundColor Red
 				Write-Host '       both jars must use the same mappings (yarn with yarn, mojmap with mojmap)' -ForegroundColor Red
 				exit 2
 			}
@@ -1402,7 +1402,7 @@ switch ($Verb) {
 		}
 		if ($Fix) {
 			if (-not $Log) {
-				Write-Host 'usage: modaccel port -Fix -Log <build.log> [-Task <gradle task>] [-Max 5] [-DryRun] [-Repo <repo>]' -ForegroundColor Red
+				Write-Host 'usage: mmt port -Fix -Log <build.log> [-Task <gradle task>] [-Max 5] [-DryRun] [-Repo <repo>]' -ForegroundColor Red
 				exit 2
 			}
 			$result = Invoke-PortFix -Log $Log -Repo $root -Task $Task -Max $Max -DryRun:$DryRun `
@@ -1433,10 +1433,10 @@ switch ($Verb) {
 			exit 1
 		}
 		if (-not $New) {
-			Write-Host 'usage: modaccel port -New <target minecraft jar> [-Old <current jar>] [-Apply]' -ForegroundColor Red
-			Write-Host '       modaccel port -Log <build log> [-New <target jar>]' -ForegroundColor Red
-			Write-Host '       modaccel port -Fix -Log <build log> [-Task <gradle task>] [-Max 5] [-DryRun] [-Repo <repo>]' -ForegroundColor Red
-			Write-Host '       modaccel port -Check [-Repo <repo>] [-To <minecraft version>]' -ForegroundColor Red
+			Write-Host 'usage: mmt port -New <target minecraft jar> [-Old <current jar>] [-Apply]' -ForegroundColor Red
+			Write-Host '       mmt port -Log <build log> [-New <target jar>]' -ForegroundColor Red
+			Write-Host '       mmt port -Fix -Log <build log> [-Task <gradle task>] [-Max 5] [-DryRun] [-Repo <repo>]' -ForegroundColor Red
+			Write-Host '       mmt port -Check [-Repo <repo>] [-To <minecraft version>]' -ForegroundColor Red
 			exit 2
 		}
 		$classes = Join-Path $root 'build\classes\java\main'
@@ -1465,7 +1465,7 @@ switch ($Verb) {
 			}
 			else {
 				$hits | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
-				if ($Apply) { Write-Host "renames: applied $($hits.Count) symbol(s); run .\modaccel next" -ForegroundColor Green }
+				if ($Apply) { Write-Host "renames: applied $($hits.Count) symbol(s); run .\mmt next" -ForegroundColor Green }
 				else { Write-Host 'renames: dry run, nothing written (add -Apply)' -ForegroundColor Yellow }
 			}
 		}
@@ -1499,7 +1499,7 @@ switch ($Verb) {
 		if ($notes.Count -gt 0) { $lines += "## Known fixes from the knowledge base"; $lines += ($notes | Sort-Object -Unique); $lines += "" }
 		$lines += "## Handoff"
 		$lines += "Work through the diff below: each entry is file, symbol and the nearest candidate in the target jar."
-		$lines += "After each fix, run ``.\modaccel`` for logic and ``.\modaccel world`` for registrations."
+		$lines += "After each fix, run ``.\mmt`` for logic and ``.\mmt world`` for registrations."
 		$lines += ""
 		$lines += '```'
 		$lines += (& $java (Join-Path $harness 'tools\SymbolDiff.java') ($(if ($Old) { $Old } else { $New })) $New $classes 2>$null)
@@ -1512,7 +1512,7 @@ switch ($Verb) {
 	}
 	'scenario' {
 		if (-not $Steps) {
-			Write-Host 'usage: modaccel scenario -Steps "place=ns:id|wait=40|assert=charge|capture=name"' -ForegroundColor Red
+			Write-Host 'usage: mmt scenario -Steps "place=ns:id|wait=40|assert=charge|capture=name"' -ForegroundColor Red
 			exit 2
 		}
 		if (-not (Test-WarmClient)) {
@@ -1536,7 +1536,7 @@ switch ($Verb) {
 	}
 	'mp' {
 		if (-not $Steps) {
-			Write-Host 'usage: modaccel mp -Steps "place=ns:id|wait=60|assert=charge|capture=mp-node" [-Cold]' -ForegroundColor Red
+			Write-Host 'usage: mmt mp -Steps "place=ns:id|wait=60|assert=charge|capture=mp-node" [-Cold]' -ForegroundColor Red
 			exit 2
 		}
 		Reset-Stage
@@ -1560,7 +1560,7 @@ switch ($Verb) {
 		$newest = Get-NewestSource
 		$oldest = Get-OldestMpStart
 		if ($newest -and $oldest -and $newest.LastWriteTime -gt $oldest.since) {
-			$summary = "server predates these sources; run .\modaccel mp -Cold ({0} changed {1:HH:mm:ss}, {2} started {3:HH:mm:ss})" -f `
+			$summary = "server predates these sources; run .\mmt mp -Cold ({0} changed {1:HH:mm:ss}, {2} started {3:HH:mm:ss})" -f `
 				$newest.Name, $newest.LastWriteTime, $oldest.what, $oldest.since
 			Write-Run -Tier 'mp' -Ok $false -Seconds ([math]::Round($script:stageClock.Elapsed.TotalSeconds, 1)) -Summary $summary
 			Write-Stage $summary 'Red'
@@ -1609,7 +1609,7 @@ switch ($Verb) {
 	'suite' {
 		$suiteFile = if ($File) { $File } else { Join-Path $root 'scenarios\prismlab.txt' }
 		if (-not (Test-Path $suiteFile)) {
-			Write-Host "usage: modaccel suite -File <scenarios.txt> (default scenarios\prismlab.txt)" -ForegroundColor Red
+			Write-Host "usage: mmt suite -File <scenarios.txt> (default scenarios\prismlab.txt)" -ForegroundColor Red
 			exit 2
 		}
 		$cases = @()
@@ -1635,7 +1635,7 @@ switch ($Verb) {
 			}
 			try {
 				$line = Send-Line -Port $clientPort -Text ("scenario " + $case.Steps)
-				if (-not $line) { throw "the warm client stopped answering (see .modaccel\client.log)" }
+				if (-not $line) { throw "the warm client stopped answering (see .mmt\client.log)" }
 				$result = $line | ConvertFrom-Json
 				$seconds = [math]::Round(((Get-Date) - $caseStart).TotalSeconds, 1)
 				$summary = if ($result.ok) { $result.lines } else { $result.error }

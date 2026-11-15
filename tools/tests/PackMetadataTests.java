@@ -9,7 +9,7 @@ import java.util.*;
  * with a bundled jar, Fabric's fabric.mod.json and Quilt's quilt.mod.json; and what it finds in them: duplicates,
  * missing and wrong-version dependencies, game and loader version mismatches, declared conflicts, a mod for another
  * loader, shared look files and block names.
- * Needs no game and no network (modaccel.pack.offline; mod sides are pre-cached).
+ * Needs no game and no network (mmt.pack.offline; mod sides are pre-cached).
  *
  * The Prehistoric World 2 case: Traverse bundles Biolith 1.0.1-alpha.1, whose saved climate list makes a world open
  * once and never again. The known fault must be found through the bundled copy, and must go away once a newer Biolith
@@ -18,10 +18,10 @@ import java.util.*;
 public final class PackMetadataTests extends PackCheckFixtures {
 
     public static void main(String[] args) throws Exception {
-        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("modaccel-pack");
+        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("mmt-pack");
         String home = System.getProperty("user.home");
         System.setProperty("user.home", scratch.resolve("home").toString());
-        System.setProperty("modaccel.pack.offline", "true");
+        System.setProperty("mmt.pack.offline", "true");
         try {
             forge(harness, scratch);
             inputs(harness, scratch);
@@ -158,7 +158,7 @@ public final class PackMetadataTests extends PackCheckFixtures {
 
     // ------------------------------------------------------------------ the shapes a pack arrives in
     static void inputs(Path harness, Path scratch) throws Exception {
-        Path modrinth = Files.createDirectories(scratch.resolve("home/.modaccel/packs/modrinth"));
+        Path modrinth = Files.createDirectories(scratch.resolve("home/.mmt/packs/modrinth"));
         // A CurseForge app instance lists each mod's project and file; their sides come from the (pre-cached) file API. A jar added by hand stays unknown.
         Path app = scratch.resolve("app"), appMods = Files.createDirectories(app.resolve("mods"));
         jar(appMods.resolve("blur-forge-3.1.1.jar"), Map.of("META-INF/mods.toml", toml("blur", "3.1.1", "")));
@@ -174,7 +174,7 @@ public final class PackMetadataTests extends PackCheckFixtures {
             new String[] { "11-111", "blur-forge-3.1.1.jar", "\"1.20.1\",\"Forge\",\"Client\"" },
             new String[] { "22-222", "traverse-forge-7.0.12.jar", "\"1.20.1\",\"Forge\",\"Client\",\"Server\"" }
         )) {
-            Path meta = Files.createDirectories(scratch.resolve("home/.modaccel/packs/curseforge/" + file[0])).resolve("file.json");
+            Path meta = Files.createDirectories(scratch.resolve("home/.mmt/packs/curseforge/" + file[0])).resolve("file.json");
             Files.writeString(meta, "{\"data\":{\"fileName\":\"" + file[1] + "\",\"fileLength\":1,\"gameVersions\":[" + file[2] + "]}}");
         }
         jar(appMods.resolve("zoomify.jar"), Map.of("fabric.mod.json", "{\"id\":\"zoomify\",\"version\":\"2\"}"));
@@ -206,8 +206,8 @@ public final class PackMetadataTests extends PackCheckFixtures {
         expect(
             unpacked.mods().size() == 1 &&
             unpacked.format().equals("curseforge-export") &&
-            unpackedAt.startsWith(scratch.resolve("home/.modaccel/packs/exports")) &&
-            Files.isRegularFile(unpackedAt.resolve(".modaccel-unpacked")),
+            unpackedAt.startsWith(scratch.resolve("home/.mmt/packs/exports")) &&
+            Files.isRegularFile(unpackedAt.resolve(".mmt-unpacked")),
             "an export is unpacked into the cache: " + unpackedAt
         );
         Files.writeString(unpackedAt.resolve("seen-before.txt"), "x");
@@ -218,7 +218,7 @@ public final class PackMetadataTests extends PackCheckFixtures {
         Path lithium = jar(scratch.resolve("lithium.jar"), Map.of("fabric.mod.json", "{\"id\":\"lithium\",\"version\":\"0.15\"}"));
         Path sodium = jar(scratch.resolve("sodium.jar"), Map.of("fabric.mod.json", "{\"id\":\"sodium\",\"version\":\"0.6\"}"));
         for (Path j : List.of(lithium, sodium)) {
-            Path cached = Files.createDirectories(scratch.resolve("home/.modaccel/packs/modrinth-files").resolve(PackCheck.sha1(j))).resolve(j.getFileName());
+            Path cached = Files.createDirectories(scratch.resolve("home/.mmt/packs/modrinth-files").resolve(PackCheck.sha1(j))).resolve(j.getFileName());
             Files.copy(j, cached);
         }
         String index = Json.write(
@@ -293,7 +293,7 @@ public final class PackMetadataTests extends PackCheckFixtures {
         var lithiumEntry = Json.array(Json.object(Json.parse(fixedIndex)).get("files")).stream().map(Json::object).filter(f -> f.get("path").equals("mods/lithium.jar")).findFirst().orElseThrow();
         expect(
             fromSpaced.mods().size() == 2 &&
-            fixedCopy.getFileName().toString().equals("Small Pack 1.0 (modaccel fixed).mrpack") &&
+            fixedCopy.getFileName().toString().equals("Small Pack 1.0 (mmt fixed).mrpack") &&
             Json.object(lithiumEntry.get("env")).get("server").equals("unsupported"),
             "a pack under a path with spaces is read, and its fixed copy marks a server-only jar: " + fixedCopy + " " + lithiumEntry
         );

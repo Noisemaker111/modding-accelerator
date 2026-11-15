@@ -4,7 +4,7 @@ import java.time.*;
 import java.util.*;
 
 /** Portable public entrypoint. Every result states the tier actually checked. */
-public final class Modaccel {
+public final class Mmt {
 
     static final class Report {
 
@@ -187,7 +187,7 @@ public final class Modaccel {
                 } else throw new IllegalArgumentException(
                     "Unknown option --" +
                     key +
-                    ". Run modaccel help" +
+                    ". Run mmt help" +
                     (command.equals("help") ? "" : " " + command) +
                     " for the options it takes."
                 );
@@ -220,7 +220,7 @@ public final class Modaccel {
         }
     }
 
-    /** Commands for modaccel's own tests, left out of help. */
+    /** Commands for mmt's own tests, left out of help. */
     static final Set<String> INTERNAL = Set.of("legacy-agent");
 
     static final Set<String> COMMANDS = Set.of(
@@ -304,7 +304,7 @@ public final class Modaccel {
                     (Boolean.TRUE.equals(preferences.get("background")) ? "on" : "off") +
                     "\nQuiet sound and narrator: " +
                     (Boolean.TRUE.equals(preferences.get("quiet")) ? "on" : "off") +
-                    "\nChange with: modaccel preferences --background on|off --quiet on|off"
+                    "\nChange with: mmt preferences --background on|off --quiet on|off"
                 );
                 return;
             }
@@ -338,7 +338,7 @@ public final class Modaccel {
             if (
                 Files.isRegularFile(root) && root.toString().toLowerCase(Locale.ROOT).endsWith(".jar")
             ) throw new IllegalArgumentException(
-                "--root needs the mod's Gradle source directory, not a compiled JAR. Check out its source and run modaccel discover --root SOURCE."
+                "--root needs the mod's Gradle source directory, not a compiled JAR. Check out its source and run mmt discover --root SOURCE."
             );
             if (!COMMANDS.contains(options.command)) throw new IllegalArgumentException(
                 unknownCommand(options.command)
@@ -354,7 +354,7 @@ public final class Modaccel {
                     options.command
                 )
             ) lock = ProjectLock.acquire(project, options.command);
-            if (preview) previewReceipts = Files.createTempDirectory("modaccel-convert-receipt-");
+            if (preview) previewReceipts = Files.createTempDirectory("mmt-convert-receipt-");
             report = new Report(preview ? previewReceipts : project.root, options.command);
             Map<String, Object> result;
             String interrupted = options.command.equals("port") ? null : Port.interruptedText(project);
@@ -369,7 +369,7 @@ public final class Modaccel {
                     (Boolean.TRUE.equals(result.get("stonecutter"))
                             ? " (a Stonecutter build names its scripts build.<variant>.gradle.kts)"
                             : "") +
-                    ". Run modaccel setup to evaluate the build itself."
+                    ". Run mmt setup to evaluate the build itself."
                 );
             } else if (options.command.equals("package")) {
                 result = Installation.pack(home, report);
@@ -518,7 +518,7 @@ public final class Modaccel {
                     case "compile", "test" -> {
                         String name = options.command.equals("compile")
                             ? "classes"
-                            : options.command.equals("test") ? "test" : "modaccelPure";
+                            : options.command.equals("test") ? "test" : "mmtPure";
                         List<String> tasks = options.values.containsKey("task")
                             ? List.of(options.get("task", ""))
                             : build.tasks(model, name);
@@ -578,7 +578,7 @@ public final class Modaccel {
                             result.get("details") +
                             "\nMixin targets are not checked by " +
                             options.command +
-                            ": modaccel mixin-check lets Mixin itself apply them, without starting the game."
+                            ": mmt mixin-check lets Mixin itself apply them, without starting the game."
                         );
                     }
                     default -> throw new IllegalArgumentException("Unknown command " + options.command + ". " + help());
@@ -586,7 +586,7 @@ public final class Modaccel {
             }
             if (interrupted != null) result.put(
                 "warning",
-                interrupted + " Undo it with: modaccel port --root \"" + project.root + "\" --undo"
+                interrupted + " Undo it with: mmt port --root \"" + project.root + "\" --undo"
             );
             Map<String, Object> output = report.finish(exit, result);
             if (previewReceipts != null) output.remove("receipt");
@@ -607,14 +607,14 @@ public final class Modaccel {
                 if (!text.isBlank()) System.out.println(text.strip());
                 if (result.get("warning") != null) System.out.println("Warning: " + result.get("warning"));
                 if (result.containsKey("undo")) System.out.println(
-                    "Undo: modaccel port --root \"" + project.root + "\" --undo \"" + result.get("undo") + "\""
+                    "Undo: mmt port --root \"" + project.root + "\" --undo \"" + result.get("undo") + "\""
                 );
                 if (result.containsKey("zip")) System.out.println("Package: " + result.get("zip"));
                 if (output.get("receipt") != null) System.out.println("Receipt: " + output.get("receipt"));
             }
         } catch (Exception error) {
-            // MODACCEL_TRACE=1 prints where a failure came from, for a bug in modaccel itself.
-            if (System.getenv("MODACCEL_TRACE") != null) error.printStackTrace();
+            // MMT_TRACE=1 prints where a failure came from, for a bug in mmt itself.
+            if (System.getenv("MMT_TRACE") != null) error.printStackTrace();
             try {
                 String reported = plainError(error);
                 // A dedicated server that died mid-check is the likelier cause of a client failure: say so with the error.
@@ -635,7 +635,7 @@ public final class Modaccel {
                 } else {
                     // Words first; the receipt keeps the stages and timings for anyone who wants them.
                     System.err.println(
-                        (options == null ? "modaccel" : options.command) + ": failed\n" + reported.strip()
+                        (options == null ? "mmt" : options.command) + ": failed\n" + reported.strip()
                     );
                     if (value.get("receipt") != null) System.err.println("Receipt: " + value.get("receipt"));
                 }
@@ -695,7 +695,7 @@ public final class Modaccel {
                 available.size() +
                 ": " +
                 String.join(", ", available) +
-                ".\nPick one with --project (modaccel setup lists them with their loader and Minecraft version)."
+                ".\nPick one with --project (mmt setup lists them with their loader and Minecraft version)."
             );
         }
         // Port wraps its failure to add the undo line; the file-system cause underneath still needs words.
@@ -799,7 +799,7 @@ public final class Modaccel {
         }
         if (result.get("details") != null) out.append('\n').append(result.get("details"));
         out
-            .append("\nNext: modaccel setup --root \"")
+            .append("\nNext: mmt setup --root \"")
             .append(project.root)
             .append("\" evaluates the build (a minute or more the first time). Add --json for every field.");
         return out.toString();
@@ -832,11 +832,11 @@ public final class Modaccel {
         if (mods.size() > 1) {
             String first = mods.get(mods.size() - 1).split("\\s+")[0];
             out
-                .append("\nCommands work on one of them at a time: add --project, e.g. modaccel compile --root \"")
+                .append("\nCommands work on one of them at a time: add --project, e.g. mmt compile --root \"")
                 .append(project.root)
                 .append("\" --project ")
                 .append(first);
-        } else out.append("\nNext: modaccel compile --root \"").append(project.root).append("\", then fast for tests.");
+        } else out.append("\nNext: mmt compile --root \"").append(project.root).append("\", then fast for tests.");
         out.append("\nModel: ").append(result.get("model")).append(" (add --json for every task and pin)");
         return out.toString();
     }
@@ -847,21 +847,21 @@ public final class Modaccel {
 
     static String help(String command) {
         return switch (command) {
-            case "perf" -> "Profile a running local Java 17+ game/server: modaccel perf [--attach PID | --instance FOLDER | --root SOURCE] [--duration 30] [--warmup 5] [--out FOLDER] [--json]\n" +
-                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root profiles the client modaccel started as your preferences say, hidden or not, with no --allow-hidden needed (hidden: frame timing is not representative).\n" +
+            case "perf" -> "Profile a running local Java 17+ game/server: mmt perf [--attach PID | --instance FOLDER | --root SOURCE] [--duration 30] [--warmup 5] [--out FOLDER] [--json]\n" +
+                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root profiles the client mmt started as your preferences say, hidden or not, with no --allow-hidden needed (hidden: frame timing is not representative).\n" +
                 "Open report.html in the output folder. Frame/tick hooks depend on game mappings; missing metrics are explicit. GPU timing is not collected.\n" +
                 "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden lets --attach or --instance profile a hidden, throttled game (frame timing not representative; --root implies it); --no-heap skips the post-capture class histogram.\n" +
                 "--no-hooks records JFR only. --prepare prints a startup -javaagent argument when dynamic attach is disabled. Requires JDK 17+ and same OS user.\n" +
                 "Each capture writes record.json (--session NAME groups runs) and names known patterns from knowledge/perf-patterns.json that its hotspots match.\n" +
-                "--scenario FILE --rcon-port 25575 [--rcon-password-env MODACCEL_RCON_PASSWORD] [--repeat 1] [--seed 0] drives explicit test-world commands.\n" +
+                "--scenario FILE --rcon-port 25575 [--rcon-password-env MMT_RCON_PASSWORD] [--repeat 1] [--seed 0] drives explicit test-world commands.\n" +
                 "Scenarios edit the selected local server world: use a disposable world. Each command requires an expected response. Repeats share one JVM.";
-            case "perf-template" -> "Generate editable scenario files: modaccel perf-template --family transport|block-scene|entity-crowd|mod-content [--block MOD:BLOCK] [--entity MOD:ENTITY] [--counts 1,16,64] [--root SOURCE] [--out FOLDER]\n" +
+            case "perf-template" -> "Generate editable scenario files: mmt perf-template --family transport|block-scene|entity-crowd|mod-content [--block MOD:BLOCK] [--entity MOD:ENTITY] [--counts 1,16,64] [--root SOURCE] [--out FOLDER]\n" +
                 "--family experiment --from CAPTURE --root SOURCE [--out .runs/MOD-experiment] [--max-calls-per-tick 256] writes a perf-optimize experiment, probes and gate snippets to fill in from a perf --root capture.\n" +
                 "Methods the capture timed above --max-calls-per-tick get no probe (capture again with perf --probes CAPTURE/probes.suggested.json for call counts); a probe metric counts Server thread calls only (serverInclusiveMsPerTick).\n" +
                 "mod-content reads the mod's lang files for its own blocks and entities. Generation does not edit a world. perf --root SOURCE --scenario FILE runs it in the source client's own world; other games need a disposable local server with RCON.";
-            case "perf-diff" -> "Compare observed captures: modaccel perf-diff --baseline FOLDER_OR_REPORT --candidate FOLDER_OR_REPORT [--out FOLDER]\nDescriptive differences only; this does not establish equal workload, causality or statistical significance.";
-            case "perf-optimize" -> "Accept or reject one candidate change with measured speedup: modaccel perf-optimize --root SOURCE --experiment EXPERIMENT.json --patch CANDIDATE.diff [--runs 5] [--out FOLDER] [--dry-run] [--keep]\n" +
-                "The candidate is a git diff you or your own agent wrote from the perf report; modaccel never writes code. Baseline (HEAD) and candidate (HEAD + diff)\n" +
+            case "perf-diff" -> "Compare observed captures: mmt perf-diff --baseline FOLDER_OR_REPORT --candidate FOLDER_OR_REPORT [--out FOLDER]\nDescriptive differences only; this does not establish equal workload, causality or statistical significance.";
+            case "perf-optimize" -> "Accept or reject one candidate change with measured speedup: mmt perf-optimize --root SOURCE --experiment EXPERIMENT.json --patch CANDIDATE.diff [--runs 5] [--out FOLDER] [--dry-run] [--keep]\n" +
+                "The candidate is a git diff you or your own agent wrote from the perf report; mmt never writes code. Baseline (HEAD) and candidate (HEAD + diff)\n" +
                 "are separate git worktrees, launched alternately in fresh games. Each launch runs the experiment's setup snippets, a cold capture and a warm capture of\n" +
                 "the chosen metric (a timing probe or a report value), then its gates: eval snippets compared exactly, against an expected value or within a tolerance,\n" +
                 "and 1280x720 framebuffer captures compared pixel by pixel. Every gate must also agree baseline-to-baseline. Accepted only when all gates pass and the\n" +
@@ -870,27 +870,27 @@ public final class Modaccel {
                 "Pairs stop at the first failed gate, or from --min-runs pairs (3) once 99% t intervals lie above 1 (cold and warm) or below --min-speedup (1). Each pair prints a line; creating OUT/stop ends the run after the pair in progress.\n" +
                 "--arms auto|parallel|sequential: auto starts both arms of a pair together on 12 or more cores.\n" +
                 "--check-only checks the experiment (and --patch) offline, as every run does first. --replay OUT1,OUT2 decides finished runs again and prints their wall time.";
-            case "perf-report" -> "Render an existing capture/JFR locally: modaccel perf-report --file FOLDER_OR_JFR [--out FOLDER]\nNo game or network is required. External JFR files may lack frame/tick events or code-origin metadata.";
-            case "self-test" -> "Test modaccel itself, with no game and no network: modaccel self-test [--only SUITE,SUITE] [--json]\n" +
+            case "perf-report" -> "Render an existing capture/JFR locally: mmt perf-report --file FOLDER_OR_JFR [--out FOLDER]\nNo game or network is required. External JFR files may lack frame/tick events or code-origin metadata.";
+            case "self-test" -> "Test mmt itself, with no game and no network: mmt self-test [--only SUITE,SUITE] [--json]\n" +
             "Suites: " +
             String.join(", ", Installation.SUITES.stream().map(Installation.Suite::name).toList()) +
             ". Each is a class in tools/tests.\n" +
             "A failed suite is reported first, with the end of its log; --only runs the named suites alone.";
-            case "preferences" -> "See or save your game launch preferences: modaccel preferences [--background on|off] [--quiet on|off] [--json]\n" +
+            case "preferences" -> "See or save your game launch preferences: mmt preferences [--background on|off] [--quiet on|off] [--json]\n" +
             "Background keeps the client hidden and prevents cursor capture (default off).\n" +
             "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off,\n" +
             "and the next game gets back the sound, narrator and first-launch options quiet changed in its folder.";
             case "port" -> "Port a Gradle mod source checkout (not a JAR):\n" +
-            "  modaccel discover --root SOURCE\n" +
-            "  modaccel dependencies --root SOURCE --to 1.21.6 --json\n" +
-            "  modaccel port --root SOURCE --from 1.21.5 --to 1.21.6 --fix --json\n" +
-            "  modaccel port --root SOURCE --undo TRANSACTION\n" +
-            "  modaccel port --root SOURCE --from 1.21.1 --to 26.3 --fix --check \"java tools/tests/ZombieAiCheck.java ...\" --json\n" +
-            "--check COMMAND runs the mod's own real-game check on the ported project (MODACCEL_PORTED_ROOT is set); the port is ok only when it passes. --learn-from-mods also runs the rule book's older rules mined from other mods (provenance third-party-mods) and learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and our own rules.\n" +
+            "  mmt discover --root SOURCE\n" +
+            "  mmt dependencies --root SOURCE --to 1.21.6 --json\n" +
+            "  mmt port --root SOURCE --from 1.21.5 --to 1.21.6 --fix --json\n" +
+            "  mmt port --root SOURCE --undo TRANSACTION\n" +
+            "  mmt port --root SOURCE --from 1.21.1 --to 26.3 --fix --check \"java tools/tests/ZombieAiCheck.java ...\" --json\n" +
+            "--check COMMAND runs the mod's own real-game check on the ported project (MMT_PORTED_ROOT is set); the port is ok only when it passes. --learn-from-mods also runs the rule book's older rules mined from other mods (provenance third-party-mods) and learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and our own rules.\n" +
             "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n" +
-            "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
-            case "convert" -> "Move a mod's source to another loader on the same Minecraft version: modaccel convert --root SOURCE --to neoforge|fabric [--dry-run | --no-compile] [--json]\n" +
-            "  modaccel convert --root SOURCE --undo [ID]   restore every file the conversion changed, byte for byte\n" +
+            "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .mmt/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
+            case "convert" -> "Move a mod's source to another loader on the same Minecraft version: mmt convert --root SOURCE --to neoforge|fabric [--dry-run | --no-compile] [--json]\n" +
+            "  mmt convert --root SOURCE --undo [ID]   restore every file the conversion changed, byte for byte\n" +
             "Fabric to NeoForge (any version with a NeoForge release) and NeoForge to Fabric (Minecraft 26.1 and later, where both use Mojang's names).\n" +
             "It rewrites the build (Loom <-> ModDevGradle, the newest loader releases for that Minecraft version), the metadata (fabric.mod.json <->\n" +
             "META-INF/neoforge.mods.toml), the entrypoints (ModInitializer <-> @Mod classes that run it in NeoForge's first registry event), and the\n" +
@@ -901,17 +901,17 @@ public final class Modaccel {
             "receipt): it lists each file that would change or be removed and what would be left, compiles nothing, and exits 0 when it ran.\n" +
             "A compile is not proof: check the mod in the game with ui-check or world-check and --assert.\n" +
             "Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
-            case "explain" -> "Explain a port's compiler errors: modaccel explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n" +
+            case "explain" -> "Explain a port's compiler errors: mmt explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n" +
             "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n" +
             "class, method or field it names as each project's jars have it: where a missing class lives, a member's signatures, or similar names.\n" +
             "--only keeps errors whose source path contains TEXT.";
-            case "mixin-check" -> "Let Mixin itself apply the mod's mixins, without starting the game: modaccel mixin-check --root SOURCE [--project :module] [--client-task :p:runClient] [--refresh] --json\n" +
+            case "mixin-check" -> "Let Mixin itself apply the mod's mixins, without starting the game: mmt mixin-check --root SOURCE [--project :module] [--client-task :p:runClient] [--refresh] --json\n" +
             "The build's client launch is recorded once per build (Gradle compiles and prepares it, without downloading game assets), then started with\n" +
             "the loader set up as its own JUnit support does (Fabric: Knot, as fabric-loader-junit; NeoForge: the forgejunituserdev target, as junit-fml).\n" +
             "Every class the mod's mixin configs target is loaded, so Mixin applies the mixins; nothing opens a window or a world. Mixin's debug\n" +
             "injector check is on, so an injection that matches fewer places than it expects is reported as dead. Each finding is Mixin's own message,\n" +
             "with the mixin's source file. Exit 1 when a mixin would stop the game or is dead; --refresh records the launch again.";
-            case "data-check" -> "Read what the game loads for the mod, without launching the game: modaccel data-check --root SOURCE [--project :module] [--client-task :p:runClient] [--once] [--refresh] --json\n" +
+            case "data-check" -> "Read what the game loads for the mod, without launching the game: mmt data-check --root SOURCE [--project :module] [--client-task :p:runClient] [--once] [--refresh] --json\n" +
             "The mod's dev launch (recorded once, shared with mixin-check) starts the game's own code with no window, no world and no network:\n" +
             "Bootstrap, every mod's main and server entrypoints, the registries frozen, then a new world's data packs loaded by the game's WorldLoader.\n" +
             "Reports what the mod registered (items, blocks, recipes, loot tables, tags ...), each item as a real stack (stack size, durability, food),\n" +
@@ -919,23 +919,23 @@ public final class Modaccel {
             "The game's code stays loaded: the next data-check reads the data again (a changed recipe or loot table costs a few CPU-seconds);\n" +
             "changed classes or fabric.mod.json load it again. --once does not keep it; game-stop ends it, and it ends itself after 15 minutes unused.\n" +
             "Fabric on Minecraft 26.x; other versions and loaders are reported as unchecked with the reason.";
-            case "plugin-check" -> "Load and enable a Paper/Bukkit plugin on MockBukkit, a fake Paper server, without a real server: modaccel plugin-check --root SOURCE [--project :module] [--task :shadowJar] [--plugins FOLDER] --json\n" +
+            case "plugin-check" -> "Load and enable a Paper/Bukkit plugin on MockBukkit, a fake Paper server, without a real server: mmt plugin-check --root SOURCE [--project :module] [--task :shadowJar] [--plugins FOLDER] --json\n" +
             "The plugin's own jar task builds the jar (shadowJar, reobfJar or jar; --task picks another). MockBukkit for the plugin's Paper API line\n" +
             "(knowledge/mockbukkit.json) loads that jar in a fresh JVM, the way Paper does, and checks: plugin.yml / paper-plugin.yml parses and its\n" +
             "api-version is not newer than the server; the main class loads and onLoad, onEnable, 100 ticks of its tasks and onDisable run without\n" +
             "an exception; every plugin.yml command has a handler; every declared permission registers; every registered listener's handlers are\n" +
             "valid; hard dependencies are present (put their jars in --plugins FOLDER). Failures name the file and line. Code through server\n" +
             "internals (net.minecraft, CraftBukkit) or API MockBukkit lacks is reported unchecked, never passed. Exit 1 on a failure or anything unchecked.";
-            case "dependencies" -> "Report target dependencies without editing: modaccel dependencies --root SOURCE --to 1.21.6 [--selection FILE] --json\nEach non-loader dependency is resolved, explicitly selected, or blocked with the selection entry to add in .modaccel/dependencies.json.";
-            case "ui-check" -> "Capture the target client: modaccel ui-check --root SOURCE --screen net.minecraft.client.gui.screen.TitleScreen --json\nInspect the receipt's framebuffer capture; add --assert METHOD for behavior checks, or --expect-change PERCENT to require the action to visibly change the frame.\n" +
+            case "dependencies" -> "Report target dependencies without editing: mmt dependencies --root SOURCE --to 1.21.6 [--selection FILE] --json\nEach non-loader dependency is resolved, explicitly selected, or blocked with the selection entry to add in .mmt/dependencies.json.";
+            case "ui-check" -> "Capture the target client: mmt ui-check --root SOURCE --screen net.minecraft.client.gui.screen.TitleScreen --json\nInspect the receipt's framebuffer capture; add --assert METHOD for behavior checks, or --expect-change PERCENT to require the action to visibly change the frame.\n" +
             "--screen opens a new instance of that screen; leave it out to capture what the running client shows now.\n" +
             "--java JAVA_HOME (ui-check or world-check) starts the client on that runtime instead of the build's, for failures that only happen on one Java build.";
-            case "reload" -> "Recompile and swap the changes into the running game: modaccel reload --root SOURCE --project :module\n" +
+            case "reload" -> "Recompile and swap the changes into the running game: mmt reload --root SOURCE --project :module\n" +
             "Changed method bodies swap in place; changed resources reload the resource packs; classes the game hasn't loaded yet\n" +
             "are read on first use. A changed class shape (added or removed methods or fields) on a stock JVM, a mixin, or mod\n" +
             "metadata needs a restart: the command says so and exits 1. Objects keep their field values and static initializers do not rerun.\n" +
             "Start the game with --jbr (ui-check or world-check) to run it on JetBrains Runtime, which also swaps added or removed methods and fields.";
-            case "eval" -> "Run Java inside the running game: modaccel eval --root SOURCE --code 'mc.player.getX()'\n" +
+            case "eval" -> "Run Java inside the running game: mmt eval --root SOURCE --code 'mc.player.getX()'\n" +
             "  --file SNIPPET.java  read the snippet from a file instead\n" +
             "  --thread control     run off the game thread (for snippets that wait); default is the game thread\n" +
             "  --until CONDITION    run CONDITION every 0.25 s until it returns true, e.g. --until 'mc.level != null';\n" +
@@ -943,47 +943,47 @@ public final class Modaccel {
             "An expression is returned; statements return what they return. 'mc' is the Minecraft instance, print(x) adds output,\n" +
             "vars is a map kept between snippets; call(objectOrClass, \"name\", args...) and field(objectOrClass, \"name\") reach private\n" +
             "members. Leading import lines are allowed. Start the game first with ui-check or world-check.";
-            case "world-check" -> "Check a loaded save: modaccel world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.";
+            case "world-check" -> "Check a loaded save: mmt world-check --root SOURCE --world lab --assert METHOD --json\nThe save must exist in this project's game directory. Inspect the receipt's framebuffer capture; --expect-change PERCENT requires a visible result from the key or click.";
             case "fast",
-                "test" -> "Run the mod's logic tests without the game: modaccel fast --root SOURCE [--project :module]\n" +
+                "test" -> "Run the mod's logic tests without the game: mmt fast --root SOURCE [--project :module]\n" +
             "fast runs JUnit 5 tests, reusing compiled code when nothing changed. With no Minecraft or loader on the test classpath\n" +
             "(plain Java, a Paper/Bukkit plugin) every test runs; with Minecraft present only tests tagged @Tag(\"pure\") run.\n" +
             "test runs the project's whole test task. Both fail when no test ran, and check the mod's resources and metadata afterwards.\n" +
             "The build needs JUnit: testImplementation(\"org.junit.jupiter:junit-jupiter:5.11.4\") and testRuntimeOnly(\"org.junit.platform:junit-platform-launcher:1.11.4\").";
-            case "server-check" -> "Run a plugin on a real headless Paper server with a bot player and check what it really did: modaccel server-check --root SOURCE [--file SCENARIO] [--server-version 26.3] [--server-build N] [--server-xms 512M] [--fresh-server] [--plugins FOLDER_OR_JARS] [--refresh] --json\n" +
+            case "server-check" -> "Run a plugin on a real headless Paper server with a bot player and check what it really did: mmt server-check --root SOURCE [--file SCENARIO] [--server-version 26.3] [--server-build N] [--server-xms 512M] [--fresh-server] [--plugins FOLDER_OR_JARS] [--refresh] --json\n" +
             "The plugin's jar task builds the jar; the real Paper server for its Minecraft version is downloaded once from PaperMC's API\n" +
             "(SHA-256 checked, cached), started headless in offline mode on 127.0.0.1 with a flat fixed-seed world, and stopped after.\n" +
             "--fresh-server uses a new server directory in the receipt, so Paper patches and libraries are not reused.\n" +
-            "modaccel accepts Minecraft's EULA only for that throwaway local test server. A protocol bot (MCProtocolLib, knowledge/mcprotocollib.json) joins as\n" +
-            "serverFakeBot; on a server of another Minecraft version it joins through ViaProxy (knowledge/viaproxy.json, 1.8 and up). The scenario (--file, else .modaccel/server-check.scenario) is one step per line:\n" +
+            "mmt accepts Minecraft's EULA only for that throwaway local test server. A protocol bot (MCProtocolLib, knowledge/mcprotocollib.json) joins as\n" +
+            "serverFakeBot; on a server of another Minecraft version it joins through ViaProxy (knowledge/viaproxy.json, 1.8 and up). The scenario (--file, else .mmt/server-check.scenario) is one step per line:\n" +
             "  join, leave, restart-server, say TEXT, command /CMD, rcon CMD, wait Ns, server-env K=V, server-property K=V, background NAME: CMD, wait-port P\n" +
             "  expect-chat|expect-title|expect-actionbar|expect-log|expect-rcon CMD|expect-http GET URL  ~regex~ [within Ns]; expect-no-rcon CMD ~regex~ [for Ns]\n" +
             "  expect-entity TYPE [named ~re~] [near R], expect-block X Y Z ID[props] (~ is relative), expect-inventory ITEM [count N] [~re~],\n" +
             "  expect-position X Y Z [tolerance T], and expect-no-chat|-log|-entity|-inventory ... [within|for Ns].\n" +
             "  process-env K=V, helper-env K=V; expect-process COMMAND ~success output~ within Ns runs an existing test, requires exit 0 and matching output.\n" +
-            "The process receives MC_HOST, MC_PORT, RCON_PORT and RCON_PASSWORD; MODACCEL_RESTART_PORT and MODACCEL_RESTART_TOKEN request a managed restart over loopback.\n" +
+            "The process receives MC_HOST, MC_PORT, RCON_PORT and RCON_PASSWORD; MMT_RESTART_PORT and MMT_RESTART_TOKEN request a managed restart over loopback.\n" +
             "restart-server preserves the world and plugin data, disconnects the bot, and requires join again before bot steps.\n" +
-            "${bot}, ${root}, ${harness}, ${port:NAME} and ${secret:NAME} expand; secrets come from the environment or .modaccel/secrets.properties (keep it\n" +
+            "${bot}, ${root}, ${harness}, ${port:NAME} and ${secret:NAME} expand; secrets come from the environment or .mmt/secrets.properties (keep it\n" +
             "out of git), are masked as ${secret:NAME} in every receipt and server file, and a missing one fails with \"needs secret NAME\".\n" +
             "Every expect step must pass; a scenario without one fails. Exit 1 names the step, what it expected and what came instead.";
-            case "compile" -> "Compile the mod and check what the game reads at start-up: modaccel compile --root SOURCE [--project :module]\n" +
+            case "compile" -> "Compile the mod and check what the game reads at start-up: mmt compile --root SOURCE [--project :module]\n" +
             "After javac it fails only on what the loader or game rejects: JSON Minecraft cannot read even leniently (assets/, data/,\n" +
             "pack.mcmeta), a fabric.mod.json Fabric's strict reader refuses or with an invalid id, an invalid mods.toml id, a missing\n" +
             "mixin config, a missing class in a \"required\" mixin config, a missing entrypoint or access widener. Anything that depends on\n" +
             "the game version or on how the jar is assembled, JSON nothing in the game reads, a MOD_ID that differs from the metadata,\n" +
             "and items made by a recipe without a translation or model are warnings.\n" +
-            "Build a jar with the project's own task: modaccel compile --root SOURCE --task :jar. That is the build path for\n" +
-            "Paper/Bukkit plugins (the jar lands in build/libs); then modaccel plugin-check loads it.";
-            case "pack-check" -> "Check a modpack the way its players run it: modaccel pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--focus MODID,MODID] [--fix] [--json]\n" +
+            "Build a jar with the project's own task: mmt compile --root SOURCE --task :jar. That is the build path for\n" +
+            "Paper/Bukkit plugins (the jar lands in build/libs); then mmt plugin-check loads it.";
+            case "pack-check" -> "Check a modpack the way its players run it: mmt pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--focus MODID,MODID] [--fix] [--json]\n" +
             "--pack is a CurseForge export (.zip or folder), a Modrinth .mrpack (or folder), a CurseForge app, Prism/MultiMC or vanilla launcher\n" +
             "instance, or any folder with mods/. --minecraft 1.21.1 and --loader neoforge[-21.1.77] override what the pack says; with no loader\n" +
-            "version the loader's newest stable one is used. modaccel pack-check --list shows the inputs, loaders, checks and repairs it knows.\n" +
-            "Mod files are downloaded once, checked against their hashes or sizes, and cached in ~/.modaccel/packs; sides come from the pack,\n" +
+            "version the loader's newest stable one is used. mmt pack-check --list shows the inputs, loaders, checks and repairs it knows.\n" +
+            "Mod files are downloaded once, checked against their hashes or sizes, and cached in ~/.mmt/packs; sides come from the pack,\n" +
             "CurseForge or Modrinth (by SHA-1). Forge, NeoForge, Fabric and Quilt servers, any version, come from each loader's own installer.\n" +
             "Without the game it reads every jar the way the pack's loader does and warns about duplicate ids, missing or wrong-version\n" +
             "dependencies, mods for another game version, loader version or loader, declared conflicts, shared block files and names, and\n" +
             "mods with a proven repair in knowledge/pack-fixes.json. Warnings become problems only when the game shows them.\n" +
-            "Then the pack's server starts offline on 127.0.0.1 with its mods and configs and a probe mod. modaccel accepts Minecraft's EULA\n" +
+            "Then the pack's server starts offline on 127.0.0.1 with its mods and configs and a probe mod. mmt accepts Minecraft's EULA\n" +
             "only for that throwaway local test server. Mods that only work in a game client are left out and named.\n" +
             "Start 1 makes a new world, saves every dimension the way level.dat stores it and reads it back, and places every block item (or --only)\n" +
             "the way a player right-clicks; start 2 opens that world again and reads every placed block back. --world SAVE also opens a copy of your\n" +
@@ -995,7 +995,7 @@ public final class Modaccel {
             "--memory 6G sets the server's heap. A start is judged by its log: --timeout SECONDS (default 600) stops one whose log stops growing,\n" +
             "and a ceiling of 30 minutes plus 8 s per mod past 100 stops one that never finishes. How to add a loader, input, check or\n" +
             "repair: tools/packcheck/CONTRIBUTING.md.";
-            default -> "modaccel <command> --root SOURCE [--project :module] [--json]\n" +
+            default -> "mmt <command> --root SOURCE [--project :module] [--json]\n" +
             "  support                what works today        discover, doctor   what kind of build this is\n" +
             "  setup                  evaluate the build      compile            compile + resource/metadata checks\n" +
             "  fast, test             logic tests, no game    mixin-check        Mixin applies the mixins, no game\n" +
@@ -1011,8 +1011,8 @@ public final class Modaccel {
             "  perf, perf-report      where a mod's CPU, memory, I/O and frame/tick time go\n" +
             "  perf-diff              compare two captures    perf-template      scenario files for perf --scenario\n" +
             "  perf-optimize          accept or reject a candidate change with equivalence gates and measured speedup\n" +
-            "  package, self-test     build or test modaccel itself\n" +
-            "Run modaccel help COMMAND for one command (port, convert, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +
+            "  package, self-test     build or test mmt itself\n" +
+            "Run mmt help COMMAND for one command (port, convert, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +
             "--root is the mod's Gradle source checkout (the folder with gradlew); a multi-version build needs --project, e.g. --project :1.21.6.";
         };
     }

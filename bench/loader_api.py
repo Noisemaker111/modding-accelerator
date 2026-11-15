@@ -3,7 +3,7 @@
     python bench/loader_api.py verify     download the pinned jars (network), check every symbol, write coverage/loader/api.json
     python bench/loader_api.py show       the rules, what each moves, and where its symbols were found
 
-knowledge/loaders.json holds the rules modaccel convert applies (written for this project, never read from
+knowledge/loaders.json holds the rules mmt convert applies (written for this project, never read from
 other people's mods). Each rule lists its symbols as "artifact|class#member", where artifact is a key of the
 file's "published" table: Fabric Loader, Fabric API, NeoForge, FancyModLoader, NeoForge's event bus, or
 Minecraft itself. verify downloads those exact releases from their own Maven repositories (Minecraft from
@@ -136,7 +136,7 @@ def index_jar(data, into, depth=0):
 # ---- the published jars -----------------------------------------------------------------------------
 
 def get(url):
-    request = urllib.request.Request(url, headers={"User-Agent": "modaccel-loader-api"})
+    request = urllib.request.Request(url, headers={"User-Agent": "mmt-loader-api"})
     with urllib.request.urlopen(request, timeout=120) as response:
         return response.read()
 

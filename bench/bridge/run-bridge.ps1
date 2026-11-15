@@ -16,7 +16,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $Jar = (Resolve-Path $Jar).Path
 $Node = (Resolve-Path $Node).Path
-$cpArgs = Join-Path $Node '.modaccel\neoforge-cp.args'
+$cpArgs = Join-Path $Node '.mmt\neoforge-cp.args'
 $vmArgs = Join-Path $Node 'build\moddev\clientWarmRunVmArgs.txt'
 $progArgs = Join-Path $Node 'build\moddev\clientWarmRunProgramArgs.txt'
 foreach ($file in @($cpArgs, $vmArgs, $progArgs)) {

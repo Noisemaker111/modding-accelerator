@@ -2,7 +2,7 @@
 
     python bench/perf_sessions.py [--session NAME] [--local] [--json] [PATH ...]
 
-Every `modaccel perf` capture, every `modaccel perf-optimize` decision and every mod's own comparison
+Every `mmt perf` capture, every `mmt perf-optimize` decision and every mod's own comparison
 script writes one run record (record.json in its output, a copy in .runs/perf-records/). Kept runs are
 in coverage/perf-runs.json (`python bench/record.py perf RECORD`). This reads the ledger, plus
 .runs/perf-records with --local, plus any record files or folders named, and prints:

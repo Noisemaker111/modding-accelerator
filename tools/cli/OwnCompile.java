@@ -13,7 +13,7 @@ import java.util.zip.ZipFile;
  * reported, the game jar swapped in. Everything is built here from Mojang's and NeoForge's downloads.
  *
  * Gradle stays the authority: this runs only while NeoForm's game jar is not built yet, writes nothing into
- * the user's build folder (classes go under .modaccel/portable/own-compile), and any doubt or failure,
+ * the user's build folder (classes go under .mmt/portable/own-compile), and any doubt or failure,
  * compile errors included, falls back to the Gradle compile.
  */
 final class OwnCompile {
@@ -24,7 +24,7 @@ final class OwnCompile {
 
     /** Why the own compile does not apply, or null when it does. */
     static String skipReason(Map<String, Object> model, List<String> tasks) throws IOException {
-        if ("false".equals(System.getenv("MODACCEL_OWN_GAME"))) return "MODACCEL_OWN_GAME=false";
+        if ("false".equals(System.getenv("MMT_OWN_GAME"))) return "MMT_OWN_GAME=false";
         if (neoforgeVersion(model) == null) return "not a NeoGradle build waiting on NeoForm";
         for (Object item : Json.array(model.get("projects"))) {
             var p = Json.object(item);
@@ -197,7 +197,7 @@ final class OwnCompile {
         return result(tasks, version, jar, universal, ownTransformers, compiled, outputs);
     }
 
-    /** modaccel's own compile, not Gradle's: it says so, and port and ledger verdicts never use it. */
+    /** mmt's own compile, not Gradle's: it says so, and port and ledger verdicts never use it. */
     static Map<String, Object> result(
         List<String> tasks,
         String version,
@@ -211,7 +211,7 @@ final class OwnCompile {
             "tier",
             "own-compile",
             "compiledBy",
-            "modaccel (own javac against its own game prep), not Gradle",
+            "mmt (own javac against its own game prep), not Gradle",
             "gradleConfirmed",
             false,
             "tasks",
@@ -232,13 +232,13 @@ final class OwnCompile {
             "compiled",
             compiled,
             "details",
-            "Own compile (modaccel's javac, not Gradle; Gradle has not confirmed it): compiled " +
+            "Own compile (mmt's javac, not Gradle; Gradle has not confirmed it): compiled " +
             compiled.size() +
             " source set(s) against NeoForge " +
             version +
             "'s installer-made game jar, without NeoForm's decompile and recompile. Classes: " +
             outputs +
-            ". Resources were not processed; set MODACCEL_OWN_GAME=false for the Gradle compile."
+            ". Resources were not processed; set MMT_OWN_GAME=false for the Gradle compile."
         );
     }
 

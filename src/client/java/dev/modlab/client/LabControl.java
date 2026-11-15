@@ -62,9 +62,9 @@ public final class LabControl {
 		}
 		Path gameDir = Minecraft.getInstance().gameDirectory.toPath().toAbsolutePath();
 		// A Stonecutter node runs its client from versions/<node>/run, two folders below the repo:
-		// the repo is the nearest folder up that holds .modaccel, not simply run/'s parent.
+		// the repo is the nearest folder up that holds .mmt, not simply run/'s parent.
 		for (Path dir = gameDir; dir != null; dir = dir.getParent()) {
-			if (Files.isDirectory(dir.resolve(".modaccel"))) {
+			if (Files.isDirectory(dir.resolve(".mmt"))) {
 				return dir;
 			}
 		}

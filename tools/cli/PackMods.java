@@ -172,7 +172,7 @@ final class PackMods {
         for (String path : nested) {
             ZipEntry inner = zip.getEntry(path);
             if (inner == null) continue;
-            Path temporary = Files.createTempFile("modaccel-nested-", ".jar");
+            Path temporary = Files.createTempFile("mmt-nested-", ".jar");
             try {
                 try (var in = zip.getInputStream(inner)) {
                     Files.copy(in, temporary, StandardCopyOption.REPLACE_EXISTING);

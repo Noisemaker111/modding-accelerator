@@ -2,7 +2,7 @@
 <#
   Warm-client driver for the Minecraft 1.21.11 node.
 
-  Same socket protocol as the parent's modaccel.ps1 warm client, its own ports:
+  Same socket protocol as the parent's mmt.ps1 warm client, its own ports:
   client 27499, agent 27498. Runs from versions\1.21.11.
 
     .\warm.ps1 start                 start the client and wait for the socket
@@ -21,7 +21,7 @@ $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $root
 
-$lab = Join-Path $root '.modaccel'
+$lab = Join-Path $root '.mmt'
 $parent = (Resolve-Path (Join-Path $root '..\..')).Path
 $clientPort = 27499
 $agentPort = 27498

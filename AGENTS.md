@@ -1,19 +1,19 @@
-# Modding Accelerator
+# Minecraft Modding Tools
 
-`modaccel` tests Minecraft mods/plugins, ports mod source between versions, and diagnoses modpacks.
+`mmt` tests Minecraft mods/plugins, ports mod source between versions, and diagnoses modpacks.
 The root is also Prism Lab, the demo mod fixture. Scope: `README.md`, `SCOPE.md`. Traps: `KNOWN_ISSUES.md`.
 
 ## Commands
 
-JDK 17+ and Python 3.12+; no install step. Windows: `modaccel.cmd` and `python` for `./modaccel` and `python3`.
+JDK 17+ and Python 3.12+; no install step. Windows: `mmt.cmd` and `python` for `./mmt` and `python3`.
 
 ```sh
-./modaccel help                    # every command
+./mmt help                    # every command
 python3 bench/run_tests.py         # every offline check, as CI runs them (--list, --only NAME)
 tools/cloud-run packs|ports|perf   # full sweeps on GitHub's runners (below)
 ```
 
-Use modaccel for builds and game launches, never raw Gradle or `--no-daemon`.
+Use mmt for builds and game launches, never raw Gradle or `--no-daemon`.
 
 ## Rules
 
@@ -31,12 +31,12 @@ Use modaccel for builds and game launches, never raw Gradle or `--no-daemon`.
   fail. Budgets (enforced by `bench/test_budgets.py`): PR job under 3 min, no test file over 800 lines, this file
   under 100 lines. To add past a budget, delete first. A new check needs `bench/run_tests.py`, nowhere else.
 - **Never search the whole disk.** Gradle's sources jars and dependencies are under `~/.gradle/caches`
-  (`modules-2/files-2.1/GROUP/NAME`, Loom's game jars in `fabric-loom/`); ours are in `~/.modaccel`.
+  (`modules-2/files-2.1/GROUP/NAME`, Loom's game jars in `fabric-loom/`); ours are in `~/.mmt`.
 - Scratch, logs and clones go in ignored `.runs/`. Plans and dated status go in PRs/issues, not docs.
 
 ## Where things are
 
-- CLI: `tools/cli/Modaccel.java` (entry/help), one class per command. Self-test suites: `tools/tests/`, listed in
+- CLI: `tools/cli/Mmt.java` (entry/help), one class per command. Self-test suites: `tools/tests/`, listed in
   `tools/cli/Installation.java` (`SUITES`); everything the jar ships is `Installation.RESOURCES`.
 - Game probes: `tools/{agent,datacheck,mixincheck,packcheck,plugincheck,servercheck}/`. Modpacks: `tools/cli/Pack*.java`
   (`tools/packcheck/CONTRIBUTING.md`).

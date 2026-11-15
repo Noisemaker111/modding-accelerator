@@ -1,4 +1,4 @@
-package modaccel.packprobe;
+package mmt.packprobe;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -15,14 +15,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
 /**
- * The game calls pack-check's probe makes that changed between Minecraft versions, for Minecraft 1.21.5 to 1.21.10: NBT getters
- * return Optional (getStringOr and getCompoundOrEmpty are the plain forms) and an entity moves with snapTo.
+ * The game calls pack-check's probe makes that changed between Minecraft versions, for Minecraft 1.21.11: the spawn is read from
+ * the level's respawn data and a resource key names its Identifier.
  * pack-check compiles the probe with the variant in tools/packcheck/game/ whose folder names the newest version at or
  * below the pack's, so one probe source serves every version; each variant keeps the same methods.
  */
-final class ModaccelPackGame {
+final class MmtPackGame {
 
-    private ModaccelPackGame() {}
+    private MmtPackGame() {}
 
     static Iterable<Item> items() {
         return BuiltInRegistries.ITEM;
@@ -46,7 +46,7 @@ final class ModaccelPackGame {
     }
 
     static BlockPos spawn(ServerLevel level) {
-        return level.getSharedSpawnPos();
+        return level.getRespawnData().pos();
     }
 
     /** The highest block a level can hold. */
@@ -83,7 +83,7 @@ final class ModaccelPackGame {
         var stems = access.lookupOrThrow(net.minecraft.core.registries.Registries.LEVEL_STEM);
         for (var entry : stems.entrySet()) {
             JsonObject row = new JsonObject();
-            row.addProperty("dimension", entry.getKey().location().toString());
+            row.addProperty("dimension", entry.getKey().identifier().toString());
             try {
                 var written = net.minecraft.world.level.dimension.LevelStem.CODEC.encodeStart(ops, entry.getValue());
                 if (written.error().isPresent()) {
@@ -101,7 +101,7 @@ final class ModaccelPackGame {
                 // Find the smallest saved part that fails on its own, so the report names it.
                 if (read.error().isPresent()) row.addProperty("failingPart", failingPart(ops, tag));
             } catch (Throwable failure) {
-                row.addProperty("error", ModaccelPackProbe.stack(failure));
+                row.addProperty("error", MmtPackProbe.stack(failure));
             }
             out.add(row);
         }

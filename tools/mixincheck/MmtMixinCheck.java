@@ -5,7 +5,7 @@ import java.util.*;
 /**
  * Lets Mixin itself decide whether a mod's mixins apply, without starting the game.
  *
- * modaccel starts this in place of the game's main class, inside the mod's own dev launch (same
+ * mmt starts this in place of the game's main class, inside the mod's own dev launch (same
  * Java, classpath, loader properties and agents). It sets the loader up the way the loader's own
  * JUnit support does, then, instead of running the game, loads every class the mod's mixin configs
  * target through the game's class loader. Loading a class is what makes Mixin apply its mixins, so
@@ -23,21 +23,21 @@ import java.util.*;
  * game would stop on it (fewer than {@code require}) or start with the injection missing.
  *
  * Java 8 syntax: this runs on whatever Java the mod's own game uses.
- * Output: one JSON object per line, appended to the file named by -Dmodaccel.mixincheck.out.
+ * Output: one JSON object per line, appended to the file named by -Dmmt.mixincheck.out.
  */
-public final class ModaccelMixinCheck {
+public final class MmtMixinCheck {
 
     static final Set<String> OURS = new HashSet<String>();
-    static final String HANDLER = "org.spongepowered.asm.mixin.extensibility.ModaccelMixinErrors";
+    static final String HANDLER = "org.spongepowered.asm.mixin.extensibility.MmtMixinErrors";
 
     public static void main(String[] args) throws Throwable {
         long start = System.nanoTime();
-        new FileOutputStream(System.getProperty("modaccel.mixincheck.out")).close();
-        for (String name : System.getProperty("modaccel.mixincheck.configs", "").split(",")) if (
+        new FileOutputStream(System.getProperty("mmt.mixincheck.out")).close();
+        for (String name : System.getProperty("mmt.mixincheck.configs", "").split(",")) if (
             !name.trim().isEmpty()
         ) OURS.add(name.trim());
-        String side = System.getProperty("modaccel.mixincheck.side", "client").toUpperCase(Locale.ROOT);
-        String loader = System.getProperty("modaccel.mixincheck.loader", "fabric");
+        String side = System.getProperty("mmt.mixincheck.side", "client").toUpperCase(Locale.ROOT);
+        String loader = System.getProperty("mmt.mixincheck.loader", "fabric");
         ClassLoader game;
         try {
             game = loader.equals("neoforge") ? neoForge(args) : fabric(args, side);
@@ -72,7 +72,7 @@ public final class ModaccelMixinCheck {
 
     /** junit-fml's LaunchWrapper: the launcher returns once the game layer is built, with its loader as the context loader. */
     static ClassLoader neoForge(String[] args) throws Throwable {
-        if ("startup".equals(System.getProperty("modaccel.mixincheck.fml"))) return fmlStartup(args);
+        if ("startup".equals(System.getProperty("mmt.mixincheck.fml"))) return fmlStartup(args);
         Class<?> launcher = Class.forName("cpw.mods.bootstraplauncher.BootstrapLauncher");
         launcher.getMethod("unitTestingMain", String[].class).invoke(null, (Object) args);
         ClassLoader game = Thread.currentThread().getContextClassLoader();
@@ -90,7 +90,7 @@ public final class ModaccelMixinCheck {
     static ClassLoader fmlStartup(String[] args) throws Throwable {
         Class<?> entrypoint = Class.forName("net.neoforged.fml.startup.Entrypoint");
         Class<?> dist = Class.forName("net.neoforged.api.distmarker.Dist");
-        boolean client = !"server".equals(System.getProperty("modaccel.mixincheck.side", "client"));
+        boolean client = !"server".equals(System.getProperty("mmt.mixincheck.side", "client"));
         @SuppressWarnings({ "unchecked", "rawtypes" })
         Object side = Enum.valueOf((Class) dist, client ? "CLIENT" : "DEDICATED_SERVER");
         Method startup = entrypoint.getDeclaredMethod("startup", String[].class, boolean.class, dist, boolean.class);
@@ -268,7 +268,7 @@ public final class ModaccelMixinCheck {
         } catch (ClassNotFoundException notVisible) {}
         if (handler == null || !api.isAssignableFrom(handler)) {
             InputStream in =
-                ModaccelMixinCheck.class.getClassLoader().getResourceAsStream(HANDLER.replace('.', '/') + ".class");
+                MmtMixinCheck.class.getClassLoader().getResourceAsStream(HANDLER.replace('.', '/') + ".class");
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             byte[] buffer = new byte[8192];
             int n;
@@ -362,7 +362,7 @@ public final class ModaccelMixinCheck {
             .append(value(fields[i + 1]));
         try {
             Writer out = new OutputStreamWriter(
-                new FileOutputStream(System.getProperty("modaccel.mixincheck.out"), true),
+                new FileOutputStream(System.getProperty("mmt.mixincheck.out"), true),
                 "UTF-8"
             );
             try {
@@ -371,7 +371,7 @@ public final class ModaccelMixinCheck {
                 out.close();
             }
         } catch (IOException failure) {
-            System.err.println("modaccel mixin check could not record: " + line);
+            System.err.println("mmt mixin check could not record: " + line);
         }
     }
 

@@ -80,8 +80,8 @@ final class HotUi {
 
 	private static void prepare(Path root) throws Exception {
 		if (mainOut == null) {
-			mainOut = root.resolve(".modaccel/hot/main");
-			clientOut = root.resolve(".modaccel/hot/client");
+			mainOut = root.resolve(".mmt/hot/main");
+			clientOut = root.resolve(".mmt/hot/client");
 			Files.createDirectories(mainOut);
 			Files.createDirectories(clientOut);
 			depsClasspath = System.getProperty("java.class.path");
@@ -141,11 +141,11 @@ final class HotUi {
 
 	/**
 	 * Source folders this node's build leaves out (another loader's package in a Stonecutter repo),
-	 * as `labClasspath` writes them to .modaccel/excludes.txt. Compiling them here fails on classes
+	 * as `labClasspath` writes them to .mmt/excludes.txt. Compiling them here fails on classes
 	 * this client does not have, so they are skipped the same way the build skips them.
 	 */
 	private static List<String> excludes(Path root) throws Exception {
-		Path file = root.resolve(".modaccel/excludes.txt");
+		Path file = root.resolve(".mmt/excludes.txt");
 		if (!Files.isRegularFile(file)) {
 			return List.of();
 		}

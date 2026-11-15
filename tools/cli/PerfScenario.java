@@ -8,7 +8,7 @@ import java.util.regex.*;
 
 /** Explicit, bounded scenario files drive a local test server through RCON. */
 final class PerfScenario {
-    static Map<String, Object> run(Path home, Modaccel.Options options, Modaccel.Report receipt) throws Exception {
+    static Map<String, Object> run(Path home, Mmt.Options options, Mmt.Report receipt) throws Exception {
         Map<String, Object> scenario = Json.read(Path.of(options.get("scenario", "")));
         List<Object> cases = validate(scenario);
         if (options.values.containsKey("only")) {
@@ -28,7 +28,7 @@ final class PerfScenario {
         Path agent = Performance.agent(home, receipt);
         // A source session's integrated server runs the commands directly; any other game needs RCON.
         boolean dev = options.values.containsKey("root") && !options.values.containsKey("rcon-port");
-        String password = dev ? "" : System.getenv(options.get("rcon-password-env", "MODACCEL_RCON_PASSWORD"));
+        String password = dev ? "" : System.getenv(options.get("rcon-password-env", "MMT_RCON_PASSWORD"));
         if (!dev && (password == null || password.isBlank())) throw new IllegalArgumentException("Set the RCON password environment variable first");
         int port = dev ? 0 : Performance.integer(options, "rcon-port", 25575, 1, 65535);
         List<Object> results = new ArrayList<>();
@@ -190,7 +190,7 @@ final class PerfScenario {
      * collecting the same feedback text RCON would return. Mojang names first, then Yarn names.
      */
     static final class DevCommands implements Commands {
-        static final String KEY = "modaccel.scenario.command";
+        static final String KEY = "mmt.scenario.command";
         static final String MOJANG = """
             java.util.function.Function<String, String> run = text -> {
                 StringBuilder out = new StringBuilder();

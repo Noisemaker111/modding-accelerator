@@ -6,7 +6,7 @@ import javax.tools.ToolProvider;
 /**
  * The Mixin check's own logic, without a game: how Mixin's reports are sorted into a verdict, how a
  * failure is traced to its handler, how a recorded launch is read back, and the NeoForge launch-target
- * edit. The check's runtime classes are compiled for Java 8 here, as modaccel compiles them for a mod.
+ * edit. The check's runtime classes are compiled for Java 8 here, as mmt compiles them for a mod.
  * Usage: MixinCheckTest <harness root>
  */
 public final class MixinCheckTest {
@@ -14,7 +14,7 @@ public final class MixinCheckTest {
     static int count;
 
     public static void main(String[] args) throws Exception {
-        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("modaccel-mixincheck");
+        Path harness = Path.of(args[0]), scratch = Files.createTempDirectory("mmt-mixincheck");
         try {
             verdicts();
             handlerNames();
@@ -285,7 +285,7 @@ public final class MixinCheckTest {
                 "-Djdk.module.addmods=ALL-MODULE-PATH",
                 "-Djdk.module.addopens=java.base/java.lang=ALL-UNNAMED",
                 "-javaagent:recorder.jar=x.json",
-                "-Dmodaccel.agent=y",
+                "-Dmmt.agent=y",
                 "-Xmx2G",
                 "-Dfoo=bar"
             )
@@ -311,7 +311,7 @@ public final class MixinCheckTest {
             options
                 .stream()
                 .noneMatch(
-                    o -> o.contains("recorder.jar") || o.startsWith("-Dmodaccel.") || o.startsWith("-Djdk.module.")
+                    o -> o.contains("recorder.jar") || o.startsWith("-Dmmt.") || o.startsWith("-Djdk.module.")
                 ),
             "the recorder and reserved properties are dropped: " + options
         );
@@ -390,7 +390,7 @@ public final class MixinCheckTest {
                 MixinCheckTest.class.getClassLoader()
             )
         ) {
-            Class<?> agent = loader.loadClass("ModaccelNeoForgeTarget");
+            Class<?> agent = loader.loadClass("MmtNeoForgeTarget");
             var patch = agent.getDeclaredMethod("patch", byte[].class, boolean.class);
             patch.setAccessible(true);
             for (boolean client : new boolean[] { true, false }) {

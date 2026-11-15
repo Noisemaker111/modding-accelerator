@@ -234,7 +234,7 @@ public final class LabControl {
 					client.options.tutorialStep = net.minecraft.client.tutorial.TutorialSteps.NONE;
 					client.options.pauseOnLostFocus = false;
 					client.getToastManager().clear();
-					// Fresh client-side classes from .modaccel/hot/client, so this shows the
+					// Fresh client-side classes from .mmt/hot/client, so this shows the
 					// code as it is on disk, not what Gradle built at launch.
 					ClassLoader loader = HotUi.reload(root(), sourceStamp(root()));
 					this.uiClass = loader.loadClass(System.getProperty("modlab.screen", ""));
@@ -448,10 +448,10 @@ public final class LabControl {
 			return false;
 		}
 
-		/** Debug aid: writes the two frames that did not match to .modaccel/settle-frames. */
+		/** Debug aid: writes the two frames that did not match to .mmt/settle-frames. */
 		private static void dump(int[] argb, String name) {
 			try {
-				Path dir = root().resolve(".modaccel/settle-frames");
+				Path dir = root().resolve(".mmt/settle-frames");
 				Files.createDirectories(dir);
 				java.awt.image.BufferedImage image = new java.awt.image.BufferedImage(SHOT_WIDTH, SHOT_HEIGHT, java.awt.image.BufferedImage.TYPE_INT_ARGB);
 				image.setRGB(0, 0, SHOT_WIDTH, SHOT_HEIGHT, argb, 0, SHOT_WIDTH);

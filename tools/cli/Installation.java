@@ -22,11 +22,11 @@ final class Installation {
         "tools/agent/Console.java",
         "tools/agent/HotReload.java",
         "tools/runner/PureTests.java",
-        "tools/plugincheck/ModaccelPluginCheck.java",
-        "tools/servercheck/ModaccelServerCheck.java",
-        "tools/packcheck/ModaccelPackProbe.java",
-        "tools/packcheck/ModaccelPackProbeFabric.java",
-        "tools/packcheck/ModaccelPackOpener.java",
+        "tools/plugincheck/MmtPluginCheck.java",
+        "tools/servercheck/MmtServerCheck.java",
+        "tools/packcheck/MmtPackProbe.java",
+        "tools/packcheck/MmtPackProbeFabric.java",
+        "tools/packcheck/MmtPackOpener.java",
         "tools/packcheck/stubs/net/minecraftforge/fml/common/Mod.java",
         "tools/packcheck/stubs/net/neoforged/fml/common/Mod.java",
         "tools/packcheck/stubs/net/fabricmc/api/DedicatedServerModInitializer.java",
@@ -34,25 +34,25 @@ final class Installation {
         "tools/packcheck/neoforge.mods.toml",
         "tools/packcheck/fabric.mod.json",
         "tools/packcheck/pack.mcmeta",
-        "tools/packcheck/game/1.16/ModaccelPackGame.java",
-        "tools/packcheck/game/1.18/ModaccelPackGame.java",
-        "tools/packcheck/game/1.19.3/ModaccelPackGame.java",
-        "tools/packcheck/game/1.21.2/ModaccelPackGame.java",
-        "tools/packcheck/game/1.21.5/ModaccelPackGame.java",
-        "tools/packcheck/game/1.21.11/ModaccelPackGame.java",
-        "tools/packcheck/game/26.1/ModaccelPackGame.java",
+        "tools/packcheck/game/1.16/MmtPackGame.java",
+        "tools/packcheck/game/1.18/MmtPackGame.java",
+        "tools/packcheck/game/1.19.3/MmtPackGame.java",
+        "tools/packcheck/game/1.21.2/MmtPackGame.java",
+        "tools/packcheck/game/1.21.5/MmtPackGame.java",
+        "tools/packcheck/game/1.21.11/MmtPackGame.java",
+        "tools/packcheck/game/26.1/MmtPackGame.java",
         "tools/VersionMap.java",
         "tools/GameDiff.java",
         "tools/MixinAudit.java",
-        "tools/mixincheck/ModaccelMixinCheck.java",
-        "tools/mixincheck/ModaccelMixinErrors.java",
-        "tools/mixincheck/ModaccelLaunchRecorder.java",
-        "tools/mixincheck/ModaccelNeoForgeTarget.java",
-        "tools/datacheck/ModaccelDataCheck.java",
-        "tools/datacheck/ModaccelDataProbe.java",
+        "tools/mixincheck/MmtMixinCheck.java",
+        "tools/mixincheck/MmtMixinErrors.java",
+        "tools/mixincheck/MmtLaunchRecorder.java",
+        "tools/mixincheck/MmtNeoForgeTarget.java",
+        "tools/datacheck/MmtDataCheck.java",
+        "tools/datacheck/MmtDataProbe.java",
         "tools/datacheck/mod/SkipShapeCache.java",
         "tools/datacheck/mod/fabric.mod.json",
-        "tools/datacheck/mod/modaccel_datacheck.mixins.json",
+        "tools/datacheck/mod/mmt_datacheck.mixins.json",
         "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinErrorHandler.java",
         "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinInfo.java",
         "tools/mixincheck/stubs/org/spongepowered/asm/mixin/extensibility/IMixinConfig.java",
@@ -84,7 +84,7 @@ final class Installation {
     );
 
     /** The jar entry listing every resource the package carries, so unpacking restores exactly what was packed. */
-    static final String RESOURCE_LIST = "modaccel-resources.txt";
+    static final String RESOURCE_LIST = "mmt-resources.txt";
 
     /**
      * Every file a package carries: RESOURCES with each directory (an entry ending in /) expanded, and the change
@@ -122,18 +122,18 @@ final class Installation {
     }
 
     static Path home() throws Exception {
-        Path location = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        Path location = Path.of(Mmt.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         // A child started by perf-optimize (PerfOptimize.childJava) is handed its parent's resources; a test hands its own.
-        // Not modaccel.home: the portable launchers set that to the ZIP's folder, which has no resources.
-        if (System.getProperty("modaccel.resources") != null) return Path.of(System.getProperty("modaccel.resources"))
+        // Not mmt.home: the portable launchers set that to the ZIP's folder, which has no resources.
+        if (System.getProperty("mmt.resources") != null) return Path.of(System.getProperty("mmt.resources"))
             .toAbsolutePath()
             .normalize();
-        if (!location.toString().endsWith(".jar")) return Path.of(System.getProperty("modaccel.home", "."))
+        if (!location.toString().endsWith(".jar")) return Path.of(System.getProperty("mmt.home", "."))
             .toAbsolutePath()
             .normalize();
         Path directory = Path.of(
             System.getProperty("user.home"),
-            ".modaccel/packages",
+            ".mmt/packages",
             Fingerprints.bytes(Files.readAllBytes(location))
         );
         try (var jar = new JarFile(location.toFile())) {
@@ -165,7 +165,7 @@ final class Installation {
         return directory;
     }
 
-    static Map<String, Object> pack(Path harness, Modaccel.Report report) throws Exception {
+    static Map<String, Object> pack(Path harness, Mmt.Report report) throws Exception {
         Runtimes.Jdk jdk = Runtimes.ensureAtLeast(harness, 17);
         Path directory = report.root.resolve("build/distributions");
         Files.createDirectories(directory);
@@ -203,7 +203,7 @@ final class Installation {
                 "UTF-8",
                 "-d",
                 classes.toString(),
-                harness.resolve("tools/launcher/ModaccelLauncher.java").toString()
+                harness.resolve("tools/launcher/MmtLauncher.java").toString()
             ),
             report.root,
             Map.of(),
@@ -213,8 +213,8 @@ final class Installation {
         report.stage("package-launcher", launcher, Map.of());
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().putValue("Manifest-Version", "1.0");
-        manifest.getMainAttributes().putValue("Main-Class", launcher.exit() == 0 ? "ModaccelLauncher" : "Modaccel");
-        Path target = directory.resolve("modaccel.jar"), temporary = directory.resolve("modaccel.jar.tmp");
+        manifest.getMainAttributes().putValue("Main-Class", launcher.exit() == 0 ? "MmtLauncher" : "Mmt");
+        Path target = directory.resolve("mmt.jar"), temporary = directory.resolve("mmt.jar.tmp");
         try (
             var output = new JarOutputStream(Files.newOutputStream(temporary), manifest);
             var files = Files.walk(classes)
@@ -242,14 +242,14 @@ final class Installation {
         }
         Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
         String sha = Fingerprints.bytes(Files.readAllBytes(target));
-        Files.writeString(directory.resolve("modaccel.jar.sha256"), sha + "  modaccel.jar\n");
-        Path zip = directory.resolve("modaccel-portable.zip"), zipTemporary = directory.resolve(
-            "modaccel-portable.zip.tmp"
+        Files.writeString(directory.resolve("mmt.jar.sha256"), sha + "  mmt.jar\n");
+        Path zip = directory.resolve("mmt-portable.zip"), zipTemporary = directory.resolve(
+            "mmt-portable.zip.tmp"
         );
         Map<String, byte[]> contents = new LinkedHashMap<>();
-        contents.put("modaccel.jar", Files.readAllBytes(target));
-        contents.put("modaccel.jar.sha256", Files.readAllBytes(directory.resolve("modaccel.jar.sha256")));
-        for (String file : List.of("modaccel", "modaccel.cmd", "LICENSE", "NOTICE", "PERFORMANCE.md")) contents.put(
+        contents.put("mmt.jar", Files.readAllBytes(target));
+        contents.put("mmt.jar.sha256", Files.readAllBytes(directory.resolve("mmt.jar.sha256")));
+        for (String file : List.of("mmt", "mmt.cmd", "LICENSE", "NOTICE", "PERFORMANCE.md")) contents.put(
             file,
             Files.readAllBytes(harness.resolve(file))
         );
@@ -262,12 +262,12 @@ final class Installation {
             " in this folder.\n";
         contents.put(
             "GETTING_STARTED.txt",
-            ("Modding Accelerator portable beta\n\n" +
+            ("Minecraft Modding Tools portable beta\n\n" +
                 "Windows needs no Java installed: if Java 17 or newer is missing, the launcher downloads a Java 21 runtime\n" +
-                "once into %LOCALAPPDATA%\\modaccel\\jre after checking its published SHA-256. macOS and Linux need Java 17 or newer\n" +
-                "on PATH or JAVA_HOME; project builds may download other JDKs into the modaccel cache.\n" +
-                "Extract the entire ZIP, then run ./modaccel (macOS/Linux) or modaccel.cmd (Windows) from this folder.\n" +
-                "Example: modaccel.cmd doctor --root \"C:\\path to\\your mod\"\n" +
+                "once into %LOCALAPPDATA%\\mmt\\jre after checking its published SHA-256. macOS and Linux need Java 17 or newer\n" +
+                "on PATH or JAVA_HOME; project builds may download other JDKs into the mmt cache.\n" +
+                "Extract the entire ZIP, then run ./mmt (macOS/Linux) or mmt.cmd (Windows) from this folder.\n" +
+                "Example: mmt.cmd doctor --root \"C:\\path to\\your mod\"\n" +
                 "Use port --from VERSION --to VERSION --fix to prepare a target; use compile, test, ui-check or world-check to verify.\n" +
                 "Run help for commands and support --json for current compatibility evidence. No Minecraft code or game assets are included.\n\n" +
                 "Support: Include the command, its receipt path under your mod's .runs/portable folder, and the failing log.\n" +
@@ -308,7 +308,7 @@ final class Installation {
                 p + 46 + nameLength + u16(archive, p + 30) + u16(archive, p + 32);
             if (next > limit) throw new IOException("Invalid ZIP central directory entry length");
             String name = new String(archive, p + 46, nameLength, java.nio.charset.StandardCharsets.UTF_8);
-            if (name.equals("modaccel") || name.equals(DESKTOP_LINUX)) {
+            if (name.equals("mmt") || name.equals(DESKTOP_LINUX)) {
                 archive[p + 5] = 3; // made by Unix
                 int mode = 0100755 << 16;
                 for (int i = 0; i < 4; i++) archive[p + 38 + i] = (byte) (mode >>> (i * 8));
@@ -320,7 +320,7 @@ final class Installation {
         Files.write(zipTemporary, archive);
         Files.move(zipTemporary, zip, StandardCopyOption.REPLACE_EXISTING);
         String zipSha = Fingerprints.bytes(Files.readAllBytes(zip));
-        Files.writeString(directory.resolve("modaccel-portable.zip.sha256"), zipSha + "  modaccel-portable.zip\n");
+        Files.writeString(directory.resolve("mmt-portable.zip.sha256"), zipSha + "  mmt-portable.zip\n");
         return Json.map(
             "jar",
             target.toString(),
@@ -343,7 +343,7 @@ final class Installation {
         );
     }
 
-    static final String DESKTOP_WINDOWS = "modaccel-desktop.exe", DESKTOP_LINUX = "modaccel-desktop-linux";
+    static final String DESKTOP_WINDOWS = "mmt-desktop.exe", DESKTOP_LINUX = "mmt-desktop-linux";
 
     /**
      * The desktop app (app/, built with cargo build --release) goes into the ZIP once it is built: the Windows exe,
@@ -354,7 +354,7 @@ final class Installation {
         Path app = harness.resolve("app"), release = app.resolve("target/release");
         Path exe = release.resolve(DESKTOP_WINDOWS);
         // A built app older than its sources is not the app: rebuild it with cargo, or refuse to package it.
-        for (Path binary : List.of(exe, release.resolve("modaccel-desktop"))) {
+        for (Path binary : List.of(exe, release.resolve("mmt-desktop"))) {
             if (!Files.isRegularFile(binary) || newerSource(app, binary) == null) continue;
             Path cargo = onPath("cargo");
             if (cargo != null) {
@@ -371,7 +371,7 @@ final class Installation {
             contents.put(DESKTOP_WINDOWS, Files.readAllBytes(exe));
             added.add(DESKTOP_WINDOWS);
         }
-        Path unix = release.resolve("modaccel-desktop");
+        Path unix = release.resolve("mmt-desktop");
         byte[] bytes = Files.isRegularFile(unix) ? Files.readAllBytes(unix) : new byte[0];
         boolean elf = bytes.length > 4 && bytes[0] == 0x7f && bytes[1] == 'E' && bytes[2] == 'L' && bytes[3] == 'F';
         if (elf) {
@@ -450,7 +450,7 @@ final class Installation {
      * Runs the suites (all of them, or the comma-separated names in only) and reports the failed ones first,
      * each with the end of its log, so the cause is the first thing read. A passed suite is one line.
      */
-    static Map<String, Object> test(Path harness, Modaccel.Report report, String only) throws Exception {
+    static Map<String, Object> test(Path harness, Mmt.Report report, String only) throws Exception {
         List<String> wanted = only.isBlank() ? List.of() : Arrays.stream(only.split(",")).map(String::strip).toList();
         List<String> known = SUITES.stream().map(Suite::name).toList();
         for (String name : wanted) {
@@ -465,7 +465,7 @@ final class Installation {
         Runtimes.Jdk jdk = Runtimes.ensureAtLeast(harness, 17);
         Path classes = report.directory.resolve("test-classes");
         Files.createDirectories(classes);
-        Path own = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        Path own = Path.of(Mmt.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         List<String> javac = new ArrayList<>(
             List.of(
                 jdk.home().resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
@@ -509,7 +509,7 @@ final class Installation {
                 failedText.add(
                     "FAILED " +
                     suite.name() +
-                    " (modaccel self-test --only " +
+                    " (mmt self-test --only " +
                     suite.name() +
                     " runs it alone)\n" +
                     tail +

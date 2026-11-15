@@ -1,13 +1,13 @@
 ---
 name: optimize-a-mod
-description: Take an unfamiliar Minecraft mod's source to a measured, gated, accepted speedup with modaccel perf and perf-optimize, and turn each accepted change into a reusable pattern. Use when Jon names a mod and says "make it faster", "optimize this mod", "next mod to optimize", "where does this mod's time go", or asks to push knowledge/perf-patterns.json further.
+description: Take an unfamiliar Minecraft mod's source to a measured, gated, accepted speedup with mmt perf and perf-optimize, and turn each accepted change into a reusable pattern. Use when Jon names a mod and says "make it faster", "optimize this mod", "next mod to optimize", "where does this mod's time go", or asks to push knowledge/perf-patterns.json further.
 ---
 
 Done means: one accepted `perf-optimize` run (cold and warm 95% intervals above 1, every gate passing) kept in
 `coverage/perf-runs.json`, and a `knowledge/perf-patterns.json` entry when the change generalises. You write the
-change; modaccel only profiles, measures and gates. Reference: PERFORMANCE.md.
+change; mmt only profiles, measures and gates. Reference: PERFORMANCE.md.
 
-1. Clone the mod into `.runs/<mod>` at a pinned commit; `modaccel compile --root R`. Pick a mod whose cost is in
+1. Clone the mod into `.runs/<mod>` at a pinned commit; `mmt compile --root R`. Pick a mod whose cost is in
    server ticks or worker threads (a hidden client draws ~8 fps). Make the run a player's: drop optional
    `localRuntime` test mods, log level INFO, one local commit both arms share.
 2. Make one world and reuse it: `ui-check --root R --jit full`, build the scene with `eval` snippets (wait with

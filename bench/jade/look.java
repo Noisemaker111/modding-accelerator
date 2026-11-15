@@ -25,7 +25,7 @@ Thread look = new Thread(() -> {
         }
     } catch (InterruptedException stopped) {
     }
-}, "modaccel-look");
+}, "mmt-look");
 look.setDaemon(true);
 vars.put("look.thread", look);
 look.start();

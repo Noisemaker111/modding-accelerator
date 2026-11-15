@@ -41,7 +41,7 @@ public final class PerfTest {
         runRecords();
         patternLibrary(home);
         Path scratch = Files.createTempDirectory(Path.of(args[1]).toAbsolutePath().getParent(), "perf-fixture-");
-        Modaccel.Report receipt = new Modaccel.Report(scratch, "perf-test");
+        Mmt.Report receipt = new Mmt.Report(scratch, "perf-test");
         Path agent = Performance.agent(home, receipt);
         Path source = scratch.resolve("net/minecraft/client/Minecraft.java");
         Files.createDirectories(source.getParent());
@@ -130,7 +130,7 @@ public final class PerfTest {
                     "descriptor", descriptor, "label", method, "mode", "timing"));
             }
             Json.save(probes, Json.map("probes", selectors));
-            Performance.probes(request, new Modaccel.Options(new String[]{"perf", "--probes", probes.toString()}));
+            Performance.probes(request, new Mmt.Options(new String[]{"perf", "--probes", probes.toString()}));
             Performance.capture(pid, agent, request, first, 2, 0, false);
             check(process.isAlive(), "profiling must leave the target running");
             check(Performance.properties(first.resolve("status.properties")).getProperty("errors", "").isEmpty(), "hooks install and restore without errors");
@@ -174,7 +174,7 @@ public final class PerfTest {
         Path rooted = scratch.resolve("rooted");
         Files.createDirectories(rooted);
         Path rootRequest = Performance.request(rooted, 1, 0, false);
-        Performance.attribution(rootRequest, new Modaccel.Options(new String[]{"perf", "--root", scratch.toString()}));
+        Performance.attribution(rootRequest, new Mmt.Options(new String[]{"perf", "--root", scratch.toString()}));
         check(Performance.properties(rootRequest).getProperty("allowHidden", "").equals("true"),
             "perf --root profiles the game it started the way the background preference says, hidden or not");
         check(PerfReport.percentile(List.of(1.0, 2.0, 3.0, 4.0), .5) == 2.5, "linear percentile");
@@ -231,7 +231,7 @@ public final class PerfTest {
             Path probes = scratch.resolve("allocation-probes.json");
             Json.save(probes, Json.map("probes", List.of(Json.map("class", "com.example.alloc.Spawner", "method", "tiny", "descriptor", "(I)I",
                 "label", "tiny", "mode", "timing"))));
-            Performance.probes(request, new Modaccel.Options(new String[]{"perf", "--probes", probes.toString()}));
+            Performance.probes(request, new Mmt.Options(new String[]{"perf", "--probes", probes.toString()}));
             Performance.capture(Long.toString(process.pid()), agent, request, out, 2, 0, false);
             PerfReport.write(out, out);
             Map<String, Object> attribution = Json.object(Json.read(out.resolve("report.json")).get("attribution"));
@@ -327,7 +327,7 @@ public final class PerfTest {
         Map<String, List<String>> content = PerfTemplates.content(root);
         check(content.get("block").equals(List.of("demo:lamp")) && content.get("entity").equals(List.of("demo:ghoul")),
             "mod content comes from the mod's own lang keys, not items, vanilla ids or longer keys: " + content);
-        Map<String, Object> made = PerfTemplates.run(new Modaccel.Options(new String[]{"perf-template", "--family", "mod-content", "--root", root.toString(),
+        Map<String, Object> made = PerfTemplates.run(new Mmt.Options(new String[]{"perf-template", "--family", "mod-content", "--root", root.toString(),
             "--counts", "3,16", "--out", root.resolve("out").toString()}));
         Map<String, Object> scenario = Json.read(Path.of(made.get("scenario").toString()));
         List<Object> cases = PerfScenario.validate(scenario);
@@ -335,7 +335,7 @@ public final class PerfTest {
         Map<String, Object> crowd = cases.stream().map(Json::object).filter(c -> c.get("id").equals("demo-ghoul-16")).findFirst().orElseThrow();
         long summons = Json.array(crowd.get("setup")).stream().map(Json::object).filter(s -> s.get("command").toString().startsWith("summon demo:ghoul")).count();
         check(summons == 16, "a crowd summons exactly its count");
-        check(Json.array(crowd.get("cleanup")).stream().map(Json::object).anyMatch(s -> s.get("command").toString().contains("tag=modaccel_perf")),
+        check(Json.array(crowd.get("cleanup")).stream().map(Json::object).anyMatch(s -> s.get("command").toString().contains("tag=mmt_perf")),
             "crowd cleanup removes only the tagged entities");
     }
 
@@ -586,7 +586,7 @@ public final class PerfTest {
             Json.map("class", "p.Pipe", "method", "tick", "descriptor", "()V", "label", "Pipe.tick", "mode", "timing", "mod", "pipes"),
             Json.map("class", "p.Pipe", "method", "sort", "descriptor", "()V", "label", "Pipe.sort", "mode", "timing", "mod", "pipes"),
             Json.map("class", "o.Other", "method", "x", "descriptor", "()V", "label", "Other.x", "mode", "timing", "mod", "other")))));
-        Map<String, Object> made = PerfTemplates.run(new Modaccel.Options(new String[]{"perf-template", "--family", "experiment", "--from", capture.toString(),
+        Map<String, Object> made = PerfTemplates.run(new Mmt.Options(new String[]{"perf-template", "--family", "experiment", "--from", capture.toString(),
             "--root", dir.toString(), "--out", dir.resolve("exp").toString()}));
         Map<String, Object> generated = Json.read(dir.resolve("exp/experiment.json"));
         Map<String, Object> metric = Json.object(Json.object(generated.get("measure")).get("metric"));
@@ -610,7 +610,7 @@ public final class PerfTest {
         fixture(farm, "probes.suggested.json", Json.write(Json.map("probes", List.of(
             Json.map("class", "f.Farm", "method", "tick", "descriptor", "()V", "label", "Farm.tick", "mode", "timing", "mod", "farms"),
             Json.map("class", "f.Villager", "method", "getAge", "descriptor", "()I", "label", "Villager.getAge", "mode", "timing", "mod", "farms")))));
-        Map<String, Object> farmMade = PerfTemplates.run(new Modaccel.Options(new String[]{"perf-template", "--family", "experiment", "--from", farm.toString(),
+        Map<String, Object> farmMade = PerfTemplates.run(new Mmt.Options(new String[]{"perf-template", "--family", "experiment", "--from", farm.toString(),
             "--root", dir.toString(), "--out", dir.resolve("farm-exp").toString()}));
         Map<String, Object> farmMetric = Json.object(Json.object(Json.read(dir.resolve("farm-exp/experiment.json")).get("measure")).get("metric"));
         List<Object> farmProbes = Json.array(Json.read(dir.resolve("farm-exp/probes.json")).get("probes"));
@@ -730,20 +730,20 @@ public final class PerfTest {
         output.flush();
     }
 
-    /** modaccel run with its output redirected (no -Dstdout.encoding) writes UTF-8, whatever the platform charset. */
+    /** mmt run with its output redirected (no -Dstdout.encoding) writes UTF-8, whatever the platform charset. */
     static void redirectedOutputIsUtf8() throws Exception {
         Path scratch = Files.createTempDirectory("perf-utf8-");
         Path source = scratch.resolve("Utf8Probe.java");
-        Files.writeString(source, "public class Utf8Probe { public static void main(String[] args) { Modaccel.utf8WhenRedirected(); "
+        Files.writeString(source, "public class Utf8Probe { public static void main(String[] args) { Mmt.utf8WhenRedirected(); "
             + "System.out.print(\"95% 9.94\\u201311.33; 3.97 \\u2192 0.38\"); System.out.flush(); } }");
         Path out = scratch.resolve("out.txt");
-        String classes = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+        String classes = Path.of(Mmt.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
         Process process = new ProcessBuilder(ProcessHandle.current().info().command().orElse("java"), "-cp", classes, source.toString())
             .redirectErrorStream(true).redirectOutput(out.toFile()).start();
         boolean done = process.waitFor(60, java.util.concurrent.TimeUnit.SECONDS);
         String text = new String(Files.readAllBytes(out), java.nio.charset.StandardCharsets.UTF_8);
         check(done && process.exitValue() == 0 && text.equals("95% 9.94\u201311.33; 3.97 \u2192 0.38"),
-            "redirected modaccel output is UTF-8, so a log or the desktop app reads its dashes and arrows: " + text);
+            "redirected mmt output is UTF-8, so a log or the desktop app reads its dashes and arrows: " + text);
         Files.walk(scratch).sorted(Comparator.reverseOrder()).forEach(path -> path.toFile().delete());
     }
 

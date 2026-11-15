@@ -17,16 +17,16 @@ import java.security.ProtectionDomain;
  * file is edited in place (a constant renamed, one method body filled with nop and a return), so it
  * works on whichever FML version defines the class, and changes nothing when the class is not there.
  */
-public final class ModaccelNeoForgeTarget implements ClassFileTransformer {
+public final class MmtNeoForgeTarget implements ClassFileTransformer {
 
     final boolean client;
 
-    ModaccelNeoForgeTarget(boolean client) {
+    MmtNeoForgeTarget(boolean client) {
         this.client = client;
     }
 
     public static void premain(String side, Instrumentation instrumentation) {
-        instrumentation.addTransformer(new ModaccelNeoForgeTarget(!"server".equals(side)));
+        instrumentation.addTransformer(new MmtNeoForgeTarget(!"server".equals(side)));
     }
 
     @Override
@@ -43,11 +43,11 @@ public final class ModaccelNeoForgeTarget implements ClassFileTransformer {
         try {
             byte[] patched = patch(bytes, client);
             System.out.println(
-                "modaccel: " + name + " now builds the game layer only" + (client ? ", on the client side" : "")
+                "mmt: " + name + " now builds the game layer only" + (client ? ", on the client side" : "")
             );
             return patched;
         } catch (Throwable failure) {
-            System.err.println("modaccel: could not adjust " + name + ": " + failure);
+            System.err.println("mmt: could not adjust " + name + ": " + failure);
             return null;
         }
     }

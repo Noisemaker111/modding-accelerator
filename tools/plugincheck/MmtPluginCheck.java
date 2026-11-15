@@ -29,9 +29,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
  * a task/onDisable, a plugin.yml command nothing handles, permissions that do not register, and
  * listeners Paper would skip. What MockBukkit cannot stand in for is reported "unchecked", never passed.
  *
- * Usage: ModaccelPluginCheck <spec.json>  (spec: jar, result, descriptorSource, javaRoots, plugins)
+ * Usage: MmtPluginCheck <spec.json>  (spec: jar, result, descriptorSource, javaRoots, plugins)
  */
-public final class ModaccelPluginCheck {
+public final class MmtPluginCheck {
     static final List<Map<String, Object>> checks = new ArrayList<>();
     static final List<String> warnings = new ArrayList<>(), unchecked = new ArrayList<>();
     static List<Path> javaRoots = List.of();
@@ -157,9 +157,9 @@ public final class ModaccelPluginCheck {
         else { out.put("enabled", false); return; }
 
         // 4. Load: the main class exists, is a JavaPlugin, and constructs; onLoad runs.
-        Path data = Files.createTempDirectory("modaccel-plugin-data-");
+        Path data = Files.createTempDirectory("mmt-plugin-data-");
         JavaPlugin plugin;
-        MockBukkitURLClassLoader loader = new MockBukkitURLClassLoader(jarPath.toFile(), ModaccelPluginCheck.class.getClassLoader(), server, description, data.toFile());
+        MockBukkitURLClassLoader loader = new MockBukkitURLClassLoader(jarPath.toFile(), MmtPluginCheck.class.getClassLoader(), server, description, data.toFile());
         String main = description.getMain();
         Class<?> mainClass;
         try {
@@ -217,7 +217,7 @@ public final class ModaccelPluginCheck {
         // 6. Commands: Paper fires the commands lifecycle event once plugins are enabled.
         List<String> brigadier = new ArrayList<>();
         try {
-            server.dispatchCommand(server.getConsoleSender(), "modaccel-plugin-check-no-such-command");
+            server.dispatchCommand(server.getConsoleSender(), "mmt-plugin-check-no-such-command");
             String prefix = name.toLowerCase(Locale.ROOT) + ":";
             for (var node : PaperCommandsMock.INSTANCE.getDispatcherInternal().getRoot().getChildren())
                 // plugin.yml commands sit in the same tree as Bukkit wrappers; only nodes registered through Paper's Commands API count here.

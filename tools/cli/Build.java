@@ -7,10 +7,10 @@ final class Build {
     final ProjectModel project;
     final Path harness, init;
     final String selected;
-    final Modaccel.Report report;
+    final Mmt.Report report;
     Runtimes.Jdk jdk;
 
-    Build(ProjectModel project, Path harness, String selected, Modaccel.Report report) throws Exception {
+    Build(ProjectModel project, Path harness, String selected, Mmt.Report report) throws Exception {
         this.project = project;
         this.harness = harness;
         this.selected = selected;
@@ -72,7 +72,7 @@ final class Build {
         return project.state().resolve("gradle-daemons").toAbsolutePath();
     }
 
-    /** Stops the Gradle daemons modaccel started for this checkout; null if it never started any. */
+    /** Stops the Gradle daemons mmt started for this checkout; null if it never started any. */
     Run.Result stopDaemons() throws Exception {
         if (!Files.isDirectory(daemons())) return null;
         Path wrapper = project.root.resolve("gradle/wrapper/gradle-wrapper.jar");
@@ -96,7 +96,7 @@ final class Build {
 
     static final int GRADLE_TIMEOUT = 900;
     static final int NETWORK_RETRY_SECONDS = 20;
-    static final String TIMEOUT_VARIABLE = "MODACCEL_GRADLE_TIMEOUT";
+    static final String TIMEOUT_VARIABLE = "MMT_GRADLE_TIMEOUT";
 
     /** No evaluated model yet: Gradle may still download the game, mappings and every dependency. */
     boolean coldSetup() {
@@ -106,7 +106,7 @@ final class Build {
         );
     }
 
-    /** Seconds one Gradle invocation may take: MODACCEL_GRADLE_TIMEOUT when set, else 15 minutes, cold or warm. */
+    /** Seconds one Gradle invocation may take: MMT_GRADLE_TIMEOUT when set, else 15 minutes, cold or warm. */
     static int gradleTimeout(String configured) {
         if (configured != null && !configured.isBlank()) {
             try {
@@ -122,7 +122,7 @@ final class Build {
 
     static String timeoutMessage(int seconds, boolean cold, Path log) {
         return (
-            "Gradle stopped at modaccel's " +
+            "Gradle stopped at mmt's " +
             seconds +
             " s limit for " +
             (cold
@@ -174,7 +174,7 @@ final class Build {
             )
         );
         if (!fallback) return result;
-        // The init script registers modaccel's tasks as each project configures. If a build still hides
+        // The init script registers mmt's tasks as each project configures. If a build still hides
         // a task from Gradle's on-demand selection, configure every project once, as before, and say so.
         command.add(command.indexOf("-I") + 2, "--no-configure-on-demand");
         Run.Result retry = timed(command, stage + "-all-projects");
@@ -238,7 +238,7 @@ final class Build {
     }
 
     /**
-     * A compile with nothing of modaccel's in it, so Gradle can reuse its configuration cache:
+     * A compile with nothing of mmt's in it, so Gradle can reuse its configuration cache:
      * on a 21-project build that is about 3 s instead of 11 s per reload. A build that can't use
      * the cache still compiles; Gradle just reports the problem and configures as usual.
      */
@@ -251,7 +251,7 @@ final class Build {
         }
         command.replaceAll(argument -> argument.equals("--no-configuration-cache") ? "--configuration-cache" : argument
         );
-        command.removeIf(argument -> argument.startsWith("-Dmodaccel.") || argument.equals("-Dfabric.loom.ci=true"));
+        command.removeIf(argument -> argument.startsWith("-Dmmt.") || argument.equals("-Dfabric.loom.ci=true"));
         Run.Result result = timed(command, stage);
         report.stage(
             stage,
@@ -281,7 +281,7 @@ final class Build {
             )
         );
         // Test hook: make the init script miss under configure-on-demand to exercise the fallback.
-        if ("true".equals(System.getenv("MODACCEL_SIMULATE_COD_MISS"))) command.add("-Dmodaccel.simulateCodMiss=true");
+        if ("true".equals(System.getenv("MMT_SIMULATE_COD_MISS"))) command.add("-Dmmt.simulateCodMiss=true");
         List<String> toolchains = new ArrayList<>();
         Path downloaded = JdkDownloads.cache();
         for (Runtimes.Jdk installed : Runtimes.installed(harness)) {
@@ -305,11 +305,11 @@ final class Build {
             }
             command.add("-Dorg.gradle.java.installations.paths=" + String.join(",", toolchains));
         }
-        if (!selected.isBlank()) command.add("-Dmodaccel.project=" + selected);
+        if (!selected.isBlank()) command.add("-Dmmt.project=" + selected);
         // Loom skips dependency source remapping for CLI checks; compiled dependency remapping still runs.
         command.add("-Dfabric.loom.ci=true");
-        command.add("-Dmodaccel.runId=" + report.id);
-        // Daemons of modaccel's own, so game-stop can stop them without touching the user's or another
+        command.add("-Dmmt.runId=" + report.id);
+        // Daemons of mmt's own, so game-stop can stop them without touching the user's or another
         // agent's (gradle --stop would end them all), and one left running leaves after ten minutes idle.
         command.add("-Dorg.gradle.daemon.registry.base=" + daemons());
         // A command-line value would override one the user set, so only fill in a default.
@@ -337,8 +337,8 @@ final class Build {
             }
         }
         List<String> task = planning
-            ? List.of("-Dmodaccel.metadataMode=plan", ":modaccelMetadata")
-            : List.of(":modaccelMetadata");
+            ? List.of("-Dmmt.metadataMode=plan", ":mmtMetadata")
+            : List.of(":mmtMetadata");
         String stage = planning ? "metadata-plan" : "metadata";
         Run.Result result = gradle(task, stage);
         // The first read downloads Gradle and the build's dependencies, and the wrapper gives up after one 10 s try:
@@ -379,7 +379,7 @@ final class Build {
         if (planning && !Files.isRegularFile(model)) {
             // Some older Gradle builds (ModMenu 1.16.5 on Gradle 6.9.1) never show the init script the planning flag, so it
             // writes the full model; that is a superset of the planning model, so it serves as one.
-            java.util.regex.Matcher written = java.util.regex.Pattern.compile("(?m)^MODACCEL_MODEL (.+?)\s*$").matcher(
+            java.util.regex.Matcher written = java.util.regex.Pattern.compile("(?m)^MMT_MODEL (.+?)\s*$").matcher(
                 Files.readString(result.log())
             );
             Path full = null;
@@ -391,11 +391,11 @@ final class Build {
         return value;
     }
 
-    /** What stopped modaccel reading the build, in a few words, ahead of Gradle's own detail. */
+    /** What stopped mmt reading the build, in a few words, ahead of Gradle's own detail. */
     static String discoveryHeadline(String why) {
         if (
             why.startsWith("Gradle could not resolve")
-        ) return "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build.";
+        ) return "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build.";
         java.util.regex.Matcher plugin = java.util.regex.Pattern.compile(
             "Plugin \\[id: '([^']+)'(?:, version: '([^']+)')?\\] was not found"
         ).matcher(why);
@@ -403,11 +403,11 @@ final class Build {
             "Missing build plugin: this project's build uses the Gradle plugin " +
             plugin.group(1) +
             (plugin.group(2) == null ? "" : " " + plugin.group(2)) +
-            ", and none of its plugin repositories has it, so modaccel could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
+            ", and none of its plugin repositories has it, so mmt could not read the build. Check the plugin id and version, or add the repository that publishes it (pluginManagement in settings.gradle)."
         );
         if (
             why.startsWith("Gradle could not reach")
-        ) return "No connection to a repository: Gradle could not download what this project's build needs, so modaccel could not read the build.";
+        ) return "No connection to a repository: Gradle could not download what this project's build needs, so mmt could not read the build.";
         return "Could not read this project's build: Gradle stopped while loading it, before any code was compiled.";
     }
 
@@ -436,7 +436,7 @@ final class Build {
                 }
                 continue;
             }
-            boolean found = name.equals("modaccelPure")
+            boolean found = name.equals("mmtPure")
                 ? Json.array(p.get("sourceSets")).stream().anyMatch(s -> "test".equals(Json.object(s).get("name")))
                 : Json.array(p.get("tasks"))
                     .stream()

@@ -209,7 +209,7 @@ public final class DependenciesTest {
 
     /** An explicit selection is verified, not trusted: publication, target-game support, and disable proof. */
     static void selections() throws Exception {
-        Path file = Files.createTempFile("modaccel-selection-", ".json");
+        Path file = Files.createTempFile("mmt-selection-", ".json");
         try {
             Files.writeString(
                 file,
@@ -484,7 +484,7 @@ public final class DependenciesTest {
     }
 
     static Path jarWithMinecraft(String constraint) throws Exception {
-        Path jar = Files.createTempFile("modaccel-manifest-", ".jar");
+        Path jar = Files.createTempFile("mmt-manifest-", ".jar");
         try (var zip = new ZipOutputStream(Files.newOutputStream(jar))) {
             zip.putNextEntry(new ZipEntry("fabric.mod.json"));
             zip.write(
@@ -505,7 +505,7 @@ public final class DependenciesTest {
     }
 
     static Path jarWithHomepage(String homepage) throws Exception {
-        Path jar = Files.createTempFile("modaccel-dependency-", ".jar");
+        Path jar = Files.createTempFile("mmt-dependency-", ".jar");
         try (var zip = new ZipOutputStream(Files.newOutputStream(jar))) {
             zip.putNextEntry(new ZipEntry("fabric.mod.json"));
             zip.write(

@@ -1,6 +1,6 @@
 {
   "required": false,
-  "package": "modaccel.datacheck.mixin",
+  "package": "mmt.datacheck.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": ["SkipShapeCache"],
   "injectors": { "defaultRequire": 0 }

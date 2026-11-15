@@ -1,7 +1,7 @@
 # Extending pack-check
 
 `pack-check` runs a modpack on its own loader's real server. A new loader, input, check or repair goes into one
-registry, not the core (`tools/cli/PackCheck.java`); `modaccel pack-check --list` prints them. Copy an existing entry.
+registry, not the core (`tools/cli/PackCheck.java`); `mmt pack-check --list` prints them. Copy an existing entry.
 
 | Add | Where | Test it in |
 |---|---|---|
@@ -10,9 +10,9 @@ registry, not the core (`tools/cli/PackCheck.java`); `modaccel pack-check --list
 | Jar metadata | `PackMods.read` | a jar layout in `PackMetadataTests` |
 | Check | `new Check(id, stage, what, body)` in `PackChecks.ALL`; `problem` only for what the game showed, `warning` for a metadata prediction, `note` never fails | a real log or jar layout in `PackLogTests` |
 | Repair | `knowledge/pack-fixes.json` (`match`, `action`, `check`, `evidence`, `test`), only after a real run proved it; new matchers/actions in `PackRepairs.java` | its own `test`, run by `self-test` |
-| Game version whose API moved | a layer `tools/packcheck/game/VERSION/ModaccelPackGame.java`, listed in `Installation.RESOURCES` | `probe-compile` |
+| Game version whose API moved | a layer `tools/packcheck/game/VERSION/MmtPackGame.java`, listed in `Installation.RESOURCES` | `probe-compile` |
 
-The probe (`tools/packcheck/ModaccelPackProbe.java`) is loader-neutral, written in Mojang names, and reaches the
+The probe (`tools/packcheck/MmtPackProbe.java`) is loader-neutral, written in Mojang names, and reaches the
 loader only by reflection; keep loader code out of it and its game layers.
 
 Offline: `python bench/run_tests.py --only self-test`. In game, locally, before merge: `pack-check --pack PACK --focus

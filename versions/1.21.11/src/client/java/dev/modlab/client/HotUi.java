@@ -108,8 +108,8 @@ final class HotUi {
 		if (mainOut != null) {
 			return;
 		}
-		mainOut = root.resolve(".modaccel/hot/main");
-		clientOut = root.resolve(".modaccel/hot/client");
+		mainOut = root.resolve(".mmt/hot/main");
+		clientOut = root.resolve(".mmt/hot/client");
 		Files.createDirectories(mainOut);
 		Files.createDirectories(clientOut);
 		parentRoot = root.getParent() == null ? root : root.getParent().getParent();

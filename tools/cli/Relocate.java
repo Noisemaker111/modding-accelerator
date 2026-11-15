@@ -4,7 +4,7 @@ import java.io.*;
 final class Relocate {
 
     static String name(String name) {
-        return name.replace("org/objectweb/asm", "dev/modaccel/internal/asm");
+        return name.replace("org/objectweb/asm", "dev/mmt/internal/asm");
     }
 
     static byte[] classes(byte[] bytes) throws IOException {
@@ -22,7 +22,7 @@ final class Relocate {
             output.writeByte(tag);
             switch (tag) {
                 case 1 -> output.writeUTF(
-                    name(input.readUTF()).replace("org.objectweb.asm", "dev.modaccel.internal.asm")
+                    name(input.readUTF()).replace("org.objectweb.asm", "dev.mmt.internal.asm")
                 );
                 case 3, 4, 9, 10, 11, 12, 17, 18 -> output.writeInt(input.readInt());
                 case 5, 6 -> {
