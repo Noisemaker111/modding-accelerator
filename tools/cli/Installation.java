@@ -23,10 +23,7 @@ final class Installation {
         "tools/agent/HotReload.java",
         "tools/runner/PureTests.java",
         "tools/plugincheck/ModaccelPluginCheck.java",
-        "knowledge/mockbukkit.json",
         "tools/servercheck/ModaccelServerCheck.java",
-        "knowledge/mcprotocollib.json",
-        "knowledge/viaproxy.json",
         "tools/packcheck/ModaccelPackProbe.java",
         "tools/packcheck/ModaccelPackProbeFabric.java",
         "tools/packcheck/ModaccelPackOpener.java",
@@ -44,8 +41,6 @@ final class Installation {
         "tools/packcheck/game/1.21.5/ModaccelPackGame.java",
         "tools/packcheck/game/1.21.11/ModaccelPackGame.java",
         "tools/packcheck/game/26.1/ModaccelPackGame.java",
-        "knowledge/pack-fixes.json",
-        "knowledge/pack-loaders.json",
         "tools/VersionMap.java",
         "tools/GameDiff.java",
         "tools/MixinAudit.java",
@@ -73,56 +68,55 @@ final class Installation {
         "tools/tests/StrangerTest.java",
         "tools/tests/PackCheckTest.java",
         "tools/tests/RulesTest.java",
-        "knowledge/fixes.json",
-        "knowledge/loaders.json",
-        "knowledge/bridges/neoforge-on-fabric/Bridge.java",
-        "knowledge/bridges/neoforge-on-fabric/BuildCreativeModeTabContentsEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/Bus.java",
-        "knowledge/bridges/neoforge-on-fabric/ClientBridge.java",
-        "knowledge/bridges/neoforge-on-fabric/ClientTickEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ConfigurationScreen.java",
-        "knowledge/bridges/neoforge-on-fabric/DeferredBlock.java",
-        "knowledge/bridges/neoforge-on-fabric/DeferredHolder.java",
-        "knowledge/bridges/neoforge-on-fabric/DeferredItem.java",
-        "knowledge/bridges/neoforge-on-fabric/DeferredRegister.java",
-        "knowledge/bridges/neoforge-on-fabric/Event.java",
-        "knowledge/bridges/neoforge-on-fabric/EventBusSubscriber.java",
-        "knowledge/bridges/neoforge-on-fabric/EventPriority.java",
-        "knowledge/bridges/neoforge-on-fabric/FMLClientSetupEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/FMLCommonSetupEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ICancellableEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/IConfigScreenFactory.java",
-        "knowledge/bridges/neoforge-on-fabric/IEventBus.java",
-        "knowledge/bridges/neoforge-on-fabric/ModConfig.java",
-        "knowledge/bridges/neoforge-on-fabric/ModConfigEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ModConfigSpec.java",
-        "knowledge/bridges/neoforge-on-fabric/ModContainer.java",
-        "knowledge/bridges/neoforge-on-fabric/NeoForge.java",
-        "knowledge/bridges/neoforge-on-fabric/RegisterCommandsEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerLifecycleEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerStartedEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerStartingEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerStoppedEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerStoppingEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerTickEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/SubscribeEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ClientPacketDistributor.java",
-        "knowledge/bridges/neoforge-on-fabric/ClientPayloadContext.java",
-        "knowledge/bridges/neoforge-on-fabric/HandlerThread.java",
-        "knowledge/bridges/neoforge-on-fabric/IPayloadContext.java",
-        "knowledge/bridges/neoforge-on-fabric/IPayloadHandler.java",
-        "knowledge/bridges/neoforge-on-fabric/PacketDistributor.java",
-        "knowledge/bridges/neoforge-on-fabric/PayloadRegistrar.java",
-        "knowledge/bridges/neoforge-on-fabric/RegisterClientPayloadHandlersEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/RegisterPayloadHandlersEvent.java",
-        "knowledge/bridges/neoforge-on-fabric/ServerPayloadContext.java",
-        "knowledge/structural.json",
-        "knowledge/port-corpus.json",
+        "knowledge/",
         "coverage/changes/index.json"
     );
 
+    /** The jar entry listing every resource the package carries, so unpacking restores exactly what was packed. */
+    static final String RESOURCE_LIST = "modaccel-resources.txt";
+
+    /**
+     * Every file a package carries: RESOURCES with each directory (an entry ending in /) expanded, and the change
+     * index's step files for updates into unobfuscated releases, which port's by-name lookups read (Port.byName).
+     * A hand-kept list once missed knowledge/meaning-changes.json and perf-patterns.json, so the shipped port and
+     * perf-optimize silently ran without them.
+     */
+    static List<String> resources(Path harness) throws IOException {
+        List<String> files = new ArrayList<>();
+        for (String name : RESOURCES) {
+            if (!name.endsWith("/")) {
+                files.add(name);
+                continue;
+            }
+            try (var walk = Files.walk(harness.resolve(name))) {
+                walk
+                    .filter(Files::isRegularFile)
+                    .map(p -> harness.relativize(p).toString().replace('\\', '/'))
+                    .sorted()
+                    .forEach(files::add);
+            }
+        }
+        try (var steps = Files.list(harness.resolve("coverage/changes"))) {
+            steps
+                .map(p -> p.getFileName().toString())
+                .filter(n -> n.endsWith(".json") && n.contains("__"))
+                .filter(n -> {
+                    String[] sides = n.substring(0, n.length() - 5).split("__");
+                    return Versions.compare(sides[1], Route.FIRST_UNOBFUSCATED) >= 0;
+                })
+                .sorted()
+                .forEach(n -> files.add("coverage/changes/" + n));
+        }
+        return files;
+    }
+
     static Path home() throws Exception {
         Path location = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        // A child started by perf-optimize (PerfOptimize.childJava) is handed its parent's resources; a test hands its own.
+        // Not modaccel.home: the portable launchers set that to the ZIP's folder, which has no resources.
+        if (System.getProperty("modaccel.resources") != null) return Path.of(System.getProperty("modaccel.resources"))
+            .toAbsolutePath()
+            .normalize();
         if (!location.toString().endsWith(".jar")) return Path.of(System.getProperty("modaccel.home", "."))
             .toAbsolutePath()
             .normalize();
@@ -132,7 +126,11 @@ final class Installation {
             Fingerprints.bytes(Files.readAllBytes(location))
         );
         try (var jar = new JarFile(location.toFile())) {
-            for (String name : RESOURCES) {
+            List<String> names;
+            try (var input = jar.getInputStream(jar.getJarEntry(RESOURCE_LIST))) {
+                names = new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).lines().toList();
+            }
+            for (String name : names) {
                 Path file = directory.resolve(name);
                 byte[] bytes;
                 try (var input = jar.getInputStream(jar.getJarEntry(name))) {
@@ -210,13 +208,19 @@ final class Installation {
                 Files.copy(file, output);
                 output.closeEntry();
             }
-            for (String name : RESOURCES) {
+            List<String> resources = resources(harness);
+            for (String name : resources) {
                 var entry = new JarEntry(name);
                 entry.setTime(0);
                 output.putNextEntry(entry);
                 Files.copy(harness.resolve(name), output);
                 output.closeEntry();
             }
+            var list = new JarEntry(RESOURCE_LIST);
+            list.setTime(0);
+            output.putNextEntry(list);
+            output.write(String.join("\n", resources).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            output.closeEntry();
         }
         Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
         String sha = Fingerprints.bytes(Files.readAllBytes(target));
