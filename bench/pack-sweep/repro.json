@@ -1,0 +1,19 @@
+{
+  "about": "Packs a known fault in knowledge/pack-fixes.json was found in, pinned like corpus.json, for proving a repair with python bench/pack_sweep.py run --corpus bench/pack-sweep/repro.json --fix [--focus MODID]. Not part of the pack sweep's pass rates.",
+  "packs": [
+    {
+      "id": "jojos-pack-forge-1.20.1",
+      "name": "JoJo's Bizarre Modpack",
+      "format": "mrpack",
+      "loader": "forge",
+      "minecraft": "1.20.1",
+      "url": "https://cdn.modrinth.com/data/yonXWV57/versions/UET5pFxd/JoJo%27s%20Bizarre%20Modpack%201.0.0.mrpack",
+      "bytes": 16767,
+      "sha512": "44a02440ff5550f47bd8e24aa295210355a8071f7b358a82fe274067fdf8c7c36879207415331c82c3e9a6a652b57f0b6397fc00fb0067adfe9b8435300767c5",
+      "version": "1.0.0",
+      "page": "https://modrinth.com/modpack/jojos-pack/version/UET5pFxd",
+      "fault": "soulsweapons-pinned-projectile-damage",
+      "focus": "soulsweapons"
+    }
+  ]
+}
