@@ -1320,6 +1320,11 @@ public final class PortableTests {
             "classifier and shareCaches() rewritten for Gradle 8 and Loom 1.x"
         );
         check(Target.removedDsl("    classifier \"dev\"\n", false).equals("    classifier \"dev\"\n"), "a classifier stays on Gradle 7");
+        // Architectury Loom is Loom: its version is read like Fabric Loom's, so a port can raise it (BetterF3 1.5-SNAPSHOT).
+        check(
+            "1.5-SNAPSHOT".equals(ProjectModel.loomVersion(new Properties(), List.of("plugins {\n    id \"dev.architectury.loom\" version \"1.5-SNAPSHOT\" apply false\n}\n"))),
+            "Architectury Loom's version is the build's Loom"
+        );
         // A Forge project a target has no Forge for leaves settings.gradle; the other loaders stay.
         check(
             Target.withoutForgeInclude("include(\":common\")\ninclude(\":fabric\")\ninclude(\":forge\")\ninclude(\":neoforge\")\n")

@@ -182,7 +182,7 @@ public final class ProjectModel {
             !props.getProperty(key, "").isBlank()
         ) return props.getProperty(key).strip();
         Pattern plugin = Pattern.compile(
-            "id\\s*\\(?\\s*[\"'](?:fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?)[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"']([^\"']+)[\"']"
+            "id\\s*\\(?\\s*[\"'](?:fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?|dev\\.architectury\\.loom)[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"']([^\"']+)[\"']"
         );
         Pattern catalog = Pattern.compile("(?m)^\\s*(?:fabric-)?loom\\s*=\\s*\"([^\"]+)\"");
         for (String script : scripts) {

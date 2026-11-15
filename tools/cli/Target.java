@@ -668,6 +668,43 @@ final class Target {
         return text.replaceAll("(?m)^([ \\t]*include\\s*\\(?\\s*)" + forge + "\\s*,\\s*", "$1");
     }
 
+    /**
+     * Architectury Loom (dev.architectury.loom, Fabric Loom's fork for Architectury builds) follows the same Loom line the
+     * target's jars were built with: BetterF3 1.20.4 -> 1.20.5 kept 1.5-SNAPSHOT while Fabric API was built with 1.7, and
+     * the build would not load. The plugin's version moves to that line's newest release on maven.architectury.dev, and
+     * Gradle to what its own bootstrap class asks. Returns the new version, or null when the build applies no such plugin.
+     */
+    static String architecturyLoomFollows(Setup setup, Build build, String line) throws Exception {
+        Pattern plugin = Pattern.compile(
+            "(id\\s*\\(?\\s*[\"']dev\\.architectury\\.loom[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"'])([^\"']+)([\"'])"
+        );
+        List<Path> scripts = new ArrayList<>();
+        for (String name : List.of("build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts")) scripts.add(build.project.root.resolve(name));
+        for (Path script : scripts) {
+            if (!Files.isRegularFile(script)) continue;
+            Matcher found = plugin.matcher(setup.text(script));
+            if (!found.find()) continue;
+            String current = found.group(2);
+            if (Versions.compare(Dependencies.minor(current.replace("-SNAPSHOT", "")), line) >= 0) return null;
+            String newest = null;
+            Matcher version = Pattern.compile("<version>(" + Pattern.quote(line) + "\\.[0-9]+)</version>").matcher(
+                fetch(build, "https://maven.architectury.dev/dev/architectury/architectury-loom/maven-metadata.xml")
+            );
+            while (version.find()) if (newest == null || Versions.compare(version.group(1), newest) > 0) newest = version.group(1);
+            if (newest == null) return null;
+            setup.replace(script, found.group(0), found.group(1) + newest + found.group(3));
+            gradleFollows(
+                setup,
+                build,
+                "https://maven.architectury.dev/dev/architectury/architectury-loom/" + newest + "/architectury-loom-" + newest + ".module",
+                "Architectury Loom " + newest,
+                "architectury-loom " + newest
+            );
+            return newest;
+        }
+        return null;
+    }
+
     /** Parchment's newest release of parameter names for exactly this Minecraft version, or "" when it publishes none. */
     static String parchmentRelease(Build build, String to) throws Exception {
         String xml;
@@ -857,6 +894,11 @@ final class Target {
         }
         String line = Dependencies.minor(need), loom = newestLoom(build, line);
         if (!loomEdit(setup, build, current, loom)) {
+            String architectury = architecturyLoomFollows(setup, build, line);
+            if (architectury != null) {
+                setup.applied.add(Json.map("change", "Architectury Loom " + current + " -> " + architectury + " for " + to, "evidence", needBy + " was built with Loom " + need));
+                return;
+            }
             System.err.println(
                 "Warning: " + Dependencies.loomWarning(Json.map("version_number", needBy), need, current)
             );
@@ -885,12 +927,18 @@ final class Target {
      */
     static void gradleFollows(Setup setup, Build build, String moduleUrl, String plugin, String evidence)
         throws Exception {
-        Matcher api = Pattern.compile("\"org\\.gradle\\.plugin\\.api-version\"\\s*:\\s*\"([^\"]+)\"").matcher(
-            fetch(build, moduleUrl)
-        );
+        String module;
+        try {
+            module = fetch(build, moduleUrl);
+        } catch (LookupFailure unreachable) {
+            throw unreachable;
+        } catch (IOException none) {
+            module = ""; // Architectury Loom publishes no Gradle module metadata
+        }
+        Matcher api = Pattern.compile("\"org\\.gradle\\.plugin\\.api-version\"\\s*:\\s*\"([^\"]+)\"").matcher(module);
         String required = api.find() ? api.group(1) : null, source = " (org.gradle.plugin.api-version)";
-        // Loom before 1.x publishes no api-version; its own bootstrap class states the Gradle it needs.
-        if (required == null && moduleUrl.contains("/fabric-loom/")) {
+        // Loom before 1.x (and Architectury Loom, its fork) publishes no api-version; its own bootstrap class states the Gradle it needs.
+        if (required == null && (moduleUrl.contains("/fabric-loom/") || moduleUrl.contains("/architectury-loom/"))) {
             required = loomMinimumGradle(build, download(build, moduleUrl.replaceFirst("\\.module$", ".jar")));
             source = " or newer (its LoomGradlePluginBootstrap states the minimum; the newest release of that line is used)";
         }
