@@ -538,6 +538,38 @@ final class Target {
         setup.applied.add(Json.map("artifact", "net.neoforged:neoform", "from", pin.group(3), "to", newest, "evidence", "NeoForm's newest release for " + to + " on maven.neoforged.net"));
     }
 
+    /**
+     * A parchment { mappingsVersion = project.KEY } block whose property is not one of the conventional names (Ars Nouveau:
+     * parchment_version, beside minecraftVersion = project.minecraft_version): the property moves to Parchment's release for
+     * the target, a separate Minecraft property to the target, and the block goes when Parchment has no release for it.
+     */
+    static void parchmentBlockFollows(Setup setup, Build build, String to) throws Exception {
+        Path properties = build.project.root.resolve("gradle.properties");
+        if (!Files.isRegularFile(properties)) return;
+        for (String name : List.of("build.gradle", "build.gradle.kts")) {
+            Path script = build.project.root.resolve(name);
+            if (!Files.isRegularFile(script)) continue;
+            String text = setup.text(script);
+            Matcher block = Pattern.compile("(?m)^[ \\t]*parchment\\s*\\{([^{}]*)\\}").matcher(text);
+            if (!block.find()) continue;
+            Matcher mappings = Pattern.compile("mappingsVersion\\s*(?:=|\\.set\\()\\s*(?:project\\.)?(?:property\\(\\s*[\"'])?(\\w+)").matcher(block.group(1));
+            if (!mappings.find()) continue;
+            String key = mappings.group(1);
+            if (key.equals("parchment_mappings_version") || !Pattern.compile("(?m)^[ \\t]*" + Pattern.quote(key) + "[ \\t]*=").matcher(setup.text(properties)).find()) continue;
+            String release = parchmentRelease(build, to);
+            if (release.isEmpty()) {
+                setup.originals.putIfAbsent(script, text);
+                setup.texts.put(script, removeStatements(text, Pattern.compile("(?m)^[ \\t]*parchment\\s*\\{")));
+                setup.applied.add(Json.map("file", script.toString(), "change", "parchment block removed for " + to, "evidence", "Parchment publishes no parameter names for " + to + " (maven.parchmentmc.org)"));
+                continue;
+            }
+            setProperty(setup, properties, key, release);
+            Matcher minecraft = Pattern.compile("minecraftVersion\\s*(?:=|\\.set\\()\\s*(?:project\\.)?(?:property\\(\\s*[\"'])?(\\w+)").matcher(block.group(1));
+            if (minecraft.find() && !minecraft.group(1).matches("minecraft_version|minecraftVersion|mc_version")) setProperty(setup, properties, minecraft.group(1), to);
+            setup.applied.add(Json.map("change", "Parchment " + key + " -> " + release + " for " + to, "evidence", "Parchment " + release + " is its newest release for " + to));
+        }
+    }
+
     /** Parchment's newest release of parameter names for exactly this Minecraft version, or "" when it publishes none. */
     static String parchmentRelease(Build build, String to) throws Exception {
         String xml;
@@ -571,6 +603,7 @@ final class Target {
      */
     static void parchmentFollows(Setup setup, Build build, String to) throws Exception {
         parchmentEdit(setup, build, to, null);
+        parchmentBlockFollows(setup, build, to);
     }
 
     /** parchmentFollows with Parchment's release for the target given ("" for none), or null to look it up only if the build states Parchment. */
