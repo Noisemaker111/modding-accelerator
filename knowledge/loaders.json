@@ -1490,7 +1490,9 @@
     "net.neoforged.fml.ModList": "ModList",
     "net.neoforged.neoforge.event.tick.EntityTickEvent": "EntityTickEvent",
     "net.neoforged.neoforge.event.tick.PlayerTickEvent": "PlayerTickEvent",
-    "net.neoforged.neoforge.event.EventHooks": "EventHooks"
+    "net.neoforged.neoforge.event.EventHooks": "EventHooks",
+    "net.neoforged.neoforge.common.util.BlockSnapshot": "BlockSnapshot",
+    "net.neoforged.neoforge.event.level.BlockEvent": "BlockEvent"
    },
    "symbols": {
     "neoforge": [
@@ -1586,7 +1588,18 @@
      "neoforge|net.neoforged.neoforge.event.EventHooks#fireEntityTickPre",
      "neoforge|net.neoforged.neoforge.event.EventHooks#fireEntityTickPost",
      "neoforge|net.neoforged.neoforge.event.EventHooks#firePlayerTickPre",
-     "neoforge|net.neoforged.neoforge.event.EventHooks#firePlayerTickPost"
+     "neoforge|net.neoforged.neoforge.event.EventHooks#firePlayerTickPost",
+     "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#create",
+     "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#getCurrentState",
+     "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#restoreToLocation",
+     "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#restoreBlockEntity",
+     "neoforge|net.neoforged.neoforge.common.util.BlockSnapshot#recreateBlockEntity",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent#getState",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$EntityPlaceEvent#getPlacedAgainst",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$EntityMultiPlaceEvent#getReplacedBlockSnapshots",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$NeighborNotifyEvent#getNotifiedSides",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$FluidPlaceBlockEvent#setNewState",
+     "neoforge|net.neoforged.neoforge.event.level.BlockEvent$FarmlandTrampleEvent#getFallDistance"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -1633,7 +1646,13 @@
      "minecraft|net.minecraft.world.entity.Entity#commonTick",
      "minecraft|net.minecraft.world.entity.Entity#tick",
      "minecraft|net.minecraft.world.entity.Entity#rideTick",
-     "minecraft|net.minecraft.world.entity.player.Player#tick"
+     "minecraft|net.minecraft.world.entity.player.Player#tick",
+     "minecraft|net.minecraft.world.level.block.entity.BlockEntity#loadStatic",
+     "minecraft|net.minecraft.world.level.block.entity.BlockEntity#loadWithComponents",
+     "minecraft|net.minecraft.world.level.block.entity.BlockEntity#saveWithFullMetadata",
+     "minecraft|net.minecraft.world.level.block.entity.BlockEntity#problemPath",
+     "minecraft|net.minecraft.world.level.storage.TagValueInput#create",
+     "minecraft|net.minecraft.resources.ResourceKey#identifier"
     ]
    },
    "test": {
@@ -1717,7 +1736,12 @@
        "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#fireEntityTickPre",
        "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#fireEntityTickPost",
        "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#firePlayerTickPre",
-       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#firePlayerTickPost"
+       "neoforge-21.1|net.neoforged.neoforge.event.EventHooks#firePlayerTickPost",
+       "neoforge-21.1|net.neoforged.neoforge.common.util.BlockSnapshot#create",
+       "neoforge-21.1|net.neoforged.neoforge.common.util.BlockSnapshot#restoreBlockEntity",
+       "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$BreakEvent#getPlayer",
+       "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$EntityPlaceEvent#getPlacedAgainst",
+       "neoforge-21.1|net.neoforged.neoforge.event.level.BlockEvent$FarmlandTrampleEvent#getFallDistance"
       ],
       "fabric": [
        "fabric-api-1.21.1|net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#MODIFY_ENTRIES_ALL",
@@ -1764,7 +1788,9 @@
        "minecraft-1.21.1|net.minecraft.client.multiplayer.ClientLevel#tickNonPassenger",
        "minecraft-1.21.1|net.minecraft.world.entity.Entity#tick",
        "minecraft-1.21.1|net.minecraft.world.entity.Entity#rideTick",
-       "minecraft-1.21.1|net.minecraft.world.entity.player.Player#tick"
+       "minecraft-1.21.1|net.minecraft.world.entity.player.Player#tick",
+       "minecraft-1.21.1|net.minecraft.world.level.block.entity.BlockEntity#loadWithComponents",
+       "minecraft-1.21.1|net.minecraft.world.level.block.entity.BlockEntity#saveWithFullMetadata"
       ]
      },
      "below": "1.21.2"
