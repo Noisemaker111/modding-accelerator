@@ -13,9 +13,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * NeoForge's net.neoforged.neoforge.common.extensions.IEntityExtension, whose methods NeoForge adds to Entity: here
  * as static methods taking the entity first, which modaccel convert's rules write in place of the calls
  * (entity.getPersistentData() becomes IEntityExtension.getPersistentData(entity)). The persistent data is kept, as on
- * NeoForge, in the entity's (or block entity's) saved data: a Fabric API persistent data attachment (MODID:persistent_data)
- * holds the tag, where NeoForge writes it under NeoForgeData, so each converted mod has its own tag rather than one
- * shared by all mods. A player's PlayerPersisted section is carried to the respawned player, as NeoForge's ServerPlayer
+ * NeoForge, in the entity's (or block entity's) saved data: a Fabric API persistent data attachment
+ * (neoforge:persistent_data/MODID, NeoForge's data, as NeoForge writes it under NeoForgeData) holds the tag, so each
+ * converted mod has its own tag rather than one shared by all mods, and the mod registers nothing of its own for it. A player's PlayerPersisted section is carried to the respawned player, as NeoForge's ServerPlayer
  * patch does (GameEvents).
  */
 public final class IEntityExtension {
@@ -31,7 +31,7 @@ public final class IEntityExtension {
     static synchronized void register() {
         if (PERSISTENT_DATA != null) return;
         PERSISTENT_DATA = AttachmentRegistry.create(
-            Identifier.fromNamespaceAndPath("${modid}", "persistent_data"),
+            Identifier.fromNamespaceAndPath("neoforge", "persistent_data/${modid}"),
             builder -> builder.persistent(CompoundTag.CODEC).initializer(CompoundTag::new)
         );
     }

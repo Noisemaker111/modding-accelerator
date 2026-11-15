@@ -584,6 +584,14 @@ final class Convert {
     }
 
     /** The Java files of the source sets whose name starts with test (src/test/java ...), which javaFiles() leaves out. */
+    /** Whether src/test/java names the game's classes (net.minecraft, com.mojang). */
+    boolean testsUseGame() throws IOException {
+        for (String file : testJavaFiles()) if (
+            file.startsWith("src/test/") && Pattern.compile("(?m)^import\\s+(?:static\\s+)?(?:net\\.minecraft|com\\.mojang)\\.").matcher(read(file)).find()
+        ) return true;
+        return false;
+    }
+
     List<String> testJavaFiles() throws IOException {
         List<String> out = new ArrayList<>();
         Path src = project.root.resolve("src").toAbsolutePath().normalize();
@@ -2180,7 +2188,14 @@ final class Convert {
             .append(unit)
             .append("}\n")
             .append(unit)
-            .append("}\n}\n");
+            .append("}\n");
+        // ModDevGradle puts the game on the main source set only (Loom and NeoGradle on every one): tests that use the
+        // game get it as ModDevGradle provides, through addModdingDependenciesTo.
+        if (testsUseGame()) {
+            neoForge.append('\n').append(unit).append("addModdingDependenciesTo(sourceSets.test)\n");
+            notes.add("Build: the mod's tests use the game's classes, so ModDevGradle adds them to the test source set (addModdingDependenciesTo).");
+        }
+        neoForge.append("}\n");
         if (datagenOutput != null) neoForge
             .append(
                 "\n// Generated data (runClientData) ships with the mod's own resources.\nsourceSets.main.resources {\n"
