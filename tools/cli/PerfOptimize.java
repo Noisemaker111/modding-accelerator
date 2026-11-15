@@ -351,11 +351,10 @@ final class PerfOptimize {
             // "frames": a hidden game otherwise draws about 8 frames a second once idle, so per-frame costs and frame
             // timing measure the throttle; held at a player's rate, they measure the frames a player's game draws.
             if (experiment.get("frames") instanceof Number frames && frames.intValue() > 0) {
-                Map<String, Object> held = modaccel(tree, arm + "-frames", List.of("eval", "--code",
-                    "System.setProperty(\"modaccel.frames\", \"" + frames.intValue() + "\"); return \"frames\";"), 120);
-                if (!Boolean.TRUE.equals(held.get("ok"))) {
-                    throw new IOException(arm + " run " + run + ": could not hold " + frames.intValue() + " frames a second: " + held.get("error"));
-                }
+                // As a file: quotes in an argument of a child process do not survive Windows' command line.
+                Path hold = dir.resolve("frames.java");
+                Files.writeString(hold, "System.setProperty(\"modaccel.frames\", \"" + frames.intValue() + "\");\nreturn \"frames\";\n", StandardCharsets.UTF_8);
+                eval(tree, arm + "-frames", hold, "game");
             }
             for (Object step : Json.array(experiment.getOrDefault("setup", List.of()))) {
                 Map<String, Object> setup = Json.object(step);
