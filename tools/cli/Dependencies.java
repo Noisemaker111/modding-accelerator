@@ -310,7 +310,31 @@ final class Dependencies {
         } else if (whole.isEmpty() && partKeys.size() == 1) {
             setup.replacements.put(partKeys.iterator().next(), newPart);
             setup.pins.putIfAbsent(partKeys.iterator().next(), part);
-        } else return false;
+        } else {
+            // A property that owns the game and what follows it (Sound Physics: fabric-${voicechat_version},
+            // voicechat_version=1.21.1-2.5.20), or what comes before it: the same span of the chosen release.
+            String owner = null, value = null, was = null;
+            for (int cut = 1; cut <= at.start() && owner == null; cut++) {
+                Set<String> keys = propertyKeys(setup.build.project, old.substring(cut));
+                if (keys.size() == 1 && chosen.startsWith(old.substring(0, cut))) {
+                    owner = keys.iterator().next();
+                    value = chosen.substring(cut);
+                    was = old.substring(cut);
+                }
+            }
+            for (int cut = old.length() - 1; cut >= at.end() && owner == null; cut--) {
+                Set<String> keys = propertyKeys(setup.build.project, old.substring(0, cut));
+                String tail = old.substring(cut);
+                if (keys.size() == 1 && chosen.endsWith(tail)) {
+                    owner = keys.iterator().next();
+                    value = chosen.substring(0, chosen.length() - tail.length());
+                    was = old.substring(0, cut);
+                }
+            }
+            if (owner == null) return false;
+            setup.replacements.put(owner, value);
+            setup.pins.putIfAbsent(owner, was);
+        }
         setup.applied.add(
             Json.map(
                 "artifact",
