@@ -412,7 +412,18 @@ def classify(rec):
                                "changed": ([c.get("change") for c in e.get("changedIn") or [] if isinstance(c, dict)][:1] or [None])[0]})
         else:
             text = str(r.get("reason") or r.get("details") or "")
-            blocker = (gradle_class(text), " ".join(text.split())[:300])
+            cls = gradle_class(text)
+            # Gradle's summary only says a tool failed; the log says why (NeoForge's recompile of the game, an AT entry).
+            log = Path(str(r.get("log") or ""))
+            if cls == "build-tooling" and log.is_file():
+                tail = log.read_text(encoding="utf-8", errors="replace")[-20000:]
+                if re.search(r"weaker access privileges|AccessTransformer|accesstransformer|Access transformer", tail):
+                    cls = "access-transformer"
+                elif re.search(r"Mixin apply failed|InvalidMixinException|MixinTransformerError", tail):
+                    cls = "mixin-target-change"
+                else:
+                    cls = gradle_class(tail[-4000:]) if gradle_class(tail[-4000:]) != "tool-crash" else cls
+            blocker = (cls, " ".join(text.split())[:300])
     rec["errors"] = errors
     rec["errorsAfter"] = 0 if rec["build"] else (len([e for e in errors if "file" in e]) if r.get("unresolved") else None)
     rec["blocker"] = {"class": blocker[0], "detail": blocker[1]} if blocker else None
