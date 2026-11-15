@@ -116,6 +116,13 @@ public final class ModaccelPackProbe {
             // The world opened. Load the test area through the normal chunk system before touching it, so no
             // block update in the middle of a tick has to wait for chunk generation.
             ServerLevel level = server.overworld();
+            // A level with no players and no saved forced chunk stops ticking block entities 300 ticks after it empties, and
+            // with them BlockEntity.onLoad for every chunk that loads later. The test area's tickets (forceChunk) are not saved
+            // forced chunks, so a big pack whose probe began past those 300 ticks loaded its grid into a level that never called
+            // onLoad: Ender IO 8.2.13's capacitor bank, whose caches onLoad makes, then stopped All the Mods 10's reopen. The
+            // spawn chunk, already loaded, is forced the saved way, so the level ticks like one a player is in.
+            BlockPos spawn = ModaccelPackGame.spawn(level);
+            level.setChunkForced(spawn.getX() >> 4, spawn.getZ() >> 4, true);
             BlockPos origin = origin(level);
             area = new HashSet<>();
             int rows = rows();
