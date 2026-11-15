@@ -1208,7 +1208,9 @@ final class PackCheck {
 
         Path instance() throws Exception {
             MessageDigest hash = MessageDigest.getInstance("SHA-256");
-            hash.update((loader.id() + " " + pack.minecraft() + "\n").getBytes(StandardCharsets.UTF_8));
+            // The lane is part of the folder's name: a repair that only drops a file the host no longer serves starts the same
+            // jars as the shipped pack, and two servers side by side must never share a folder.
+            hash.update((lane + loader.id() + " " + pack.minecraft() + "\n").getBytes(StandardCharsets.UTF_8));
             for (Mod mod : pack.mods()) hash.update((mod.file() + "\n").getBytes(StandardCharsets.UTF_8));
             for (Path jar : change.add()) hash.update(("add " + jar.getFileName() + "\n").getBytes(StandardCharsets.UTF_8));
             for (String jar : change.offServer()) hash.update(("remove " + jar + "\n").getBytes(StandardCharsets.UTF_8));
