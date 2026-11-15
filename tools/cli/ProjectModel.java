@@ -182,7 +182,7 @@ public final class ProjectModel {
             !props.getProperty(key, "").isBlank()
         ) return props.getProperty(key).strip();
         Pattern plugin = Pattern.compile(
-            "id\\s*\\(?\\s*[\"'](?:fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?)[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"']([^\"']+)[\"']"
+            "id\\s*\\(?\\s*[\"'](?:fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?|dev\\.architectury\\.loom)[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"']([^\"']+)[\"']"
         );
         Pattern catalog = Pattern.compile("(?m)^\\s*(?:fabric-)?loom\\s*=\\s*\"([^\"]+)\"");
         for (String script : scripts) {
@@ -251,6 +251,17 @@ public final class ProjectModel {
         );
     }
 
+    /**
+     * A folder below the root with its own settings.gradle is another Gradle build that this one never includes
+     * (ZAA keeps a Forge 1.20.1 and a NeoForge 1.20.1 copy in forge1201/ and neoforge1201/): nothing modaccel reads or
+     * writes for this build is in it. buildSrc and build-logic belong to the build.
+     */
+    static boolean separateBuild(Path dir) {
+        String name = dir.getFileName() == null ? "" : dir.getFileName().toString();
+        if (name.equals("buildSrc") || name.equals("build-logic")) return false;
+        return Files.isRegularFile(dir.resolve("settings.gradle")) || Files.isRegularFile(dir.resolve("settings.gradle.kts"));
+    }
+
     List<Path> inputs() throws IOException {
         List<Path> files = new ArrayList<>();
         Files.walkFileTree(
@@ -260,7 +271,7 @@ public final class ProjectModel {
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                     if (
                         !dir.equals(root) &&
-                        (IGNORED.contains(dir.getFileName().toString()) || Files.exists(dir.resolve(".git")))
+                        (IGNORED.contains(dir.getFileName().toString()) || Files.exists(dir.resolve(".git")) || separateBuild(dir))
                     ) return FileVisitResult.SKIP_SUBTREE;
                     return FileVisitResult.CONTINUE;
                 }

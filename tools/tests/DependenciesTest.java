@@ -12,6 +12,12 @@ public final class DependenciesTest {
     static final String TO = "1.21.6";
 
     public static void main(String[] args) throws Exception {
+        // A library released per game version (Corpse's corelib 1.21.1-2.1.11): the target is its own newest release for the
+        // target game, of the same shape; 1.21.10 is not 1.21.1, and a beta is not chosen in place of a release.
+        var corelib = List.of("1.21.1-2.1.11", "1.21.2-2.1.9", "1.21.2-2.1.12", "1.21.2-2.1.13-beta", "1.21.10-2.1.20", "1.21.2-2.1.2");
+        require("1.21.2-2.1.12".equals(Dependencies.chooseGameRelease(corelib, "1.21.1-2.1.11", "1.21.1", "1.21.2")), "newest same-shape release for the target game");
+        require(Dependencies.chooseGameRelease(corelib, "1.21.1-2.1.11", "1.21.1", "1.21.6") == null, "no release for the target game is no choice");
+        require("1.4.0+1.21.6".equals(Dependencies.chooseGameRelease(List.of("1.3.0+1.21.1", "1.4.0+1.21.6", "1.3.2+1.21.6"), "1.3.0+1.21.1", "1.21.1", "1.21.6")), "game as a build suffix");
         var found = Dependencies.findPublishedProject(
             SOURCE,
             NAME,

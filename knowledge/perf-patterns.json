@@ -358,7 +358,7 @@
      }
     ]
    },
-   "change": "Look the capabilities up through NeoForge BlockCapabilityCaches made with an invalidation listener, and keep the resolved node list (in the iteration order the per-tick HashSet gives) with each node's capabilities until the node set is replaced or a listener fires. Still check every position is loaded each tick (a chunk stops being loaded before its unload event), fall back to lookups for a node whose position moved, and to fresh lookups for the rest of a tick in which a cache is invalidated. A cache calls its listener only if it was queried since its last invalidation: query every cache a plan depends on when the plan is made.",
+   "change": "Look the capabilities up through NeoForge BlockCapabilityCaches made with an invalidation listener, and keep the resolved node list (in the iteration order the per-tick HashSet gives) with each node's capabilities until the node set is replaced or a listener fires. Still check every position is loaded each tick (a chunk stops being loaded before its unload event), fall back to lookups for a node whose position moved, and to fresh lookups for the rest of a tick in which a cache is invalidated. A cache calls its listener only if it was queried since its last invalidation: query every cache a plan depends on when the plan is made. A lookup also reads the node's chunk through ServerChunkCache.getChunk(x, z, FULL, true), which renews a one-tick ticket: that is what keeps a network's chunks loaded while its controller ticks. Make that read once per tick for every chunk holding a node when the plan is used, and before every answer taken from a cache, or far chunks unload and the network shrinks.",
    "gain": {
     "scope": "masterTick (inclusive ms per server tick of TileMain.tick, 315-node network, 256 storage barrels, 32 I/O cables)",
     "cold": {
@@ -372,12 +372,13 @@
      "low": 1.315,
      "high": 1.577,
      "pairs": 6
-    }
+    },
+    "note": "measured with the diff before its chunk reads were added; see provenIn.corrected"
    },
    "gate": {
-    "name": "transfers + moving",
+    "name": "transfers + moving + components + chunks + borders",
     "compare": "exact + expect",
-    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation"
+    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation; chunks: only the master's chunk forced, every chunk holding a node stays loaded and the network shows and exports all 768 cobblestone; borders: a double chest's other half and an export target in chunks no node is in stay exactly as loaded as without the change"
    },
    "provenIn": {
     "mod": "storagenetwork",
@@ -385,7 +386,12 @@
     "loader": "neoforge",
     "scope": "masterTick",
     "record": "2026-11-15T10-23-42.306325Z-5020354d",
-    "patch": "bench/storagenetwork/tick-only-acting-nodes.diff"
+    "patch": "bench/storagenetwork/tick-only-acting-nodes.diff",
+    "corrected": {
+     "record": "2026-11-15T15-24-24.789018800Z-fa04b24c",
+     "patch": "bench/storagenetwork/cumulative.diff",
+     "note": "The diff measured in record lost a side effect: its cached answers skipped the chunk reads the lookups made, so chunks a network kept loaded unloaded. The diff at patch makes those reads; it was re-measured with the other Storage Network changes (all five against the unmodified mod: cold 4.60x (95% 4.22-4.98), warm 4.74x (95% 3.94-5.74))."
+    }
    },
    "test": {
     "fires": {
@@ -426,7 +432,7 @@
      }
     ]
    },
-   "change": "Keep one NeoForge BlockCapabilityCache of Capabilities.ItemHandler.BLOCK per cable for its target position and side, used only while the target is loaded (a fresh lookup would load the chunk), and remade when the target position, side or level differs. Vanilla providers are cache-safe (chests invalidate when they join or leave a double chest; the composter forwards to its current state); third-party providers must invalidate by contract.",
+   "change": "Keep one NeoForge BlockCapabilityCache of Capabilities.ItemHandler.BLOCK per cable for its target position and side, used only while the target is loaded (a fresh lookup would load the chunk), and remade when the target position, side or level differs. Cache only NeoForge's answers for vanilla barrels and chests (an exact InvWrapper of a BarrelBlockEntity, ChestBlockEntity or CompoundContainer; chests invalidate when they join or leave a double chest), because their chunk reads are known, and make those reads before returning a cached answer: getChunk on the target's chunk, and for a chest whose type is not SINGLE on the chunk of the half it points at. Look any other target up every time: a provider can read other chunks, renewing their tickets, and a cache would skip that.",
    "gain": {
     "scope": "masterTick (inclusive ms per server tick of TileMain.tick, 315-node network, 256 storage barrels, 32 I/O cables)",
     "cold": {
@@ -440,12 +446,13 @@
      "low": 1.073,
      "high": 1.168,
      "pairs": 6
-    }
+    },
+    "note": "measured with the diff before its chunk reads were added; see provenIn.corrected"
    },
    "gate": {
-    "name": "transfers + moving",
+    "name": "transfers + moving + components + chunks + borders",
     "compare": "exact + expect",
-    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation"
+    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation; chunks: only the master's chunk forced, every chunk holding a node stays loaded and the network shows and exports all 768 cobblestone; borders: a double chest's other half and an export target in chunks no node is in stay exactly as loaded as without the change"
    },
    "provenIn": {
     "mod": "storagenetwork",
@@ -453,7 +460,12 @@
     "loader": "neoforge",
     "scope": "masterTick",
     "record": "2026-11-15T10-42-25.332386800Z-f0080703",
-    "patch": "bench/storagenetwork/cache-target-item-handlers.diff"
+    "patch": "bench/storagenetwork/cache-target-item-handlers.diff",
+    "corrected": {
+     "record": "2026-11-15T15-24-24.789018800Z-fa04b24c",
+     "patch": "bench/storagenetwork/cumulative.diff",
+     "note": "The diff measured in record lost a side effect: its cached answers skipped the chunk reads the lookups made, so chunks a network kept loaded unloaded. The diff at patch makes those reads; it was re-measured with the other Storage Network changes (all five against the unmodified mod: cold 4.60x (95% 4.22-4.98), warm 4.74x (95% 3.94-5.74))."
+    }
    },
    "test": {
     "fires": {
@@ -494,7 +506,7 @@
      }
     ]
    },
-   "change": "Decide each provider just before it is used, in the same storage and slot order, and stop when every request for the item is met (count 0, after which each later provider would only simulate). Do it only when the answer cannot differ from the up-front list: every storage and export target is a plain vanilla barrel or chest (an exact InvWrapper, slots independent, no loot table left to unpack), no inventory is behind two storages and no export target is a storage; otherwise list everything first as before.",
+   "change": "Decide each provider just before it is used, in the same storage and slot order, and stop when every request for the item is met (count 0, after which each later provider would only simulate). Do it only when the answer cannot differ from the up-front list: every storage and export target is a plain vanilla barrel or chest (an exact InvWrapper, slots independent, no loot table left to unpack), no inventory is behind two storages and no export target is a storage; otherwise list everything first as before. Decide whether an export target is plain without reading its chunk (from a cache that already holds a vanilla barrel or single chest; otherwise list everything first): the unmodified mod reads an export's target only when items move, and a read every export would keep that chunk loaded.",
    "gain": {
     "scope": "masterTick (inclusive ms per server tick of TileMain.tick, 315-node network, 256 storage barrels, 32 I/O cables)",
     "cold": {
@@ -508,12 +520,13 @@
      "low": 1.319,
      "high": 1.396,
      "pairs": 6
-    }
+    },
+    "note": "measured with the diff before its chunk reads were added; see provenIn.corrected"
    },
    "gate": {
-    "name": "transfers + moving",
+    "name": "transfers + moving + components + chunks + borders",
     "compare": "exact + expect",
-    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation"
+    "detail": "SHA-256 of every container, the network size, comparator, empty slots and sorted contents after each of 130 hand-ticked rounds of two frozen networks (filters, import-only and redstone links, a double chest, stock, operation and same-item exports, inserts and requests, blocks broken and placed, a priority change); the live base keeps all 265,274 items and every buffer refills with its own item after a rotation; chunks: only the master's chunk forced, every chunk holding a node stays loaded and the network shows and exports all 768 cobblestone; borders: a double chest's other half and an export target in chunks no node is in stay exactly as loaded as without the change"
    },
    "provenIn": {
     "mod": "storagenetwork",
@@ -521,7 +534,12 @@
     "loader": "neoforge",
     "scope": "masterTick",
     "record": "2026-11-15T11-00-23.631737800Z-2726069f",
-    "patch": "bench/storagenetwork/scan-providers-until-requests-met.diff"
+    "patch": "bench/storagenetwork/scan-providers-until-requests-met.diff",
+    "corrected": {
+     "record": "2026-11-15T15-24-24.789018800Z-fa04b24c",
+     "patch": "bench/storagenetwork/cumulative.diff",
+     "note": "The diff measured in record lost a side effect: its cached answers skipped the chunk reads the lookups made, so chunks a network kept loaded unloaded. The diff at patch makes those reads; it was re-measured with the other Storage Network changes (all five against the unmodified mod: cold 4.60x (95% 4.22-4.98), warm 4.74x (95% 3.94-5.74))."
+    }
    },
    "test": {
     "fires": {
@@ -545,6 +563,426 @@
       {
        "name": "m.Net.tick()V",
        "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "cache-recipe-match-until-inputs-or-recipes-change",
+   "symptom": {
+    "text": "A machine finds its recipe every tick by testing each recipe of a type in turn (often after RecipeManager.getAllRecipesFor, which copies the whole list on every call), although its inputs rarely change.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(find|get|lookup|match|search|check)\\w*Recipe\\w*\\(",
+      "minShare": 0.3
+     }
+    ]
+   },
+   "change": "Keep the scan's answer per block entity with copies of the stacks it was computed from, and return it while every input slot holds an equal stack (ItemStack.matches: item, count, components; compare copies, so a stack changed in place is noticed) and the server's recipes are the same set: RecipeManager replaces its maps on every reload and replaceRecipes, so the identity of getRecipes() changes exactly then. Scan as before whenever an input holds a filled map: the map extending recipe is the one vanilla crafting recipe whose match reads the level (the map's saved data). Vanilla's own Crafter keeps a RecipeCache under the same rule.",
+   "gain": {
+    "scope": "crafterTick (inclusive ms per server tick of TileCrafter.serverTick, 128 crafters compressing items every 40 ticks)",
+    "cold": {
+     "geometricMean": 10.491,
+     "low": 9.937,
+     "high": 11.331,
+     "pairs": 3
+    },
+    "warm": {
+     "geometricMean": 11.416,
+     "low": 10.674,
+     "high": 12.837,
+     "pairs": 3
+    }
+   },
+   "gate": {
+    "name": "crafts + crafting",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every slot (item, count, components), timer and energy of 12 frozen crafters after each of 160 hand-ticked rounds (full and partial grids, shapeless and shaped, map extending, no recipe, an empty grid, named stacks, redstone, low energy, the input check's empty-slot quirk), with grids changed through the handler and in place and the server's recipes replaced and restored mid-run; the live base's 128 crafters show no recipe while a grid slot is emptied, then each makes at least one more block from exactly nine ingredients"
+   },
+   "provenIn": {
+    "mod": "cyclic",
+    "version": "1.14.2",
+    "loader": "neoforge",
+    "scope": "crafterTick",
+    "record": "2026-11-15T12-33-11.489586Z-00cc39e4",
+    "patch": "bench/cyclic/cache-matched-recipe.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.findMatchingRecipe(Ljava/util/ArrayList;)Lm/R;",
+       "samples": 85
+      },
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 15
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "check-slots-in-place-instead-of-copied-lists",
+   "symptom": {
+    "text": "A per-tick check copies every input and recipe slot into new lists, matches them against each other with removeAll, and throws the lists away; it runs every tick although it only decides whether a timer may count down.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(check|has|can|validate|enough)\\w*(Input|Inputs|Ingredient|Ingredients|Items|Stacks)\\w*\\(",
+      "minShare": 0.1
+     }
+    ]
+   },
+   "change": "Compute the same answer from the slots in place, with items and counts in small arrays and no stack copied. Keep every quirk of the list version: a stack whose count ran out reads as air and so matches empty slots, and a copied empty stack is the one ItemStack.EMPTY, so removeAll (identity) took every empty slot at once when it took one.",
+   "gain": {
+    "scope": "crafterTick (inclusive ms per server tick of TileCrafter.serverTick, 128 crafters compressing items every 40 ticks)",
+    "cold": {
+     "geometricMean": 1.25,
+     "low": 1.2,
+     "high": 1.328,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 1.196,
+     "low": 1.116,
+     "high": 1.29,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "crafts + crafting",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every slot (item, count, components), timer and energy of 12 frozen crafters after each of 160 hand-ticked rounds (full and partial grids, shapeless and shaped, map extending, no recipe, an empty grid, named stacks, redstone, low energy, the input check's empty-slot quirk), with grids changed through the handler and in place and the server's recipes replaced and restored mid-run; the live base's 128 crafters show no recipe while a grid slot is emptied, then each makes at least one more block from exactly nine ingredients"
+   },
+   "provenIn": {
+    "mod": "cyclic",
+    "version": "1.14.2",
+    "loader": "neoforge",
+    "scope": "crafterTick",
+    "record": "2026-11-15T12-47-10.351307700Z-ba79f14c",
+    "patch": "bench/cyclic/check-input-without-copies.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.checkInput(Lm/IItemHandler;)Z",
+       "samples": 30
+      },
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 70
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "write-equal-slots-only-when-unshared",
+   "symptom": {
+    "text": "Every tick a block entity takes a display slot's stack out and puts an equal one back (a recipe preview, a ghost or result slot), and copies its grid into a crafting container, although neither changed.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(set|update|refresh|write)\\w*(Preview|Display|Ghost|Result)\\w*\\(",
+      "minShare": 0.05
+     }
+    ]
+   },
+   "change": "Skip the write while the slot already holds an equal stack (ItemStack.matches) of its own, and copy the grid into the crafting container only when the recipe is looked up again (the copies made then stay equal to the grid). NeoForge's ItemStackHandler.insertItem keeps the very stack it is given in an empty slot, so the same object can sit in two slots: Cyclic's crafter puts the result stack in its preview and then in an empty output slot on a craft tick, and later crafts grow it there. Write exactly as before whenever the slot's object may be shared (the craft tick and the tick after), and skip only when it is a stack the slot alone holds.",
+   "gain": {
+    "scope": "crafterTick (inclusive ms per server tick of TileCrafter.serverTick, 128 crafters compressing items every 40 ticks)",
+    "cold": {
+     "geometricMean": 1.554,
+     "low": 1.366,
+     "high": 1.91,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 1.322,
+     "low": 1.247,
+     "high": 1.417,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "crafts + crafting",
+    "compare": "exact + expect",
+    "detail": "SHA-256 of every slot (item, count, components), timer and energy of 12 frozen crafters after each of 160 hand-ticked rounds (full and partial grids, shapeless and shaped, map extending, no recipe, an empty grid, named stacks, redstone, low energy, the input check's empty-slot quirk), with grids changed through the handler and in place and the server's recipes replaced and restored mid-run; the live base's 128 crafters show no recipe while a grid slot is emptied, then each makes at least one more block from exactly nine ingredients"
+   },
+   "provenIn": {
+    "mod": "cyclic",
+    "version": "1.14.2",
+    "loader": "neoforge",
+    "scope": "crafterTick",
+    "record": "2026-11-15T13-08-28.398183200Z-1757061f",
+    "patch": "bench/cyclic/skip-unchanged-rewrites.diff"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.setPreviewSlot(Lm/ItemStack;)V",
+       "samples": 10
+      },
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 90
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.TileCrafter.serverTick()V",
+       "samples": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "keep-unchanged-columns-between-rebakes",
+   "symptom": {
+    "text": "A per-tile pass (here a GPU mesher walking every column of a map tile, its shadow casters, and a per-sample spawn-spot ray pass) dominates a mod's CPU, and the same tile is rebuilt many times as nearby chunks load, though most of its columns come out the same each time.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(build|mesh|bake)\\w*\\(",
+      "minShare": 0.3
+     }
+    ]
+   },
+   "change": "Keep, per tile, each column's output and exactly what it read: the chunks under the cells its rays reached (and their neighbours), each by a token that a replacement snapshot inherits only when its blocks (or light) are equal, plus derived inputs such as tint arrays and any saved data it consulted. Take a column again only when the tile's settings are equal and every recorded input matches; record outputs packed so a bounded LRU holds a flight's worth of tiles. The same works for a ray pass whose rays stay in their column. Compare a replacement snapshot with its predecessor on the first worker that asks, not on the client thread. Keep the per-column walk in its own method: new branches in a huge hot method trigger uncommon traps that send the whole method back to the interpreter.",
+   "gain": {
+    "scope": "live mapping CPU (decision metric: Diorama's baker threads and the render thread)",
+    "cold": {
+     "geometricMean": 1.251,
+     "low": 1.033,
+     "high": 1.523,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 1.906,
+     "low": 1.575,
+     "high": 2.243,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "reuse-live + bake-digest",
+    "compare": "expect + exact",
+    "detail": "every live tile meshed and its spots picked with each reuse switch off and twice on come out identical, and corrupting a kept record makes the gate fail; the bake functions' digest on frozen chunks is unchanged"
+   },
+   "provenIn": {
+    "mod": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "record": "2026-11-15T12-02-18.553256900Z-064d6c30",
+    "patch": "bench/diorama/column-reuse.patch",
+    "scope": "live mapping CPU"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 55
+      },
+      {
+       "name": "m.Pick.pick(DD)I",
+       "samples": 45
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 10
+      },
+      {
+       "name": "m.Pick.pick(DD)I",
+       "samples": 90
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "share-chunk-derived-data-as-few-arrays",
+   "symptom": {
+    "text": "A pass over a wide region around each tile (here shadow casters, scanned over dozens of chunks the neighbouring tiles scan too) recomputes from every chunk's blocks on every bake.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.casters?\\w*\\(",
+      "minShare": 0.1
+     }
+    ]
+   },
+   "change": "Work it out once per chunk content and keep it with the snapshot under a token that content-equal replacement snapshots inherit, so every bake of every tile over that chunk shares it. Store it as a few primitive arrays per chunk (an offset table and one packed array), built for the whole chunk at once: kept as one small object per column it was half a million long-lived objects, and every young collection took 3 ms longer.",
+   "gain": {
+    "scope": "castersCpu (inclusive sampled CPU of GpuMesher.casters)",
+    "cold": {
+     "geometricMean": 3.129,
+     "low": 2.61,
+     "high": 3.777,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 4.068,
+     "low": 3.088,
+     "high": 5.275,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "reuse-live + bake-digest",
+    "compare": "expect + exact",
+    "detail": "every live tile meshed and its spots picked with each reuse switch off and twice on come out identical, and corrupting a kept record makes the gate fail; the bake functions' digest on frozen chunks is unchanged"
+   },
+   "provenIn": {
+    "mod": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "record": "2026-11-15T12-02-18.553256900Z-064d6c30",
+    "patch": "bench/diorama/column-reuse.patch",
+    "scope": "castersCpu"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Mesher.casters(I)V",
+       "samples": 25
+      },
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 75
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Mesher.casters(I)V",
+       "samples": 3
+      },
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 97
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "keep-cached-ints-in-a-ring-of-region-sized-arrays",
+   "symptom": {
+    "text": "A cache of packed results kept for seconds between passes (here camera faces, shadow-caster rows and spawn-spot columns kept per tile column) is built as many small primitive arrays; the bakes got faster but every young collection got longer, because the kept arrays are copied from one survivor space to the next before they are promoted.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.copy\\w*\\(",
+      "minShare": 0.02
+     }
+    ]
+   },
+   "change": "Copy what the cache keeps into a ring of a few arrays, each one collector region long (at least half a G1 region, so it is allocated in the old generation and never copied), allocated once and filled in turn; a kept record holds (array, offset, length, the pass that wrote it). Entries in a pass older than the ring are dropped, an entry about to leave is copied forward when it is taken again, and since an array is written over once it leaves the ring, every read is checked afterwards against the array's pass (a StampedLock-style validation) and the work is redone if it changed. Allocating a new large array whenever one filled started a young collection and a concurrent cycle each time; the ring allocates each once.",
+   "gain": {
+    "scope": "gcPauseMeanMs (mean young pause; slab-ring run 2026-11-15T14-55-52.903860400Z-7f0da1ec against the same build keeping small arrays, 4 pairs)",
+    "cold": {
+     "geometricMean": 1.119,
+     "low": 1.1,
+     "high": 1.13,
+     "pairs": 4
+    },
+    "warm": {
+     "geometricMean": 1.19,
+     "low": 1.13,
+     "high": 1.24,
+     "pairs": 4
+    }
+   },
+   "gate": {
+    "name": "reuse-live + slabs-ring + bake-digest",
+    "compare": "expect + expect + exact",
+    "detail": "every live tile meshed and picked with reuse off and on comes out identical after a flight that went round the ring; going round once more, a run kept before reads as stale and every tile still matches; the frozen bake digest is unchanged"
+   },
+   "provenIn": {
+    "mod": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "record": "2026-11-15T15-58-01.240561200Z-9aa457c6",
+    "patch": "bench/diorama/slab-ring.patch",
+    "scope": "gcPauseMeanMs"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Cache.copyOut(II)I",
+       "samples": 5
+      },
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 95
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Cache.copyOut(II)I",
+       "samples": 1
+      },
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 99
       }
      ]
     }

@@ -23,6 +23,8 @@ final class PerfReport {
     final Map<String, Double> lockSites = new HashMap<>();
     final Map<String, Long> probeCalls = new TreeMap<>();
     final Map<String, double[]> timingTotals = new TreeMap<>();
+    /** Per thread name: CPU ms, user ms, threads, threads that ended during the window. */
+    final Map<String, double[]> threadCpuTime = new TreeMap<>();
     /** Threads whose first allocation sample has been seen; that sample only starts the thread's count. */
     final Set<Long> allocationThreads = new HashSet<>();
     long executionSamples, truncated;
@@ -98,6 +100,13 @@ final class PerfReport {
             case "modaccel.MethodTiming" -> functions.accept(event);
             case "modaccel.TimingTotals" -> timingTotals.put(event.getString("label"),
                 new double[]{event.getLong("calls"), event.getLong("inclusiveNanos") / 1e6, event.getLong("selfNanos") / 1e6});
+            case "modaccel.ThreadCpuTime" -> {
+                double[] sum = threadCpuTime.computeIfAbsent(event.getString("thread"), k -> new double[4]);
+                sum[0] += event.getLong("cpuNanos") / 1e6;
+                sum[1] += event.getLong("userNanos") / 1e6;
+                sum[2]++;
+                if (!event.getBoolean("whole")) sum[3]++;
+            }
             case "modaccel.ProbeCalls" -> probeCalls.merge(event.getString("label"), event.getLong("calls"), Long::sum);
             case "modaccel.Pulse" -> {
                 String kind = event.getString("kind");
@@ -271,6 +280,13 @@ final class PerfReport {
             if (completeWindow) result.put("observedTicksPerSecond", ticks.size() / seconds);
         }
         if (events.containsKey("jdk.GCPhasePause")) result.put("gcPauseTotalMs", gcPauseMs);
+        if (!threadCpuTime.isEmpty()) {
+            List<Object> rows = new ArrayList<>();
+            threadCpuTime.forEach((thread, sum) -> rows.add(Json.map("thread", thread, "cpuMs", sum[0], "userMs", sum[1],
+                "cpuMsPerSecond", sum[0] / seconds, "threads", (long) sum[2], "endedInWindow", (long) sum[3])));
+            rows.sort(Comparator.comparingDouble((Object r) -> -((Number) Json.object(r).get("cpuMs")).doubleValue()));
+            result.put("threadCpuTime", rows);
+        }
         if (events.containsKey("jdk.JavaMonitorEnter")) result.put("observedMonitorBlockedMs", blockedMs);
         if (completeWindow && events.containsKey("jdk.ObjectAllocationSample")) result.put("estimatedAllocationBytesPerSecond", allocationWeight / seconds);
         if (events.containsKey("jdk.FileRead")) result.put("observedFileReadBytes", readBytes);

@@ -409,6 +409,14 @@ final class PerfAttribution {
             sum[2] += ((Number) call.get("selfMs")).doubleValue();
         }
         long tickCount = ticks == null ? 0 : ((Number) ticks.get("n")).longValue();
+        // Per-thread totals arrive as label@server, label@render and label@other (labels never contain @).
+        Map<String, Map<String, double[]>> byThread = new HashMap<>();
+        for (var entry : List.copyOf(exactTotals.entrySet())) {
+            int at = entry.getKey().indexOf('@');
+            if (at <= 0) continue;
+            byThread.computeIfAbsent(entry.getKey().substring(0, at), k -> new TreeMap<>()).put(entry.getKey().substring(at + 1), entry.getValue());
+            exactTotals.remove(entry.getKey());
+        }
         for (var entry : exactTotals.entrySet()) {
             String type = selectorClass.get(entry.getKey());
             Origin origin = type == null ? null : owner(type, "");
@@ -423,6 +431,17 @@ final class PerfAttribution {
                 row.put("inclusiveMsPerTick", v[1] / tickCount);
             }
             row.put("inclusiveMsPerSecond", v[1] / seconds);
+            // A block entity can tick on the server and on the client: a metric names the thread it means.
+            for (var thread : byThread.getOrDefault(entry.getKey(), Map.of()).entrySet()) {
+                double[] t = thread.getValue();
+                row.put(thread.getKey() + "Calls", (long) t[0]);
+                row.put(thread.getKey() + "InclusiveTotalMs", t[1]);
+                if (tickCount > 0) {
+                    row.put(thread.getKey() + "CallsPerTick", t[0] / tickCount);
+                    row.put(thread.getKey() + "InclusiveMsPerTick", t[1] / tickCount);
+                }
+            }
+            if (!byThread.isEmpty()) row.put("threads", List.copyOf(byThread.getOrDefault(entry.getKey(), Map.of()).keySet()));
             exact.computeIfAbsent(key, k -> new ArrayList<>()).add(row);
         }
         long serverSamples = threadSamples.getOrDefault("Server thread", 0L);

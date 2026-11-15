@@ -271,6 +271,8 @@ public final class PerfTest {
         check(((Number) mod.get("heapShallowBytes")).longValue() > 0 && Json.array(mod.get("heapClasses")).stream()
             .anyMatch(c -> Json.object(c).get("name").equals("com.example.mod.ModBlock")), "live instances of the mod's own classes are measured after the capture");
         check(Json.array(attribution.get("threads")).size() > 0, "per-thread CPU load is reported");
+        check(Json.array(report.getOrDefault("threadCpuTime", List.of())).stream().map(Json::object)
+            .anyMatch(t -> ((Number) t.get("cpuMs")).doubleValue() > 0), "each thread's operating-system CPU time over the window is reported");
         List<Object> suggested = Json.array(Json.read(directory.resolve("probes.suggested.json")).get("probes"));
         check(suggested.stream().map(Json::object).anyMatch(p -> p.get("class").equals("com.example.mod.Handler") && p.get("descriptor").toString().startsWith("(")),
             "timing probes are suggested for sampled mod methods with exact descriptors");
@@ -279,6 +281,12 @@ public final class PerfTest {
             .filter(r -> r.get("label").equals("outer")).findFirst().orElseThrow(() -> new AssertionError("timed game method listed as unattributed exact cost"));
         check(Boolean.TRUE.equals(outer.get("complete")) && ((Number) outer.get("calls")).longValue() > 0,
             "exact rows come from complete agent totals, not the capped per-call history");
+        long perThread = 0;
+        for (String thread : List.of("server", "render", "other")) {
+            if (outer.get(thread + "Calls") instanceof Number n) perThread += n.longValue();
+        }
+        check(outer.get("threads") instanceof List<?> && perThread == ((Number) outer.get("calls")).longValue(),
+            "each probe row splits its calls by game thread (server, render, other), and the parts add up: " + outer);
     }
 
     /**
@@ -460,6 +468,15 @@ public final class PerfTest {
         check(PerfOptimize.metric(report, Json.map("mod", "m")) == 30.0, "a mod metric is its whole sampled CPU");
         check(PerfOptimize.metric(report, Json.map("mod", "m", "threads", "^m-baker")) == 20.0, "a thread filter counts only matching threads");
         check(PerfOptimize.metric(report, Json.map("mod", "m", "method", "Mesher.build")) == 12.0, "a method scope is its inclusive CPU");
+        report.put("threadCpuTime", List.of(Json.map("thread", "m-baker-1", "cpuMsPerSecond", 7.0, "cpuMs", 70.0),
+            Json.map("thread", "m-baker-2", "cpuMsPerSecond", 5.0, "cpuMs", 50.0), Json.map("thread", "Render thread", "cpuMsPerSecond", 400.0, "cpuMs", 4000.0)));
+        check(PerfOptimize.metric(report, Json.map("threadCpu", "^m-baker")) == 12.0, "a threadCpu metric sums the matching threads' CPU time");
+        report.put("probeCalls", Json.map("mesh", 40L));
+        check(PerfOptimize.metric(report, Json.map("threadCpu", "^m-baker", "perCall", "mesh")) == 3.0, "perCall divides the window's CPU time by a counted probe's calls");
+        boolean none = false;
+        try { PerfOptimize.metric(report, Json.map("threadCpu", "^nobody")); }
+        catch (IllegalStateException expected) { none = true; }
+        check(none, "a threadCpu metric that matches no thread is an error, not zero");
         boolean refused = false;
         try { PerfOptimize.validate(Json.map("schema", 1, "measure", Json.map("metric", Json.map("probe", "x")), "gates", List.of())); }
         catch (IllegalArgumentException expected) { refused = true; }
@@ -540,6 +557,7 @@ public final class PerfTest {
         check(PerfOptimize.childOutput(cp1252).contains("�") && PerfOptimize.childJava(Path.of(".")).contains("-Dstdout.encoding=UTF-8"),
             "a child's answer is read as UTF-8 without failing on a stray byte, and the child is told to write UTF-8");
         Files.delete(cp1252);
+        redirectedOutputIsUtf8();
         boolean refused = false;
         try { PerfOptimize.parallel("both"); } catch (IllegalArgumentException expected) { refused = true; }
         check(refused && PerfOptimize.parallel("parallel") && !PerfOptimize.parallel("sequential"), "--arms is auto, parallel or sequential");
@@ -583,6 +601,37 @@ public final class PerfTest {
         check(Json.array(Json.read(dir.resolve("exp/probes.json")).get("probes")).size() == 2, "only the mod's own suggested probes are kept");
         Map<String, Object> fresh = PerfCheck.check(dir.resolve("exp/experiment.json"), generated, null, null, Json.map("background", true));
         check(Json.array(fresh.get("problems")).toString().contains("still the generated template"), "a generated experiment cannot launch until its gates are written");
+        check(Json.array(generated.get("gates")).toString().contains("chunks.java") && Files.readString(dir.resolve("exp/chunks.java")).contains("getTicketDebugString"),
+            "the generated experiment has a gate comparing loaded chunks and their tickets between the arms");
+        check("serverInclusiveMsPerTick".equals(metric.get("statistic")) && made.get("details").toString().contains("call rates unknown"),
+            "the probe metric counts server-thread calls only, and a capture without call counts says so: " + made);
+        // A block entity that also ticks on the client (more Render than Server samples), a tiny method timed at
+        // 2,000 calls a tick: the metric stays on the server thread and the tiny method gets no probe.
+        Path farm = dir.resolve("farm");
+        fixture(farm, "report.json", Json.write(Json.map("metrics", Json.map("tick_ms", Json.map("n", 100)),
+            "attribution", Json.map("mods", List.of(Json.map("id", "farms", "yourMod", true,
+                "threads", List.of(Json.map("name", "Render thread", "samples", 35), Json.map("name", "Server thread", "samples", 31)),
+                "features", List.of(Json.map("name", "block entity · Farm", "threads",
+                    List.of(Json.map("name", "Render thread", "samples", 33), Json.map("name", "Server thread", "samples", 28)))),
+                "exact", List.of(Json.map("label", "Farm.tick", "callsPerTick", 128.0), Json.map("label", "Villager.getAge", "callsPerTick", 2048.0))))))));
+        fixture(farm, "probes.suggested.json", Json.write(Json.map("probes", List.of(
+            Json.map("class", "f.Farm", "method", "tick", "descriptor", "()V", "label", "Farm.tick", "mode", "timing", "mod", "farms"),
+            Json.map("class", "f.Villager", "method", "getAge", "descriptor", "()I", "label", "Villager.getAge", "mode", "timing", "mod", "farms")))));
+        Map<String, Object> farmMade = PerfTemplates.run(new Modaccel.Options(new String[]{"perf-template", "--family", "experiment", "--from", farm.toString(),
+            "--root", dir.toString(), "--out", dir.resolve("farm-exp").toString()}));
+        Map<String, Object> farmMetric = Json.object(Json.object(Json.read(dir.resolve("farm-exp/experiment.json")).get("measure")).get("metric"));
+        List<Object> farmProbes = Json.array(Json.read(dir.resolve("farm-exp/probes.json")).get("probes"));
+        String farmWarnings = Json.array(farmMade.get("warnings")).toString();
+        check("Farm.tick".equals(farmMetric.get("probe")) && "serverInclusiveMsPerTick".equals(farmMetric.get("statistic")),
+            "a block entity ticking on both sides is measured on the server thread: " + farmMetric);
+        check(farmProbes.size() == 1 && farmWarnings.contains("Villager.getAge") && farmWarnings.contains("Render thread"),
+            "a method above --max-calls-per-tick gets no probe, and the client-side ticking is warned about: " + farmWarnings);
+        Map<String, Object> split = Json.map("attribution", Json.map("mods", List.of(Json.map("id", "farms", "exact", List.of(
+            Json.map("label", "Farm.tick", "inclusiveMsPerTick", 3.0, "serverInclusiveMsPerTick", 1.0, "threads", List.of("render", "server")),
+            Json.map("label", "Client.only", "inclusiveMsPerTick", 2.0, "renderInclusiveMsPerTick", 2.0, "threads", List.of("render")))))));
+        check(PerfOptimize.metric(split, Json.map("probe", "Farm.tick", "statistic", "serverInclusiveMsPerTick")) == 1.0
+            && PerfOptimize.metric(split, Json.map("probe", "Client.only", "statistic", "serverInclusiveMsPerTick")) == 0.0,
+            "a per-thread probe statistic reads that thread's calls, and none on it is zero");
     }
 
     static void functionTiming(Map<String, Object> report, Path directory) throws Exception {
@@ -686,6 +735,23 @@ public final class PerfTest {
         packet.putInt(bytes.length + 10).putInt(id).putInt(type).put(bytes).put((byte) 0).put((byte) 0);
         output.write(packet.array());
         output.flush();
+    }
+
+    /** modaccel run with its output redirected (no -Dstdout.encoding) writes UTF-8, whatever the platform charset. */
+    static void redirectedOutputIsUtf8() throws Exception {
+        Path scratch = Files.createTempDirectory("perf-utf8-");
+        Path source = scratch.resolve("Utf8Probe.java");
+        Files.writeString(source, "public class Utf8Probe { public static void main(String[] args) { Modaccel.utf8WhenRedirected(); "
+            + "System.out.print(\"95% 9.94\\u201311.33; 3.97 \\u2192 0.38\"); System.out.flush(); } }");
+        Path out = scratch.resolve("out.txt");
+        String classes = Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+        Process process = new ProcessBuilder(ProcessHandle.current().info().command().orElse("java"), "-cp", classes, source.toString())
+            .redirectErrorStream(true).redirectOutput(out.toFile()).start();
+        boolean done = process.waitFor(60, java.util.concurrent.TimeUnit.SECONDS);
+        String text = new String(Files.readAllBytes(out), java.nio.charset.StandardCharsets.UTF_8);
+        check(done && process.exitValue() == 0 && text.equals("95% 9.94\u201311.33; 3.97 \u2192 0.38"),
+            "redirected modaccel output is UTF-8, so a log or the desktop app reads its dashes and arrows: " + text);
+        Files.walk(scratch).sorted(Comparator.reverseOrder()).forEach(path -> path.toFile().delete());
     }
 
 }

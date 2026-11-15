@@ -5855,6 +5855,628 @@
         "after": "package snownee.jade.gui.config;\n\npublic class OptionsList extends ContainerObjectSelectionList<OptionsList.Entry> {\n\t\t\tl = Mth.clamp(l, 32, this.height - 8);\n\t\t\tint m = (int) this.getScrollAmount() * (this.height - l) / this.maxScrollAmount() + this.getY();\n\t\t\tif (m < this.getY()) {\n",
         "from": "Jade neoforge 1.21.1 at 6701b1ee, src/main/java/snownee/jade/gui/config/OptionsList.java:204"
       }
+    },
+    {
+      "id": "identifier-constructor-of",
+      "provenance": "hand",
+      "jump": "1.20.6 -> 1.21 (yarn)",
+      "match": "Identifier\\([^)]*\\) has private access in Identifier|constructor Identifier in class Identifier cannot be applied",
+      "apply": {
+        "find": "new Identifier\\(",
+        "replace": "Identifier.of("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21 made Identifier's constructors private. Identifier.of(namespace, path) and Identifier.of(id) are the same two constructors, for any argument expressions (the older identifier-constructor rules only took string literals).",
+      "verified": "Port sweep 2026-11-14 (bench/sweep.py): Continuity 1.20.1 -> 1.21.1 left 5 Identifier constructor errors with variable arguments; the 1.21 yarn Identifier class has of(String) and of(String,String) and private constructors",
+      "test": {
+        "error": "ContinuityClient.java:40: error: Identifier(String,String) has private access in Identifier\n",
+        "before": "package me.pepperbell.continuity.client;\n\npublic final class ContinuityClient {\n\tpublic static Identifier asId(String path) {\n\t\treturn new Identifier(ID, path);\n\t}\n\tstatic Identifier parsed(String id) {\n\t\treturn new Identifier(id);\n\t}\n}\n",
+        "after": "package me.pepperbell.continuity.client;\n\npublic final class ContinuityClient {\n\tpublic static Identifier asId(String path) {\n\t\treturn Identifier.of(ID, path);\n\t}\n\tstatic Identifier parsed(String id) {\n\t\treturn Identifier.of(id);\n\t}\n}\n",
+        "from": "written for this rule (the shape of Continuity 1.20.1's ContinuityClient.asId)"
+      }
+    },
+    {
+      "id": "resource-location-constructor-two-arg",
+      "provenance": "hand",
+      "jump": "1.20.6 -> 1.21 (mojmap)",
+      "match": "ResourceLocation\\(String,String\\) has private access in ResourceLocation|constructor ResourceLocation in class ResourceLocation cannot be applied",
+      "apply": {
+        "find": "new ResourceLocation\\(((?:[^(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^()]|\\([^()]*\\))*\\))+),((?:[^(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^()]|\\([^()]*\\))*\\))+)\\)",
+        "replace": "ResourceLocation.fromNamespaceAndPath($1,$2)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21 made ResourceLocation's constructors private; the two-argument one is ResourceLocation.fromNamespaceAndPath(namespace, path). Arguments may be any expression with up to two levels of parentheses.",
+      "verified": "Written from the 1.21 game's ResourceLocation (fromNamespaceAndPath, parse, private constructors) for the 1.20.x -> 1.21 NeoForge ports of the sweep corpus",
+      "test": {
+        "error": "ModItems.java:12: error: ResourceLocation(String,String) has private access in ResourceLocation\n",
+        "before": "package mod;\n\nclass ModItems {\n\tstatic final ResourceLocation ID = new ResourceLocation(MOD_ID, \"knife\");\n\tstatic ResourceLocation of(String path) { return new ResourceLocation(Mod.id(), path.toLowerCase(java.util.Locale.ROOT)); }\n}\n",
+        "after": "package mod;\n\nclass ModItems {\n\tstatic final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(MOD_ID, \"knife\");\n\tstatic ResourceLocation of(String path) { return ResourceLocation.fromNamespaceAndPath(Mod.id(), path.toLowerCase(java.util.Locale.ROOT)); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "resource-location-constructor-one-arg",
+      "provenance": "hand",
+      "jump": "1.20.6 -> 1.21 (mojmap)",
+      "match": "ResourceLocation\\(String\\) has private access in ResourceLocation|constructor ResourceLocation in class ResourceLocation cannot be applied",
+      "apply": {
+        "find": "new ResourceLocation\\(((?:[^(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^()]|\\([^()]*\\))*\\))+)\\)",
+        "replace": "ResourceLocation.parse($1)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21 made ResourceLocation's constructors private; the one-argument (namespace:path) constructor is ResourceLocation.parse(id), which throws on an invalid id the same way.",
+      "verified": "Written from the 1.21 game's ResourceLocation (parse) for the 1.20.x -> 1.21 NeoForge ports of the sweep corpus",
+      "test": {
+        "error": "Config.java:30: error: ResourceLocation(String) has private access in ResourceLocation\n",
+        "before": "package mod;\n\nclass Config {\n\tItem item(String name) { return BuiltInRegistries.ITEM.get(new ResourceLocation(name)); }\n}\n",
+        "after": "package mod;\n\nclass Config {\n\tItem item(String name) { return BuiltInRegistries.ITEM.get(ResourceLocation.parse(name)); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "registry-access-lookup-or-throw",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method registryOrThrow\\(",
+      "apply": {
+        "find": "\\.registryOrThrow\\(",
+        "replace": ".lookupOrThrow("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 renamed RegistryAccess.registryOrThrow(ResourceKey) to lookupOrThrow(ResourceKey), same descriptor and return type.",
+      "verified": "Game-derived route map (tools/GameDiff.java, Mojang's 1.21.1 and 1.21.2 jars and mappings): net.minecraft.core.RegistryAccess registryOrThrow (Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/core/Registry; renamed to lookupOrThrow in 1.21.1 -> 1.21.2",
+      "test": {
+        "error": "Spawns.java:20: error: cannot find symbol\n  symbol:   method registryOrThrow(ResourceKey<Registry<Biome>>)\n",
+        "before": "package mod;\n\nclass Spawns {\n\tRegistry<Biome> biomes(Level level) { return level.registryAccess().registryOrThrow(Registries.BIOME); }\n}\n",
+        "after": "package mod;\n\nclass Spawns {\n\tRegistry<Biome> biomes(Level level) { return level.registryAccess().lookupOrThrow(Registries.BIOME); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "scroll-area-scroll-amount",
+      "provenance": "hand",
+      "jump": "1.21.3 -> 1.21.4 (mojmap)",
+      "match": "symbol:\\s+method getScrollAmount\\(\\)",
+      "apply": {
+        "find": "\\bgetScrollAmount\\(\\)",
+        "replace": "scrollAmount()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.4 moved scrolling from AbstractSelectionList into the new AbstractScrollArea, whose getter is scrollAmount() (the same double).",
+      "verified": "Mojang's 1.21.4 client mappings: net.minecraft.client.gui.components.AbstractScrollArea has double scrollAmount(); the route map lists AbstractSelectionList.getScrollAmount ()D as removed in 1.21.3 -> 1.21.4",
+      "test": {
+        "error": "OptionsList.java:40: error: cannot find symbol\n  symbol: method getScrollAmount()\n",
+        "before": "package mod;\n\nclass OptionsList extends ContainerObjectSelectionList<OptionsList.Entry> {\n\tint top() { return (int) this.getScrollAmount() + getY(); }\n}\n",
+        "after": "package mod;\n\nclass OptionsList extends ContainerObjectSelectionList<OptionsList.Entry> {\n\tint top() { return (int) this.scrollAmount() + getY(); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "command-source-permission-level",
+      "provenance": "hand",
+      "jump": "1.21.10 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+method hasPermission\\(int\\)",
+      "apply": {
+        "find": "\\.hasPermission\\(((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\)",
+        "replace": ".permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId($1)))",
+        "ensureImports": [
+          "net.minecraft.server.permissions.Permission",
+          "net.minecraft.server.permissions.PermissionLevel"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.11 replaced the int permission level with permission sets: CommandSourceStack.permissions() returns a PermissionSet, whose hasPermission takes a Permission; HasCommandLevel wraps a PermissionLevel, and PermissionLevel.byId(int) keeps the old number exactly.",
+      "verified": "Mojang's 26.1 client jar (same API as 1.21.11): CommandSourceStack.permissions() -> PermissionSet; PermissionSet.hasPermission(Permission); record Permission$HasCommandLevel(PermissionLevel); PermissionLevel.byId(int). The route map lists CommandSourceStack.hasPermission (I)Z removed in 1.21.10 -> 1.21.11",
+      "test": {
+        "error": "ZombieCommand.java:30: error: cannot find symbol\n  symbol:   method hasPermission(int)\n",
+        "before": "package mod;\n\nclass ZombieCommand {\n\tstatic void register(CommandDispatcher<CommandSourceStack> d) {\n\t\td.register(Commands.literal(\"zaa\").requires(source -> source.hasPermission(2)));\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.server.permissions.PermissionLevel;\nimport net.minecraft.server.permissions.Permission;\n\nclass ZombieCommand {\n\tstatic void register(CommandDispatcher<CommandSourceStack> d) {\n\t\td.register(Commands.literal(\"zaa\").requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(2)))));\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "player-permission-level",
+      "provenance": "hand",
+      "jump": "1.21.10 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+method hasPermissions\\(int\\)",
+      "apply": {
+        "find": "\\.hasPermissions\\(((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))+?)\\)",
+        "replace": ".permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId($1)))",
+        "ensureImports": [
+          "net.minecraft.server.permissions.Permission",
+          "net.minecraft.server.permissions.PermissionLevel"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.11 removed Player.hasPermissions(int); Player.permissions() returns the player's PermissionSet, asked the same way as a command source's.",
+      "verified": "Mojang's 26.1 client jar: Player.permissions() -> PermissionSet; the route map lists Entity/Player.hasPermissions (I)Z removed in 1.21.10 -> 1.21.11",
+      "test": {
+        "error": "Events.java:12: error: cannot find symbol\n  symbol:   method hasPermissions(int)\n",
+        "before": "package mod;\n\nclass Events {\n\tboolean admin(Player player) { return player.hasPermissions(4); }\n}\n",
+        "after": "package mod;\nimport net.minecraft.server.permissions.PermissionLevel;\nimport net.minecraft.server.permissions.Permission;\n\nclass Events {\n\tboolean admin(Player player) { return player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(4))); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "game-profile-record-name",
+      "provenance": "hand",
+      "jump": "1.21.8 -> 1.21.9 (mojmap)",
+      "match": "symbol:\\s+method getName\\(\\)\\s+location: (?:variable \\w+ of type |class |interface )(?:[\\w.]+\\.)?GameProfile\\b",
+      "apply": {
+        "find": "\\b(\\w*[Pp]rofile(?:\\(\\))?)\\.getName\\(\\)",
+        "replace": "$1.name()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.9 ships authlib 7, whose GameProfile is a record: getName() is name().",
+      "verified": "Mojang's version manifests: 1.21.8 uses com.mojang:authlib:6.0.58, 1.21.9 uses 7.0.61; authlib 7.0.61's com.mojang.authlib.GameProfile declares UUID id() and String name() and no getName()/getId()",
+      "test": {
+        "error": "Names.java:9: error: cannot find symbol\n  symbol:   method getName()\n  location: variable profile of type com.mojang.authlib.GameProfile\n",
+        "before": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.getName() + \" \" + player.getGameProfile().getId(); }\n}\n",
+        "after": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.name() + \" \" + player.getGameProfile().getId(); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "game-profile-record-id",
+      "provenance": "hand",
+      "jump": "1.21.8 -> 1.21.9 (mojmap)",
+      "match": "symbol:\\s+method getId\\(\\)\\s+location: (?:variable \\w+ of type |class |interface )(?:[\\w.]+\\.)?GameProfile\\b",
+      "apply": {
+        "find": "\\b(\\w*[Pp]rofile(?:\\(\\))?)\\.getId\\(\\)",
+        "replace": "$1.id()"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.9 ships authlib 7, whose GameProfile is a record: getId() is id().",
+      "verified": "Mojang's version manifests: 1.21.8 uses com.mojang:authlib:6.0.58, 1.21.9 uses 7.0.61; authlib 7.0.61's com.mojang.authlib.GameProfile declares UUID id() and String name() and no getName()/getId()",
+      "test": {
+        "error": "Names.java:9: error: cannot find symbol\n  symbol:   method getId()\n  location: class com.mojang.authlib.GameProfile\n",
+        "before": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.getName() + \" \" + player.getGameProfile().getId(); }\n}\n",
+        "after": "package mod;\n\nclass Names {\n\tString of(GameProfile profile) { return profile.getName() + \" \" + player.getGameProfile().id(); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "entity-types-constants",
+      "provenance": "hand",
+      "jump": "26.1.2 -> 26.2 (mojmap)",
+      "match": "symbol:\\s+variable [A-Z][A-Z0-9_]*\\s+location: (?:class|interface) EntityType\\b",
+      "apply": {
+        "find": "\\bEntityType\\.([A-Z][A-Z0-9_]*)\\b",
+        "replace": "EntityTypes.$1",
+        "ensureImports": [
+          "net.minecraft.world.entity.EntityTypes"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "26.2 moved every vanilla entity type constant from EntityType into the new class EntityTypes (EntityType.PIG is EntityTypes.PIG).",
+      "verified": "Mojang's 26.2 client jar: net.minecraft.world.entity.EntityTypes declares the EntityType constants (PIG, ALLAY, ...) and EntityType declares none; in 26.1.2 EntityType declared them and EntityTypes did not exist",
+      "test": {
+        "error": "ModSpawns.java:15: error: cannot find symbol\n  symbol:   variable ZOMBIE\n  location: class EntityType\n",
+        "before": "package mod;\n\nclass ModSpawns {\n\tboolean zombie(Entity e) { return e.getType() == EntityType.ZOMBIE || e.getType() == EntityType.HUSK; }\n}\n",
+        "after": "package mod;\nimport net.minecraft.world.entity.EntityTypes;\n\nclass ModSpawns {\n\tboolean zombie(Entity e) { return e.getType() == EntityTypes.ZOMBIE || e.getType() == EntityTypes.HUSK; }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "level-height-max-y-exclusive",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+method getMaxBuildHeight\\(\\)",
+      "apply": {
+        "find": "(?<![*/%~!]\\s{0,3}[\\w.()]{0,80})\\.getMaxBuildHeight\\(\\)(?=\\s*[)\\];,<>=+\\-?:&|])",
+        "replace": ".getMaxY() + 1"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 replaced LevelHeightAccessor.getMaxBuildHeight() (exclusive: minY + height) with getMaxY() (inclusive: minY + height - 1). The route map links them as a rename, which would move every height check down one block, so this runs first and keeps the old value as getMaxY() + 1. It only rewrites where + 1 binds as the old call did (beside a comparison, + or -, a comma or a closing bracket); a call inside * / % stays a reported error.",
+      "verified": "Mojang's 26.1 client jar (same as 1.21.2): LevelHeightAccessor.getMaxY() is getMinY() + getHeight() - 1 (bytecode); 1.21.1's getMaxBuildHeight() was getMinBuildHeight() + getHeight()",
+      "test": {
+        "error": "Spawner.java:22: error: cannot find symbol\n  symbol:   method getMaxBuildHeight()\n",
+        "before": "package mod;\n\nclass Spawner {\n\tboolean inside(Level level, int y) { return y >= level.getMinBuildHeight() && y < level.getMaxBuildHeight(); }\n\tint top(Level level) { return level.getMaxBuildHeight() - 1; }\n\tint twice(Level level) { return 2 * level.getMaxBuildHeight(); }\n}\n",
+        "after": "package mod;\n\nclass Spawner {\n\tboolean inside(Level level, int y) { return y >= level.getMinBuildHeight() && y < level.getMaxY() + 1; }\n\tint top(Level level) { return level.getMaxY() + 1 - 1; }\n\tint twice(Level level) { return 2 * level.getMaxBuildHeight(); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "height-limit-top-y-exclusive",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (yarn)",
+      "match": "symbol:\\s+method getTopY\\(\\)",
+      "apply": {
+        "find": "(?<![*/%~!]\\s{0,3}[\\w.()]{0,80})\\.getTopY\\(\\)(?=\\s*[)\\];,<>=+\\-?:&|])",
+        "replace": ".getTopYInclusive() + 1"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "Yarn's names for the same 1.21.2 change: HeightLimitView.getTopY() (exclusive) became getTopYInclusive() (one lower). The yarn route map links them as a rename; this keeps the old value where + 1 binds as the old call did.",
+      "verified": "Mojang's 26.1 client jar: LevelHeightAccessor.getMaxY() (yarn getTopYInclusive) is getMinY() + getHeight() - 1; the yarn route map 1.21.1 -> 1.21.2 renames HeightLimitView.getTopY to getTopYInclusive",
+      "test": {
+        "error": "Spawner.java:22: error: cannot find symbol\n  symbol:   method getTopY()\n",
+        "before": "package mod;\n\nclass Spawner {\n\tboolean inside(World world, int y) { return y < world.getTopY(); }\n}\n",
+        "after": "package mod;\n\nclass Spawner {\n\tboolean inside(World world, int y) { return y < world.getTopYInclusive() + 1; }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "nbt-getcompound-or-empty-any-key",
+      "provenance": "hand",
+      "jump": "1.21.4 -> 1.21.5 (mojmap)",
+      "match": "incompatible types: Optional<(?:CompoundTag|ListTag)> cannot be converted to",
+      "apply": {
+        "find": "\\.getCompound\\(((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)(?!\\s*\\.\\s*(?:orElse|orElseGet|orElseThrow|ifPresent|ifPresentOrElse|isPresent|isEmpty|map|flatMap|filter|get\\b|stream))",
+        "replace": ".getCompoundOrEmpty($1)"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.5 made CompoundTag.getCompound(String) return Optional<CompoundTag>; getCompoundOrEmpty(String) returns the tag or an empty one, as getCompound did. For any key expression (\"itemFilter\" + i); a call already used as an Optional is left alone.",
+      "verified": "Mojang's 26.1 client jar (same API since 1.21.5): CompoundTag.getCompound(String) -> Optional<CompoundTag>, getCompoundOrEmpty(String) -> CompoundTag; port sweep 2026-11-15: Trash Cans 1.21.4 -> 1.21.5 left exactly these two errors",
+      "test": {
+        "error": "TrashCanBlockEntity.java:80: error: incompatible types: Optional<CompoundTag> cannot be converted to CompoundTag\n",
+        "before": "package mod;\n\nclass TrashCanBlockEntity {\n\tvoid load(CompoundTag tag) {\n\t\tfor (int i = 0; i < 9; i++) this.itemFilter.set(i, tag.contains(\"itemFilter\" + i) ? decode(tag.getCompound(\"itemFilter\" + i), access) : ItemStack.EMPTY);\n\t\ttag.getCompound(\"x\").ifPresent(this::read);\n\t}\n}\n",
+        "after": "package mod;\n\nclass TrashCanBlockEntity {\n\tvoid load(CompoundTag tag) {\n\t\tfor (int i = 0; i < 9; i++) this.itemFilter.set(i, tag.contains(\"itemFilter\" + i) ? decode(tag.getCompoundOrEmpty(\"itemFilter\" + i), access) : ItemStack.EMPTY);\n\t\ttag.getCompound(\"x\").ifPresent(this::read);\n\t}\n}\n",
+        "from": "written for this rule (the shape of Trash Cans 1.21.4's TrashCanBlockEntity)"
+      }
+    },
+    {
+      "id": "item-interaction-pass-to-default",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
+      "apply": {
+        "find": "\\bItemInteractionResult\\.PASS_TO_DEFAULT_BLOCK_INTERACTION\\b",
+        "replace": "InteractionResult.TRY_WITH_EMPTY_HAND"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2: 'pass to the block's own use without the item' is InteractionResult.TRY_WITH_EMPTY_HAND.",
+      "verified": "Mojang's 1.21.1 mappings: enum ItemInteractionResult {SUCCESS, CONSUME, CONSUME_PARTIAL, PASS_TO_DEFAULT_BLOCK_INTERACTION, SKIP_DEFAULT_BLOCK_INTERACTION, FAIL}; Mojang's 26.1 jar (same since 1.21.2): no ItemInteractionResult, InteractionResult has SUCCESS, SUCCESS_SERVER, CONSUME, FAIL, PASS, TRY_WITH_EMPTY_HAND, and BlockBehaviour.useItemOn's default returns TRY_WITH_EMPTY_HAND where 1.21.1's returned PASS_TO_DEFAULT_BLOCK_INTERACTION",
+      "test": {
+        "error": "Stove.java:7: error: cannot find symbol\n  symbol:   class ItemInteractionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return InteractionResult.TRY_WITH_EMPTY_HAND;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-interaction-skip-default",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
+      "apply": {
+        "find": "\\bItemInteractionResult\\.SKIP_DEFAULT_BLOCK_INTERACTION\\b",
+        "replace": "InteractionResult.PASS"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2: skipping the block's own use and going on to the item's is InteractionResult.PASS.",
+      "verified": "Mojang's 1.21.1 mappings: enum ItemInteractionResult {SUCCESS, CONSUME, CONSUME_PARTIAL, PASS_TO_DEFAULT_BLOCK_INTERACTION, SKIP_DEFAULT_BLOCK_INTERACTION, FAIL}; Mojang's 26.1 jar (same since 1.21.2): no ItemInteractionResult, InteractionResult has SUCCESS, SUCCESS_SERVER, CONSUME, FAIL, PASS, TRY_WITH_EMPTY_HAND, and BlockBehaviour.useItemOn's default returns TRY_WITH_EMPTY_HAND where 1.21.1's returned PASS_TO_DEFAULT_BLOCK_INTERACTION",
+      "test": {
+        "error": "Stove.java:7: error: cannot find symbol\n  symbol:   class ItemInteractionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return InteractionResult.PASS;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-interaction-consume-partial",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
+      "apply": {
+        "find": "\\bItemInteractionResult\\.CONSUME_PARTIAL\\b",
+        "replace": "InteractionResult.CONSUME"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 has no CONSUME_PARTIAL; the game's own uses became CONSUME.",
+      "verified": "Mojang's 1.21.1 mappings: enum ItemInteractionResult {SUCCESS, CONSUME, CONSUME_PARTIAL, PASS_TO_DEFAULT_BLOCK_INTERACTION, SKIP_DEFAULT_BLOCK_INTERACTION, FAIL}; Mojang's 26.1 jar (same since 1.21.2): no ItemInteractionResult, InteractionResult has SUCCESS, SUCCESS_SERVER, CONSUME, FAIL, PASS, TRY_WITH_EMPTY_HAND, and BlockBehaviour.useItemOn's default returns TRY_WITH_EMPTY_HAND where 1.21.1's returned PASS_TO_DEFAULT_BLOCK_INTERACTION",
+      "test": {
+        "error": "Stove.java:7: error: cannot find symbol\n  symbol:   class ItemInteractionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return InteractionResult.CONSUME;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-interaction-sided-success",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
+      "apply": {
+        "find": "\\bItemInteractionResult\\.sidedSuccess\\(((?:[^;()]|\\((?:[^;()]|\\([^;()]*\\))*\\))*)\\)",
+        "replace": "InteractionResult.SUCCESS"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 has no sidedSuccess: InteractionResult.SUCCESS is returned on both sides (the server answers SUCCESS_SERVER itself where it matters).",
+      "verified": "Mojang's 1.21.1 mappings: enum ItemInteractionResult {SUCCESS, CONSUME, CONSUME_PARTIAL, PASS_TO_DEFAULT_BLOCK_INTERACTION, SKIP_DEFAULT_BLOCK_INTERACTION, FAIL}; Mojang's 26.1 jar (same since 1.21.2): no ItemInteractionResult, InteractionResult has SUCCESS, SUCCESS_SERVER, CONSUME, FAIL, PASS, TRY_WITH_EMPTY_HAND, and BlockBehaviour.useItemOn's default returns TRY_WITH_EMPTY_HAND where 1.21.1's returned PASS_TO_DEFAULT_BLOCK_INTERACTION",
+      "test": {
+        "error": "Stove.java:7: error: cannot find symbol\n  symbol:   class ItemInteractionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn InteractionResult.SUCCESS;\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "item-interaction-result-type",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) ItemInteractionResult\\b",
+      "apply": {
+        "find": "\\bItemInteractionResult\\b",
+        "replace": "InteractionResult"
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 folded ItemInteractionResult into InteractionResult; SUCCESS, CONSUME and FAIL keep their names. The constants that changed meaning are rewritten by the item-interaction-* rules first.",
+      "verified": "Mojang's 1.21.1 mappings: enum ItemInteractionResult {SUCCESS, CONSUME, CONSUME_PARTIAL, PASS_TO_DEFAULT_BLOCK_INTERACTION, SKIP_DEFAULT_BLOCK_INTERACTION, FAIL}; Mojang's 26.1 jar (same since 1.21.2): no ItemInteractionResult, InteractionResult has SUCCESS, SUCCESS_SERVER, CONSUME, FAIL, PASS, TRY_WITH_EMPTY_HAND, and BlockBehaviour.useItemOn's default returns TRY_WITH_EMPTY_HAND where 1.21.1's returned PASS_TO_DEFAULT_BLOCK_INTERACTION",
+      "test": {
+        "error": "Stove.java:7: error: cannot find symbol\n  symbol:   class ItemInteractionResult\n",
+        "before": "package mod;\n\nimport net.minecraft.world.ItemInteractionResult;\n\nclass Stove {\n\tprotected ItemInteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return ItemInteractionResult.CONSUME_PARTIAL;\n\t\treturn ItemInteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "after": "package mod;\n\nimport net.minecraft.world.InteractionResult;\n\nclass Stove {\n\tprotected InteractionResult useItemOn(ItemStack stack, Level level) {\n\t\tif (stack.isEmpty()) return InteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;\n\t\tif (level.isClientSide) return InteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;\n\t\tif (stack.getCount() > 1) return InteractionResult.CONSUME_PARTIAL;\n\t\treturn InteractionResult.sidedSuccess(level.isClientSide());\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "methods-return-nonnull-annotation-gone",
+      "provenance": "hand",
+      "jump": "1.21.10 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+class MethodsReturnNonnullByDefault|cannot find symbol\\s+import net\\.minecraft\\.MethodsReturnNonnullByDefault",
+      "apply": {
+        "find": "(?m)^[ \\t]*@(?:net\\.minecraft\\.)?MethodsReturnNonnullByDefault[ \\t]*\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.11 removed net.minecraft.MethodsReturnNonnullByDefault, a nullness marker (the game moved to JSpecify). The annotation goes; nothing read it.",
+      "verified": "Mojang's client mappings list net.minecraft.MethodsReturnNonnullByDefault in every release from 1.21.1 to 1.21.10 and not in 1.21.11 or the 26.1 jar; it was a nullness marker only, read by no code",
+      "test": {
+        "error": "package-info.java:2: error: cannot find symbol\n  symbol: class MethodsReturnNonnullByDefault\n",
+        "before": "@MethodsReturnNonnullByDefault\n@ParametersAreNonnullByDefault\npackage mod.client.model;\n\nimport net.minecraft.MethodsReturnNonnullByDefault;\nimport javax.annotation.ParametersAreNonnullByDefault;\n",
+        "after": "@ParametersAreNonnullByDefault\npackage mod.client.model;\n\nimport net.minecraft.MethodsReturnNonnullByDefault;\nimport javax.annotation.ParametersAreNonnullByDefault;\n",
+        "from": "written for this rule (the shape of Iron Chests' package-info.java)"
+      }
+    },
+    {
+      "id": "methods-return-nonnull-import-gone",
+      "provenance": "hand",
+      "jump": "1.21.10 -> 1.21.11 (mojmap)",
+      "match": "symbol:\\s+class MethodsReturnNonnullByDefault|cannot find symbol\\s+import net\\.minecraft\\.MethodsReturnNonnullByDefault",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.MethodsReturnNonnullByDefault;[ \\t]*\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "The import of the removed marker goes with it.",
+      "verified": "Mojang's client mappings list net.minecraft.MethodsReturnNonnullByDefault in every release from 1.21.1 to 1.21.10 and not in 1.21.11 or the 26.1 jar; it was a nullness marker only, read by no code",
+      "test": {
+        "error": "package-info.java:5: error: cannot find symbol\nimport net.minecraft.MethodsReturnNonnullByDefault;\n",
+        "before": "@MethodsReturnNonnullByDefault\n@ParametersAreNonnullByDefault\npackage mod.client.model;\n\nimport net.minecraft.MethodsReturnNonnullByDefault;\nimport javax.annotation.ParametersAreNonnullByDefault;\n",
+        "after": "@MethodsReturnNonnullByDefault\n@ParametersAreNonnullByDefault\npackage mod.client.model;\n\nimport javax.annotation.ParametersAreNonnullByDefault;\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "level-random-protected",
+      "provenance": "hand",
+      "jump": "1.21.11 -> 26.1 (mojmap)",
+      "match": "random has protected access in (?:net\\.minecraft\\.world\\.level\\.)?Level\\b",
+      "apply": {
+        "find": "\\.random\\b(?!\\s*[(=\\[])",
+        "replace": ".getRandom()"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "26.1 made Level.random protected; Level.getRandom() returns the same RandomSource. Only the lines javac reported change, so an entity's own random on another line is left alone.",
+      "verified": "Mojang's 1.21.11 client jar: Level.random (obfuscated dwo.y) is public final; Mojang's 26.1 jar: protected final RandomSource random, public RandomSource getRandom()",
+      "test": {
+        "error": "ModSpawner.java:4: error: random has protected access in Level\n",
+        "before": "package mod;\n\nclass ModSpawner {\n\tint roll(Level level) { return level.random.nextInt(10); }\n}\n",
+        "after": "package mod;\n\nclass ModSpawner {\n\tint roll(Level level) { return level.getRandom().nextInt(10); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "direction-property-create",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) DirectionProperty\\b",
+      "apply": {
+        "find": "\\bDirectionProperty\\.create\\(\\s*((?:\\\"[^\\\"]*\\\")|[\\w.]+)",
+        "replace": "EnumProperty.create($1, Direction.class",
+        "ensureImports": [
+          "net.minecraft.world.level.block.state.properties.EnumProperty",
+          "net.minecraft.core.Direction"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed DirectionProperty; a direction property is EnumProperty<Direction>, made with EnumProperty.create(name, Direction.class, ...). Any filter or value list that followed the name stays.",
+      "verified": "Mojang's 1.21.2 client mappings have no net.minecraft.world.level.block.state.properties.DirectionProperty; BlockStateProperties.FACING is an EnumProperty<Direction> (26.1 jar: public static final EnumProperty<Direction> FACING)",
+      "test": {
+        "error": "StoveBlock.java:20: error: cannot find symbol\n  symbol:   variable DirectionProperty\n",
+        "before": "package mod;\n\nclass StoveBlock {\n\tstatic final DirectionProperty FACING = DirectionProperty.create(\"facing\", Direction.Plane.HORIZONTAL);\n}\n",
+        "after": "package mod;\nimport net.minecraft.core.Direction;\nimport net.minecraft.world.level.block.state.properties.EnumProperty;\n\nclass StoveBlock {\n\tstatic final DirectionProperty FACING = EnumProperty.create(\"facing\", Direction.class, Direction.Plane.HORIZONTAL);\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "direction-property-type",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "symbol:\\s+(?:class|variable) DirectionProperty\\b",
+      "apply": {
+        "find": "(?m)^(?!import)(.*?)\\bDirectionProperty\\b(?!\\.)",
+        "replace": "$1EnumProperty<Direction>",
+        "ensureImports": [
+          "net.minecraft.world.level.block.state.properties.EnumProperty",
+          "net.minecraft.core.Direction"
+        ]
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2: a field or parameter typed DirectionProperty is an EnumProperty<Direction> (BlockStateProperties.HORIZONTAL_FACING keeps its name); its import goes.",
+      "verified": "Mojang's 26.1 jar (same since 1.21.2): BlockStateProperties.HORIZONTAL_FACING is public static final EnumProperty<Direction>",
+      "test": {
+        "error": "StoveBlock.java:20: error: cannot find symbol\n  symbol:   class DirectionProperty\n",
+        "before": "package mod;\n\nclass StoveBlock {\n\tpublic static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;\n}\n",
+        "after": "package mod;\nimport net.minecraft.core.Direction;\nimport net.minecraft.world.level.block.state.properties.EnumProperty;\n\nclass StoveBlock {\n\tpublic static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "direction-property-import-gone",
+      "provenance": "hand",
+      "jump": "1.21.1 -> 1.21.2 (mojmap)",
+      "match": "cannot find symbol\\s+import net\\.minecraft\\.world\\.level\\.block\\.state\\.properties\\.DirectionProperty|symbol:\\s+class DirectionProperty\\b",
+      "apply": {
+        "find": "(?m)^import net\\.minecraft\\.world\\.level\\.block\\.state\\.properties\\.DirectionProperty;[ \\t]*\\r?\\n",
+        "replace": ""
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.21.2 removed DirectionProperty, so its import goes (EnumProperty and Direction are imported where they are used).",
+      "verified": "Mojang's 1.21.2 client mappings have no DirectionProperty",
+      "test": {
+        "error": "StoveBlock.java:3: error: cannot find symbol\nimport net.minecraft.world.level.block.state.properties.DirectionProperty;\n",
+        "before": "package mod;\n\nimport net.minecraft.world.level.block.state.properties.DirectionProperty;\n\nclass StoveBlock {}\n",
+        "after": "package mod;\n\n\nclass StoveBlock {}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "lootable-generate-loot-yarn",
+      "provenance": "hand",
+      "jump": "1.20.2 -> 1.20.3 (yarn)",
+      "match": "symbol:\\s+method checkLootInteraction\\(",
+      "apply": {
+        "find": "\\bcheckLootInteraction\\(",
+        "replace": "generateLoot("
+      },
+      "scope": "log",
+      "when": "",
+      "note": "1.20.3 moved LootableContainerBlockEntity.checkLootInteraction(PlayerEntity) into the new LootableInventory interface as generateLoot(PlayerEntity), same descriptor; yarn gave it a new intermediary id, so the route map records the old method as removed. Mojang's name, unpackLootTable, did not change.",
+      "verified": "Fabric's yarn 1.20.2+build.4: LootableContainerBlockEntity.checkLootInteraction (method_11289, (Lnet/minecraft/class_1657;)V); yarn 1.20.3+build.1 and 1.21.1+build.3: LootableInventory.generateLoot (method_54873, (Lnet/minecraft/class_1657;)V); Mojang's 1.20.2 and 1.20.4 mappings both name it unpackLootTable(Player)",
+      "test": {
+        "error": "LithiumInventory.java:55: error: cannot find symbol\n  symbol:   method checkLootInteraction(PlayerEntity)\n",
+        "before": "package me.jellysquid.mods.lithium.api.inventory;\n\npublic interface LithiumInventory {\n\tdefault void generate(LootableContainerBlockEntity lootable) {\n\t\tlootable.checkLootInteraction(null);\n\t}\n}\n",
+        "after": "package me.jellysquid.mods.lithium.api.inventory;\n\npublic interface LithiumInventory {\n\tdefault void generate(LootableContainerBlockEntity lootable) {\n\t\tlootable.generateLoot(null);\n\t}\n}\n",
+        "from": "written for this rule (the shape of Lithium 1.20.1's LithiumInventory)"
+      }
+    },
+    {
+      "id": "draw-context-render-parameter",
+      "provenance": "hand",
+      "jump": "1.19.4 -> 1.20 (yarn)",
+      "match": "method does not override or implement a method from a supertype|MatrixStack cannot be converted to DrawContext",
+      "apply": {
+        "find": "(\\b(?:render|renderButton|renderWidget|renderBackground|renderTooltip|drawBackground|drawForeground|renderLabels)\\s*\\(\\s*)(?:final\\s+)?MatrixStack(\\s+\\w+)",
+        "replace": "$1DrawContext$2",
+        "ensureImports": [
+          "net.minecraft.client.gui.DrawContext"
+        ]
+      },
+      "scope": "log",
+      "when": "\\bMatrixStack\\b",
+      "note": "1.20 replaced the MatrixStack parameter of screen and widget render methods with a DrawContext; the parameter keeps its name, so the drawing rules below can move calls onto it.",
+      "verified": "Fabric's yarn 1.20+build.1: net.minecraft.client.gui.DrawContext has fill(IIIII)V, drawText(TextRenderer, String|Text|OrderedText, int, int, int, boolean), drawTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int) and drawCenteredTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int); Screen and widget render methods take a DrawContext where 1.19.4's took a MatrixStack",
+      "test": {
+        "error": "CompassScreen.java:40: error: method does not override or implement a method from a supertype\n",
+        "before": "package mod;\n\nclass CompassScreen extends Screen {\n\t@Override\n\tpublic void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {\n\t\tsuper.render(matrices, mouseX, mouseY, delta);\n\t}\n}\n",
+        "after": "package mod;\nimport net.minecraft.client.gui.DrawContext;\n\nclass CompassScreen extends Screen {\n\t@Override\n\tpublic void render(DrawContext matrices, int mouseX, int mouseY, float delta) {\n\t\tsuper.render(matrices, mouseX, mouseY, delta);\n\t}\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "draw-context-fill",
+      "provenance": "hand",
+      "jump": "1.19.4 -> 1.20 (yarn)",
+      "match": "no suitable method found for fill\\(DrawContext,",
+      "apply": {
+        "find": "(?<![\\w.])(?:DrawableHelper\\.)?fill\\(\\s*(\\w+)\\s*,\\s*",
+        "replace": "$1.fill("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.20: DrawableHelper.fill(matrices, x1, y1, x2, y2, color) is DrawContext.fill(x1, y1, x2, y2, color).",
+      "verified": "Fabric's yarn 1.20+build.1: net.minecraft.client.gui.DrawContext has fill(IIIII)V, drawText(TextRenderer, String|Text|OrderedText, int, int, int, boolean), drawTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int) and drawCenteredTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int); Screen and widget render methods take a DrawContext where 1.19.4's took a MatrixStack",
+      "test": {
+        "error": "CompassScreen.java:4: error: no suitable method found for fill(DrawContext,int,int,int,int,int)\n",
+        "before": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid back(DrawContext matrices) { fill(matrices, 0, 0, width, height, 0x80000000); }\n}\n",
+        "after": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid back(DrawContext matrices) { matrices.fill(0, 0, width, height, 0x80000000); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "draw-context-draw-text",
+      "provenance": "hand",
+      "jump": "1.19.4 -> 1.20 (yarn)",
+      "match": "no suitable method found for draw\\(DrawContext,",
+      "apply": {
+        "find": "([\\w.]+(?:\\(\\))?)\\.draw\\(\\s*(\\w+)\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "$2.drawText($1,$3, (int) ($4), (int) ($5),$6, false)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.20: TextRenderer.draw(matrices, text, x, y, color) is DrawContext.drawText(textRenderer, text, x, y, color, false); the new method takes int positions and says whether to draw a shadow.",
+      "verified": "Fabric's yarn 1.20+build.1: net.minecraft.client.gui.DrawContext has fill(IIIII)V, drawText(TextRenderer, String|Text|OrderedText, int, int, int, boolean), drawTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int) and drawCenteredTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int); Screen and widget render methods take a DrawContext where 1.19.4's took a MatrixStack",
+      "test": {
+        "error": "CompassScreen.java:4: error: no suitable method found for draw(DrawContext,String,int,int,int)\n",
+        "before": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { textRenderer.draw(matrices, title, width / 2f - 20, 12, 0xFFFFFF); }\n}\n",
+        "after": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { matrices.drawText(textRenderer, title, (int) ( width / 2f - 20), (int) ( 12), 0xFFFFFF, false); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "draw-context-draw-text-shadow",
+      "provenance": "hand",
+      "jump": "1.19.4 -> 1.20 (yarn)",
+      "match": "no suitable method found for drawWithShadow\\(DrawContext,|symbol:\\s+method drawWithShadow\\(DrawContext,",
+      "apply": {
+        "find": "([\\w.]+(?:\\(\\))?)\\.drawWithShadow\\(\\s*(\\w+)\\s*,((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+),((?:[^;(),\"]|\"(?:[^\"\\\\]|\\\\.)*\"|\\((?:[^;()]|\\([^;()]*\\))*\\))+)\\)",
+        "replace": "$2.drawTextWithShadow($1,$3, (int) ($4), (int) ($5),$6)"
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.20: TextRenderer.drawWithShadow(matrices, text, x, y, color) is DrawContext.drawTextWithShadow(textRenderer, text, x, y, color) with int positions.",
+      "verified": "Fabric's yarn 1.20+build.1: net.minecraft.client.gui.DrawContext has fill(IIIII)V, drawText(TextRenderer, String|Text|OrderedText, int, int, int, boolean), drawTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int) and drawCenteredTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int); Screen and widget render methods take a DrawContext where 1.19.4's took a MatrixStack",
+      "test": {
+        "error": "CompassScreen.java:4: error: cannot find symbol\n  symbol:   method drawWithShadow(DrawContext,Text,float,int,int)\n",
+        "before": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { client.textRenderer.drawWithShadow(matrices, name, x + 2.5f, y, color); }\n}\n",
+        "after": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { matrices.drawTextWithShadow(client.textRenderer, name, (int) ( x + 2.5f), (int) ( y), color); }\n}\n",
+        "from": "written for this rule"
+      }
+    },
+    {
+      "id": "draw-context-centered-text",
+      "provenance": "hand",
+      "jump": "1.19.4 -> 1.20 (yarn)",
+      "match": "drawCenteredTextWithShadow",
+      "apply": {
+        "find": "(?<![\\w.])(?:DrawableHelper\\.)?drawCenteredTextWithShadow\\(\\s*(\\w+)\\s*,\\s*",
+        "replace": "$1.drawCenteredTextWithShadow("
+      },
+      "scope": "line",
+      "when": "",
+      "note": "1.20: the inherited DrawableHelper.drawCenteredTextWithShadow(matrices, textRenderer, text, x, y, color) is DrawContext.drawCenteredTextWithShadow(textRenderer, text, x, y, color).",
+      "verified": "Fabric's yarn 1.20+build.1: net.minecraft.client.gui.DrawContext has fill(IIIII)V, drawText(TextRenderer, String|Text|OrderedText, int, int, int, boolean), drawTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int) and drawCenteredTextWithShadow(TextRenderer, String|Text|OrderedText, int, int, int); Screen and widget render methods take a DrawContext where 1.19.4's took a MatrixStack",
+      "test": {
+        "error": "CompassScreen.java:4: error: method drawCenteredTextWithShadow in class Screen cannot be applied to given types;\n",
+        "before": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { drawCenteredTextWithShadow(matrices, textRenderer, title, width / 2, 10, 0xFFFFFF); }\n}\n",
+        "after": "package mod;\n\nclass CompassScreen extends Screen {\n\tvoid label(DrawContext matrices) { matrices.drawCenteredTextWithShadow(textRenderer, title, width / 2, 10, 0xFFFFFF); }\n}\n",
+        "from": "written for this rule"
+      }
     }
   ]
 }

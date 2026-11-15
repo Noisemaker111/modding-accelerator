@@ -158,7 +158,7 @@ public final class Modaccel {
             "rcon-port", "rcon-password-env", "repeat", "seed", "probes", "baseline", "candidate", "family", "block",
             "check",
             "mod-package", "mod-root", "entity", "counts", "experiment", "runs", "patch",
-            "min-runs", "min-speedup", "arms", "replay"
+            "min-runs", "min-speedup", "arms", "replay", "max-calls-per-tick"
         );
         final Map<String, String> values = new LinkedHashMap<>();
         final Set<String> flags = new HashSet<>();
@@ -254,7 +254,31 @@ public final class Modaccel {
         "help"
     );
 
+    /**
+     * Output that goes to a file or pipe (the desktop app, an agent's log, a redirect) is written in UTF-8, as those
+     * readers decode it. Java otherwise writes redirected output in the platform charset: on Windows (windows-1252)
+     * perf-optimize's "95% 9.94–11.33" and "baseline → candidate" reached a log as a replacement character and "?".
+     * A terminal keeps the charset Java chose for it.
+     */
+    public static void utf8WhenRedirected() {
+        if (terminal()) return;
+        System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.out), 8192), true, java.nio.charset.StandardCharsets.UTF_8));
+        System.setErr(new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.err), 8192), true, java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    /** Whether standard output is a terminal: System.console() is null when redirected before Java 22, and says so after. */
+    static boolean terminal() {
+        Console console = System.console();
+        if (console == null) return false;
+        try {
+            return (Boolean) Console.class.getMethod("isTerminal").invoke(console);
+        } catch (ReflectiveOperationException beforeJava22) {
+            return true;
+        }
+    }
+
     public static void main(String[] args) {
+        utf8WhenRedirected();
         int exit = 2;
         Options options = null;
         Report report = null;
@@ -382,11 +406,39 @@ public final class Modaccel {
                     ? options.get("project", "") + "," + options.get("against", "")
                     : options.get("project", "");
                 Build build = new Build(project, home, selected, report);
-                Map<String, Object> model = Set.of("game-status", "game-stop", "eval").contains(options.command) ||
+                boolean noModel = Set.of("game-status", "game-stop", "eval").contains(options.command) ||
                     (options.command.equals("port") && options.values.containsKey("undo")) ||
-                    options.command.equals("convert")
-                    ? Json.map()
-                    : build.model(options.has("refresh"), options.command.equals("port"));
+                    options.command.equals("convert");
+                Map<String, Object> model;
+                try {
+                    model = noModel ? Json.map() : build.model(options.has("refresh"), options.command.equals("port"));
+                } catch (IOException unreadable) {
+                    // A port may drop a decompiler-only plugin that is no longer published; the port's undo restores it.
+                    String dead = options.command.equals("port") && options.has("fix") && !options.has("dry-run")
+                        ? Port.deadDevPlugin(unreadable.getMessage())
+                        : null;
+                    if (dead == null) throw unreadable;
+                    List<String> changed = Port.removeDevPlugin(project, dead);
+                    if (changed.isEmpty()) throw unreadable;
+                    report.stages.add(
+                        Json.map(
+                            "name",
+                            "dead-dev-plugin",
+                            "plugin",
+                            dead,
+                            "files",
+                            changed,
+                            "evidence",
+                            "the build names a version of this decompiler-only plugin that none of its repositories publishes"
+                        )
+                    );
+                    try {
+                        model = build.model(true, true);
+                    } catch (IOException still) {
+                        Port.restorePending(project);
+                        throw still;
+                    }
+                }
                 switch (options.command) {
                     case "setup" -> {
                         result = summary(model, project);
@@ -408,7 +460,12 @@ public final class Modaccel {
                             : 0;
                     }
                     case "port" -> {
-                        result = new Port(build, model).run(options);
+                        try {
+                            result = new Port(build, model).run(options);
+                        } finally {
+                            // Changes made before the port's transaction are undone unless the transaction took them over.
+                            Port.restorePending(project);
+                        }
                         if (!options.values.containsKey("undo")) result.put("support", Support.evaluated(model));
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }
@@ -790,15 +847,16 @@ public final class Modaccel {
     static String help(String command) {
         return switch (command) {
             case "perf" -> "Profile a running local Java 17+ game/server: modaccel perf [--attach PID | --instance FOLDER | --root SOURCE] [--duration 30] [--warmup 5] [--out FOLDER] [--json]\n" +
-                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root launches the client as your preferences say (hidden with background on, so frame timing is not representative).\n" +
+                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root profiles the client modaccel started as your preferences say, hidden or not, with no --allow-hidden needed (hidden: frame timing is not representative).\n" +
                 "Open report.html in the output folder. Frame/tick hooks depend on game mappings; missing metrics are explicit. GPU timing is not collected.\n" +
-                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden lets --attach profile a hidden, throttled game (frame timing not representative); --no-heap skips the post-capture class histogram.\n" +
+                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden lets --attach or --instance profile a hidden, throttled game (frame timing not representative; --root implies it); --no-heap skips the post-capture class histogram.\n" +
                 "--no-hooks records JFR only. --prepare prints a startup -javaagent argument when dynamic attach is disabled. Requires JDK 17+ and same OS user.\n" +
                 "Each capture writes record.json (--session NAME groups runs) and names known patterns from knowledge/perf-patterns.json that its hotspots match.\n" +
                 "--scenario FILE --rcon-port 25575 [--rcon-password-env MODACCEL_RCON_PASSWORD] [--repeat 1] [--seed 0] drives explicit test-world commands.\n" +
                 "Scenarios edit the selected local server world: use a disposable world. Each command requires an expected response. Repeats share one JVM.";
             case "perf-template" -> "Generate editable scenario files: modaccel perf-template --family transport|block-scene|entity-crowd|mod-content [--block MOD:BLOCK] [--entity MOD:ENTITY] [--counts 1,16,64] [--root SOURCE] [--out FOLDER]\n" +
-                "--family experiment --from CAPTURE --root SOURCE writes a perf-optimize experiment, probes and gate snippets to fill in from a perf --root capture.\n" +
+                "--family experiment --from CAPTURE --root SOURCE [--out .runs/MOD-experiment] [--max-calls-per-tick 256] writes a perf-optimize experiment, probes and gate snippets to fill in from a perf --root capture.\n" +
+                "Methods the capture timed above --max-calls-per-tick get no probe (capture again with perf --probes CAPTURE/probes.suggested.json for call counts); a probe metric counts Server thread calls only (serverInclusiveMsPerTick).\n" +
                 "mod-content reads the mod's lang files for its own blocks and entities. Generation does not edit a world. perf --root SOURCE --scenario FILE runs it in the source client's own world; other games need a disposable local server with RCON.";
             case "perf-diff" -> "Compare observed captures: modaccel perf-diff --baseline FOLDER_OR_REPORT --candidate FOLDER_OR_REPORT [--out FOLDER]\nDescriptive differences only; this does not establish equal workload, causality or statistical significance.";
             case "perf-optimize" -> "Accept or reject one candidate change with measured speedup: modaccel perf-optimize --root SOURCE --experiment EXPERIMENT.json --patch CANDIDATE.diff [--runs 5] [--out FOLDER] [--dry-run] [--keep]\n" +
@@ -827,7 +885,7 @@ public final class Modaccel {
             "  modaccel port --root SOURCE --from 1.21.5 --to 1.21.6 --fix --json\n" +
             "  modaccel port --root SOURCE --undo TRANSACTION\n" +
             "  modaccel port --root SOURCE --from 1.21.1 --to 26.3 --fix --check \"java tools/tests/ZombieAiCheck.java ...\" --json\n" +
-            "--check COMMAND runs the mod's own real-game check on the ported project (MODACCEL_PORTED_ROOT is set); the port is ok only when it passes. --learn-from-mods also learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and the rule book.\n" +
+            "--check COMMAND runs the mod's own real-game check on the ported project (MODACCEL_PORTED_ROOT is set); the port is ok only when it passes. --learn-from-mods also runs the rule book's older rules mined from other mods (provenance third-party-mods) and learns rules from other mods' version branches (knowledge/port-corpus.json); by default rules come only from the game's own jars and our own rules.\n" +
             "A port across several families routes FROM -> each family hub between -> TO (coverage/changes/index.json), joins every update's renames into one map, runs only the knowledge rules whose jump covers an update it crosses, builds once, and names the update behind each remaining error. --direct keeps the one-jump map. Releases before 1.14.4 are refused (no official names).\n" +
             "Fabric pins and verifiable published dependencies are retargeted automatically. When discovery cannot identify a dependency, add a verified selection to .modaccel/dependencies.json (or --selection FILE): source, target coordinate, and modrinth or repository evidence. A dependency with no target release can be disabled with disable:true, a reason and its published project; importing sources and entrypoints are removed with the port and restored by undo. Other loaders need target dependencies set in the source build first.";
             case "convert" -> "Move a mod's source to another loader on the same Minecraft version: modaccel convert --root SOURCE --to neoforge|fabric [--dry-run | --no-compile] [--json]\n" +
