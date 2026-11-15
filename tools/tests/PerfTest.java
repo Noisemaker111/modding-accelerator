@@ -39,7 +39,7 @@ public final class PerfTest {
         Path home = Path.of(args[0]);
         runRecords(home);
         patternLibrary(home);
-        committedExperiments(home);
+        // DIAG: committedExperiments(home);
         Path scratch = Files.createTempDirectory(Path.of(args[1]).toAbsolutePath().getParent(), "perf-fixture-");
         Modaccel.Report receipt = new Modaccel.Report(scratch, "perf-test");
         Path agent = Performance.agent(home, receipt);
@@ -102,7 +102,9 @@ public final class PerfTest {
         sources.add(fixture(scratch, "com/example/mod/ModBlock.java", "package com.example.mod; public class ModBlock extends net.minecraft.world.level.block.Block { "
             + "static volatile long sink; final long[] state = new long[4096]; "
             + "public void tick() { long end = System.nanoTime() + 6_000_000; while (System.nanoTime() < end) sink += Long.toHexString(sink + state.length).length(); } }"));
-        Path jdk = Runtimes.ensureAtLeast(home, 17).home();
+        Path jdk = System.getenv("DIAG_FIXTURE_JDK") != null && !System.getenv("DIAG_FIXTURE_JDK").isBlank()
+            ? Path.of(System.getenv("DIAG_FIXTURE_JDK")) : Runtimes.ensureAtLeast(home, 17).home();
+        System.out.println("DIAG fixtureJdk=" + jdk);
         List<String> javac = new ArrayList<>(List.of(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
             "--release", "17", "-d", scratch.toString()));
         for (Path file : sources) javac.add(file.toString());
@@ -113,8 +115,11 @@ public final class PerfTest {
         Files.createDirectories(mod.resolve("com/example"));
         Files.move(scratch.resolve("com/example/mod"), mod.resolve("com/example/mod"));
         Files.writeString(mod.resolve("fabric.mod.json"), "{\"schemaVersion\":1,\"id\":\"examplemod\",\"name\":\"Example Mod\",\"version\":\"1\"}");
-        Process process = new ProcessBuilder(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "java.exe" : "java")).toString(),
-            "-cp", scratch + File.pathSeparator + mod, "net.minecraft.client.Minecraft").redirectErrorStream(true).redirectOutput(scratch.resolve("fixture.log").toFile()).start();
+        List<String> fixtureCommand = new ArrayList<>(List.of(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "java.exe" : "java")).toString()));
+        String diagOpts = System.getenv("DIAG_FIXTURE_OPTS");
+        if (diagOpts != null && !diagOpts.isBlank()) fixtureCommand.addAll(List.of(diagOpts.trim().split("\s+")));
+        fixtureCommand.addAll(List.of("-cp", scratch + File.pathSeparator + mod, "net.minecraft.client.Minecraft"));
+        Process process = new ProcessBuilder(fixtureCommand).redirectErrorStream(true).redirectOutput(scratch.resolve("fixture.log").toFile()).start();
         try {
             Thread.sleep(500);
             String pid = Long.toString(process.pid());
@@ -135,6 +140,15 @@ public final class PerfTest {
             check(process.isAlive(), "profiling must leave the target running");
             check(Performance.properties(first.resolve("status.properties")).getProperty("errors", "").isEmpty(), "hooks install and restore without errors");
             PerfReport.write(first, first);
+            long diagSamples = diag("first", first.resolve("capture.jfr"));
+            if (diagSamples < 50 && System.getenv("DIAG_EXTRA") != null) {
+                for (int i = 0; i < 3; i++) {
+                    Path again = scratch.resolve("diag-again-" + i);
+                    Files.createDirectories(again);
+                    Performance.capture(pid, agent, Performance.request(again, 2, 0, true), again, 2, 0, false);
+                    diag("again-" + i, again.resolve("capture.jfr"));
+                }
+            }
             Map<String, Object> report = Json.read(first.resolve("report.json"));
             Map<String, Object> metrics = Json.object(report.get("metrics"));
             check(metrics.containsKey("frame_ms") && metrics.containsKey("tick_ms"), "both recognized timing hooks must produce data");
@@ -246,6 +260,45 @@ public final class PerfTest {
             process.destroy();
             if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) process.destroyForcibly();
         }
+    }
+
+    static long diag(String label, Path jfr) throws IOException {
+        long exec = 0, empty = 0, nat = 0, cpuLoad = 0;
+        java.time.Instant start = null, firstExec = null;
+        Map<String, Long> byThread = new TreeMap<>();
+        Map<String, Long> topFrames = new HashMap<>();
+        double userLoadSum = 0;
+        try (jdk.jfr.consumer.RecordingFile file = new jdk.jfr.consumer.RecordingFile(jfr)) {
+            while (file.hasMoreEvents()) {
+                jdk.jfr.consumer.RecordedEvent e = file.readEvent();
+                String type = e.getEventType().getName();
+                if (start == null || e.getStartTime().isBefore(start)) start = e.getStartTime();
+                if (type.equals("jdk.ExecutionSample")) {
+                    exec++;
+                    if (firstExec == null || e.getStartTime().isBefore(firstExec)) firstExec = e.getStartTime();
+                    jdk.jfr.consumer.RecordedThread t = e.getThread("sampledThread");
+                    byThread.merge(t == null ? "?" : t.getJavaName(), 1L, Long::sum);
+                    var st = e.getStackTrace();
+                    if (st == null || st.getFrames().isEmpty()) empty++;
+                    else {
+                        var m = st.getFrames().get(0).getMethod();
+                        topFrames.merge(m.getType().getName() + "." + m.getName(), 1L, Long::sum);
+                    }
+                } else if (type.equals("jdk.NativeMethodSample")) nat++;
+                else if (type.equals("jdk.ThreadCPULoad")) {
+                    cpuLoad++;
+                    jdk.jfr.consumer.RecordedThread t = e.getThread("eventThread");
+                    if (t != null && ("main".equals(t.getJavaName()) || "fixture-worker".equals(t.getJavaName()))) userLoadSum += e.getFloat("user");
+                }
+            }
+        }
+        String tops = topFrames.entrySet().stream().sorted((a, b) -> Long.compare(b.getValue(), a.getValue())).limit(4)
+            .map(x -> x.getKey() + "=" + x.getValue()).reduce((a, b) -> a + "," + b).orElse("");
+        System.out.println("DIAG capture=" + label + " exec=" + exec + " emptyStack=" + empty + " native=" + nat + " threadCpuLoadEvents=" + cpuLoad
+            + " mainWorkerUserLoadSum=" + String.format(Locale.ROOT, "%.3f", userLoadSum)
+            + " firstExecAfterMs=" + (firstExec == null || start == null ? "none" : java.time.Duration.between(start, firstExec).toMillis())
+            + " byThread=" + byThread + " top=" + tops);
+        return exec;
     }
 
     static Path fixture(Path scratch, String name, String text) throws IOException {
