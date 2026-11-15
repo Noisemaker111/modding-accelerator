@@ -10,7 +10,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -96,7 +95,7 @@ public final class ModaccelPackProbe {
             result.addProperty("mode", mode);
             result.addProperty("loader", loader());
             result.add("mods", mods());
-            result.add("dimensions", dimensions(server));
+            result.add("dimensions", ModaccelPackGame.dimensions(server));
             System.out.println("MODACCEL-PROBE-STARTED " + mode);
             if (mode.equals("open")) { finish(true); return; }
             // The world opened. Load the test area through the normal chunk system before touching it, so no
@@ -108,7 +107,7 @@ public final class ModaccelPackProbe {
             result.addProperty("gridRows", rows);
             for (int x = (origin.getX() >> 4) - 1; x <= (origin.getX() + COLUMNS * SPACING >> 4) + 1; x++)
                 for (int z = (origin.getZ() >> 4) - 1; z <= (origin.getZ() + rows * SPACING >> 4) + 1; z++) {
-                    level.setChunkForced(x, z, true); area.add(net.minecraft.world.level.ChunkPos.asLong(x, z));
+                    level.setChunkForced(x, z, true); area.add(ModaccelPackGame.chunkKey(x, z));
                 }
             waitingSince = System.nanoTime();
         }
@@ -126,7 +125,7 @@ public final class ModaccelPackProbe {
                     area = null;
                     if (System.getProperty("modaccel.probe.mode", "place").equals("verify")) { verify(server, result); finish(true); return; }
                     placement = new Placement(level, result);
-                    items = BuiltInRegistries.ITEM.iterator();
+                    items = ModaccelPackGame.items().iterator();
                 }
                 long budget = System.nanoTime() + 40_000_000L;
                 while (items.hasNext() && System.nanoTime() < budget) placement.place(items.next());
@@ -217,8 +216,8 @@ public final class ModaccelPackProbe {
     }
 
     static BlockPos origin(ServerLevel level) {
-        BlockPos spawn = level.getSharedSpawnPos();
-        int top = level.dimensionType().minY() + level.dimensionType().height() - 1;
+        BlockPos spawn = ModaccelPackGame.spawn(level);
+        int top = ModaccelPackGame.top(level);
         return new BlockPos(spawn.getX() - COLUMNS * SPACING / 2, top - 8, spawn.getZ() - COLUMNS * SPACING / 2);
     }
 
@@ -228,12 +227,12 @@ public final class ModaccelPackProbe {
         return only;
     }
     static boolean chosen(Item item, Set<String> only) {
-        return item instanceof BlockItem && (only.isEmpty() || only.contains(BuiltInRegistries.ITEM.getKey(item).toString()));
+        return item instanceof BlockItem && (only.isEmpty() || only.contains(ModaccelPackGame.itemId(item)));
     }
     /** Rows of the test grid: one cell per chosen block item. */
     static int rows() {
         Set<String> only = only(); int count = 0;
-        for (Item item : BuiltInRegistries.ITEM) if (chosen(item, only)) count++;
+        for (Item item : ModaccelPackGame.items()) if (chosen(item, only)) count++;
         return Math.max(1, (count + COLUMNS - 1) / COLUMNS);
     }
 
@@ -257,13 +256,13 @@ public final class ModaccelPackProbe {
         void place(Item item) {
             if (!chosen(item, only)) return;
             BlockItem blockItem = (BlockItem) item;
-            String id = BuiltInRegistries.ITEM.getKey(item).toString();
+            String id = ModaccelPackGame.itemId(item);
             tried++;
             Block expected = blockItem.getBlock();
-            String expectedId = BuiltInRegistries.BLOCK.getKey(expected).toString();
+            String expectedId = ModaccelPackGame.blockId(expected);
             JsonObject row = new JsonObject();
             row.addProperty("item", id);
-            row.addProperty("itemMod", BuiltInRegistries.ITEM.getKey(item).getNamespace());
+            row.addProperty("itemMod", ModaccelPackGame.itemNamespace(item));
             row.addProperty("expected", expectedId);
             try {
                 BlockState landed = null; BlockPos support = origin.offset((cell % COLUMNS) * SPACING, 0, (cell / COLUMNS) * SPACING), at = null;
@@ -297,9 +296,9 @@ public final class ModaccelPackProbe {
                     BlockState before = level.getBlockState(target);
                     ItemStack stack = new ItemStack(item);
                     player.setItemInHand(InteractionHand.MAIN_HAND, stack);
-                    player.moveTo(standing.x, standing.y, standing.z, yaw, pitch);
+                    ModaccelPackGame.moveTo(player, standing.x, standing.y, standing.z, yaw, pitch);
                     answer = player.gameMode.useItemOn(player, level, stack, InteractionHand.MAIN_HAND, new BlockHitResult(point, face, clicked, false));
-                    used = surface.contains(":") ? surface : surface + " (" + BuiltInRegistries.BLOCK.getKey(base) + ")";
+                    used = surface.contains(":") ? surface : surface + " (" + ModaccelPackGame.blockId(base) + ")";
                     BlockState now = level.getBlockState(target);
                     if (now != before) { landed = now; at = target; break; }
                     BlockState after = level.getBlockState(support);
@@ -309,7 +308,7 @@ public final class ModaccelPackProbe {
                 row.addProperty("support", used);
                 row.addProperty("answer", String.valueOf(answer));
                 if (landed == null) { unplaced.add(row); clear(level, support); return; }
-                String landedId = BuiltInRegistries.BLOCK.getKey(landed.getBlock()).toString();
+                String landedId = ModaccelPackGame.blockId(landed.getBlock());
                 row.addProperty("landed", landedId);
                 row.addProperty("state", landed.toString());
                 row.addProperty("x", at.getX()); row.addProperty("y", at.getY()); row.addProperty("z", at.getZ());
@@ -330,7 +329,7 @@ public final class ModaccelPackProbe {
             for (JsonElement element : placed) {
                 JsonObject row = element.getAsJsonObject();
                 BlockState now = level.getBlockState(new BlockPos(row.get("x").getAsInt(), row.get("y").getAsInt(), row.get("z").getAsInt()));
-                String nowId = BuiltInRegistries.BLOCK.getKey(now.getBlock()).toString();
+                String nowId = ModaccelPackGame.blockId(now.getBlock());
                 row.addProperty("saved", nowId);
                 if (!nowId.equals(row.get("landed").getAsString())) changedWhileRunning.add(row.get("item").getAsString() + ": " + row.get("landed").getAsString() + " -> " + nowId);
             }
@@ -354,7 +353,7 @@ public final class ModaccelPackProbe {
             BlockPos at = new BlockPos(row.get("x").getAsInt(), row.get("y").getAsInt(), row.get("z").getAsInt());
             BlockState now = level.getBlockState(at);
             read++;
-            String nowId = BuiltInRegistries.BLOCK.getKey(now.getBlock()).toString();
+            String nowId = ModaccelPackGame.blockId(now.getBlock());
             String saved = row.get("saved").getAsString();
             if (nowId.equals(saved)) { kept++; continue; }
             JsonObject change = new JsonObject();
@@ -367,81 +366,6 @@ public final class ModaccelPackProbe {
         result.addProperty("read", read);
         result.addProperty("kept", kept);
         result.add("changed", changed);
-    }
-
-    /**
-     * Each dimension written the way level.dat stores it and read back the way the next start reads it.
-     * A dimension that writes but cannot be read stops the world from opening again.
-     */
-    static JsonArray dimensions(MinecraftServer server) {
-        JsonArray out = new JsonArray();
-        var access = server.registryAccess();
-        var ops = net.minecraft.resources.RegistryOps.create(net.minecraft.nbt.NbtOps.INSTANCE, access);
-        var stems = access.registryOrThrow(net.minecraft.core.registries.Registries.LEVEL_STEM);
-        for (var entry : stems.entrySet()) {
-            JsonObject row = new JsonObject();
-            row.addProperty("dimension", entry.getKey().location().toString());
-            try {
-                var written = net.minecraft.world.level.dimension.LevelStem.CODEC.encodeStart(ops, entry.getValue());
-                if (written.error().isPresent()) {
-                    // The game still saves what it could write, and the next start rejects it: name the entries.
-                    String message = written.error().get().message();
-                    row.addProperty("write", message.length() > 600 ? message.substring(0, 600) + "..." : message);
-                    written.resultOrPartial(ignored -> { }).ifPresent(partial -> row.add("outOfRangeBiomes", outOfRange(partial)));
-                    out.add(row); continue;
-                }
-                net.minecraft.nbt.Tag tag = written.result().get();
-                row.addProperty("savedBytes", tag.toString().length());
-                var read = net.minecraft.world.level.dimension.LevelStem.CODEC.parse(ops, tag);
-                if (read.error().isPresent()) row.addProperty("read", read.error().get().message());
-                // Find the smallest saved part that fails on its own, so the report names it.
-                if (read.error().isPresent()) row.addProperty("failingPart", failingPart(ops, tag));
-            } catch (Throwable failure) { row.addProperty("error", stack(failure)); }
-            out.add(row);
-        }
-        return out;
-    }
-
-    /** Biome entries of a multi-noise list whose climate values fall outside what the game reads back. */
-    static JsonArray outOfRange(net.minecraft.nbt.Tag tag) {
-        JsonArray found = new JsonArray(); Set<String> seen = new HashSet<>();
-        outOfRange(tag, found, seen);
-        return found;
-    }
-    static void outOfRange(net.minecraft.nbt.Tag tag, JsonArray found, Set<String> seen) {
-        if (tag instanceof net.minecraft.nbt.ListTag list) { for (var child : list) outOfRange(child, found, seen); return; }
-        if (!(tag instanceof net.minecraft.nbt.CompoundTag compound)) return;
-        if (compound.contains("biome") && compound.get("parameters") instanceof net.minecraft.nbt.CompoundTag parameters) {
-            for (String key : parameters.getAllKeys()) {
-                double limit = key.equals("offset") ? 1 : 2, low = key.equals("offset") ? 0 : -2;
-                List<Double> values = new ArrayList<>();
-                var value = parameters.get(key);
-                if (value instanceof net.minecraft.nbt.NumericTag number) values.add(number.getAsDouble());
-                if (value instanceof net.minecraft.nbt.ListTag pair) for (var v : pair) if (v instanceof net.minecraft.nbt.NumericTag n) values.add(n.getAsDouble());
-                for (double v : values) if (v < low || v > limit) {
-                    String biome = compound.getString("biome");
-                    if (seen.add(biome)) found.add(biome + " " + key + "=" + v);
-                }
-            }
-            return;
-        }
-        for (String key : compound.getAllKeys()) outOfRange(compound.get(key), found, seen);
-    }
-
-    /** The path inside a saved dimension whose own codec rejects it: generator, then biome_source, then settings. */
-    static String failingPart(net.minecraft.resources.RegistryOps<net.minecraft.nbt.Tag> ops, net.minecraft.nbt.Tag stem) {
-        if (!(stem instanceof net.minecraft.nbt.CompoundTag compound) || !(compound.get("generator") instanceof net.minecraft.nbt.CompoundTag generator)) return "";
-        StringBuilder found = new StringBuilder();
-        if (generator.contains("biome_source")) {
-            var read = net.minecraft.world.level.biome.BiomeSource.CODEC.parse(ops, generator.get("biome_source"));
-            if (read.error().isPresent()) found.append("generator.biome_source (").append(generator.getCompound("biome_source").getString("type")).append("): ").append(read.error().get().message()).append('\n');
-        }
-        if (generator.contains("settings")) {
-            var read = net.minecraft.world.level.levelgen.NoiseGeneratorSettings.CODEC.parse(ops, generator.get("settings"));
-            if (read.error().isPresent()) found.append("generator.settings: ").append(read.error().get().message()).append('\n');
-        }
-        String text = found.toString();
-        return text.length() > 4000 ? text.substring(0, 4000) : text;
     }
 
     static void clear(ServerLevel level, BlockPos support) {

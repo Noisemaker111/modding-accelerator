@@ -514,6 +514,8 @@ final class PackLoaders {
     static Path probe(Context context, Loader loader, String minecraft, Path install) throws Exception {
         MessageDigest hash = MessageDigest.getInstance("SHA-256");
         for (String source : PROBE) hash.update(Files.readAllBytes(context.harness().resolve(source)));
+        Path layer = gameLayer(context.harness(), minecraft);
+        hash.update(Files.readAllBytes(layer));
         Names names = loader.names(context, install, minecraft);
         hash.update((loader.id() + " " + minecraft + " " + names.kind()).getBytes(StandardCharsets.UTF_8));
         Path dir = context.cache().resolve("probes").resolve(HexFormat.of().formatHex(hash.digest()).substring(0, 16));
@@ -548,7 +550,8 @@ final class PackLoaders {
                 "-d",
                 classes.toString(),
                 context.harness().resolve("tools/packcheck/ModaccelPackProbe.java").toString(),
-                context.harness().resolve("tools/packcheck/ModaccelPackProbeFabric.java").toString()
+                context.harness().resolve("tools/packcheck/ModaccelPackProbeFabric.java").toString(),
+                layer.toString()
             ),
             dir
         );
@@ -577,6 +580,25 @@ final class PackLoaders {
         }
         Files.move(temporary, jar, StandardCopyOption.REPLACE_EXISTING);
         return jar;
+    }
+
+    /**
+     * The probe's version layer for one game version: tools/packcheck/game/VERSION/ModaccelPackGame.java with the newest
+     * VERSION at or below the game's. Each layer has the same methods, written in that version's API.
+     */
+    static Path gameLayer(Path harness, String minecraft) throws IOException {
+        Path root = harness.resolve("tools/packcheck/game");
+        String best = null;
+        try (var list = Files.list(root)) {
+            for (Path dir : list.toList()) {
+                String version = dir.getFileName().toString();
+                if (Versions.compare(version, minecraft) <= 0 && (best == null || Versions.compare(version, best) > 0)) best = version;
+            }
+        }
+        if (best == null) throw new IOException(
+            "pack-check's probe has no game layer for Minecraft " + minecraft + ": tools/packcheck/game has none at or below it."
+        );
+        return root.resolve(best).resolve("ModaccelPackGame.java");
     }
 
     static String javac(Context context) {
