@@ -124,10 +124,15 @@ public class DeferredRegister<T> {
         if (registered) return;
         registered = true;
         Registry<T> registry = getRegistry().get();
+        // NeoForge's own registries the bridge mirrors (attachment types) are made on first use.
+        if (registry == null) registry = NeoForgeRegistries.registry(registryKey);
         if (registry == null) throw new IllegalStateException("No registry " + registryKey.location() + " for " + namespace);
         for (var entry : entries.entrySet()) {
             ResourceKey<T> key = entry.getKey().getKey();
-            Registry.register(registry, key, entry.getValue().apply(key.location()));
+            T value = entry.getValue().apply(key.location());
+            Registry.register(registry, key, value);
+            // A NeoForge attachment type becomes Fabric API's attachment type of the same id.
+            if (value instanceof AttachmentType<?> attachment) attachment.bind(key.location());
             entry.getKey().bind();
         }
     }

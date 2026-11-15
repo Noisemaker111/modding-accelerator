@@ -2541,6 +2541,8 @@ final class Convert {
     void applyBridge() throws Exception {
         Map<String, Object> classes = Json.object(bridge.get("classes"));
         Path templates = build.harness.resolve(Json.text(bridge, "folder", ""));
+        Set<String> attachmentFields = new TreeSet<>();
+        for (String file : javaFiles()) for (Matcher f = ATTACHMENT_FIELD.matcher(read(file)); f.find(); ) attachmentFields.add(f.group(1));
         for (String file : javaFiles()) {
             String text = read(file);
             String out = text;
@@ -2550,6 +2552,8 @@ final class Convert {
             );
             out = eventClassesInListeners(file, out);
             out = sideQueries(out);
+            String held = attachmentCalls(out, attachmentFields);
+            if (!held.equals(out)) out = LoaderRules.addImport(held, bridgePackage + ".Attachments");
             if (!out.equals(text)) {
                 write(file, out);
                 applied.computeIfAbsent("neoforge-bridge", k -> new ArrayList<>()).add(file);
@@ -2588,6 +2592,62 @@ final class Convert {
         if (!m.find()) return text;
         String out = m.reset().replaceAll(r -> Matcher.quoteReplacement("(" + r.group(1) + " == EnvType." + (r.group(2).equals("isClient") ? "CLIENT" : "SERVER") + ")"));
         return LoaderRules.addImport(out, "net.fabricmc.api.EnvType");
+    }
+
+    /** A field the mod declares as a NeoForge attachment type (Supplier<AttachmentType<X>> NAME = ..., DeferredHolder<...> NAME = ...). */
+    static final Pattern ATTACHMENT_FIELD = Pattern.compile("\\bAttachmentType<[^;=]*>\\s+(\\w+)\\s*=");
+
+    static final List<String> HOLDER_METHODS = List.of("getData", "hasData", "setData", "removeData", "getExistingData", "getExistingDataOrNull");
+
+    /**
+     * NeoForge adds IAttachmentHolder's methods to the game's entities, block entities, levels and chunks; Fabric API adds
+     * its AttachmentTarget to the same classes under other names. holder.getData(TYPE) becomes Attachments.getData(holder,
+     * TYPE) when TYPE (or TYPE.get()) is a field the mod declares as an attachment type, so other getData methods are left.
+     */
+    static String attachmentCalls(String text, Set<String> fields) {
+        if (fields.isEmpty()) return text;
+        boolean[] code = LoaderRules.code(text);
+        Matcher m = Pattern.compile("\\.\\s*(" + String.join("|", HOLDER_METHODS) + ")\\s*\\(").matcher(text);
+        StringBuilder out = new StringBuilder();
+        int last = 0;
+        while (m.find()) {
+            int dot = m.start();
+            if (!code[dot] || dot < last) continue;
+            int open = m.end() - 1;
+            int close = LoaderRules.close(text, code, open);
+            if (close < 0) continue;
+            String args = text.substring(open + 1, close - 1);
+            List<String> parts = LoaderRules.split(args);
+            if (parts.isEmpty()) continue;
+            String type = parts.get(0).replaceAll("\\s*\\.\\s*get\\(\\)$", "");
+            if (!fields.contains(type.replaceAll("^.*?(\\w+)$", "$1"))) continue;
+            int start = LoaderRules.chainStart(text, code, dot);
+            if (start >= dot || start < last) continue;
+            out.append(text, last, start).append("Attachments.").append(m.group(1)).append('(').append(text, start, dot).append(", ").append(args).append(')');
+            last = close;
+        }
+        out.append(text, last, text.length());
+        return out.toString();
+    }
+
+    /** The way back: Attachments.getData(holder, TYPE) is holder.getData(TYPE) again. */
+    static String attachmentCallsBack(String text) {
+        boolean[] code = LoaderRules.code(text);
+        Matcher m = Pattern.compile("\\bAttachments\\.(" + String.join("|", HOLDER_METHODS) + ")\\(").matcher(text);
+        StringBuilder out = new StringBuilder();
+        int last = 0;
+        while (m.find()) {
+            if (!code[m.start()] || m.start() < last) continue;
+            int open = m.end() - 1;
+            int close = LoaderRules.close(text, code, open);
+            if (close < 0) continue;
+            List<String> parts = LoaderRules.split(text.substring(open + 1, close - 1));
+            if (parts.size() < 2) continue;
+            out.append(text, last, m.start()).append(parts.get(0)).append('.').append(m.group(1)).append('(').append(String.join(", ", parts.subList(1, parts.size()))).append(')');
+            last = close;
+        }
+        out.append(text, last, text.length());
+        return out.toString();
     }
 
     /** The mixin config of the bridge's mixins this mod needs (src/main/resources), or null when it needs none. */
@@ -2823,6 +2883,7 @@ final class Convert {
                 Matcher.quoteReplacement("import " + c.getValue() + ";")
             );
             out = LoaderRules.dropImport(LoaderRules.dropImport(out, pkg + ".Bridge"), pkg + ".ClientBridge");
+            out = LoaderRules.dropImport(attachmentCallsBack(out), pkg + ".Attachments");
             out = WRITTEN_EVENT_CLASS.matcher(out).replaceAll(".addListener($1");
             if (!out.equals(text)) {
                 write(file, out);

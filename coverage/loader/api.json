@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "bfa22223c09622a4ff65b5d10a662418b6143ef99359d016fa60bdde969d3a34",
+ "rules_sha256": "57571f0646d346f42833de5b6f633c87e2b7e8caa2fb276b2955de0bc1ae58aa",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -934,6 +934,50 @@
     "found": true
    },
    {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#create",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#persistent",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#copyOnDeath",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#syncWith",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttached",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#hasAttached",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#setAttached",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#removeAttached",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder#create",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder#buildAndRegister",
+    "found": true
+   },
+   {
     "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister#createBlocks",
     "found": true
    },
@@ -1384,6 +1428,58 @@
    {
     "symbol": "neoforge|net.neoforged.neoforge.common.Tags$Blocks#ORES",
     "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.AttachmentType#builder",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#serialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#copyOnDeath",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#sync",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#build",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#hasData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#removeData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.NeoForgeRegistries#ATTACHMENT_TYPES",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.registries.NeoForgeRegistries$Keys#ATTACHMENT_TYPES",
+    "found": true
    }
   ],
   "neoforge-on-fabric@1.21.1": [
@@ -1545,6 +1641,22 @@
    },
    {
     "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.networking.v1.PlayerLookup#world",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#create",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#syncWith",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api-1.21.1|net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder#createSimple",
     "found": true
    },
    {
@@ -1805,6 +1917,26 @@
    },
    {
     "symbol": "neoforge-21.1|net.neoforged.neoforge.common.Tags$Blocks#ORES",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.attachment.AttachmentType#builder",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.attachment.AttachmentType$Builder#serialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.attachment.AttachmentType$Builder#sync",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.attachment.IAttachmentHolder#getData",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-21.1|net.neoforged.neoforge.registries.NeoForgeRegistries$Keys#ATTACHMENT_TYPES",
     "found": true
    }
   ],

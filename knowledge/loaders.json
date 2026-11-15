@@ -1492,7 +1492,9 @@
     "net.neoforged.fml.ModLoadingContext": "ModLoadingContext",
     "net.neoforged.fml.ModLoader": "ModLoader",
     "net.neoforged.fml.util.ObfuscationReflectionHelper": "ObfuscationReflectionHelper",
-    "net.neoforged.neoforge.common.Tags": "Tags"
+    "net.neoforged.neoforge.common.Tags": "Tags",
+    "net.neoforged.neoforge.attachment.AttachmentType": "AttachmentType",
+    "net.neoforged.neoforge.registries.NeoForgeRegistries": "NeoForgeRegistries"
    },
    "symbols": {
     "neoforge": [
@@ -1608,7 +1610,20 @@
      "neoforge|net.neoforged.neoforge.common.Tags$Structures",
      "neoforge|net.neoforged.neoforge.common.Tags$DamageTypes",
      "neoforge|net.neoforged.neoforge.common.Tags$Items#INGOTS_IRON",
-     "neoforge|net.neoforged.neoforge.common.Tags$Blocks#ORES"
+     "neoforge|net.neoforged.neoforge.common.Tags$Blocks#ORES",
+     "neoforge|net.neoforged.neoforge.attachment.AttachmentType#builder",
+     "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#serialize",
+     "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#copyOnDeath",
+     "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#sync",
+     "neoforge|net.neoforged.neoforge.attachment.AttachmentType$Builder#build",
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getData",
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#hasData",
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#setData",
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#removeData",
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingData",
+     "neoforge|net.neoforged.neoforge.attachment.IAttachmentHolder#getExistingDataOrNull",
+     "neoforge|net.neoforged.neoforge.registries.NeoForgeRegistries#ATTACHMENT_TYPES",
+     "neoforge|net.neoforged.neoforge.registries.NeoForgeRegistries$Keys#ATTACHMENT_TYPES"
     ],
     "fabric": [
      "fabric-api|net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents#SERVER_STARTING",
@@ -1650,7 +1665,18 @@
      "fabric-loader|net.fabricmc.loader.api.FabricLoader#getEnvironmentType",
      "fabric-loader|net.fabricmc.loader.api.FabricLoader#isDevelopmentEnvironment",
      "fabric-loader|net.fabricmc.loader.api.FabricLoader#isModLoaded",
-     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getGameDir"
+     "fabric-loader|net.fabricmc.loader.api.FabricLoader#getGameDir",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#create",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#persistent",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#copyOnDeath",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#syncWith",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttached",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#hasAttached",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#setAttached",
+     "fabric-api|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#removeAttached",
+     "fabric-api|net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder#create",
+     "fabric-api|net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder#buildAndRegister"
     ]
    },
    "test": {
@@ -1728,7 +1754,12 @@
        "fml-21.1|net.neoforged.fml.ModList#isLoaded",
        "fml-21.1|net.neoforged.fml.ModList#getModContainerById",
        "neoforge-21.1|net.neoforged.neoforge.common.Tags$Items#INGOTS_IRON",
-       "neoforge-21.1|net.neoforged.neoforge.common.Tags$Blocks#ORES"
+       "neoforge-21.1|net.neoforged.neoforge.common.Tags$Blocks#ORES",
+       "neoforge-21.1|net.neoforged.neoforge.attachment.AttachmentType#builder",
+       "neoforge-21.1|net.neoforged.neoforge.attachment.AttachmentType$Builder#serialize",
+       "neoforge-21.1|net.neoforged.neoforge.attachment.AttachmentType$Builder#sync",
+       "neoforge-21.1|net.neoforged.neoforge.attachment.IAttachmentHolder#getData",
+       "neoforge-21.1|net.neoforged.neoforge.registries.NeoForgeRegistries$Keys#ATTACHMENT_TYPES"
       ],
       "fabric": [
        "fabric-api-1.21.1|net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents#MODIFY_ENTRIES_ALL",
@@ -1770,7 +1801,11 @@
        "fabric-api-1.21.1|net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents#END_WORLD_TICK",
        "fabric-api-1.21.1|net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper#registerKeyBinding",
        "fabric-api-1.21.1|net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry#playC2S",
-       "fabric-api-1.21.1|net.fabricmc.fabric.api.networking.v1.PlayerLookup#world"
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.networking.v1.PlayerLookup#world",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry#create",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry$Builder#syncWith",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.attachment.v1.AttachmentTarget#getAttachedOrCreate",
+       "fabric-api-1.21.1|net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder#createSimple"
       ]
      },
      "below": "1.21.2"
@@ -1792,6 +1827,11 @@
      "name": "Ores",
      "from": "package demo;\n\nimport net.minecraft.world.item.ItemStack;\nimport net.neoforged.neoforge.common.Tags;\n\npublic final class Ores {\n\tstatic boolean iron(ItemStack stack) {\n\t\treturn stack.is(Tags.Items.INGOTS_IRON);\n\t}\n}\n",
      "to": "package demo;\n\nimport net.minecraft.world.item.ItemStack;\nimport demo.loaderbridge.Tags;\n\npublic final class Ores {\n\tstatic boolean iron(ItemStack stack) {\n\t\treturn stack.is(Tags.Items.INGOTS_IRON);\n\t}\n}\n"
+    },
+    {
+     "name": "Notes",
+     "from": "package demo;\n\nimport java.util.function.Supplier;\nimport net.minecraft.world.entity.player.Player;\nimport net.neoforged.neoforge.attachment.AttachmentType;\nimport net.neoforged.neoforge.registries.DeferredRegister;\nimport net.neoforged.neoforge.registries.NeoForgeRegistries;\n\npublic final class Notes {\n\tstatic final DeferredRegister<AttachmentType<?>> TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, \"demo\");\n\tstatic final Supplier<AttachmentType<Boolean>> GOT_NOTE = TYPES.register(\"got_note\", () -> AttachmentType.builder(() -> false).build());\n\n\tstatic void give(Player player) {\n\t\tif (!player.getData(GOT_NOTE)) player.setData(GOT_NOTE, true);\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.loaderbridge.Attachments;\nimport java.util.function.Supplier;\nimport net.minecraft.world.entity.player.Player;\nimport demo.loaderbridge.AttachmentType;\nimport demo.loaderbridge.DeferredRegister;\nimport demo.loaderbridge.NeoForgeRegistries;\n\npublic final class Notes {\n\tstatic final DeferredRegister<AttachmentType<?>> TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, \"demo\");\n\tstatic final Supplier<AttachmentType<Boolean>> GOT_NOTE = TYPES.register(\"got_note\", () -> AttachmentType.builder(() -> false).build());\n\n\tstatic void give(Player player) {\n\t\tif (!Attachments.getData(player, GOT_NOTE)) Attachments.setData(player, GOT_NOTE, true);\n\t}\n}\n"
     }
    ]
   },
