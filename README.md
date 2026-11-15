@@ -32,7 +32,7 @@ Version tags build a standalone JAR and portable ZIP with SHA-256 files in a dra
 | 1 | **Test a mod in seconds** | `fast` `data-check` `ui-check` `world-check` `mp-check` `server-check` | Works. Logic tests, the game's data and real-game checks all run with no game window |
 | 2 | **Port a mod to any Minecraft version** | `port` `explain` | Works for Fabric and NeoForge, 1.14.4 to 26.3. Small jumps need no hand edits |
 | 3 | **Make modpacks work together** | `pack-check` | Works for Forge, NeoForge, Fabric and Quilt packs on their real servers, with two proven repairs |
-| 4 | **Change loader or platform** | | Planned. Nothing is built yet |
+| 4 | **Change loader or platform** | `convert` | Works for Fabric ↔ NeoForge on one Minecraft version: two real Fabric mods run on NeoForge with no hand edits. Forge, Quilt and Paper are not converted yet |
 
 ## Quick start
 
@@ -83,7 +83,10 @@ Run `modaccel perf` while your game is running to capture frame/tick timing, JVM
 
 ### 4 · Change loader or platform
 
-Moving a project between Fabric, NeoForge, Forge, Quilt and Paper is the fourth goal. There is no conversion command yet; `coverage/loader/api.json` records loader API counterparts mined from multi-loader source.
+- **`convert --to neoforge`** (or `--to fabric`) moves a mod's source to the other loader on the same Minecraft version: the build (Loom ↔ ModDevGradle, with the newest loader releases for that version), the metadata (`fabric.mod.json` ↔ `META-INF/neoforge.mods.toml`), the entrypoints, and the code through the rules in `knowledge/loaders.json`: loader calls, events, key mappings, registration timing, flammability, creative tabs, loot tables, Mod Menu's config screen and Fabric data generation. It compiles the result; `convert --undo` restores every file.
+- **Our own rules, no AI.** Each rule is written here with a before/after test that `self-test` runs both ways, and names the classes and members it uses; `python bench/loader_api.py verify` finds every one in Fabric's, NeoForge's and Mojang's own published jars (`coverage/loader/api.json`). Nothing is taken from other mods' code. What has no rule is listed with its file and line, never dropped.
+- **Proven in the game with no hand edits:** Auto Omen (Fabric, 26.3) on NeoForge passes its own in-game raid self test, 23 of 23 checks, as it does on Fabric. Pride Flags (Fabric, 26.1.2) on NeoForge registers its 13 blocks and 26 items, keeps their flammability, adds its loot to village chests, loads its 48 recipes, and renders its flags from the models its converted data generation writes (189 files, the same as Fabric's but for vanilla's `random_sequence` in block loot).
+- **Not yet:** Forge, Quilt, and mods ↔ Paper plugins. NeoForge → Fabric needs Minecraft 26.1 or later (both loaders on Mojang's names) and is proven only on a mod that was Fabric first. No rules yet for networking payloads, HUD layers, renderers, data attachments, client commands, tag and language providers, or access wideners.
 
 ## What counts as working
 

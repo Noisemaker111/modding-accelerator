@@ -66,6 +66,7 @@ final class Installation {
         "tools/tests/PackCheckTest.java",
         "tools/tests/RulesTest.java",
         "knowledge/fixes.json",
+        "knowledge/loaders.json",
         "knowledge/structural.json",
         "knowledge/port-corpus.json",
         "coverage/changes/index.json"

@@ -893,6 +893,278 @@ public final class PortableTests {
         );
     }
 
+    /**
+     * convert: every rule in knowledge/loaders.json against its own before/after test, both ways; then a small Fabric
+     * mod moved to NeoForge and back with --dry-run (the release lookups come from a seeded cache, so no network),
+     * and both conversions undone byte for byte.
+     */
+    static void convertChecks(Path home, Path scratch) throws Exception {
+        Map<String, Object> rules = Json.read(home.resolve("knowledge/loaders.json"));
+        int tested = 0;
+        for (String kind : List.of("types", "expressions", "statements", "events")) for (Object item : Json.array(
+            rules.get(kind)
+        )) {
+            var rule = Json.object(item);
+            var test = Json.object(rule.get("test"));
+            String fabric = Json.text(test, "fabric", ""), neo = Json.text(test, "neoforge", ""), back = Json.text(
+                test,
+                "back",
+                fabric
+            );
+            String forward = new LoaderRules(rules, "fabric", "neoforge", "demo").apply(fabric).text;
+            String reverse = new LoaderRules(rules, "neoforge", "fabric", "demo").apply(neo).text;
+            if (!forward.equals(neo)) throw new AssertionError(
+                "rule " + rule.get("id") + " to NeoForge gave:\n" + forward
+            );
+            if (!reverse.equals(back)) throw new AssertionError(
+                "rule " + rule.get("id") + " back to Fabric gave:\n" + reverse
+            );
+            tested++;
+        }
+        check(
+            tested >= 19,
+            "every loader rule turns its Fabric test into its NeoForge test and back (" + tested + " rules)"
+        );
+        check(
+            LoaderRules.find(
+                "String s = \"FabricLoader.getInstance().getGameDir()\"; // FabricLoader.getInstance().getGameDir()",
+                "FabricLoader.getInstance().getGameDir()"
+            ).isEmpty(),
+            "a rule never matches inside a string or a comment"
+        );
+        check(
+            Convert.mavenRange("~26.3").equals("[26.3,26.4)") &&
+            Convert.mavenRange(">=1.2 <2").equals("[1.2,2)") &&
+            Convert.mavenRange("*").equals("[0,)") &&
+            Convert.mavenRange("26.1.2").equals("[26.1.2]") &&
+            Convert.fabricPredicate("[26.3,26.4)").equals("~26.3") &&
+            Convert.fabricPredicate("[1.2,)").equals(">=1.2"),
+            "Fabric version predicates and Maven ranges convert both ways"
+        );
+        check(
+            Convert.neoforgeModId("pointless-piglins").equals("pointless_piglins") && Convert.neoforgeModId("demo").equals("demo") &&
+            Convert.neoforgeModId("2fast").equals("mod_2fast"),
+            "a Fabric mod id with a hyphen becomes one NeoForge accepts"
+        );
+
+        LoaderRules.Provider models = LoaderRules.datagenProvider(
+            "package d;\n\nimport net.fabricmc.fabric.api.client.datagen.v1.provider.FabricModelProvider;\nimport net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;\n\npublic class Models extends FabricModelProvider {\n\tpublic Models(FabricPackOutput output) {\n\t\tsuper(output);\n\t}\n\n\t@Override\n\tpublic void generateBlockStateModels(BlockModelGenerators blocks) {\n\t}\n\n\t@Override\n\tpublic void generateItemModels(ItemModelGenerators items) {\n\t}\n}\n",
+            "demo"
+        );
+        check(
+            models.kind().equals("model") &&
+            models.text().contains("public class Models extends ModelProvider {") &&
+            models.text().contains("super(output, \"demo\");") &&
+            models
+                .text()
+                .contains(
+                    "protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {\n\t\tgenerateBlockStateModels(blockModels);"
+                ) &&
+            !models.text().contains("fabricmc") &&
+            models.text().contains("\tpublic void generateItemModels(ItemModelGenerators items) {"),
+            "a Fabric model provider becomes NeoForge's ModelProvider for the mod, one registerModels calling both Fabric methods:\n" +
+            models.text()
+        );
+        LoaderRules.Provider loot = LoaderRules.datagenProvider(
+            "package d;\n\nimport java.util.concurrent.CompletableFuture;\nimport net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;\nimport net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootSubProvider;\n\npublic class Loot extends FabricBlockLootSubProvider {\n\tpublic Loot(FabricPackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {\n\t\tsuper(output, lookup);\n\t}\n\n\t@Override\n\tpublic void generate() {\n\t\tdropSelf(GEM_BLOCK);\n\t}\n}\n",
+            "demo"
+        );
+        String entry = LoaderRules.datagenEntry(
+            "package d;\n\nimport net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;\nimport net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;\n\npublic class Gen implements DataGeneratorEntrypoint {\n\t@Override\n\tpublic void onInitializeDataGenerator(FabricDataGenerator generator) {\n\t\tFabricDataGenerator.Pack pack = generator.createPack();\n\t\tpack.addProvider(Models::new);\n\t\tpack.addProvider(Loot::new);\n\t}\n}\n",
+            Map.of("Models", "model", "Loot", "blockLoot"),
+            new ArrayList<>()
+        );
+        check(
+            loot.kind().equals("blockLoot") &&
+            loot
+                .text()
+                .contains(
+                    "public Loot(HolderLookup.Provider lookup) {\n\t\tsuper(Set.of(), FeatureFlags.REGISTRY.allFlags(), lookup);"
+                ) &&
+            loot.text().contains("getNamespace().equals(\"demo\")") &&
+            !loot.text().contains("CompletableFuture") &&
+            entry.contains(
+                "public void onInitializeDataGenerator(GatherDataEvent generator) {\n\t\tgenerator.createProvider(Models::new);\n\t\tgenerator.createProvider((output, lookup) -> new LootTableProvider(output, Set.of(), List.of(new LootTableProvider.SubProviderEntry(Loot::new, LootContextParamSets.BLOCK)), lookup));"
+            ) &&
+            !entry.contains("fabricmc") &&
+            !entry.contains("@Override"),
+            "a block loot provider covers the mod's own blocks, and the datagen entrypoint registers each provider with GatherDataEvent:\n" +
+            loot.text() +
+            "\n" +
+            entry
+        );
+
+        Path root = scratch.resolve("convert-mod");
+        Map<String, String> files = new LinkedHashMap<>();
+        files.put(
+            "gradle/wrapper/gradle-wrapper.properties",
+            "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n"
+        );
+        files.put(
+            "settings.gradle",
+            "pluginManagement {\n\trepositories {\n\t\tmaven {\n\t\t\tname = 'Fabric'\n\t\t\turl = 'https://maven.fabricmc.net/'\n\t\t}\n\t\tgradlePluginPortal()\n\t}\n}\n"
+        );
+        files.put(
+            "gradle.properties",
+            "minecraft_version=26.3\nloader_version=0.19.5\nloom_version=1.18.2\nmod_version=1.0.0\nfabric_api_version=0.161.0+26.3\nmodmenu_version=21.0.0\n"
+        );
+        files.put(
+            "build.gradle",
+            "plugins {\n\tid 'net.fabricmc.fabric-loom' version \"${loom_version}\"\n}\n\nversion = project.mod_version\n\nloom {\n\truns {\n\t\tselftest {\n\t\t\tclient()\n\t\t\tname = \"Self Test\"\n\t\t\tvmArg \"-Ddemo.selftest=true\"\n\t\t\trunDir = \"run\"\n\t\t}\n\t}\n}\n\ndependencies {\n\tminecraft \"com.mojang:minecraft:${project.minecraft_version}\"\n\timplementation \"net.fabricmc:fabric-loader:${project.loader_version}\"\n\timplementation \"net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}\"\n\n\tcompileOnly \"com.terraformersmc:modmenu:${project.modmenu_version}\"\n}\n\nprocessResources {\n\tfilesMatching(\"fabric.mod.json\") {\n\t\texpand \"version\": project.version\n\t}\n}\n\ntasks.withType(JavaCompile).configureEach {\n\tit.options.release = 21\n}\n"
+        );
+        files.put(
+            "src/main/resources/fabric.mod.json",
+            "{\n\t\"schemaVersion\": 1,\n\t\"id\": \"demo\",\n\t\"version\": \"${version}\",\n\t\"name\": \"Demo\",\n\t\"description\": \"A demo.\",\n\t\"authors\": [\"Someone\"],\n\t\"license\": \"MIT\",\n\t\"icon\": \"assets/demo/icon.png\",\n\t\"environment\": \"*\",\n\t\"entrypoints\": {\n\t\t\"main\": [\"demo.Demo\"],\n\t\t\"client\": [\"demo.DemoClient\"],\n\t\t\"modmenu\": [\"demo.Menu\"]\n\t},\n\t\"mixins\": [\"demo.mixins.json\"],\n\t\"depends\": {\n\t\t\"fabricloader\": \">=0.19.5\",\n\t\t\"minecraft\": \"~26.3\",\n\t\t\"java\": \">=21\",\n\t\t\"fabric-api\": \"*\"\n\t}\n}\n"
+        );
+        files.put(
+            "src/main/java/demo/Demo.java",
+            "package demo;\n\nimport net.fabricmc.api.ModInitializer;\nimport net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;\nimport net.fabricmc.fabric.api.registry.FlammableBlockRegistry;\nimport net.minecraft.world.level.block.Blocks;\n\npublic class Demo implements ModInitializer {\n\tpublic static int ticks;\n\n\t@Override\n\tpublic void onInitialize() {\n\t\tServerTickEvents.END_SERVER_TICK.register(server -> ticks++);\n\t\tFlammableBlockRegistry.getDefaultInstance().add(Blocks.WHITE_WOOL, 30, 60);\n\t}\n}\n"
+        );
+        files.put(
+            "src/main/java/demo/DemoClient.java",
+            "package demo;\n\nimport net.fabricmc.api.ClientModInitializer;\nimport net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;\nimport net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;\nimport net.minecraft.client.KeyMapping;\n\npublic class DemoClient implements ClientModInitializer {\n\tstatic KeyMapping key;\n\n\t@Override\n\tpublic void onInitializeClient() {\n\t\tkey = KeyMappingHelper.registerKeyMapping(new KeyMapping(\"key.demo\", 0, KeyMapping.Category.MISC));\n\t\tClientTickEvents.END_CLIENT_TICK.register(client -> {\n\t\t\twhile (key.consumeClick()) Config.toggle();\n\t\t});\n\t}\n}\n"
+        );
+        files.put(
+            "src/main/java/demo/Config.java",
+            "package demo;\n\nimport java.nio.file.Path;\nimport net.fabricmc.loader.api.FabricLoader;\n\nclass Config {\n\tstatic Path path() {\n\t\treturn FabricLoader.getInstance().getConfigDir().resolve(\"demo.json\");\n\t}\n\n\tstatic void toggle() {}\n}\n"
+        );
+        files.put(
+            "src/main/java/demo/Menu.java",
+            "package demo;\n\nimport com.terraformersmc.modmenu.api.ConfigScreenFactory;\nimport com.terraformersmc.modmenu.api.ModMenuApi;\n\npublic class Menu implements ModMenuApi {\n\t@Override\n\tpublic ConfigScreenFactory<?> getModConfigScreenFactory() {\n\t\treturn Settings::new;\n\t}\n}\n"
+        );
+        for (var file : files.entrySet()) {
+            Path path = root.resolve(file.getKey());
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, file.getValue());
+        }
+        ProjectModel project = new ProjectModel(root);
+        // The release lookups convert makes, answered from Target.fetch's cache as the loaders' own Maven repositories would.
+        Map<String, String> answers = Map.of(
+            "https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml",
+            "<metadata><versioning><versions><version>26.3.0.90</version><version>26.3.0.103</version><version>26.1.2.126</version><version>26.3.0.104-beta</version></versions></versioning></metadata>",
+            "https://maven.neoforged.net/releases/net/neoforged/moddev-gradle/maven-metadata.xml",
+            "<metadata><versioning><versions><version>2.0.140</version><version>2.0.148</version><version>2.1.0-beta.3</version></versions></versioning></metadata>",
+            "https://maven.neoforged.net/releases/net/neoforged/moddev-gradle/2.0.148/moddev-gradle-2.0.148.module",
+            "{\"variants\": [{\"attributes\": {}}]}",
+            "https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml",
+            "<metadata><versioning><versions><version>1.18.2</version><version>1.18.4</version><version>1.20.0-alpha.31</version></versions></versioning></metadata>",
+            "https://maven.fabricmc.net/net/fabricmc/fabric-loom/1.18.4/fabric-loom-1.18.4.module",
+            "{\"variants\": [{\"attributes\": {\"org.gradle.plugin.api-version\": \"9.7.0\"}}]}",
+            "https://meta.fabricmc.net/v2/versions/loader",
+            "[{\"version\": \"0.20.2-beta\", \"stable\": false}, {\"version\": \"0.20.1\", \"stable\": true}]",
+            "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml",
+            "<metadata><versioning><versions><version>0.161.0+26.3</version><version>0.166.2+26.3</version><version>0.150.0+26.1.2</version></versions></versioning></metadata>",
+            "https://api.modrinth.com/v2/project/modmenu/version?game_versions=%5B%2226.3%22%5D&loaders=%5B%22fabric%22%5D",
+            "[{\"version_number\": \"21.0.1\"}, {\"version_number\": \"21.0.0\"}, {\"version_number\": \"21.1.0-beta.1\"}]"
+        );
+        for (var answer : answers.entrySet()) {
+            Path cache = project
+                .state()
+                .resolve(
+                    "metadata/" +
+                    Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) +
+                    ".json"
+                );
+            Files.createDirectories(cache.getParent());
+            Files.writeString(cache, answer.getValue());
+        }
+        Map<String, byte[]> original = new LinkedHashMap<>();
+        for (String name : files.keySet()) original.put(name, Files.readAllBytes(root.resolve(name)));
+
+        Build build = new Build(project, home, "", new Modaccel.Report(root, "convert"));
+        Map<String, Object> toNeo = new Convert(build).run(
+            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+        );
+        String demo = Files.readString(root.resolve("src/main/java/demo/Demo.java")), client = Files.readString(
+            root.resolve("src/main/java/demo/DemoClient.java")
+        );
+        String gradle = Files.readString(root.resolve("build.gradle")), toml = Files.readString(
+            root.resolve("src/main/resources/META-INF/neoforge.mods.toml")
+        );
+        check(
+            Boolean.TRUE.equals(toNeo.get("ok")) &&
+            Json.array(toNeo.get("left")).isEmpty() &&
+            !Files.exists(root.resolve("src/main/resources/fabric.mod.json")),
+            "a Fabric mod whose every loader call has a rule converts with nothing left: " + toNeo.get("details")
+        );
+        check(
+            demo.contains("@Mod(\"demo\")\npublic class Demo {") &&
+            demo.contains("if (event.getRegistryKey().equals(Registries.ATTRIBUTE)) onInitialize();") &&
+            demo.contains("NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, event -> {") &&
+            demo.contains("((FireBlock) Blocks.FIRE).setFlammable(Blocks.WHITE_WOOL, 30, 60);") &&
+            !demo.contains("@Override") &&
+            !demo.contains("fabricmc"),
+            "the main entrypoint becomes a @Mod class that runs it in the first registry event, with its events and flammability converted:\n" +
+            demo
+        );
+        check(
+            client.contains("@Mod(value = \"demo\", dist = Dist.CLIENT)") &&
+            client.contains(
+                "modBus.addListener(EventPriority.HIGHEST, RegisterKeyMappingsEvent.class, event -> onInitializeClient());"
+            ) &&
+            client.contains(
+                "container.registerExtensionPoint(IConfigScreenFactory.class, (modContainer, parent) -> new demo.Menu().getModConfigScreenFactory().apply(parent));"
+            ) &&
+            client.contains("event.register(key)"),
+            "the client entrypoint runs at NeoForge's first client event, registers its key mapping and Mod Menu's config screen:\n" +
+            client
+        );
+        check(
+            gradle.contains("id 'net.neoforged.moddev' version '2.0.148'") &&
+            gradle.contains("version = project.neo_version") &&
+            gradle.contains("systemProperty 'demo.selftest', 'true'") &&
+            gradle.contains("ideName = \"Self Test\"") &&
+            !gradle.contains("fabric") &&
+            !gradle.contains("modmenu") &&
+            Files.readString(root.resolve("gradle.properties")).contains("neo_version=26.3.0.103") &&
+            Files.readString(root.resolve("src/main/resources/META-INF/accesstransformer.cfg")).contains(
+                "public net.minecraft.world.level.block.FireBlock setFlammable("
+            ),
+            "the build moves to ModDevGradle (newest stable) and NeoForge (newest release for 26.3), keeping the custom run:\n" +
+            gradle
+        );
+        check(
+            toml.contains("modId = \"demo\"") &&
+            toml.contains("iconFile = \"assets/demo/icon.png\"") &&
+            toml.contains("versionRange = \"[26.3,26.4)\"") &&
+            toml.contains("[[mixins]]\nconfig = \"demo.mixins.json\"") &&
+            toml.contains("[[accessTransformers]]"),
+            "fabric.mod.json becomes neoforge.mods.toml:\n" + toml
+        );
+        Map<String, Object> back = new Convert(new Build(project, home, "", new Modaccel.Report(root, "convert"))).run(
+            new Modaccel.Options(new String[] { "convert", "--to", "fabric", "--dry-run" })
+        );
+        boolean javaSame = true;
+        for (String name : files.keySet()) if (
+            name.endsWith(".java") && !Arrays.equals(original.get(name), Files.readAllBytes(root.resolve(name)))
+        ) javaSame = false;
+        String fabricGradle = Files.readString(root.resolve("build.gradle"));
+        check(
+            Boolean.TRUE.equals(back.get("ok")) &&
+            javaSame &&
+            !Files.exists(root.resolve("src/main/resources/META-INF")) &&
+            fabricGradle.contains("id 'net.fabricmc.fabric-loom' version '1.18.4'") &&
+            fabricGradle.contains("vmArg \"-Ddemo.selftest=true\"") &&
+            fabricGradle.contains("localRuntime \"com.terraformersmc:modmenu:${project.modmenu_version}\"") &&
+            Files.readString(root.resolve("gradle.properties")).contains("modmenu_version=21.0.1") &&
+            Files.readString(root.resolve("src/main/resources/fabric.mod.json")).contains(
+                "\"modmenu\": [\n\t\t\t\"demo.Menu\"\n\t\t]"
+            ),
+            "converted back to Fabric, every Java file is byte for byte the original (Loom: newest stable on this Gradle): " +
+            back.get("details")
+        );
+        Port.undo(project, String.valueOf(back.get("undoConvert")), Convert.FOLDER);
+        Port.undo(project, String.valueOf(toNeo.get("undoConvert")), Convert.FOLDER);
+        boolean restored = true;
+        for (var file : original.entrySet()) if (
+            !Arrays.equals(file.getValue(), Files.readAllBytes(root.resolve(file.getKey())))
+        ) restored = false;
+        check(
+            restored && !Files.exists(root.resolve("src/main/resources/META-INF/neoforge.mods.toml")),
+            "undoing both conversions restores every file byte for byte and removes the files they made"
+        );
+    }
+
     public static void main(String[] args) throws Exception {
         // Every check assumes nothing is there yet, so each run gets its own empty folder inside the one it is given.
         Path home = Path.of(args[0]), scratch = Files.createTempDirectory(
@@ -1515,6 +1787,7 @@ public final class PortableTests {
         accessorWithoutMixinsChecks(home, scratch);
         mixinRepairChecks();
         parchmentChecks(home, scratch);
+        convertChecks(home, scratch);
         for (var groups : List.of(
             List.of("net.minecraftforge"),
             List.of("net.fabricmc", "net.neoforged"),
