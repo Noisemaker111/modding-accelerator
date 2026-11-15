@@ -37,6 +37,7 @@ public final class PackCheckTest {
             loaders(harness, scratch);
             List<String> repairs = PackRepairs.selfTest(harness, scratch.resolve("repairs"));
             rules(harness, scratch.resolve("rules"));
+            wrongRepairs(harness, scratch.resolve("wrong"));
             expect(!repairs.isEmpty(), "every repair in pack-fixes.json passes its test: " + repairs);
             System.out.println(
                 count +
@@ -51,6 +52,81 @@ public final class PackCheckTest {
                 for (Path p : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(p);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ a wrong repair is refused
+    /**
+     * A repair written wrong must not pass: its own test catches the wrong mod, a version that does not clear the fault
+     * and a malformed hash; a download that does not match its recorded SHA-512 is refused; and a file a rule finds at
+     * run time cannot stand in when it is for another loader or game version, or provides another mod (round 2 of the
+     * sweep put LionfishAPI for NeoForge 1.21.1 into All the Mods 9, a Forge 1.20.1 pack).
+     */
+    static void wrongRepairs(Path harness, Path scratch) throws Exception {
+        var fixes = PackRepairs.all(harness);
+        Map<String, java.util.function.Consumer<Map<String, Object>>> wrong = new LinkedHashMap<>();
+        wrong.put("removes nothing", fix -> Json.object(fix.get("action")).put("mod", "projectile_damage_typo"));
+        wrong.put("still matches after its action", fix -> Json.object(Json.object(Json.object(fix.get("test")).get("added")).get("mods") instanceof List<?> l ? l.get(0) : Map.of()).put("version", "3.2.3+1.20.1"));
+        wrong.put("is not a SHA-512", fix -> Json.object(fix.get("action")).put("sha512", "abc123"));
+        for (var entry : wrong.entrySet()) {
+            Path fake = scratch.resolve(entry.getKey().replace(' ', '-'));
+            Files.createDirectories(fake.resolve("knowledge"));
+            Files.copy(harness.resolve("knowledge/pack-loaders.json"), fake.resolve("knowledge/pack-loaders.json"));
+            var broken = Json.object(Json.parse(Json.write(fixes.stream().filter(f -> f.get("id").equals("soulsweapons-pinned-projectile-damage")).findFirst().orElseThrow())));
+            entry.getValue().accept(broken);
+            Files.writeString(fake.resolve("knowledge/pack-fixes.json"), Json.write(Json.map("schema", 2, "fixes", List.of(broken))));
+            String message;
+            try {
+                PackRepairs.selfTest(fake, fake.resolve("scratch"));
+                message = "";
+            } catch (AssertionError refused) {
+                message = String.valueOf(refused.getMessage());
+            }
+            expect(message.contains(entry.getKey()), "a repair written wrong fails its test (" + entry.getKey() + "): " + message);
+        }
+
+        // A download that is not what its record says: served here, offline, by a local HTTP server.
+        var server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        byte[] served = "not the jar the repair names".getBytes(StandardCharsets.UTF_8);
+        server.createContext("/fix.jar", exchange -> {
+            exchange.sendResponseHeaders(200, served.length);
+            exchange.getResponseBody().write(served);
+            exchange.close();
+        });
+        server.start();
+        try {
+            String url = "http://127.0.0.1:" + server.getAddress().getPort() + "/fix.jar";
+            var action = Json.map("file", "fix.jar", "url", url, "sha512", "0".repeat(128));
+            expect(
+                throwsMessage(() -> PackRepairs.download(check(harness, scratch), action)).contains("does not match its recorded SHA-512") &&
+                !Files.exists(PackCheck.receipts().resolve("fixes/fix.jar")),
+                "a repair's download that does not match its SHA-512 is refused and not kept"
+            );
+            var file = Json.map("url", url, "filename", "fix.jar", "hashes", Json.map("sha512", PackCheck.hash("SHA-512", served)));
+            expect(PackCheck.modrinthFile(PackCheck.receipts(), file) == null, "a fetched library comes from Modrinth's CDN only");
+        } finally {
+            server.stop(0);
+        }
+
+        // A file a rule finds at run time stands in only when it is a mod for this loader and game version that provides the id.
+        Path mods = Files.createDirectories(scratch.resolve("candidates"));
+        PackLoaders.Loader forge = PackLoaders.find(harness, "forge");
+        PackCheck.Mod cataclysm = PackRepairs.testJar(mods, Json.map("file", "cataclysm.jar", "mods", List.of(Json.map("id", "cataclysm", "version", "3.16", "depends", Json.map("lionfishapi", "[2.4,)")))), "META-INF/mods.toml");
+        PackCheck.Pack pack = new PackCheck.Pack("t", "", "1.20.1", "forge", "47.4.0", List.of(cataclysm), List.of(scratch), scratch, true, "test");
+        var facts = new PackRepairs.Facts(pack, PackMods.scan(List.of(cataclysm), forge.metadata("1.20.1")), forge, List.of(), null);
+        Path neoforge = jar(mods.resolve("lionfishapi-3.1.jar"), Map.of("META-INF/neoforge.mods.toml", toml("lionfishapi", "3.1", "")));
+        Path otherGame = jar(mods.resolve("lionfishapi-1.8.jar"), Map.of("META-INF/mods.toml", toml("lionfishapi", "1.8", "[[dependencies.lionfishapi]]\nmodId=\"minecraft\"\nmandatory=true\nversionRange=\"[1.19.2]\"\nside=\"BOTH\"\n")));
+        Path tooOld = jar(mods.resolve("lionfishapi-2.3.jar"), Map.of("META-INF/mods.toml", toml("lionfishapi", "2.3", "")));
+        Path otherMod = jar(mods.resolve("lionfish-addon.jar"), Map.of("META-INF/mods.toml", toml("lionfishaddon", "2.7", "")));
+        Path right = jar(mods.resolve("lionfishapi-2.7.jar"), Map.of("META-INF/mods.toml", toml("lionfishapi", "2.7", "")));
+        expect(
+            PackRepairs.fits(neoforge, facts, "lionfishapi") != null &&
+            PackRepairs.fits(otherGame, facts, "lionfishapi") != null &&
+            PackRepairs.fits(tooOld, facts, "lionfishapi") != null &&
+            PackRepairs.fits(otherMod, facts, "lionfishapi") != null &&
+            PackRepairs.fits(right, facts, "lionfishapi") == null,
+            "only a Forge 1.20.1 jar of lionfishapi in the range cataclysm asks for stands in: " +
+            List.of(PackRepairs.fits(neoforge, facts, "lionfishapi"), PackRepairs.fits(otherGame, facts, "lionfishapi"), PackRepairs.fits(tooOld, facts, "lionfishapi"), PackRepairs.fits(otherMod, facts, "lionfishapi"))
+        );
     }
 
     // ------------------------------------------------------------------ the rules' limits
@@ -369,6 +445,27 @@ public final class PackCheckTest {
             )
         );
         expect(throwsMessage(() -> check(harness, scratch).read(bad)).contains("downloads only from"), "an .mrpack download from another host is refused");
+        // Windows users keep packs under folders with spaces and brackets ("Sodium Plus 2.2.11.mrpack" in the sweep): reading one
+        // and writing its fixed copy (whose own name has spaces) work there, and a server-only repair marks the file in the copy.
+        Path spaced = Files.createDirectories(scratch.resolve("My Packs (test) & more")).resolve("Small Pack 1.0.mrpack");
+        Files.copy(mrpack, spaced);
+        PackCheck spacedCheck = check(harness, scratch.resolve("receipts with spaces"));
+        PackCheck.Pack fromSpaced = spacedCheck.read(spaced);
+        Path fixedCopy = spacedCheck.fixedCopy(
+            fromSpaced,
+            new PackRepairs.Change(List.of(), List.of(), Map.of(), List.of("lithium.jar"), List.of(), List.of())
+        );
+        String fixedIndex;
+        try (var zip = new java.util.zip.ZipFile(fixedCopy.toFile())) {
+            fixedIndex = new String(zip.getInputStream(zip.getEntry("modrinth.index.json")).readAllBytes(), StandardCharsets.UTF_8);
+        }
+        var lithiumEntry = Json.array(Json.object(Json.parse(fixedIndex)).get("files")).stream().map(Json::object).filter(f -> f.get("path").equals("mods/lithium.jar")).findFirst().orElseThrow();
+        expect(
+            fromSpaced.mods().size() == 2 &&
+            fixedCopy.getFileName().toString().equals("Small Pack 1.0 (modaccel fixed).mrpack") &&
+            Json.object(lithiumEntry.get("env")).get("server").equals("unsupported"),
+            "a pack under a path with spaces is read, and its fixed copy marks a server-only jar: " + fixedCopy + " " + lithiumEntry
+        );
 
         // A Prism instance: mmc-pack.json names the components; the game folder holds mods/.
         Path prism = scratch.resolve("prism"), prismMods = Files.createDirectories(prism.resolve(".minecraft/mods"));

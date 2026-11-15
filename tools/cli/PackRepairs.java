@@ -656,6 +656,12 @@ final class PackRepairs {
             if (test.isEmpty()) throw new AssertionError(id + " has no test");
             if (!checks.contains(Json.text(fix, "check", ""))) throw new AssertionError(id + " names no known check: " + fix.get("check"));
             if (!ACTIONS.contains(Json.text(Json.object(fix.get("action")), "type", ""))) throw new AssertionError(id + " has an unknown action");
+            // A fixed download is used only if it matches its recorded SHA-512, so the record must be one, from an https source.
+            var fixed = Json.object(fix.get("action"));
+            if (fixed.containsKey("url") || fixed.containsKey("sha512")) {
+                if (!Json.text(fixed, "sha512", "").matches("[0-9a-f]{128}")) throw new AssertionError(id + ": its download's sha512 is not a SHA-512");
+                if (!Json.text(fixed, "url", "").startsWith("https://")) throw new AssertionError(id + ": its download is not from an https address");
+            }
             String loaderId = Json.text(test, "loader", fix.get("loader") instanceof String one && !one.equals("*") ? one : "");
             String minecraft = Json.text(test, "minecraft", String.valueOf(Json.array(fix.get("minecraft")).get(0)));
             PackLoaders.Loader loader = loaders.get(loaderId);
