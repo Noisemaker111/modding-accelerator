@@ -36,6 +36,7 @@ public final class PackCheckTest {
             serverMods(harness, scratch);
             loaders(harness, scratch);
             List<String> repairs = PackRepairs.selfTest(harness, scratch.resolve("repairs"));
+            rules(harness, scratch.resolve("rules"));
             expect(!repairs.isEmpty(), "every repair in pack-fixes.json passes its test: " + repairs);
             System.out.println(
                 count +
@@ -50,6 +51,42 @@ public final class PackCheckTest {
                 for (Path p : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(p);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ the rules' limits
+    /**
+     * Create Astral (Fabric 1.18.2): KubeJS stopped the server because a script named a missing mod's effect, and Modrinth
+     * calls KubeJS server-optional; its addons require it, so leaving it off the server is no repair. The failure lines a
+     * rule reads leave out a crash report's mod table, so an id that only appears there is not "named".
+     */
+    static void rules(Path harness, Path scratch) throws Exception {
+        PackLoaders.Loader fabric = PackLoaders.find(harness, "fabric");
+        Path mods = Files.createDirectories(scratch.resolve("mods"));
+        List<PackCheck.Mod> jars = List.of(
+            PackRepairs.testJar(mods, Json.map("file", "kubejs.jar", "serverSide", "optional", "mods", List.of(Json.map("id", "kubejs", "version", "1802.5.5"))), "fabric.mod.json"),
+            PackRepairs.testJar(mods, Json.map("file", "kubejs-create.jar", "mods", List.of(Json.map("id", "kubejs_create", "version", "1802.2.4", "depends", Json.map("kubejs", "*")))), "fabric.mod.json"),
+            PackRepairs.testJar(mods, Json.map("file", "dh.jar", "serverSide", "optional", "mods", List.of(Json.map("id", "distanthorizons", "version", "2.0.1-a"))), "fabric.mod.json")
+        );
+        PackCheck.Pack pack = new PackCheck.Pack("t", "", "1.18.2", "fabric", "", jars, List.of(scratch), scratch, true, "test");
+        PackMods.Scan scan = PackMods.scan(jars, fabric.metadata("1.18.2"));
+        var rule = PackRepairs.all(harness).stream().filter(f -> f.get("id").equals("server-optional-mod-stops-server")).findFirst().orElseThrow();
+        String kubejs = "java.lang.RuntimeException: Could not execute entrypoint stage 'main' due to errors, provided by 'kubejs' at 'dev.latvian.mods.kubejs.fabric.KubeJSFabric'!";
+        expect(
+            PackRepairs.applies(rule, new PackRepairs.Facts(pack, scan, fabric, List.of(), kubejs)).isEmpty(),
+            "a server-optional mod other mods require is not left off the server"
+        );
+        String dh = "java.lang.RuntimeException: Could not execute entrypoint stage 'server' due to errors, provided by 'distanthorizons'!";
+        expect(
+            PackRepairs.applies(rule, new PackRepairs.Facts(pack, scan, fabric, List.of(), dh)).size() == 1,
+            "a server-optional mod nothing requires is left off the server"
+        );
+        String failing = PackRepairs.failing(
+            "[main/ERROR]: Failed to start\n| vinery | 1.1.4 | Vinery |\n - Mod 'AstralVinery' (astralvinery) 1.2.0 requires version 1.1.4 of vinery, which is missing!\n[main/INFO]: Loading 200 mods: vinery"
+        );
+        expect(
+            failing.contains("requires version 1.1.4 of vinery") && !failing.contains("| vinery |") && !failing.contains("Loading 200 mods"),
+            "a rule reads the failure's own lines, not a mod table or the mod list: " + failing
+        );
     }
 
     // ------------------------------------------------------------------ Forge 1.20.1: the original case
@@ -497,6 +534,13 @@ public final class PackCheckTest {
             "Caused by: java.lang.NoClassDefFoundError: net/fabricmc/fabric/api/client/event/lifecycle/v1/ClientTickEvents$EndWorldTick"
         );
         expect(PackChecks.clientOnly(quiltLog, quilt, scan).equals(Set.of("lilac")), "Quilt: a mod reaching Fabric API's client classes is client-only: " + PackChecks.clientOnly(quiltLog, quilt, scan));
+        // Create Astral (Fabric 1.18.2): Drink Beer's main entrypoint builds its item group with FabricItemGroupBuilder, which servers run.
+        var classes = new PackLoaders.GameClasses(Set.of(), null);
+        expect(
+            !classes.clientOnly("net/fabricmc/fabric/api/client/itemgroup/FabricItemGroupBuilder") &&
+            classes.clientOnly("net/fabricmc/fabric/api/client/event/lifecycle/v1/ClientTickEvents"),
+            "Fabric API's item group builder is common code, its other client packages are not"
+        );
         var suspects = PackChecks.suspects(fabricLog, List.of(), scan, fabric);
         expect(
             suspects.size() == 1 && suspects.get(0).get("mod").equals("zoomify") && suspects.get(0).get("jar").equals("Zoomify.jar") && Json.array(suspects.get(0).get("why")).size() == 2,

@@ -314,6 +314,9 @@ final class PackRepairs {
                     if (provider.bundled()) continue;
                     PackCheck.Mod mod = facts.pack().mods().stream().filter(x -> x.file().equals(provider.jar())).findFirst().orElse(null);
                     if (mod == null) continue;
+                    // A mod other mods in the pack require is not optional to this pack, whatever its own page says (KubeJS, which
+                    // its addons need, stops a server when a script names a mod that is missing).
+                    if (requiredByOthers(facts.scan(), provider.jar())) continue;
                     String side = PackCheck.serverSide(mod);
                     if ("server-optional".equals(spec.get("side")) && !side.equals("optional") && !side.equals("unsupported")) continue;
                     hits.add(
