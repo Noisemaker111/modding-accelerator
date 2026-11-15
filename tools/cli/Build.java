@@ -141,7 +141,7 @@ final class Build {
 
     Run.Result timed(List<String> command, String stage) throws Exception {
         boolean cold = coldSetup();
-        int seconds = gradleTimeout(System.getenv(TIMEOUT_VARIABLE));
+        int seconds = gradleTimeout(UserState.env("GRADLE_TIMEOUT"));
         try {
             return Run.command(
                 command,
@@ -281,7 +281,7 @@ final class Build {
             )
         );
         // Test hook: make the init script miss under configure-on-demand to exercise the fallback.
-        if ("true".equals(System.getenv("MMT_SIMULATE_COD_MISS"))) command.add("-Dmmt.simulateCodMiss=true");
+        if ("true".equals(UserState.env("SIMULATE_COD_MISS"))) command.add("-Dmmt.simulateCodMiss=true");
         List<String> toolchains = new ArrayList<>();
         Path downloaded = JdkDownloads.cache();
         for (Runtimes.Jdk installed : Runtimes.installed(harness)) {

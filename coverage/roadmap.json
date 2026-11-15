@@ -497,7 +497,7 @@
      "part": "Forge 1.20.1 packs",
      "status": "doing",
      "text": "Detect the demonstrated failure with a code check that fails on the broken case and passes on the corrected and normal cases; verify the correction and affected behavior in a real game, including save and reload when relevant. Preserve the original pack and world.",
-     "result": "`pack-check` saves every dimension the way level.dat stores it and reads it back, starts the same world a second time, and reads back every placed block; it fails on the shipped pack and passes with the repair. `PackCheckTest` covers the checks that need no game.",
+     "result": "`pack-check` saves every dimension the way level.dat stores it and reads it back, starts the same world a second time, and reads back every placed block; it fails on the shipped pack and passes with the repair. The `pack-*` self-test suites cover the checks that need no game.",
      "start": "2026-10-30",
      "target": "2026-11-27",
      "measures": [

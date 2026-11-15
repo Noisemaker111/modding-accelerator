@@ -344,7 +344,7 @@ final class Convert {
 
     /** The project's sources and build, without Git, Gradle's and mmt's own state (but with its cached release lookups). */
     static void copyProject(Path from, Path to) throws IOException {
-        Set<String> skip = Set.of(".git", ".gradle", "build", ".runs", ".mmt", "run", "out", "bin");
+        Set<String> skip = Set.of(".git", ".gradle", "build", ".runs", ".mmt", ".modaccel", "run", "out", "bin");
         try (var walk = Files.walk(from)) {
             for (Path p : walk.toList()) {
                 Path rel = from.relativize(p);

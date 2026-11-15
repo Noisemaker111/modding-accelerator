@@ -820,7 +820,7 @@ final class PerfOptimize {
     static List<String> childJava(Path home) throws Exception {
         return new ArrayList<>(List.of(ProcessHandle.current().info().command().orElse("java"),
             "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-Dsun.stdout.encoding=UTF-8", "-Dsun.stderr.encoding=UTF-8",
-            "-Dmmt.home=" + home,
+            "-Dmmt.resources=" + home,
             "-cp", Path.of(Mmt.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(), "Mmt"));
     }
 

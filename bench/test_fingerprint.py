@@ -12,7 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FIX = ROOT / "bench" / "fingerprint-fixtures"
-MMT = [str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))]
+# The packaged jar when given (bench/run_tests.py passes it), as users get it; else this checkout's launcher.
+MMT = ["java", "-jar", sys.argv[1]] if len(sys.argv) > 1 else [str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))]
 checks = 0
 
 

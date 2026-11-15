@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "about": "Repairs pack-check applies for a cause proven in a real run. A fixed repair names its loader and game versions, a match read from the jars before the game runs (mod-below, mod-range, mods-together, dependency-unmet, dependency-missing), the check that shows the fault in the game, an action (add-jar, remove-mod, replace-mod) whose download is checked against its SHA-512, the evidence, and a test. A rule (loader and minecraft \"*\") names a kind of fault instead: a file the pack's host no longer serves (unavailable-file), a library no jar provides or one pinned to another version (dependency-missing and dependency-unmet with mod \"*\"), a server-optional mod that stops the server (start-failure); \"when\": \"start-failed\" reads it from a failed start's log. Its action (substitute-file, fetch-dependency, leave-out-of-server) finds the file at run time from a source that publishes a size or hash and checks the jar's own metadata. Every entry's test (jars, and unavailable files or a log where the match reads them) must match before the action and not after it (run by self-test). A finding with no entry here is reported with its evidence and left alone. No entry names a mod: each is a kind of fault, and self-test --only mod-specific fails on one that names a mod.",
+  "about": "Repairs pack-check applies for a cause proven in a real run. A fixed repair names its loader and game versions, a match read from the jars before the game runs (mod-below, mod-range, mods-together, dependency-unmet, dependency-missing), the check that shows the fault in the game, an action (add-jar, remove-mod, replace-mod) whose download is checked against its SHA-512, the evidence, and a test. A rule (loader and minecraft \"*\") names a kind of fault instead: a file the pack's host no longer serves (unavailable-file), a library no jar provides or one pinned to another version (dependency-missing and dependency-unmet with mod \"*\"), a server-optional mod that stops the server (start-failure); \"when\": \"start-failed\" reads it from a failed start's log. Its action (substitute-file, fetch-dependency, leave-out-of-server) finds the file at run time from a source that publishes a size or hash and checks the jar's own metadata. Every entry's test (jars, and unavailable files or a log where the match reads them) must match before the action and not after it (run by self-test). A finding with no entry here is reported with its evidence and left alone. No entry names a mod: each is a kind of fault.",
   "fixes": [
     {
       "id": "bundled-library-out-of-date",
@@ -57,60 +57,6 @@
         "loader": "forge",
         "minecraft": "1.20.1",
         "log": "[Server thread/ERROR]: Failed to load datapacks, can't proceed with server load\njava.lang.IllegalStateException: Overworld settings missing"
-      }
-    },
-    {
-      "id": "crashing-release-previous",
-      "loader": "*",
-      "minecraft": [
-        "*"
-      ],
-      "when": "start-failed",
-      "match": {
-        "type": "crash-culprit",
-        "failure": "Exception in server tick loop|Encountered an unexpected exception"
-      },
-      "check": "world-reopen",
-      "symptom": "A world stops the server once it runs: \"Exception in server tick loop\", thrown in one mod's code.",
-      "cause": "A mod's release broke something its previous release did right (a regression), so the server crashes as soon as that code runs.",
-      "evidence": [
-        "https://github.com/Team-EnderIO/EnderIO/issues/1494 (open: \"The server crashes on startup, CapacitorBankBlockEntity.getValidPushTargets returns a null BlockCapabilityCache\", Ender IO 8.2.13-beta)",
-        "pack-check on All the Mods 10 8.6 (CurseForge export, NeoForge 21.1.266, 499 files), 2026-11-15: the first start makes a world and places 43,538 block items; the second start stops in its first ticks with the NullPointerException above from CapacitorBankSavedData.onLevelTick",
-        "Restated as a general rule: the repaired pack is kept only if it opens again where the shipped one did not."
-      ],
-      "action": {
-        "type": "previous-release",
-        "how": "The mod whose class is in the crash's first stack frames is replaced by its previous release for the pack's game version and loader: the Modrinth project of the pack's own jar (by its SHA-1, else the mod id as slug), checked against Modrinth's SHA-512 and its own metadata (the same mod id, a lower version)."
-      },
-      "why": "The previous release of the same mod for the same game and loader changes the least of the pack; a regression is usually confined to one release.",
-      "test": {
-        "jars": [
-          {
-            "file": "enderio-8.2.13-beta.jar",
-            "mods": [
-              {
-                "id": "enderio",
-                "version": "8.2.13-beta"
-              }
-            ],
-            "classes": [
-              "com/enderio/machines/common/blockentity/capacitorbank/CapacitorBankBlockEntity.class"
-            ]
-          }
-        ],
-        "added": {
-          "mods": [
-            {
-              "id": "enderio",
-              "version": "8.2.12-beta"
-            }
-          ],
-          "file": "enderio-previous.jar"
-        },
-        "from": "All the Mods 10 8.6 (CurseForge, NeoForge 21.1.266)",
-        "loader": "neoforge",
-        "minecraft": "1.21.1",
-        "log": "[Server thread/ERROR]: Encountered an unexpected exception\njava.lang.NullPointerException: Cannot invoke \"net.neoforged.neoforge.capabilities.BlockCapabilityCache.getCapability()\" because \"cache\" is null\n\tat com.enderio.machines.common.blockentity.capacitorbank.CapacitorBankBlockEntity.getValidPushTargets(CapacitorBankBlockEntity.java:120)\n\tat net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:907)\n[Server thread/ERROR]: Exception in server tick loop"
       }
     },
     {

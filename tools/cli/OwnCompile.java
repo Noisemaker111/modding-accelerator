@@ -24,7 +24,7 @@ final class OwnCompile {
 
     /** Why the own compile does not apply, or null when it does. */
     static String skipReason(Map<String, Object> model, List<String> tasks) throws IOException {
-        if ("false".equals(System.getenv("MMT_OWN_GAME"))) return "MMT_OWN_GAME=false";
+        if ("false".equals(UserState.env("OWN_GAME"))) return "MMT_OWN_GAME=false";
         if (neoforgeVersion(model) == null) return "not a NeoGradle build waiting on NeoForm";
         for (Object item : Json.array(model.get("projects"))) {
             var p = Json.object(item);

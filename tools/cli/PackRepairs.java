@@ -50,13 +50,11 @@ final class PackRepairs {
         "start-failure",
         PackRepairs::startFailure,
         "bundled-in-use",
-        PackRepairs::bundledInUse,
-        "crash-culprit",
-        PackRepairs::crashCulprit
+        PackRepairs::bundledInUse
     );
 
     static final Set<String> ACTIONS = Set.of(
-        "add-jar", "remove-mod", "replace-mod", "fetch-dependency", "substitute-file", "leave-out-of-server", "add-newer-bundled", "previous-release"
+        "add-jar", "remove-mod", "replace-mod", "fetch-dependency", "substitute-file", "leave-out-of-server", "add-newer-bundled"
     );
 
     /**
@@ -75,37 +73,13 @@ final class PackRepairs {
         return hits;
     }
 
-    static final Pattern FRAME = Pattern.compile("\\bat ([a-z][\\w$]*(?:\\.[a-z][\\w$]*)+)\\.[A-Z][\\w$]*");
-
-    /**
-     * A failed start whose log matches "failure" (a crash once the world runs, not a loading error), with a stack frame in
-     * a class one jar of the pack carries: that jar's mod is the culprit. Its previous release for the same loader and game
-     * version replaces it. The first such frame decides; game and loader classes are in no pack jar.
-     */
-    static List<Hit> crashCulprit(Map<String, Object> spec, Facts facts) {
-        if (facts.startLog() == null || !Pattern.compile(Json.text(spec, "failure", ".")).matcher(facts.startLog()).find()) return List.of();
-        java.util.regex.Matcher frame = FRAME.matcher(facts.startLog());
-        while (frame.find()) {
-            String pkg = frame.group(1);
-            String jar = null;
-            for (String p = pkg; p.contains(".") && jar == null; p = p.substring(0, p.lastIndexOf('.'))) jar = facts.scan().packages.get(p);
-            if (jar == null) continue;
-            for (String id : facts.scan().idsOf(jar)) {
-                PackMods.Provider used = facts.scan().used(id);
-                if (used == null || used.bundled()) continue;
-                return List.of(new Hit(id + " " + used.version() + " (" + jar + ") is in the crash's stack (" + pkg + ")", Json.map("id", id, "version", used.version(), "jar", jar)));
-            }
-        }
-        return List.of();
-    }
-
-    /** A release of the hit's mod from Modrinth (PackResolve), newer or older than the pack's as the action asks. */
-    static Path release(PackCheck check, Facts facts, Map<String, Object> target, boolean newer) throws Exception {
+    /** A newer release of the hit's mod from Modrinth (PackResolve) than the copy the pack has. */
+    static Path release(PackCheck check, Facts facts, Map<String, Object> target) throws Exception {
         String id = Json.text(target, "id", ""), version = Json.text(target, "version", "");
         List<String> metadata = facts.loader().metadata(facts.pack().minecraft());
         List<Path> jars = facts.pack().mods().stream().map(PackCheck.Mod::jar).toList();
         return PackResolve.release(check, id, metadata, facts.pack().loader(), facts.pack().minecraft(), jars,
-            found -> newer ? Versions.compare(found, version) > 0 : Versions.compare(found, version) < 0);
+            found -> Versions.compare(found, version) > 0);
     }
 
     /**
@@ -403,7 +377,7 @@ final class PackRepairs {
         for (String line : log.split("\\R")) {
             String plain = line.replaceAll("[\u00a7\ufffd].", "");
             boolean failing = FAILING.matcher(plain).find() && !plain.contains("|");
-            // The first frames under an exception say whose code threw it (crash-culprit reads them).
+            // The first frames under an exception say whose code threw it.
             boolean frame = !failing && frames > 0 && plain.strip().startsWith("at ");
             if ((failing || frame) && lines.size() < 400) lines.add(plain.strip());
             frames = failing && plain.contains("Exception") ? 8 : frame ? frames - 1 : 0;
@@ -491,18 +465,15 @@ final class PackRepairs {
                         if (!jar.isEmpty() && !serverOnly.contains(jar)) serverOnly.add(jar);
                         notes.add(fix.get("id") + ": " + jar + " is left out of the server; players keep it");
                     }
-                    case "add-newer-bundled", "previous-release" -> {
-                        boolean newer = type.equals("add-newer-bundled");
-                        Path jar = release(check, facts, target, newer);
+                    case "add-newer-bundled" -> {
+                        Path jar = release(check, facts, target);
                         if (jar == null) {
-                            String which = newer ? "newer" : "earlier";
-                            notes.add(fix.get("id") + ": Modrinth has no " + which + " release of " + target.get("id") + " for this game version and loader, so nothing changed for it");
+                            notes.add(fix.get("id") + ": Modrinth has no newer release of " + target.get("id") + " for this game version and loader, so nothing changed for it");
                             continue;
                         }
-                        if (!newer && !remove.contains(Json.text(target, "jar", ""))) remove.add(Json.text(target, "jar", ""));
                         add.add(jar);
                         sources.put(jar.getFileName().toString(), Json.map("type", type, "mod", target.get("id"), "from", "Modrinth, by the project of the pack's own jar"));
-                        notes.add(fix.get("id") + ": " + (newer ? "added " : "replaced " + target.get("jar") + " with ") + jar.getFileName());
+                        notes.add(fix.get("id") + ": added " + jar.getFileName());
                     }
                     default -> throw new IllegalStateException(type);
                 }
@@ -771,14 +742,14 @@ final class PackRepairs {
             if (type.equals("fetch-dependency")) for (Hit hit : applies(fix, facts)) if (Boolean.TRUE.equals(hit.target().get("replace"))) {
                 for (var p : before.providers.getOrDefault(String.valueOf(hit.target().get("id")), List.of())) if (!p.bundled()) gone.add(p.jar());
             }
-            if (type.equals("leave-out-of-server") || type.equals("previous-release")) for (Hit hit : applies(fix, facts)) gone.add(String.valueOf(hit.target().get("jar")));
+            if (type.equals("leave-out-of-server")) for (Hit hit : applies(fix, facts)) gone.add(String.valueOf(hit.target().get("jar")));
             if (type.equals("substitute-file")) stillGone.clear();
             after.removeIf(m -> gone.contains(m.file()));
             // A general repair names no mod and no file: its jar is found when it runs, and its test describes it.
             if (fix.get("loader") instanceof String any && any.equals("*") && (fix.containsKey("mod") || fixed.containsKey("url") || fixed.containsKey("file"))) {
                 throw new AssertionError(id + " is general: it may not name a mod or a file");
             }
-            if (Set.of("add-jar", "replace-mod", "fetch-dependency", "substitute-file", "add-newer-bundled", "previous-release").contains(type)) {
+            if (Set.of("add-jar", "replace-mod", "fetch-dependency", "substitute-file", "add-newer-bundled").contains(type)) {
                 var added = Json.object(test.get("added"));
                 if (added.isEmpty()) throw new AssertionError(id + ": its test does not describe the jar it adds");
                 added.putIfAbsent("file", Json.text(action, "file", "added.jar"));

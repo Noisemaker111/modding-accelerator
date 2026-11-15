@@ -25,7 +25,9 @@ public final class GamePrep {
 
     static Path cache = System.getenv("MMT_GAME_CACHE") != null
         ? Path.of(System.getenv("MMT_GAME_CACHE"))
-        : Path.of(System.getProperty("user.home"), ".mmt", "game");
+        : System.getenv("MODACCEL_GAME_CACHE") != null
+            ? Path.of(System.getenv("MODACCEL_GAME_CACHE"))
+            : Path.of(System.getProperty("user.home"), ".mmt", "game");
     static final HttpClient HTTP = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
 
     public static void main(String[] args) throws Exception {

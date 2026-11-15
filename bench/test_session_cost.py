@@ -38,16 +38,21 @@ def busy_java(seconds):
 
 
 # a Java process that was already running is not counted
-before = busy_java(6)
-time.sleep(2)
+before = busy_java(5)
 with C.Sampler() as s:
-    time.sleep(1.5)
+    time.sleep(0.6)
 check(before.pid not in s.seen, "a process running before sampling began must not be counted")
 
 # one that starts while sampling is seen, with memory and CPU
 with C.Sampler() as s:
-    child = busy_java(3)
+    child = busy_java(2)
     child.wait()
+check(before.pid not in s.seen, "nor in a later sampling while it still runs")
+
+# CPU per kind of thread, read while the process runs (Windows, Linux; macOS has no reader yet)
+groups = C.thread_groups(before.pid)
+check(sys.platform == "darwin" or sum(groups.values()) > 0.5, f"thread CPU of a busy Java process: {groups}")
+before.kill()
 before.wait()
 mine = [p for pid, p in s.seen.items() if pid == child.pid or p["ppid"] == child.pid]
 check(mine, f"the Java process started while sampling was not seen; saw {json.dumps(s.seen)}")
@@ -67,13 +72,6 @@ check(busy is None and sys.platform == "darwin" or busy is not None and 0 <= bus
 # windows on screen: a dict on Windows (none for a console Java), None (unknown) elsewhere
 shown = C.visible_windows([child.pid])
 check(shown == {} if C.WINDOWS else shown is None, f"visible windows of a console process: {shown}")
-
-# CPU per kind of thread, read while the process runs (Windows, Linux; macOS has no reader yet)
-live = busy_java(4)
-time.sleep(3)
-groups = C.thread_groups(live.pid)
-live.wait()
-check(sys.platform == "darwin" or sum(groups.values()) > 0.5, f"thread CPU of a busy Java process: {groups}")
 
 # the result kept as a source has no local paths
 kept = C.clean({"root": "C:\\Users\\x\\p", "a": {"capture": "C:\\Users\\x\\p\\shot.png"}, "b": "/Users/x/p/log.txt", "n": 3})

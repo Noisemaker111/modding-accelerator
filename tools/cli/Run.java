@@ -31,7 +31,7 @@ final class Run {
      * for the end: mmt-progress {"step": what is running, "log": the file that step writes, or null}.
      */
     static void progress(String step, Path log) {
-        if (System.getenv("MMT_PROGRESS") == null) return;
+        if (UserState.env("PROGRESS") == null) return;
         String file = log == null ? null : log.toAbsolutePath().toString();
         System.err.println("mmt-progress " + Json.write(Json.map("step", step, "log", file)));
         System.err.flush();
@@ -49,6 +49,101 @@ final class Run {
             super("Timed out after " + seconds + " seconds; log: " + log);
             this.seconds = seconds;
             this.log = log;
+        }
+    }
+
+    /**
+     * A game or server this command started and still answers for. Until handOff(), close() or this JVM's exit (a
+     * failure, Ctrl-C, a parent's kill) ends it and everything it started: hidden games that outlived the command
+     * that started them ran for 13 hours. A game a Gradle daemon started is no descendant of this command; it
+     * prints "MMT_PID n" first thing (the in-game agent does), and the log it writes to is read for it.
+     */
+    static final class Owned implements AutoCloseable {
+
+        private final List<ProcessHandle> processes = new CopyOnWriteArrayList<>();
+        private final Path log;
+        private final Instant since = Instant.now().minusSeconds(1);
+        private final Thread hook;
+        private volatile boolean handedOff;
+
+        Owned(ProcessHandle process, Path log) {
+            processes.add(process);
+            this.log = log;
+            hook = new Thread(this::end, "mmt-end-owned");
+            Runtime.getRuntime().addShutdownHook(hook);
+        }
+
+        /** Another process that ends with this one, such as the server JVM a Gradle daemon started. */
+        void add(ProcessHandle process) {
+            processes.add(process);
+        }
+
+        /** The process now belongs to whoever uses it next (a running game kept for reload and eval). */
+        void handOff() {
+            handedOff = true;
+            unhook();
+        }
+
+        /** Ends the process unless it was handed off. */
+        public void close() {
+            if (handedOff) return;
+            end();
+            unhook();
+        }
+
+        private void unhook() {
+            try {
+                Runtime.getRuntime().removeShutdownHook(hook);
+            } catch (IllegalStateException shuttingDown) {}
+        }
+
+        private void end() {
+            if (handedOff) return;
+            List<ProcessHandle> all = new ArrayList<>(announced(log, since));
+            all.addAll(processes);
+            Run.end(all);
+        }
+    }
+
+    private static final Pattern ANNOUNCED = Pattern.compile("MMT_PID (\\d+)");
+
+    /** Processes a log names with "MMT_PID n" that still run and started after since (a reused pid did not). */
+    static List<ProcessHandle> announced(Path log, Instant since) {
+        List<ProcessHandle> found = new ArrayList<>();
+        if (log == null) return found;
+        String text;
+        try {
+            text = new String(Files.readAllBytes(log), StandardCharsets.UTF_8);
+        } catch (IOException unreadable) {
+            return found;
+        }
+        Matcher match = ANNOUNCED.matcher(text);
+        while (match.find()) {
+            Optional<ProcessHandle> process = ProcessHandle.of(Long.parseLong(match.group(1)));
+            if (
+                process.isPresent() &&
+                process.get().info().startInstant().map(started -> !started.isBefore(since)).orElse(false)
+            ) found.add(process.get());
+        }
+        return found;
+    }
+
+    /** Ends these processes and their descendants: asked first, forced after 5 s. */
+    static void end(List<ProcessHandle> processes) {
+        List<ProcessHandle> all = new ArrayList<>();
+        // Listed before anything ends: a child whose parent is gone is no longer found as its descendant.
+        for (ProcessHandle process : processes) {
+            all.addAll(process.descendants().toList());
+            all.add(process);
+        }
+        all.forEach(ProcessHandle::destroy);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        for (ProcessHandle process : all) {
+            long left = deadline - System.nanoTime();
+            try {
+                if (left > 0) process.onExit().get(left, TimeUnit.NANOSECONDS);
+            } catch (Exception stillRunning) {}
+            if (process.isAlive()) process.destroyForcibly();
         }
     }
 

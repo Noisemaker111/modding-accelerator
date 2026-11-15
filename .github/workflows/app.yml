@@ -1,0 +1,30 @@
+name: Desktop app
+# cargo test for the desktop app (app/, Rust on Rune) when it changes: its scenes lay out and its verdicts read the
+# CLI's JSON right. Linux only; the build's Rust and Rune are pinned in app/rust-toolchain.toml and app/Cargo.toml.
+on:
+  push:
+    branches: [main]
+    paths: ['app/**', '.github/workflows/app.yml']
+  pull_request:
+    paths: ['app/**', '.github/workflows/app.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: app-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libxkbcommon-dev libwayland-dev >/dev/null
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app
+          save-if: ${{ github.event_name == 'push' }}
+      - run: cargo test --locked

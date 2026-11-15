@@ -154,6 +154,7 @@ public final class Mmt {
             "background",
             "quiet",
             "pack",
+            "focus",
             "minecraft",
             "loader",
             "memory",
@@ -298,6 +299,7 @@ public final class Mmt {
         Path previewReceipts = null;
         try {
             options = new Options(args);
+            UserState.migrateHome();
             if (options.has("help") || options.command.equals("help")) {
                 System.out.println(help(options.command.equals("help") ? options.get("command", "") : options.command));
                 return;
@@ -366,6 +368,7 @@ public final class Mmt {
                 unknownCommand(options.command)
             );
             ProjectModel project = new ProjectModel(root);
+            UserState.migrateProject(project.root);
             if (!Set.of("package", "self-test").contains(options.command)) project.requireGradleBuild();
             // Commands that build, edit or start the game take the project lock; reading state and talking to a running game don't.
             // convert --dry-run converts a copy elsewhere: it takes no lock and keeps no receipt.
@@ -636,7 +639,7 @@ public final class Mmt {
             }
         } catch (Exception error) {
             // MMT_TRACE=1 prints where a failure came from, for a bug in mmt itself.
-            if (System.getenv("MMT_TRACE") != null) error.printStackTrace();
+            if (UserState.env("TRACE") != null) error.printStackTrace();
             try {
                 String reported = plainError(error);
                 // A dedicated server that died mid-check is the likelier cause of a client failure: say so with the error.
@@ -940,7 +943,7 @@ public final class Mmt {
             "Reports what the mod registered (items, blocks, recipes, loot tables, tags ...), each item as a real stack (stack size, durability, food),\n" +
             "and every warning and error the game logged. Exit 1 when the game logged an error, an item cannot be made, or nothing of the mod loaded.\n" +
             "The game's code stays loaded: the next data-check reads the data again (a changed recipe or loot table costs a few CPU-seconds);\n" +
-            "changed classes or fabric.mod.json load it again. --once does not keep it; game-stop ends it.\n" +
+            "changed classes or fabric.mod.json load it again. --once does not keep it; game-stop ends it, and it ends itself after 15 minutes unused.\n" +
             "Fabric on Minecraft 26.x; other versions and loaders are reported as unchecked with the reason.";
             case "plugin-check" -> "Load and enable a Paper/Bukkit plugin on MockBukkit, a fake Paper server, without a real server: mmt plugin-check --root SOURCE [--project :module] [--task :shadowJar] [--plugins FOLDER] --json\n" +
             "The plugin's own jar task builds the jar (shadowJar, reobfJar or jar; --task picks another). MockBukkit for the plugin's Paper API line\n" +
@@ -1010,7 +1013,7 @@ public final class Mmt {
             "compared, after the game's renames (knowledge/fingerprint-normalise.json, or --map). Prints each differing section and the first leaves.\n" +
             "--baseline B1.json,B2.json --candidate C1.json,C2.json decides perf-optimize's fingerprint gate on recorded launches: leaves the baselines\n" +
             "disagree on are left out and named, and every other leaf of each candidate must equal its paired baseline's.";
-            case "pack-check" -> "Check a modpack the way its players run it: mmt pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--fix] [--json]\n" +
+            case "pack-check" -> "Check a modpack the way its players run it: mmt pack-check --pack PACK [--world SAVE] [--only ITEM,ITEM] [--focus MODID,MODID] [--fix] [--json]\n" +
             "--pack is a CurseForge export (.zip or folder), a Modrinth .mrpack (or folder), a CurseForge app, Prism/MultiMC or vanilla launcher\n" +
             "instance, or any folder with mods/. --minecraft 1.21.1 and --loader neoforge[-21.1.77] override what the pack says; with no loader\n" +
             "version the loader's newest stable one is used. mmt pack-check --list shows the inputs, loaders, checks and repairs it knows.\n" +
@@ -1026,6 +1029,8 @@ public final class Mmt {
             "save. A start that fails names the mod its log, crash report, mixin configs or stack point at.\n" +
             "--fix runs the repaired pack's server beside the shipped one and compares them check by check; only when the repaired one passes\n" +
             "is your pack changed: an instance folder in place (undo with --undo), an export or .mrpack as a fixed copy.\n" +
+            "--focus MODID,MODID is a minimal repro: only the jars providing those ids and their required dependencies (from the jars'\n" +
+            "metadata) and loader plugins start, so one fault is proven in minutes, not a whole pack's start; --fix then never changes your pack.\n" +
             "--memory 6G sets the server's heap. A start is judged by its log: --timeout SECONDS (default 600) stops one whose log stops growing,\n" +
             "and a ceiling of 30 minutes plus 8 s per mod past 100 stops one that never finishes. How to add a loader, input, check or\n" +
             "repair: tools/packcheck/CONTRIBUTING.md.";

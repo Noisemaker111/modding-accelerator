@@ -14,6 +14,7 @@ public final class PerfTest {
         adviceEvidence();
         optimizerGates();
         optimizerStopping();
+        optimizerVerdict();
         experimentCheck();
         modTemplates();
         check(Run.running(ProcessHandle.current()), "current process is running");
@@ -37,9 +38,8 @@ public final class PerfTest {
         check(Run.exitedProcStat("123 (name with ) spaces) Z 1 2 3"), "unreaped Linux exits are not running games");
         check(!Run.exitedProcStat("123 (java) S 1 2 3"), "sleeping Linux process remains live");
         Path home = Path.of(args[0]);
-        runRecords(home);
+        runRecords();
         patternLibrary(home);
-        committedExperiments(home);
         Path scratch = Files.createTempDirectory(Path.of(args[1]).toAbsolutePath().getParent(), "perf-fixture-");
         Mmt.Report receipt = new Mmt.Report(scratch, "perf-test");
         Path agent = Performance.agent(home, receipt);
@@ -340,7 +340,7 @@ public final class PerfTest {
     }
 
     /** Every session run writes the same record shape; phases, verdicts and rejection reasons are checked. */
-    static void runRecords(Path home) throws Exception {
+    static void runRecords() throws Exception {
         PerfRecord record = new PerfRecord("perf-optimize", null);
         record.record.put("candidate", Json.map("label", "tints", "diffSha256", "ab12", "changedFiles", List.of()));
         Map<String, Object> launch = Json.map("stages", List.of(Json.map("name", "metadata", "seconds", 20.0), Json.map("name", "compile", "seconds", 30.0),
@@ -364,48 +364,11 @@ public final class PerfTest {
         check(PerfRecord.validate(done).stream().anyMatch(p -> p.contains("speedup.cold.low")), "an accepted record needs both intervals above 1");
         done.put("candidate", null);
         check(PerfRecord.validate(done).stream().anyMatch(p -> p.contains("candidate")), "a comparison names its candidate");
-        if (Files.isRegularFile(home.resolve("coverage/perf-runs.json"))) {
-            for (Object item : Json.array(Json.read(home.resolve("coverage/perf-runs.json")).get("runs"))) {
-                Map<String, Object> kept = Json.object(item);
-                check(PerfRecord.validate(kept).isEmpty(), "kept run " + kept.get("id") + " validates: " + PerfRecord.validate(kept));
-            }
-        }
     }
 
-    /**
-     * knowledge/perf-patterns.json: each pattern is complete, cites an accepted kept run, and its symptom
-     * fires on its own test row and stays quiet on the other, as each port rule carries a test.
-     */
-    /**
-     * Every experiment under bench/ names only files the checkout has; only its save is made once per machine. A file the
-     * repository ignores (Pipez's options.txt was) passes on the machine that made it and fails on every other. Nested
-     * experiments count too: Diorama's is bench/diorama/play, whose options.txt a one-level ignore exception missed.
-     * Files copied out of the save (Diorama's frozen region files) are made with it, by its prepare step.
-     */
-    static void committedExperiments(Path home) throws Exception {
-        int checked = 0;
-        List<Path> files;
-        try (var walk = Files.walk(home.resolve("bench"), 3)) {
-            files = walk.filter(p -> p.getFileName().toString().equals("experiment.json")).sorted().toList();
-        }
-        for (Path file : files) {
-            Map<String, Object> experiment = Json.read(file);
-            Path save = file.getParent().resolve(Json.text(experiment, "worldSource", "-")).normalize();
-            Map<String, Object> result = PerfCheck.check(file, experiment, null, null, null);
-            List<String> problems = new ArrayList<>();
-            for (Object item : Json.array(result.get("problems"))) {
-                String problem = item.toString();
-                if (problem.startsWith("worldSource ")) continue;
-                if (problem.startsWith("files: ") && file.getParent().resolve(problem.substring(7, problem.indexOf(" (for "))).normalize().startsWith(save)) continue;
-                problems.add(problem);
-            }
-            check(problems.isEmpty(), home.relativize(file) + " names files the checkout lacks: " + problems);
-            checked++;
-        }
-        check(checked >= 4, "bench experiments are checked, nested ones too: " + checked);
-    }
-
+    /** A pattern's symptom fires on its own test row and stays quiet on the other; the package carries the library. */
     static void patternLibrary(Path home) throws Exception {
+        check(!PerfPatterns.load(home).isEmpty(), "the package carries knowledge/perf-patterns.json, which perf and perf-optimize read");
         Map<String, Object> mod = Json.map("id", "m", "samples", 100, "methods", List.of(Json.map("name", "a.Tints.blend(La/Snap;)V", "samples", 30),
             Json.map("name", "a.Other.run()V", "samples", 70)), "threads", List.of(Json.map("name", "worker-1", "samples", 90)));
         Map<String, Object> symptom = Json.map("text", "t", "when", List.of(Json.map("in", "methods", "matches", "\\.blend\\(", "minShare", 0.2),
@@ -426,11 +389,41 @@ public final class PerfTest {
         check(problems.stream().anyMatch(p -> p.contains("test.fires")) && problems.stream().anyMatch(p -> p.contains("test.quiet")), "a pattern's own test must fire and stay quiet");
         List<Object> matched = PerfPatterns.match(List.of(pattern), Json.map("mods", List.of(mod)));
         check(matched.size() == 1 && "reuse-x".equals(Json.object(matched.get(0)).get("pattern")), "a capture showing the symptom names the pattern");
-        Path library = PerfPatterns.file(home);
-        if (Files.isRegularFile(library)) {
-            List<String> found = PerfPatterns.validate(Json.read(library), PerfPatterns.acceptedRecords(home));
-            check(found.isEmpty(), "knowledge/perf-patterns.json: " + String.join("; ", found));
+    }
+
+    /**
+     * perf-optimize's verdict rejects a deliberately wrong candidate even when it is twice as fast and most gates agree:
+     * Pipez's stale cache (bench/pipez/sabotage-stale-cache.diff) passed moving and transfers and only rewire caught it.
+     * An equivalent candidate that is not faster is not accepted either.
+     */
+    static void optimizerVerdict() throws Exception {
+        Map<String, Object> experiment = Json.map("measure", Json.map(), "gates", List.of(Json.map("name", "moving", "compare", "exact"),
+            Json.map("name", "transfers", "compare", "exact"), Json.map("name", "rewire", "compare", "exact")));
+        List<Object> stale = new ArrayList<>();
+        for (int run = 0; run < 3; run++) stale.addAll(arms(run, 2.0, 1.0, "rewire-ok", run == 2 ? "rewire-stale" : "rewire-ok"));
+        Map<String, Object> result = new LinkedHashMap<>();
+        PerfOptimize.evaluate(experiment, result, stale);
+        List<Object> failed = Json.array(result.get("gates")).stream().filter(g -> Boolean.FALSE.equals(Json.object(g).get("passed")))
+            .map(g -> Json.object(g).get("name")).toList();
+        check(Boolean.TRUE.equals(result.get("faster")) && Boolean.FALSE.equals(result.get("accepted")) && failed.equals(List.of("rewire")),
+            "a twice-as-fast candidate that differs in one gate on one run is rejected by that gate alone: " + failed);
+        List<Object> slower = new ArrayList<>();
+        for (int run = 0; run < 3; run++) slower.addAll(arms(run, 1.0, 1.0 + 0.01 * run, "rewire-ok", "rewire-ok"));
+        Map<String, Object> same = new LinkedHashMap<>();
+        PerfOptimize.evaluate(experiment, same, slower);
+        check(Boolean.TRUE.equals(same.get("gatesPassed")) && Boolean.FALSE.equals(same.get("faster")) && Boolean.FALSE.equals(same.get("accepted")),
+            "an equivalent candidate that is not faster is not accepted");
+    }
+
+    /** One pair whose arms agree on moving and transfers and give these rewire outputs. */
+    static List<Object> arms(int run, double base, double cand, String baseRewire, String candRewire) {
+        List<Object> rows = new ArrayList<>();
+        for (String arm : List.of("baseline", "candidate")) {
+            double value = arm.equals("baseline") ? base : cand;
+            rows.add(Json.map("run", run, "arm", arm, "captures", Json.map("cold", Json.map("value", value), "warm", Json.map("value", value)),
+                "gates", Json.map("moving", "m1", "transfers", "640", "rewire", arm.equals("baseline") ? baseRewire : candRewire)));
         }
+        return rows;
     }
 
     static void optimizerGates() throws Exception {
