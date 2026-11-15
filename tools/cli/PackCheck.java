@@ -857,6 +857,8 @@ final class PackCheck {
         final PackLoaders.Context context;
         Path install, instance, probe;
         ServerMods selection;
+        /** What check() found, once it has run. */
+        Map<String, Object> result;
 
         ServerLane(Pack pack, PackRepairs.Change change, String lane, List<Object> found, PackLoaders.Context context) {
             this.pack = pack;
@@ -980,6 +982,7 @@ final class PackCheck {
                 checks.start = opened;
                 stage("user-world", checks);
             }
+            result = game;
             return game;
         }
 
@@ -1407,12 +1410,22 @@ final class PackCheck {
         for (var fix : fixes) targets.add(Json.text(fix, "check", ""));
         Set<String> before = new HashSet<>();
         for (Object f : findings) if ("problem".equals(Json.object(f).get("severity"))) before.add(Json.object(f).get("kind") + " " + Json.object(f).get("summary"));
+        // The checks the shipped pack's starts never reached (it did not open a world, or not twice) cannot show what the
+        // repair changed: a problem only they find stays in "remaining", but the repair did not bring it.
+        Set<String> unreached = new HashSet<>();
+        var shippedGame = Json.object(shipped.result == null ? Json.map() : shipped.result);
+        boolean shippedOpened = Boolean.TRUE.equals(Json.object(shippedGame.getOrDefault("newWorld", Json.map())).get("opened"));
+        boolean shippedReopened = Boolean.TRUE.equals(Json.object(shippedGame.getOrDefault("reopen", Json.map())).get("opened"));
+        for (var check : PackChecks.ALL) if ((check.stage().equals("new-world") && !shippedOpened) || (check.stage().equals("reopen") && !shippedReopened)) unreached.add(check.id());
+        unreached.add("settled-after-save");
         List<Object> remaining = new ArrayList<>(), introduced = new ArrayList<>();
         for (Object f : lane.found) {
             var finding = Json.object(f);
             if (!"problem".equals(finding.get("severity"))) continue;
             remaining.add(finding);
-            if (targets.contains(finding.get("kind")) || !before.contains(finding.get("kind") + " " + finding.get("summary"))) introduced.add(finding);
+            boolean target = targets.contains(finding.get("kind"));
+            boolean fresh = !before.contains(finding.get("kind") + " " + finding.get("summary")) && !unreached.contains(String.valueOf(finding.get("kind")));
+            if (target || fresh) introduced.add(finding);
         }
         boolean opened = Boolean.TRUE.equals(Json.object(again.getOrDefault("newWorld", Json.map())).get("opened"));
         boolean reopened = Boolean.TRUE.equals(Json.object(again.getOrDefault("reopen", Json.map())).get("opened"));

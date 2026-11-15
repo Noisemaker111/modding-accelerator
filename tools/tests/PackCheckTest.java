@@ -113,14 +113,16 @@ public final class PackCheckTest {
                 "different",
                 List.of(
                     Json.map("item", "modern_industrialization:tin_ore", "expected", "modern_industrialization:tin_ore", "landed", "techreborn:tin_ore"),
-                    Json.map("item", "powah:energy_cable_basic", "expected", "powah:energy_cable_basic", "landed", "techreborn:glassfiber_cable")
+                    Json.map("item", "powah:energy_cable_basic", "expected", "powah:energy_cable_basic", "landed", "techreborn:glassfiber_cable"),
+                    Json.map("item", "supplementaries:tater_in_a_jar", "expected", "supplementaries:tater_in_a_jar", "landed", "quark:tiny_potato", "related", true)
                 )
             )
         );
         PackChecks.placements(placed);
         expect(
-            found.size() == 2 && "note".equals(Json.object(found.get(0)).get("severity")) && "problem".equals(Json.object(found.get(1)).get("severity")),
-            "a same-named block from another mod is a note, another block a problem: " + found
+            found.size() == 3 && "note".equals(Json.object(found.get(0)).get("severity")) && "problem".equals(Json.object(found.get(1)).get("severity")) &&
+            "note".equals(Json.object(found.get(2)).get("severity")),
+            "a same-named block from another mod, or the block the item's own block is built on, is a note; another block a problem: " + found
         );
         String failing = PackRepairs.failing(
             "[main/ERROR]: Failed to start\n| vinery | 1.1.4 | Vinery |\n - Mod 'AstralVinery' (astralvinery) 1.2.0 requires version 1.1.4 of vinery, which is missing!\n[main/INFO]: Loading 200 mods: vinery"

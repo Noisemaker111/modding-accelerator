@@ -345,12 +345,15 @@ final class PackChecks {
             boolean otherMod = !landedMod.equals(itemMod) && !landedMod.equals(expected.split(":")[0]) && !landedMod.equals("minecraft");
             // Another mod's block of the same name (tin_ore for tin_ore) is a pack unifying a block two mods both add, on purpose.
             boolean unified = otherMod && landed.contains(":") && expected.contains(":") && landed.split(":", 2)[1].equals(expected.split(":", 2)[1]);
+            boolean related = otherMod && Boolean.TRUE.equals(row.get("related"));
             c.add(
                 "placed-other-block",
-                otherMod && !unified ? "problem" : "note",
+                otherMod && !unified && !related ? "problem" : "note",
                 "Placing " + item + " put down " + landed + " instead of " + expected +
                 (unified
                     ? ": the same block from another mod, as a pack does when it unifies a block two mods both add."
+                    : related
+                    ? ": the item's own block is built on that block (its mod's compatibility code chose it)."
                     : otherMod ? ": a block from another mod." : ": the item's own mod does this (a growth stage or a deliberate swap)."),
                 "evidence",
                 row

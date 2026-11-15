@@ -356,7 +356,13 @@ public final class ModaccelPackProbe {
                     return;
                 }
                 // An item with a wall or hanging form (torch, sign) registers both blocks as its own: either is the item's block.
-                if (landed.getBlock() == expected || landed.getBlock().asItem() == item) same++; else different.add(row);
+                if (landed.getBlock() == expected || landed.getBlock().asItem() == item) same++;
+                else {
+                    // The item's own block built on the one that landed (Supplementaries' tater in a jar on Quark's tiny potato):
+                    // the item's mod chose the other block in its own compatibility code.
+                    if (landed.getBlock().getClass().isAssignableFrom(expected.getClass())) row.addProperty("related", true);
+                    different.add(row);
+                }
                 placed.add(row);
                 cell++;
             } catch (Throwable failure) {
