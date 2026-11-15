@@ -132,7 +132,7 @@ def main():
         text, version = sources(key)
         written = render(constants(text), version, "ResourceLocation" if key.endswith("21.1") else "Identifier")
         if args.check:
-            if not out.is_file() or out.read_text(encoding="utf-8") != written:
+            if not out.is_file() or out.read_bytes().decode("utf-8").replace("\r\n", "\n") != written:
                 stale.append(str(out.relative_to(ROOT)))
         else:
             out.write_text(written, encoding="utf-8", newline="\n")
