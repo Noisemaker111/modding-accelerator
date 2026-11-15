@@ -36,9 +36,10 @@ public final class Bridge {
         Bus.INSTANCE.register(type);
     }
 
-    /** The end of the main entrypoint: registration, then the game's events, then common setup. */
+    /** The end of the main entrypoint: registration, then capabilities, the game's events, and common setup. */
     public static void common(String modid) {
         DeferredRegister.registerPending();
+        Bus.INSTANCE.post(new ${package}.capabilities.RegisterCapabilitiesEvent());
         hook();
         Bus.INSTANCE.post(new RegisterPayloadHandlersEvent());
         Bus.INSTANCE.post(new FMLCommonSetupEvent(container(modid)));

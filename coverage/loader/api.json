@@ -1,6 +1,6 @@
 {
  "about": "Every class and member a rule in knowledge/loaders.json names, looked up in the loaders' own published jars by python bench/loader_api.py verify. artifacts: the exact jars read, with their SHA-256. rules: each rule's symbols and whether the jar has them.",
- "rules_sha256": "5e7159181a6b6348d3ed7f3cdc9c5f9078dc8142ef1ddb5c2f620cc6150ef3b2",
+ "rules_sha256": "3bd89acfcdcdbe1223d298c131f4094d1a533f91fd024eba772d43e97b0b3764",
  "artifacts": {
   "bus": {
    "coordinate": "net.neoforged:bus:8.0.5",
@@ -61,6 +61,16 @@
    "coordinate": "net.neoforged:neoforge:21.1.250:universal",
    "url": "https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.250/neoforge-21.1.250-universal.jar",
    "sha256": "1f9cc68fe9ec0416475d34ce76e95a696b9721d5d338168563dab0632c3d2956"
+  },
+  "neoforge-26.1": {
+   "coordinate": "net.neoforged:neoforge:26.1.2.126:universal",
+   "url": "https://maven.neoforged.net/releases/net/neoforged/neoforge/26.1.2.126/neoforge-26.1.2.126-universal.jar",
+   "sha256": "6d480a6b83d279b85b8e8069a05528c4f69e9bee6b67e72358efa035ee47cedf"
+  },
+  "teamreborn-energy": {
+   "coordinate": "teamreborn:energy:5.0.0",
+   "url": "https://maven.fabricmc.net/teamreborn/energy/5.0.0/energy-5.0.0.jar",
+   "sha256": "889afc438d3e4add5cfdac76517da7987a2c495e4731690a56f2c5dee775db59"
   }
  },
  "rules": {
@@ -930,6 +940,414 @@
     "found": true
    },
    {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#openOuter",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#getLifecycle",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#getCurrentUnsafe",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#commit",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#close",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction$Lifecycle#NONE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction$Lifecycle#OPEN",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction$Lifecycle#CLOSING",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction$Lifecycle#OUTER_CLOSING",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext#openNested",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext#nestingDepth",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext#getOpenTransaction",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext#addCloseCallback",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext#addOuterCloseCallback",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext$CloseCallback#onClose",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext$OuterCloseCallback#afterOuterClose",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext$Result#wasAborted",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#get",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#find",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#registerForBlocks",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#registerForBlockEntities",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#getProvider",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup$BlockApiProvider#find",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup$BlockEntityApiProvider#find",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiCache#create",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiCache#find",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiCache#getLevel",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiCache#getPos",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.entity.EntityApiLookup#get",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.entity.EntityApiLookup#find",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.entity.EntityApiLookup#registerForTypes",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.entity.EntityApiLookup#getProvider",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.item.ItemApiLookup#get",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.item.ItemApiLookup#find",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.item.ItemApiLookup#registerForItems",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.item.ItemApiLookup#getProvider",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemStorage#SIDED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemStorage#ITEM",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage#SIDED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage#ITEM",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#insert",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#extract",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#iterator",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#supportsInsertion",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#asClass",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StorageView#extract",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StorageView#isResourceBlank",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StorageView#getResource",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StorageView#getAmount",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StorageView#getCapacity",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.SlottedStorage#getSlotCount",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.SlottedStorage#getSlot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StoragePreconditions#notBlankNotNegative",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StoragePreconditions#notNegative",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant#isBlank",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant#getComponentsPatch",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#of",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#blank",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#getItem",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant#of",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant#blank",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant#getFluid",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#BUCKET",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getName",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getLuminance",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getTemperature",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getViscosity",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#isLighterThanAir",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#forPlayerInteraction",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#forCreativeInteraction",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#ofPlayerCursor",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#ofPlayerSlot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#ofSingleSlot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#getItemVariant",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#getAmount",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#insert",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#extract",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#getMainSlot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#insertOverflow",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext#getAdditionalSlots",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ContainerStorage#of",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ContainerStorage#getSlot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.PlayerInventoryStorage#of",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.PlayerInventoryStorage#getHandSlot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.PlayerInventoryStorage#insert",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.PlayerInventoryStorage#offerOrDrop",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.PlayerInventoryStorage#drop",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.core.TypedInstance#typeHolder",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.storage.ValueOutput#store",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.storage.ValueOutput#putInt",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.storage.ValueOutput#list",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.storage.ValueInput#read",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.storage.ValueInput#getIntOr",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.storage.ValueInput#listOrEmpty",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.ItemStackWithSlot#CODEC",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.ItemStackWithSlot#isValidInContainer",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.util.Unit#INSTANCE",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.Level",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.entity.Entity",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.ItemStack#typeHolder",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.item.ItemStack#getComponentsPatch",
+    "found": true
+   },
+   {
     "symbol": "neoforge|net.neoforged.neoforge.registries.DeferredRegister#createBlocks",
     "found": true
    },
@@ -1267,6 +1685,1486 @@
    },
    {
     "symbol": "fml|net.neoforged.fml.ModList#getModContainerById",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BaseCapability#name",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BaseCapability#typeClass",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BaseCapability#contextClass",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapability#create",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapability#createVoid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapability#createSided",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapability#getAll",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapability#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.EntityCapability#create",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.EntityCapability#createVoid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.EntityCapability#createSided",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.EntityCapability#getAll",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.EntityCapability#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.ItemCapability#create",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.ItemCapability#createVoid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.ItemCapability#getAll",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.ItemCapability#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.ICapabilityProvider#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.IBlockCapabilityProvider#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent#registerBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent#registerBlockEntity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent#isBlockRegistered",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent#registerEntity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent#isEntityRegistered",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent#registerItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent#isItemRegistered",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapabilityCache#create",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapabilityCache#level",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapabilityCache#pos",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapabilityCache#context",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapabilityCache#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Energy#BLOCK",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Energy#ENTITY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Energy#ITEM",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Fluid#BLOCK",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Fluid#ENTITY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Fluid#ITEM",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Item#BLOCK",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Item#ENTITY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Item#ENTITY_AUTOMATION",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Item#ITEM",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.ILevelExtension#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.ILevelExtension#invalidateCapabilities",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IItemStackExtension#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#size",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#getResource",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#getAmountAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#getAmountAsInt",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#getCapacityAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#getCapacityAsInt",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#isValid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#insert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#extract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#asClass",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.IndexModifier#set",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.Resource#isEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.ResourceStack#resource",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.ResourceStack#amount",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.ResourceStack#isEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.RegisteredResource#value",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.RegisteredResource#is",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.DataComponentHolderResource#isComponentsPatchEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.DataComponentHolderResource#withMergedPatch",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.DataComponentHolderResource#with",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.DataComponentHolderResource#without",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.DataComponentHolderResource#getComponentsPatch",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#EMPTY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#CODEC",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#OPTIONAL_CODEC",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#STREAM_CODEC",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#value",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#getItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#typeHolder",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#isEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#matches",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#is",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#test",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#isComponentsPatchEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#withMergedPatch",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#with",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#without",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#getComponents",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#getComponentsPatch",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#toStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#getMaxStackSize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#getHoverName",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#EMPTY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#CODEC",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#OPTIONAL_CODEC",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#STREAM_CODEC",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#value",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#getFluid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#typeHolder",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#getFluidType",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#isEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#withMergedPatch",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#with",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#without",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#getComponents",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#getComponentsPatch",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#toStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#isComponentsPatchEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#is",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#matches",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#test",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#getHoverName",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#openRoot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#open",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#getLifecycle",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#getCurrentOpenedTransaction",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#commit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#close",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#depth",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction$Lifecycle#NONE",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction$Lifecycle#OPEN",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction$Lifecycle#CLOSING",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction$Lifecycle#ROOT_CLOSING",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.TransactionContext#depth",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.SnapshotJournal#createSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.SnapshotJournal#revertToSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.SnapshotJournal#releaseSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.SnapshotJournal#onRootCommit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.SnapshotJournal#isInTransaction",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.SnapshotJournal#updateSnapshots",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.RootCommitJournal#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.RootCommitJournal#onRootCommit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#VALUE_IO_KEY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#emptyStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#stacks",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#codec",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#setStacks",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#serialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#deserialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#set",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#getResourceFrom",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#getAmountFrom",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#getStackFrom",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#copyOf",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#matches",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#isValid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#getCapacity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#onContentsChanged",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#copyToList",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#size",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#getResource",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#getAmountAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#getCapacityAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#insert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.StacksResourceHandler#extract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler#getResourceFrom",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler#getAmountFrom",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler#getStackFrom",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler#getCapacity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler#copyOf",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler#matches",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler#capacity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler#getResourceFrom",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler#getAmountFrom",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler#getStackFrom",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler#getCapacity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler#copyOf",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler#matches",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.EnergyHandler#getAmountAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.EnergyHandler#getAmountAsInt",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.EnergyHandler#getCapacityAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.EnergyHandler#getCapacityAsInt",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.EnergyHandler#insert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.EnergyHandler#extract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#energy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#capacity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#maxInsert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#maxExtract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#serialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#deserialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#set",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#onEnergyChanged",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#getAmountAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#getCapacityAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#insert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler#extract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#isEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#isFull",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#isValid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#getRedstoneSignalFromResourceHandler",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#insertStacking",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#extractFirst",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#move",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#moveStacking",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#moveFirst",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#moveFirstStacking",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#contains",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#indexOf",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandlerUtil#findExtractableResource",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemUtil#getStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemUtil#insertItemReturnRemaining",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.RangedResourceHandler#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.RangedResourceHandler#ofSingleIndex",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.RangedResourceHandler#start",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.RangedResourceHandler#end",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.RangedResourceHandler#size",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.RangedResourceHandler#convertIndex",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.RangedResourceHandler#insert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.RangedResourceHandler#extract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.CombinedResourceHandler#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.CombinedResourceHandler#getHandlerIndex",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.CombinedResourceHandler#getHandlerFromIndex",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.CombinedResourceHandler#getSlotFromIndex",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.CombinedResourceHandler#size",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.CombinedResourceHandler#getResource",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.CombinedResourceHandler#getAmountAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.CombinedResourceHandler#getCapacityAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.CombinedResourceHandler#isValid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.CombinedResourceHandler#insert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.CombinedResourceHandler#extract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.VanillaContainerWrapper#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.VanillaContainerWrapper#ofUncached",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.VanillaContainerWrapper#size",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.VanillaContainerWrapper#getResource",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.VanillaContainerWrapper#getAmountAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.VanillaContainerWrapper#getCapacityAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.VanillaContainerWrapper#isValid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.VanillaContainerWrapper#insert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.VanillaContainerWrapper#extract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.PlayerInventoryWrapper#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.PlayerInventoryWrapper#getSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.PlayerInventoryWrapper#getMainHandSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.PlayerInventoryWrapper#getHandSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.PlayerInventoryWrapper#insert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.PlayerInventoryWrapper#placeItemBackInInventory",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.PlayerInventoryWrapper#drop",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#forPlayerInteraction",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#forInfiniteMaterials",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#forPlayerCursor",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#forPlayerSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#forHandlerIndex",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#forHandlerIndexStrict",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#forStack",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#getResource",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#getAmount",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#insert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#extract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.access.ItemAccess#exchange",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#CODEC",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#OPTIONAL_CODEC",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#STREAM_CODEC",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#OPTIONAL_STREAM_CODEC",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#EMPTY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#isEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#split",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#copyAndClear",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#getFluid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#typeHolder",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#copy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#copyWithAmount",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#matches",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#isSameFluid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#isSameFluidSameComponents",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#hashFluidAndComponents",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#getDescriptionId",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#getHoverName",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#getComponents",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#getComponentsPatch",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#isComponentsPatchEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#set",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#remove",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#applyComponents",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#amount",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#getAmount",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#setAmount",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#limitSize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#grow",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#shrink",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidInstance#getFluidType",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidInstance#is",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#BUCKET_VOLUME",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#getDescription",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#getDescriptionId",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#getLightLevel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#getTemperature",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#getViscosity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#isLighterThanAir",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.ValueIOSerializable#serialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.util.ValueIOSerializable#deserialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.IItemHandler#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.IItemHandler#getSlots",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.IItemHandler#getStackInSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.IItemHandler#insertItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.IItemHandler#extractItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.IItemHandler#getSlotLimit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.IItemHandler#isItemValid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.IItemHandlerModifiable#setStackInSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#stacks",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#setSize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#setStackInSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#getSlots",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#getStackInSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#insertItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#extractItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#getSlotLimit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#getStackLimit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#isItemValid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#serialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#deserialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#validateSlotIndex",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#onLoad",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemStackHandler#onContentsChanged",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemHandlerHelper#insertItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemHandlerHelper#insertItemStacked",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemHandlerHelper#giveItemToPlayer",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.ItemHandlerHelper#calcRedstoneFromInventory",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.SlotItemHandler#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.SlotItemHandler#index",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.SlotItemHandler#mayPlace",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.SlotItemHandler#getItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.SlotItemHandler#set",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.SlotItemHandler#initialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.SlotItemHandler#onQuickCraft",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.SlotItemHandler#getMaxStackSize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.SlotItemHandler#mayPickup",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.SlotItemHandler#remove",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.SlotItemHandler#getItemHandler",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RangedWrapper#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RangedWrapper#getSlots",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RangedWrapper#getStackInSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RangedWrapper#insertItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RangedWrapper#extractItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RangedWrapper#setStackInSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RangedWrapper#getSlotLimit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RangedWrapper#isItemValid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.InvWrapper#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.InvWrapper#getSlots",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.InvWrapper#getStackInSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.InvWrapper#insertItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.InvWrapper#extractItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.InvWrapper#setStackInSlot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.InvWrapper#getSlotLimit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.InvWrapper#isItemValid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.InvWrapper#getInv",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RecipeWrapper#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RecipeWrapper#inv",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RecipeWrapper#size",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.items.wrapper.RecipeWrapper#getItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.IEnergyStorage#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.IEnergyStorage#receiveEnergy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.IEnergyStorage#extractEnergy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.IEnergyStorage#getEnergyStored",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.IEnergyStorage#getMaxEnergyStored",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.IEnergyStorage#canExtract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.IEnergyStorage#canReceive",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#energy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#capacity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#maxReceive",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#maxExtract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#receiveEnergy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#extractEnergy",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#getEnergyStored",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#getMaxEnergyStored",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#canExtract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#canReceive",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#serialize",
+    "found": true
+   },
+   {
+    "symbol": "neoforge-26.1|net.neoforged.neoforge.energy.EnergyStorage#deserialize",
     "found": true
    }
   ],
@@ -1814,6 +3712,702 @@
     "found": true
    },
    {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#openOuter",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#isOpen",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#getLifecycle",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#openNested",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#getCurrentUnsafe",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#abort",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#commit",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction#close",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction$Lifecycle#NONE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction$Lifecycle#OPEN",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction$Lifecycle#CLOSING",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.Transaction$Lifecycle#OUTER_CLOSING",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext#openNested",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext#nestingDepth",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext#getOpenTransaction",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext#addCloseCallback",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext#addOuterCloseCallback",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext$CloseCallback#onClose",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext$OuterCloseCallback#afterOuterClose",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext$Result#ABORTED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext$Result#COMMITTED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext$Result#wasAborted",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext$Result#wasCommitted",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant#createSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant#readSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant#releaseSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant#onFinalCommit",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant#updateSnapshots",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant#onClose",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant#afterOuterClose",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#empty",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#supportsInsertion",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#insert",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#supportsExtraction",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#extract",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#iterator",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#nonEmptyIterator",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#nonEmptyViews",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#getVersion",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.Storage#asClass",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StorageView#extract",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StorageView#isResourceBlank",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StorageView#getResource",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StorageView#getAmount",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StorageView#getCapacity",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StorageView#getUnderlyingView",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.SlottedStorage#getSlotCount",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.SlottedStorage#getSlot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.SlottedStorage#getSlots",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant#isBlank",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant#getObject",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant#getComponentsPatch",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant#getComponents",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant#hasComponents",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant#componentsMatch",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant#isOf",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant#withComponents",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StoragePreconditions#notBlank",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StoragePreconditions#notNegative",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.StoragePreconditions#notBlankNotNegative",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage#iterator",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage#getSlotCount",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage#getSlot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#variant",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#amount",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#getBlankVariant",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#getCapacity",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#canInsert",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#canExtract",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#insert",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#extract",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#isResourceBlank",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#getResource",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#getAmount",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#createSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#readSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#readValue",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage#writeValue",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.ResourceAmount#resource",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.storage.base.ResourceAmount#amount",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#CODEC",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#PACKET_CODEC",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#blank",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#of",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#matches",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#getItem",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#typeHolder",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#toStack",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemVariant#withComponents",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.item.ItemStorage#SIDED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant#CODEC",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant#PACKET_CODEC",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant#blank",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant#of",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant#getFluid",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant#typeHolder",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant#withComponents",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage#SIDED",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#BUCKET",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#BOTTLE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#BOWL",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#BLOCK",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#INGOT",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#NUGGET",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#DROPLET",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#fromBucketFraction",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#WATER_TEMPERATURE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#LAVA_TEMPERATURE",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#WATER_VISCOSITY",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#LAVA_VISCOSITY",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#LAVA_VISCOSITY_NETHER",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants#VISCOSITY_RATIO",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#register",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getHandler",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getHandlerOrDefault",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getName",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getColoredName",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getAssociatedColor",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getFillSound",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getEmptySound",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getLuminance",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getTemperature",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#getViscosity",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes#isLighterThanAir",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler#getName",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler#getColoredName",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler#getAssociatedColor",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler#getFillSound",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler#getEmptySound",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler#getLightEmission",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler#getTemperature",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler#getViscosity",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler#isLighterThanAir",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering#register",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering#getHandler",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering#getHandlerOrDefault",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering#getTooltip",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering#getColor",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRenderHandler#appendTooltip",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRenderHandler#getColor",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#get",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#find",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#registerSelf",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#registerForBlocks",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#registerForBlockEntity",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#registerForBlockEntities",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#registerFallback",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#getId",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#apiClass",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#contextClass",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup#getProvider",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup$BlockApiProvider#find",
+    "found": true
+   },
+   {
+    "symbol": "fabric-api|net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup$BlockEntityApiProvider#find",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.EnergyStorage#SIDED",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.EnergyStorage#EMPTY",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.EnergyStorage#supportsInsertion",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.EnergyStorage#insert",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.EnergyStorage#supportsExtraction",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.EnergyStorage#extract",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.EnergyStorage#getAmount",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.EnergyStorage#getCapacity",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#<init>",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#amount",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#capacity",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#maxInsert",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#maxExtract",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#createSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#readSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#supportsInsertion",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#insert",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#supportsExtraction",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#extract",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#getAmount",
+    "found": true
+   },
+   {
+    "symbol": "teamreborn-energy|team.reborn.energy.api.base.SimpleEnergyStorage#getCapacity",
+    "found": true
+   },
+   {
     "symbol": "fml|net.neoforged.fml.ModList#getMods",
     "found": true
    },
@@ -1875,6 +4469,282 @@
    },
    {
     "symbol": "minecraft|net.minecraft.resources.Identifier#fromNamespaceAndPath",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapability#create",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.BlockCapability#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Item#BLOCK",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Fluid#BLOCK",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.Capabilities$Energy#BLOCK",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent#registerBlock",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent#registerBlockEntity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.IBlockCapabilityProvider#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.capabilities.ICapabilityProvider#getCapability",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#size",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#getResource",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#getAmountAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#getCapacityAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#isValid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#insert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.ResourceHandler#extract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.resource.Resource#isEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#EMPTY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#isEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#getItem",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.item.ItemResource#getComponentsPatch",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#EMPTY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#of",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#isEmpty",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#getFluid",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.fluid.FluidResource#getComponentsPatch",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.EnergyHandler#getAmountAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.EnergyHandler#getCapacityAsLong",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.EnergyHandler#insert",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.energy.EnergyHandler#extract",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#openRoot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#open",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#getLifecycle",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#getCurrentOpenedTransaction",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#commit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction#close",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction$Lifecycle#NONE",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction$Lifecycle#OPEN",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction$Lifecycle#CLOSING",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.Transaction$Lifecycle#ROOT_CLOSING",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.TransactionContext#depth",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.SnapshotJournal#updateSnapshots",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.SnapshotJournal#createSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.SnapshotJournal#revertToSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.SnapshotJournal#releaseSnapshot",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.transfer.transaction.SnapshotJournal#onRootCommit",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#BUCKET_VOLUME",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#getDescription",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#getSound",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#getLightLevel",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#getTemperature",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#getViscosity",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidType#isLighterThanAir",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#EMPTY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.fluids.FluidStack#<init>",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.SoundActions#BUCKET_FILL",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.SoundActions#BUCKET_EMPTY",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.common.extensions.IFluidExtension#getFluidType",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSource#colorInWorld",
+    "found": true
+   },
+   {
+    "symbol": "neoforge|net.neoforged.neoforge.client.fluid.FluidTintSource#colorAsStack",
+    "found": true
+   },
+   {
+    "symbol": "bus|net.neoforged.bus.api.EventPriority#LOWEST",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.renderer.block.FluidModel#tintSource",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.color.block.BlockTintSource#color",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.color.block.BlockTintSource#colorInWorld",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.client.resources.model.ModelManager#getFluidStateModelSet",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.material.Fluid#getPickupSound",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.material.Fluid#isSource",
+    "found": true
+   },
+   {
+    "symbol": "minecraft|net.minecraft.world.level.material.FlowingFluid#getSource",
     "found": true
    }
   ]

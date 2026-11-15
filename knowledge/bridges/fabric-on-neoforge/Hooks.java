@@ -8,5 +8,6 @@ final class Hooks {
     private Hooks() {}
 
     static void common(IEventBus modBus) {
+        TransferHooks.common(modBus);
     }
 }
