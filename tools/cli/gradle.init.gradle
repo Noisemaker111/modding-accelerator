@@ -219,7 +219,8 @@ gradle.afterProject { p ->
                         '-Dfabric.noGui=true'
                 // A hidden game is a test session, not someone playing: C1 alone halves the CPU a client
                 // spends starting (8 clients at once: 378 CPU-s instead of 819, bench/session_cost.py).
-                if (System.getProperty('modaccel.background', 'false') == 'true') t.jvmArgs '-XX:TieredStopAtLevel=1'
+                // --jit full (performance measurements) keeps the JIT players have.
+                if (System.getProperty('modaccel.background', 'false') == 'true' && System.getProperty('modaccel.jit', '') != 'full') t.jvmArgs '-XX:TieredStopAtLevel=1'
             }
             def executable = t.executable
             try { executable = t.javaLauncher.get().executablePath.asFile.absolutePath } catch (Exception ignored) {}

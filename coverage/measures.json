@@ -772,6 +772,34 @@
    "points": [
     {"date": "2026-10-21", "value": 158.55, "n": 6, "note": "median of 6 Fabric mods", "source": "bench/port/results.json"}
    ]
+  },
+  {
+   "id": "test.diorama-live-mapping-cold",
+   "area": "test",
+   "name": "Diorama's live-mapping CPU (baker threads and render thread) during the play experiment's first 60 s flight capture, hidden client, production JIT",
+   "unit": "CPU-s",
+   "better": "lower",
+   "condition": "cold",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-14", "value": 35.3, "n": 6, "note": "Diorama 0.10.1 unmodified, mean of 6 launches", "source": "coverage/perf-runs.json#2026-11-15T06-25-41.604795900Z-ad5239e8"},
+    {"date": "2026-11-14", "value": 26.6, "n": 6, "note": "with bench/diorama/tint-carry-over.patch and dirty-only-gpu-spots.patch, mean of 6 paired launches", "source": "coverage/perf-runs.json#2026-11-15T06-25-41.604795900Z-ad5239e8"}
+   ],
+   "info": true
+  },
+  {
+   "id": "test.diorama-live-mapping-warm",
+   "area": "test",
+   "name": "Diorama's live-mapping CPU (baker threads and render thread) during the play experiment's second 60 s flight capture, hidden client, production JIT",
+   "unit": "CPU-s",
+   "better": "lower",
+   "condition": "warm",
+   "machine": "jon-pc",
+   "points": [
+    {"date": "2026-11-14", "value": 31.1, "n": 6, "note": "Diorama 0.10.1 unmodified, mean of 6 launches", "source": "coverage/perf-runs.json#2026-11-15T06-25-41.604795900Z-ad5239e8"},
+    {"date": "2026-11-14", "value": 24.2, "n": 6, "note": "with bench/diorama/tint-carry-over.patch and dirty-only-gpu-spots.patch, mean of 6 paired launches", "source": "coverage/perf-runs.json#2026-11-15T06-25-41.604795900Z-ad5239e8"}
+   ],
+   "info": true
   }
  ]
 }

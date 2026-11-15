@@ -1,0 +1,4349 @@
+{
+ "note": "Every kept optimization-session run: modaccel perf captures, perf-optimize decisions and comparison-script runs, one record each in the shape tools/cli/PerfRecord.java writes. Add with python bench/record.py perf RECORD; summarise with python bench/perf_sessions.py. knowledge/perf-patterns.json cites accepted runs here as proof.",
+ "runs": [
+  {
+   "schema": 1,
+   "id": "2026-11-15T03-49-28.766047800Z-49681887",
+   "kind": "perf-optimize",
+   "session": "diorama-10x",
+   "started": "2026-11-15T03:49:28.766047800Z",
+   "mod": {
+    "id": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "project": ""
+   },
+   "phases": {
+    "setup": 70.8247965,
+    "build": 120.1608727,
+    "launch": 403.7509807,
+    "warmup": 200.0,
+    "measure": 1152.3490829000002,
+    "gates": 296.0361683,
+    "other": 49.282777200000005
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 1.7637425
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 29.781716300000003
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 54.290604200000004
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.2233226
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 2.8149064
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.7025569
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 69.2943499
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 69.8975127
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 38.062011
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 2.9791646
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 6.304403
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 50.1771545
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 91.38737169999999
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.9884451
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.6184176
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.9585333
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 80.6652765
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 70.7776693
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 35.5372292
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 2.2369344
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 5.3153957
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 24.6503314
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 70.8923866
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 8.376069
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.6557635
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 3.5121777
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 74.3314075
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 68.5871727
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 30.8487848
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 2.3902134
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 5.0073071
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 14.553842600000001
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 51.81069879999999
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.3634394
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 2.7664198
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.906399
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 70.4345688
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 70.6523071
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 34.0837314
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 2.4776459
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 5.139237
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2968984
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 35.7547827
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.7989743
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.5734229
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.8653223
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 72.3566804
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 71.8238862
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 36.1175598
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 2.6007895
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 9.1026824
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2241825
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 31.481226
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.768822
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.0449781
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.8606687
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 71.9486566
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 69.259412
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 33.0355718
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 2.7256883
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 6.2653954
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2488912
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 35.702885599999995
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.4323261
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.2560855
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.9331739
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 73.5453473
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 70.5868163
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 38.3500281
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 3.0644064
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 5.6493289
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2278558
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 32.4310251
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.5699045
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.2244768
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.8464486
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 75.2087654
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 72.9792542
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 29.5536325
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.9727772
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.1991399
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.0788125
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.2210753
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "baseline run 0 before launch",
+      "at": "2026-11-15T03:49:30.741912200Z",
+      "systemCpu": 0.231887460426221,
+      "javaProcesses": 7
+     },
+     {
+      "when": "candidate run 0 before launch",
+      "at": "2026-11-15T03:54:35.079957900Z",
+      "systemCpu": 0.6302971031066874,
+      "javaProcesses": 18
+     },
+     {
+      "when": "candidate run 1 before launch",
+      "at": "2026-11-15T04:00:46.037511Z",
+      "systemCpu": 0.37396513122340447,
+      "javaProcesses": 22
+     },
+     {
+      "when": "baseline run 1 before launch",
+      "at": "2026-11-15T04:06:04.563253300Z",
+      "systemCpu": 0.32742449046463795,
+      "javaProcesses": 18
+     },
+     {
+      "when": "baseline run 2 before launch",
+      "at": "2026-11-15T04:10:47.062331400Z",
+      "systemCpu": 0.9617058180558042,
+      "javaProcesses": 21
+     },
+     {
+      "when": "candidate run 2 before launch",
+      "at": "2026-11-15T04:15:09.725772400Z",
+      "systemCpu": 0.7894828597051109,
+      "javaProcesses": 24
+     },
+     {
+      "when": "candidate run 3 before launch",
+      "at": "2026-11-15T04:19:18.636288400Z",
+      "systemCpu": 0.4957210818300075,
+      "javaProcesses": 27
+     },
+     {
+      "when": "baseline run 3 before launch",
+      "at": "2026-11-15T04:23:39.693058800Z",
+      "systemCpu": 0.43951969079422304,
+      "javaProcesses": 32
+     }
+    ],
+    "meanSystemCpu": 0.5312504544507621,
+    "maxSystemCpu": 0.9617058180558042
+   },
+   "candidate": {
+    "label": "tint-carry-over",
+    "diffSha256": "143ff516cf714814982fefdc7618a1a0b989570f0274e57e9e1d1c2a10f47982",
+    "changedFiles": [
+     "src/main/java/dev/diorama/bake/BiomeTints.java",
+     "src/main/java/dev/diorama/data/ChunkSnapshot.java",
+     "src/main/java/dev/diorama/render/MapLevel.java"
+    ]
+   },
+   "gates": [
+    {
+     "name": "bakes",
+     "compare": "exact",
+     "passed": false,
+     "failures": [
+      "baseline values differ between launches; this output is not deterministic enough for an exact gate",
+      "candidate run 0 differs from baseline",
+      "candidate run 1 differs from baseline",
+      "candidate run 2 differs from baseline",
+      "candidate run 3 differs from baseline"
+     ]
+    },
+    {
+     "name": "mapped",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 1.0881265781071507,
+     "low": 0.9100993040574353,
+     "high": 1.2676292142981231,
+     "pairs": 4,
+     "baselineMean": 1202.2302391880949,
+     "candidateMean": 1133.2267943337663
+    },
+    "warm": {
+     "geometricMean": 1.1578397483833183,
+     "low": 1.0208579223259338,
+     "high": 1.275553631239894,
+     "pairs": 4,
+     "baselineMean": 1154.232303888639,
+     "candidateMean": 1000.398732693006
+    },
+    "scopes": {
+     "gpuMesh": {
+      "cold": {
+       "geometricMean": 0.9557049948758752,
+       "low": 0.6637957493745438,
+       "high": 1.3759835583329876,
+       "pairs": 4,
+       "baselineMean": 63854.942200000005,
+       "candidateMean": 69517.98879999999
+      },
+      "warm": {
+       "geometricMean": 1.3215010538744958,
+       "low": 1.0584651690739,
+       "high": 1.5531495523875776,
+       "pairs": 4,
+       "baselineMean": 69729.545925,
+       "candidateMean": 53310.300925
+      }
+     },
+     "spots": {
+      "cold": {
+       "geometricMean": 0.7664005366586775,
+       "low": 0.572442843782473,
+       "high": 1.0260758588745813,
+       "pairs": 4,
+       "baselineMean": 25995.90425,
+       "candidateMean": 34939.673325
+      },
+      "warm": {
+       "geometricMean": 1.0974355515532823,
+       "low": 0.9648565066775727,
+       "high": 1.2113151413386207,
+       "pairs": 4,
+       "baselineMean": 30079.064375,
+       "candidateMean": 27405.253525
+      }
+     },
+     "gpuImage": {
+      "cold": {
+       "geometricMean": 0.6962816924178742,
+       "low": 0.4523017930630929,
+       "high": 1.071868833225412,
+       "pairs": 4,
+       "baselineMean": 2267.21615,
+       "candidateMean": 3374.046625
+      },
+      "warm": {
+       "geometricMean": 1.1387345288331896,
+       "low": 0.9417207459549286,
+       "high": 1.347399085909303,
+       "pairs": 4,
+       "baselineMean": 2970.69685,
+       "candidateMean": 2609.010125
+      }
+     },
+     "traceBake": {
+      "cold": {
+       "geometricMean": 0.6582919836519724,
+       "low": 0.6582919836519724,
+       "high": 0.6582919836519724,
+       "pairs": 1,
+       "baselineMean": 18868.9004,
+       "candidateMean": 28663.4212
+      },
+      "warm": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      }
+     },
+     "tintBlend": {
+      "cold": {
+       "geometricMean": 2.004655288503882,
+       "low": 1.4036964724980265,
+       "high": 2.799198614214801,
+       "pairs": 4,
+       "baselineMean": 20868.540275,
+       "candidateMean": 10939.783300000001
+      },
+      "warm": {
+       "geometricMean": 2.839988644293084,
+       "low": 2.370541442309862,
+       "high": 3.2187207984653115,
+       "pairs": 4,
+       "baselineMean": 18561.2054,
+       "candidateMean": 6576.5234
+      }
+     },
+     "mipmapBuild": {
+      "cold": {
+       "geometricMean": 0.8197086630803224,
+       "low": 0.5807968924105252,
+       "high": 1.156897189205334,
+       "pairs": 4,
+       "baselineMean": 797.4143250000001,
+       "candidateMean": 994.984875
+      },
+      "warm": {
+       "geometricMean": 1.0975804204761657,
+       "low": 0.93484368547805,
+       "high": 1.2486650011684357,
+       "pairs": 4,
+       "baselineMean": 1154.121,
+       "candidateMean": 1039.43935
+      }
+     },
+     "tileUpload": {
+      "cold": {
+       "geometricMean": 0.9637784583540758,
+       "low": 0.8518913032866059,
+       "high": 1.0903608397031084,
+       "pairs": 4,
+       "baselineMean": 164.272625,
+       "candidateMean": 171.225475
+      },
+      "warm": {
+       "geometricMean": 1.0387423389738228,
+       "low": 0.9222917054751534,
+       "high": 1.156874891355473,
+       "pairs": 4,
+       "baselineMean": 170.350075,
+       "candidateMean": 164.509975
+      }
+     },
+     "tileWrite": {
+      "cold": {
+       "geometricMean": 0.8252149090030583,
+       "low": 0.6496212841219902,
+       "high": 1.0482717587699095,
+       "pairs": 4,
+       "baselineMean": 5091.34675,
+       "candidateMean": 6222.6162
+      },
+      "warm": {
+       "geometricMean": 1.0246784750378026,
+       "low": 0.672210791830871,
+       "high": 1.3209699849082095,
+       "pairs": 4,
+       "baselineMean": 4679.227849999999,
+       "candidateMean": 4739.83845
+      }
+     },
+     "importDraw": {
+      "cold": {
+       "geometricMean": 0.7806938818369005,
+       "low": 0.6832432166878274,
+       "high": 0.8868510111988934,
+       "pairs": 4,
+       "baselineMean": 31197.5039,
+       "candidateMean": 40280.159325
+      },
+      "warm": {
+       "geometricMean": 1.5131074969842677,
+       "low": 1.0279796837377306,
+       "high": 2.227178546083131,
+       "pairs": 4,
+       "baselineMean": 26657.606099999997,
+       "candidateMean": 19417.85425
+      }
+     },
+     "hudRenderPerCall": {
+      "cold": {
+       "geometricMean": 0.979640072678171,
+       "low": 0.9162167293471954,
+       "high": 1.0219697285566718,
+       "pairs": 4,
+       "baselineMean": 2.9105623542413674,
+       "candidateMean": 2.970519842513606
+      },
+      "warm": {
+       "geometricMean": 1.0524466505073224,
+       "low": 0.9609206796916338,
+       "high": 1.184956624194417,
+       "pairs": 4,
+       "baselineMean": 2.9842306442722566,
+       "candidateMean": 2.839680745408174
+      }
+     },
+     "levelUpdatePerCall": {
+      "cold": {
+       "geometricMean": 0.9403757330371723,
+       "low": 0.8567720056728162,
+       "high": 1.032137503828408,
+       "pairs": 4,
+       "baselineMean": 0.19928608530286723,
+       "candidateMean": 0.21245309476239774
+      },
+      "warm": {
+       "geometricMean": 1.0569780758669962,
+       "low": 0.9277678505614493,
+       "high": 1.1733022361679522,
+       "pairs": 4,
+       "baselineMean": 0.20226930918444505,
+       "candidateMean": 0.19206253563370532
+      }
+     },
+     "radarCollectPerCall": {
+      "cold": {
+       "geometricMean": 0.9525652240828025,
+       "low": 0.8602063572584839,
+       "high": 1.0548405024856848,
+       "pairs": 4,
+       "baselineMean": 0.08365235062466692,
+       "candidateMean": 0.08836404920382858
+      },
+      "warm": {
+       "geometricMean": 1.0187881102987688,
+       "low": 0.9455721543781134,
+       "high": 1.124424046694693,
+       "pairs": 4,
+       "baselineMean": 0.08798846766703103,
+       "candidateMean": 0.08653675956927868
+      }
+     },
+     "waypointLayoutPerCall": {
+      "cold": {
+       "geometricMean": 0.8934309022478577,
+       "low": 0.7466888024565209,
+       "high": 1.0436871865709778,
+       "pairs": 4,
+       "baselineMean": 0.00392699270309845,
+       "candidateMean": 0.004498299130002873
+      },
+      "warm": {
+       "geometricMean": 1.101664542097104,
+       "low": 1.014087571539803,
+       "high": 1.2628151834690056,
+       "pairs": 4,
+       "baselineMean": 0.002260011799849737,
+       "candidateMean": 0.0020422172437326957
+      }
+     },
+     "sessionTickPerCall": {
+      "cold": {
+       "geometricMean": 0.9233023545857906,
+       "low": 0.8072770328403608,
+       "high": 1.081707730104562,
+       "pairs": 4,
+       "baselineMean": 0.7988159402475064,
+       "candidateMean": 0.8689784448862148
+      },
+      "warm": {
+       "geometricMean": 1.0087687161075862,
+       "low": 0.917376665700184,
+       "high": 1.101938663533459,
+       "pairs": 4,
+       "baselineMean": 0.8003396754155877,
+       "candidateMean": 0.7949777722762308
+      }
+     }
+    }
+   },
+   "verdict": "rejected",
+   "rejection": "gate bakes failed: [baseline values differ between launches; this output is not deterministic enough for an exact gate, candidate run 0 differs from baseline, candidate run 1 differs from baseline, candidate run 2 differs from baseline, candidate run 3 differs from baseline]; cold speedup 1.088x, 95% interval 0.910-1.268 includes 1",
+   "metric": {
+    "mod": "diorama",
+    "statistic": "sampledCpuMsPerSecond"
+   },
+   "source": ".\\.runs\\diorama-10x\\opt-c1",
+   "finished": "2026-11-15T04:27:54.026670400Z",
+   "seconds": 2292.4046783000003
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T04-31-38.563414800Z-c85c6e6a",
+   "kind": "perf",
+   "session": "diorama-10x",
+   "started": "2026-11-15T04:31:38.563914700Z",
+   "mod": {
+    "id": "diorama",
+    "version": "",
+    "loader": "",
+    "project": ""
+   },
+   "phases": {
+    "setup": 5.6789714,
+    "build": 0.0,
+    "launch": 0.0,
+    "warmup": 0.0,
+    "measure": 159.4006793,
+    "gates": 0.0,
+    "other": 5.560893
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "attach",
+     "seconds": 5.6789714
+    },
+    {
+     "phase": "warmup",
+     "name": "capture warmup",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "capture",
+     "seconds": 159.4006793
+    },
+    {
+     "phase": "other",
+     "name": "report",
+     "seconds": 5.560893
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "before capture",
+      "at": "2026-11-15T04:31:38.572001700Z",
+      "systemCpu": 0.9723038311707842,
+      "javaProcesses": 40
+     }
+    ],
+    "meanSystemCpu": 0.9723038311707842,
+    "maxSystemCpu": 0.9723038311707842
+   },
+   "candidate": null,
+   "gates": [],
+   "speedup": null,
+   "verdict": "observed",
+   "rejection": null,
+   "source": ".\\.runs\\diorama-10x\\cap-c2jit",
+   "cost": {
+    "sampledCpuMsPerSecond": 616.7235849891999,
+    "perFrameMs": 40.28457634987384,
+    "perTickMs": 0.48044844447557583,
+    "hotspots": [
+     {
+      "method": "dev.diorama.bake.MapPick.pick(DD)I",
+      "share": 0.15187547292184628
+     },
+     {
+      "method": "dev.diorama.bake.GpuMesher.build(Ldev/diorama/bake/TileKey;Ldev/diorama/bake/ChunkSource;Ldev/diorama/bake/BlockLooks;ZLdev/diorama/bake/Overlays;[I)Ldev/diorama/bake/GpuMesher$Mesh;",
+      "share": 0.14279537347313803
+     },
+     {
+      "method": "dev.diorama.bake.BiomeTints.blend(Ldev/diorama/data/ChunkSnapshot;)Ldev/diorama/data/ChunkSnapshot$Tints;",
+      "share": 0.09209815155118366
+     },
+     {
+      "method": "dev.diorama.bake.TileSpots.passedWhenSaved(Ldev/diorama/bake/TileKey;[IIII)Z",
+      "share": 0.06637120311317696
+     },
+     {
+      "method": "dev.diorama.bake.VoxelReader$Decoded.solid(I[B[I[I)[J",
+      "share": 0.05902064641660361
+     }
+    ]
+   },
+   "patterns": [],
+   "finished": "2026-11-15T04:34:29.300583200Z",
+   "seconds": 170.6405437
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T04-39-23.715962200Z-afec9c1b",
+   "kind": "perf-optimize",
+   "session": "diorama-10x",
+   "started": "2026-11-15T04:39:23.716962500Z",
+   "mod": {
+    "id": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "project": ""
+   },
+   "phases": {
+    "setup": 122.7741702,
+    "build": 160.46059010000005,
+    "launch": 622.3397607999999,
+    "warmup": 250.0,
+    "measure": 1649.2230160999995,
+    "gates": 320.34562090000003,
+    "other": 86.52432629999998
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 2.6800826
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 93.32879500000001
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 122.55660599999999
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 5.8125322
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 4.9303144
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 2.4181959
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 86.4754208
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 75.9359998
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 27.5391198
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 3.5035409
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 5.1949159
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 11.1085019
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 64.0201837
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 106.21829609999999
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 4.3436745
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.363702
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 2.2447887
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 84.159639
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 79.0157962
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 23.1789888
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 1.9561132
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 3.4849157
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 5.4047825
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2074416
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 28.5269674
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.5118819
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 2.8808912
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.0524303
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 77.7084086
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 77.414677
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 26.5768363
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 2.8595387
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 4.9734908
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 6.8553996
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2618338
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 47.075563800000005
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 5.8712097
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.596738
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.8125664
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 86.2185551
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 77.9712191
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 25.5383208
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 2.6714817
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 5.1226464
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 10.1678199
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.4506242
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 72.09410790000001
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 13.4824378
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 14.3099387
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 5.2565676
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 132.3496378
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 82.7724954
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 29.5241723
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 4.0895813
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 6.2095664
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 14.9473797
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.472535
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 69.1038197
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 4.3014112
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 4.6836387
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.5302033
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 93.8775031
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 90.6439018
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 28.3806166
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 2.9888106
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 5.4548237
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 7.7546009
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.3844899
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 50.5828362
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 4.2481457
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.0659866
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 2.3114988
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 87.7590581
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 84.4317328
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 27.9230592
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 3.1694766
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 5.7116527
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 12.5053198
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.929752
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 69.4054189
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 5.140198
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.758846
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 2.1265924
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 82.8199796
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 69.0919142
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 17.4248938
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.6871486
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.1103866
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.4724991
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.1851755
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 25.4301134
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.6834648
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 2.8616476
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.1582948
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 69.1334409
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 68.1025601
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 21.136013
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.5259179
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.1931442
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.4637158
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2197594
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 31.346031399999998
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 2.9700677
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 2.4743219
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.8919008
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 73.840096
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 69.5009807
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 20.5867699
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 1.7951082
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 3.8345703
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 4.9250981
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 2.3993776
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.5198314
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "baseline run 0 before launch",
+      "at": "2026-11-15T04:39:26.683441500Z",
+      "systemCpu": 0.9903498791363272,
+      "javaProcesses": 44
+     },
+     {
+      "when": "candidate run 0 before launch",
+      "at": "2026-11-15T04:47:18.019446800Z",
+      "systemCpu": 0.9070487118289958,
+      "javaProcesses": 42
+     },
+     {
+      "when": "candidate run 1 before launch",
+      "at": "2026-11-15T04:54:01.922043400Z",
+      "systemCpu": 0.4079901456249294,
+      "javaProcesses": 41
+     },
+     {
+      "when": "baseline run 1 before launch",
+      "at": "2026-11-15T04:58:20.943702900Z",
+      "systemCpu": 0.6528009611341862,
+      "javaProcesses": 42
+     },
+     {
+      "when": "baseline run 2 before launch",
+      "at": "2026-11-15T05:03:13.639737400Z",
+      "systemCpu": 0.977580464314149,
+      "javaProcesses": 40
+     },
+     {
+      "when": "candidate run 2 before launch",
+      "at": "2026-11-15T05:09:55.671485200Z",
+      "systemCpu": 0.8775695126481154,
+      "javaProcesses": 45
+     },
+     {
+      "when": "candidate run 3 before launch",
+      "at": "2026-11-15T05:15:31.335567100Z",
+      "systemCpu": 0.9748372836245823,
+      "javaProcesses": 40
+     },
+     {
+      "when": "baseline run 3 before launch",
+      "at": "2026-11-15T05:20:40.381691100Z",
+      "systemCpu": 1.0,
+      "javaProcesses": 43
+     },
+     {
+      "when": "baseline run 4 before launch",
+      "at": "2026-11-15T05:25:26.847757600Z",
+      "systemCpu": 0.30475149356401876,
+      "javaProcesses": 14
+     },
+     {
+      "when": "candidate run 4 before launch",
+      "at": "2026-11-15T05:29:13.939535600Z",
+      "systemCpu": 0.49647478338904383,
+      "javaProcesses": 14
+     }
+    ],
+    "meanSystemCpu": 0.7589403235264347,
+    "maxSystemCpu": 1.0,
+    "jit": "full"
+   },
+   "candidate": {
+    "label": "tint-carry-over",
+    "diffSha256": "143ff516cf714814982fefdc7618a1a0b989570f0274e57e9e1d1c2a10f47982",
+    "changedFiles": [
+     "src/main/java/dev/diorama/bake/BiomeTints.java",
+     "src/main/java/dev/diorama/data/ChunkSnapshot.java",
+     "src/main/java/dev/diorama/render/MapLevel.java"
+    ]
+   },
+   "gates": [
+    {
+     "name": "bakes",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "mapped",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "tints",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 1.129385728086266,
+     "low": 0.9960090584122413,
+     "high": 1.3092119556876143,
+     "pairs": 5,
+     "baselineMean": 841.320059003851,
+     "candidateMean": 746.7701729690406
+    },
+    "warm": {
+     "geometricMean": 1.0064936006039775,
+     "low": 0.869593497454666,
+     "high": 1.1649458868102573,
+     "pairs": 5,
+     "baselineMean": 501.2935867338607,
+     "candidateMean": 495.6198890676254
+    },
+    "scopes": {
+     "gpuMeshCpu": {
+      "cold": {
+       "geometricMean": 1.1628578125542575,
+       "low": 0.9476451386953539,
+       "high": 1.4269458439686946,
+       "pairs": 5,
+       "baselineMean": 474.9747460962215,
+       "candidateMean": 413.8028915023694
+      },
+      "warm": {
+       "geometricMean": 1.0605097153004925,
+       "low": 0.9283977191068437,
+       "high": 1.2114213909623996,
+       "pairs": 5,
+       "baselineMean": 291.5962972648835,
+       "candidateMean": 273.8259719947334
+      }
+     },
+     "spotsCpu": {
+      "cold": {
+       "geometricMean": 0.9731062804377244,
+       "low": 0.8143735802422962,
+       "high": 1.1737760516042846,
+       "pairs": 5,
+       "baselineMean": 187.52301160833497,
+       "candidateMean": 190.75830448269767
+      },
+      "warm": {
+       "geometricMean": 0.9482250187889307,
+       "low": 0.7819978199164697,
+       "high": 1.1497866916730155,
+       "pairs": 5,
+       "baselineMean": 142.264814742257,
+       "candidateMean": 149.66260473857827
+      }
+     },
+     "tintBlendCpu": {
+      "cold": {
+       "geometricMean": 2.924448328897095,
+       "low": 2.60640815357684,
+       "high": 3.281296529345313,
+       "pairs": 5,
+       "baselineMean": 97.12793035363163,
+       "candidateMean": 32.89431448284804
+      },
+      "warm": {
+       "geometricMean": 2.8142249588231083,
+       "low": 2.458961908612742,
+       "high": 3.1834127334806865,
+       "pairs": 5,
+       "baselineMean": 58.69928412922111,
+       "candidateMean": 20.366138836082836
+      }
+     },
+     "castersCpu": {
+      "cold": {
+       "geometricMean": 0.9862728579042488,
+       "low": 0.8130484785236926,
+       "high": 1.2061733682476463,
+       "pairs": 5,
+       "baselineMean": 131.32610078065656,
+       "candidateMean": 133.53516985865286
+      },
+      "warm": {
+       "geometricMean": 0.9327117903646813,
+       "low": 0.8176572759974352,
+       "high": 1.0639559011128008,
+       "pairs": 5,
+       "baselineMean": 86.59890020684837,
+       "candidateMean": 93.03083125261269
+      }
+     },
+     "importCpu": {
+      "cold": {
+       "geometricMean": 1.0776290075441852,
+       "low": 0.8529091998509387,
+       "high": 1.439317749046309,
+       "pairs": 5,
+       "baselineMean": 142.79156268235695,
+       "candidateMean": 133.60190022202556
+      },
+      "warm": {
+       "geometricMean": 0.6161717148939722,
+       "low": 0.4545206035132976,
+       "high": 0.8353143494501033,
+       "pairs": 5,
+       "baselineMean": 44.79940310392557,
+       "candidateMean": 67.39802260208883
+      }
+     },
+     "traceCpu": {
+      "cold": {
+       "geometricMean": 13691582.823535128,
+       "low": 2.7168565767543225,
+       "high": 68998651536353.49,
+       "pairs": 2,
+       "baselineMean": 163.32200782745292,
+       "candidateMean": 47.41607752190345
+      },
+      "warm": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      }
+     },
+     "tileWriteCpu": {
+      "cold": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      },
+      "warm": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      }
+     },
+     "mipmapsCpu": {
+      "cold": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      },
+      "warm": {
+       "geometricMean": 1948485.7304766441,
+       "low": 0.7111742521398022,
+       "high": 5338490012043.878,
+       "pairs": 4,
+       "baselineMean": 5.708259508514955,
+       "candidateMean": 4.166517833285452
+      }
+     },
+     "fogMaskCpu": {
+      "cold": {
+       "geometricMean": 1.0803300741929154,
+       "low": 0.9480151533159188,
+       "high": 1.231112250815192,
+       "pairs": 4,
+       "baselineMean": 16.24918819542457,
+       "candidateMean": 14.662935361113258
+      },
+      "warm": {
+       "geometricMean": 0.9393500462887029,
+       "low": 0.7816991871537184,
+       "high": 1.0392020652802774,
+       "pairs": 5,
+       "baselineMean": 8.866547168571866,
+       "candidateMean": 9.233078229071547
+      }
+     },
+     "hudCpu": {
+      "cold": {
+       "geometricMean": 6833325805286.063,
+       "low": 6833325805286.063,
+       "high": 6833325805286.063,
+       "pairs": 1,
+       "baselineMean": 6.833325805286071,
+       "candidateMean": 0.0
+      },
+      "warm": {
+       "geometricMean": 2243310.8308735713,
+       "low": 0.8387423028664371,
+       "high": 5999987680025.306,
+       "pairs": 2,
+       "baselineMean": 5.166636641108861,
+       "candidateMean": 2.5832043926860724
+      }
+     },
+     "hudRenderMs": {
+      "cold": {
+       "geometricMean": 0.97395844309583,
+       "low": 0.8879979872355934,
+       "high": 1.0707105698723267,
+       "pairs": 5,
+       "baselineMean": 1.6056310781709022,
+       "candidateMean": 1.6490397536247248
+      },
+      "warm": {
+       "geometricMean": 0.9615601848114965,
+       "low": 0.8779519799393658,
+       "high": 1.0575235613116214,
+       "pairs": 5,
+       "baselineMean": 1.2385360845792406,
+       "candidateMean": 1.2837069512806498
+      }
+     },
+     "radarMs": {
+      "cold": {
+       "geometricMean": 0.922854894901453,
+       "low": 0.8346235755859014,
+       "high": 1.0089821075197467,
+       "pairs": 5,
+       "baselineMean": 0.08110883212725412,
+       "candidateMean": 0.08757512973602917
+      },
+      "warm": {
+       "geometricMean": 0.945914152604345,
+       "low": 0.7364168957558932,
+       "high": 1.1207552113623396,
+       "pairs": 5,
+       "baselineMean": 0.09557976697433981,
+       "candidateMean": 0.09928803470725797
+      }
+     },
+     "waypointMs": {
+      "cold": {
+       "geometricMean": 0.9428539816506285,
+       "low": 0.7880299108391302,
+       "high": 1.0923010145879135,
+       "pairs": 5,
+       "baselineMean": 0.0046268085199395285,
+       "candidateMean": 0.0049537893333804536
+      },
+      "warm": {
+       "geometricMean": 1.0880303486627347,
+       "low": 0.7663550678307303,
+       "high": 1.544727880461577,
+       "pairs": 5,
+       "baselineMean": 0.0036550444798958658,
+       "candidateMean": 0.0032173698477101858
+      }
+     },
+     "sessionTickMs": {
+      "cold": {
+       "geometricMean": 0.9200406571013932,
+       "low": 0.7660833427149273,
+       "high": 1.1344566601226236,
+       "pairs": 5,
+       "baselineMean": 0.7158945363267346,
+       "candidateMean": 0.7730163429422638
+      },
+      "warm": {
+       "geometricMean": 0.8484397335203808,
+       "low": 0.7055217080354516,
+       "high": 1.0798177641521904,
+       "pairs": 5,
+       "baselineMean": 0.4569196356488222,
+       "candidateMean": 0.5074841678419915
+      }
+     },
+     "levelUpdateMs": {
+      "cold": {
+       "geometricMean": 1.0179283115758786,
+       "low": 0.8271088047437989,
+       "high": 1.1965997717659824,
+       "pairs": 5,
+       "baselineMean": 0.2334686264361459,
+       "candidateMean": 0.2255271396867633
+      },
+      "warm": {
+       "geometricMean": 0.8953935788280002,
+       "low": 0.8048363048314995,
+       "high": 0.9980379378353487,
+       "pairs": 5,
+       "baselineMean": 0.14423111440175013,
+       "candidateMean": 0.15974102243878874
+      }
+     }
+    }
+   },
+   "verdict": "rejected",
+   "rejection": "cold speedup 1.129x, 95% interval 0.996-1.309 includes 1; warm speedup 1.006x, 95% interval 0.870-1.165 includes 1",
+   "metric": {
+    "mod": "diorama",
+    "statistic": "sampledCpuMsPerSecond"
+   },
+   "source": ".\\.runs\\diorama-10x\\opt-c1b",
+   "finished": "2026-11-15T05:33:18.727453Z",
+   "seconds": 3211.667484399999
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T05-50-52.327064200Z-c8912a8a",
+   "kind": "perf-optimize",
+   "session": "diorama-10x",
+   "started": "2026-11-15T05:50:52.328064100Z",
+   "mod": {
+    "id": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "project": ""
+   },
+   "phases": {
+    "setup": 61.590185700000006,
+    "build": 90.87459000000001,
+    "launch": 281.00611449999997,
+    "warmup": 175.0,
+    "measure": 1017.0213837000001,
+    "gates": 180.33859549999997,
+    "other": 79.1213557
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 5.1940579
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 31.2843922
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 52.49829
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.0933795
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 2.6614064
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.7626077
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 72.1607666
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 69.4652679
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 20.0406825
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.917917
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.5085641
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 5.3585966
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 58.212973600000005
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 60.271359499999996
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.475011
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 2.555929
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.2091943
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 70.582317
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 73.5680016
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 24.9479917
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 3.1082319
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 6.6138656
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 19.3934011
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2129727
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 30.3342252
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 4.0626748
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 5.2881324
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.8000581
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 79.6357378
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 75.6869446
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 26.0781581
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 3.4158815
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 5.7050108
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 12.1685583
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.3108047
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 42.8135195
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 4.2826068
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 2.8174636
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.0105743
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 72.097351
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 69.0430303
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 20.2239585
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 2.624944
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 4.4864495
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 5.8961405
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.3201744
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 34.635672
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.2930902
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.1882649
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.6677634
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 72.0899712
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 72.9494774
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 19.2361396
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 1.8397625
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.1520368
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.1256912
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2381896
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 27.2896262
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.3479248
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 2.8541569
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.3647287
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 75.4750745
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 74.222841
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 25.8148948
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 2.7976491
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 4.8264575
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 6.831347
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2950828
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 33.1634221
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.5480356
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.0164799
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.0966455
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 72.2840637
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 25.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 67.7605391
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 12.3143965
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 4.9790677
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 8.0541568
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "baseline run 0 before launch",
+      "at": "2026-11-15T05:50:57.862678600Z",
+      "systemCpu": 0.43696904504472056,
+      "javaProcesses": 12
+     },
+     {
+      "when": "candidate run 0 before launch",
+      "at": "2026-11-15T05:55:48.182483500Z",
+      "systemCpu": 0.6077207624971399,
+      "javaProcesses": 16
+     },
+     {
+      "when": "candidate run 1 before launch",
+      "at": "2026-11-15T06:01:38.410227900Z",
+      "systemCpu": 0.4746912082390914,
+      "javaProcesses": 22
+     },
+     {
+      "when": "baseline run 1 before launch",
+      "at": "2026-11-15T06:06:09.330875700Z",
+      "systemCpu": 0.9948769042545804,
+      "javaProcesses": 18
+     },
+     {
+      "when": "baseline run 2 before launch",
+      "at": "2026-11-15T06:10:21.277888700Z",
+      "systemCpu": 0.7273830235055143,
+      "javaProcesses": 15
+     },
+     {
+      "when": "candidate run 2 before launch",
+      "at": "2026-11-15T06:14:24.063724Z",
+      "systemCpu": 0.3446539673129736,
+      "javaProcesses": 17
+     },
+     {
+      "when": "candidate run 3 before launch",
+      "at": "2026-11-15T06:18:35.405884700Z",
+      "systemCpu": 0.9602263450333973,
+      "javaProcesses": 17
+     }
+    ],
+    "meanSystemCpu": 0.6495030365553454,
+    "maxSystemCpu": 0.9948769042545804,
+    "jit": "full"
+   },
+   "candidate": {
+    "label": "tints-and-dirty-spots",
+    "diffSha256": "e02c819ca038896f28e88b8cc1916fde1c1e48d26b47b6635667d155168d01c1",
+    "changedFiles": [
+     "src/main/java/dev/diorama/bake/BiomeTints.java",
+     "src/main/java/dev/diorama/bake/MapPick.java",
+     "src/main/java/dev/diorama/bake/TileSpots.java",
+     "src/main/java/dev/diorama/data/ChunkSnapshot.java",
+     "src/main/java/dev/diorama/render/MapLevel.java"
+    ]
+   },
+   "gates": [],
+   "speedup": null,
+   "verdict": "error",
+   "rejection": "error: java.io.IOException: candidate warm capture failed: No such file or folder: .\\.runs\\diorama-10x\\opt-bundle2\\runs\\03-candidate\\warm\\status.properties.",
+   "metric": {
+    "mod": "diorama",
+    "statistic": "sampledCpuMsPerSecond"
+   },
+   "source": ".\\.runs\\diorama-10x\\opt-bundle2",
+   "finished": "2026-11-15T06:22:32.853323900Z",
+   "seconds": 1884.9522251
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T05-51-14.930234Z-1ade6f13",
+   "kind": "comparison",
+   "session": "diorama-10x",
+   "started": "2026-11-15T05:51:14.930234Z",
+   "mod": {
+    "id": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "project": ":1.21.1"
+   },
+   "phases": {
+    "setup": 0.0,
+    "build": 44.0,
+    "launch": 60.0,
+    "warmup": 0.0,
+    "measure": 240.0,
+    "gates": 90.0,
+    "other": 0.0
+   },
+   "steps": [
+    {
+     "phase": "build",
+     "name": "compile bundle1-check",
+     "seconds": 44
+    },
+    {
+     "phase": "launch",
+     "name": "world-check --jit full",
+     "seconds": 60
+    },
+    {
+     "phase": "measure",
+     "name": "fly.java, whole path",
+     "seconds": 240
+    },
+    {
+     "phase": "gates",
+     "name": "counters, mapped, tints-live, bake-digest",
+     "seconds": 90
+    }
+   ],
+   "machine": {
+    "os": "Windows 11",
+    "cpu": "AMD Ryzen 9 3900X",
+    "logicalCores": 24,
+    "jit": "full",
+    "load": [],
+    "note": "shared with other agents' Gradle and game JVMs"
+   },
+   "candidate": {
+    "label": "dirty-only-gpu-spots exactness check",
+    "diffSha256": "46f9c5077855a63ead7d5da9c4a03ce359dc1ea7d34767be7bdc4f80ff1cb63c",
+    "changedFiles": []
+   },
+   "gates": [
+    {
+     "name": "incremental pick equals full pick",
+     "compare": "exact",
+     "passed": true,
+     "failures": [],
+     "detail": "444 checked, 0 mismatched"
+    },
+    {
+     "name": "bake-digest",
+     "compare": "exact",
+     "passed": true,
+     "failures": [],
+     "detail": "ac6a8694c066e75d4679ee5bd26d8d79, same as the unmodified build"
+    },
+    {
+     "name": "tints-live",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "mapped",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": null,
+   "verdict": "observed",
+   "rejection": null,
+   "finished": "2026-11-15T05:51:14.930234Z",
+   "seconds": 434.0
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T05-51-14.937247Z-a90134f8",
+   "kind": "comparison",
+   "session": "diorama-10x",
+   "started": "2026-11-15T05:51:14.937247Z",
+   "mod": {
+    "id": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "project": ":1.21.1"
+   },
+   "phases": {
+    "setup": 0.0,
+    "build": 45.0,
+    "launch": 60.0,
+    "warmup": 0.0,
+    "measure": 180.0,
+    "gates": 0.0,
+    "other": 0.0
+   },
+   "steps": [
+    {
+     "phase": "build",
+     "name": "compile bundle1-toggles",
+     "seconds": 45
+    },
+    {
+     "phase": "launch",
+     "name": "world-check --jit full",
+     "seconds": 60
+    },
+    {
+     "phase": "measure",
+     "name": "toggle-bench.java",
+     "seconds": 180
+    }
+   ],
+   "machine": {
+    "os": "Windows 11",
+    "cpu": "AMD Ryzen 9 3900X",
+    "logicalCores": 24,
+    "jit": "full",
+    "load": [],
+    "note": "shared with other agents' Gradle and game JVMs"
+   },
+   "candidate": {
+    "label": "air-over-ground-without-lookups",
+    "diffSha256": "8a163ca7f2800a1ccd8cffa941221f152d72ea5c3cd92f3fb1cf72a7e53859a2",
+    "changedFiles": []
+   },
+   "gates": [
+    {
+     "name": "outputs equal across settings",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "bake-digest (bundle1)",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": {
+    "warm": {
+     "geometricMean": 0.774,
+     "low": null,
+     "high": null,
+     "pairs": 8,
+     "scope": "TileSpots.pick"
+    },
+    "cold": null,
+    "scopes": {
+     "mesh": 1.051,
+     "spots": 0.774,
+     "savedSpots": 0.784
+    }
+   },
+   "verdict": "rejected",
+   "rejection": "slower with the production JIT: spot picks 0.774x and 0.784x (paired, 8 rounds), mesh 1.051x; it looked faster only in the C1-only profile",
+   "values": {
+    "rounds": 8,
+    "basis": "paired same-JVM, production JIT, randomized setting order; outputs identical in every round",
+    "s0": {
+     "mesh": 277.3,
+     "spots": 173.5,
+     "savedSpots": 180.3
+    },
+    "airSkip": {
+     "mesh": 263.2,
+     "spots": 231.2,
+     "savedSpots": 235.6
+    },
+    "intRows": {
+     "mesh": 303.4,
+     "spots": 195.7,
+     "savedSpots": 194.9
+    }
+   },
+   "finished": "2026-11-15T05:51:14.937247Z",
+   "seconds": 285.0
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T05-51-14.947057Z-65a7d868",
+   "kind": "comparison",
+   "session": "diorama-10x",
+   "started": "2026-11-15T05:51:14.947057Z",
+   "mod": {
+    "id": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "project": ":1.21.1"
+   },
+   "phases": {
+    "setup": 0.0,
+    "build": 0.0,
+    "launch": 0.0,
+    "warmup": 0.0,
+    "measure": 0.0,
+    "gates": 0.0,
+    "other": 0.0
+   },
+   "steps": [
+    {
+     "phase": "measure",
+     "name": "toggle-bench.java (same run as air-over-ground)",
+     "seconds": 0
+    }
+   ],
+   "machine": {
+    "os": "Windows 11",
+    "cpu": "AMD Ryzen 9 3900X",
+    "logicalCores": 24,
+    "jit": "full",
+    "load": [],
+    "note": "shared with other agents' Gradle and game JVMs"
+   },
+   "candidate": {
+    "label": "integer-rows-passedWhenSaved",
+    "diffSha256": "31ed62a75de2a6128a22dc9a4af417f3c899bd26fde86d233b28730fb612553a",
+    "changedFiles": []
+   },
+   "gates": [
+    {
+     "name": "outputs equal across settings",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": {
+    "warm": {
+     "geometricMean": 0.951,
+     "low": null,
+     "high": null,
+     "pairs": 8,
+     "scope": "TileSpots.pick"
+    },
+    "cold": null,
+    "scopes": {
+     "mesh": 0.945,
+     "spots": 0.951,
+     "savedSpots": 0.958
+    }
+   },
+   "verdict": "rejected",
+   "rejection": "no gain with the production JIT: spot picks 0.951x, saved-spot picks 0.958x (paired, 8 rounds)",
+   "values": {
+    "rounds": 8,
+    "basis": "paired same-JVM, production JIT, randomized setting order; outputs identical in every round",
+    "s0": {
+     "mesh": 277.3,
+     "spots": 173.5,
+     "savedSpots": 180.3
+    },
+    "airSkip": {
+     "mesh": 263.2,
+     "spots": 231.2,
+     "savedSpots": 235.6
+    },
+    "intRows": {
+     "mesh": 303.4,
+     "spots": 195.7,
+     "savedSpots": 194.9
+    }
+   },
+   "finished": "2026-11-15T05:51:14.947057Z",
+   "seconds": 0.0
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T06-25-41.604795900Z-ad5239e8",
+   "kind": "perf-optimize",
+   "session": "diorama-10x",
+   "started": "2026-11-15T06:25:41.605326100Z",
+   "mod": {
+    "id": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "project": ""
+   },
+   "phases": {
+    "setup": 222.22207980200008,
+    "build": 78.99859059999999,
+    "launch": 558.7268667,
+    "warmup": 0.0,
+    "measure": 1816.1599757019999,
+    "gates": 379.55120199799995,
+    "other": 99.91361829999998
+   },
+   "steps": [
+    {
+     "phase": "setup",
+     "name": "worktrees",
+     "seconds": 3.7358105
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 41.333282999999994
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 62.86693910000001
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 4.7423055
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.9110487
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.8289061
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 3.2172031
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 80.4416603
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.4712694
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.4834467
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 70.1444909
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 17.9244569
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 2.263038
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 4.3327087
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.9011416
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 34.4607575
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 80.6906634
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 3.5867607
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.8687405
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 3.2625867
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 3.3079421
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 73.3054684
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.1770808
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 1.7558146
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 71.4173704
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 23.9080026
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 2.841939
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 4.7270473
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 5.5687374
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.3858147
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 42.714365
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 4.7971697
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.0019442
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 7.2497204
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 7.0511083
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 91.0849995
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.798479
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.8718339
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 71.6733619
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 19.8680765
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 1.9309181
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 3.836997
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 4.3645095
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2925661
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 32.057842699999995
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 4.1823518
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.5014296
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.8172038
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 3.0614976
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 75.6297149
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 3.1979635
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.6604046
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 72.7523324
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 23.6193372
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 4.8779605
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 6.0209845
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 11.8116398
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2270939
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 29.979066
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.4234183
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.937499
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.7173655
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.6266694
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 72.7812741
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.7903646
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.5810767
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 69.7889765
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 20.9888151
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 2.1874436
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 3.8866296
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 4.9289135
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2247607
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 52.501585500000004
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 5.1059883
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 0.9349371
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 3.2805589
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 3.0241737
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 87.4951645
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.1050352
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 2.4676601
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 68.9475175
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 22.3623413
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 3.0325669
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 4.3183254
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 5.4783372
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.2931836
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 47.7092474
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 5.3942869
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.7452152
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 3.0031917
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 3.1906836
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 84.5877721
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 3.6428768
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 3.1155561
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 84.235011
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 28.4820574
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 4.2166758
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 6.9257471
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 16.2742319
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.5355666
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 38.289102899999996
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 4.3613383
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.8438983
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.5934237
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.8619926
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 73.5516941
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 3.1937737
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 4.2950342
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 74.6131095
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 24.3366586
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 3.8708877
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 4.6098573
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 6.9374429
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2860482
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 37.836225299999995
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 4.553256
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 1.1152623
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.9507506
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 3.0134051
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 73.8979866
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.0670942
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 1.9741615
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 69.1352147
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 24.14661
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 4.4066732
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 7.090335
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 8.9649887
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.3924304
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 59.778805899999995
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 4.3343587
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 2.4178309
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 5.2187036
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 4.7028867
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 80.592829
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 3.4236935
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 3.4040854
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 74.022395
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 25.9883378
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 3.2266286
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 5.5124189
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 11.2994352
+    },
+    {
+     "phase": "build",
+     "name": "candidate-launch",
+     "seconds": 0.3456605
+    },
+    {
+     "phase": "launch",
+     "name": "candidate-launch",
+     "seconds": 43.0863735
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-setup",
+     "seconds": 5.0712888
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-status",
+     "seconds": 1.2536779
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 3.3437576
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-cold",
+     "seconds": 3.7853124
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-cold",
+     "seconds": 78.3907173
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 3.414783801
+    },
+    {
+     "phase": "setup",
+     "name": "candidate-before-warm",
+     "seconds": 3.247439899
+    },
+    {
+     "phase": "warmup",
+     "name": "candidate-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "candidate-warm",
+     "seconds": 74.276985101
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-bakes",
+     "seconds": 23.7652353
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-mapped",
+     "seconds": 2.5430987
+    },
+    {
+     "phase": "gates",
+     "name": "candidate-gate-tints",
+     "seconds": 4.964064899
+    },
+    {
+     "phase": "other",
+     "name": "candidate-game-stop",
+     "seconds": 9.329652
+    },
+    {
+     "phase": "build",
+     "name": "baseline-launch",
+     "seconds": 0.2214254
+    },
+    {
+     "phase": "launch",
+     "name": "baseline-launch",
+     "seconds": 31.216649999999998
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-setup",
+     "seconds": 3.845895701
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-status",
+     "seconds": 0.8439068
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.5568472
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-cold",
+     "seconds": 2.851624501
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-cold",
+     "seconds": 71.709715801
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 2.128718
+    },
+    {
+     "phase": "setup",
+     "name": "baseline-before-warm",
+     "seconds": 1.927299
+    },
+    {
+     "phase": "warmup",
+     "name": "baseline-warm",
+     "seconds": 0.0
+    },
+    {
+     "phase": "measure",
+     "name": "baseline-warm",
+     "seconds": 71.6842142
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-bakes",
+     "seconds": 25.1720589
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-mapped",
+     "seconds": 2.784728399
+    },
+    {
+     "phase": "gates",
+     "name": "baseline-gate-tints",
+     "seconds": 4.5815402
+    },
+    {
+     "phase": "other",
+     "name": "baseline-game-stop",
+     "seconds": 6.6283558
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.6948365
+    },
+    {
+     "phase": "other",
+     "name": "final-game-stop",
+     "seconds": 1.7313963
+    }
+   ],
+   "machine": {
+    "os": "Windows 11 10.0",
+    "cpu": "AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD",
+    "logicalCores": 24,
+    "load": [
+     {
+      "when": "baseline run 0 before launch",
+      "at": "2026-11-15T06:25:45.512948900Z",
+      "systemCpu": 0.7505986129111428,
+      "javaProcesses": 8
+     },
+     {
+      "when": "candidate run 0 before launch",
+      "at": "2026-11-15T06:30:49.042248Z",
+      "systemCpu": 0.4022409793471997,
+      "javaProcesses": 14
+     },
+     {
+      "when": "candidate run 1 before launch",
+      "at": "2026-11-15T06:36:02.250932800Z",
+      "systemCpu": 0.9384416761474693,
+      "javaProcesses": 13
+     },
+     {
+      "when": "baseline run 1 before launch",
+      "at": "2026-11-15T06:40:25.204780800Z",
+      "systemCpu": 0.7540768859760212,
+      "javaProcesses": 21
+     },
+     {
+      "when": "baseline run 2 before launch",
+      "at": "2026-11-15T06:44:31.049031200Z",
+      "systemCpu": 0.56374019092449,
+      "javaProcesses": 16
+     },
+     {
+      "when": "candidate run 2 before launch",
+      "at": "2026-11-15T06:48:12.157454700Z",
+      "systemCpu": 0.6562061440292372,
+      "javaProcesses": 11
+     },
+     {
+      "when": "candidate run 3 before launch",
+      "at": "2026-11-15T06:52:34.758025600Z",
+      "systemCpu": 0.9877564469485791,
+      "javaProcesses": 17
+     },
+     {
+      "when": "baseline run 3 before launch",
+      "at": "2026-11-15T06:57:29.332643400Z",
+      "systemCpu": 0.9889701104613385,
+      "javaProcesses": 22
+     },
+     {
+      "when": "baseline run 4 before launch",
+      "at": "2026-11-15T07:01:35.651696100Z",
+      "systemCpu": 0.9740067047144807,
+      "javaProcesses": 21
+     },
+     {
+      "when": "candidate run 4 before launch",
+      "at": "2026-11-15T07:05:38.410628800Z",
+      "systemCpu": 0.6874716647803796,
+      "javaProcesses": 22
+     },
+     {
+      "when": "candidate run 5 before launch",
+      "at": "2026-11-15T07:10:24.313527800Z",
+      "systemCpu": 1.0,
+      "javaProcesses": 22
+     },
+     {
+      "when": "baseline run 5 before launch",
+      "at": "2026-11-15T07:14:42.725680500Z",
+      "systemCpu": 0.7595970368276794,
+      "javaProcesses": 20
+     }
+    ],
+    "meanSystemCpu": 0.7885922044223347,
+    "maxSystemCpu": 1.0,
+    "jit": "full"
+   },
+   "candidate": {
+    "label": "tints-and-dirty-spots",
+    "diffSha256": "e02c819ca038896f28e88b8cc1916fde1c1e48d26b47b6635667d155168d01c1",
+    "changedFiles": [
+     "src/main/java/dev/diorama/bake/BiomeTints.java",
+     "src/main/java/dev/diorama/bake/MapPick.java",
+     "src/main/java/dev/diorama/bake/TileSpots.java",
+     "src/main/java/dev/diorama/data/ChunkSnapshot.java",
+     "src/main/java/dev/diorama/render/MapLevel.java"
+    ]
+   },
+   "gates": [
+    {
+     "name": "bakes",
+     "compare": "exact",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "mapped",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    },
+    {
+     "name": "tints",
+     "compare": "expect",
+     "passed": true,
+     "failures": []
+    }
+   ],
+   "speedup": {
+    "cold": {
+     "geometricMean": 1.3843821849900826,
+     "low": 1.0865447398220347,
+     "high": 1.8615030710479834,
+     "pairs": 6,
+     "baselineMean": 588.8569849528316,
+     "candidateMean": 443.87827097845826
+    },
+    "warm": {
+     "geometricMean": 1.322402392720951,
+     "low": 1.017901320905798,
+     "high": 1.7665218203521125,
+     "pairs": 6,
+     "baselineMean": 517.8157868228208,
+     "candidateMean": 404.0516261265687
+    },
+    "scopes": {
+     "dioramaAllThreadsCpu": {
+      "cold": {
+       "geometricMean": 1.338820552300911,
+       "low": 0.997305104194577,
+       "high": 1.92458773219766,
+       "pairs": 6,
+       "baselineMean": 757.8195260095416,
+       "candidateMean": 598.1625292144093
+      },
+      "warm": {
+       "geometricMean": 1.2703437420991515,
+       "low": 1.0189166762377169,
+       "high": 1.5686867169789271,
+       "pairs": 6,
+       "baselineMean": 621.8402875353548,
+       "candidateMean": 500.2451482456848
+      }
+     },
+     "gpuMeshCpu": {
+      "cold": {
+       "geometricMean": 1.2429804104752185,
+       "low": 0.8401615897654726,
+       "high": 1.9721282227994417,
+       "pairs": 6,
+       "baselineMean": 391.4810077564207,
+       "candidateMean": 338.96920854009676
+      },
+      "warm": {
+       "geometricMean": 1.2038047481918144,
+       "low": 0.9404074097564482,
+       "high": 1.5358462678018137,
+       "pairs": 6,
+       "baselineMean": 393.9589101228617,
+       "candidateMean": 335.9967365451445
+      }
+     },
+     "spotsCpu": {
+      "cold": {
+       "geometricMean": 1.8524777982164282,
+       "low": 1.322618944381058,
+       "high": 2.696753399361053,
+       "pairs": 6,
+       "baselineMean": 152.742164011366,
+       "candidateMean": 87.8324261918716
+      },
+      "warm": {
+       "geometricMean": 1.7498183588802245,
+       "low": 1.4251088942519003,
+       "high": 2.153868680698423,
+       "pairs": 6,
+       "baselineMean": 156.24477277154656,
+       "candidateMean": 91.86021526080316
+      }
+     },
+     "tintBlendCpu": {
+      "cold": {
+       "geometricMean": 3.1575908420634042,
+       "low": 2.519959921060835,
+       "high": 4.108626922662049,
+       "pairs": 6,
+       "baselineMean": 97.85639130267346,
+       "candidateMean": 31.32368306645195
+      },
+      "warm": {
+       "geometricMean": 2.7108650952801314,
+       "low": 2.3138874571533536,
+       "high": 3.3307253750845107,
+       "pairs": 6,
+       "baselineMean": 68.21995238683796,
+       "candidateMean": 25.610872282054743
+      }
+     },
+     "castersCpu": {
+      "cold": {
+       "geometricMean": 1.0215261930866386,
+       "low": 0.6882822354224185,
+       "high": 1.6527534420812988,
+       "pairs": 6,
+       "baselineMean": 96.71729674646197,
+       "candidateMean": 104.49235929581694
+      },
+      "warm": {
+       "geometricMean": 1.0610107566244225,
+       "low": 0.8263664103174183,
+       "high": 1.3767623137131093,
+       "pairs": 6,
+       "baselineMean": 92.83021730708496,
+       "candidateMean": 90.0824740878791
+      }
+     },
+     "importCpu": {
+      "cold": {
+       "geometricMean": 1.204588521032793,
+       "low": 0.729711895445003,
+       "high": 2.163471378089308,
+       "pairs": 6,
+       "baselineMean": 114.35470108900563,
+       "candidateMean": 108.40932235521728
+      },
+      "warm": {
+       "geometricMean": 1.2265679096167472,
+       "low": 0.8989891376799436,
+       "high": 1.8011001299432683,
+       "pairs": 6,
+       "baselineMean": 73.7754476687104,
+       "candidateMean": 65.99935428662998
+      }
+     },
+     "traceCpu": {
+      "cold": {
+       "geometricMean": 1.2815572735101182,
+       "low": 0.9112916055616458,
+       "high": 1.8022650875560884,
+       "pairs": 2,
+       "baselineMean": 143.32828866786036,
+       "candidateMean": 112.84183302925703
+      },
+      "warm": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      }
+     },
+     "tileWriteCpu": {
+      "cold": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      },
+      "warm": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      }
+     },
+     "mipmapsCpu": {
+      "cold": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      },
+      "warm": {
+       "geometricMean": 1.3999976853372875,
+       "low": 1.3999976853372875,
+       "high": 1.3999976853372875,
+       "pairs": 1,
+       "baselineMean": 5.83332336807258,
+       "candidateMean": 4.166666437500012
+      }
+     },
+     "fogMaskCpu": {
+      "cold": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      },
+      "warm": {
+       "geometricMean": 1.2615110119448332,
+       "low": 0.971048410203103,
+       "high": 1.5674926003790108,
+       "pairs": 4,
+       "baselineMean": 8.374835326791757,
+       "candidateMean": 6.708279017599855
+      }
+     },
+     "hudCpu": {
+      "cold": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      },
+      "warm": {
+       "geometricMean": null,
+       "low": null,
+       "high": null,
+       "pairs": 0,
+       "baselineMean": null,
+       "candidateMean": null
+      }
+     },
+     "hudRenderMs": {
+      "cold": {
+       "geometricMean": 0.9620459501415694,
+       "low": 0.8724510955419422,
+       "high": 1.0579893453897469,
+       "pairs": 6,
+       "baselineMean": 1.384251095915418,
+       "candidateMean": 1.4406278400777375
+      },
+      "warm": {
+       "geometricMean": 0.9649497786856258,
+       "low": 0.9058744537756096,
+       "high": 1.0235956759213805,
+       "pairs": 6,
+       "baselineMean": 1.2942835245070465,
+       "candidateMean": 1.3414724068706472
+      }
+     },
+     "radarMs": {
+      "cold": {
+       "geometricMean": 0.9555217931430726,
+       "low": 0.9142695198429165,
+       "high": 1.0000156706025964,
+       "pairs": 6,
+       "baselineMean": 0.07647374017760648,
+       "candidateMean": 0.08000804714777975
+      },
+      "warm": {
+       "geometricMean": 0.8694740208211305,
+       "low": 0.7786062113380527,
+       "high": 0.9653403572371693,
+       "pairs": 6,
+       "baselineMean": 0.08820092940969386,
+       "candidateMean": 0.10079037638698214
+      }
+     },
+     "waypointMs": {
+      "cold": {
+       "geometricMean": 1.1135720489469492,
+       "low": 0.9306784412247542,
+       "high": 1.36428318130535,
+       "pairs": 6,
+       "baselineMean": 0.004944639968477524,
+       "candidateMean": 0.004292096499785955
+      },
+      "warm": {
+       "geometricMean": 0.921200383270506,
+       "low": 0.8607949337722467,
+       "high": 0.981985489620443,
+       "pairs": 6,
+       "baselineMean": 0.0035923548487594935,
+       "candidateMean": 0.003886163632636759
+      }
+     },
+     "sessionTickMs": {
+      "cold": {
+       "geometricMean": 0.5019250893581613,
+       "low": 0.2606107784552978,
+       "high": 0.955008614286231,
+       "pairs": 6,
+       "baselineMean": 0.7174636000379441,
+       "candidateMean": 1.9061889145672704
+      },
+      "warm": {
+       "geometricMean": 0.7760760598644041,
+       "low": 0.5624096608345955,
+       "high": 1.0282638423601345,
+       "pairs": 6,
+       "baselineMean": 0.5255070190767382,
+       "candidateMean": 0.7298904231732841
+      }
+     },
+     "levelUpdateMs": {
+      "cold": {
+       "geometricMean": 0.8576123652586151,
+       "low": 0.7500649649945461,
+       "high": 0.962853456819718,
+       "pairs": 6,
+       "baselineMean": 0.17272064174278345,
+       "candidateMean": 0.20583134097670006
+      },
+      "warm": {
+       "geometricMean": 1.020898543768909,
+       "low": 0.9124400242011313,
+       "high": 1.111852106378118,
+       "pairs": 6,
+       "baselineMean": 0.15161455135953797,
+       "candidateMean": 0.14843392280311035
+      }
+     }
+    }
+   },
+   "verdict": "accepted",
+   "rejection": null,
+   "metric": {
+    "mod": "diorama",
+    "threads": "^(diorama-baker|Render thread)"
+   },
+   "source": ".\\.runs\\diorama-10x\\opt-bundle2b",
+   "finished": "2026-11-15T07:18:38.171806Z",
+   "seconds": 3155.5723331020004
+  },
+  {
+   "schema": 1,
+   "id": "2026-11-15T07-51-31.816197Z-04404745",
+   "kind": "comparison",
+   "session": "diorama-10x",
+   "started": "2026-11-15T07:51:31.816197Z",
+   "mod": {
+    "id": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "project": ":1.21.1"
+   },
+   "phases": {
+    "setup": 0.0,
+    "build": 240.0,
+    "launch": 360.0,
+    "warmup": 0.0,
+    "measure": 1360.0,
+    "gates": 0.0,
+    "other": 0.0
+   },
+   "steps": [
+    {
+     "phase": "build",
+     "name": "compile run 0",
+     "seconds": 30
+    },
+    {
+     "phase": "launch",
+     "name": "world-check run 0",
+     "seconds": 45
+    },
+    {
+     "phase": "measure",
+     "name": "both flight segments run 0",
+     "seconds": 170
+    },
+    {
+     "phase": "build",
+     "name": "compile run 1",
+     "seconds": 30
+    },
+    {
+     "phase": "launch",
+     "name": "world-check run 1",
+     "seconds": 45
+    },
+    {
+     "phase": "measure",
+     "name": "both flight segments run 1",
+     "seconds": 170
+    },
+    {
+     "phase": "build",
+     "name": "compile run 2",
+     "seconds": 30
+    },
+    {
+     "phase": "launch",
+     "name": "world-check run 2",
+     "seconds": 45
+    },
+    {
+     "phase": "measure",
+     "name": "both flight segments run 2",
+     "seconds": 170
+    },
+    {
+     "phase": "build",
+     "name": "compile run 3",
+     "seconds": 30
+    },
+    {
+     "phase": "launch",
+     "name": "world-check run 3",
+     "seconds": 45
+    },
+    {
+     "phase": "measure",
+     "name": "both flight segments run 3",
+     "seconds": 170
+    },
+    {
+     "phase": "build",
+     "name": "compile run 4",
+     "seconds": 30
+    },
+    {
+     "phase": "launch",
+     "name": "world-check run 4",
+     "seconds": 45
+    },
+    {
+     "phase": "measure",
+     "name": "both flight segments run 4",
+     "seconds": 170
+    },
+    {
+     "phase": "build",
+     "name": "compile run 5",
+     "seconds": 30
+    },
+    {
+     "phase": "launch",
+     "name": "world-check run 5",
+     "seconds": 45
+    },
+    {
+     "phase": "measure",
+     "name": "both flight segments run 5",
+     "seconds": 170
+    },
+    {
+     "phase": "build",
+     "name": "compile run 6",
+     "seconds": 30
+    },
+    {
+     "phase": "launch",
+     "name": "world-check run 6",
+     "seconds": 45
+    },
+    {
+     "phase": "measure",
+     "name": "both flight segments run 6",
+     "seconds": 170
+    },
+    {
+     "phase": "build",
+     "name": "compile run 7",
+     "seconds": 30
+    },
+    {
+     "phase": "launch",
+     "name": "world-check run 7",
+     "seconds": 45
+    },
+    {
+     "phase": "measure",
+     "name": "both flight segments run 7",
+     "seconds": 170
+    }
+   ],
+   "machine": {
+    "os": "Windows 11",
+    "cpu": "AMD Ryzen 9 3900X",
+    "logicalCores": 24,
+    "jit": "full",
+    "load": [
+     {
+      "when": "each run",
+      "systemCpu": 1.0
+     }
+    ],
+    "note": "100% CPU from other agents throughout"
+   },
+   "candidate": {
+    "label": "tints-and-dirty-spots safepoint check",
+    "diffSha256": "e02c819ca038896f28e88b8cc1916fde1c1e48d26b47b6635667d155168d01c1",
+    "changedFiles": []
+   },
+   "gates": [
+    {
+     "name": "no more long safepoints than the baseline",
+     "compare": "count",
+     "passed": false,
+     "failures": [
+      "candidate 12, 5, 0 against baseline 1, 1, 2 per run on a saturated machine: not established either way"
+     ]
+    }
+   ],
+   "speedup": null,
+   "verdict": "observed",
+   "rejection": null,
+   "values": {
+    "safepointTimeoutsOver250ms": {
+     "candidate": [
+      12,
+      5,
+      0
+     ],
+     "baseline": [
+      1,
+      1,
+      2
+     ]
+    },
+    "perfOptimizeCapturesOver300ms": {
+     "candidate": 24,
+     "baseline": 4,
+     "basis": "jdk.SafepointBegin over 300 ms in the 12 captures of each arm"
+    },
+    "flags": "-XX:+SafepointTimeout -XX:SafepointTimeoutDelay=250; every thread named was a diorama-baker thread at below-normal priority"
+   },
+   "finished": "2026-11-15T07:51:31.816197Z",
+   "seconds": 1960.0
+  }
+ ]
+}

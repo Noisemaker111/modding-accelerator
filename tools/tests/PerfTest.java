@@ -15,9 +15,22 @@ public final class PerfTest {
         optimizerGates();
         modTemplates();
         check(Run.running(ProcessHandle.current()), "current process is running");
+        Path modRoot = Path.of("/work/mymod").toAbsolutePath();
+        check(PerfAttribution.underRoot(modRoot.resolve("versions/1.21.1/build/classes/java/main"), modRoot), "the mod's own build output is the mod");
+        check(!PerfAttribution.underRoot(modRoot.resolve(".gradle/loom-cache/remapped_mods/fabric-api.jar"), modRoot),
+            "dependencies Loom remaps inside the checkout are not the mod");
+        Path copySource = Path.of("/elsewhere/copy-source").toAbsolutePath();
+        Map<String, Object> copied = Json.map("root", copySource.toString(), "pid", Long.MAX_VALUE - 7, "processStart", "2026-01-01T00:00:00Z");
+        check(!Game.foreign(copied, Path.of("/here")), "a copied checkout's exited session does not block this project");
+        Map<String, Object> running = Json.map("root", copySource.toString(), "pid", ProcessHandle.current().pid(),
+            "processStart", ProcessHandle.current().info().startInstant().map(java.time.Instant::toString).orElse(""));
+        check(Game.foreign(running, Path.of("/here")), "another project's running game is still refused");
+        check(!Game.foreign(running, copySource), "this project's own session is not foreign");
         check(Run.exitedProcStat("123 (name with ) spaces) Z 1 2 3"), "unreaped Linux exits are not running games");
         check(!Run.exitedProcStat("123 (java) S 1 2 3"), "sleeping Linux process remains live");
         Path home = Path.of(args[0]);
+        runRecords(home);
+        patternLibrary(home);
         Path scratch = Files.createTempDirectory(Path.of(args[1]).toAbsolutePath().getParent(), "perf-fixture-");
         Modaccel.Report receipt = new Modaccel.Report(scratch, "perf-test");
         Path agent = Performance.agent(home, receipt);
@@ -215,6 +228,71 @@ public final class PerfTest {
             "crowd cleanup removes only the tagged entities");
     }
 
+    /** Every session run writes the same record shape; phases, verdicts and rejection reasons are checked. */
+    static void runRecords(Path home) throws Exception {
+        PerfRecord record = new PerfRecord("perf-optimize", null);
+        record.record.put("candidate", Json.map("label", "tints", "diffSha256", "ab12", "changedFiles", List.of()));
+        Map<String, Object> launch = Json.map("stages", List.of(Json.map("name", "metadata", "seconds", 20.0), Json.map("name", "compile", "seconds", 30.0),
+            Json.map("name", "game-start", "seconds", 40.0)), "result", Json.map("modsLoaded", Json.map("loader", "fabric",
+            "mods", List.of(Json.map("id", "diorama", "loadedVersion", "0.10.1")))));
+        record.launchStages("baseline-launch", launch, 95.0);
+        record.modFromLaunch(launch);
+        check(((Number) record.phases.get("build")).doubleValue() == 50.0 && ((Number) record.phases.get("launch")).doubleValue() == 45.0,
+            "a launch splits into its build stages and the rest");
+        check("diorama".equals(Json.object(record.record.get("mod")).get("id")) && "fabric".equals(Json.object(record.record.get("mod")).get("loader")),
+            "the record names the loaded mod and loader from the launch receipt");
+        record.step("nonsense", "x", 1.0);
+        check(((Number) record.phases.get("other")).doubleValue() == 1.0, "an unknown phase counts as other");
+        Map<String, Object> result = Json.map("speedup", Json.map("cold", Json.map("geometricMean", 1.0, "low", 0.9, "high", 1.1),
+            "warm", Json.map("geometricMean", 1.2, "low", 1.1, "high", 1.3)), "gates", List.of(Json.map("name", "bakes", "passed", false, "failures", List.of("run 0 differs"))));
+        String why = PerfRecord.rejection(result);
+        check(why.contains("gate bakes failed") && why.contains("cold speedup") && !why.contains("warm speedup"), "a rejection names every failed gate and interval: " + why);
+        Map<String, Object> done = record.finish("rejected", why);
+        check(PerfRecord.validate(done).isEmpty(), "a complete rejected record validates: " + PerfRecord.validate(done));
+        done.put("verdict", "accepted");
+        check(PerfRecord.validate(done).stream().anyMatch(p -> p.contains("speedup.cold.low")), "an accepted record needs both intervals above 1");
+        done.put("candidate", null);
+        check(PerfRecord.validate(done).stream().anyMatch(p -> p.contains("candidate")), "a comparison names its candidate");
+        if (Files.isRegularFile(home.resolve("coverage/perf-runs.json"))) {
+            for (Object item : Json.array(Json.read(home.resolve("coverage/perf-runs.json")).get("runs"))) {
+                Map<String, Object> kept = Json.object(item);
+                check(PerfRecord.validate(kept).isEmpty(), "kept run " + kept.get("id") + " validates: " + PerfRecord.validate(kept));
+            }
+        }
+    }
+
+    /**
+     * knowledge/perf-patterns.json: each pattern is complete, cites an accepted kept run, and its symptom
+     * fires on its own test row and stays quiet on the other, as each port rule carries a test.
+     */
+    static void patternLibrary(Path home) throws Exception {
+        Map<String, Object> mod = Json.map("id", "m", "samples", 100, "methods", List.of(Json.map("name", "a.Tints.blend(La/Snap;)V", "samples", 30),
+            Json.map("name", "a.Other.run()V", "samples", 70)), "threads", List.of(Json.map("name", "worker-1", "samples", 90)));
+        Map<String, Object> symptom = Json.map("text", "t", "when", List.of(Json.map("in", "methods", "matches", "\\.blend\\(", "minShare", 0.2),
+            Json.map("in", "threads", "matches", "^worker", "minShare", 0.5)));
+        check(PerfPatterns.evidence(symptom, mod) != null, "every clause holding matches");
+        Map<String, Object> strict = Json.map("text", "t", "when", List.of(Json.map("in", "methods", "matches", "\\.blend\\(", "minShare", 0.5)));
+        check(PerfPatterns.evidence(strict, mod) == null, "a share below minShare does not match");
+        Map<String, Object> pattern = Json.map("id", "reuse-x", "symptom", symptom, "change", "c", "gain", Json.map("scope", "s",
+            "cold", Json.map("geometricMean", 1.5, "low", 1.2, "high", 1.8), "warm", Json.map("geometricMean", 1.4, "low", 1.1, "high", 1.7)),
+            "gate", Json.map("name", "g", "compare", "exact"), "provenIn", Json.map("mod", "m", "version", "1", "loader", "fabric", "scope", "s", "record", "r1"),
+            "test", Json.map("fires", mod, "quiet", Json.map("id", "q", "samples", 100, "methods", List.of(Json.map("name", "a.Other.run()V", "samples", 100)))));
+        check(PerfPatterns.validate(Json.map("schema", 1, "patterns", List.of(pattern)), Set.of("r1")).isEmpty(), "a complete pattern validates");
+        check(PerfPatterns.validate(Json.map("schema", 1, "patterns", List.of(pattern)), Set.of()).stream().anyMatch(p -> p.contains("not an accepted run")),
+            "a pattern must cite an accepted kept run");
+        Map<String, Object> wrongTest = new LinkedHashMap<>(pattern);
+        wrongTest.put("test", Json.map("fires", Json.map("id", "q", "samples", 1, "methods", List.of()), "quiet", mod));
+        List<String> problems = PerfPatterns.validate(Json.map("schema", 1, "patterns", List.of(wrongTest)), Set.of("r1"));
+        check(problems.stream().anyMatch(p -> p.contains("test.fires")) && problems.stream().anyMatch(p -> p.contains("test.quiet")), "a pattern's own test must fire and stay quiet");
+        List<Object> matched = PerfPatterns.match(List.of(pattern), Json.map("mods", List.of(mod)));
+        check(matched.size() == 1 && "reuse-x".equals(Json.object(matched.get(0)).get("pattern")), "a capture showing the symptom names the pattern");
+        Path library = PerfPatterns.file(home);
+        if (Files.isRegularFile(library)) {
+            List<String> found = PerfPatterns.validate(Json.read(library), PerfPatterns.acceptedRecords(home));
+            check(found.isEmpty(), "knowledge/perf-patterns.json: " + String.join("; ", found));
+        }
+    }
+
     static void optimizerGates() throws Exception {
         Map<String, Object> speed = PerfOptimize.speedup(List.of(2.0, 2.0, 2.0, 2.0), 1);
         check(Math.abs(((Number) speed.get("geometricMean")).doubleValue() - 2) < 1e-9 && ((Number) speed.get("low")).doubleValue() > 1.99,
@@ -244,6 +322,12 @@ public final class PerfTest {
         javax.imageio.ImageIO.write(image, "png", dir.resolve("b.png").toFile());
         Map<String, Object> diff = PerfOptimize.pixels(dir.resolve("a.png"), dir.resolve("b.png"));
         check(((Number) diff.get("differentPixels")).longValue() == 1 && ((Number) diff.get("maxChannelDelta")).intValue() == 1, "one changed channel value is a visible difference");
+        Map<String, Object> report = Json.map("seconds", 10.0, "recording", "r", "attribution", Json.map("samplePeriodMs", 10, "mods", List.of(Json.map("id", "m",
+            "sampledCpuMsPerSecond", 30.0, "threads", List.of(Json.map("name", "m-baker-1", "samples", 20), Json.map("name", "m-import", "samples", 10)),
+            "inclusiveMethods", List.of(Json.map("name", "a.Mesher.build(I)V", "samples", 12, "cpuMsPerSecond", 12.0))))));
+        check(PerfOptimize.metric(report, Json.map("mod", "m")) == 30.0, "a mod metric is its whole sampled CPU");
+        check(PerfOptimize.metric(report, Json.map("mod", "m", "threads", "^m-baker")) == 20.0, "a thread filter counts only matching threads");
+        check(PerfOptimize.metric(report, Json.map("mod", "m", "method", "Mesher.build")) == 12.0, "a method scope is its inclusive CPU");
         boolean refused = false;
         try { PerfOptimize.validate(Json.map("schema", 1, "measure", Json.map("metric", Json.map("probe", "x")), "gates", List.of())); }
         catch (IllegalArgumentException expected) { refused = true; }
