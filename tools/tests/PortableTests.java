@@ -1336,6 +1336,58 @@ public final class PortableTests {
             "undoing both conversions restores every file byte for byte and removes the files they made"
         );
 
+        // Found by an independent check on FastQuit (contariaa/FastQuit 8efed17): dependencies with an exclude block are whole
+        // statements. Mod Menu goes with its block, and Cloth Config moves to its NeoForge build, which its repository has.
+        Path quit = scratch.resolve("convert-exclude-mod");
+        Map<String, String> quitFiles = new LinkedHashMap<>();
+        quitFiles.put("gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.7.1-bin.zip\n");
+        quitFiles.put("settings.gradle", "rootProject.name = 'quit'\n");
+        quitFiles.put("gradle.properties", "minecraft_version=26.3\nloader_version=0.19.5\nfabric_api_version=0.161.0+26.3\nmodmenu_version=21.0.0\ncloth_config_version=26.3.1\n");
+        quitFiles.put(
+            "build.gradle",
+            "plugins {\n\tid 'net.fabricmc.fabric-loom' version '1.18.2'\n}\n\nrepositories {\n\tmaven { url \"https://maven.shedaniel.me/\" }\n}\n\ndependencies {\n" +
+            "\tminecraft \"com.mojang:minecraft:${project.minecraft_version}\"\n\timplementation \"net.fabricmc:fabric-loader:${project.loader_version}\"\n" +
+            "\timplementation \"net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}\"\n\n\t// ModMenu\n" +
+            "\timplementation(\"com.terraformersmc:modmenu:${project.modmenu_version}\"){\n\t\texclude(group: \"eu.pb4\")\n\t}\n\n\t// Cloth Config\n" +
+            "\timplementation(\"me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}\") {\n\t\texclude(group: \"net.fabricmc.fabric-api\")\n\t}\n}\n"
+        );
+        quitFiles.put(
+            "src/main/resources/fabric.mod.json",
+            "{\n\t\"schemaVersion\": 1,\n\t\"id\": \"quit\",\n\t\"version\": \"1.0.0\",\n\t\"entrypoints\": {\n\t\t\"main\": [\"quit.Quit\"]\n\t},\n\t\"depends\": {\n\t\t\"minecraft\": \"~26.3\"\n\t}\n}\n"
+        );
+        quitFiles.put(
+            "src/main/java/quit/Quit.java",
+            "package quit;\n\nimport net.fabricmc.api.ModInitializer;\n\npublic class Quit implements ModInitializer {\n\t@Override\n\tpublic void onInitialize() {\n\t}\n}\n"
+        );
+        for (var file : quitFiles.entrySet()) {
+            Path path = quit.resolve(file.getKey());
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, file.getValue());
+        }
+        ProjectModel quitProject = new ProjectModel(quit);
+        Map<String, String> quitAnswers = new LinkedHashMap<>(answers);
+        quitAnswers.put(
+            "https://maven.shedaniel.me/me/shedaniel/cloth/cloth-config-neoforge/maven-metadata.xml",
+            "<metadata><versioning><versions><version>26.3.1</version></versions></versioning></metadata>"
+        );
+        for (var answer : quitAnswers.entrySet()) {
+            Path cache = quitProject.state().resolve("metadata/" + Fingerprints.bytes(answer.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".json");
+            Files.createDirectories(cache.getParent());
+            Files.writeString(cache, answer.getValue());
+        }
+        new Convert(new Build(quitProject, home, "", new Modaccel.Report(quit, "convert"))).run(
+            new Modaccel.Options(new String[] { "convert", "--to", "neoforge", "--dry-run" })
+        );
+        String quitGradle = Files.readString(quit.resolve("build.gradle"));
+        check(
+            quitGradle.chars().filter(c -> c == '{').count() == quitGradle.chars().filter(c -> c == '}').count() &&
+            !quitGradle.contains("modmenu") &&
+            !quitGradle.contains("eu.pb4") &&
+            quitGradle.contains("\timplementation(\"me.shedaniel.cloth:cloth-config-neoforge:${project.cloth_config_version}\") {\n\t\texclude(group: \"net.fabricmc.fabric-api\")\n\t}\n") &&
+            !quitGradle.contains("cloth-config-fabric"),
+            "a dependency with an exclude block is removed or moved whole; Cloth Config moves to its NeoForge build:\n" + quitGradle
+        );
+
         // A mod written for NeoForge first goes to Fabric through the NeoForge bridge (knowledge/loaders.json "bridges").
         Map<String, Object> bridgeRule = null;
         for (Object b : LoaderRules.list(rules.get("bridges"))) if ("neoforge-on-fabric".equals(Json.object(b).get("id"))) bridgeRule = Json.object(b);

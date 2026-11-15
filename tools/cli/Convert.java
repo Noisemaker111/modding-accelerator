@@ -1522,18 +1522,20 @@ final class Convert {
             gradle.substring(insertAt);
         int[] deps = block(gradle, "dependencies");
         if (deps != null) {
+            // Whole statements, not lines: a dependency with a closure ({ exclude ... }) is one statement.
             List<String> kept = new ArrayList<>();
             boolean dropping = false;
-            for (String raw : gradle.substring(deps[2] + 1, deps[3] - 1).lines().toList()) {
-                String line = raw.strip();
+            for (String raw : statements(gradle.substring(deps[2] + 1, deps[3] - 1))) {
+                // What the statement depends on is in its first line; its closure (exclude(group: "net.fabricmc.fabric-api")) is not.
+                String line = raw.strip().lines().findFirst().orElse("");
                 boolean drop =
-                    line.matches("(?:minecraft|mappings)\\b.*") ||
+                    line.matches("(?s)(?:minecraft|mappings)\\b.*") ||
                     line.contains("net.fabricmc:fabric-loader") ||
                     line.contains("net.fabricmc.fabric-api") ||
                     line.contains("fabricApi.module") ||
                     line.contains("com.terraformersmc:modmenu");
                 if (drop) {
-                    // A comment that only introduced the dropped lines goes with them.
+                    // A comment that only introduced the dropped statements goes with them.
                     while (
                         !dropping &&
                         kept.size() >= 2 &&
@@ -1544,36 +1546,35 @@ final class Convert {
                     continue;
                 }
                 dropping = false;
-                // Loom's configurations, wherever they are in the line (implementation include("x") nests one in another).
+                if (line.startsWith("//") || line.startsWith("/*")) {
+                    kept.add(raw);
+                    continue;
+                }
+                // A Fabric build of another mod moves to its NeoForge build; Loom's own configurations are renamed after.
+                raw = dependencyLine(raw, "fabric", "neoforge", repositories(gradle), false);
+                // Loom's configurations, wherever they are in the statement (implementation include("x") nests one in another).
                 Matcher mod = Pattern.compile(
                     "\\b(mod(?:Implementation|Api|CompileOnly|CompileOnlyApi|RuntimeOnly|LocalRuntime)|client(?:Implementation|Api|CompileOnly|RuntimeOnly)|include|localRuntime)(?=\\s*[(\"'\\w])"
                 ).matcher(raw);
-                if (!line.startsWith("//") && mod.find()) {
-                    raw = dependencyLine(raw, "fabric", "neoforge", repositories(gradle), false);
-                    mod = Pattern.compile(
-                        "\\b(mod(?:Implementation|Api|CompileOnly|CompileOnlyApi|RuntimeOnly|LocalRuntime)|client(?:Implementation|Api|CompileOnly|RuntimeOnly)|include|localRuntime)(?=\\s*[(\"'\\w])"
-                    ).matcher(raw);
-                    StringBuilder renamed = new StringBuilder();
-                    mod.reset();
-                    while (mod.find()) mod.appendReplacement(
-                        renamed,
-                        switch (mod.group(1)) {
-                            case "modImplementation" -> "implementation";
-                            case "modApi" -> "api";
-                            case "modCompileOnly", "modCompileOnlyApi" -> "compileOnly";
-                            case "modRuntimeOnly", "modLocalRuntime", "localRuntime", "clientRuntimeOnly" -> "runtimeOnly";
-                            case "clientImplementation" -> "implementation";
-                            case "clientApi" -> "api";
-                            case "clientCompileOnly" -> "compileOnly";
-                            default -> "jarJar";
-                        }
-                    );
-                    mod.appendTail(renamed);
-                    raw = renamed.toString();
-                }
-                kept.add(raw);
+                StringBuilder renamed = new StringBuilder();
+                while (mod.find()) mod.appendReplacement(
+                    renamed,
+                    switch (mod.group(1)) {
+                        case "modImplementation" -> "implementation";
+                        case "modApi" -> "api";
+                        case "modCompileOnly", "modCompileOnlyApi" -> "compileOnly";
+                        case "modRuntimeOnly", "modLocalRuntime", "localRuntime", "clientRuntimeOnly" -> "runtimeOnly";
+                        case "clientImplementation" -> "implementation";
+                        case "clientApi" -> "api";
+                        case "clientCompileOnly" -> "compileOnly";
+                        default -> "jarJar";
+                    }
+                );
+                mod.appendTail(renamed);
+                kept.add(renamed.toString());
             }
-            String inner = String.join("\n", kept) + "\n";
+            String inner = String.join("", kept);
+            if (!inner.endsWith("\n")) inner += "\n";
             gradle =
                 gradle.substring(0, deps[2] + 1) + "\n" + inner.replaceAll("^\\n+", "") + gradle.substring(deps[3] - 1);
         }
@@ -2415,7 +2416,8 @@ final class Convert {
      * not named; anything else is named with the reason.
      */
     String dependencyLine(String raw, String from, String to, List<String> repos, boolean remapMods) throws IOException {
-        String line = raw.strip();
+        // A statement over several lines ({ exclude ... }) is named by its first line.
+        String line = raw.strip().lines().findFirst().orElse("");
         Matcher c = COORDINATE.matcher(line);
         if (!c.find()) return raw;
         if (c.group(2).startsWith("curse.maven") || c.group(2).startsWith("maven.modrinth")) {
@@ -2450,8 +2452,23 @@ final class Convert {
 
     /** Removes each top-level statement of a build script (balanced brackets; comments are kept) that matches. */
     static String dropStatements(String gradle, java.util.function.Predicate<String> drop, List<String> removed) {
-        boolean[] code = LoaderRules.code(gradle);
         StringBuilder out = new StringBuilder();
+        for (String statement : statements(gradle)) {
+            String s = statement.strip();
+            boolean comment = s.startsWith("//") || s.startsWith("/*") || s.startsWith("*");
+            if (!comment && drop.test(statement)) removed.add(s.lines().findFirst().orElse(""));
+            else out.append(statement);
+        }
+        return out.toString();
+    }
+
+    /**
+     * A build script (or a block's body) as its statements, each with its line ends: a statement runs to the end of the
+     * line where its brackets balance, so implementation("x") { exclude(...) } is one statement over three lines.
+     */
+    static List<String> statements(String gradle) {
+        boolean[] code = LoaderRules.code(gradle);
+        List<String> out = new ArrayList<>();
         int i = 0;
         while (i < gradle.length()) {
             int depth = 0, end = i;
@@ -2462,14 +2479,10 @@ final class Convert {
                 end++;
                 if (c == '\n' && depth <= 0) break;
             }
-            String statement = gradle.substring(i, end);
-            String s = statement.strip();
-            boolean comment = s.startsWith("//") || s.startsWith("/*") || s.startsWith("*");
-            if (!comment && drop.test(statement)) removed.add(s.lines().findFirst().orElse(""));
-            else out.append(statement);
+            out.add(gradle.substring(i, end));
             i = end;
         }
-        return out.toString();
+        return out;
     }
 
     void buildToFabric(String minecraft, boolean menu) throws Exception {
@@ -2649,16 +2662,18 @@ final class Convert {
         List<String> mavens = repositories(gradle);
         if (deps != null) {
             StringBuilder body = new StringBuilder();
-            for (String raw : gradle.substring(deps[2] + 1, deps[3] - 1).lines().toList()) {
+            // Whole statements, not lines: a dependency with a closure ({ exclude ... }) is one statement.
+            for (String raw : statements(gradle.substring(deps[2] + 1, deps[3] - 1))) {
                 String line = raw.strip();
                 Matcher jar = Pattern.compile("^jarJar\\b").matcher(line);
                 if (jar.find()) raw = raw.replaceFirst("jarJar", "include");
                 // NeoGradle names NeoForge itself as a dependency; the Loom lines above replace it.
-                if (line.matches("\\w+\\s*\\(?\\s*[\"']net\\.neoforged:neoforge:.*")) continue;
+                if (line.matches("(?s)\\w+\\s*\\(?\\s*[\"']net\\.neoforged:neoforge:.*")) continue;
                 boolean comment = line.startsWith("//") || line.startsWith("/*") || line.startsWith("*");
                 if (!line.isEmpty() && !comment) raw = dependencyLine(raw, "neoforge", "fabric", mavens, remap);
-                body.append(raw).append('\n');
+                body.append(raw);
             }
+            if (body.length() > 0 && body.charAt(body.length() - 1) != '\n') body.append('\n');
             gradle =
                 gradle.substring(0, deps[2] + 1) +
                 "\n" +
