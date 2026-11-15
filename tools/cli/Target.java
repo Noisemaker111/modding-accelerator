@@ -1625,6 +1625,19 @@ final class Target {
                 file +
                 "; update its owner manually."
             );
+            // The range filled in from a property when the jar is built (Trash Cans: "${minecraft_dependency}", with
+            // minecraft_dependency=>=1.21.4 <1.21.5): the property is the owner, retargeted the same way.
+            Matcher placeholder = Pattern.compile("^\\$\\{(\\w+)\\}$").matcher(constraint.trim());
+            if (placeholder.find() && setup.build != null) {
+                Path properties = setup.build.project.root.resolve("gradle.properties");
+                Matcher owner = Pattern.compile("(?m)^[ \\t]*" + Pattern.quote(placeholder.group(1)) + "[ \\t]*=[ \\t]*([^\\r\\n]*?)[ \\t]*$").matcher(
+                    Files.isRegularFile(properties) ? setup.text(properties) : ""
+                );
+                if (owner.find() && !owner.group(1).contains("$") && !Versions.matches(owner.group(1), setup.to)) {
+                    setProperty(setup, properties, placeholder.group(1), setup.to);
+                }
+                continue;
+            }
             if (constraint.contains("${") || constraint.equals(toRange(setup.to))) continue;
             if (Versions.matches(constraint, setup.to)) continue;
             // A range that excludes the target (">=26.3" ported to 26.2, ">=1.20.1 <1.21" to 1.21.6) would make Fabric refuse
