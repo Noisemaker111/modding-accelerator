@@ -99,6 +99,7 @@ final class Dependencies {
             );
             if (
                 group.startsWith("net.fabricmc") ||
+                group.startsWith("loom_mappings_") || // Loom's own remapped copy of a dependency listed by its real coordinate too
                 group.equals("com.mojang") ||
                 old.isEmpty() ||
                 !seen.add(group + ":" + name + ":" + old)
