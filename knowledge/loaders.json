@@ -4592,6 +4592,12 @@
       "ScreenOpeningLegacyMixin"
      ],
      "minecraft": "1.21.1"
+    },
+    {
+     "name": "Sided",
+     "from": "package demo;\n\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.common.Mod;\n\n@Mod(\"demo\")\npublic class Sided {\n\tstatic boolean client;\n\n\tpublic Sided(IEventBus bus, Dist dist) {\n\t\tif (dist.isClient()) client = true;\n\t}\n}\n",
+     "to": "package demo;\n\nimport demo.loaderbridge.Bridge;\nimport net.fabricmc.api.EnvType;\nimport net.fabricmc.api.ModInitializer;\nimport demo.loaderbridge.IEventBus;\nimport demo.loaderbridge.FMLLoader;\n\npublic class Sided implements ModInitializer {\n\tstatic boolean client;\n\n\t/** NeoForge's constructor of this @Mod class, run as Fabric's entrypoint (modaccel convert, NeoForge bridge). */\n\t@Override\n\tpublic void onInitialize() {\n\t\tIEventBus bus = Bridge.bus();\n\t\tEnvType dist = FMLLoader.getDist();\n\t\tif ((dist == EnvType.CLIENT)) client = true;\n\t\tBridge.common(\"demo\");\n\t}\n}\n",
+     "back": "package demo;\n\nimport net.neoforged.api.distmarker.Dist;\nimport net.neoforged.bus.api.IEventBus;\nimport net.neoforged.fml.common.Mod;\n\n@Mod(\"demo\")\npublic class Sided {\n\tstatic boolean client;\n\n\tpublic Sided(IEventBus bus, Dist dist) {\n\t\tif ((dist == Dist.CLIENT)) client = true;\n\t}\n}\n"
     }
    ],
    "mixins": [

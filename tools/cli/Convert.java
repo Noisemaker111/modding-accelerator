@@ -2685,6 +2685,7 @@ final class Convert {
             return null;
         }
         StringBuilder locals = new StringBuilder();
+        List<String> sides = new ArrayList<>();
         String in = indent + unit;
         if (!params.isEmpty()) for (String param : params.split(",")) {
             String[] p = param.strip().replaceAll("^final\\s+", "").split("\\s+");
@@ -2692,7 +2693,11 @@ final class Convert {
             switch (p[0]) {
                 case "IEventBus" -> locals.append(in).append("IEventBus ").append(p[1]).append(" = Bridge.bus();\n");
                 case "ModContainer" -> locals.append(in).append("ModContainer ").append(p[1]).append(" = Bridge.container(").append(id).append(");\n");
-                case "Dist" -> locals.append(in).append("Dist ").append(p[1]).append(" = Dist.").append(client ? "CLIENT" : "DEDICATED_SERVER").append(";\n");
+                // A client @Mod class runs on the client only; a common one on either side, which FMLLoader tells.
+                case "Dist" -> {
+                    locals.append(in).append("Dist ").append(p[1]).append(" = ").append(client ? "Dist.CLIENT" : "FMLLoader.getDist()").append(";\n");
+                    sides.add(p[1]);
+                }
                 default -> {
                     return leaveEntry(file, text, annotation, simple, "parameter " + param.strip());
                 }
@@ -2716,6 +2721,10 @@ final class Convert {
         StringBuilder entry = new StringBuilder();
         entry.append(indent).append("/** NeoForge's constructor of this @Mod class, run as Fabric's entrypoint (modaccel convert, NeoForge bridge). */\n");
         entry.append(indent).append("public void ").append(method).append("() {\n").append(locals);
+        // Dist.isClient() and isDedicatedServer() on the side parameter: Fabric's EnvType has neither, so the side is compared.
+        for (String side : sides) body = body
+            .replaceAll("\\b" + side + "\\.isClient\\(\\)", "(" + side + " == Dist.CLIENT)")
+            .replaceAll("\\b" + side + "\\.isDedicatedServer\\(\\)", "(" + side + " == Dist.DEDICATED_SERVER)");
         if (!body.isEmpty()) entry.append(body.replaceAll("(?m)^" + Pattern.quote(indent + unit), in)).append('\n');
         for (Subscriber s : subscribers) if (s.client() == client) entry.append(in).append("Bridge.subscribe(").append(s.type()).append(".class);\n");
         entry.append(in).append(client ? "ClientBridge.client(" : "Bridge.common(").append(id).append(");\n");
@@ -2726,6 +2735,7 @@ final class Convert {
         out = out.substring(0, lineStart) + out.substring(lineEnd);
         out = implementFabric(out, simple, api, method);
         out = LoaderRules.dropImport(out, "net.neoforged.fml.common.Mod");
+        if (!client && !sides.isEmpty()) out = LoaderRules.addImport(out, "net.neoforged.fml.loading.FMLLoader");
         out = LoaderRules.addImport(out, bridgePackage + ".Bridge");
         if (client) {
             out = LoaderRules.addImport(out, bridgePackage + ".ClientBridge");
@@ -3108,7 +3118,8 @@ final class Convert {
     );
 
     static final Pattern BRIDGED_LOCAL = Pattern.compile(
-        "^\\s*(IEventBus|ModContainer|Dist) (\\w+) = (?:Bridge\\.bus\\(\\)|Bridge\\.container\\(.*\\)|Dist\\.\\w+);\\s*$"
+        // The side local reads EnvType here: the way back undoes the bridge before the rules turn EnvType into Dist.
+        "^\\s*(IEventBus|ModContainer|Dist|EnvType) (\\w+) = (?:Bridge\\.bus\\(\\)|Bridge\\.container\\(.*\\)|(?:Dist|EnvType)\\.\\w+|FMLLoader\\.getDist\\(\\));\\s*$"
     );
 
     static final Pattern BRIDGED_END = Pattern.compile("^\\s*(?:Bridge\\.common|ClientBridge\\.client)\\((.+)\\);\\s*$");
@@ -3165,6 +3176,8 @@ final class Convert {
             );
             out = LoaderRules.dropImport(LoaderRules.dropImport(out, pkg + ".Bridge"), pkg + ".ClientBridge");
             out = LoaderRules.dropImport(attachmentCallsBack(out), pkg + ".Attachments");
+            // The side local of a common entrypoint read FMLLoader; the constructor takes Dist again.
+            out = LoaderRules.dropImport(out, "net.neoforged.fml.loading.FMLLoader");
             out = WRITTEN_EVENT_CLASS.matcher(out).replaceAll(".addListener($1");
             if (!out.equals(text)) {
                 write(file, out);
