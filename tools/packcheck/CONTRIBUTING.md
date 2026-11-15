@@ -138,11 +138,19 @@ others for one more repaired start. `fix.rounds` and `fix.notes` say what each r
 
 A new matcher or action is a small function in `PackRepairs.java` (`MATCHERS`, `ACTIONS` and `change`).
 
-A start is judged by its log, not a fixed time: it is stuck when its log has not grown for `--timeout` seconds (default
-600; the probe logs every 30 s while it places), and a ceiling of 30 minutes plus 8 s per mod past 100 stops one that
-never finishes. A placed block whose block entity cannot be sent to players (which on a real server stops it at the next
-tick) is taken out again and reported as `block-entity-unsendable`; a placed block that still had a scheduled tick when
-the world saved and changed when it ran is `settled-after-save`, a note, not `changed-by-save`.
+A start is judged by its log, not a fixed time: it is stuck when its log has said nothing new for `--timeout` seconds
+(default 600; a line repeated with another timestamp is no progress, and the probe logs every 30 s while it loads its
+test area and places), and a ceiling of 30 minutes plus 8 s per mod past 100 stops one that never finishes. The server
+runs with no tick watchdog (`max-tick-time=-1`), since one tick of a big pack on a busy machine can take minutes; a
+stuck start gets a thread dump in its crash-reports folder, and the mod it names is the start's culprit. A JVM the
+machine could not give memory starts once more, alone, and names no mod.
+
+The probe places what a player can place: block items in a creative tab (up to 1.19.2, where the item says), and not a
+developer's `debug` block. A placed block whose block entity cannot be sent to players (which on a real server stops it
+at the next tick) is taken out again and reported as `block-entity-unsendable`. A placed block that still had a
+scheduled tick, or could not survive where it stood, when the world saved, and changed by the game's rules after the
+reload, is `settled-after-save`, a note, not `changed-by-save`. An item that puts down another mod's block of the same
+name (a pack unifying it), or the block its own block is built on, is a note, not a `placed-other-block` problem.
 
 To prove a repair, run `modaccel pack-check --pack PACK --fix`. pack-check starts the repaired pack's server beside
 the shipped one, and compares them check by check (`fix.comparison`). It changes the user's pack only when the

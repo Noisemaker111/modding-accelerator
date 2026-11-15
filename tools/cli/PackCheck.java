@@ -1132,9 +1132,9 @@ final class PackCheck {
             process.getOutputStream().close();
             // A start is judged by its log, not by the clock: a 400-mod pack legitimately takes many minutes, logging as it
             // loads, generates and places. It is stuck when its log has said nothing new for --timeout seconds (default 600;
-            // a line it already said, such as a profiler's warning each minute, is no progress; a tick that hangs longer than
-            // max-tick-time, 300 s, gets the watchdog's crash report first, and the probe logs its progress every 30 s). A
-            // ceiling that grows with the pack's size still stops one that keeps saying new things forever.
+            // a line it already said, such as a profiler's warning each minute, is no progress; the probe logs its progress
+            // every 30 s, and a stuck start's thread dump names the mod holding the server). A ceiling that grows with the
+            // pack's size still stops one that keeps saying new things forever.
             long quiet = TimeUnit.SECONDS.toNanos(Integer.parseInt(options.get("timeout", "600")));
             long ceiling = System.nanoTime() + TimeUnit.SECONDS.toNanos(ceilingSeconds(pack.mods().size()));
             long lastGrowth = System.nanoTime(), size = 0;
@@ -1252,12 +1252,13 @@ final class PackCheck {
             try (var socket = new java.net.ServerSocket(0)) {
                 port = socket.getLocalPort();
             }
-            // max-tick-time of 5 minutes, not 60 s: the probe loads its test area in one tick, and a big pack's world generation
-            // on a busy machine took over 60 s (All the Mods 7 and 10 were stopped that way). A tick that hangs longer still
-            // gets the watchdog's crash report, whose stack names the mod.
+            // No tick watchdog (max-tick-time=-1): a tick of a big pack on a busy machine can legitimately take minutes (one
+            // block placed in All the Mods 10 loaded chunk after chunk on the server thread for over 300 s, and the vanilla
+            // watchdog stopped a server that was still working). A start is judged by its log instead (runServer), and one
+            // that is truly stuck gets a thread dump that names the mod, as the watchdog's report did.
             Files.writeString(
                 instance.resolve("server.properties"),
-                "server-ip=127.0.0.1\nserver-port=" + port + "\nonline-mode=false\nspawn-protection=0\nmax-tick-time=300000\nlevel-name=" + level +
+                "server-ip=127.0.0.1\nserver-port=" + port + "\nonline-mode=false\nspawn-protection=0\nmax-tick-time=-1\nlevel-name=" + level +
                 "\nmotd=modaccel pack-check\n"
             );
             voiceChatPort(instance);
