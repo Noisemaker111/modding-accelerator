@@ -271,6 +271,8 @@ public final class PerfTest {
         check(((Number) mod.get("heapShallowBytes")).longValue() > 0 && Json.array(mod.get("heapClasses")).stream()
             .anyMatch(c -> Json.object(c).get("name").equals("com.example.mod.ModBlock")), "live instances of the mod's own classes are measured after the capture");
         check(Json.array(attribution.get("threads")).size() > 0, "per-thread CPU load is reported");
+        check(Json.array(report.getOrDefault("threadCpuTime", List.of())).stream().map(Json::object)
+            .anyMatch(t -> ((Number) t.get("cpuMs")).doubleValue() > 0), "each thread's operating-system CPU time over the window is reported");
         List<Object> suggested = Json.array(Json.read(directory.resolve("probes.suggested.json")).get("probes"));
         check(suggested.stream().map(Json::object).anyMatch(p -> p.get("class").equals("com.example.mod.Handler") && p.get("descriptor").toString().startsWith("(")),
             "timing probes are suggested for sampled mod methods with exact descriptors");
@@ -466,6 +468,15 @@ public final class PerfTest {
         check(PerfOptimize.metric(report, Json.map("mod", "m")) == 30.0, "a mod metric is its whole sampled CPU");
         check(PerfOptimize.metric(report, Json.map("mod", "m", "threads", "^m-baker")) == 20.0, "a thread filter counts only matching threads");
         check(PerfOptimize.metric(report, Json.map("mod", "m", "method", "Mesher.build")) == 12.0, "a method scope is its inclusive CPU");
+        report.put("threadCpuTime", List.of(Json.map("thread", "m-baker-1", "cpuMsPerSecond", 7.0, "cpuMs", 70.0),
+            Json.map("thread", "m-baker-2", "cpuMsPerSecond", 5.0, "cpuMs", 50.0), Json.map("thread", "Render thread", "cpuMsPerSecond", 400.0, "cpuMs", 4000.0)));
+        check(PerfOptimize.metric(report, Json.map("threadCpu", "^m-baker")) == 12.0, "a threadCpu metric sums the matching threads' CPU time");
+        report.put("probeCalls", Json.map("mesh", 40L));
+        check(PerfOptimize.metric(report, Json.map("threadCpu", "^m-baker", "perCall", "mesh")) == 3.0, "perCall divides the window's CPU time by a counted probe's calls");
+        boolean none = false;
+        try { PerfOptimize.metric(report, Json.map("threadCpu", "^nobody")); }
+        catch (IllegalStateException expected) { none = true; }
+        check(none, "a threadCpu metric that matches no thread is an error, not zero");
         boolean refused = false;
         try { PerfOptimize.validate(Json.map("schema", 1, "measure", Json.map("metric", Json.map("probe", "x")), "gates", List.of())); }
         catch (IllegalArgumentException expected) { refused = true; }

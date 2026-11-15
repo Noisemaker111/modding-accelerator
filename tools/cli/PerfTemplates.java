@@ -3,6 +3,10 @@ import java.util.*;
 
 /** Reusable Minecraft command fixtures. Generating a file never edits a world. */
 final class PerfTemplates {
+    /** Game, JVM and pool threads that run other work besides a mod's: a mod's own threads are the rest. */
+    static final java.util.regex.Pattern SHARED_THREAD = java.util.regex.Pattern.compile(
+        "^(Render thread|Server thread|main|Worker-Main|IO-Worker|Netty|ForkJoinPool|pool-|Download|Timer|Signal|Reference Handler|Finalizer|Common-Cleaner|JFR|Attach)");
+
     static Map<String, Object> run(Modaccel.Options options) throws Exception {
         String family = options.get("family", "transport");
         if (family.equals("experiment")) return experiment(options);
@@ -127,6 +131,14 @@ final class PerfTemplates {
             }
             metric = names.isEmpty() ? Json.map("mod", id) : Json.map("mod", id, "threads", "^(" + String.join("|", names) + ")$");
             if (server > 0) warnings.add("the metric leaves out the Server thread (" + server + " of " + total + " samples); time server work with a probe");
+            // Threads the mod started run only its work: their operating-system CPU time is exact where samples
+            // also count a preempted thread's wait. Shared game and pool threads stay sampled, as a scope.
+            Set<String> own = new LinkedHashSet<>();
+            for (String name : names) if (!SHARED_THREAD.matcher(name).find()) own.add(name);
+            if (!own.isEmpty()) {
+                scopes.add(Json.map("name", id + "SampledCpu", "mod", id, "threads", metric.getOrDefault("threads", ".")));
+                metric = Json.map("threadCpu", "^(" + String.join("|", own) + ")$");
+            }
         }
         for (Object item : probes.subList(Math.min(1, probes.size()), probes.size())) {
             String label = Json.object(item).get("label").toString();

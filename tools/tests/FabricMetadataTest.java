@@ -58,7 +58,14 @@ public final class FabricMetadataTest {
             require(Target.manifestEdits(selected, "1.21.6").isEmpty(), "missing Minecraft constraint is not invented");
             Json.object(placeholder.get("depends")).put("minecraft", List.of("~1.20.1", "1.21.6"));
             Files.writeString(manifest, Json.write(placeholder));
-            reject(selected, "not one literal string");
+            require(Target.manifestEdits(selected, "1.21.6").isEmpty(), "a list with an alternative that accepts the target is left alone");
+            Json.object(placeholder.get("depends")).put("minecraft", List.of("1.21", "1.21.1"));
+            Files.writeString(manifest, Json.write(placeholder));
+            var listed = Target.manifestEdits(selected, "1.21.6");
+            require(
+                listed.size() == 1 && "1.21.6".equals(Json.object(Json.object(Json.parse(listed.get(0).after())).get("depends")).get("minecraft")),
+                "a list none of whose alternatives accepts the target becomes the target release (Sound Physics)"
+            );
             Json.object(placeholder.get("depends")).put("minecraft", ">=1.20.1 <1.22");
             Files.writeString(manifest, Json.write(placeholder));
             require(
@@ -70,7 +77,18 @@ public final class FabricMetadataTest {
             require(Target.manifestEdits(selected, "1.21.6").isEmpty(), "real Trinkets wide range needs no rewrite");
             Json.object(placeholder.get("depends")).put("minecraft", ">=1.20.1 <1.21");
             Files.writeString(manifest, Json.write(placeholder));
-            reject(selected, "complex constraint");
+            var ranged = Target.manifestEdits(selected, "1.21.6");
+            require(
+                ranged.size() == 1 && "1.21.6".equals(Json.object(Json.object(Json.parse(ranged.get(0).after())).get("depends")).get("minecraft")),
+                "a range that excludes the target becomes the target release"
+            );
+            Json.object(placeholder.get("depends")).put("minecraft", ">=26.3");
+            Files.writeString(manifest, Json.write(placeholder));
+            var lower = Target.manifestEdits(selected, "26.2");
+            require(
+                lower.size() == 1 && "26.2".equals(Json.object(Json.object(Json.parse(lower.get(0).after())).get("depends")).get("minecraft")),
+                "a backport below a lower bound (Krypton 26.3 -> 26.2) retargets the bound"
+            );
             Files.writeString(manifest, original);
             Path client = root.resolve("src/client/resources");
             Files.createDirectories(client);

@@ -1,0 +1,21 @@
+{
+  "note": "Members the game-derived route maps link as a rename although the new member returns something else. port removes these pairs from its map before repairing, so a call no rule could rewrite safely stays a reported error instead of compiling with a changed meaning. Each entry names the evidence, read from the game's own classes.",
+  "changes": [
+    {
+      "from": "getMaxBuildHeight",
+      "to": "getMaxY",
+      "names": "mojmap",
+      "update": "1.21.1 -> 1.21.2",
+      "why": "getMaxBuildHeight() was exclusive (minY + height); getMaxY() is inclusive (minY + height - 1). Rule level-height-max-y-exclusive rewrites the calls where getMaxY() + 1 binds the same way.",
+      "evidence": "Mojang's 26.1 client jar: LevelHeightAccessor.getMaxY() bytecode is getMinY() + getHeight() - 1"
+    },
+    {
+      "from": "getTopY",
+      "to": "getTopYInclusive",
+      "names": "yarn",
+      "update": "1.21.1 -> 1.21.2",
+      "why": "Yarn's names for the same change: getTopY() was exclusive, getTopYInclusive() is one lower. Rule height-limit-top-y-exclusive rewrites the safe calls.",
+      "evidence": "Mojang's 26.1 client jar: LevelHeightAccessor.getMaxY() (yarn getTopYInclusive) is getMinY() + getHeight() - 1"
+    }
+  ]
+}

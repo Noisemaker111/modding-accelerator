@@ -28,19 +28,27 @@ python bench/diorama/play/prepare_world.py --root .runs/diorama
   (`"jit": "full"`) and turns server saving off (`save-off.java`). Right before the cold capture
   `fly.java` flies east for 30 s, right before the warm capture south for 30 s, at 16 blocks/s
   (`measure.before`), so each 60 s window holds its whole flight and 30 s of settling.
-- The metric is Diorama's live-mapping CPU: its baker threads and the render thread. The save
-  import is a background job that takes whatever time the bakers leave, so in a fixed window it
-  hides savings; it and Diorama's all-thread CPU are scopes. Scopes also report the GPU mesher,
-  spawn spots, tint blends, shadow casters, the save import, tile writes, mipmaps and the
-  fog mask as inclusive sampled CPU, and minimap render, radar, waypoint layout, session tick
-  and map update as mean milliseconds per call (`scopes.json` probes).
+- The metric is the bakers' CPU time: what the operating system counted on the
+  `diorama-baker-*` threads over the window (`{"threadCpu": "^diorama-baker"}`, from
+  ThreadMXBean at the window's start and end). It is exact, and a baker preempted by other load
+  counts nothing; the sampled CPU the earlier runs decided on (`liveMappingSampledCpu`, execution
+  samples on the bakers and the render thread) also counts a preempted thread in Java code. The
+  save import takes whatever time the bakers leave, so in a fixed window it hides savings; it and
+  every Diorama thread are scopes. `bakerMsPerMesh` divides the bakers' time by the meshes built,
+  for windows where a faster build finishes more of them.
+- Scopes for the player: the render thread's and server thread's CPU time, the server tick, the
+  young-collection pause (`gcPauseMeanMs`), all pause time and the mean heap, and minimap render,
+  radar, waypoint layout, session tick and map update as mean milliseconds per call (`scopes.json`
+  probes). Inclusive sampled CPU of the GPU mesher, spawn spots, tint blends, shadow casters, the
+  save import, tile writes, mipmaps and the fog mask shows where a change landed.
 - Gates: `bake-digest.java` digests the GPU mesh, the traced image (full and partial over saved
   pixels), every mip level, spawn spots with and without saved spots, the GPU merge and the
   tints of six tiles along the path, read from the experiment's own frozen copy of the region
   files (`files`), so it is identical between launches. `tints-live.java` requires every tint
   the live map holds to equal a fresh blend; `mapped.java` requires the flight to have ended
   with GPU-baked tiles; `reuse-live.java` requires everything a build carries between bakes to
-  change nothing (below).
+  change nothing (below); `slabs-ring.java` requires a build that keeps those in a ring of arrays
+  to have gone round it during the flight and to read nothing stale once it goes round again.
 - `bake-bench.java` times those functions in one client (descriptive), and `toggle-bench.java`
   compares switchable variants of one build in the same JVM with randomized order.
 
@@ -157,6 +165,162 @@ warm one re-meshes them. Three things to weigh before distributing:
   the warm captures; that run shared the machine with another paired run.
 - Hit rates during the flight: 70% of camera columns, 78% of caster rows and 73% of spot
   columns came from the bake before; no tile was evicted from the budgets.
+
+### Decide on the bakers' CPU time
+
+The runs above decided on execution samples, which count a baker preempted in Java code as
+busy. Decided again on what the operating system counted on the baker threads (six paired
+launches of the three patches against unmodified Diorama, `all3-vs-unmodified-cputime` in
+`coverage/perf-runs.json`; every gate identical in every launch):
+
+| Scope | Cold | Warm |
+|---|---|---|
+| Bakers' CPU time (decision metric) | 1.61× (95% 1.34–1.99) | 2.21× (2.05–2.35) |
+| Bakers' CPU time per mesh built | 1.77× (1.38–2.44) | 2.19× (2.08–2.31) |
+| Sampled live-mapping CPU (the old metric) | 1.58× (1.41–1.80) | 2.22× (1.99–2.43) |
+| Every Diorama thread's CPU time | 1.40× (1.20–1.67) | 1.65× (1.62–1.70) |
+
+On this run the two metrics agree; the machine was less loaded than in #78's. This round's runs,
+kept and rejected, are session `diorama-round3` (`python bench/perf_sessions.py --session
+diorama-round3`). In the cold window
+the patched bakers keep up with the flight and build 10% more meshes, so per mesh the gain is
+larger than per window.
+
+### The player's tick and the collector
+
+Against unmodified Diorama, with the three patches (same run):
+
+- The render thread's and the server thread's CPU time are unchanged (cold 0.96×, 0.93–1.00;
+  warm 1.01×, 0.98–1.03; server 0.99× and 1.01×). Session tick and map update, per call, are
+  0.99× (0.83–1.19) and 1.04× (0.79–1.46) cold, 1.09× (0.97–1.30) and 0.99× (0.91–1.06) warm:
+  the warm slowdowns #78 measured on a shared machine were noise. Where a pair's map update was
+  slower it uploaded more tiles: the patched build finishes 11% more of them in the cold window,
+  and the map update per uploaded tile is unchanged (0.99× warm). Sampled CPU under the session
+  tick was the same in both builds; the extra wall time of #78's slow pairs was in GL calls and
+  in rare long calls, not in Diorama's work.
+- The collector is a real cost: young pauses were 19% longer cold and 33% longer warm
+  (`gcPauseMeanMs` 0.84×, 0.81–0.88; 0.75×, 0.70–0.81) and the mean heap 9% larger. Total pause
+  time stayed level (0.94×, 0.97×, both including 1) because there were fewer, longer pauses.
+  Each young collection copied 10–22% more bytes: what the bakes keep (kept columns, caster rows,
+  spot columns) lives for seconds, so it is copied from one survivor space to the next before it
+  is promoted.
+
+### Keep carried-over ints in a ring of large arrays
+
+Apply after the three patches above:
+
+```sh
+git -C DIORAMA_SOURCE apply bench/diorama/slab-ring.patch
+```
+
+- `Slabs` keeps every int the kept columns, caster rows and spot columns hold (faces, spots, saved
+  spots) in a ring of arrays, each one collector region long (8 MB for the game's 16 GB heap, at
+  least 4 MB), 40 MB in all, what those caches were allowed before. `G1` allocates such an array
+  straight into the old generation and never moves it, so no young collection copies kept data.
+  A kept record holds a run (array, offset, length, the pass that wrote it) instead of an array.
+- Each pass over an array has a serial; tiles whose ints are in a pass older than the ring are
+  dropped, and a run in one of the two passes that leave next is copied forward when a bake takes
+  it again. A bake that took a tile just before its array is written over may still be reading
+  it, so every read is checked afterwards against the array's serial (as `StampedLock` readers
+  do) and, if the array was written over meanwhile, the column is walked or picked instead and
+  what was copied is dropped. Kept records are never written once a tile holds them; a record
+  copied forward is a new record.
+- The first version allocated a new array whenever one filled. It shortened young pauses as much,
+  but each allocation of so large an array started a young collection and a concurrent cycle
+  (8 and 8 in a cold window): total pause time went up. Its run ended when the machine ran out of
+  memory (`kept-ints-in-slabs`, two pairs). The ring allocates each array once.
+- `slabs-ring.java` (gate, run last) requires the flight to have gone round the ring at least once,
+  so `reuse-live.java` compared tiles while arrays were being written over under them, then goes
+  round once more and requires a run kept before to read as stale and every live tile to mesh and
+  pick as it does with reuse off.
+
+Four paired launches against the three patches (`slab-ring` in `coverage/perf-runs.json`; every
+gate identical in every launch). Not a speedup, and not accepted by the speed rule; it removes the
+collector's cost:
+
+| Scope | Cold | Warm |
+|---|---|---|
+| Young-collection pause | 1.12× shorter (1.10–1.13) | 1.19× shorter (1.13–1.24) |
+| Mean heap | 1.03× smaller (0.99–1.08) | 1.08× smaller (1.03–1.12) |
+| All pause time | 1.05× (0.95–1.17) | 1.04× (0.99–1.10) |
+| Bakers' CPU time | 1.16× (1.07–1.25) | 1.04× (0.98–1.16) |
+| Render thread CPU time | 0.97× (0.94–0.99) | 0.98× (0.94–1.02) |
+
+The render thread draws each GPU bake; the ring's arm did 3% more of them in the cold window,
+and its render time per GPU bake was the same.
+
+### All four against unmodified Diorama
+
+Six paired launches of the three patches and `slab-ring.patch` against unmodified Diorama
+(`all-four-vs-unmodified`, accepted; every gate identical in every launch). The three patches'
+own run (above) is in the first columns; the two runs are separate sessions, so their baselines
+differ (the unmodified bakers used 504 and 474 ms a second warm), and against the three patches
+directly the ring changed the bakers' time by 1.16× cold and 1.04× warm (0.98–1.16).
+
+| Scope | Three patches, cold | warm | All four, cold | warm |
+|---|---|---|---|---|
+| Bakers' CPU time (decision metric) | 1.61× (1.34–1.99) | 2.21× (2.05–2.35) | 1.62× (1.20–2.22) | 1.93× (1.86–2.01) |
+| Bakers' CPU time per mesh | 1.77× (1.38–2.44) | 2.19× (2.08–2.31) | 1.77× (1.18–2.74) | 2.00× (1.93–2.07) |
+| Every Diorama thread's CPU time | 1.40× (1.20–1.67) | 1.65× (1.62–1.70) | 1.39× (1.10–1.79) | 1.45× (1.39–1.51) |
+| Render thread CPU time | 0.96× (0.93–1.00) | 1.01× (0.98–1.03) | 0.97× (0.92–1.01) | 0.97× (0.95–1.00) |
+| Server thread CPU time | 0.99× (0.95–1.06) | 1.01× (0.96–1.08) | 1.01× (0.97–1.05) | 0.99× (0.93–1.06) |
+| Young-collection pause | 0.84× (0.81–0.88) | 0.75× (0.70–0.81) | 0.94× (0.91–0.98) | 0.93× (0.87–0.98) |
+| All pause time | 0.94× (0.86–1.02) | 0.97× (0.90–1.06) | 0.94× (0.87–1.04) | 1.02× (0.93–1.16) |
+| Mean heap | 0.91× (0.89–0.94) | 0.91× (0.88–0.94) | 0.96× (0.95–0.98) | 0.93× (0.91–0.95) |
+| Session tick, ms a call | 0.99× (0.83–1.19) | 1.09× (0.97–1.30) | 0.88× (0.72–1.02) | 0.95× (0.93–0.96) |
+| Map update, ms a call | 1.04× (0.79–1.46) | 0.99× (0.91–1.06) | 1.00× (0.89–1.13) | 0.94× (0.92–0.97) |
+| Shadow casters (sampled) | 2.44× (2.10–2.77) | 3.87× (3.45–4.22) | 2.17× (1.87–2.48) | 3.73× (3.40–4.08) |
+| Spawn spots (sampled) | 1.62× (1.43–1.83) | 2.04× (1.76–2.31) | 1.50× (1.23–1.81) | 1.73× (1.59–1.88) |
+| Tint blends (sampled) | 2.53× (2.16–2.96) | 2.69× (2.37–3.03) | 2.51× (2.14–2.88) | 2.29× (2.18–2.41) |
+
+Above 1 is better for the candidate. With all four, young pauses are still 6–7% longer than
+unmodified Diorama's and the heap 4–7% larger (from 19–33% and 9% with the three patches): what
+the per-chunk `ChunkBakeData` keeps is still small arrays. In the warm window the patched arm
+finished 3.4% more GPU bakes and uploads; the render thread's CPU time grew no faster than the
+GPU bakes it drew (21.2 against 21.0 ms per GPU bake in the window) and the map update per
+uploaded tile was 0.97× (0.95–1.00), so the warm session
+tick and map update, 5–6% slower per call, did more work rather than the same work slower.
+
+### Tried and rejected this round
+
+- `sky-free.patch`: a kept column no longer depends on its chunks' sky light, which in the views
+  kept only the spawn-spot overlay reads (off by default, and one of the tile's settings). Re-meshes
+  took more columns (warm 1.08×, 95% 1.03–1.15), but the cold window was slower (0.80×, 0.64–0.99,
+  five pairs of six): with more columns taken, the column walk gets hot later and C2 compiles it
+  later, so more of the first minute runs in slower tiers. Exact (every gate identical).
+- `pick-rows.patch`: every ray of a pixel row steps through the same cells whatever its x, so the
+  steps were worked out once per row, and `passedWhenSaved` answers were remembered per cell. Picks
+  came out 1.7× slower (`spotsCpu` 0.60×, 0.57×; bakers 0.79×, 0.83×): a boxed `HashMap` lookup per
+  ray and per unknown cell costs more than the floating-point steps it replaced, which the
+  sampled line numbers had overstated.
+
+### The cold window is the JIT's first minute
+
+Cold pairs vary far more than warm ones, even on exact CPU time (sky-free's cold pairs ranged
+0.56–1.20×). In a slow pair the bakers' samples are in the interpreter: 728 interpreted top frames
+against 88 in its baseline, in `TileBaker.bake`, `TileBaker.trace` and `GpuMesher.build`, while the
+traced check bakes and the first meshes run before C2 has compiled them. A change that makes
+hot code run less often can make the first minute slower. Count interpreted frames before reading
+a cold verdict, and expect a small change to show only in the warm window.
+
+### What is left
+
+Per mesh, the bakers spend about 55% in the column walk, 18–26% in spawn-spot picks, 10% in shadow
+casters, 7% blending tints of new chunks and 5% each in the GPU image merge and traced bakes. What
+has been tried makes re-meshes cheap; the first mesh of a new tile is untouched:
+
+- the collector: `ChunkBakeData`'s per-chunk arrays (solid masks, caster faces, open heights) in
+  the ring too, with validated reads, would take the last 6–7% off young pauses;
+
+- the column walk visits every cell rays reach one at a time, with per-cell rock, water and fog
+  bookkeeping the sky view never needs and twelve extent updates. Rows of air and whole cubes could
+  be walked as bit masks, 64 cells at a time (reach propagates north along a row as a carry does),
+  leaving only faces to visit one at a time;
+- picks: the same per-row steps, kept in a primitive table indexed by row rather than a map;
+- the per-row clearing of five arrays over the whole span and the extent updates could be per row
+  (about 5% of the walk, exact);
+- reuse that tolerates a chunk's sky light, decided per cell rather than per chunk, once the cold
+  window's JIT effect is understood (or warmed: run the cold capture after a short flight).
 
 ### Time to safepoint on a busy machine
 

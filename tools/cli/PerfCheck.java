@@ -69,11 +69,12 @@ final class PerfCheck {
             if (metric.containsKey("probe") && !timed.contains(metric.get("probe").toString())) {
                 problems.add("probe " + metric.get("probe") + " is not a timing probe in " + measure.getOrDefault("probes", "the experiment (no probes file)"));
             }
-            if (metric.containsKey("threads")) {
+            for (String key : List.of("threads", "threadCpu")) {
+                if (!metric.containsKey(key)) continue;
                 try {
-                    Pattern.compile(metric.get("threads").toString());
+                    Pattern.compile(metric.get(key).toString());
                 } catch (RuntimeException bad) {
-                    problems.add("threads is not a regular expression: " + metric.get("threads"));
+                    problems.add(key + " is not a regular expression: " + metric.get(key));
                 }
             }
         }
