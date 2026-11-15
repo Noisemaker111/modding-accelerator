@@ -1311,6 +1311,8 @@ public final class PortableTests {
         String forge = "<version>1.21.4-54.0.16</version><version>1.21.5-55.0.9</version><version>1.21.5-55.0.21</version><version>1.21.5-55.0.3</version><version>1.21.50-1.0</version>";
         check("1.21.5-55.0.21".equals(Target.forgeRelease(forge, "1.21.5")), "Forge's newest release for the target game");
         check(Target.forgeRelease(forge, "1.21.2") == null, "no Forge release for a game Forge skipped");
+        // An exact game range is written [1.21.2]: Maven's rules refuse [1.21.2,1.21.2] (identical boundaries), and NeoForge refuses the mod.
+        check(MavenRange.own("[1.21.2]", "1.21.2") && !MavenRange.own("[1.21.2]", "1.21.3"), "an exact range written the way Maven accepts it");
         // Old Loom states its minimum Gradle only as a constant of its bootstrap class: class constants are read from the
         // class file itself (an int and a String constant of the JDK's own classes), and a major line becomes its newest release.
         try (var integer = Object.class.getResourceAsStream("/java/lang/Integer.class"); var jar = Object.class.getResourceAsStream("/java/util/jar/JarFile.class")) {

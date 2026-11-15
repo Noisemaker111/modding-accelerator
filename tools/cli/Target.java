@@ -120,7 +120,7 @@ final class Target {
             // Mod metadata declares an accepted game range; leaving it on the old version makes NeoForge refuse the mod at runtime.
             if (pins.containsKey("minecraft_version_range")) setup.replacements.put(
                 "minecraft_version_range",
-                "[" + to + "," + to + "]"
+                "[" + to + "]"
             );
             for (String key : List.of("neo_version_range", "neoforge_version_range")) if (
                 pins.containsKey(key)
@@ -501,7 +501,7 @@ final class Target {
             if (key.equals("minecraft_version_range") || setup.replacements.containsKey(key)) continue;
             if (!key.matches("(?i)(?:forge|neoforge|neo|fabric|quilt)_?(?:game|minecraft|mc)_?version_?range")) continue;
             if (!value.matches("[\\[(][^,]*,[^,]*[\\])]") || value.contains(to)) continue;
-            setup.replacements.put(key, "[" + to + "," + to + "]");
+            setup.replacements.put(key, "[" + to + "]");
         }
     }
 
