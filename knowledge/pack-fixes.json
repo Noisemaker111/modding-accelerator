@@ -126,59 +126,6 @@
       }
     },
     {
-      "id": "enderio-capacitor-bank-null-cache",
-      "mod": "enderio",
-      "loader": "neoforge",
-      "minecraft": [
-        "1.21.1"
-      ],
-      "match": {
-        "type": "mod-range",
-        "mod": "enderio",
-        "range": "[8.2.13-beta]"
-      },
-      "check": "world-reopen",
-      "symptom": "A world with an Ender IO capacitor bank stops the server when it opens again: \"Exception in server tick loop\", a NullPointerException because the capacitor bank's BlockCapabilityCache is null in CapacitorBankBlockEntity.getValidPushTargets.",
-      "cause": "Ender IO 8.2.13-beta reworked capacitor banks; its network ticks a bank whose capability cache is not made yet while the bank's chunk loads, which a world with a bank anywhere outside the spawn chunks does on every start.",
-      "evidence": [
-        "https://github.com/Team-EnderIO/EnderIO/issues/1494 (open: \"The server crashes on startup, CapacitorBankBlockEntity.getValidPushTargets returns a null BlockCapabilityCache\", Ender IO 8.2.13-beta)",
-        "pack-check on All the Mods 10 8.6 (CurseForge export, NeoForge 21.1.266, 499 files), 2026-11-15: the first start makes a world and places 43,538 block items; the second start stops in its first ticks with the NullPointerException above from CapacitorBankSavedData.onLevelTick"
-      ],
-      "action": {
-        "type": "replace-mod",
-        "mod": "enderio",
-        "file": "enderio-8.2.12-beta.jar",
-        "url": "https://cdn.modrinth.com/data/49ZofO4f/versions/2bHl1dCW/enderio-8.2.12-beta.jar",
-        "sha512": "c4415c1e835fa7eaf7f4528fd685412151968b092e9be91528add11dd981943ba6243eee41ff73923df64d59d8f907901cb006edcb5c02783e73ab656524c995",
-        "bytes": 6598496,
-        "page": "https://modrinth.com/mod/enderio/version/2bHl1dCW",
-        "license": "Unlicense"
-      },
-      "why": "8.2.12-beta is the release before the capacitor bank rework, for the same game and loader, and bundles its own Ender Core 8.2.12-beta, so nothing else of the pack changes.",
-      "test": {
-        "jars": [
-          {
-            "file": "enderio-8.2.13-beta.jar",
-            "mods": [
-              {
-                "id": "enderio",
-                "version": "8.2.13-beta"
-              }
-            ]
-          }
-        ],
-        "added": {
-          "mods": [
-            {
-              "id": "enderio",
-              "version": "8.2.12-beta"
-            }
-          ]
-        },
-        "from": "All the Mods 10 8.6 (CurseForge, NeoForge 21.1.266)"
-      }
-    },
-    {
       "id": "unavailable-curseforge-file",
       "loader": "*",
       "minecraft": [
