@@ -1,0 +1,53 @@
+diff --git a/src/main/java/dev/diorama/data/TileStore.java b/src/main/java/dev/diorama/data/TileStore.java
+index 8a7a422d..5ae71487 100644
+--- a/src/main/java/dev/diorama/data/TileStore.java
++++ b/src/main/java/dev/diorama/data/TileStore.java
+@@ -83,7 +83,7 @@ public final class TileStore {
+ 	private static final ScheduledThreadPoolExecutor WRITER = new ScheduledThreadPoolExecutor(1, task -> {
+ 		Thread thread = new Thread(task, "diorama-tile-writer");
+ 		thread.setDaemon(true);
+-		thread.setPriority(Thread.MIN_PRIORITY + 1);
++		thread.setPriority(Thread.NORM_PRIORITY);
+ 		return thread;
+ 	});
+ 
+diff --git a/src/main/java/dev/diorama/render/MapLevel.java b/src/main/java/dev/diorama/render/MapLevel.java
+index 370b86b4..14f7e518 100644
+--- a/src/main/java/dev/diorama/render/MapLevel.java
++++ b/src/main/java/dev/diorama/render/MapLevel.java
+@@ -68,7 +68,12 @@ public final class MapLevel implements ChunkSource {
+ 		task -> {
+ 			Thread thread = new Thread(task, "diorama-baker-" + THREAD_ID.incrementAndGet());
+ 			thread.setDaemon(true);
+-			thread.setPriority(Thread.MIN_PRIORITY + 1);
++			// Normal priority, as the game's own threads have. Below it, a machine busy with other programs
++			// can leave a baker unscheduled for seconds (Windows lets a starved thread wait about four),
++			// and whenever the JVM stops every thread at a safepoint (a garbage collection, say) the whole
++			// game, render thread included, waits for that baker to reach its stop. The same goes for the
++			// save import and the tile writer. There are at most a third as many bakers as cores.
++			thread.setPriority(Thread.NORM_PRIORITY);
+ 			return thread;
+ 		}
+ 	);
+diff --git a/src/main/java/dev/diorama/render/SavedChunkImport.java b/src/main/java/dev/diorama/render/SavedChunkImport.java
+index d185399f..50956286 100644
+--- a/src/main/java/dev/diorama/render/SavedChunkImport.java
++++ b/src/main/java/dev/diorama/render/SavedChunkImport.java
+@@ -107,7 +107,7 @@ public final class SavedChunkImport {
+ 	private final ExecutorService workers = Executors.newFixedThreadPool(WORKERS, task -> {
+ 		Thread thread = new Thread(task, "diorama-saved-chunks-worker");
+ 		thread.setDaemon(true);
+-		thread.setPriority(Thread.MIN_PRIORITY);
++		thread.setPriority(Thread.NORM_PRIORITY);
+ 		return thread;
+ 	});
+ 	private final CountDownLatch stop = new CountDownLatch(1);
+@@ -156,7 +156,7 @@ public final class SavedChunkImport {
+ 		this.source = new SavedChunkSource(map.world(), save, portals);
+ 		this.thread = new Thread(this::run, "diorama-saved-chunks");
+ 		this.thread.setDaemon(true);
+-		this.thread.setPriority(Thread.MIN_PRIORITY);
++		this.thread.setPriority(Thread.NORM_PRIORITY);
+ 	}
+ 
+ 	/**

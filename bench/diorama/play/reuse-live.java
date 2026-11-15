@@ -87,12 +87,20 @@ for (TileKey key : keys) {
     var image = TileImage.full(key, new int[][] {new int[0]}, new byte[0]);
     BitSet blocks = new BitSet();
     for (int b = 0; b < 256; b += 4) blocks.set(b);
-    int startY = new MapPick(source, looks, key, false).startY();
+    // Builds with the dirty-block pick (bench/diorama/dirty-only-gpu-spots.patch) also pick that way; found
+    // by reflection, so the gate runs on an unmodified build too.
+    java.lang.reflect.Method dirtyPick = null;
+    int startY = 0;
+    try {
+        dirtyPick = TileSpots.class.getMethod("pick", TileImage.class, ChunkSource.class, BlockLooks.class, boolean.class, int[].class, BitSet.class, int.class);
+        startY = (int) MapPick.class.getMethod("startY").invoke(new MapPick(source, looks, key, false));
+    } catch (NoSuchMethodException absent) {
+    }
     String[] spots = new String[3];
     for (int r = 0; r < 3; r++) {
         for (var s : switches) s.setBoolean(null, r > 0);
         spots[r] = Arrays.hashCode(TileSpots.pick(image, source, looks, false, saved)) + "/"
-            + Arrays.hashCode(TileSpots.pick(image, source, looks, false, saved, blocks, startY).spots()) + "/"
+            + (dirtyPick == null ? 0 : Arrays.hashCode((int[]) field(dirtyPick.invoke(null, image, source, looks, false, saved, blocks, startY), "spots"))) + "/"
             + Arrays.hashCode(TileSpots.pick(image, source, looks, false, null));
     }
     if (!a.equals(reused[0]) || !a.equals(reused[1]) || !spots[0].equals(spots[1]) || !spots[0].equals(spots[2])) {

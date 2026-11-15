@@ -36,7 +36,8 @@ python bench/diorama/play/prepare_world.py --root .runs/diorama
   tints of six tiles along the path, read from the experiment's own frozen copy of the region
   files (`files`), so it is identical between launches. `tints-live.java` requires every tint
   the live map holds to equal a fresh blend; `mapped.java` requires the flight to have ended
-  with GPU-baked tiles.
+  with GPU-baked tiles; `reuse-live.java` requires everything a build carries between bakes to
+  change nothing (below).
 - `bake-bench.java` times those functions in one client (descriptive), and `toggle-bench.java`
   compares switchable variants of one build in the same JVM with randomized order.
 
@@ -71,9 +72,109 @@ Measured with six paired launches (`experiment.json`, production JIT, hidden cli
 | GPU mesher | 1.24× (0.84–1.97) | 1.20× (0.94–1.54) |
 
 Every gate was identical in every launch. Minimap drawing, radar and waypoint layout cost well
-under a millisecond a call before and after and are not changed. On a machine at full load the
-patched build showed more long time-to-safepoint pauses on baker threads in some runs (0–12 over
-250 ms per flight, against 1–2 unpatched); confirm on an idle machine before distributing.
+under a millisecond a call before and after and are not changed.
+
+### Reuse what a re-mesh would work out again
+
+A tile is meshed about ten times while the land around it loads, and each mesh walked every
+column again. Measured over the flight, 79% of a re-mesh's columns and 80% of its shadow-caster
+columns came out exactly as the tile's mesh before; 39% of re-meshes were identical throughout.
+Apply after the two patches above:
+
+```sh
+git -C DIORAMA_SOURCE apply bench/diorama/column-reuse.patch
+```
+
+- Snapshots carry tokens for their blocks, block light and sky light. A snapshot that replaces
+  one with the same blocks (every section the same block, or the same packed indices and
+  palette, the same column tops, no copycats) takes over its blocks token; likewise each light
+  token where every light section is equal. The first bake thread that asks compares the two,
+  not the client thread, and a token never changes once read. Anything worked out from blocks
+  alone is then shared by every snapshot with that token.
+- `ChunkBakeData`, per blocks token and looks: the solid masks the readers build, the chunk's
+  shadow-caster faces in one array (with the west and south neighbours' tokens where its edge
+  columns read them) and the height from which each column is all air. Kept as an object per
+  column, the caster faces were half a million long-lived objects that made every young
+  collection 3 ms longer; as one per chunk the heap after a flight has as many objects as before.
+- `MeshColumns`: each tile keeps, per column of x, the camera faces its walk added and the
+  chunks it read, by blocks and light tokens and tint arrays. A column is taken again only when
+  the tile's settings (looks, style, overlays, projection, ray start and limit) are equal and
+  every one of those chunks is: the same tokens and equal tints. A column that reached a chunk
+  the map has no data for also keeps the saved spots it read there, which must be equal too.
+  The tile's caster faces are kept per x the same way, by the blocks tokens of x and x − 1.
+- `SpotColumns`: in the sky view a spawn-spot ray reads only blocks of its own column, so each
+  column's spots are kept with the chunks the rays read and, where those were missing, the saved
+  spots; whole and dirty-block picks take the columns that still match.
+- Rows of a column that are all air from their south end on are reached throughout and add
+  only their extent, so they are taken in one step; below them the walk visits only the cells
+  the row above reached and an unbroken run north of them. Kept faces are packed (one int for
+  position and face, a box only when it isn't the whole cube): 16 MB each for camera faces and
+  casters and 8 MB for spots hold a flight's worth of tiles.
+- One column's walk is a method of its own. In `build` the new branches had not been taken when
+  C2 first compiled it, and the uncommon traps that followed sent the whole 4.6 KB method back
+  to the interpreter: the first paired run of these changes spent 343–757 samples per capture
+  interpreting it, against 5–94 unchanged, and was rejected (cold 1.18×, 95% 0.98–1.39).
+- Switches (`VoxelReader.SHARED`, `GpuMesher.REUSE`, `GpuMesher.AIR_ROWS`) exist so the gate
+  can compare; they default on.
+
+`reuse-live.java` is the gate for anything carried between bakes: after the flight it meshes
+every live surface tile and picks its spots (whole, and every fourth block over saved spots)
+from the live map's own snapshots, with every switch off and twice on, and requires identical
+results. Corrupting a live tile's kept mesh columns, caster rows or spot columns makes it fail.
+`bake-digest.java` stays `ac6a8694…` in every build.
+
+Six paired launches against the two patches above decided it (`column-reuse-caster-chunks` in
+`coverage/perf-runs.json`); six more measured all three patches against unmodified Diorama
+(`all-patches-vs-unmodified`). Every gate was identical in every launch of both.
+
+| Scope | This patch, cold | warm | All three patches, cold | warm |
+|---|---|---|---|---|
+| Live mapping CPU (decision metric) | 1.25× (95% 1.03–1.52) | 1.91× (1.57–2.24) | 1.61× (1.48–1.76) | 1.96× (1.58–2.41) |
+| Bakers' thread CPU time | 1.11× (0.99–1.23) | 1.67× (1.45–1.98) | 1.46× (1.38–1.57) | 1.85× (1.56–2.19) |
+| All Diorama threads | 1.16× (0.95–1.42) | 1.64× (1.32–2.00) | 1.39× (1.30–1.52) | 1.69× (1.36–2.04) |
+| GPU mesher | 1.30× (0.98–1.68) | 1.96× (1.57–2.39) | 1.53× (1.38–1.70) | 1.97× (1.52–2.48) |
+| Shadow casters | 3.13× (2.61–3.78) | 4.07× (3.09–5.27) | 2.56× (2.19–2.97) | 3.45× (2.80–4.05) |
+| Spawn spots | 1.21× (0.99–1.49) | 1.39× (1.00–1.85) | 1.82× (1.59–2.09) | 1.87× (1.56–2.31) |
+| Tint blends | 0.97× (0.76–1.23) | 1.04× (0.77–1.27) | 3.11× (2.57–3.68) | 2.16× (1.84–2.47) |
+| Minimap drawing, ms a call | 1.08× (1.00–1.19) | 1.02× (0.93–1.10) | 1.06× (0.87–1.28) | 0.99× (0.91–1.07) |
+| Session tick, ms a call | 0.98× (0.86–1.09) | 1.02× (0.74–1.32) | 0.94× (0.85–1.02) | 0.77× (0.63–0.94) |
+| Map update, ms a call | 1.05× (0.95–1.19) | 1.08× (0.93–1.22) | 1.00× (0.92–1.07) | 0.75× (0.56–0.94) |
+
+The cold window is mostly the first mesh of tiles nobody has meshed, which nothing reuses; the
+warm one re-meshes them. Three things to weigh before distributing:
+
+- The decision metric counts JFR execution samples, and JFR samples a thread in Java code
+  whether or not it is on a CPU: on a saturated machine a preempted baker's wait counts too.
+  The bakers' operating-system CPU time (`jdk.ThreadCPULoad`) shows smaller gains, above.
+- What is kept costs heap: about 120 MB more after a flight, all of it primitive arrays, and
+  young collections pause about 2–3 ms longer (17.0 against 14.3 ms in the run against
+  unmodified). Kept as an object per column, the caster cache made the first accepted version's
+  minimap and radar calls measurably slower; as one array per chunk they are not, against the
+  two patches above. Against unmodified Diorama the session tick and map update were slower in
+  the warm captures; that run shared the machine with another paired run.
+- Hit rates during the flight: 70% of camera columns, 78% of caster rows and 73% of spot
+  columns came from the bake before; no tile was evicted from the budgets.
+
+### Time to safepoint on a busy machine
+
+Long pauses before a safepoint (a garbage collection, a deoptimization) come from the machine,
+not a build. In #72's 24 captures, below 0.97 machine load both builds reached safepoints in a
+median 0.03 ms with almost no pause over 100 ms; at full load both took milliseconds (baseline
+median 2.7 ms, 12 of 183 over 100 ms; patched 7.1 ms, 61 of 337), the patched build simply met
+full load more often. The game runs JDK 25 with G1, so C2 keeps a safepoint poll in every 1000
+iterations of a counted loop: no loop runs without one. Diorama's bakers, save import and tile
+writer run at Java priority 1–2, Windows' lowest. When other programs keep every core busy, a
+baker preempted in Java code waits for the scheduler's starvation boost before it reaches its
+poll, and the whole game, render thread included, waits at the safepoint for it.
+
+`normal-priority-workers.patch` (after `column-reuse.patch`) runs the bakers, the save import and
+the tile writer at normal priority; there are at most a third as many bakers as cores. In three
+paired launches no baseline or candidate safepoint took over 100 ms below full load; at full
+load 2 of 37 baseline safepoints did and 0 of 33 candidate ones (medians 0.131 against
+0.057 ms). The machine reached full load in only part of those launches, so this is thin
+evidence. `perf-optimize` accepted it (1.37× cold, 1.34× warm), but that is the metric's
+preemption count: the bakers' thread CPU time did not change (1.11×, 0.96×). It is a trade:
+at normal priority the bakers also compete with whatever else the player runs.
 
 Hidden clients present about 8 frames a second whatever `maxFps` and vsync say, so frame-driven
 work (minimap drawing, GPU tile readback) runs less often than in a visible game; the per-call

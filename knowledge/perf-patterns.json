@@ -141,6 +141,150 @@
      ]
     }
    }
+  },
+  {
+   "id": "keep-unchanged-columns-between-rebakes",
+   "symptom": {
+    "text": "A per-tile pass (here a GPU mesher walking every column of a map tile, its shadow casters, and a per-sample spawn-spot ray pass) dominates a mod's CPU, and the same tile is rebuilt many times as nearby chunks load, though most of its columns come out the same each time.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.(build|mesh|bake)\\w*\\(",
+      "minShare": 0.3
+     }
+    ]
+   },
+   "change": "Keep, per tile, each column's output and exactly what it read: the chunks under the cells its rays reached (and their neighbours), each by a token that a replacement snapshot inherits only when its blocks (or light) are equal, plus derived inputs such as tint arrays and any saved data it consulted. Take a column again only when the tile's settings are equal and every recorded input matches; record outputs packed so a bounded LRU holds a flight's worth of tiles. The same works for a ray pass whose rays stay in their column. Compare a replacement snapshot with its predecessor on the first worker that asks, not on the client thread. Keep the per-column walk in its own method: new branches in a huge hot method trigger uncommon traps that send the whole method back to the interpreter.",
+   "gain": {
+    "scope": "live mapping CPU (decision metric: Diorama's baker threads and the render thread)",
+    "cold": {
+     "geometricMean": 1.251,
+     "low": 1.033,
+     "high": 1.523,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 1.906,
+     "low": 1.575,
+     "high": 2.243,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "reuse-live + bake-digest",
+    "compare": "expect + exact",
+    "detail": "every live tile meshed and its spots picked with each reuse switch off and twice on come out identical, and corrupting a kept record makes the gate fail; the bake functions' digest on frozen chunks is unchanged"
+   },
+   "provenIn": {
+    "mod": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "record": "2026-11-15T12-02-18.553256900Z-064d6c30",
+    "patch": "bench/diorama/column-reuse.patch",
+    "scope": "live mapping CPU"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 55
+      },
+      {
+       "name": "m.Pick.pick(DD)I",
+       "samples": 45
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 10
+      },
+      {
+       "name": "m.Pick.pick(DD)I",
+       "samples": 90
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "share-chunk-derived-data-as-few-arrays",
+   "symptom": {
+    "text": "A pass over a wide region around each tile (here shadow casters, scanned over dozens of chunks the neighbouring tiles scan too) recomputes from every chunk's blocks on every bake.",
+    "when": [
+     {
+      "in": "methods",
+      "matches": "\\.casters?\\w*\\(",
+      "minShare": 0.1
+     }
+    ]
+   },
+   "change": "Work it out once per chunk content and keep it with the snapshot under a token that content-equal replacement snapshots inherit, so every bake of every tile over that chunk shares it. Store it as a few primitive arrays per chunk (an offset table and one packed array), built for the whole chunk at once: kept as one small object per column it was half a million long-lived objects, and every young collection took 3 ms longer.",
+   "gain": {
+    "scope": "castersCpu (inclusive sampled CPU of GpuMesher.casters)",
+    "cold": {
+     "geometricMean": 3.129,
+     "low": 2.61,
+     "high": 3.777,
+     "pairs": 6
+    },
+    "warm": {
+     "geometricMean": 4.068,
+     "low": 3.088,
+     "high": 5.275,
+     "pairs": 6
+    }
+   },
+   "gate": {
+    "name": "reuse-live + bake-digest",
+    "compare": "expect + exact",
+    "detail": "every live tile meshed and its spots picked with each reuse switch off and twice on come out identical, and corrupting a kept record makes the gate fail; the bake functions' digest on frozen chunks is unchanged"
+   },
+   "provenIn": {
+    "mod": "diorama",
+    "version": "0.10.1+1.21-1.21.1",
+    "loader": "fabric",
+    "record": "2026-11-15T12-02-18.553256900Z-064d6c30",
+    "patch": "bench/diorama/column-reuse.patch",
+    "scope": "castersCpu"
+   },
+   "test": {
+    "fires": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Mesher.casters(I)V",
+       "samples": 25
+      },
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 75
+      }
+     ]
+    },
+    "quiet": {
+     "id": "m",
+     "samples": 100,
+     "methods": [
+      {
+       "name": "m.Mesher.casters(I)V",
+       "samples": 3
+      },
+      {
+       "name": "m.Mesher.build(I)V",
+       "samples": 97
+      }
+     ]
+    }
+   }
   }
  ]
 }
