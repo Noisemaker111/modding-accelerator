@@ -12,8 +12,10 @@ reopened world, client-only mods left out, every finding by kind and severity, a
 
 Each pack's gaps are classified: the version or loader pack-check could not run (probe compile, loader install, pack
 input), a start that failed with or without a named culprit, a world that did not reopen, warnings the game refuted
-(false positives) and problems with no proven repair. The ranked table and pass rates go to coverage/sweeps/pack.json;
---label keeps each sweep's pass rates in its history. A server pack-check leaves behind is stopped with its process tree.
+(false positives) and problems with no proven repair. With --fix, a pack whose shipped server fails but whose repaired one
+makes and reopens a world (pack-check's fix.proven) counts as repaired, with what each repair did. The ranked table and pass
+rates go to coverage/sweeps/pack.json; --label keeps each sweep's pass rates in its history. A server pack-check leaves behind
+is stopped with its process tree.
 """
 import argparse
 import concurrent.futures
@@ -140,6 +142,9 @@ def analyse(pack, code, result, seconds):
     probe = first.get("probe") or {}
     # Counts, not the probe's own lists: one pack's placements run to megabytes.
     record["probe"] = {k: len(v) if isinstance(v, list) else v for k, v in probe.items() if k in ("placed", "blocks", "items", "dimensions", "errors", "failed")}
+    if probe.get("error"):
+        record["probe"]["error"] = str(probe["error"]).split("\n")[0][:300]
+        record["gaps"].append("the probe stopped before it checked the world")
     findings = result.get("findings") or []
     kinds = {}
     for f in findings:
@@ -150,7 +155,18 @@ def analyse(pack, code, result, seconds):
                           for f in findings if f.get("severity") == "problem"]
     refuted = [f for f in findings if f.get("severity") == "note" and re.search(r"loaded (?:it )?anyway|refuted|the game loaded", str(f.get("summary")))]
     record["refutedWarnings"] = len(refuted)
-    record["fix"] = {k: (result.get("fix") or {}).get(k) for k in ("applied", "proven", "remaining")} if result.get("fix") else None
+    fix = result.get("fix") or {}
+    record["fix"] = {
+        "applied": [a.get("id") for a in fix.get("applied") or []],
+        "notes": fix.get("notes") or [],
+        "proven": fix.get("proven"),
+        "rounds": fix.get("rounds") or [],
+        "remaining": [{"kind": f.get("kind"), "summary": str(f.get("summary"))[:300]} for f in fix.get("remaining") or []],
+        "comparison": fix.get("comparison") or [],
+        "fixedExport": fix.get("fixedExport"),
+        "recheck": {k: {"opened": (((fix.get("recheck") or {}).get(k)) or {}).get("opened"), "seconds": (((fix.get("recheck") or {}).get(k)) or {}).get("seconds")}
+                    for k in ("newWorld", "reopen")},
+    } if result.get("fix") else None
     record["ok"] = result.get("ok")
     record["stages"] = [{"name": s.get("name"), "seconds": round(float(s.get("seconds") or 0), 1)} for s in result.get("_stages", [])]
     if not first.get("opened"):
@@ -164,6 +180,8 @@ def analyse(pack, code, result, seconds):
         record["outcome"] = "reopen failed"
     else:
         record["outcome"] = "world made and reopened"
+    if record["outcome"] != "world made and reopened" and record["fix"] and record["fix"].get("proven"):
+        record["outcome"] = "repaired: world made and reopened"
     record["fingerprint"] = fingerprint_record(game.get("fingerprint"))
     if record["outcome"] == "world made and reopened" and record["fingerprint"].get("same") is False:
         record["gaps"].append("fingerprint world changed across its save and reload")
@@ -207,6 +225,9 @@ def summarize(records, label):
              "ran": sum(r["outcome"] != "did not run" for r in records),
              "started": sum(bool((r.get("start") or {}).get("opened")) for r in records),
              "world made and reopened": sum(r["outcome"] == "world made and reopened" for r in records),
+             "repaired": sum(r["outcome"] == "repaired: world made and reopened" for r in records),
+             "passing with repairs": sum(r["outcome"] in ("world made and reopened", "repaired: world made and reopened") for r in records),
+             "repairs proven": sum(bool((r.get("fix") or {}).get("proven")) for r in records),
              "failed start with a named culprit": sum(r["outcome"] == "start failed" and bool((r.get("start") or {}).get("suspects")) for r in records),
              "fingerprinted": sum(bool((r.get("fingerprint") or {}).get("taken")) for r in records),
              "fingerprint world reopened unchanged": sum(bool((r.get("fingerprint") or {}).get("same")) for r in records),
@@ -229,7 +250,8 @@ def write(records, label):
 
 def table(ranked, rates):
     lines = [f"Pack sweep ({rates['label']}): {rates['packs']} packs; ran {rates['ran']}, started {rates['started']}, "
-             f"world made and reopened {rates['world made and reopened']}", "", "| # | Gap | Packs | Which |", "|---|---|---|---|"]
+             f"world made and reopened {rates['world made and reopened']}, repaired {rates.get('repaired', 0)} "
+             f"(passing with repairs {rates.get('passing with repairs', rates['world made and reopened'])})", "", "| # | Gap | Packs | Which |", "|---|---|---|---|"]
     for e in ranked:
         lines.append(f"| {e['rank']} | {e['gap']} | {len(e['packs'])} | {', '.join(e['packs'])[:120]} |")
     return "\n".join(lines)
@@ -275,7 +297,8 @@ def main():
     run.add_argument("--only", default="")
     run.add_argument("--jobs", type=int, default=1, help="ignored: one pack at a time, since each server takes up to 6 GB")
     run.add_argument("--fix", action="store_true", help="pack-check --fix: a repaired server beside the shipped one")
-    run.add_argument("--timeout", type=int, default=5400)
+    # pack-check judges each start by its log (a stuck start stops itself), so this only bounds a whole --fix run of the biggest packs.
+    run.add_argument("--timeout", type=int, default=4 * 3600)
     run.add_argument("--no-fingerprint", action="store_true", help="skip pack-check --fingerprint (two more server starts)")
     run.add_argument("--label", default="latest")
     run.add_argument("--resume", action="store_true", help="skip what already has a record under this --label")

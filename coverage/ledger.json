@@ -284,6 +284,96 @@
       "status": "stop",
       "detail": "Upstream 1.21-neoforge at 6701b1e ported by modaccel port --fix with nothing written by hand on the game-derived map: 30 compiler errors left (98 recorded before, with more hidden behind javac's 100-error cap). It now gets past its build: NeoGradle's mixin plugin, gone in NeoGradle 7.1, is dropped with its config declared in neoforge.mods.toml. 50 new rules for 1.21.2-1.21.6 cover the 2D GUI pose stack, sprite and tiled blits (blit offset dropped, render function then pipeline first, colour threaded from setColor), the void drawString end x, registry getValue, delta tracker, villager data, NBT keys, armour slots, JSON reload listeners, custom model data, picked and cloned items and more. A port step rewrites stale access-transformer entries for members the target made private again (6 here), and the typed fixer follows the game's unanimous renames on a mod's own subclasses. Left: Jade's raw-vertex DisplayHelper and its Font mixins (1.21.5-1.21.6 render rewrite), fog and darkness (FogRenderer rewrite), entity variants (VariantHolder became data components), tooltips for the next frame, the reload-listener event, and two Jade API types (RegistryAccess where NeoForge gives a HolderLookup.Provider).",
       "date": "2026-11-14"
+    },
+    {
+      "mod": "Continuity",
+      "loader": "fabric",
+      "from": "26.1",
+      "to": "26.1.1",
+      "status": "build",
+      "detail": "Ported by modaccel port --fix with nothing written by hand: it builds and the mixin check passed. Not started in the game.",
+      "date": "2026-11-15"
+    },
+    {
+      "mod": "Fabric Example Mod",
+      "loader": "fabric",
+      "from": "1.17.1",
+      "to": "1.18",
+      "status": "load",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 0eaf29dd69): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with modid in the loader's own mod list (modaccel eval).",
+      "date": "2026-11-15"
+    },
+    {
+      "mod": "Fabric Example Mod",
+      "loader": "fabric",
+      "from": "1.17.1",
+      "to": "1.20.1",
+      "status": "load",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 0eaf29dd69): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with modid in the loader's own mod list (modaccel eval).",
+      "date": "2026-11-15"
+    },
+    {
+      "mod": "Iron Chests",
+      "loader": "neoforge",
+      "from": "26.1.2",
+      "to": "26.1.1",
+      "status": "build",
+      "detail": "Ported by modaccel port --fix with nothing written by hand: it builds and the mixin check passed. Not started in the game.",
+      "date": "2026-11-15"
+    },
+    {
+      "mod": "Krypton",
+      "loader": "fabric",
+      "from": "26.3",
+      "to": "26.2",
+      "status": "load",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit bc08466ff9): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with krypton in the loader's own mod list (modaccel eval).",
+      "date": "2026-11-15"
+    },
+    {
+      "mod": "MidnightLib",
+      "loader": "fabric",
+      "from": "1.21.1",
+      "to": "1.21.2",
+      "status": "load",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 0ba128f322): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with midnightlib in the loader's own mod list (modaccel eval). MidnightLib registered its own config with MidnightConfig at start (MidnightConfig.configClass has midnightlib): passed.",
+      "date": "2026-11-15"
+    },
+    {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.2",
+      "status": "load",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 1bb67d4a48): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with zombieapocalypseaddon in the loader's own mod list (modaccel eval).",
+      "date": "2026-11-15"
+    },
+    {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "1.21.6",
+      "status": "load",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 1bb67d4a48): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with zombieapocalypseaddon in the loader's own mod list (modaccel eval).",
+      "date": "2026-11-15"
+    },
+    {
+      "mod": "ZombieApocalypseAddon",
+      "loader": "neoforge",
+      "from": "1.21.1",
+      "to": "26.3",
+      "status": "load",
+      "detail": "Port sweep after2 (python bench/sweep.py, commit 1bb67d4a48): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with zombieapocalypseaddon in the loader's own mod list (modaccel eval).",
+      "date": "2026-11-15"
+    },
+    {
+      "mod": "Trash Cans",
+      "loader": "fabric",
+      "from": "1.21.4",
+      "to": "1.21.5",
+      "status": "load",
+      "detail": "Port sweep verify5 (python bench/sweep.py, commit 2e18da56a5): modaccel port --fix with nothing written by hand builds, and a hidden modaccel ui-check reached the title screen with trashcans in the loader's own mod list (modaccel eval). 4 blocks, items and entity types the mod's own assets name are in the game's registries: passed.",
+      "date": "2026-11-15"
     }
   ],
   "loader_pairs": [

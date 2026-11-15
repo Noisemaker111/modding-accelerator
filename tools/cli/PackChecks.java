@@ -70,6 +70,7 @@ final class PackChecks {
         new Check("loader-verdict", "new-world", "what the metadata predicted, confirmed or refuted by the loader on the real server", PackChecks::verdict),
         new Check("dimension-save", "new-world", "a dimension that saves in a form the next start rejects", PackChecks::dimensions),
         new Check("placed-other-block", "new-world", "a block item that places another block", PackChecks::placements),
+        new Check("block-entity-unsendable", "new-world", "a placed block whose block entity cannot be sent to players, which stops the server", PackChecks::unsendable),
         new Check("world-reopen", "reopen", "a world that opens once and not again; the log names the mod", PackChecks::reopen),
         new Check("changed-by-save", "reopen", "a placed block that is different after saving and reopening", PackChecks::changedBySave),
         new Check("user-world", "user-world", "your own save (a copy) does not open, or saves badly", PackChecks::userWorld)
@@ -249,7 +250,9 @@ final class PackChecks {
             suspects.stream().anyMatch(s -> String.valueOf(s.get("why")).contains("client-only"))
         );
         String named = names(suspects);
-        String summary = javaBuild != null
+        String summary = Boolean.TRUE.equals(c.start.get("machine"))
+            ? failure
+            : javaBuild != null
             ? "The pack's server did not start because of the Java build, not a mod: " + Json.array(javaBuild.get("why")).get(0) + "."
             : clientOnly
             ? "A client-only mod stopped the pack's server" +
@@ -340,15 +343,29 @@ final class PackChecks {
             String item = Json.text(row, "item", ""), expected = Json.text(row, "expected", ""), landed = Json.text(row, "landed", "");
             String itemMod = item.split(":")[0], landedMod = landed.split(":")[0];
             boolean otherMod = !landedMod.equals(itemMod) && !landedMod.equals(expected.split(":")[0]) && !landedMod.equals("minecraft");
+            // Another mod's block of the same name (tin_ore for tin_ore) is a pack unifying a block two mods both add, on purpose.
+            boolean unified = otherMod && landed.contains(":") && expected.contains(":") && landed.split(":", 2)[1].equals(expected.split(":", 2)[1]);
+            boolean related = otherMod && Boolean.TRUE.equals(row.get("related"));
             c.add(
                 "placed-other-block",
-                otherMod ? "problem" : "note",
+                otherMod && !unified && !related ? "problem" : "note",
                 "Placing " + item + " put down " + landed + " instead of " + expected +
-                (otherMod ? ": a block from another mod." : ": the item's own mod does this (a growth stage or a deliberate swap)."),
+                (unified
+                    ? ": the same block from another mod, as a pack does when it unifies a block two mods both add."
+                    : related
+                    ? ": the item's own block is built on that block (its mod's compatibility code chose it)."
+                    : otherMod ? ": a block from another mod." : ": the item's own mod does this (a growth stage or a deliberate swap)."),
                 "evidence",
                 row
             );
         }
+        if (probe.get("hiddenBlockItems") instanceof Number hidden && hidden.intValue() > 0) c.add(
+            "not-checked",
+            "note",
+            hidden + " block item(s) are in no creative tab (blocks a mod places itself, such as portals) or are a developer's debug block, so no player places them by hand and they were not placed; --only ITEM places one anyway.",
+            "hiddenBlockItems",
+            hidden
+        );
         // Items that need a wall, water, a ceiling or more room never landed: say they went unchecked.
         List<Object> unplaced = Json.array(probe.getOrDefault("unplaced", List.of()));
         if (!unplaced.isEmpty()) {
@@ -388,6 +405,30 @@ final class PackChecks {
         );
     }
 
+    /**
+     * Blocks whose block entity threw when the server wrote it for players, right after a player-style placement: on a
+     * real server the next tick does that and stops the whole server. The probe took each out again to check the rest.
+     * A warning, since such blocks are usually ones a mod places itself with its data (a portal, a spectral block), so a
+     * player reaches them only with creative or commands; the mod and the error are named for its author.
+     */
+    static void unsendable(Context c) {
+        if (!c.opened()) return;
+        for (Object u : Json.array(c.probe().getOrDefault("unsendable", List.of()))) {
+            var row = Json.object(u);
+            String error = Json.text(row, "error", "");
+            c.add(
+                "block-entity-unsendable",
+                "warning",
+                "Placing " + Json.text(row, "item", "") + " by hand stops the server: its block entity (" + Json.text(row, "landed", "") +
+                ") cannot be written for players (" + error.lines().findFirst().orElse("") + "). The mod normally places it itself with its data, so only creative or commands reach it; pack-check took it out to check the rest.",
+                "evidence",
+                error.lines().limit(8).toList(),
+                "item",
+                Json.text(row, "item", "")
+            );
+        }
+    }
+
     static void reopen(Context c) {
         if (c.opened()) return;
         List<Map<String, Object>> suspects = Json.array(c.start.getOrDefault("suspects", List.of())).stream().map(Json::object).toList();
@@ -405,6 +446,20 @@ final class PackChecks {
 
     static void changedBySave(Context c) {
         if (!c.opened()) return;
+        // A block that still had a scheduled tick when the world saved changed by the game's rules when that tick ran.
+        List<Object> settled = Json.array(c.probe().getOrDefault("settled", List.of()));
+        if (!settled.isEmpty()) {
+            List<String> shown = new ArrayList<>();
+            for (Object change : settled) shown.add(Json.text(Json.object(change), "before", "") + " -> " + Json.text(Json.object(change), "after", ""));
+            c.add(
+                "settled-after-save",
+                "note",
+                settled.size() + " placed block(s) were waiting for a scheduled tick, or could not survive where they stood, when the world saved, and changed by the game's own rules after the reload (coral out of water dries, a plant on the wrong ground breaks at its next block update), not because of the save: " +
+                examples(shown),
+                "evidence",
+                settled
+            );
+        }
         for (Object change : Json.array(c.probe().getOrDefault("changed", List.of()))) c.add(
             "changed-by-save",
             "problem",

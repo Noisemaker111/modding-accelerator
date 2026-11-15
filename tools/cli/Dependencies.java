@@ -99,6 +99,8 @@ final class Dependencies {
             );
             if (
                 group.startsWith("net.fabricmc") ||
+                group.startsWith("loom_mappings_") || // Loom's own remapped copy of a dependency listed by its real coordinate too
+                group.matches("[a-z0-9_]+_v[0-9]+\\..*") ||
                 group.equals("com.mojang") ||
                 old.isEmpty() ||
                 !seen.add(group + ":" + name + ":" + old)
@@ -108,6 +110,7 @@ final class Dependencies {
                 // Target lookup reads Fabric metadata only. A NeoForge or Forge mod jar is still a mod the
                 // port depends on, so it is listed as unchecked instead of disappearing from the result.
                 Path mod = forgeModJar(setup.project, group, name, old);
+                if (gameVersioned(setup, group, name, old, mod, Json.text(dep, "configuration", ""))) continue;
                 if (mod != null) setup.unchecked.add(
                     Json.map(
                         "artifact",
@@ -131,10 +134,35 @@ final class Dependencies {
                 continue;
             }
             Selection selection = select(setup.selections, group, name, old);
+            // A library released per game version (in its name or its version) is looked up by that before anything else.
+            if (selection == null && gameVersioned(setup, group, name, old, binary, Json.text(dep, "configuration", ""))) continue;
             try {
                 if (selection != null && selection.disable()) disable(setup, group, name, old, binary, selection);
                 else if (selection != null) choose(setup, group, name, old, binary, selection);
-                else discover(setup, group, name, old, binary, Json.text(dep, "configuration", ""), loader);
+                else if (group.equals(CURSE_MAVEN)) curseMaven(setup, group, name, old, binary, Json.text(dep, "configuration", ""), loader);
+                else try {
+                    discover(setup, group, name, old, binary, Json.text(dep, "configuration", ""), loader);
+                } catch (IOException unpublished) {
+                    if (unpublished instanceof Target.LookupFailure || !loader.equals("fabric")) throw unpublished;
+                    if (!mavenRelease(setup, group, name, old, binary)) {
+                        // A Fabric library whose own metadata names no Minecraft version (MixinExtras) runs on any game: it stays.
+                        if (!gameIndependent(binary)) throw unpublished;
+                        setup.applied.add(
+                            Json.map(
+                                "artifact",
+                                group + ":" + name,
+                                "from",
+                                old,
+                                "to",
+                                old,
+                                "kept",
+                                true,
+                                "evidence",
+                                "its fabric.mod.json depends on no Minecraft version, so it is not tied to the game it was built beside"
+                            )
+                        );
+                    }
+                }
             } catch (IOException failure) {
                 String configuration = Json.text(dep, "configuration", "");
                 // A compile-only integration is never packaged or loaded with the mod, and authors often
@@ -176,6 +204,330 @@ final class Dependencies {
                 );
             }
         }
+    }
+
+    /**
+     * A library released once per game version names the game in its own version: corelib 1.21.1-2.1.11, openhud
+     * 1.3.0+1.21.1. Retargeting Minecraft changes (or should change) that coordinate, and the same library number is
+     * rarely published for the new game, so the target is the library's own newest release for the target game, read
+     * from the project's repositories (maven-metadata.xml): a version of the same shape with the target game in place of
+     * the source game. Written where the build owns it: the whole version's property, or the library part's property
+     * when the build joins it to the Minecraft property (${minecraft_version}-${corelib_version}). A coordinate built on
+     * the Minecraft property with no release for the target is a blocker, not a guess. Returns false when the version does
+     * not name the source game, so the caller keeps its usual handling.
+     */
+    static boolean gameVersioned(Target.Setup setup, String group, String name, String old, Path binary, String configuration)
+        throws Exception {
+        String from = null;
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (
+            setup.pins.get(key) != null
+        ) from = setup.pins.get(key);
+        if (from == null || from.equals(setup.to)) return false;
+        // Parchment, the loaders and the game itself have their own followers.
+        if (group.startsWith("org.parchmentmc") || group.startsWith("net.neoforged") || group.startsWith("net.minecraftforge") || group.startsWith("net.fabricmc")) return false;
+        // The game in the artifact's name (JEI: jei-${minecraft_version}-neoforge-api): the build renames it with the
+        // Minecraft property, and the version is the newest of the same shape that artifact publishes for the target.
+        Matcher named = Pattern.compile("(?<![0-9.])" + Pattern.quote(from) + "(?![0-9])(?!\\.[0-9])").matcher(name);
+        if (named.find()) {
+            String renamed = name.substring(0, named.start()) + setup.to + name.substring(named.end());
+            Set<String> versions = new TreeSet<>();
+            for (String repository : ProjectModel.strings(setup.project.get("repositories"))) {
+                if (!repository.startsWith("https://")) continue;
+                try {
+                    Matcher version = Pattern.compile("<version>([^<]+)</version>").matcher(
+                        Target.fetch(setup.build, repository.replaceFirst("/$", "") + "/" + group.replace('.', '/') + "/" + renamed + "/maven-metadata.xml")
+                    );
+                    while (version.find()) versions.add(version.group(1).strip());
+                } catch (IOException notHere) {}
+            }
+            String shape = old.replaceAll("[0-9]+", "0"), chosen = null;
+            for (String v : versions) if (v.replaceAll("[0-9]+", "0").equals(shape) && (chosen == null || numbers(v).compareTo(numbers(chosen)) > 0)) chosen = v;
+            Set<String> owners = propertyKeys(setup.build.project, old);
+            if (chosen == null) {
+                // A compile-only integration written out by name keeps its old coordinate, as any compile-only one does
+                // (mods compile against JEI's API): the build decides whether it still compiles.
+                // Only a name the build makes from the Minecraft property (jei-${minecraft_version}-...) must change with it; a
+                // name written out, or one that only arrives with another dependency, keeps its old coordinate.
+                String head = name.substring(0, named.start());
+                boolean interpolated = false;
+                for (Path input : setup.build.project.inputs()) {
+                    if (!input.getFileName().toString().contains(".gradle")) continue;
+                    try {
+                        if (setup.text(input).contains(head + "$")) interpolated = true;
+                    } catch (java.nio.charset.CharacterCodingException notText) {}
+                }
+                if (!interpolated) return false;
+                setup.blockers.add(
+                    blocker(
+                        group,
+                        name,
+                        old,
+                        binary,
+                        "its artifact name carries the Minecraft version, and " + renamed + " publishes no release in the project's repositories",
+                        configuration,
+                        setup.to
+                    )
+                );
+                return true;
+            }
+            if (owners.size() != 1) return false;
+            // A name written out in the build script (bookshelf-fabric-1.21.1) is renamed where it is written.
+            Object buildFile = setup.project.get("buildFile");
+            if (buildFile != null && Files.isRegularFile(Path.of(buildFile.toString()))) {
+                Path script = Path.of(buildFile.toString());
+                String text = setup.text(script);
+                if (text.contains(name)) {
+                    setup.originals.putIfAbsent(script, text);
+                    setup.texts.put(script, text.replace(name, renamed));
+                }
+            }
+            setup.replacements.put(owners.iterator().next(), chosen);
+            setup.pins.putIfAbsent(owners.iterator().next(), old);
+            setup.applied.add(
+                Json.map("artifact", group + ":" + renamed, "from", old, "to", chosen, "configuration", configuration, "evidence", "the newest " + renamed + " release in the project's repositories")
+            );
+            recordLoom(setup, group, renamed, chosen);
+            return true;
+        }
+        Matcher at = Pattern.compile("(?<![0-9.])" + Pattern.quote(from) + "(?![0-9])(?!\\.[0-9])").matcher(old);
+        if (!at.find()) return false;
+        String prefix = old.substring(0, at.start()), suffix = old.substring(at.end());
+        Set<String> published = new TreeSet<>();
+        for (String repository : ProjectModel.strings(setup.project.get("repositories"))) {
+            if (!repository.startsWith("https://")) continue;
+            try {
+                String xml = Target.fetch(
+                    setup.build,
+                    repository.replaceFirst("/$", "") + "/" + group.replace('.', '/') + "/" + name + "/maven-metadata.xml"
+                );
+                Matcher version = Pattern.compile("<version>([^<]+)</version>").matcher(xml);
+                while (version.find()) published.add(version.group(1).strip());
+            } catch (IOException unavailable) {}
+        }
+        String chosen = chooseGameRelease(published, old, from, setup.to);
+        Set<String> whole = propertyKeys(setup.build.project, old);
+        // The library part beside the game: "2.1.11" in 1.21.1-2.1.11, "1.3.0" in 1.3.0+1.21.1.
+        String part = prefix.isEmpty() ? suffix.replaceFirst("^[-+_.]", "") : suffix.isEmpty() ? prefix.replaceFirst("[-+_.]$", "") : "";
+        Set<String> partKeys = part.isEmpty() ? Set.of() : propertyKeys(setup.build.project, part);
+        if (chosen == null) {
+            if (whole.isEmpty() && partKeys.size() == 1) {
+                // The coordinate follows the Minecraft property, so keeping it is not possible: it would name a release that does not exist.
+                setup.blockers.add(
+                    blocker(
+                        group,
+                        name,
+                        old,
+                        binary,
+                        "its version is built from the Minecraft version, and no " + setup.to + " release of it is published in the project's repositories",
+                        configuration,
+                        setup.to
+                    )
+                );
+                return true;
+            }
+            return false;
+        }
+        String newPart = prefix.isEmpty()
+            ? chosen.substring(chosen.indexOf(setup.to) + setup.to.length()).replaceFirst("^[-+_.]", "")
+            : chosen.substring(0, chosen.lastIndexOf(setup.to)).replaceFirst("[-+_.]$", "");
+        if (whole.size() == 1) {
+            setup.replacements.put(whole.iterator().next(), chosen);
+            setup.pins.putIfAbsent(whole.iterator().next(), old);
+        } else if (whole.isEmpty() && partKeys.size() == 1) {
+            setup.replacements.put(partKeys.iterator().next(), newPart);
+            setup.pins.putIfAbsent(partKeys.iterator().next(), part);
+        } else {
+            // A property that owns the game and what follows it (Sound Physics: fabric-${voicechat_version},
+            // voicechat_version=1.21.1-2.5.20), or what comes before it: the same span of the chosen release.
+            String owner = null, value = null, was = null;
+            for (int cut = 1; cut <= at.start() && owner == null; cut++) {
+                Set<String> keys = propertyKeys(setup.build.project, old.substring(cut));
+                if (keys.size() == 1 && chosen.startsWith(old.substring(0, cut))) {
+                    owner = keys.iterator().next();
+                    value = chosen.substring(cut);
+                    was = old.substring(cut);
+                }
+            }
+            for (int cut = old.length() - 1; cut >= at.end() && owner == null; cut--) {
+                Set<String> keys = propertyKeys(setup.build.project, old.substring(0, cut));
+                String tail = old.substring(cut);
+                if (keys.size() == 1 && chosen.endsWith(tail)) {
+                    owner = keys.iterator().next();
+                    value = chosen.substring(0, chosen.length() - tail.length());
+                    was = old.substring(0, cut);
+                }
+            }
+            if (owner == null) return false;
+            setup.replacements.put(owner, value);
+            setup.pins.putIfAbsent(owner, was);
+        }
+        setup.applied.add(
+            Json.map(
+                "artifact",
+                group + ":" + name,
+                "from",
+                old,
+                "to",
+                chosen,
+                "configuration",
+                configuration,
+                "evidence",
+                "the library's own release for Minecraft " + setup.to + ", read from its repository's maven-metadata.xml"
+            )
+        );
+        recordLoom(setup, group, name, chosen);
+        return true;
+    }
+
+    /**
+     * The Loom a chosen Fabric library's jar was built with, for Target.loomFollows: a library looked up by its game version
+     * (not through Modrinth) says it too (a Fabric port 1.20.1 -> 1.21.1 kept a Loom older than its JEI's 1.18.2). The jar is
+     * read from the first project repository that has it; a jar that cannot be read records nothing.
+     */
+    static void recordLoom(Target.Setup setup, String group, String name, String version) {
+        if (!Support.loaders(setup.project).contains("fabric")) return;
+        for (String repository : ProjectModel.strings(setup.project.get("repositories"))) {
+            if (!repository.startsWith("https://")) continue;
+            try {
+                Path jar = Target.download(
+                    setup.build,
+                    repository.replaceFirst("/$", "") + "/" + group.replace('.', '/') + "/" + name + "/" + version + "/" + name + "-" + version + ".jar"
+                );
+                String built = builtWithLoom(jar);
+                if (!built.isEmpty()) setup.loomBuilt.put(group + ":" + name + " " + version, built);
+                return;
+            } catch (Exception notThere) {}
+        }
+    }
+
+    /** The newest published version shaped like old with the target game in place of the source game; stable before pre-releases. */
+    static String chooseGameRelease(Collection<String> published, String old, String from, String to) {
+        String shape = old.replace(from, "@").replaceAll("[0-9]+", "0");
+        String best = null;
+        for (String version : published) {
+            if (!version.contains(to)) continue;
+            String candidate = version.replaceFirst(Pattern.quote(to), "@");
+            if (!candidate.replaceAll("[0-9]+", "0").equals(shape)) continue;
+            if (best == null || numbers(candidate).compareTo(numbers(best.replaceFirst(Pattern.quote(to), "@"))) > 0) best = version;
+        }
+        return best;
+    }
+
+    /** The numbers of a version, zero-padded so text order is number order: 2.1.11 after 2.1.9. */
+    private static String numbers(String version) {
+        StringBuilder key = new StringBuilder();
+        Matcher number = Pattern.compile("[0-9]+").matcher(version);
+        while (number.find()) key.append(String.format("%012d", Long.parseLong(number.group().length() > 12 ? "999999999999" : number.group()))).append('.');
+        return key.toString();
+    }
+
+    /**
+     * A Fabric library published only to Maven (teamreborn:energy on maven.fabricmc.net, with no Modrinth project to
+     * match): the newest version in the project's own repositories whose jar's fabric.mod.json accepts the target game.
+     * A jar that states no Minecraft range proves nothing and is not chosen. Returns false when none does.
+     */
+    static boolean mavenRelease(Target.Setup setup, String group, String name, String old, Path binary) throws Exception {
+        for (String repository : ProjectModel.strings(setup.project.get("repositories"))) {
+            if (!repository.startsWith("https://")) continue;
+            String base = repository.replaceFirst("/$", "") + "/" + group.replace('.', '/') + "/" + name + "/";
+            List<String> versions = new ArrayList<>();
+            try {
+                Matcher version = Pattern.compile("<version>([^<]+)</version>").matcher(Target.fetch(setup.build, base + "maven-metadata.xml"));
+                while (version.find()) if (!version.group(1).contains("SNAPSHOT")) versions.add(version.group(1).strip());
+            } catch (IOException notHere) {
+                continue;
+            }
+            versions.sort((a, b) -> Versions.compare(b, a));
+            int tried = 0;
+            for (String version : versions) {
+                if (tried++ >= 40) break;
+                String accepts;
+                try {
+                    accepts = minecraftConstraint(Target.download(setup.build, base + version + "/" + name + "-" + version + ".jar"));
+                } catch (Exception unreadable) {
+                    continue;
+                }
+                if (accepts.isEmpty() || !Versions.matches(accepts, setup.to)) continue;
+                apply(
+                    setup,
+                    group,
+                    name,
+                    old,
+                    group,
+                    name,
+                    version,
+                    binary,
+                    Json.map(
+                        "repository",
+                        repository,
+                        "gameVersion",
+                        setup.to,
+                        "evidence",
+                        "its fabric.mod.json accepts Minecraft " + setup.to + " (" + accepts + "), the newest such release in " + repository
+                    )
+                );
+                recordLoom(setup, group, name, version);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static final String CURSE_MAVEN = "curse.maven";
+
+    /**
+     * A CurseMaven coordinate (curse.maven:SLUG-PROJECTID:FILEID) names one CurseForge file, so the target is the file the
+     * project itself lists for the target game and loader: CurseForge's public file listing for that project id, newest
+     * first, a release before a beta or alpha. Its file id goes where the build keeps the old one.
+     */
+    static void curseMaven(Target.Setup setup, String group, String name, String old, Path binary, String configuration, String loader)
+        throws Exception {
+        Matcher id = Pattern.compile("-(\\d+)$").matcher(name);
+        if (!id.find()) throw new IOException("CurseMaven name " + name + " ends in no project id");
+        String loaderName = loader.equals("neoforge") ? "NeoForge" : loader.equals("forge") ? "Forge" : "Fabric";
+        Map<String, Object> best = null;
+        for (int page = 0; page < 8; page++) {
+            var files = Json.array(
+                Json.object(
+                    Json.parse(
+                        Target.fetch(
+                            setup.build,
+                            "https://www.curseforge.com/api/v1/mods/" + id.group(1) + "/files?pageIndex=" + page + "&pageSize=50&sort=dateCreated&sortDescending=true"
+                        )
+                    )
+                ).get("data")
+            );
+            best = curseFile(files, best, setup.to, loaderName);
+            if (files.size() < 50 || best != null && ((Number) best.getOrDefault("releaseType", 1)).intValue() == 1) break;
+        }
+        if (best == null) throw new IOException(
+            "CurseForge lists no " + loaderName + " file of project " + id.group(1) + " for " + setup.to
+        );
+        Map<String, Object> evidence = Json.map(
+            "publishedFile",
+            best.get("displayName"),
+            "gameVersion",
+            setup.to,
+            "evidence",
+            "CurseForge's file listing for project " + id.group(1) + " lists this " + loaderName + " file for " + setup.to
+        );
+        if (((Number) best.getOrDefault("releaseType", 1)).intValue() != 1) evidence.put(
+            "preRelease",
+            name + " has no release file for " + setup.to + ", so its newest " + (((Number) best.get("releaseType")).intValue() == 2 ? "beta" : "alpha") + " was chosen"
+        );
+        apply(setup, group, name, old, group, name, String.valueOf(((Number) best.get("id")).longValue()), binary, evidence);
+    }
+
+    /** The better of best and the files of one listing page for a game and loader: a release first, then the newest. */
+    static Map<String, Object> curseFile(List<Object> files, Map<String, Object> best, String to, String loaderName) {
+        for (Object item : files) {
+            var file = Json.object(item);
+            var versions = ProjectModel.strings(file.get("gameVersions"));
+            if (!versions.contains(to) || !versions.contains(loaderName)) continue;
+            int type = ((Number) file.getOrDefault("releaseType", 3)).intValue();
+            if (best == null || type < ((Number) best.getOrDefault("releaseType", 3)).intValue()) best = file;
+        }
+        return best;
     }
 
     /** compileOnly, modCompileOnly, modCompileOnlyApi: on the compile classpath only, never in the jar or the game. */
@@ -800,7 +1152,7 @@ final class Dependencies {
             "configuration",
             configuration,
             "file",
-            binary.toString(),
+            binary == null ? "" : binary.toString(),
             "reason",
             reason,
             "suggestion",
@@ -1121,6 +1473,18 @@ final class Dependencies {
         String replacement = literal.group(1) + artifact + ":" + target + literal.group(2);
         if (literal.find()) throw new IOException("Multiple dependency literals for " + artifact);
         return text.substring(0, start) + replacement + text.substring(end);
+    }
+
+    /** A Fabric mod jar whose fabric.mod.json exists and depends on no Minecraft version. */
+    static boolean gameIndependent(Path jar) {
+        try (var zip = new ZipFile(jar.toFile())) {
+            var entry = zip.getEntry("fabric.mod.json");
+            if (entry == null) return false;
+            var metadata = Json.object(Json.parse(new String(zip.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8)));
+            return !(metadata.get("depends") instanceof Map<?, ?> depends) || !depends.containsKey("minecraft");
+        } catch (Exception unreadable) {
+            return false;
+        }
     }
 
     static String minecraftConstraint(Path jar) throws Exception {

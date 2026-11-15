@@ -72,11 +72,23 @@ final class Target {
 
     static Setup plan(Build build, Map<String, Object> model, String to, List<Dependencies.Selection> selections)
         throws Exception {
-        if (Json.array(model.get("projects")).size() != 1) throw new IOException(
+        List<Object> projects = Json.array(model.get("projects"));
+        // A multi-module mod on one loader (Cardinal Components' modules, owo-lib and its sentinel) keeps its versions in
+        // the shared gradle.properties, so the root project's setup retargets every module.
+        // Plain helper projects with no loader (Twilight Forest's :tf-asm) are not mods to retarget.
+        List<Object> modProjects = projects.stream().filter(p -> !Support.loaders(Json.object(p)).isEmpty()).toList();
+        Set<Set<String>> loaderSets = new HashSet<>();
+        for (Object p : modProjects) loaderSets.add(Support.loaders(Json.object(p)));
+        Object root = modProjects.stream().filter(p -> ":".equals(Json.object(p).get("path"))).findFirst().orElse(null);
+        boolean oneLoader = loaderSets.size() == 1 && loaderSets.iterator().next().size() == 1 && (root != null || modProjects.size() == 1);
+        if (projects.size() != 1 && !oneLoader) throw new IOException(
             "Automatic target setup needs one selected project; choose --project."
         );
-        var project = Json.object(Json.array(model.get("projects")).get(0));
+        var project = Json.object(projects.size() == 1 ? projects.get(0) : modProjects.size() == 1 ? modProjects.get(0) : root);
         Set<String> loaders = Support.loaders(project);
+        // A NeoForge build (ModDevGradle or NeoGradle applied) that also lists a Forge artifact among its dependencies is NeoForge.
+        String appliedPlugins = String.valueOf(project.get("plugins")).toLowerCase(Locale.ROOT);
+        if (loaders.equals(Set.of("forge", "neoforge")) && appliedPlugins.matches("(?s).*(moddev|net\\.neoforged\\.gradle).*")) loaders = Set.of("neoforge");
         if (!loaders.equals(Set.of("fabric")) && !loaders.equals(Set.of("neoforge"))) throw new IOException(
             "Automatic target dependency setup requires one Fabric or NeoForge project; found " +
             loaders +
@@ -109,15 +121,28 @@ final class Target {
             // Mod metadata declares an accepted game range; leaving it on the old version makes NeoForge refuse the mod at runtime.
             if (pins.containsKey("minecraft_version_range")) setup.replacements.put(
                 "minecraft_version_range",
-                "[" + to + "," + to + "]"
+                "[" + to + "]"
             );
             for (String key : List.of("neo_version_range", "neoforge_version_range")) if (
                 pins.containsKey(key)
             ) setup.replacements.put(key, "[" + resolved + ",)");
+            // A multi-loader build keeps Fabric's versions beside NeoForge's: the sibling project must follow the same game.
+            try {
+                fabricPins(setup, build, pins, to);
+                // The Fabric project's Loom follows the jars its Fabric API was built with, as in a Fabric port.
+                if (!setup.loomBuilt.isEmpty()) loomFollows(setup, build, to);
+            } catch (IOException sibling) {
+                setup.unchecked.add(Json.map("artifact", "Fabric (sibling project)", "version", to, "reason", sibling.getMessage()));
+            }
+            forgeSibling(setup, build, pins, to);
             Dependencies.resolve(setup, "neoforge");
             applyReplacements(setup, build, pins);
             neoGradleFollows(setup, build, to);
+            modDevFollows(setup, build, to);
+            neoFormFollows(setup, build, to);
             toolchain(setup, build, to);
+            gradleForJava25(setup, build, to);
+            buildDslFollows(setup, build);
             runTypeRename(setup, build, to);
             parchmentFollows(setup, build, to);
             unitTestsInFml(setup, build, to, resolved);
@@ -137,12 +162,149 @@ final class Target {
             );
             return setup;
         }
+        fabricPins(setup, build, pins, to);
+        // A multi-loader build keeps NeoForge's version beside Fabric's: the sibling project must follow the same game.
+        neoForgeSibling(setup, build, pins, to);
+        forgeSibling(setup, build, pins, to);
+        neoFormFollows(setup, build, to);
+        Dependencies.resolve(setup);
+        applyReplacements(setup, build, pins);
+        loomFollows(setup, build, to);
+        unobfuscatedFabric(setup, build, to);
+        buildDslFollows(setup, build);
+        toolchain(setup, build, to);
+        gradleForJava25(setup, build, to);
+        parchmentFollows(setup, build, to);
+        manifest(setup);
+        return setup;
+    }
+
+    /**
+     * A Fabric build moving onto the unobfuscated game (26.1 and later) stops remapping: Minecraft ships with Mojang's names,
+     * so Loom's plugin is net.fabricmc.fabric-loom (fabric-loom and fabric-loom-remap remap), the mappings line goes, the
+     * remapping configurations become the plain ones (modImplementation -> implementation, ...), remapJar becomes jar, and
+     * Java rises to the game's. Written to the build files that apply Loom; a backport onto an obfuscated game is not
+     * changed here.
+     */
+    static void unobfuscatedFabric(Setup setup, Build build, String to) throws Exception {
+        String from = null;
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (
+            setup.pins.get(key) != null
+        ) from = setup.pins.get(key);
+        if (from == null || Versions.compare(to, "26.1") < 0 || Versions.compare(from, "26.1") >= 0) return;
+        Set<Path> files = new LinkedHashSet<>();
+        Object own = setup.project.get("buildFile");
+        if (own != null) files.add(Path.of(own.toString()));
+        for (String name : List.of("build.gradle", "build.gradle.kts")) files.add(build.project.root.resolve(name));
+        // An access widener names the namespace its entries are in; on the unobfuscated game that is "official". The planning
+        // model may list no resource folders (Origins), so the project's src folder is searched too.
+        Set<String> resourceDirs = new LinkedHashSet<>();
+        for (Object set : Json.array(setup.project.get("sourceSets"))) resourceDirs.addAll(
+            ProjectModel.strings(Json.object(set).get("resources"))
+        );
+        Object projectDir = setup.project.get("directory");
+        resourceDirs.add((projectDir == null ? build.project.root : Path.of(projectDir.toString())).resolve("src").toString());
+        for (String resources : resourceDirs) {
+            Path dir = Path.of(resources);
+            if (!Files.isDirectory(dir)) continue;
+            List<Path> wideners;
+            try (var walk = Files.walk(dir, 6)) {
+                wideners = walk.filter(p -> p.toString().endsWith(".accesswidener") || p.toString().endsWith(".classtweaker")).toList();
+            }
+            for (Path widener : wideners) {
+                String before = setup.text(widener), text = before.replaceFirst(
+                    "^(\\s*(?:accessWidener|classTweaker)\\s+v\\d+\\s+)named\\b",
+                    "$1official"
+                );
+                if (text.equals(before)) continue;
+                setup.originals.putIfAbsent(widener, before);
+                setup.texts.put(widener, text);
+                setup.applied.add(Json.map("file", widener.toString(), "change", "access widener namespace named -> official for " + to));
+            }
+        }
+        for (Path file : files) {
+            if (!Files.isRegularFile(file)) continue;
+            String before = setup.text(file), text = unobfuscatedLoom(before, javaFor(to));
+            if (text.equals(before)) continue;
+            setup.originals.putIfAbsent(file, before);
+            setup.texts.put(file, text);
+            setup.applied.add(
+                Json.map(
+                    "file",
+                    file.toString(),
+                    "change",
+                    "Loom without remapping for " + to + ": plugin net.fabricmc.fabric-loom, no mappings, plain configurations, jar for remapJar, Java " + javaFor(to),
+                    "evidence",
+                    "Minecraft " + to + " ships unobfuscated, with Mojang's names"
+                )
+            );
+        }
+    }
+
+    /** One build script rewritten for Loom on an unobfuscated game; unchanged when it does not apply Loom. */
+    static String unobfuscatedLoom(String text, int java) {
+        if (!Pattern.compile("[\"'](?:fabric-loom|net\\.fabricmc\\.fabric-loom(?:-remap)?)[\"']").matcher(text).find()) return text;
+        text = text.replaceAll("([\"'])(?:fabric-loom|net\\.fabricmc\\.fabric-loom-remap)([\"'])", "$1net.fabricmc.fabric-loom$2");
+        text = removeStatements(text, Pattern.compile("(?m)^[ \\t]*mappings\\b"));
+        Map<String, String> configurations = new LinkedHashMap<>();
+        configurations.put("modImplementation", "implementation");
+        configurations.put("modApi", "api");
+        configurations.put("modCompileOnlyApi", "compileOnlyApi");
+        configurations.put("modCompileOnly", "compileOnly");
+        configurations.put("modRuntimeOnly", "runtimeOnly");
+        configurations.put("modLocalRuntime", "localRuntime");
+        configurations.put("remapSourcesJar", "sourcesJar");
+        configurations.put("remapJar", "jar");
+        for (var c : configurations.entrySet()) text = text.replaceAll("(?<![\\w$])" + c.getKey() + "(?![\\w$])", c.getValue());
+        text = text.replaceAll("JavaVersion\\.VERSION_(?:1_8|1[0-9]|2[0-4])\\b", "JavaVersion.VERSION_" + java);
+        text = text.replaceAll("JavaLanguageVersion\\.of\\((?:[89]|1[0-9]|2[0-4])\\)", "JavaLanguageVersion.of(" + java + ")");
+        text = text.replaceAll("(options\\.release(?:\\.set\\(|\\s*=\\s*))(?:[89]|1[0-9]|2[0-4])\\b", "$1" + java);
+        return text;
+    }
+
+    /** Removes each whole statement that starts where the pattern matches, through its balanced brackets. */
+    static String removeStatements(String text, Pattern start) {
+        StringBuilder out = new StringBuilder();
+        int at = 0;
+        Matcher m = start.matcher(text);
+        while (m.find(at)) {
+            int end = m.start(), depth = 0;
+            boolean string = false;
+            char quote = 0;
+            for (; end < text.length(); end++) {
+                char c = text.charAt(end);
+                if (string) {
+                    if (c == '\\') end++;
+                    else if (c == quote) string = false;
+                    continue;
+                }
+                if (c == '"' || c == '\'') {
+                    string = true;
+                    quote = c;
+                } else if (c == '(' || c == '{' || c == '[') depth++;
+                else if (c == ')' || c == '}' || c == ']') depth--;
+                else if (c == '\n' && depth <= 0) break;
+            }
+            out.append(text, at, m.start());
+            at = Math.min(text.length(), end + 1);
+        }
+        return out.append(text.substring(at)).toString();
+    }
+
+    /** Yarn, Fabric loader and Fabric API pins of a Fabric build, each moved to its release for the target game. */
+    static void fabricPins(Setup setup, Build build, Map<String, Object> pins, String to) throws Exception {
         for (String key : List.of("yarn_mappings", "yarn_version")) if (pins.containsKey(key)) {
+            // The unobfuscated game has no yarn: the port crosses into Mojang's names and drops the mappings line.
+            if (Versions.compare(to, "26.1") >= 0) continue;
             var versions = Json.array(Json.parse(fetch(build, "https://meta.fabricmc.net/v2/versions/yarn/" + to)));
             if (versions.isEmpty()) throw new IOException(
                 "No published Yarn mappings for " + to + "; mapping namespace changes need a guided migration."
             );
-            setup.replacements.put(key, Json.text(Json.object(versions.get(0)), "version", ""));
+            String yarn = Json.text(Json.object(versions.get(0)), "version", "");
+            // A build that joins the game version to a build number (Cardinal Components: ${minecraft_version}+build.${yarn_mappings},
+            // yarn_mappings=1) keeps only the number in the property.
+            if (String.valueOf(pins.get(key)).matches("\\d+") && yarn.matches(".*\\+build\\.\\d+")) yarn = yarn.substring(yarn.lastIndexOf('.') + 1);
+            setup.replacements.put(key, yarn);
         }
         if (pins.containsKey("loader_version")) {
             var versions = Json.array(Json.parse(fetch(build, "https://meta.fabricmc.net/v2/versions/loader/" + to)));
@@ -168,12 +330,29 @@ final class Target {
                 .newDocumentBuilder()
                 .parse(new ByteArrayInputStream(xml.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
                 .getElementsByTagName("version");
-            String api = "";
+            List<String> published = new ArrayList<>();
             for (int i = 0; i < nodes.getLength(); i++) {
                 String value = nodes.item(i).getTextContent();
-                if (value.endsWith("+" + to)) api = value;
+                if (value.endsWith("+" + to)) published.add(value);
             }
-            if (api.isEmpty()) throw new IOException("No published Fabric API for " + to);
+            if (published.isEmpty()) throw new IOException("No published Fabric API for " + to);
+            // "+1.18" builds span 1.18 to 1.18.2 and the newest needs 1.18.2: take the newest whose own fabric.mod.json
+            // accepts the target game, read from the jar (a few of the newest are tried; an unreadable one is skipped).
+            String api = published.get(published.size() - 1);
+            for (int i = published.size() - 1, tried = 0; i >= 0 && tried < 12; i--, tried++) {
+                String candidate = published.get(i);
+                try {
+                    String accepts = Dependencies.minecraftConstraint(
+                        download(build, "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/" + candidate + "/fabric-api-" + candidate + ".jar")
+                    );
+                    if (accepts.isEmpty() || Versions.matches(accepts, to)) {
+                        api = candidate;
+                        break;
+                    }
+                } catch (Exception unread) {
+                    break;
+                }
+            }
             for (String key : List.of("fabric_version", "fabric_api_version")) if (
                 pins.containsKey(key)
             ) setup.replacements.put(key, api);
@@ -202,12 +381,377 @@ final class Target {
                 );
             }
         }
-        Dependencies.resolve(setup);
-        applyReplacements(setup, build, pins);
-        loomFollows(setup, build, to);
-        parchmentFollows(setup, build, to);
-        manifest(setup);
-        return setup;
+    }
+
+    /** NeoForge pins kept beside a Fabric project's (Architectury and MultiLoader builds) move to NeoForge's release for the target. */
+    static void neoForgeSibling(Setup setup, Build build, Map<String, Object> pins, String to) throws Exception {
+        for (String key : List.of("neo_version", "neoforge_version", "neoForgeVersion", "neoforgeVersion")) if (pins.containsKey(key)) {
+            try {
+                String resolved = neoForgeVersion(build, to);
+                setup.replacements.put(key, resolved);
+                setup.applied.add(
+                    Json.map("artifact", "net.neoforged:neoforge", "to", resolved, "evidence", "the build's NeoForge project follows the same game: NeoForge " + resolved + " publishes for " + to)
+                );
+            } catch (IOException none) {
+                setup.unchecked.add(Json.map("artifact", "net.neoforged:neoforge (sibling project)", "version", to, "reason", none.getMessage()));
+            }
+        }
+    }
+
+    /**
+     * ModDevGradle follows a forward port to the newest release of its line on maven.neoforged.net. An old release cannot set
+     * up a newer game: a mod's moddev 1.0.0 moved to 1.21.4 failed every build on com.mojang:jtracy, a library
+     * 1.21.4 added. The line is kept, so the build script's DSL stays the one it was written for; Gradle rises to what the
+     * plugin's own module metadata asks. A backport keeps its build tools.
+     */
+    static void modDevFollows(Setup setup, Build build, String to) throws Exception {
+        String from = "";
+        for (String key : List.of("minecraft_version", "minecraftVersion", "exactMinecraftVersion", "mc_version")) if (
+            setup.pins.containsKey(key)
+        ) {
+            from = setup.pins.get(key);
+            break;
+        }
+        if (!from.isEmpty() && Versions.compare(to, from) <= 0) return;
+        Pattern pluginLine = Pattern.compile(
+            "(id\\s*\\(?\\s*[\"']net\\.neoforged\\.moddev[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"'])([^\"']+)([\"'])"
+        );
+        Path properties = build.project.root.resolve("gradle.properties");
+        List<Path> files = new ArrayList<>();
+        Object own = setup.project.get("buildFile");
+        if (own != null) files.add(Path.of(own.toString()));
+        for (String name : List.of("build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts")) files.add(build.project.root.resolve(name));
+        files.add(properties);
+        for (Path file : new LinkedHashSet<>(files)) {
+            if (!Files.isRegularFile(file)) continue;
+            Matcher pin = file.equals(properties)
+                ? Pattern.compile(
+                    "(?m)^([ \\t]*(?:moddev_version|moddevgradle_version|mdg_version|moddevVersion)[ \\t]*=[ \\t]*)(\\S+)()[ \\t]*$"
+                ).matcher(setup.text(file))
+                : pluginLine.matcher(setup.text(file));
+            if (!pin.find() || !pin.group(2).matches("\\d+\\.\\d+\\.\\d+(?:-beta)?")) continue;
+            // The unobfuscated game (26.1+) needs ModDevGradle 2: 1.x cannot set up its game artifacts (a NeoForge port 1.21.3 -> 26.3).
+            String current = pin.group(2), line = current.substring(0, current.indexOf('.'));
+            if (Versions.compare(to, "26.1") >= 0 && Integer.parseInt(line) < 2) line = "2";
+            String newest = newestInLine(
+                fetch(build, "https://maven.neoforged.net/releases/net/neoforged/moddev-gradle/maven-metadata.xml"),
+                line
+            );
+            if (newest == null || Versions.compare(newest, current) <= 0) return;
+            setup.replace(file, pin.group(0), pin.group(1) + newest + pin.group(3));
+            setup.applied.add(
+                Json.map(
+                    "file",
+                    file.toString(),
+                    "change",
+                    "ModDevGradle " + current + " -> " + newest + " for " + to,
+                    "evidence",
+                    "the newest ModDevGradle " + line + ".x on maven.neoforged.net"
+                )
+            );
+            gradleFollows(
+                setup,
+                build,
+                "https://maven.neoforged.net/releases/net/neoforged/moddev-gradle/" + newest + "/moddev-gradle-" + newest + ".module",
+                "ModDevGradle " + newest,
+                "ModDevGradle " + newest
+            );
+            return;
+        }
+    }
+
+    /** The newest final release of one major line in a maven-metadata.xml (pre-releases only when the line has nothing else). */
+    static String newestInLine(String xml, String major) {
+        String release = null, any = null;
+        Matcher version = Pattern.compile("<version>(" + Pattern.quote(major) + "\\.[^<]+)</version>").matcher(xml);
+        while (version.find()) {
+            String v = version.group(1);
+            if (any == null || Versions.compare(v, any) > 0) any = v;
+            if (!v.matches(".*-(?:beta|alpha|rc|SNAPSHOT).*") && (release == null || Versions.compare(v, release) > 0)) release = v;
+        }
+        return release != null ? release : any;
+    }
+
+    /**
+     * A multi-loader build (Architectury, MultiLoader) keeps Forge's version beside Fabric's and NeoForge's, and Gradle
+     * configures every project: a Forge project left on the old game stops the whole build (Chat Heads 1.21.4 -> 1.21.5
+     * asked for forge 1.21.5-54.0.16, which does not exist). Forge's pin moves to Forge's newest release for the target
+     * (maven.minecraftforge.net); when Forge publishes none, an Architectury enabled_platforms list drops forge, so the
+     * other loaders still build. The game version ranges the build keeps for each loader's metadata follow the target.
+     */
+    static void forgeSibling(Setup setup, Build build, Map<String, Object> pins, String to) throws Exception {
+        for (String key : List.of("forge_version", "forgeVersion", "minecraft_forge_version")) if (pins.containsKey(key)) {
+            String old = String.valueOf(pins.get(key)), release;
+            try {
+                release = forgeRelease(fetch(build, "https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml"), to);
+            } catch (IOException unreachable) {
+                setup.unchecked.add(Json.map("artifact", "net.minecraftforge:forge (sibling project)", "version", to, "reason", unreachable.getMessage()));
+                continue;
+            }
+            if (release != null) {
+                setup.replacements.put(key, old.contains("-") ? release : release.substring(release.indexOf('-') + 1));
+                setup.applied.add(
+                    Json.map("artifact", "net.minecraftforge:forge", "to", release, "evidence", "the build's Forge project follows the same game: Forge " + release + " publishes for " + to)
+                );
+            } else if (pins.containsKey("enabled_platforms") && String.valueOf(pins.get("enabled_platforms")).contains("forge")) {
+                String platforms = String.join(
+                    ",",
+                    Arrays.stream(String.valueOf(pins.get("enabled_platforms")).split(",")).map(String::trim).filter(p -> !p.equals("forge")).toList()
+                );
+                setup.replacements.put("enabled_platforms", platforms);
+                setup.applied.add(
+                    Json.map("change", "enabled_platforms drops forge for " + to, "evidence", "Forge publishes no release for Minecraft " + to + " (maven.minecraftforge.net)")
+                );
+            } else if (!dropForgeProject(setup, build, to)) setup.unchecked.add(
+                Json.map("artifact", "net.minecraftforge:forge (sibling project)", "version", to, "reason", "Forge publishes no release for Minecraft " + to)
+            );
+        }
+        for (var pin : pins.entrySet()) {
+            String key = pin.getKey(), value = String.valueOf(pin.getValue());
+            if (key.equals("minecraft_version_range") || setup.replacements.containsKey(key)) continue;
+            if (!key.matches("(?i)(?:forge|neoforge|neo|fabric|quilt)_?(?:game|minecraft|mc)_?version_?range")) continue;
+            if (!value.matches("[\\[(][^,]*,[^,]*[\\])]") || value.contains(to)) continue;
+            setup.replacements.put(key, "[" + to + "]");
+        }
+    }
+
+    /** Forge's newest release for one game version in its maven-metadata.xml ("1.21.5-55.0.21"), or null. */
+    static String forgeRelease(String xml, String to) {
+        String newest = null;
+        Matcher version = Pattern.compile("<version>(" + Pattern.quote(to) + "-[0-9][^<]*)</version>").matcher(xml);
+        while (version.find()) {
+            String v = version.group(1);
+            if (newest == null || Versions.compare(v.substring(to.length() + 1), newest.substring(to.length() + 1)) > 0) newest = v;
+        }
+        return newest;
+    }
+
+    /**
+     * A vanilla-only module (an Architectury or MultiLoader common built on ModDevGradle's neoForm) names a NeoForm release:
+     * its full version, or a timestamp the build joins to the Minecraft version (JEI: ${minecraftVersion}-${neoformTimestamp}).
+     * It moves to NeoForm's newest release for the target game on maven.neoforged.net; the old one does not exist for it.
+     */
+    static void neoFormFollows(Setup setup, Build build, String to) throws Exception {
+        Path properties = build.project.root.resolve("gradle.properties");
+        if (!Files.isRegularFile(properties)) return;
+        String text = setup.text(properties);
+        Matcher pin = Pattern.compile(
+            "(?m)^([ \\t]*(neoform_version|neoFormVersion|neoform_timestamp|neoformTimestamp|neoFormTimestamp)[ \\t]*=[ \\t]*)(\\S+)[ \\t]*$"
+        ).matcher(text);
+        if (!pin.find()) return;
+        String newest = null;
+        Matcher version = Pattern.compile("<version>(" + Pattern.quote(to) + "-(\\d{8}\\.\\d{6}))</version>").matcher(
+            fetch(build, "https://maven.neoforged.net/releases/net/neoforged/neoform/maven-metadata.xml")
+        );
+        while (version.find()) if (newest == null || version.group(2).compareTo(newest.substring(newest.indexOf('-') + 1)) > 0) newest = version.group(1);
+        if (newest == null) {
+            setup.unchecked.add(Json.map("artifact", "net.neoforged:neoform", "version", to, "reason", "NeoForm publishes no release for Minecraft " + to));
+            return;
+        }
+        String value = pin.group(2).toLowerCase(Locale.ROOT).contains("timestamp") ? newest.substring(newest.indexOf('-') + 1) : newest;
+        if (value.equals(pin.group(3))) return;
+        setup.replace(properties, pin.group(0), pin.group(1) + value);
+        setup.applied.add(Json.map("artifact", "net.neoforged:neoform", "from", pin.group(3), "to", newest, "evidence", "NeoForm's newest release for " + to + " on maven.neoforged.net"));
+    }
+
+    /**
+     * A parchment { mappingsVersion = project.KEY } block whose property is not one of the conventional names (Ars Nouveau:
+     * parchment_version, beside minecraftVersion = project.minecraft_version): the property moves to Parchment's release for
+     * the target, a separate Minecraft property to the target, and the block goes when Parchment has no release for it.
+     */
+    static void parchmentBlockFollows(Setup setup, Build build, String to) throws Exception {
+        Path properties = build.project.root.resolve("gradle.properties");
+        if (!Files.isRegularFile(properties)) return;
+        for (String name : List.of("build.gradle", "build.gradle.kts")) {
+            Path script = build.project.root.resolve(name);
+            if (!Files.isRegularFile(script)) continue;
+            String text = setup.text(script);
+            Matcher block = Pattern.compile("(?m)^[ \\t]*parchment\\s*\\{([^{}]*)\\}").matcher(text);
+            if (!block.find()) continue;
+            Matcher mappings = Pattern.compile("mappingsVersion\\s*(?:=|\\.set\\()\\s*(?:project\\.)?(?:property\\(\\s*[\"'])?(\\w+)").matcher(block.group(1));
+            if (!mappings.find()) continue;
+            String key = mappings.group(1);
+            if (key.equals("parchment_mappings_version") || !Pattern.compile("(?m)^[ \\t]*" + Pattern.quote(key) + "[ \\t]*=").matcher(setup.text(properties)).find()) continue;
+            String release = parchmentRelease(build, to);
+            if (release.isEmpty()) {
+                setup.originals.putIfAbsent(script, text);
+                setup.texts.put(script, removeStatements(text, Pattern.compile("(?m)^[ \\t]*parchment\\s*\\{")));
+                setup.applied.add(
+                    Json.map(
+                        "file",
+                        script.toString(),
+                        "change",
+                        "parchment block removed for " + to,
+                        "evidence",
+                        "Parchment publishes no parameter names for " + to + " (maven.parchmentmc.org)"
+                    )
+                );
+                continue;
+            }
+            setProperty(setup, properties, key, release);
+            Matcher minecraft = Pattern.compile("minecraftVersion\\s*(?:=|\\.set\\()\\s*(?:project\\.)?(?:property\\(\\s*[\"'])?(\\w+)").matcher(block.group(1));
+            if (minecraft.find() && !minecraft.group(1).matches("minecraft_version|minecraftVersion|mc_version")) setProperty(setup, properties, minecraft.group(1), to);
+            setup.applied.add(Json.map("change", "Parchment " + key + " -> " + release + " for " + to, "evidence", "Parchment " + release + " is its newest release for " + to));
+        }
+    }
+
+    /**
+     * The unobfuscated game's build tools run on Java 25 (Loom for 26.x refuses a Gradle on 21: Carry On's Fabric project),
+     * and Gradle runs on Java 25 from 9.1. A wrapper older than that rises to 9.4.1, which NeoGradle 7.1, ModDevGradle 2
+     * and Loom 1.14+ all run on. A wrapper already on 9.1 or newer stays.
+     */
+    static void gradleForJava25(Setup setup, Build build, String to) throws Exception {
+        if (Versions.compare(to, "26.1") < 0) return;
+        Path wrapper = build.project.root.resolve("gradle/wrapper/gradle-wrapper.properties");
+        if (!Files.isRegularFile(wrapper)) return;
+        String text = setup.text(wrapper);
+        Matcher url = Pattern.compile("(distributionUrl=[^\\r\\n]*?gradle-)([0-9][0-9.]*(?:-rc-?\\d+)?)(-(?:bin|all)\\.zip)").matcher(text);
+        if (!url.find() || Versions.compare(url.group(2), "9.1") >= 0) return;
+        String gradle = "9.4.1";
+        setup.replace(wrapper, url.group(0), url.group(1) + gradle + url.group(3));
+        Matcher sum = Pattern.compile("(?m)^distributionSha256Sum=\\S+").matcher(setup.text(wrapper));
+        if (sum.find()) setup.replace(
+            wrapper,
+            sum.group(0),
+            "distributionSha256Sum=" + fetch(build, "https://services.gradle.org/distributions/gradle-" + gradle + url.group(3) + ".sha256").trim()
+        );
+        setup.applied.add(
+            Json.map(
+                "file",
+                wrapper.toString(),
+                "change",
+                "Gradle " + url.group(2) + " -> " + gradle + " for " + to,
+                "evidence",
+                "Minecraft " + to + " builds on Java 25, which Gradle runs on from 9.1"
+            )
+        );
+    }
+
+    /**
+     * Build-script settings the build tools the port moves to no longer have. Gradle 8 removed a jar task's classifier
+     * (archiveClassifier replaces it: ModMenu 1.16.5 on Gradle 8 stopped with "unknown property 'classifier'"), and Loom
+     * 1.x removed loom.shareCaches(), a cache-sharing switch with no effect on what is built (owo-lib). Only the build's own
+     * scripts are changed, and only when the port's Gradle is 8 or newer for the first.
+     */
+    static void buildDslFollows(Setup setup, Build build) throws Exception {
+        buildDslFollows(setup, build, true);
+    }
+
+    /** One build script without the settings buildDslFollows names. */
+    static String removedDsl(String text, boolean gradle8) {
+        return removedDsl(text, gradle8, false);
+    }
+
+    /**
+     * Also, for Gradle 9: project-level sourceCompatibility and targetCompatibility belong to the java extension
+     * (a Fabric port 1.20.1 -> 1.21.1 moves to Gradle 9 with Loom 1.18 and stopped on them).
+     */
+    static String removedDsl(String text, boolean gradle8, boolean gradle9) {
+        if (gradle9) {
+            text = text.replaceAll("(?m)^(sourceCompatibility|targetCompatibility)([ \\t]*=)", "java.$1$2");
+            // Gradle 9 removed the project-level archivesBaseName; the base extension owns it.
+            text = text.replaceAll("(?m)^([ \\t]*)archivesBaseName([ \\t]*=)", "$1base.archivesName$2");
+            text = text.replaceAll("(?<![\\w.$])(?:project\\.)?archivesBaseName(?![\\w(])", "project.base.archivesName.get()");
+        }
+        if (gradle8) text = text.replaceAll("(?m)^([ \\t]*)classifier(\\s*=\\s*|\\s+)([\"'])", "$1archiveClassifier = $3");
+        return text.replaceAll("(?m)^[ \\t]*shareCaches\\(\\)[ \\t]*\\r?\\n", "");
+    }
+
+    private static void buildDslFollows(Setup setup, Build build, boolean unused) throws Exception {
+        Path wrapper = build.project.root.resolve("gradle/wrapper/gradle-wrapper.properties");
+        Matcher gradle = Pattern.compile("gradle-([0-9]+)\\.").matcher(Files.isRegularFile(wrapper) ? setup.text(wrapper) : "");
+        int major = gradle.find() ? Integer.parseInt(gradle.group(1)) : 0;
+        boolean gradle8 = major >= 8, gradle9 = major >= 9;
+        for (Path script : build.project.inputs()) {
+            // build.gradle and the scripts it applies (ModMenu's gradle/*.gradle via apply from:), not settings.
+            String file = script.getFileName().toString();
+            if (!file.matches(".*\\.gradle(\\.kts)?") || file.startsWith("settings.") || file.startsWith("gradle.init")) continue;
+            String before;
+            try {
+                before = setup.text(script);
+            } catch (java.nio.charset.CharacterCodingException notText) {
+                continue; // a script in another encoding (owo-lib has one); nothing to rewrite in it
+            }
+            String text = removedDsl(before, gradle8, gradle9);
+            if (text.equals(before)) continue;
+            setup.originals.putIfAbsent(script, before);
+            setup.texts.put(script, text);
+            setup.applied.add(Json.map("file", script.toString(), "change", "build-script settings the new Gradle and Loom removed (classifier -> archiveClassifier, shareCaches())"));
+        }
+    }
+
+    /**
+     * A multi-loader build that includes its Forge project by name in settings.gradle (ImmediatelyFast: include(":forge"))
+     * cannot configure it for a game Forge publishes nothing for, and Gradle configures every included project. The Forge
+     * project leaves the include list, so the other loaders build; port does not port Forge projects in any case.
+     */
+    static boolean dropForgeProject(Setup setup, Build build, String to) throws IOException {
+        boolean dropped = false;
+        for (String name : List.of("settings.gradle", "settings.gradle.kts")) {
+            Path settings = build.project.root.resolve(name);
+            if (!Files.isRegularFile(settings)) continue;
+            String before = setup.text(settings), text = withoutForgeInclude(before);
+            if (text.equals(before)) continue;
+            setup.originals.putIfAbsent(settings, before);
+            setup.texts.put(settings, text);
+            setup.applied.add(
+                Json.map(
+                    "file",
+                    settings.toString(),
+                    "change",
+                    "Forge project left out of the build for " + to,
+                    "evidence",
+                    "Forge publishes no release for Minecraft " + to + " (maven.minecraftforge.net)"
+                )
+            );
+            dropped = true;
+        }
+        return dropped;
+    }
+
+    /** A settings script without its Forge project: a one-name include line goes, a name in a longer list leaves it. */
+    static String withoutForgeInclude(String text) {
+        String forge = "[\"']:?[Ff]orge[\"']";
+        text = text.replaceAll("(?m)^[ \\t]*include\\s*\\(?\\s*" + forge + "\\s*\\)?[ \\t]*\\r?\\n", "");
+        text = text.replaceAll("(?m)^([ \\t]*include\\b[^\\n]*?),\\s*" + forge, "$1");
+        return text.replaceAll("(?m)^([ \\t]*include\\s*\\(?\\s*)" + forge + "\\s*,\\s*", "$1");
+    }
+
+    /**
+     * Architectury Loom (dev.architectury.loom, Fabric Loom's fork for Architectury builds) follows the same Loom line the
+     * target's jars were built with: BetterF3 1.20.4 -> 1.20.5 kept 1.5-SNAPSHOT while Fabric API was built with 1.7, and
+     * the build would not load. The plugin's version moves to that line's newest release on maven.architectury.dev, and
+     * Gradle to what its own bootstrap class asks. Returns the new version, or null when the build applies no such plugin.
+     */
+    static String architecturyLoomFollows(Setup setup, Build build, String line) throws Exception {
+        Pattern plugin = Pattern.compile(
+            "(id\\s*\\(?\\s*[\"']dev\\.architectury\\.loom[\"']\\s*\\)?\\s*version\\s*\\(?\\s*[\"'])([^\"']+)([\"'])"
+        );
+        List<Path> scripts = new ArrayList<>();
+        for (String name : List.of("build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts")) scripts.add(build.project.root.resolve(name));
+        for (Path script : scripts) {
+            if (!Files.isRegularFile(script)) continue;
+            Matcher found = plugin.matcher(setup.text(script));
+            if (!found.find()) continue;
+            String current = found.group(2);
+            if (Versions.compare(Dependencies.minor(current.replace("-SNAPSHOT", "")), line) >= 0) return null;
+            String newest = null;
+            Matcher version = Pattern.compile("<version>(" + Pattern.quote(line) + "\\.[0-9]+)</version>").matcher(
+                fetch(build, "https://maven.architectury.dev/dev/architectury/architectury-loom/maven-metadata.xml")
+            );
+            while (version.find()) if (newest == null || Versions.compare(version.group(1), newest) > 0) newest = version.group(1);
+            if (newest == null) return null;
+            setup.replace(script, found.group(0), found.group(1) + newest + found.group(3));
+            gradleFollows(
+                setup,
+                build,
+                "https://maven.architectury.dev/dev/architectury/architectury-loom/" + newest + "/architectury-loom-" + newest + ".module",
+                "Architectury Loom " + newest,
+                "architectury-loom " + newest
+            );
+            return newest;
+        }
+        return null;
     }
 
     /** Parchment's newest release of parameter names for exactly this Minecraft version, or "" when it publishes none. */
@@ -243,6 +787,7 @@ final class Target {
      */
     static void parchmentFollows(Setup setup, Build build, String to) throws Exception {
         parchmentEdit(setup, build, to, null);
+        parchmentBlockFollows(setup, build, to);
     }
 
     /** parchmentFollows with Parchment's release for the target given ("" for none), or null to look it up only if the build states Parchment. */
@@ -257,6 +802,8 @@ final class Target {
         for (String name : List.of("build.gradle", "build.gradle.kts")) if (
             Files.isRegularFile(build.project.root.resolve(name))
         ) scripts.add(build.project.root.resolve(name));
+        // A multi-module build keeps its parchment block in a module's script (Repurposed Structures' :common).
+        for (Path input : build.project.inputs()) if (input.getFileName().toString().matches("build\\.gradle(\\.kts)?") && !scripts.contains(input)) scripts.add(input);
         Pattern layered = Pattern.compile(
             "parchment\\(\\s*[\"']org\\.parchmentmc\\.data:parchment-([^:\"']+):([^@\"']+)@zip[\"']\\s*\\)"
         );
@@ -348,7 +895,8 @@ final class Target {
     }
 
     private static void setProperty(Setup setup, Path properties, String key, String value) throws IOException {
-        Matcher line = Pattern.compile("(?m)^([ \\t]*" + Pattern.quote(key) + "[ \\t]*=[ \\t]*)(\\S*)").matcher(
+        // The whole value: a range such as ">=1.21.4 <1.21.5" is one property (Trash Cans' minecraft_dependency).
+        Matcher line = Pattern.compile("(?m)^([ \\t]*" + Pattern.quote(key) + "[ \\t]*=[ \\t]*)([^\\r\\n]*?)[ \\t]*$").matcher(
             setup.text(properties)
         );
         if (!line.find()) throw new IOException(
@@ -396,6 +944,11 @@ final class Target {
         }
         String line = Dependencies.minor(need), loom = newestLoom(build, line);
         if (!loomEdit(setup, build, current, loom)) {
+            String architectury = architecturyLoomFollows(setup, build, line);
+            if (architectury != null) {
+                setup.applied.add(Json.map("change", "Architectury Loom " + current + " -> " + architectury + " for " + to, "evidence", needBy + " was built with Loom " + need));
+                return;
+            }
             System.err.println(
                 "Warning: " + Dependencies.loomWarning(Json.map("version_number", needBy), need, current)
             );
@@ -424,18 +977,30 @@ final class Target {
      */
     static void gradleFollows(Setup setup, Build build, String moduleUrl, String plugin, String evidence)
         throws Exception {
-        Matcher api = Pattern.compile("\"org\\.gradle\\.plugin\\.api-version\"\\s*:\\s*\"([^\"]+)\"").matcher(
-            fetch(build, moduleUrl)
-        );
-        if (!api.find()) return;
+        String module;
+        try {
+            module = fetch(build, moduleUrl);
+        } catch (LookupFailure unreachable) {
+            throw unreachable;
+        } catch (IOException none) {
+            module = ""; // Architectury Loom publishes no Gradle module metadata
+        }
+        Matcher api = Pattern.compile("\"org\\.gradle\\.plugin\\.api-version\"\\s*:\\s*\"([^\"]+)\"").matcher(module);
+        String required = api.find() ? api.group(1) : null, source = " (org.gradle.plugin.api-version)";
+        // Loom before 1.x (and Architectury Loom, its fork) publishes no api-version; its own bootstrap class states the Gradle it needs.
+        if (required == null && (moduleUrl.contains("/fabric-loom/") || moduleUrl.contains("/architectury-loom/"))) {
+            required = loomMinimumGradle(build, download(build, moduleUrl.replaceFirst("\\.module$", ".jar")));
+            source = " or newer (its LoomGradlePluginBootstrap states the minimum; the newest release of that line is used)";
+        }
+        if (required == null) return;
         Path wrapper = build.project.root.resolve("gradle/wrapper/gradle-wrapper.properties");
         if (!Files.isRegularFile(wrapper)) return;
         String text = setup.text(wrapper);
         Matcher url = Pattern.compile(
             "(distributionUrl=[^\\r\\n]*?gradle-)([0-9][0-9.]*(?:-rc-?\\d+)?)(-(?:bin|all)\\.zip)"
         ).matcher(text);
-        if (!url.find() || Versions.compare(url.group(2), api.group(1)) >= 0) return;
-        String gradle = api.group(1);
+        if (!url.find() || Versions.compare(url.group(2), required) >= 0) return;
+        String gradle = required;
         setup.replace(wrapper, url.group(0), url.group(1) + gradle + url.group(3));
         Matcher sum = Pattern.compile("(?m)^distributionSha256Sum=\\S+").matcher(setup.text(wrapper));
         if (sum.find()) setup.replace(
@@ -451,7 +1016,7 @@ final class Target {
                 "change",
                 "Gradle " + url.group(2) + " -> " + gradle + " for " + plugin,
                 "evidence",
-                evidence + " requires Gradle " + gradle + " (org.gradle.plugin.api-version)"
+                evidence + " requires Gradle " + gradle + source
             )
         );
     }
@@ -566,8 +1131,9 @@ final class Target {
             out = withoutPlugin.substring(0, at) + withoutPlugin.substring(at + body.length()).replaceFirst("^\\r?\\n", "");
         }
         Path toml = null;
-        for (String dir : List.of("src/main/resources/META-INF/", "src/main/templates/META-INF/")) {
-            Path candidate = build.project.root.resolve(dir + "neoforge.mods.toml");
+        // NeoForge before 20.5 read META-INF/mods.toml (a 1.20.4 mod); later releases neoforge.mods.toml.
+        for (String name : List.of("mods.toml", "neoforge.mods.toml")) for (String dir : List.of("src/main/resources/META-INF/", "src/main/templates/META-INF/")) {
+            Path candidate = build.project.root.resolve(dir + name);
             if (Files.isRegularFile(candidate)) toml = candidate;
         }
         if (toml == null && !configs.isEmpty()) return;
@@ -595,6 +1161,83 @@ final class Target {
                 "net.neoforged.gradle.mixin's newest release on maven.neoforged.net is 7.0.192"
             )
         );
+    }
+
+    /**
+     * The Gradle a Loom jar says it needs, from its bootstrap class's constants: MIN_SUPPORTED_GRADLE_VERSION ("8.1") as
+     * stated, or MIN_SUPPORTED_MAJOR_GRADLE_VERSION (7) as that major line's newest release on services.gradle.org.
+     */
+    static String loomMinimumGradle(Build build, Path jar) throws Exception {
+        Map<String, Object> constants;
+        try (var zip = new java.util.zip.ZipFile(jar.toFile())) {
+            var entry = zip.getEntry("net/fabricmc/loom/bootstrap/LoomGradlePluginBootstrap.class");
+            if (entry == null) return null;
+            constants = classConstants(zip.getInputStream(entry).readAllBytes());
+        }
+        if (constants.get("MIN_SUPPORTED_GRADLE_VERSION") instanceof String version) return version;
+        if (!(constants.get("MIN_SUPPORTED_MAJOR_GRADLE_VERSION") instanceof Integer major)) return null;
+        return newestGradle(fetch(build, "https://services.gradle.org/versions/all"), major);
+    }
+
+    /** The newest final release of one Gradle major line in services.gradle.org/versions/all. */
+    static String newestGradle(String versionsJson, int major) {
+        String newest = null;
+        Matcher release = Pattern.compile("\"version\"\\s*:\\s*\"(" + major + "\\.[0-9]+(?:\\.[0-9]+)?)\"").matcher(versionsJson);
+        while (release.find()) if (newest == null || Versions.compare(release.group(1), newest) > 0) newest = release.group(1);
+        return newest;
+    }
+
+    /** The compile-time constants of a class file's fields (int and String ConstantValue attributes), by field name. */
+    static Map<String, Object> classConstants(byte[] bytes) throws IOException {
+        var in = new DataInputStream(new ByteArrayInputStream(bytes));
+        in.readInt();
+        in.readUnsignedShort();
+        in.readUnsignedShort();
+        int count = in.readUnsignedShort();
+        Object[] pool = new Object[count];
+        int[] strings = new int[count];
+        for (int i = 1; i < count; i++) {
+            int tag = in.readUnsignedByte();
+            switch (tag) {
+                case 1 -> pool[i] = in.readUTF();
+                case 3 -> pool[i] = in.readInt();
+                case 4 -> in.readFloat();
+                case 5, 6 -> {
+                    in.readLong();
+                    i++;
+                }
+                case 8 -> strings[i] = in.readUnsignedShort();
+                case 7, 16, 19, 20 -> in.readUnsignedShort();
+                case 9, 10, 11, 12, 17, 18 -> in.readInt();
+                case 15 -> {
+                    in.readUnsignedByte();
+                    in.readUnsignedShort();
+                }
+                default -> throw new IOException("Unknown constant pool tag " + tag);
+            }
+        }
+        in.readUnsignedShort();
+        in.readUnsignedShort();
+        in.readUnsignedShort();
+        int interfaces = in.readUnsignedShort();
+        for (int i = 0; i < interfaces; i++) in.readUnsignedShort();
+        Map<String, Object> constants = new LinkedHashMap<>();
+        int fields = in.readUnsignedShort();
+        for (int f = 0; f < fields; f++) {
+            in.readUnsignedShort();
+            String name = String.valueOf(pool[in.readUnsignedShort()]);
+            in.readUnsignedShort();
+            int attributes = in.readUnsignedShort();
+            for (int a = 0; a < attributes; a++) {
+                String attribute = String.valueOf(pool[in.readUnsignedShort()]);
+                int length = in.readInt();
+                if (attribute.equals("ConstantValue") && length == 2) {
+                    int index = in.readUnsignedShort();
+                    constants.put(name, strings[index] != 0 ? pool[strings[index]] : pool[index]);
+                } else in.skipNBytes(length);
+            }
+        }
+        return constants;
     }
 
     /** The newest release of one Loom line (e.g. 1.10 -> 1.10.5), read from maven.fabricmc.net. */
@@ -834,7 +1477,7 @@ final class Target {
         }
         Path properties = build.project.root.resolve("gradle.properties");
         if (Files.isRegularFile(properties)) {
-            for (String key : List.of("java_version", "java_toolchain_version")) {
+            for (String key : List.of("java_version", "java_toolchain_version", "java_target", "javaVersion", "java_release", "target_java_version")) {
                 Matcher pin = Pattern.compile("(?m)^([ \\t]*" + key + "[ \\t]*=[ \\t]*)(\\d+)[ \\t]*$").matcher(
                     setup.text(properties)
                 );
@@ -852,6 +1495,18 @@ final class Target {
                     );
                 }
             }
+        }
+        // Gradle 9 removed the project-level sourceCompatibility and targetCompatibility; the java extension owns them.
+        String compatibility = setup.text(file), javaOwned = compatibility.replaceAll(
+            "(?m)^(sourceCompatibility|targetCompatibility)([ \\t]*=)",
+            "java.$1$2"
+        );
+        if (!javaOwned.equals(compatibility)) {
+            setup.originals.putIfAbsent(file, compatibility);
+            setup.texts.put(file, javaOwned);
+            setup.applied.add(
+                Json.map("file", file.toString(), "change", "sourceCompatibility/targetCompatibility -> java.* for Gradle 9")
+            );
         }
         // Gradle 9 removed the project-level archivesBaseName property; the base extension owns it now.
         Matcher archives = Pattern.compile("(?m)^[ \\t]*archivesBaseName[ \\t]*=[ \\t]*([^\\r\\n]+)$").matcher(
@@ -990,20 +1645,43 @@ final class Target {
             if (!(metadata.get("depends") instanceof Map<?, ?>)) continue;
             var depends = Json.object(metadata.get("depends"));
             if (!depends.containsKey("minecraft")) continue;
+            // A list of alternatives (Sound Physics: ["1.21", "1.21.1"]) accepts the target when one of them does; when none
+            // does, the list becomes the target release, as a single constraint would.
+            if (depends.get("minecraft") instanceof List<?> alternatives && alternatives.stream().allMatch(a -> a instanceof String)) {
+                boolean accepted = false;
+                for (Object a : alternatives) if (String.valueOf(a).contains("${") || Versions.matches(String.valueOf(a), setup.to)) accepted = true;
+                if (accepted) continue;
+                Matcher list = Pattern.compile("(\"minecraft\"\\s*:\\s*)\\[[^\\]]*\\]").matcher(before);
+                if (!list.find()) throw new IOException("Cannot locate depends.minecraft in " + file + "; update its owner manually.");
+                int at = list.start();
+                if (list.find()) throw new IOException("Fabric manifest names minecraft lists twice in " + file + "; update its owner manually.");
+                Matcher only = Pattern.compile("(\"minecraft\"\\s*:\\s*)\\[[^\\]]*\\]").matcher(before);
+                only.find(at);
+                setup.replace(file, before, before.substring(0, only.start()) + only.group(1) + "\"" + setup.to + "\"" + before.substring(only.end()));
+                continue;
+            }
             if (!(depends.get("minecraft") instanceof String constraint)) throw new IOException(
                 "Fabric manifest depends.minecraft is not one literal string in " +
                 file +
                 "; update its owner manually."
             );
+            // The range filled in from a property when the jar is built (Trash Cans: "${minecraft_dependency}", with
+            // minecraft_dependency=>=1.21.4 <1.21.5): the property is the owner, retargeted the same way.
+            Matcher placeholder = Pattern.compile("^\\$\\{(\\w+)\\}$").matcher(constraint.trim());
+            if (placeholder.find() && setup.build != null) {
+                Path properties = setup.build.project.root.resolve("gradle.properties");
+                Matcher owner = Pattern.compile("(?m)^[ \\t]*" + Pattern.quote(placeholder.group(1)) + "[ \\t]*=[ \\t]*([^\\r\\n]*?)[ \\t]*$").matcher(
+                    Files.isRegularFile(properties) ? setup.text(properties) : ""
+                );
+                if (owner.find() && !owner.group(1).contains("$") && !Versions.matches(owner.group(1), setup.to)) {
+                    setProperty(setup, properties, placeholder.group(1), setup.to);
+                }
+                continue;
+            }
             if (constraint.contains("${") || constraint.equals(toRange(setup.to))) continue;
             if (Versions.matches(constraint, setup.to)) continue;
-            if (!constraint.matches("~?[0-9]+(?:\\.[0-9]+){1,2}")) throw new IOException(
-                "Fabric manifest depends.minecraft has a complex constraint " +
-                constraint +
-                " in " +
-                file +
-                "; update its owner manually."
-            );
+            // A range that excludes the target (">=26.3" ported to 26.2, ">=1.20.1 <1.21" to 1.21.6) would make Fabric refuse
+            // the ported mod, so it becomes the target release, as a plain version does; the edit is one literal in the receipt.
             setup.replace(file, before, retargetMinecraft(before, constraint, setup.to, file));
         }
     }

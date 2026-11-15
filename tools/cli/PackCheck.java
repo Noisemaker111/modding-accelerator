@@ -36,6 +36,13 @@ final class PackCheck {
 
     record Mod(String file, Path jar, String side, String source) {}
 
+    /** A mod file the pack lists that its host no longer serves: its CurseForge project and file, its name when known, and why. */
+    record Unavailable(int project, int file, String name, String why) {
+        String describe() {
+            return (name.isEmpty() ? "" : name + " (") + "project " + project + ", file " + file + (name.isEmpty() ? "" : ")") + ": " + why;
+        }
+    }
+
     /** layers: the folders the pack's configs come from, in order (an .mrpack's overrides then server-overrides); the first holds mods/ for an instance. */
     record Pack(
         String name,
@@ -67,10 +74,10 @@ final class PackCheck {
     final Modaccel.Report report;
     final List<Object> findings = new ArrayList<>();
     /** Mod files the pack lists that its source no longer serves: a player's launcher cannot get them either. */
-    final List<String> unavailable = new ArrayList<>();
+    final List<Unavailable> unavailable = new ArrayList<>();
 
-    synchronized void unavailable(String what) {
-        unavailable.add(what);
+    synchronized void unavailable(int project, int file, String name, String why) {
+        unavailable.add(new Unavailable(project, file, name, why));
     }
     PackMods.Scan scan = new PackMods.Scan();
     PackLoaders.Loader loader;
@@ -151,13 +158,15 @@ final class PackCheck {
                 "problem",
                 "summary",
                 unavailable.size() + " mod file(s) the pack lists cannot be downloaded any more, so a player cannot install the pack as published; the rest is checked without them: " +
-                String.join("; ", unavailable),
+                String.join("; ", unavailable.stream().map(Unavailable::describe).toList()),
                 "files",
-                new ArrayList<>(unavailable)
+                unavailable.stream().map(u -> (Object) Json.map("project", u.project(), "file", u.file(), "name", u.name(), "why", u.why())).toList()
             )
         );
         PackChecks.run("static", statics);
-        List<Map<String, Object>> fixes = PackRepairs.match(harness, pack, scan, findings);
+        final Pack checked = pack;
+        PackRepairs.Facts known = new PackRepairs.Facts(checked, scan, loader, List.copyOf(unavailable), null);
+        List<Map<String, Object>> fixes = PackRepairs.match(harness, known, findings, List.of());
         report.stages.add(Json.map("name", "static-checks", "seconds", (System.nanoTime() - started) / 1e9));
         result.put("staticChecks", Json.map("modIds", scan.providers.size(), "findings", findings.size()));
         // Each jar with the mod ids it provides, so a front end can draw the whole pack (the desktop app's grid).
@@ -173,21 +182,52 @@ final class PackCheck {
         );
         result.put("modFiles", modFiles);
         readDropped();
-        // Every repair is a known fault's, so it is known now: the repaired pack's server starts beside the shipped one.
-        List<Map<String, Object>> chosen = options.has("fix") ? fixes : List.of();
-        PackRepairs.Change change = PackRepairs.change(this, chosen, scan, pack);
-        ServerLane shipped = new ServerLane(pack, new PackRepairs.Change(List.of(), List.of()), "", findings, context);
+        // A repair known from the jars is known now: the repaired pack's server starts beside the shipped one.
+        List<Map<String, Object>> chosen = new ArrayList<>(options.has("fix") ? fixes : List.of());
+        PackRepairs.Change change = PackRepairs.change(this, chosen, known);
+        ServerLane shipped = new ServerLane(checked, new PackRepairs.Change(List.of(), List.of()), "", findings, context);
         shipped.prepare();
-        ServerLane repaired = chosen.isEmpty() ? null : new ServerLane(pack, change, "repaired-", new ArrayList<>(), context);
+        ServerLane repaired = chosen.isEmpty() ? null : new ServerLane(checked, change, "repaired-", new ArrayList<>(), context);
         ExecutorService side = Executors.newSingleThreadExecutor();
+        String world = options.get("world", "");
         try {
             Future<Map<String, Object>> recheck = null;
             if (repaired != null) {
                 repaired.prepare();
-                recheck = side.submit(() -> repaired.check(options.get("world", "")));
+                ServerLane lane = repaired;
+                recheck = side.submit(() -> lane.check(world));
             }
-            result.put("game", shipped.check(options.get("world", "")));
-            if (options.has("fix")) result.put("fix", apply(pack, chosen, change, recheck, shipped, repaired));
+            var game = shipped.check(world);
+            result.put("game", game);
+            if (options.has("fix")) {
+                Map<String, Object> again = null;
+                if (recheck != null) try {
+                    again = recheck.get();
+                } catch (ExecutionException failed) {
+                    throw failed.getCause() instanceof Exception e ? e : failed;
+                }
+                // A start that failed (the repaired pack's, else the shipped one's) can show a fault a rule repairs, which no jar
+                // showed before the game: that repair joins the others and the repaired pack starts again, at most three times.
+                List<Object> rounds = new ArrayList<>();
+                for (int round = 1; round <= 3; round++) {
+                    String failing = failedStart(again != null ? again : game);
+                    if (failing == null) break;
+                    var facts = new PackRepairs.Facts(checked, scan, loader, List.copyOf(unavailable), failing);
+                    List<Map<String, Object>> more = PackRepairs.match(harness, facts, findings, chosen);
+                    if (more.isEmpty()) break;
+                    chosen.addAll(more);
+                    change = PackRepairs.change(this, chosen, facts);
+                    String after = again != null ? "the repaired pack's start failed" : "the shipped pack's start failed";
+                    rounds.add(Json.map("round", round, "after", after, "added", more.stream().map(f -> f.get("id")).toList()));
+                    if (change.empty()) break;
+                    repaired = new ServerLane(checked, change, "repaired-", new ArrayList<>(), context);
+                    repaired.prepare();
+                    again = repaired.check(world);
+                }
+                var fix = apply(checked, chosen, change, again, shipped, repaired);
+                if (!rounds.isEmpty()) fix.put("rounds", rounds);
+                result.put("fix", fix);
+            }
         } finally {
             side.shutdownNow();
         }
@@ -195,9 +235,23 @@ final class PackCheck {
         var fix = Json.object(result.getOrDefault("fix", Json.map()));
         result.put("findings", findings);
         result.put("checks", PackChecks.ALL.stream().map(PackChecks.Check::id).toList());
-        result.put("ok", problems == 0 || (Boolean.TRUE.equals(fix.get("proven")) && Json.array(fix.get("remaining")).isEmpty()));
+        result.put("ok", problems == 0 || (Boolean.TRUE.equals(fix.get("proven")) && Json.array(fix.getOrDefault("remaining", List.of("unknown"))).isEmpty()));
         result.put("details", text(result));
         return result;
+    }
+
+    /**
+     * The failing lines of the first start in a lane's result that did not open (its log's failure and dependency lines,
+     * and the failure pack-check read from its crash report), or null when every start opened.
+     */
+    static String failedStart(Map<String, Object> game) throws IOException {
+        for (String stage : List.of("newWorld", "reopen")) {
+            if (!(game.get(stage) instanceof Map<?, ?> start) || Boolean.TRUE.equals(start.get("opened"))) continue;
+            Path log = Path.of(String.valueOf(start.get("log")));
+            String text = Files.isRegularFile(log) ? new String(Files.readAllBytes(log), StandardCharsets.UTF_8) : "";
+            return PackRepairs.failing(text) + "\n" + start.get("failure");
+        }
+        return null;
     }
 
     /** --list: what pack-check knows, from its registries. */
@@ -388,7 +442,7 @@ final class PackCheck {
                         byte[] answer = get(CURSEFORGE + file[0] + "/files/" + file[1]);
                         // CurseForge answers {"data": null} for a file it no longer serves: not kept, so it is asked again next time.
                         if (!(Json.parse(new String(answer, StandardCharsets.UTF_8)) instanceof Map<?, ?> m && m.get("data") instanceof Map<?, ?>)) {
-                            unavailable("project " + file[0] + ", file " + file[1] + ": CurseForge no longer lists it");
+                            unavailable(file[0], file[1], "", "CurseForge no longer lists it");
                             return null;
                         }
                         Files.write(metaFile, answer);
@@ -402,18 +456,10 @@ final class PackCheck {
                     long length = ((Number) data.get("fileLength")).longValue();
                     if (onDisk.containsKey(file[1])) name = target.getFileName().toString();
                     else if (!Files.isRegularFile(target) || Files.size(target) != length) {
-                        byte[] bytes;
-                        try {
-                            bytes = get(CURSEFORGE + file[0] + "/files/" + file[1] + "/download");
-                        } catch (IOException gone) {
-                            if (!gone.getMessage().startsWith("HTTP 404")) throw gone;
-                            unavailable(name + " (project " + file[0] + ", file " + file[1] + "): CurseForge does not serve its download");
+                        if (!curseforgeDownload(file[0], file[1], name, length, target)) {
+                            unavailable(file[0], file[1], name, "CurseForge does not serve its download");
                             return null;
                         }
-                        if (bytes.length != length) throw new IOException(name + ": CurseForge said " + length + " bytes, sent " + bytes.length);
-                        Path temporary = Files.createTempFile(folder, "download-", ".tmp");
-                        Files.write(temporary, bytes);
-                        Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
                         synchronized (downloaded) {
                             downloaded[0]++;
                         }
@@ -452,6 +498,148 @@ final class PackCheck {
             throw failed.getCause() instanceof Exception e ? e : failed;
         } finally {
             pool.shutdownNow();
+        }
+    }
+
+    /**
+     * One CurseForge file into target, checked against the size CurseForge publishes (it publishes no hash): from its
+     * download API, or, when that answers 404, from CurseForge's own CDN by the file's id and name (the address the
+     * CurseForge app itself downloads from). false: neither serves it.
+     */
+    static boolean curseforgeDownload(int project, int file, String name, long length, Path target) throws Exception {
+        String encoded = java.net.URLEncoder.encode(name, StandardCharsets.UTF_8).replace("+", "%20");
+        List<String> urls = List.of(
+            CURSEFORGE + project + "/files/" + file + "/download",
+            "https://mediafilez.forgecdn.net/files/" + file / 1000 + "/" + file % 1000 + "/" + encoded,
+            "https://edge.forgecdn.net/files/" + file / 1000 + "/" + file % 1000 + "/" + encoded
+        );
+        for (String url : urls) {
+            byte[] bytes;
+            try {
+                bytes = get(url);
+            } catch (IOException gone) {
+                if (!gone.getMessage().startsWith("HTTP 404") && !gone.getMessage().startsWith("HTTP 403")) throw gone;
+                continue;
+            }
+            if (bytes.length != length) throw new IOException(name + ": CurseForge said " + length + " bytes, " + url + " sent " + bytes.length);
+            Files.createDirectories(target.getParent());
+            Path temporary = Files.createTempFile(target.getParent(), "download-", ".tmp");
+            Files.write(temporary, bytes);
+            Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
+            return true;
+        }
+        return false;
+    }
+
+    /** Every file CurseForge lists for a project (its public file API, page by page), cached for a day. */
+    static List<Map<String, Object>> curseforgeFiles(int project) throws Exception {
+        Path cached = receipts().resolve("curseforge").resolve("project-" + project + "-files.json");
+        List<Map<String, Object>> files = new ArrayList<>();
+        if (Files.isRegularFile(cached) && Files.getLastModifiedTime(cached).toMillis() > System.currentTimeMillis() - 86_400_000L) {
+            for (Object f : Json.array(Json.read(cached).get("files"))) files.add(Json.object(f));
+            return files;
+        }
+        for (int page = 0; page < 40; page++) {
+            var answer = Json.object(Json.parse(new String(get(CURSEFORGE + project + "/files?pageSize=50&pageIndex=" + page), StandardCharsets.UTF_8)));
+            List<Object> data = Json.array(answer.getOrDefault("data", List.of()));
+            for (Object f : data) files.add(Json.object(f));
+            long total = answer.get("pagination") instanceof Map<?, ?> p && p.get("totalCount") instanceof Number n ? n.longValue() : 0;
+            if (data.isEmpty() || files.size() >= total) break;
+        }
+        Files.createDirectories(cached.getParent());
+        Json.save(cached, Json.map("project", project, "files", files));
+        return files;
+    }
+
+    /** One CurseForge file, downloaded once into the same cache fetch uses, checked against its published size. */
+    Path curseforgeJar(int project, int file, Map<String, Object> data) throws Exception {
+        String name = Json.text(data, "fileName", "");
+        if (name.isEmpty() || name.contains("/") || name.contains("\\") || name.startsWith(".")) throw new IOException("Unsafe file name from CurseForge: " + name);
+        Path target = cache.resolve("curseforge").resolve(project + "-" + file).resolve(name);
+        long length = ((Number) data.get("fileLength")).longValue();
+        if (Files.isRegularFile(target) && Files.size(target) == length) return target;
+        if (!curseforgeDownload(project, file, name, length, target)) throw new IOException(name + ": CurseForge does not serve it");
+        return target;
+    }
+
+    /** Modrinth's answer for a path under its API, parsed; null when it has none or cannot be reached. */
+    static Object modrinthJson(String path) {
+        if (Boolean.getBoolean("modaccel.pack.offline")) return null;
+        try {
+            return Json.parse(new String(get(MODRINTH + path), StandardCharsets.UTF_8));
+        } catch (Exception unknown) {
+            return null;
+        }
+    }
+
+    /** The Modrinth version a jar is a file of, by its SHA-1, or null. */
+    static Map<String, Object> modrinthVersion(String sha1) {
+        return modrinthJson("version_file/" + sha1 + "?algorithm=sha1") instanceof Map<?, ?> version ? Json.object(version) : null;
+    }
+
+    /** "project version" when Modrinth has a file with this jar's SHA-1, else "". */
+    static String modrinthHas(Path jar) throws Exception {
+        var version = modrinthVersion(sha1(jar));
+        return version == null ? "" : version.get("project_id") + " " + version.get("version_number");
+    }
+
+    /** A file a Modrinth version lists, from Modrinth's CDN only, checked against the SHA-512 Modrinth publishes; cached by that hash. null: not served or not matching. */
+    static Path modrinthFile(Path cache, Map<String, Object> file) throws Exception {
+        String url = Json.text(file, "url", ""), name = Json.text(file, "filename", "");
+        String sha512 = file.get("hashes") instanceof Map<?, ?> h ? String.valueOf(h.get("sha512")) : "";
+        if (!sha512.matches("[0-9a-f]{128}") || name.isEmpty() || name.contains("/") || name.contains("\\") || name.startsWith(".")) return null;
+        if (!"cdn.modrinth.com".equals(URI.create(url).getHost())) return null;
+        Path jar = cache.resolve("fixes").resolve(sha512.substring(0, 16)).resolve(name);
+        if (Files.isRegularFile(jar) && hash("SHA-512", Files.readAllBytes(jar)).equals(sha512)) return jar;
+        byte[] bytes;
+        try {
+            bytes = get(url);
+        } catch (IOException gone) {
+            return null;
+        }
+        if (!hash("SHA-512", bytes).equals(sha512)) return null;
+        Files.createDirectories(jar.getParent());
+        Files.write(jar, bytes);
+        return jar;
+    }
+
+    /**
+     * Whether a server needs a mod, as its sides say: "required", "optional", "unsupported" or "unknown". From the
+     * pack's own words where it has them (a .mrpack's env, kept in the mod's source), else Modrinth's project page for
+     * the jar (by its SHA-1, cached beside the sides pack-check already asks for).
+     */
+    static String serverSide(Mod mod) {
+        Matcher said = Pattern.compile("server_side (required|optional|unsupported)").matcher(mod.source());
+        if (said.find()) return said.group(1);
+        if (mod.jar() == null || !Files.isRegularFile(mod.jar())) return "unknown";
+        try {
+            Path folder = receipts().resolve("modrinth");
+            String sha1 = sha1(mod.jar());
+            Path answer = folder.resolve(sha1 + ".json");
+            if (!Files.isRegularFile(answer) || Json.text(Json.read(answer), "server_side", "").isEmpty()) {
+                var version = modrinthVersion(sha1);
+                if (version == null) return "unknown";
+                if (!(modrinthJson("project/" + version.get("project_id")) instanceof Map<?, ?> p)) return "unknown";
+                var project = Json.object(p);
+                Files.createDirectories(folder);
+                Json.save(
+                    answer,
+                    Json.map(
+                        "project",
+                        Json.text(project, "id", ""),
+                        "slug",
+                        Json.text(project, "slug", ""),
+                        "client_side",
+                        Json.text(project, "client_side", ""),
+                        "server_side",
+                        Json.text(project, "server_side", "")
+                    )
+                );
+            }
+            String side = Json.text(Json.read(answer), "server_side", "");
+            return side.isEmpty() ? "unknown" : side;
+        } catch (Exception unreachable) {
+            return "unknown";
         }
     }
 
@@ -670,6 +858,8 @@ final class PackCheck {
         final PackLoaders.Context context;
         Path install, instance, probe;
         ServerMods selection;
+        /** What check() found, once it has run. */
+        Map<String, Object> result;
 
         ServerLane(Pack pack, PackRepairs.Change change, String lane, List<Object> found, PackLoaders.Context context) {
             this.pack = pack;
@@ -699,9 +889,16 @@ final class PackCheck {
                 "instance",
                 instance.toString()
             );
-            if (!change.add().isEmpty() || !change.remove().isEmpty()) game.put(
+            if (!change.add().isEmpty() || !change.offServer().isEmpty()) game.put(
                 "changed",
-                Json.map("added", change.add().stream().map(p -> p.getFileName().toString()).toList(), "removed", change.remove())
+                Json.map(
+                    "added",
+                    change.add().stream().map(p -> p.getFileName().toString()).toList(),
+                    "removed",
+                    change.remove(),
+                    "leftOutOfServer",
+                    change.serverOnly()
+                )
             );
             // Start 1: a new world.
             Map<String, Object> first = start("place", "world", Map.of());
@@ -787,6 +984,7 @@ final class PackCheck {
                 checks.start = opened;
                 stage("user-world", checks);
             }
+            result = game;
             return game;
         }
 
@@ -837,6 +1035,7 @@ final class PackCheck {
         /** One server start. place makes the world; verify and open read an existing one. */
         Map<String, Object> start(String mode, String level, Map<String, String> properties) throws Exception {
             boolean alone = false;
+            int memoryRetries = 0;
             for (int round = 0;; round++) {
                 Path out = report.directory.resolve(lane + "probe-" + mode + ".json");
                 Files.deleteIfExists(out);
@@ -889,7 +1088,7 @@ final class PackCheck {
                 // A mod that only works in a game client stops a server at start-up; leave it out and start again.
                 Map<String, String> clientOnly = new LinkedHashMap<>();
                 for (String id : PackChecks.clientOnly(text, loader, scan, game::clientOnly)) for (PackMods.Provider p : scan.providers.getOrDefault(id, List.of())) if (
-                    !p.bundled() && !change.remove().contains(p.jar())
+                    !p.bundled() && !change.offServer().contains(p.jar())
                 ) clientOnly.put(p.jar(), id);
                 clientOnly.keySet().removeIf(dropped::contains);
                 if (mode.equals("place") && !clientOnly.isEmpty() && round < 8) {
@@ -905,6 +1104,32 @@ final class PackCheck {
                     if (mode.equals("place")) deleteTree(instance.resolve(level));
                     continue;
                 }
+                // The JVM itself could not get memory from the machine (other programs held it): no mod did anything. Once
+                // more alone, after a minute; if it happens again the start is reported as the machine's, naming no mod.
+                if (machineMemory(text)) {
+                    if (round < 4 && memoryRetries++ < 1) {
+                        alone = true;
+                        Thread.sleep(60_000);
+                        if (mode.equals("place")) deleteTree(instance.resolve(level));
+                        continue;
+                    }
+                    return Json.map(
+                        "opened",
+                        false,
+                        "seconds",
+                        seconds,
+                        "log",
+                        log.toString(),
+                        "ended",
+                        ended,
+                        "failure",
+                        "The machine ran out of memory for Java (\"There is insufficient memory for the Java Runtime Environment\"), twice: not a fault of the pack. Run again with more free memory, or a smaller --memory.",
+                        "suspects",
+                        List.of(),
+                        "machine",
+                        true
+                    );
+                }
                 List<String> reports = PackChecks.crashReports(instance, wall);
                 return Json.map(
                     "opened",
@@ -918,7 +1143,10 @@ final class PackCheck {
                     "failure",
                     PackChecks.failure(text + "\n" + String.join("\n", reports), loader.failed()),
                     "suspects",
-                    PackChecks.suspects(text, reports, scan, loader, game::clientOnly)
+                    // A start pack-check stopped as stuck: the thread dump says what held the server; the start-up lines before it do not.
+                    ended.startsWith("stuck") || ended.startsWith("probe silent")
+                        ? stuckSuspects(text, reports)
+                        : PackChecks.suspects(text, reports, scan, loader, game::clientOnly)
                 );
             }
         }
@@ -934,18 +1162,39 @@ final class PackCheck {
             Files.createDirectories(log.getParent());
             Process process = new ProcessBuilder(command).directory(instance.toFile()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
             process.getOutputStream().close();
-            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(Integer.parseInt(options.get("timeout", "1200")));
+            // A start is judged by its log, not by the clock: a 400-mod pack legitimately takes many minutes, logging as it
+            // loads, generates and places. It is stuck when its log has said nothing new for --timeout seconds (default 600;
+            // a line it already said, such as a profiler's warning each minute, is no progress; the probe logs its progress
+            // every 30 s, and a stuck start's thread dump names the mod holding the server). A ceiling that grows with the
+            // pack's size still stops one that keeps saying new things forever.
+            long quiet = TimeUnit.SECONDS.toNanos(Integer.parseInt(options.get("timeout", "600")));
+            long ceiling = System.nanoTime() + TimeUnit.SECONDS.toNanos(ceilingSeconds(pack.mods().size()));
+            long lastGrowth = System.nanoTime(), size = 0;
+            Set<String> said = new HashSet<>();
             String ended = "exited";
             List<String> failed = loader.failed();
             long started = 0;
             try {
                 while (process.isAlive()) {
+                    long now = Files.size(log);
+                    if (now > size) {
+                        String added;
+                        try (var in = new RandomAccessFile(log.toFile(), "r")) {
+                            in.seek(size);
+                            byte[] bytes = new byte[(int) Math.min(now - size, 8 << 20)];
+                            in.readFully(bytes);
+                            added = new String(bytes, StandardCharsets.ISO_8859_1);
+                        }
+                        size = now;
+                        if (newLines(added, said)) lastGrowth = System.nanoTime();
+                    }
                     String text = Files.readString(log, StandardCharsets.ISO_8859_1);
                     // The server logged Done but the probe never said it began: waiting out the whole timeout shows nothing more.
                     if (!text.contains("MODACCEL-PROBE-STARTED") && PackChecks.startedLine(text) != null) {
                         if (started == 0) started = System.nanoTime();
                         else if (System.nanoTime() - started > TimeUnit.SECONDS.toNanos(PROBE_SILENT_SECONDS)) {
                             ended = "probe silent " + PROBE_SILENT_SECONDS + " s after the server finished starting";
+                            threadDump(process);
                             stop(process);
                             break;
                         }
@@ -965,8 +1214,14 @@ final class PackCheck {
                         if (!process.waitFor(failure != null ? 15 : keepWorld ? 120 : 0, TimeUnit.SECONDS)) stop(process);
                         break;
                     }
-                    if (System.nanoTime() > deadline) {
-                        ended = "timed out";
+                    if (System.nanoTime() - lastGrowth > quiet) {
+                        ended = "stuck: its log said nothing new for " + quiet / 1_000_000_000L + " s";
+                        threadDump(process);
+                        stop(process);
+                        break;
+                    }
+                    if (System.nanoTime() > ceiling) {
+                        ended = "timed out after " + ceilingSeconds(pack.mods().size()) + " s (the ceiling for " + pack.mods().size() + " mods), still logging";
                         stop(process);
                         break;
                     }
@@ -976,6 +1231,37 @@ final class PackCheck {
                 if (process.isAlive()) stop(process);
             }
             return ended;
+        }
+
+        /**
+         * The game's own threads when a start stopped making progress, as a crash report in the instance's crash-reports
+         * folder (where pack-check reads the reports a failed start leaves), so the mod whose code holds the server thread
+         * is named. From jcmd in the server's own Java; nothing when that has none.
+         */
+        void threadDump(Process process) {
+            try {
+                Path jcmd = context.java().home().resolve("bin").resolve(System.getProperty("os.name").startsWith("Windows") ? "jcmd.exe" : "jcmd");
+                if (!Files.isRegularFile(jcmd)) return;
+                Process dump = new ProcessBuilder(jcmd.toString(), String.valueOf(process.pid()), "Thread.print").redirectErrorStream(true).start();
+                dump.getOutputStream().close();
+                String text = new String(dump.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                dump.waitFor(30, TimeUnit.SECONDS);
+                Path report = instance.resolve("crash-reports").resolve("modaccel-stuck-" + System.currentTimeMillis() + ".txt");
+                Files.createDirectories(report.getParent());
+                Files.writeString(report, stuckReport(text));
+            } catch (Exception unavailable) {
+                /* no dump: the log still says where it stopped */
+            }
+        }
+
+        /** The mods a stuck start's thread dump names, else what its log and reports name. */
+        List<Map<String, Object>> stuckSuspects(String text, List<String> reports) {
+            List<String> dumps = reports.stream().filter(r -> r.contains("pack-check: the server stopped making progress")).toList();
+            if (!dumps.isEmpty()) {
+                var named = PackChecks.suspects("", dumps, scan, loader, game::clientOnly);
+                if (!named.isEmpty()) return named;
+            }
+            return PackChecks.suspects(text, reports, scan, loader, game::clientOnly);
         }
 
         void stop(Process process) throws InterruptedException {
@@ -998,12 +1284,13 @@ final class PackCheck {
             try (var socket = new java.net.ServerSocket(0)) {
                 port = socket.getLocalPort();
             }
-            // max-tick-time of 5 minutes, not 60 s: the probe loads its test area in one tick, and a big pack's world generation
-            // on a busy machine took over 60 s (All the Mods 7 and 10 were stopped that way). A tick that hangs longer still
-            // gets the watchdog's crash report, whose stack names the mod.
+            // No tick watchdog (max-tick-time=-1): a tick of a big pack on a busy machine can legitimately take minutes (one
+            // block placed in All the Mods 10 loaded chunk after chunk on the server thread for over 300 s, and the vanilla
+            // watchdog stopped a server that was still working). A start is judged by its log instead (runServer), and one
+            // that is truly stuck gets a thread dump that names the mod, as the watchdog's report did.
             Files.writeString(
                 instance.resolve("server.properties"),
-                "server-ip=127.0.0.1\nserver-port=" + port + "\nonline-mode=false\nspawn-protection=0\nmax-tick-time=300000\nlevel-name=" + level +
+                "server-ip=127.0.0.1\nserver-port=" + port + "\nonline-mode=false\nspawn-protection=0\nmax-tick-time=-1\nlevel-name=" + level +
                 "\nmotd=modaccel pack-check\n"
             );
             voiceChatPort(instance);
@@ -1030,10 +1317,12 @@ final class PackCheck {
 
         Path instance() throws Exception {
             MessageDigest hash = MessageDigest.getInstance("SHA-256");
-            hash.update((loader.id() + " " + pack.minecraft() + "\n").getBytes(StandardCharsets.UTF_8));
+            // The lane is part of the folder's name: a repair that only drops a file the host no longer serves starts the same
+            // jars as the shipped pack, and two servers side by side must never share a folder.
+            hash.update((lane + loader.id() + " " + pack.minecraft() + "\n").getBytes(StandardCharsets.UTF_8));
             for (Mod mod : pack.mods()) hash.update((mod.file() + "\n").getBytes(StandardCharsets.UTF_8));
             for (Path jar : change.add()) hash.update(("add " + jar.getFileName() + "\n").getBytes(StandardCharsets.UTF_8));
-            for (String jar : change.remove()) hash.update(("remove " + jar + "\n").getBytes(StandardCharsets.UTF_8));
+            for (String jar : change.offServer()) hash.update(("remove " + jar + "\n").getBytes(StandardCharsets.UTF_8));
             Path dir = cache.resolve("instances").resolve(HexFormat.of().formatHex(hash.digest()).substring(0, 16));
             Files.createDirectories(dir);
             // The pack's own settings, fresh each run, layer by layer; its world, if any, is not a test world.
@@ -1048,7 +1337,7 @@ final class PackCheck {
 
         /** The server's mods folder, made again: the jars serverMods keeps, the repair's jars and the probe. */
         ServerMods linkMods() throws IOException {
-            ServerMods chosen = serverMods(pack.mods(), scan, dropped, change.remove());
+            ServerMods chosen = serverMods(pack.mods(), scan, dropped, change.offServer());
             Path mods = instance.resolve("mods");
             deleteTree(mods);
             Files.createDirectories(mods);
@@ -1058,6 +1347,45 @@ final class PackCheck {
             selection = chosen;
             return chosen;
         }
+    }
+
+    /** The longest one start may take however busy its log: 30 minutes, and 8 s more per mod past 100 (ATM-sized packs get about an hour). */
+    static long ceilingSeconds(int mods) {
+        return 1800 + 8L * Math.max(0, mods - 100);
+    }
+
+    /** Whether a piece of log says a line it has not said before, timestamps aside. */
+    static boolean newLines(String added, Set<String> said) {
+        boolean fresh = false;
+        for (String line : added.split("\\R")) {
+            String body = line.replaceFirst("^\\[[0-9:. ]+\\] \\[[^\\]]*\\]:? ?", "").strip();
+            if (!body.isEmpty() && said.add(body)) fresh = true;
+        }
+        return fresh;
+    }
+
+    /**
+     * A thread dump as a crash report: the server thread's stack (and main's, for a start that hung before the server
+     * thread began) under a cause line, so the triage that reads crash reports finds the mod whose code it is in.
+     */
+    static String stuckReport(String dump) {
+        StringBuilder out = new StringBuilder("---- Minecraft Crash Report ----\nDescription: pack-check: the server stopped making progress (a thread dump)\n\n");
+        for (String block : dump.split("\\R\\R")) {
+            String first = block.strip().lines().findFirst().orElse("");
+            // The server thread, main (a start that hung before the server thread began), and the game's workers that run
+            // (a data pack reload that never finishes runs there while main waits for it).
+            boolean worker = first.startsWith("\"Worker-Main") && block.contains("RUNNABLE");
+            if (!first.startsWith("\"Server thread\"") && !first.startsWith("\"main\"") && !worker) continue;
+            out.append("java.lang.IllegalStateException: stuck in ").append(first, 0, first.indexOf('"', 1) + 1).append('\n');
+            block.lines().filter(l -> l.strip().startsWith("at ")).forEach(l -> out.append('\t').append(l.strip()).append('\n'));
+            out.append('\n');
+        }
+        return out.toString();
+    }
+
+    /** The JVM could not get native memory from the machine: HotSpot's own fatal message, which names no code of the pack. */
+    static boolean machineMemory(String log) {
+        return log.contains("There is insufficient memory for the Java Runtime Environment to continue");
     }
 
     /** A port another process held, in the start's own log: Java's bind failure. */
@@ -1080,37 +1408,68 @@ final class PackCheck {
         Pack pack,
         List<Map<String, Object>> fixes,
         PackRepairs.Change change,
-        Future<Map<String, Object>> recheck,
+        Map<String, Object> again,
         ServerLane shipped,
         ServerLane lane
     ) throws Exception {
-        if (fixes.isEmpty()) return Json.map("applied", List.of(), "details", "No finding has a proven repair in knowledge/pack-fixes.json.");
+        if (fixes.isEmpty() || again == null) return Json.map(
+            "applied",
+            List.of(),
+            "comparison",
+            List.of(),
+            "notes",
+            change.notes(),
+            "details",
+            fixes.isEmpty() ? "No finding has a proven repair in knowledge/pack-fixes.json." : "The repairs found nothing to change: " + change.notes()
+        );
         List<Object> applied = new ArrayList<>();
         for (var fix : fixes) {
             var action = Json.object(fix.get("action"));
-            applied.add(Json.map("id", fix.get("id"), "action", action.get("type"), "file", action.get("file"), "mod", action.get("mod"), "page", action.get("page")));
+            applied.add(
+                Json.map(
+                    "id",
+                    fix.get("id"),
+                    "action",
+                    action.get("type"),
+                    "file",
+                    action.get("file"),
+                    "mod",
+                    action.get("mod"),
+                    "page",
+                    action.get("page"),
+                    "hits",
+                    fix.getOrDefault("hits", List.of())
+                )
+            );
         }
-        var result = Json.map("applied", applied);
-        Map<String, Object> again;
-        try {
-            again = recheck.get();
-        } catch (ExecutionException failed) {
-            throw failed.getCause() instanceof Exception e ? e : failed;
-        }
+        var result = Json.map("applied", applied, "notes", change.notes());
         Set<String> targets = new HashSet<>(List.of("server-start", "world-reopen", "probe-error", "dimension-save"));
         for (var fix : fixes) targets.add(Json.text(fix, "check", ""));
         Set<String> before = new HashSet<>();
         for (Object f : findings) if ("problem".equals(Json.object(f).get("severity"))) before.add(Json.object(f).get("kind") + " " + Json.object(f).get("summary"));
+        // The checks the shipped pack's starts never reached (it did not open a world, or not twice) cannot show what the
+        // repair changed: a problem only they find stays in "remaining", but the repair did not bring it.
+        Set<String> unreached = new HashSet<>();
+        var shippedGame = Json.object(shipped.result == null ? Json.map() : shipped.result);
+        boolean shippedOpened = Boolean.TRUE.equals(Json.object(shippedGame.getOrDefault("newWorld", Json.map())).get("opened"));
+        boolean shippedReopened = Boolean.TRUE.equals(Json.object(shippedGame.getOrDefault("reopen", Json.map())).get("opened"));
+        for (var check : PackChecks.ALL) if ((check.stage().equals("new-world") && !shippedOpened) || (check.stage().equals("reopen") && !shippedReopened)) unreached.add(check.id());
+        unreached.add("settled-after-save");
         List<Object> remaining = new ArrayList<>(), introduced = new ArrayList<>();
         for (Object f : lane.found) {
             var finding = Json.object(f);
             if (!"problem".equals(finding.get("severity"))) continue;
             remaining.add(finding);
-            if (targets.contains(finding.get("kind")) || !before.contains(finding.get("kind") + " " + finding.get("summary"))) introduced.add(finding);
+            boolean target = targets.contains(finding.get("kind"));
+            boolean fresh = !before.contains(finding.get("kind") + " " + finding.get("summary")) && !unreached.contains(String.valueOf(finding.get("kind")));
+            if (target || fresh) introduced.add(finding);
         }
         boolean opened = Boolean.TRUE.equals(Json.object(again.getOrDefault("newWorld", Json.map())).get("opened"));
         boolean reopened = Boolean.TRUE.equals(Json.object(again.getOrDefault("reopen", Json.map())).get("opened"));
-        boolean proven = opened && reopened && introduced.isEmpty();
+        // A start whose probe stopped before it placed and read back the blocks proves nothing about them.
+        boolean checked = Json.object(again.getOrDefault("newWorld", Json.map())).get("probe") instanceof Map<?, ?> placed && placed.get("error") == null &&
+            Json.object(again.getOrDefault("reopen", Json.map())).get("probe") instanceof Map<?, ?> read && read.get("error") == null;
+        boolean proven = opened && reopened && checked && introduced.isEmpty();
         result.put("comparison", compare(shipped.found, lane.found, targets));
         result.put("recheck", again);
         result.put("recheckFindings", lane.found);
@@ -1143,13 +1502,15 @@ final class PackCheck {
             Json.save(record, Json.map("mods", mods.toString(), "added", added, "removed", removed));
             result.put("changed", mods.toString());
             result.put("undo", "modaccel pack-check --pack \"" + pack.input() + "\" --undo");
+            if (!change.serverOnly().isEmpty()) result.put("server", "A server of this pack must leave out " + change.serverOnly() + "; this instance keeps them for play.");
         } else {
             Path fixed = fixedCopy(pack, change);
             result.put("fixedExport", fixed.toString());
             result.put(
                 "import",
                 "Import the fixed file in your launcher, or in the instance add " + change.add().stream().map(p -> p.getFileName().toString()).toList() +
-                (change.remove().isEmpty() ? "" : " and remove " + change.remove()) + " in mods/."
+                (change.remove().isEmpty() ? "" : " and remove " + change.remove()) + " in mods/." +
+                (change.serverOnly().isEmpty() ? "" : " A server of this pack must leave out " + change.serverOnly() + (pack.format().equals("mrpack") ? " (the fixed .mrpack marks them so)." : "."))
             );
         }
         return result;
@@ -1174,11 +1535,20 @@ final class PackCheck {
         String extension = name.toLowerCase(Locale.ROOT).endsWith(".mrpack") ? ".mrpack" : ".zip";
         Path fixed = report.directory.resolve(name.replaceFirst("(?i)\\.(zip|mrpack)$", "") + " (modaccel fixed)" + extension);
         Files.createDirectories(fixed.getParent());
-        Set<String> projects = new HashSet<>(), indexPaths = new HashSet<>();
+        Set<String> projects = new HashSet<>(change.dropped()), indexPaths = new HashSet<>(), serverless = new HashSet<>();
         for (Mod mod : pack.mods()) if (change.remove().contains(mod.file())) {
             if (mod.source().startsWith("curseforge ")) projects.add(mod.source().substring("curseforge ".length()).split(",")[0]);
             if (mod.source().startsWith("modrinth-index ")) indexPaths.add(mod.source().substring("modrinth-index ".length()).split(",")[0]);
         }
+        for (Mod mod : pack.mods()) if (change.serverOnly().contains(mod.file()) && mod.source().startsWith("modrinth-index ")) serverless.add(
+            mod.source().substring("modrinth-index ".length()).split(",")[0]
+        );
+        // A CurseForge file that stands in for an unavailable one goes in the manifest by its project and file, not as a copy.
+        Map<String, Map<String, Object>> substitutes = new LinkedHashMap<>();
+        for (var source : change.sources().values()) if (source.get("curseforge") instanceof Map<?, ?> cf) substitutes.put(
+            cf.get("project") + "/" + Json.object(source).get("stands"),
+            Json.object(cf)
+        );
         Map<String, byte[]> entries = new LinkedHashMap<>();
         if (Files.isRegularFile(pack.input())) try (var in = new ZipInputStream(Files.newInputStream(pack.input()))) {
             for (ZipEntry entry; (entry = in.getNextEntry()) != null;) if (!entry.isDirectory()) entries.put(entry.getName(), in.readAllBytes());
@@ -1192,19 +1562,42 @@ final class PackCheck {
                 String path = entry.getKey();
                 byte[] bytes = entry.getValue();
                 if (path.matches("(server-)?overrides/mods/[^/]+\\.jar") && change.remove().contains(path.substring(path.lastIndexOf('/') + 1))) continue;
-                if (path.equals("manifest.json") && !projects.isEmpty()) {
+                // A jar the pack carries itself that a server must leave out moves to client-overrides, which only a client installs.
+                if (path.matches("(server-)?overrides/mods/[^/]+\\.jar") && entries.containsKey("modrinth.index.json") && change.serverOnly().contains(path.substring(path.lastIndexOf('/') + 1))) {
+                    path = "client-overrides/mods/" + path.substring(path.lastIndexOf('/') + 1);
+                }
+                if (path.equals("manifest.json") && (!projects.isEmpty() || !substitutes.isEmpty())) {
                     var manifest = Json.object(Json.parse(new String(bytes, StandardCharsets.UTF_8)));
                     List<Object> kept = new ArrayList<>();
-                    for (Object f : Json.array(manifest.get("files"))) if (
-                        !projects.contains(Json.object(f).get("projectID") + "/" + Json.object(f).get("fileID"))
-                    ) kept.add(f);
+                    for (Object f : Json.array(manifest.get("files"))) {
+                        var file = Json.object(f);
+                        String key = file.get("projectID") + "/" + file.get("fileID");
+                        if (projects.contains(key)) continue;
+                        var stand = substitutes.get(key);
+                        if (stand != null) {
+                            file = new LinkedHashMap<>(file);
+                            file.put("fileID", stand.get("file"));
+                            file.remove("downloadUrl");
+                        }
+                        kept.add(file);
+                    }
                     manifest.put("files", kept);
                     bytes = Json.write(manifest).getBytes(StandardCharsets.UTF_8);
                 }
                 if (path.equals("modrinth.index.json")) {
                     var index = Json.object(Json.parse(new String(bytes, StandardCharsets.UTF_8)));
                     List<Object> kept = new ArrayList<>();
-                    for (Object f : Json.array(index.get("files"))) if (!indexPaths.contains(Json.text(Json.object(f), "path", ""))) kept.add(f);
+                    for (Object f : Json.array(index.get("files"))) {
+                        var file = Json.object(f);
+                        if (indexPaths.contains(Json.text(file, "path", ""))) continue;
+                        if (serverless.contains(Json.text(file, "path", ""))) {
+                            file = new LinkedHashMap<>(file);
+                            var env = new LinkedHashMap<>(Json.object(file.getOrDefault("env", Json.map("client", "required"))));
+                            env.put("server", "unsupported");
+                            file.put("env", env);
+                        }
+                        kept.add(file);
+                    }
                     for (Path jar : change.add()) {
                         var source = change.sources().getOrDefault(jar.getFileName().toString(), Map.of());
                         byte[] content = Files.readAllBytes(jar);
@@ -1234,6 +1627,7 @@ final class PackCheck {
             // Other archives carry it in overrides/mods/, which launchers put into the instance's mods folder on import.
             for (Path jar : change.add()) {
                 if (entries.containsKey("modrinth.index.json")) continue;
+                if (change.sources().getOrDefault(jar.getFileName().toString(), Map.of()).get("curseforge") != null && entries.containsKey("manifest.json")) continue;
                 out.putNextEntry(new ZipEntry(overrides + "/mods/" + jar.getFileName()));
                 Files.copy(jar, out);
                 out.closeEntry();
@@ -1303,8 +1697,9 @@ final class PackCheck {
             out.append('\n');
         }
         if (result.get("fix") instanceof Map<?, ?> fix) {
-            out.append("Repair: ").append(fix.get("applied")).append('\n');
-            for (Object row : Json.array(fix.get("comparison"))) {
+            out.append("Repair: ").append(fix.get("applied") instanceof List<?> l ? l.size() + " repair(s)" : "none").append('\n');
+            if (fix.get("notes") instanceof List<?> notes) for (Object note : notes) out.append("  ").append(note).append('\n');
+            for (Object row : Json.array(fix.get("comparison") == null ? List.of() : fix.get("comparison"))) {
                 var r = Json.object(row);
                 out.append("  ").append(r.get("check")).append(": shipped ").append(r.get("shipped")).append(" problem(s), repaired ").append(r.get("repaired")).append('\n');
             }
