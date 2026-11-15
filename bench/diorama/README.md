@@ -5,7 +5,81 @@ client through `modaccel eval`. They target Diorama 0.10.1, commit
 `7aa1484cd5dfe4ec19d246a58fb23bbc48a8bc6e`, on Fabric / Minecraft 1.21.1.
 They require that source checkout and its JDK 25 build environment.
 
-Start a visible development client with `modaccel perf --root DIORAMA_SOURCE
+## Measure ordinary play and decide a change
+
+`play/` measures what Diorama costs while a player flies over new land with the minimap
+showing, in hidden test clients, and decides a candidate patch with `modaccel perf-optimize`.
+
+```sh
+git clone https://github.com/SunkenInTime/diorama .runs/diorama
+git -C .runs/diorama checkout 7aa1484cd5dfe4ec19d246a58fb23bbc48a8bc6e
+python bench/diorama/play/prepare_world.py --root .runs/diorama
+./modaccel perf-optimize --root .runs/diorama --experiment bench/diorama/play/experiment.json \
+  --patch CANDIDATE.diff --runs 6 --label NAME --session NAME --dry-run
+```
+
+- `prepare_world.py` creates the save every launch copies (`.runs/diorama-play/diorama-play`):
+  `create-world.java` (fixed seed, creative, no mobs, time and weather frozen), then one
+  flight over the whole path so every chunk is generated and saved.
+- Each launch starts with Diorama's map folder deleted (`reset`) and the production JIT
+  (`"jit": "full"`) and turns server saving off (`save-off.java`). Right before the cold capture
+  `fly.java` flies east for 30 s, right before the warm capture south for 30 s, at 16 blocks/s
+  (`measure.before`), so each 60 s window holds its whole flight and 30 s of settling.
+- The metric is Diorama's live-mapping CPU: its baker threads and the render thread. The save
+  import is a background job that takes whatever time the bakers leave, so in a fixed window it
+  hides savings; it and Diorama's all-thread CPU are scopes. Scopes also report the GPU mesher,
+  spawn spots, tint blends, shadow casters, the save import, tile writes, mipmaps and the
+  fog mask as inclusive sampled CPU, and minimap render, radar, waypoint layout, session tick
+  and map update as mean milliseconds per call (`scopes.json` probes).
+- Gates: `bake-digest.java` digests the GPU mesh, the traced image (full and partial over saved
+  pixels), every mip level, spawn spots with and without saved spots, the GPU merge and the
+  tints of six tiles along the path, read from the experiment's own frozen copy of the region
+  files (`files`), so it is identical between launches. `tints-live.java` requires every tint
+  the live map holds to equal a fresh blend; `mapped.java` requires the flight to have ended
+  with GPU-baked tiles.
+- `bake-bench.java` times those functions in one client (descriptive), and `toggle-bench.java`
+  compares switchable variants of one build in the same JVM with randomized order.
+
+### Exact optimizations for ordinary play
+
+Apply in order to a clean checkout of the pinned commit; together they are the change
+`perf-optimize` accepted (its run is in `coverage/perf-runs.json`, summarised by
+`python bench/perf_sessions.py --session diorama-10x`):
+
+```sh
+git -C DIORAMA_SOURCE apply bench/diorama/tint-carry-over.patch
+git -C DIORAMA_SOURCE apply bench/diorama/dirty-only-gpu-spots.patch
+```
+
+- `tint-carry-over.patch`: a chunk snapshot that replaces another (light updates do this all the
+  time) adopts its blended biome tints when everything the blend reads is identical: the same
+  biome containers for the chunk and its neighbours, column tops, zoom seed, blend radius and
+  colour resolvers. Tint blends fall about threefold.
+- `dirty-only-gpu-spots.patch`: GPU bakes draw whole tiles, and the spawn-spot pass after them
+  re-picked every sample. When a tile's stored spots came from its previous live bake (same
+  store, colour generation and ray start height), only the dirty blocks are picked again. An
+  instrumented build that also ran the whole pick found 444 of 444 incremental picks identical.
+
+Measured with six paired launches (`experiment.json`, production JIT, hidden clients):
+
+| Scope | Cold | Warm |
+|---|---|---|
+| Live mapping CPU (decision metric) | 1.38× (95% 1.09–1.86) | 1.32× (1.02–1.77) |
+| All Diorama threads | 1.34× (1.00–1.92) | 1.27× (1.02–1.57) |
+| Spawn spots | 1.85× (1.32–2.70) | 1.75× (1.43–2.15) |
+| Tint blends | 3.16× (2.52–4.11) | 2.71× (2.31–3.33) |
+| GPU mesher | 1.24× (0.84–1.97) | 1.20× (0.94–1.54) |
+
+Every gate was identical in every launch. Minimap drawing, radar and waypoint layout cost well
+under a millisecond a call before and after and are not changed. On a machine at full load the
+patched build showed more long time-to-safepoint pauses on baker threads in some runs (0–12 over
+250 ms per flight, against 1–2 unpatched); confirm on an idle machine before distributing.
+
+Hidden clients present about 8 frames a second whatever `maxFps` and vsync say, so frame-driven
+work (minimap drawing, GPU tile readback) runs less often than in a visible game; the per-call
+render scopes stay comparable, totals per second do not. Measure frames visibly with `perf`.
+
+Start a development client with `modaccel perf --root DIORAMA_SOURCE
 --project :1.21.1`, enter a **disposable mapped world**, and allow initial mapping
 to settle. Then, from the Mod Accel checkout:
 

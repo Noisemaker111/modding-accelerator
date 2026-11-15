@@ -31,13 +31,50 @@ final class Performance {
                 "jvmArgument", "-javaagent:" + agent + "=" + request,
                 "details", "Add the JVM argument in your launcher. After the capture completes, run perf-report --file \"" + out + "\".");
         }
+        long started = System.nanoTime();
+        PerfRecord record = new PerfRecord("perf", options);
+        record.record.put("source", out.toString());
         String pid = select(home, options, receipt);
+        record.sampleLoad("before capture");
+        record.step("setup", "attach", (System.nanoTime() - started) / 1e9);
+        long captured = System.nanoTime();
         capture(pid, agent, request, out, seconds, warmup, !options.has("json"));
+        double captureSeconds = (System.nanoTime() - captured) / 1e9;
+        record.step("warmup", "capture warmup", Math.min(warmup, captureSeconds));
+        record.step("measure", "capture", Math.max(0, captureSeconds - warmup));
         String instance = options.get("instance", properties(out.resolve("environment.properties")).getProperty("user.dir", ""));
         if (!instance.isBlank()) Json.save(out.resolve("inventory.json"), inventory(Path.of(instance)));
+        long reported = System.nanoTime();
         Map<String, Object> result = PerfReport.write(out, out);
+        record.step("other", "report", (System.nanoTime() - reported) / 1e9);
         result.put("pid", pid);
+        observed(record, Json.read(out.resolve("report.json")));
+        record.finish("observed", null);
+        result.put("record", record.save(home, out).toString());
         return result;
+    }
+
+    /** What a plain capture adds to its run record: the mod it ranked first as yours, its cost and the patterns its hotspots match. */
+    static void observed(PerfRecord record, Map<String, Object> report) {
+        Map<String, Object> attribution = Json.object(report.getOrDefault("attribution", Map.of()));
+        for (Object item : Json.array(attribution.getOrDefault("mods", List.of()))) {
+            Map<String, Object> mod = Json.object(item);
+            if (!Boolean.TRUE.equals(mod.get("yourMod"))) continue;
+            record.mod(Json.text(mod, "id", ""), "", "");
+            List<Object> hot = new ArrayList<>();
+            double total = ((Number) mod.getOrDefault("samples", 1)).doubleValue();
+            for (Object m : Json.array(mod.getOrDefault("methods", List.of()))) {
+                if (hot.size() == 5) break;
+                Map<String, Object> method = Json.object(m);
+                hot.add(Json.map("method", method.get("name"), "share", ((Number) method.get("samples")).doubleValue() / Math.max(1, total)));
+            }
+            record.record.put("cost", Json.map("sampledCpuMsPerSecond", mod.get("sampledCpuMsPerSecond"), "perFrameMs", mod.get("perFrameMs"),
+                "perTickMs", mod.get("perTickMs"), "hotspots", hot));
+            break;
+        }
+        List<Object> ids = new ArrayList<>();
+        for (Object item : Json.array(report.getOrDefault("patterns", List.of()))) ids.add(Json.object(item).get("pattern"));
+        record.record.put("patterns", ids);
     }
 
     static String text(Map<String, Object> result) {
@@ -131,7 +168,7 @@ final class Performance {
         return matching.get(0);
     }
 
-    /** The visible source session for --root, started when none runs. */
+    /** The source session for --root, started when none runs; hidden when the background preference is on. */
     static Map<String, Object> rootSession(Path home, Modaccel.Options options, Modaccel.Report receipt) throws Exception {
         ProjectModel project = new ProjectModel(Path.of(options.get("root", ".")));
         project.requireGradleBuild();
@@ -143,8 +180,6 @@ final class Performance {
                 game = new Game(build, build.model(options.has("refresh"), false));
                 session = game.start(options, game.fingerprint());
             }
-            if (Boolean.TRUE.equals(session.get("background"))) throw new IOException(
-                "This source session is throttled/hidden. Run game-stop for this project, then perf --root again to launch visibly.");
             return session;
         }
     }
@@ -213,7 +248,8 @@ final class Performance {
             properties.setProperty("modPackages", value);
         }
         properties.setProperty("heap", options.has("no-heap") ? "off" : "on");
-        if (options.has("allow-hidden")) properties.setProperty("allowHidden", "true");
+        // --root profiles the session modaccel started with the user's own window preference.
+        if (options.has("allow-hidden") || options.values.containsKey("root")) properties.setProperty("allowHidden", "true");
         try (Writer writer = Files.newBufferedWriter(request)) { properties.store(writer, "Mod Accel capture request"); }
     }
 
@@ -283,7 +319,15 @@ final class Performance {
         long deadline = System.nanoTime() + (seconds + warmup + 90L) * 1_000_000_000;
         String previous = "";
         while (System.nanoTime() < deadline) {
-            Properties status = properties(out.resolve("status.properties"));
+            Properties status;
+            try {
+                status = properties(out.resolve("status.properties"));
+            } catch (IOException replacing) {
+                // The agent replaces the file as the state moves on; on Windows a read in that moment
+                // finds no file. The next look sees the new one.
+                Thread.sleep(250);
+                continue;
+            }
             String state = status.getProperty("state", "attaching");
             if (!state.equals(previous) && progress) System.err.println("perf: " + state + " — " + out);
             previous = state;

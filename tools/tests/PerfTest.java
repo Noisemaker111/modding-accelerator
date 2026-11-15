@@ -15,9 +15,22 @@ public final class PerfTest {
         optimizerGates();
         modTemplates();
         check(Run.running(ProcessHandle.current()), "current process is running");
+        Path modRoot = Path.of("/work/mymod").toAbsolutePath();
+        check(PerfAttribution.underRoot(modRoot.resolve("versions/1.21.1/build/classes/java/main"), modRoot), "the mod's own build output is the mod");
+        check(!PerfAttribution.underRoot(modRoot.resolve(".gradle/loom-cache/remapped_mods/fabric-api.jar"), modRoot),
+            "dependencies Loom remaps inside the checkout are not the mod");
+        Path copySource = Path.of("/elsewhere/copy-source").toAbsolutePath();
+        Map<String, Object> copied = Json.map("root", copySource.toString(), "pid", Long.MAX_VALUE - 7, "processStart", "2026-01-01T00:00:00Z");
+        check(!Game.foreign(copied, Path.of("/here")), "a copied checkout's exited session does not block this project");
+        Map<String, Object> running = Json.map("root", copySource.toString(), "pid", ProcessHandle.current().pid(),
+            "processStart", ProcessHandle.current().info().startInstant().map(java.time.Instant::toString).orElse(""));
+        check(Game.foreign(running, Path.of("/here")), "another project's running game is still refused");
+        check(!Game.foreign(running, copySource), "this project's own session is not foreign");
         check(Run.exitedProcStat("123 (name with ) spaces) Z 1 2 3"), "unreaped Linux exits are not running games");
         check(!Run.exitedProcStat("123 (java) S 1 2 3"), "sleeping Linux process remains live");
         Path home = Path.of(args[0]);
+        runRecords(home);
+        patternLibrary(home);
         Path scratch = Files.createTempDirectory(Path.of(args[1]).toAbsolutePath().getParent(), "perf-fixture-");
         Modaccel.Report receipt = new Modaccel.Report(scratch, "perf-test");
         Path agent = Performance.agent(home, receipt);
@@ -147,6 +160,13 @@ public final class PerfTest {
             process.destroy();
             if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) process.destroyForcibly();
         }
+        allocationCharges(scratch, jdk, agent);
+        Path rooted = scratch.resolve("rooted");
+        Files.createDirectories(rooted);
+        Path rootRequest = Performance.request(rooted, 1, 0, false);
+        Performance.attribution(rootRequest, new Modaccel.Options(new String[]{"perf", "--root", scratch.toString()}));
+        check(Performance.properties(rootRequest).getProperty("allowHidden", "").equals("true"),
+            "perf --root profiles the game it started the way the background preference says, hidden or not");
         check(PerfReport.percentile(List.of(1.0, 2.0, 3.0, 4.0), .5) == 2.5, "linear percentile");
         check(Performance.candidate("net.fabricmc.loader.impl.launch.knot.KnotClient"), "recognize Fabric");
         check(Performance.candidate("cpw.mods.bootstraplauncher.BootstrapLauncher"), "recognize Forge bootstrap launcher");
@@ -163,6 +183,61 @@ public final class PerfTest {
         rconProtocol();
         System.out.println(checks + " performance checks passed (synthetic JVM fixture; no Minecraft claims)");
     }
+    /**
+     * The game thread allocates 3 GB before the capture, then a mod allocates about 20 MB/s and has a cheap method under a
+     * timing probe. JFR's first allocation sample on that thread carries the 3 GB, and the probe's own bookkeeping allocates
+     * inside the mod's method: neither is the mod's.
+     */
+    static void allocationCharges(Path scratch, Path jdk, Path agent) throws Exception {
+        Path classes = scratch.resolve("allocation"), mod = scratch.resolve("allocation-mod");
+        List<Path> sources = List.of(
+            fixture(classes, "net/minecraft/server/Warm.java", "package net.minecraft.server; public class Warm { static volatile Object sink; "
+                + "public static void fill() { for (int i = 0; i < 3000; i++) sink = new byte[1 << 20]; } "
+                + "public static void main(String[] args) throws Exception { Thread server = new Thread(() -> { fill(); System.out.println(\"READY\"); long sum = 0; "
+                + "while (true) { com.example.alloc.Spawner.tick(); for (int i = 0; i < 2000; i++) sum += com.example.alloc.Spawner.tiny(i); "
+                + "try { Thread.sleep(12); } catch (InterruptedException stop) { return; } } }, \"Server thread\"); server.start(); server.join(); } }"),
+            fixture(classes, "com/example/alloc/Spawner.java", "package com.example.alloc; public class Spawner { static volatile Object sink; "
+                + "public static void tick() { sink = new byte[256 * 1024]; } public static int tiny(int x) { return x + 1; } }"));
+        List<String> javac = new ArrayList<>(List.of(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "javac.exe" : "javac")).toString(),
+            "--release", "17", "-d", classes.toString()));
+        for (Path file : sources) javac.add(file.toString());
+        Run.Result compilation = Run.command(javac, classes, Map.of(), classes.resolve("compile.log"), 30);
+        check(compilation.exit() == 0, "allocation fixture compilation: " + Run.tail(compilation.log()));
+        Files.createDirectories(mod.resolve("com/example"));
+        Files.move(classes.resolve("com/example/alloc"), mod.resolve("com/example/alloc"));
+        Files.writeString(mod.resolve("fabric.mod.json"), "{\"schemaVersion\":1,\"id\":\"allocmod\",\"name\":\"Alloc Mod\",\"version\":\"1\"}");
+        Path log = scratch.resolve("allocation.log");
+        Process process = new ProcessBuilder(jdk.resolve("bin/" + (Runtimes.WINDOWS ? "java.exe" : "java")).toString(), "-Xmx256m",
+            "-cp", classes + File.pathSeparator + mod, "net.minecraft.server.Warm").redirectErrorStream(true).redirectOutput(log.toFile()).start();
+        try {
+            long deadline = System.nanoTime() + 60_000_000_000L;
+            while (!Files.readString(log).contains("READY")) {
+                check(process.isAlive() && System.nanoTime() < deadline, "allocation fixture starts: " + Files.readString(log));
+                Thread.sleep(100);
+            }
+            Path out = scratch.resolve("allocation-capture");
+            Files.createDirectories(out);
+            Path request = Performance.request(out, 2, 0, false);
+            Path probes = scratch.resolve("allocation-probes.json");
+            Json.save(probes, Json.map("probes", List.of(Json.map("class", "com.example.alloc.Spawner", "method", "tiny", "descriptor", "(I)I",
+                "label", "tiny", "mode", "timing"))));
+            Performance.probes(request, new Modaccel.Options(new String[]{"perf", "--probes", probes.toString()}));
+            Performance.capture(Long.toString(process.pid()), agent, request, out, 2, 0, false);
+            PerfReport.write(out, out);
+            Map<String, Object> attribution = Json.object(Json.read(out.resolve("report.json")).get("attribution"));
+            Map<String, Object> charged = Json.array(attribution.get("mods")).stream().map(Json::object)
+                .filter(m -> m.get("id").equals("allocmod")).findFirst().orElseThrow(() -> new AssertionError("allocation fixture mod identified"));
+            double modRate = ((Number) charged.get("allocationBytesPerSecond")).doubleValue();
+            check(modRate > 1e6 && modRate < 200e6,
+                "a mod is charged what it allocates in the capture (about 20 MB/s), not the 3 GB its thread allocated before it: " + Math.round(modRate / 1e6) + " MB/s");
+            double profilerRate = ((Number) Json.object(attribution.get("profilerOverhead")).get("allocationBytesPerSecond")).doubleValue();
+            check(profilerRate > 1e6, "a timing probe's own allocation is profiler overhead, not the mod's: " + Math.round(profilerRate / 1e6) + " MB/s");
+        } finally {
+            process.destroy();
+            if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) process.destroyForcibly();
+        }
+    }
+
     static Path fixture(Path scratch, String name, String text) throws IOException {
         Path file = scratch.resolve(name);
         Files.createDirectories(file.getParent());
@@ -215,6 +290,71 @@ public final class PerfTest {
             "crowd cleanup removes only the tagged entities");
     }
 
+    /** Every session run writes the same record shape; phases, verdicts and rejection reasons are checked. */
+    static void runRecords(Path home) throws Exception {
+        PerfRecord record = new PerfRecord("perf-optimize", null);
+        record.record.put("candidate", Json.map("label", "tints", "diffSha256", "ab12", "changedFiles", List.of()));
+        Map<String, Object> launch = Json.map("stages", List.of(Json.map("name", "metadata", "seconds", 20.0), Json.map("name", "compile", "seconds", 30.0),
+            Json.map("name", "game-start", "seconds", 40.0)), "result", Json.map("modsLoaded", Json.map("loader", "fabric",
+            "mods", List.of(Json.map("id", "diorama", "loadedVersion", "0.10.1")))));
+        record.launchStages("baseline-launch", launch, 95.0);
+        record.modFromLaunch(launch);
+        check(((Number) record.phases.get("build")).doubleValue() == 50.0 && ((Number) record.phases.get("launch")).doubleValue() == 45.0,
+            "a launch splits into its build stages and the rest");
+        check("diorama".equals(Json.object(record.record.get("mod")).get("id")) && "fabric".equals(Json.object(record.record.get("mod")).get("loader")),
+            "the record names the loaded mod and loader from the launch receipt");
+        record.step("nonsense", "x", 1.0);
+        check(((Number) record.phases.get("other")).doubleValue() == 1.0, "an unknown phase counts as other");
+        Map<String, Object> result = Json.map("speedup", Json.map("cold", Json.map("geometricMean", 1.0, "low", 0.9, "high", 1.1),
+            "warm", Json.map("geometricMean", 1.2, "low", 1.1, "high", 1.3)), "gates", List.of(Json.map("name", "bakes", "passed", false, "failures", List.of("run 0 differs"))));
+        String why = PerfRecord.rejection(result);
+        check(why.contains("gate bakes failed") && why.contains("cold speedup") && !why.contains("warm speedup"), "a rejection names every failed gate and interval: " + why);
+        Map<String, Object> done = record.finish("rejected", why);
+        check(PerfRecord.validate(done).isEmpty(), "a complete rejected record validates: " + PerfRecord.validate(done));
+        done.put("verdict", "accepted");
+        check(PerfRecord.validate(done).stream().anyMatch(p -> p.contains("speedup.cold.low")), "an accepted record needs both intervals above 1");
+        done.put("candidate", null);
+        check(PerfRecord.validate(done).stream().anyMatch(p -> p.contains("candidate")), "a comparison names its candidate");
+        if (Files.isRegularFile(home.resolve("coverage/perf-runs.json"))) {
+            for (Object item : Json.array(Json.read(home.resolve("coverage/perf-runs.json")).get("runs"))) {
+                Map<String, Object> kept = Json.object(item);
+                check(PerfRecord.validate(kept).isEmpty(), "kept run " + kept.get("id") + " validates: " + PerfRecord.validate(kept));
+            }
+        }
+    }
+
+    /**
+     * knowledge/perf-patterns.json: each pattern is complete, cites an accepted kept run, and its symptom
+     * fires on its own test row and stays quiet on the other, as each port rule carries a test.
+     */
+    static void patternLibrary(Path home) throws Exception {
+        Map<String, Object> mod = Json.map("id", "m", "samples", 100, "methods", List.of(Json.map("name", "a.Tints.blend(La/Snap;)V", "samples", 30),
+            Json.map("name", "a.Other.run()V", "samples", 70)), "threads", List.of(Json.map("name", "worker-1", "samples", 90)));
+        Map<String, Object> symptom = Json.map("text", "t", "when", List.of(Json.map("in", "methods", "matches", "\\.blend\\(", "minShare", 0.2),
+            Json.map("in", "threads", "matches", "^worker", "minShare", 0.5)));
+        check(PerfPatterns.evidence(symptom, mod) != null, "every clause holding matches");
+        Map<String, Object> strict = Json.map("text", "t", "when", List.of(Json.map("in", "methods", "matches", "\\.blend\\(", "minShare", 0.5)));
+        check(PerfPatterns.evidence(strict, mod) == null, "a share below minShare does not match");
+        Map<String, Object> pattern = Json.map("id", "reuse-x", "symptom", symptom, "change", "c", "gain", Json.map("scope", "s",
+            "cold", Json.map("geometricMean", 1.5, "low", 1.2, "high", 1.8), "warm", Json.map("geometricMean", 1.4, "low", 1.1, "high", 1.7)),
+            "gate", Json.map("name", "g", "compare", "exact"), "provenIn", Json.map("mod", "m", "version", "1", "loader", "fabric", "scope", "s", "record", "r1"),
+            "test", Json.map("fires", mod, "quiet", Json.map("id", "q", "samples", 100, "methods", List.of(Json.map("name", "a.Other.run()V", "samples", 100)))));
+        check(PerfPatterns.validate(Json.map("schema", 1, "patterns", List.of(pattern)), Set.of("r1")).isEmpty(), "a complete pattern validates");
+        check(PerfPatterns.validate(Json.map("schema", 1, "patterns", List.of(pattern)), Set.of()).stream().anyMatch(p -> p.contains("not an accepted run")),
+            "a pattern must cite an accepted kept run");
+        Map<String, Object> wrongTest = new LinkedHashMap<>(pattern);
+        wrongTest.put("test", Json.map("fires", Json.map("id", "q", "samples", 1, "methods", List.of()), "quiet", mod));
+        List<String> problems = PerfPatterns.validate(Json.map("schema", 1, "patterns", List.of(wrongTest)), Set.of("r1"));
+        check(problems.stream().anyMatch(p -> p.contains("test.fires")) && problems.stream().anyMatch(p -> p.contains("test.quiet")), "a pattern's own test must fire and stay quiet");
+        List<Object> matched = PerfPatterns.match(List.of(pattern), Json.map("mods", List.of(mod)));
+        check(matched.size() == 1 && "reuse-x".equals(Json.object(matched.get(0)).get("pattern")), "a capture showing the symptom names the pattern");
+        Path library = PerfPatterns.file(home);
+        if (Files.isRegularFile(library)) {
+            List<String> found = PerfPatterns.validate(Json.read(library), PerfPatterns.acceptedRecords(home));
+            check(found.isEmpty(), "knowledge/perf-patterns.json: " + String.join("; ", found));
+        }
+    }
+
     static void optimizerGates() throws Exception {
         Map<String, Object> speed = PerfOptimize.speedup(List.of(2.0, 2.0, 2.0, 2.0), 1);
         check(Math.abs(((Number) speed.get("geometricMean")).doubleValue() - 2) < 1e-9 && ((Number) speed.get("low")).doubleValue() > 1.99,
@@ -244,6 +384,12 @@ public final class PerfTest {
         javax.imageio.ImageIO.write(image, "png", dir.resolve("b.png").toFile());
         Map<String, Object> diff = PerfOptimize.pixels(dir.resolve("a.png"), dir.resolve("b.png"));
         check(((Number) diff.get("differentPixels")).longValue() == 1 && ((Number) diff.get("maxChannelDelta")).intValue() == 1, "one changed channel value is a visible difference");
+        Map<String, Object> report = Json.map("seconds", 10.0, "recording", "r", "attribution", Json.map("samplePeriodMs", 10, "mods", List.of(Json.map("id", "m",
+            "sampledCpuMsPerSecond", 30.0, "threads", List.of(Json.map("name", "m-baker-1", "samples", 20), Json.map("name", "m-import", "samples", 10)),
+            "inclusiveMethods", List.of(Json.map("name", "a.Mesher.build(I)V", "samples", 12, "cpuMsPerSecond", 12.0))))));
+        check(PerfOptimize.metric(report, Json.map("mod", "m")) == 30.0, "a mod metric is its whole sampled CPU");
+        check(PerfOptimize.metric(report, Json.map("mod", "m", "threads", "^m-baker")) == 20.0, "a thread filter counts only matching threads");
+        check(PerfOptimize.metric(report, Json.map("mod", "m", "method", "Mesher.build")) == 12.0, "a method scope is its inclusive CPU");
         boolean refused = false;
         try { PerfOptimize.validate(Json.map("schema", 1, "measure", Json.map("metric", Json.map("probe", "x")), "gates", List.of())); }
         catch (IllegalArgumentException expected) { refused = true; }

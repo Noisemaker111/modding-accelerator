@@ -27,6 +27,10 @@ final class Convert {
     final Set<String> accessTransformers = new LinkedHashSet<>();
     static final String AT_FILE = "src/main/resources/META-INF/accesstransformer.cfg";
     String modid = "", fabricId = "", unit = "\t";
+    /** --dry-run: files change here, never on disk; null is a removed file. */
+    boolean dryRun;
+    final Map<String, String> staged = new HashMap<>();
+    static final Pattern SOURCE = Pattern.compile("src/([^/]+)/java/.+\\.java");
 
     /**
      * A Fabric access widener (or class tweaker) as NeoForge access transformer lines, by the two loaders' own formats:
@@ -227,12 +231,13 @@ final class Convert {
         this.project = build.project;
     }
 
-    /** True in the copy a dry run converts. */
-    boolean previewing;
-
     Map<String, Object> run(Modaccel.Options options) throws Exception {
+        return run(options, true);
+    }
+
+    /** compile false writes the conversion without compiling it (self-test, which has no network). */
+    Map<String, Object> run(Modaccel.Options options, boolean compile) throws Exception {
         if (options.values.containsKey("undo")) return Port.undo(project, options.get("undo", ""), FOLDER);
-        if (options.has("dry-run") && !previewing) return preview(options);
         String to = options.get("to", "").toLowerCase(Locale.ROOT);
         String from = loader(project.root);
         if (from == null) throw new IOException(
@@ -270,16 +275,19 @@ final class Convert {
             "Minecraft " + minecraft + ", read from the NeoForge release in gradle.properties (NeoForge numbers its releases by the Minecraft version)."
         );
         gameVersion = minecraft;
-        transaction = project.state().resolve(FOLDER).resolve(Instant.now().toString().replace(':', '-'));
-        Files.createDirectories(transaction.resolve("before"));
-        saveInProgress();
+        dryRun = options.has("dry-run");
+        if (!dryRun) {
+            transaction = project.state().resolve(FOLDER).resolve(Instant.now().toString().replace(':', '-'));
+            Files.createDirectories(transaction.resolve("before"));
+            saveInProgress();
+        }
         if (from.equals("fabric")) toNeoForge(minecraft);
         else toFabric(minecraft);
         if (!neutralDependencies.isEmpty()) notes.add(
             "Dependencies kept as they are, since they name no loader (libraries, or a mod's loader-neutral API): " +
             String.join(", ", neutralDependencies)
         );
-        Port.finishTransaction(project, transaction, before, removed);
+        if (!dryRun) Port.finishTransaction(project, transaction, before, removed);
         Map<String, Object> result = Json.map(
             "from",
             from,
@@ -297,41 +305,41 @@ final class Convert {
             left,
             "notes",
             notes,
-            "undoConvert",
-            transaction.getFileName().toString(),
-            "transaction",
-            transaction.toString()
+            "dryRun",
+            dryRun
         );
-        if (options.has("dry-run") || options.has("no-compile")) {
+        if (!dryRun) {
+            result.put("undoConvert", transaction.getFileName().toString());
+            result.put("transaction", transaction.toString());
+        }
+        if (dryRun || !compile || options.has("no-compile")) {
             result.put("compiled", null);
-            // A preview succeeds when it ran; what it could not convert is in left.
-            result.put("ok", previewing || left.isEmpty());
+            // A dry run succeeds when it ran; what it could not convert is in left.
+            result.put("ok", dryRun || left.isEmpty());
         } else compile(result);
         result.put("details", text(result));
         return result;
     }
 
     /**
-     * convert --dry-run: the conversion runs on a copy of the project outside it (with the project's cached release
-     * lookups), without compiling, and reports what it would change and leave. The project's own folder is not written.
+     * convert --dry-run from the command line: the dry run (which stages every change in memory) runs on a copy of the
+     * project outside it, so even the release lookups it caches and its receipt stay out of the project's folder. The
+     * copy is removed afterwards; the result lists what would change and be left.
      */
-    Map<String, Object> preview(Modaccel.Options options) throws Exception {
+    static Map<String, Object> preview(Path root, Path harness, Modaccel.Options options) throws Exception {
         Path copy = Files.createTempDirectory("modaccel-convert-preview-");
-        copyProject(project.root, copy);
-        ProjectModel model = new ProjectModel(copy);
-        Convert convert = new Convert(new Build(model, build.harness, "", new Modaccel.Report(copy, "convert")));
-        convert.previewing = true;
-        Map<String, Object> result = convert.run(options);
-        result.put("dryRun", true);
-        result.put("preview", copy.toString());
-        result.remove("undoConvert");
-        result.remove("transaction");
-        result.put(
-            "details",
-            String.valueOf(result.get("details")) +
-            "\nDry run: nothing in " + project.root + " was changed; the converted copy is in " + copy + "."
-        );
-        return result;
+        try {
+            copyProject(root, copy);
+            Convert convert = new Convert(new Build(new ProjectModel(copy), harness, "", new Modaccel.Report(copy, "convert")));
+            Map<String, Object> result = convert.run(options);
+            result.put(
+                "details",
+                String.valueOf(result.get("details")) + "\nDry run: nothing in " + root + " was written; this lists what convert would change."
+            );
+            return result;
+        } finally {
+            OwnCompile.deleteTree(copy);
+        }
     }
 
     /** The project's sources and build, without Git, Gradle's and modaccel's own state (but with its cached release lookups). */
@@ -446,19 +454,34 @@ final class Convert {
     final Set<String> crlf = new HashSet<>();
 
     String read(String relative) throws IOException {
-        Path file = project.root.resolve(relative);
-        if (!Files.isRegularFile(file)) return "";
-        String text = Files.readString(file, StandardCharsets.UTF_8);
+        String text = current(relative);
+        if (text == null) return "";
         if (text.contains("\r\n")) crlf.add(relative);
         return text.replace("\r\n", "\n");
     }
 
+    /** A file's text, with a dry run's changes; null when there is none. */
+    String current(String relative) throws IOException {
+        if (staged.containsKey(relative)) return staged.get(relative);
+        Path file = project.root.resolve(relative);
+        return Files.isRegularFile(file) ? Files.readString(file, StandardCharsets.UTF_8) : null;
+    }
+
+    boolean exists(String relative) throws IOException {
+        return current(relative) != null;
+    }
+
     void write(String relative, String text) throws Exception {
         Path file = project.root.resolve(relative);
-        if (crlf.contains(relative) || (!Files.isRegularFile(file) && !crlf.isEmpty())) text = text
+        if (crlf.contains(relative) || (!exists(relative) && !crlf.isEmpty())) text = text
             .replace("\r\n", "\n")
             .replace("\n", "\r\n");
-        if (Files.isRegularFile(file) && Files.readString(file, StandardCharsets.UTF_8).equals(text)) return;
+        if (text.equals(current(relative))) return;
+        if (dryRun) {
+            staged.put(relative, text);
+            if (!changed.contains(relative)) changed.add(relative);
+            return;
+        }
         track(file);
         Files.createDirectories(file.getParent());
         Files.writeString(file, text, StandardCharsets.UTF_8);
@@ -467,7 +490,13 @@ final class Convert {
 
     void delete(String relative) throws Exception {
         Path file = project.root.resolve(relative);
-        if (!Files.isRegularFile(file)) return;
+        if (!exists(relative)) return;
+        if (dryRun) {
+            staged.put(relative, null);
+            removed.add(relative);
+            changed.remove(relative);
+            return;
+        }
         track(file);
         removed.add(relative);
         saveInProgress();
@@ -492,20 +521,30 @@ final class Convert {
     // ---- sources -------------------------------------------------------------------------------------
 
     List<String> javaFiles() throws IOException {
-        List<String> out = new ArrayList<>();
-        Path src = project.root.resolve("src");
-        if (!Files.isDirectory(src)) return out;
-        try (var sets = Files.list(src)) {
-            for (Path set : sets.sorted().toList()) {
-                if (set.getFileName().toString().startsWith("test")) continue;
+        Path src = project.root.resolve("src").toAbsolutePath().normalize();
+        Map<Path, TreeSet<Path>> sets = new TreeMap<>();
+        if (Files.isDirectory(src)) try (var list = Files.list(src)) {
+            for (Path set : list.toList()) {
                 Path java = set.resolve("java");
                 if (!Files.isDirectory(java)) continue;
+                TreeSet<Path> files = sets.computeIfAbsent(set, k -> new TreeSet<>());
                 try (var walk = Files.walk(java)) {
-                    for (Path file : walk.filter(p -> p.toString().endsWith(".java")).sorted().toList()) out.add(
-                        relative(file)
-                    );
+                    walk.filter(p -> p.toString().endsWith(".java")).forEach(files::add);
                 }
             }
+        }
+        // A dry run's files, where the run that writes them would find them.
+        for (var entry : staged.entrySet()) {
+            Matcher source = SOURCE.matcher(entry.getKey());
+            if (!source.matches()) continue;
+            Path set = src.resolve(source.group(1));
+            Path file = project.root.resolve(entry.getKey()).toAbsolutePath().normalize();
+            if (entry.getValue() != null) sets.computeIfAbsent(set, k -> new TreeSet<>()).add(file);
+            else if (sets.containsKey(set)) sets.get(set).remove(file);
+        }
+        List<String> out = new ArrayList<>();
+        for (var set : sets.entrySet()) if (!set.getKey().getFileName().toString().startsWith("test")) {
+            for (Path file : set.getValue()) out.add(relative(file));
         }
         return out;
     }
@@ -1903,7 +1942,7 @@ final class Convert {
             if (made.find()) {
                 String target = file.substring(0, file.lastIndexOf('/') + 1) + made.group(1) + ".java";
                 if (
-                    !Files.isRegularFile(project.root.resolve(target)) ||
+                    !exists(target) ||
                     !text.contains("new " + made.group(1) + "()." + method + "()")
                 ) {
                     leave(
@@ -1972,7 +2011,7 @@ final class Convert {
         for (Object rule : LoaderRules.list(rules.get("expressions"))) if (
             Json.object(rule).get("accessTransformers") instanceof Map<?, ?> at
         ) known.addAll(LoaderRules.strings(Json.object(at).get("neoforge")));
-        if (Files.isRegularFile(project.root.resolve(AT_FILE))) {
+        if (exists(AT_FILE)) {
             List<String> keep = new ArrayList<>();
             for (String line : read(AT_FILE).lines().toList()) if (!known.contains(line.strip())) keep.add(line);
             if (!keep.stream().allMatch(l -> l.isBlank() || l.strip().startsWith("#"))) {
@@ -3259,8 +3298,9 @@ final class Convert {
 
     static String text(Map<String, Object> result) {
         StringBuilder out = new StringBuilder();
+        boolean dryRun = Boolean.TRUE.equals(result.get("dryRun"));
         out
-            .append("Converted ")
+            .append(dryRun ? "Would convert " : "Converted ")
             .append(result.get("from"))
             .append(" to ")
             .append(result.get("to"))
@@ -3269,9 +3309,13 @@ final class Convert {
             .append("): ");
         out
             .append(Json.array(result.get("changed")).size())
-            .append(" file(s) changed, ")
+            .append(dryRun ? " file(s) would change, " : " file(s) changed, ")
             .append(Json.array(result.get("removed")).size())
-            .append(" removed.\n");
+            .append(dryRun ? " would be removed.\n" : " removed.\n");
+        if (dryRun) {
+            for (Object file : Json.array(result.get("changed"))) out.append("  change ").append(file).append('\n');
+            for (Object file : Json.array(result.get("removed"))) out.append("  remove ").append(file).append('\n');
+        }
         Map<String, Object> rulesApplied = Json.object(result.get("rulesApplied"));
         if (!rulesApplied.isEmpty()) out
             .append("Rules applied: ")
@@ -3315,7 +3359,8 @@ final class Convert {
             }
             out.append('\n');
         }
-        out.append("Undo: modaccel convert --undo ").append(result.get("undoConvert"));
+        if (dryRun) out.append("Dry run: nothing was written. Run it without --dry-run to convert and compile.");
+        else out.append("Undo: modaccel convert --undo ").append(result.get("undoConvert"));
         return out.toString();
     }
 }

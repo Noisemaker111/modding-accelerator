@@ -1,0 +1,110 @@
+diff --git a/src/main/java/dev/diorama/bake/BiomeTints.java b/src/main/java/dev/diorama/bake/BiomeTints.java
+index fbd86f99..d44068af 100644
+--- a/src/main/java/dev/diorama/bake/BiomeTints.java
++++ b/src/main/java/dev/diorama/bake/BiomeTints.java
+@@ -44,6 +44,15 @@ public final class BiomeTints {
+ 
+ 	static void setWater(ColorResolver resolver) {
+ 		RESOLVERS[WATER] = resolver;
++		generation++;
++	}
++
++	/** Changes whenever a resolver does, so tints blended before can tell they're stale. */
++	private static volatile int generation;
++
++	/** See {@link ChunkSnapshot#inheritTints}. */
++	public static int generation() {
++		return generation;
+ 	}
+ 
+ 	/** The snapshot's tints, blended now if no bake has needed them yet. Any thread. */
+@@ -53,8 +62,9 @@ public final class BiomeTints {
+ 			// Two bakes may both blend; they read the same biomes, so either result will do.
+ 			// A turned view blends its chunk, and turns what that gives.
+ 			ChunkSnapshot chunk = snapshot.chunk();
++			int generation = generation();
+ 			tints = blend(chunk);
+-			chunk.setTints(tints);
++			chunk.setTints(tints, generation);
+ 			if (chunk != snapshot) {
+ 				tints = snapshot.tints();
+ 			}
+diff --git a/src/main/java/dev/diorama/data/ChunkSnapshot.java b/src/main/java/dev/diorama/data/ChunkSnapshot.java
+index ad168edb..0ff92f7f 100644
+--- a/src/main/java/dev/diorama/data/ChunkSnapshot.java
++++ b/src/main/java/dev/diorama/data/ChunkSnapshot.java
+@@ -609,9 +609,58 @@ public final class ChunkSnapshot {
+ 	}
+ 
+ 	public void setTints(Tints tints) {
++		this.setTints(tints, -1);
++	}
++
++	/** Tints blended under {@link BiomeTints#generation} {@code generation}, which a later snapshot may inherit. */
++	public void setTints(Tints tints, int generation) {
++		this.tintsGeneration = generation;
+ 		this.tints = tints;
+ 	}
+ 
++	/** The resolvers' generation {@link #tints} were blended under, or -1 when unknown. */
++	private volatile int tintsGeneration = -1;
++
++	/**
++	 * Takes the tints the snapshot this one replaces blended, when everything the blend reads is the
++	 * same: the biomes of this chunk and its neighbours (the game swaps in a new container rather than
++	 * changing one, so the same containers hold the same biomes), the column tops, the zoom seed, the
++	 * blend radius and the resolvers. Light and block changes away from the surface take a new snapshot
++	 * but leave all of that alone, so their chunks needn't be blended again. Returns whether it did.
++	 */
++	public boolean inheritTints(ChunkSnapshot before) {
++		Tints from = before.tints;
++		int generation = before.tintsGeneration;
++		if (from == null || generation < 0 || generation != dev.diorama.bake.BiomeTints.generation() || this.tints != null
++			|| this.base != null || before.base != null || this.chunkX != before.chunkX || this.chunkZ != before.chunkZ
++			|| this.biomeZoomSeed != before.biomeZoomSeed || this.blendRadius != before.blendRadius || this.fallbackBiome != before.fallbackBiome
++			|| this.minSectionY != before.minSectionY || !java.util.Arrays.equals(this.surface, before.surface)
++			|| this.biomes == null || before.biomes == null || this.biomes.length != before.biomes.length) {
++			return false;
++		}
++		for (int i = 0; i < this.biomes.length; i++) {
++			var mine = this.biomes[i];
++			var theirs = before.biomes[i];
++			if (mine == null || theirs == null) {
++				if (mine != theirs) {
++					return false;
++				}
++				continue;
++			}
++			if (mine.length != theirs.length) {
++				return false;
++			}
++			for (int s = 0; s < mine.length; s++) {
++				if (mine[s] != theirs[s]) {
++					return false;
++				}
++			}
++		}
++		this.tintsGeneration = generation;
++		this.tints = from;
++		return true;
++	}
++
+ 	/** Blended biome tints per column, as 0xRRGGBB, indexed {@code (z << 4) | x}. */
+ 	public record Tints(int[] grass, int[] foliage, int[] dryFoliage, int[] water) {
+ 	}
+diff --git a/src/main/java/dev/diorama/render/MapLevel.java b/src/main/java/dev/diorama/render/MapLevel.java
+index c625a97e..8b4a594b 100644
+--- a/src/main/java/dev/diorama/render/MapLevel.java
++++ b/src/main/java/dev/diorama/render/MapLevel.java
+@@ -581,6 +581,11 @@ public final class MapLevel implements ChunkSource {
+ 	 *     the whole chunk is new
+ 	 */
+ 	public void put(ChunkSnapshot snapshot, int @Nullable [] changed, int playerChunkX, int playerChunkZ) {
++		ChunkSnapshot before = this.chunks.get(snapshot.key());
++		if (before != null) {
++			// Before it's visible to bakes, so none blends what it can reuse.
++			snapshot.inheritTints(before);
++		}
+ 		this.chunks.put(snapshot.key(), snapshot);
+ 		if (changed == null && this.watchingLiveChunks) {
+ 			this.liveChunks.add(snapshot.key());

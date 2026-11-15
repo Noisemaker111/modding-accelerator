@@ -105,6 +105,10 @@ public final class Modaccel {
         );
         static final Set<String> VALUES = Set.of(
             "command",
+            "label",
+            "session",
+            "parent",
+            "jit",
             "root",
             "project",
             "task",
@@ -212,6 +216,9 @@ public final class Modaccel {
             );
         }
     }
+
+    /** Commands for modaccel's own tests, left out of help. */
+    static final Set<String> INTERNAL = Set.of("legacy-agent");
 
     static final Set<String> COMMANDS = Set.of(
         "perf", "perf-report", "perf-diff", "perf-template", "perf-optimize",
@@ -401,7 +408,7 @@ public final class Modaccel {
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }
                     case "convert" -> {
-                        result = new Convert(build).run(options);
+                        result = preview ? Convert.preview(project.root, home, options) : new Convert(build).run(options);
                         exit = Boolean.TRUE.equals(result.get("ok")) ? 0 : 1;
                     }
                     case "explain" -> {
@@ -773,10 +780,11 @@ public final class Modaccel {
     static String help(String command) {
         return switch (command) {
             case "perf" -> "Profile a running local Java 17+ game/server: modaccel perf [--attach PID | --instance FOLDER | --root SOURCE] [--duration 30] [--warmup 5] [--out FOLDER] [--json]\n" +
-                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root can launch a visible client.\n" +
+                "Start your game normally, then run perf; --list shows PIDs when automatic selection is ambiguous. Source --root launches the client as your preferences say (hidden with background on, so frame timing is not representative).\n" +
                 "Open report.html in the output folder. Frame/tick hooks depend on game mappings; missing metrics are explicit. GPU timing is not collected.\n" +
-                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden profiles a hidden, throttled source session (frame timing not representative); --no-heap skips the post-capture class histogram.\n" +
+                "--mod-root SOURCE (with --attach) or --mod-package PKG names your mod in the cost ranking; --allow-hidden lets --attach profile a hidden, throttled game (frame timing not representative); --no-heap skips the post-capture class histogram.\n" +
                 "--no-hooks records JFR only. --prepare prints a startup -javaagent argument when dynamic attach is disabled. Requires JDK 17+ and same OS user.\n" +
+                "Each capture writes record.json (--session NAME groups runs) and names known patterns from knowledge/perf-patterns.json that its hotspots match.\n" +
                 "--scenario FILE --rcon-port 25575 [--rcon-password-env MODACCEL_RCON_PASSWORD] [--repeat 1] [--seed 0] drives explicit test-world commands.\n" +
                 "Scenarios edit the selected local server world: use a disposable world. Each command requires an expected response. Repeats share one JVM.";
             case "perf-template" -> "Generate editable scenario files: modaccel perf-template --family transport|block-scene|entity-crowd|mod-content [--block MOD:BLOCK] [--entity MOD:ENTITY] [--counts 1,16,64] [--root SOURCE] [--out FOLDER]\n" +
@@ -787,7 +795,8 @@ public final class Modaccel {
                 "are separate git worktrees, launched alternately in fresh games. Each launch runs the experiment's setup snippets, a cold capture and a warm capture of\n" +
                 "the chosen metric (a timing probe or a report value), then its gates: eval snippets compared exactly, against an expected value or within a tolerance,\n" +
                 "and 1280x720 framebuffer captures compared pixel by pixel. Every gate must also agree baseline-to-baseline. Accepted only when all gates pass and the\n" +
-                "95% bootstrap interval of the speedup is above 1 for cold and warm; an accepted diff is then applied to SOURCE (not with --dry-run). See PERFORMANCE.md.";
+                "95% bootstrap interval of the speedup is above 1 for cold and warm; an accepted diff is then applied to SOURCE (not with --dry-run). See PERFORMANCE.md.\n" +
+                "--label TEXT names the candidate and --session NAME groups runs in record.json, which bench/perf_sessions.py summarises.";
             case "perf-report" -> "Render an existing capture/JFR locally: modaccel perf-report --file FOLDER_OR_JFR [--out FOLDER]\nNo game or network is required. External JFR files may lack frame/tick events or code-origin metadata.";
             case "self-test" -> "Test modaccel itself, with no game and no network: modaccel self-test [--only SUITE,SUITE] [--json]\n" +
             "Suites: " +
@@ -796,7 +805,8 @@ public final class Modaccel {
             "A failed suite is reported first, with the end of its log; --only runs the named suites alone.";
             case "preferences" -> "See or save your game launch preferences: modaccel preferences [--background on|off] [--quiet on|off] [--json]\n" +
             "Background keeps the client hidden and prevents cursor capture (default off).\n" +
-            "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off.";
+            "Quiet starts every game with sound and narrator off (default on); opt out with --quiet off,\n" +
+            "and the next game gets back the sound, narrator and first-launch options quiet changed in its folder.";
             case "port" -> "Port a Gradle mod source checkout (not a JAR):\n" +
             "  modaccel discover --root SOURCE\n" +
             "  modaccel dependencies --root SOURCE --to 1.21.6 --json\n" +
@@ -814,9 +824,10 @@ public final class Modaccel {
             "code with the rules in knowledge/loaders.json: loader calls, events, key mappings, Mod Menu's config screen. Every rule names classes checked\n" +
             "against the loaders' own published jars (python bench/loader_api.py verify) and has a before/after test. There is no AI step.\n" +
             "Anything with no rule is listed with its file and line and left as it was, never dropped. Then the converted build is compiled\n" +
-            "(--no-compile skips that); exit 0 means it compiled and nothing was left. --dry-run converts a copy outside the project instead, without\n" +
-            "compiling, changes nothing in the project, and exits 0 when the preview ran; its result names the copy and what would be left. A compile is not proof: check the mod in the game with ui-check or\n" +
-            "world-check and --assert. Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
+            "(--no-compile skips that); exit 0 means it compiled and nothing was left. --dry-run writes nothing in the project (no state, no\n" +
+            "receipt): it lists each file that would change or be removed and what would be left, compiles nothing, and exits 0 when it ran.\n" +
+            "A compile is not proof: check the mod in the game with ui-check or world-check and --assert.\n" +
+            "Forge, Quilt and mod <-> Paper plugin moves are not converted yet.";
             case "explain" -> "Explain a port's compiler errors: modaccel explain --root SOURCE --project :failing --against :building [--only TEXT] [--log FILE] [--task :p:task]\n" +
             "Compiles the failing project (or reads --log), maps errors in Stonecutter's generated sources back to src/, and for each one shows the\n" +
             "class, method or field it names as each project's jars have it: where a missing class lives, a member's signatures, or similar names.\n" +
@@ -922,6 +933,7 @@ public final class Modaccel {
             "  pack-check             a modpack on its real Forge/NeoForge/Fabric/Quilt server: crashes, conflicts, worlds that will not reopen\n" +
             "  preferences            show or change your game window and sound choices\n" +
             "  perf, perf-report      where a mod's CPU, memory, I/O and frame/tick time go\n" +
+            "  perf-diff              compare two captures    perf-template      scenario files for perf --scenario\n" +
             "  perf-optimize          accept or reject a candidate change with equivalence gates and measured speedup\n" +
             "  package, self-test     build or test modaccel itself\n" +
             "Run modaccel help COMMAND for one command (port, convert, fast, compile, mixin-check, data-check, explain, ui-check, eval, reload ...).\n" +
