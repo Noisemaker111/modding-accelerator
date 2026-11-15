@@ -1,27 +1,30 @@
 # Known issues
 
-Environment traps that cost agents time. One entry each: symptom, cause, fix or workaround. Add one when a trap costs you more than a few minutes; delete it when the cause is gone.
+Traps that cost agents time. One entry each: symptom, cause, fix. Add one when a trap costs you more than a few
+minutes; delete it when the cause is gone.
 
-## `bun` fails to start from Node on Windows
+## A search for a jar or source file runs for hours
+- Cause: `find /` or a whole-drive search. One ran for 11 hours.
+- Fix: Gradle's dependencies and sources jars are under `~/.gradle/caches/modules-2/files-2.1/GROUP/NAME/`, Loom's
+  game jars under `~/.gradle/caches/fabric-loom/`, modaccel's JDKs, servers and packages under `~/.modaccel/`.
 
-- Symptom: a Node script spawning `bun` fails (`spawn bun ENOENT`, or `EINVAL` on `bun.cmd`).
-- Cause: the npm-installed shim is `bun.cmd`; Node will not spawn a `.cmd` without `shell: true`.
-- Fix: native `bun.exe` is first on PATH on Jon's PC. Elsewhere install native bun, or spawn with `shell: true`.
+## The PC freezes during a check
+- Cause: game clients, pack servers, port boards or A/B timing run locally, often several agents at once.
+- Fix: run them in the cloud (`tools/cloud-run`, AGENTS.md). Locally: one game at a time, `port_board.py --changed`,
+  `pack-check --focus MODID`.
 
-## `gh: command not found`
+## Self-test passes in the checkout and fails in CI
+- Cause: the jar ships only `Installation.RESOURCES` (directories there are packed whole); a file the CLI reads that is
+  not listed is missing from `~/.modaccel/packages/<hash>`.
+- Fix: list it in `RESOURCES`; run `python bench/run_tests.py --only self-test`, which tests the packaged jar.
 
-- Symptom: `gh` is missing in Git Bash or a fresh shell on Windows.
-- Cause: the GitHub CLI installs to `C:\Program Files\GitHub CLI`, which some shells do not have on PATH.
-- Fix: it is now first on PATH on Jon's PC; otherwise `export PATH="/c/Program Files/GitHub CLI:$PATH"`.
-
-## Smoke process-list parser crashes on a control byte
-
-- Symptom: a smoke run's process cleanup throws while parsing the Windows process list.
-- Cause: a process command line containing a control character breaks the parser.
-- Where: appforgutters (`scripts/lib/smokeProcesses.mjs`), not this repository.
+## `gh: command not found` on Windows
+- Fix: `export PATH="/c/Program Files/GitHub CLI:$PATH"`.
 
 ## Shell heredocs and `sed` mangle backslashes and quotes on Windows
+- Fix: edit files with the Edit/Write tools. For a regex in Java source, `[0-9]` avoids the backslash entirely.
 
-- Symptom: an edit made through a heredoc, `python -c` or `sed` in Git Bash lands with `\d` turned into `d`, `\\` halved, or quotes lost; the old text then fails to match.
-- Cause: Git Bash, MSYS path conversion and the interpreter each unescape the text again.
-- Fix: edit files with the Edit/Write tools, not shell heredocs or `sed`. For a regex in Java source, `[0-9]` avoids the backslash entirely.
+## Game code that compiles and misbehaves
+- `MouseButtonInfo`'s left button is 1. Build an `ItemStack` after datapack load. `BlockBehaviour.Properties` needs
+  `.setId(...)`. Multiplayer block entities need both `getUpdatePacket()` and `getUpdateTag()`.
+- Adding fields or methods while hot reloading needs `--jbr`.
