@@ -316,7 +316,19 @@ final class PackChecks {
     static void placements(Context c) {
         if (!c.opened()) return;
         var probe = c.probe();
-        for (Object d : Json.array(probe.get("different"))) {
+        // The world opened but pack-check's own probe stopped before placing: say so, as a gap of the check, not the pack.
+        if (probe.get("error") != null && probe.get("different") == null) {
+            c.add(
+                "not-checked",
+                "note",
+                "pack-check's probe stopped before placing blocks, so block placement was not checked: " +
+                String.valueOf(probe.get("error")).lines().findFirst().orElse(""),
+                "evidence",
+                String.valueOf(probe.get("error"))
+            );
+            return;
+        }
+        for (Object d : Json.array(probe.getOrDefault("different", List.of()))) {
             var row = Json.object(d);
             String item = Json.text(row, "item", ""), expected = Json.text(row, "expected", ""), landed = Json.text(row, "landed", "");
             String itemMod = item.split(":")[0], landedMod = landed.split(":")[0];

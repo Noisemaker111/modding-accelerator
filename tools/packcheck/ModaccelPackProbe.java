@@ -211,13 +211,18 @@ public final class ModaccelPackProbe {
         for (java.lang.reflect.Constructor<?> constructor : ServerPlayer.class.getConstructors()) {
             Class<?>[] types = constructor.getParameterTypes();
             if (types.length == 3) return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile);
-            // Before 1.17 the player takes its game mode handler, which takes the level.
-            if (types.length == 4 && types[3].getSimpleName().equals("ServerPlayerGameMode")) for (java.lang.reflect.Constructor<?> mode : types[3].getConstructors())
-                if (mode.getParameterCount() == 1 && mode.getParameterTypes()[0].isInstance(level))
-                    return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile, mode.newInstance(level));
-            if (types.length == 4) for (Method made : types[3].getMethods())
+            if (types.length != 4) continue;
+            // The fourth argument by its type, since run-time names differ by loader: a default made by a static
+            // factory (client information, 1.20.2+), a game mode handler made from the level (before 1.17), or nothing
+            // (1.19's profile public key, which an offline player does not have).
+            for (Method made : types[3].getMethods())
                 if (java.lang.reflect.Modifier.isStatic(made.getModifiers()) && made.getParameterCount() == 0 && made.getReturnType() == types[3])
                     return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile, made.invoke(null));
+            for (java.lang.reflect.Constructor<?> mode : types[3].getConstructors())
+                if (mode.getParameterCount() == 1 && mode.getParameterTypes()[0].isInstance(level))
+                    return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile, mode.newInstance(level));
+            try { return (ServerPlayer) constructor.newInstance(level.getServer(), level, profile, null); }
+            catch (ReflectiveOperationException | RuntimeException refused) { /* the next constructor */ }
         }
         throw new IllegalStateException("no way to make a player for placing blocks");
     }

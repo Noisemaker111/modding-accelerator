@@ -551,6 +551,18 @@ public final class PackCheckTest {
         // Found by the pack sweep (SodiumPlus, Quilt 1.20.1): QSL modules need quilt_base >=6.1.2+1.20.1 and the pack has
         // 6.1.2+1.20.1. Fabric and Quilt compare SemVer without build metadata, on both sides.
         PackMods.Dependency qsl = new PackMods.Dependency("block_content_registry", "quilt_base", List.of(">=6.1.2+1.20.1"), "quilt.mod.json", "depends");
+        // From the pack sweep (Additive, Fabric 1.19.2): the world opened but the probe stopped before placing blocks; the
+        // placement check names that as unchecked instead of failing pack-check.
+        List<Object> stopped = new ArrayList<>();
+        PackChecks.Context placed = new PackChecks.Context(null, new PackMods.Scan(), PackLoaders.all(harness).get("fabric"), stopped);
+        placed.start = Map.of("opened", true, "probe", Map.of("error", "java.lang.IllegalStateException: no way to make a player\n\tat x.y", "ok", false));
+        PackChecks.placements(placed);
+        expect(
+            stopped.size() == 1 &&
+            "not-checked".equals(Json.object(stopped.get(0)).get("kind")) &&
+            "note".equals(Json.object(stopped.get(0)).get("severity")),
+            "a probe that stopped before placing is a note that placement went unchecked: " + stopped
+        );
         // And on Vanilla Perfected 1.0.0+1.21.1 (an independent check): an exact citresewn 1.2.1+1.21, and YACL >=3.5.0+1.21-fabric.
         PackMods.Dependency cit = new PackMods.Dependency("cit-addon", "citresewn", List.of("1.2.1+1.21"), "fabric.mod.json", "depends");
         PackMods.Dependency yacl = new PackMods.Dependency("some-mod", "yet_another_config_lib_v3", List.of(">=3.5.0+1.21-fabric"), "fabric.mod.json", "depends");
