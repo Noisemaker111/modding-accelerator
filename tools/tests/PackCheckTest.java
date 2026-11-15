@@ -32,6 +32,7 @@ public final class PackCheckTest {
             inputs(harness, scratch);
             fabricAndQuilt(harness, scratch);
             logs(harness, scratch);
+            culprits(harness, scratch);
             serverMods(harness, scratch);
             loaders(harness, scratch);
             List<String> repairs = PackRepairs.selfTest(harness, scratch.resolve("repairs"));
@@ -40,7 +41,7 @@ public final class PackCheckTest {
                 count +
                 " pack-check checks passed: six pack inputs, Forge/Fabric/Quilt metadata with bundled mods, duplicate ids, missing and wrong-version mods," +
                 " game and loader version mismatches, declared conflicts, mods for another loader, shared look files and block names, mod sides from" +
-                " CurseForge and Modrinth, known faults and the repair tests (" + repairs + "), client-only mods and remembering them, which jars a server gets (client-side jars a kept mod requires, dependants of client-only ones), a library jar's bundled mods, the mod a crash names," +
+                " CurseForge and Modrinth, known faults and the repair tests (" + repairs + "), client-only mods and remembering them, which jars a server gets (client-side jars a kept mod requires, dependants of client-only ones), a library jar's bundled mods, the mod a crash names (only the failure's own lines; the Java build when the JDK lacks what the loader calls; only the mod reaching a client class), client-only code read from server entrypoints, the Java build a loader needs," +
                 " failed-start words, four loader adapters, a port lost to the other server, a free voice chat port"
             );
         } finally {
@@ -795,6 +796,151 @@ public final class PackCheckTest {
 
     static String dependency(String id, String mandatory, String range) {
         return "[[dependencies.x]] #optional\nmodId=\"" + id + "\"\nmandatory=" + mandatory + "\nversionRange=\"" + range + "\"\nordering=\"NONE\"\nside=\"BOTH\"\n";
+    }
+
+    /**
+     * Found by an independent check of the pack sweep. Create: Above and Beyond (Forge 1.16.5 36.2.20) on Temurin 8u512
+     * stopped in ModLauncher with NoSuchMethodError on ManifestEntryVerifier(Manifest), and pack-check blamed antiqueatlas,
+     * whose mixin config was named on the log line above. XPlus 2.0 (Fabric 1.17.1) kept mcwifipnp, whose main entrypoint
+     * reaches Screen (class_437), and blamed iceberg and worldedit too, for mixin configs in ordinary start-up lines.
+     */
+    static void culprits(Path harness, Path scratch) throws Exception {
+        PackLoaders.Loader forge = PackLoaders.find(harness, "forge"), fabric = PackLoaders.find(harness, "fabric");
+        String stderr = "[02:56:35] [main/INFO] [STDERR/]: [java.lang.ThreadGroup:uncaughtException:1052]: ";
+        String cab = String.join(
+            "\n",
+            "[02:56:33] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.4 Service=ModLauncher Env=SERVER",
+            "[02:56:35] [main/ERROR] [mixin/]: Mixin config antiqueatlas.mixins.json does not specify \"minVersion\" property",
+            "Exception in thread \"main\" " + stderr + "java.lang.NoSuchMethodError: sun.security.util.ManifestEntryVerifier.<init>(Ljava/util/jar/Manifest;)V",
+            stderr + "\tat cpw.mods.modlauncher.SecureJarHandler.createCodeSource(SecureJarHandler.java:66)",
+            stderr + "\tat cpw.mods.modlauncher.TransformingClassLoader$DelegatedClassLoader.findClass(TransformingClassLoader.java:275)",
+            stderr + "\tat net.minecraftforge.server.ServerMain.main(ServerMain.java:57)"
+        );
+        PackMods.Scan cabScan = new PackMods.Scan();
+        cabScan.providers.put("antiqueatlas", new ArrayList<>(List.of(new PackMods.Provider("antiqueatlas.jar", "6.0.1", false, "META-INF/mods.toml"))));
+        cabScan.mixins.put("antiqueatlas.mixins.json", "antiqueatlas.jar");
+        cabScan.packages.put("hunternif.mc.impl.atlas", "antiqueatlas.jar");
+        var cabSuspects = PackChecks.suspects(cab, List.of(), cabScan, forge);
+        expect(
+            cabSuspects.size() == 1 && Boolean.TRUE.equals(cabSuspects.get(0).get("runtime")) && PackChecks.names(cabSuspects).equals("the Java build") &&
+            Json.array(cabSuspects.get(0).get("why")).get(0).toString().contains("ManifestEntryVerifier.<init>(Ljava/util/jar/Manifest;)V"),
+            "a JDK member missing under the loader's own code blames the Java build, not the mod on the line above: " + cabSuspects
+        );
+        expect(PackChecks.failure(cab, forge.failed()).contains("NoSuchMethodError: sun.security.util.ManifestEntryVerifier"), "the evidence keeps the uncaught error");
+        // The same missing member called from a mod's own code is that mod's.
+        String modCalls = cab.replace("cpw.mods.modlauncher.SecureJarHandler.createCodeSource", "hunternif.mc.impl.atlas.Foo.bar");
+        var modSuspects = PackChecks.suspects(modCalls, List.of(), cabScan, forge);
+        expect(modSuspects.size() == 1 && modSuspects.get(0).get("mod").equals("antiqueatlas"), "a mod calling a JDK member this Java lacks is that mod: " + modSuspects);
+        // A mixin config named only in an ordinary line blames nobody; named in the failure, it does.
+        String calm = "[main/WARN]: Method overwrite conflict for getLanguage in worldedit.mixins.json:Mixin from mod worldedit. Skipping method.\n" +
+            "[main/FATAL]: Failed to start the minecraft server\njava.lang.IllegalStateException: boom\n\tat a.b.C.d(C.java:1)";
+        PackMods.Scan xScan = new PackMods.Scan();
+        xScan.mixins.put("worldedit.mixins.json", "worldedit.jar");
+        xScan.mixins.put("iceberg.mixins.json", "iceberg.jar");
+        for (String id : List.of("worldedit", "iceberg", "mcwifipnp")) xScan.providers.put(
+            id,
+            new ArrayList<>(List.of(new PackMods.Provider(id + ".jar", "1", false, "fabric.mod.json")))
+        );
+        expect(PackChecks.suspects(calm, List.of(), xScan, fabric).isEmpty(), "a mixin config in a start-up warning is not in the failure");
+        String xplus = String.join(
+            "\n",
+            "[02:55:59] [main/INFO]: Mixing EntityMixin from iceberg.mixins.json into net.minecraft.class_1297",
+            "[02:55:59] [main/WARN]: Method overwrite conflict for getLanguage in worldedit.mixins.json:MixinServerPlayerEntity from mod worldedit, previously written by carpet. Skipping method.",
+            "[02:56:07] [main/FATAL]: Failed to start the minecraft server",
+            "java.lang.RuntimeException: Could not execute entrypoint stage 'main' due to errors, provided by 'mcwifipnp'!",
+            "\tat net.fabricmc.loader.impl.entrypoint.EntrypointUtils.lambda$invoke0$0(EntrypointUtils.java:51) ~[fabric-loader-0.14.21.jar:?]",
+            "Caused by: java.lang.NoClassDefFoundError: net/minecraft/class_437",
+            "\tat io.github.satxm.mcwifipnp.MCWiFiPnP.onInitialize(MCWiFiPnP.java:30) ~[mcwifipnp.jar:?]",
+            "Caused by: java.lang.ClassNotFoundException: net.minecraft.class_437"
+        );
+        java.util.function.Predicate<String> client = type -> type.equals("net/minecraft/class_437");
+        var xSuspects = PackChecks.suspects(xplus, List.of(), xScan, fabric, client);
+        expect(
+            xSuspects.size() == 1 && xSuspects.get(0).get("mod").equals("mcwifipnp") && Json.array(xSuspects.get(0).get("why")).get(0).toString().contains("class_437"),
+            "a client game class missing on the server blames only the mod that reached it: " + xSuspects
+        );
+        expect(PackChecks.clientOnly(xplus, fabric, xScan, client).equals(Set.of("mcwifipnp")), "a server-side NoClassDefFoundError on a client class is client-only");
+        expect(PackChecks.clientOnly(xplus, fabric, xScan).isEmpty(), "a game class the server has, or an unknown one, is not taken for client code");
+
+        // Static: a server entrypoint that reaches a client class as it initialises is client-only; one that only names it elsewhere is not.
+        Path src = Files.createDirectories(scratch.resolve("client-code/src")), out = Files.createDirectories(scratch.resolve("client-code/out"));
+        Files.createDirectories(src.resolve("net/minecraft"));
+        Files.createDirectories(src.resolve("a"));
+        Files.createDirectories(src.resolve("x"));
+        Files.writeString(src.resolve("net/minecraft/class_437.java"), "package net.minecraft; public class class_437 { }");
+        Files.writeString(src.resolve("net/minecraft/class_1937.java"), "package net.minecraft; public class class_1937 { }");
+        Files.writeString(src.resolve("a/Reaches.java"),
+            "package a; public class Reaches { static void after(net.minecraft.class_437 s) { } " +
+            "public void onInitialize() { java.util.function.Consumer<net.minecraft.class_437> c = Reaches::after; } }");
+        Files.writeString(src.resolve("a/Guarded.java"),
+            "package a; public class Guarded { public void onInitialize() { new net.minecraft.class_1937(); } " +
+            "public static void client() { new net.minecraft.class_437(); } }");
+        Files.writeString(src.resolve("x/V.java"), "package x; public class V { public V(java.util.jar.Manifest m) { } }");
+        Files.writeString(src.resolve("x/Caller.java"), "package x; public class Caller { Object make() { return new V(new java.util.jar.Manifest()); } }");
+        List<String> javac = new ArrayList<>(List.of("-d", out.toString()));
+        try (var walk = Files.walk(src)) {
+            walk.filter(p -> p.toString().endsWith(".java")).forEach(p -> javac.add(p.toString()));
+        }
+        expect(javax.tools.ToolProvider.getSystemJavaCompiler().run(null, null, null, javac.toArray(String[]::new)) == 0, "client-code fixtures compile");
+        java.util.function.Predicate<String> game = new PackLoaders.GameClasses(
+            Set.of("net/minecraft/class_1937"),
+            Set.of("net/minecraft/class_1937", "net/minecraft/class_437")
+        )::clientOnly;
+        Path reaches = jar(scratch.resolve("reaches.jar"), Map.of(
+            "fabric.mod.json", "{\"schemaVersion\":1,\"id\":\"reaches\",\"version\":\"1\",\"entrypoints\":{\"main\":[\"a.Reaches\"]}}",
+            "a/Reaches.class", out.resolve("a/Reaches.class")
+        ));
+        Path guarded = jar(scratch.resolve("guarded.jar"), Map.of(
+            "fabric.mod.json", "{\"schemaVersion\":1,\"id\":\"guarded\",\"version\":\"1\",\"entrypoints\":{\"main\":[{\"adapter\":\"default\",\"value\":\"a.Guarded\"}]}}",
+            "a/Guarded.class", out.resolve("a/Guarded.class")
+        ));
+        String why = PackMods.clientCode(reaches, game);
+        expect(why != null && why.contains("main entrypoint a.Reaches") && why.contains("net/minecraft/class_437"), "an entrypoint whose onInitialize reaches Screen is client-only: " + why);
+        expect(PackMods.clientCode(guarded, game) == null, "a client class named only in a method the server never runs is not client-only");
+        List<PackCheck.Mod> sided = PackCheck.clientCode(
+            List.of(new PackCheck.Mod("reaches.jar", reaches, "unknown", "folder"), new PackCheck.Mod("guarded.jar", guarded, "unknown", "folder")),
+            new PackLoaders.GameClasses(Set.of("net/minecraft/class_1937"), Set.of("net/minecraft/class_1937", "net/minecraft/class_437"))
+        );
+        expect(
+            sided.get(0).side().equals("client") && sided.get(0).source().contains("reaches client-only game classes") && sided.get(1).side().equals("unknown"),
+            "a side-unknown jar is client-only by its code: " + sided
+        );
+        expect(PackLoaders.classMap(writeText(scratch.resolve("i.tiny"), "tiny\t2\t0\tofficial\tintermediary\nc\tdyn\tnet/minecraft/class_437\n\tm\t()V\ta\tmethod_1\n"))
+            .equals(Map.of("dyn", "net/minecraft/class_437")), "Tiny v2 classes map official to intermediary names");
+        expect(PackLoaders.classMap(writeText(scratch.resolve("j.tsrg"), "a net/minecraft/util/A\n\tb func_1_a\nc/ net/minecraft/\n"))
+            .equals(Map.of("a", "net/minecraft/util/A")), "TSRG classes map official to Forge's names");
+
+        // The Java build: the loader's jars call a JDK member; a Java whose class lacks it needs the rule's release.
+        String call = "x/V.<init>:(Ljava/util/jar/Manifest;)V";
+        Path libraries = Files.createDirectories(scratch.resolve("loader/libraries/cpw/mods/modlauncher/8.0.9"));
+        jar(libraries.resolve("modlauncher-8.0.9.jar"), Map.of("x/Caller.class", out.resolve("x/Caller.class")));
+        expect(PackLoaders.caller(scratch.resolve("loader/libraries/cpw/mods/modlauncher"), call) != null, "the loader's jars are read for the JDK call");
+        expect(PackLoaders.caller(scratch.resolve("loader/libraries/cpw/mods/modlauncher"), "x/V.<init>:(Ljava/util/jar/Manifest;Ljava/lang/String;)V") == null, "only that exact call");
+        Path oldJdk = Files.createDirectories(scratch.resolve("jdk-old/jre/lib")), newJdk = Files.createDirectories(scratch.resolve("jdk-new/jre/lib"));
+        jar(oldJdk.resolve("rt.jar"), Map.of("x/V.class", out.resolve("x/V.class")));
+        Files.writeString(src.resolve("x/V.java"), "package x; public class V { public V(java.util.jar.Manifest m, String name) { } }");
+        Path newOut = Files.createDirectories(scratch.resolve("client-code/new"));
+        expect(javax.tools.ToolProvider.getSystemJavaCompiler().run(null, null, null, "-d", newOut.toString(), src.resolve("x/V.java").toString()) == 0, "new V compiles");
+        jar(newJdk.resolve("rt.jar"), Map.of("x/V.class", newOut.resolve("x/V.class")));
+        expect(PackLoaders.jdkDeclares(scratch.resolve("jdk-old"), call) && !PackLoaders.jdkDeclares(scratch.resolve("jdk-new"), call), "a JDK's rt.jar says whether it has the member");
+        var rule = Json.object(Json.array(PackLoaders.data(harness).get("javaBuilds")).get(0));
+        expect(
+            rule.get("call").equals("sun/security/util/ManifestEntryVerifier.<init>:(Ljava/util/jar/Manifest;)V") && rule.get("release").equals("jdk8u312-b07"),
+            "Forge 1.16.5's old ModLauncher runs on Temurin 8u312, the last Java 8 with ManifestEntryVerifier(Manifest)"
+        );
+        String answer = "{\"release_name\":\"jdk8u312-b07\",\"binaries\":[{\"package\":{\"link\":\"https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u312-b07/a.zip\"," +
+            "\"checksum\":\"" + "d".repeat(64) + "\",\"checksum_link\":\"https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u312-b07/a.zip.sha256.txt\"}}]}";
+        var asset = JdkDownloads.releaseAsset(answer, "jdk8u312-b07", "windows/x64");
+        expect(asset.sha256().equals("d".repeat(64)) && asset.checksumFile().toString().endsWith(".sha256.txt"), "a pinned release comes with the vendor's checksum and checksum file");
+        expect(
+            throwsMessage(() -> JdkDownloads.releaseAsset(answer.replace("https://github.com", "http://example.com"), "jdk8u312-b07", "windows/x64")).contains("No published"),
+            "a release download off Adoptium's or GitHub's https is refused"
+        );
+    }
+
+    static Path writeText(Path file, String text) throws IOException {
+        Files.writeString(file, text);
+        return file;
     }
 
     static Path jar(Path target, Map<String, Object> entries) throws IOException {

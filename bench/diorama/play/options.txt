@@ -1,0 +1,6 @@
+narrator:0
+onboardAccessibility:false
+soundCategory_master:0.0
+tutorialStep:none
+skipMultiplayerWarning:true
+joinedFirstServer:true

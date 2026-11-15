@@ -53,12 +53,17 @@ and the time in `insertOrdered` and `getSortedConnections`.
   equal-distance connections by `DirectionalPosition.hashCode`, which includes `Direction`'s identity
   hash and so differs between JVMs. The first version of this gate had such ties and gave a different
   hash in every launch.
+- `rewire` (exact): `trace-rewire.java` is `transfers` with one change to the network: at round 5,
+  after every extractor has sorted its connections once, a pipe and a barrel join the end of the
+  ROUND_ROBIN line. Neither other gate ever changes a network, so a candidate that caches the sorted
+  list and never sorts again passed both; this gate sees items keep going to the old destinations.
 - `moving` (expect `true`): `count.java` checks after both captures that the live base still holds
   all 55,296 items and that items are on both sides of every row, so every line is moving them.
 
 `sabotage-nearest-reversed.diff` sorts nearest-first connections the other way. It moves every
 item, so `moving` passes, but `transfers` fails, and the run stops at the second pair, once two
-baseline launches agree.
+baseline launches agree. `sabotage-stale-cache.diff` sorts each pipe's connections once and keeps
+that list forever: `moving` and `transfers` pass, `rewire` fails.
 
 ## Result
 

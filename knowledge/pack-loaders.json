@@ -11,6 +11,16 @@
       "sha1": "1c0e9093bf1483039e3f342c4051cbbf9764d23c"
     }
   },
+  "javaBuilds": [
+    {
+      "about": "An exact Java build a loader needs, used when the installed loader's jars (under libraries/<libraries>) call a JDK member (call) that the game's Java as installed no longer declares. The build is downloaded from Adoptium and must match both the SHA-256 its API gives and the checksum file published with it.",
+      "java": 8,
+      "libraries": "cpw/mods/modlauncher",
+      "call": "sun/security/util/ManifestEntryVerifier.<init>:(Ljava/util/jar/Manifest;)V",
+      "release": "jdk8u312-b07",
+      "why": "ModLauncher 8.0.9 (in Forge 1.16.5 36.2.20) checks jar signatures with ManifestEntryVerifier(Manifest). Java 8u321 replaced that constructor with ManifestEntryVerifier(Manifest, String), so on 8u321 and later the server stops with NoSuchMethodError before any mod loads. 8u312 is the last Java 8 release with the old constructor. Seen on Create: Above and Beyond (Forge 36.2.20) with Temurin 8u512; Forge 36.2.39 ships ModLauncher 8.1.3, which does not make the call."
+    }
+  ],
   "common": {
     "failed": [
       "Failed to start the minecraft server",

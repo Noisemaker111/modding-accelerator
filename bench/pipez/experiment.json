@@ -18,7 +18,8 @@
   },
   "gates": [
     {"name": "moving", "file": "count.java", "thread": "control", "compare": "expect", "expect": "true"},
-    {"name": "transfers", "file": "trace.java", "thread": "control", "compare": "exact"}
+    {"name": "transfers", "file": "trace.java", "thread": "control", "compare": "exact"},
+    {"name": "rewire", "file": "trace-rewire.java", "thread": "control", "compare": "exact"}
   ],
   "jit": "full"
 }

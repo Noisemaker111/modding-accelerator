@@ -246,6 +246,7 @@ final class PerfOptimize {
         Json.save(out.resolve("optimize.json"), result);
         Files.writeString(out.resolve("optimize.html"), html(result));
         result.put("ok", accepted);
+        result.put("verdict", verdict(result));
         result.put("html", out.resolve("optimize.html").toString());
         result.put("details", summary(result));
         return result;
@@ -578,7 +579,7 @@ final class PerfOptimize {
             }
             record.record.put("speedup", summary);
         }
-        String verdict = result.containsKey("error") && !result.containsKey("speedup") ? "error" : accepted ? "accepted" : "rejected";
+        String verdict = verdict(result);
         record.finish(verdict, accepted ? null : PerfRecord.rejection(result));
         result.put("record", record.save(home, out).toString());
     }
@@ -709,11 +710,12 @@ final class PerfOptimize {
     /**
      * A child modaccel JVM that writes its answer in UTF-8, as childOutput reads it. Redirected to a file, Java's stdout
      * otherwise uses the platform charset (windows-1252): Storage Network's second candidate died when a capture matched
-     * a known pattern whose text holds a middle dot.
+     * a known pattern whose text holds a middle dot. Java 18+ reads stdout.encoding, Java 17 sun.stdout.encoding.
      */
     static List<String> childJava(Path home) throws Exception {
         return new ArrayList<>(List.of(ProcessHandle.current().info().command().orElse("java"),
-            "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-Dmodaccel.home=" + home,
+            "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-Dsun.stdout.encoding=UTF-8", "-Dsun.stderr.encoding=UTF-8",
+            "-Dmodaccel.home=" + home,
             "-cp", Path.of(Modaccel.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString(), "Modaccel"));
     }
 
@@ -819,8 +821,17 @@ final class PerfOptimize {
         }
     }
 
+    /**
+     * accepted, rejected or error. A run that threw (a tool crash, a game that never answered, unreadable child output)
+     * decided nothing about the candidate, so it is an error even when some pairs were measured.
+     */
+    static String verdict(Map<String, Object> result) {
+        if (result.containsKey("error")) return "error";
+        return Boolean.TRUE.equals(result.get("accepted")) ? "accepted" : "rejected";
+    }
+
     static String summary(Map<String, Object> result) {
-        StringBuilder text = new StringBuilder(Boolean.TRUE.equals(result.get("accepted")) ? "ACCEPTED" : "REJECTED");
+        StringBuilder text = new StringBuilder(verdict(result).toUpperCase(Locale.ROOT));
         if (result.containsKey("error")) text.append(": ").append(result.get("error"));
         if (result.get("stopped") instanceof Map<?, ?> stopped) text.append("\nStopped early: ").append(stopped.get("reason"));
         if (result.get("wallSeconds") instanceof Number wall) {
@@ -869,7 +880,7 @@ final class PerfOptimize {
             <p><a href="optimize.json">Full JSON evidence</a></p>
             <script>const d=__DATA__,el=id=>document.getElementById(id),f=v=>typeof v==='number'?v.toPrecision(4):String(v);
             function row(t,v){const r=document.createElement('tr');for(const x of v){const c=document.createElement('td');c.textContent=x;r.append(c)}el(t).tBodies[0].append(r)}
-            el('verdict').textContent=(d.accepted?'Accepted':'Rejected')+(d.error?': '+d.error:'');el('verdict').className=d.accepted?'ok':'bad';
+            el('verdict').textContent=(d.error?'Error (nothing decided about the candidate)':d.accepted?'Accepted':'Rejected')+(d.error?': '+d.error:'');el('verdict').className=d.accepted?'ok':'bad';
             el('rule').textContent=d.rule||'';
             for(const [k,s] of Object.entries(d.speedup||{}))if(k!=='scopes')row('speed',[k,f(s.geometricMean)+'×',f(s.low)+'–'+f(s.high),f(s.baselineMean),f(s.candidateMean),s.pairs]);
             const scopeRow=(name,k,s)=>row('speed',[name+' · '+k,s.geometricMean?f(s.geometricMean)+'×':'unmeasured',

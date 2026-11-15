@@ -283,6 +283,8 @@ public final class Modaccel {
         Options options = null;
         Report report = null;
         ProjectLock lock = null;
+        // convert --dry-run keeps its receipt here while it runs and deletes it after: it leaves nothing behind.
+        Path previewReceipts = null;
         try {
             options = new Options(args);
             if (options.has("help") || options.command.equals("help")) {
@@ -343,7 +345,7 @@ public final class Modaccel {
             ProjectModel project = new ProjectModel(root);
             if (!Set.of("package", "self-test").contains(options.command)) project.requireGradleBuild();
             // Commands that build, edit or start the game take the project lock; reading state and talking to a running game don't.
-            // convert --dry-run converts a copy elsewhere: it takes no lock and leaves its receipt outside the project.
+            // convert --dry-run converts a copy elsewhere: it takes no lock and keeps no receipt.
             boolean preview = options.command.equals("convert") && options.has("dry-run") && !options.values.containsKey("undo");
             if (
                 !preview &&
@@ -351,7 +353,8 @@ public final class Modaccel {
                     options.command
                 )
             ) lock = ProjectLock.acquire(project, options.command);
-            report = new Report(preview ? Files.createTempDirectory("modaccel-convert-receipt-") : project.root, options.command);
+            if (preview) previewReceipts = Files.createTempDirectory("modaccel-convert-receipt-");
+            report = new Report(preview ? previewReceipts : project.root, options.command);
             Map<String, Object> result;
             String interrupted = options.command.equals("port") ? null : Port.interruptedText(project);
             long discovered = System.nanoTime();
@@ -552,6 +555,7 @@ public final class Modaccel {
                 interrupted + " Undo it with: modaccel port --root \"" + project.root + "\" --undo"
             );
             Map<String, Object> output = report.finish(exit, result);
+            if (previewReceipts != null) output.remove("receipt");
             if (options.has("json")) System.out.println(Json.write(output));
             else {
                 System.out.printf(
@@ -572,7 +576,7 @@ public final class Modaccel {
                     "Undo: modaccel port --root \"" + project.root + "\" --undo \"" + result.get("undo") + "\""
                 );
                 if (result.containsKey("zip")) System.out.println("Package: " + result.get("zip"));
-                System.out.println("Receipt: " + output.get("receipt"));
+                if (output.get("receipt") != null) System.out.println("Receipt: " + output.get("receipt"));
             }
         } catch (Exception error) {
             // MODACCEL_TRACE=1 prints where a failure came from, for a bug in modaccel itself.
@@ -585,6 +589,7 @@ public final class Modaccel {
                 ) reported += "\n" + Json.object(stage).get("details");
                 var value = Json.map("error", reported);
                 if (report != null) value = report.finish(2, value);
+                if (previewReceipts != null) value.remove("receipt");
                 if (options != null && options.has("json")) System.out.println(Json.write(value));
                 else if (options != null && options.command.equals("eval")) {
                     // A snippet's own error doesn't need the game log; a game that died does.
@@ -607,6 +612,9 @@ public final class Modaccel {
         } finally {
             if (lock != null) try {
                 lock.close();
+            } catch (IOException ignored) {}
+            if (previewReceipts != null) try {
+                OwnCompile.deleteTree(previewReceipts);
             } catch (IOException ignored) {}
         }
         System.exit(exit);
