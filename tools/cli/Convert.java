@@ -1610,6 +1610,14 @@ final class Convert {
         String old = project.wrapperVersion();
         write(file, out);
         notes.add("Gradle wrapper: " + old + " to " + best + ", the Gradle " + why + " asks for in its published metadata (" + needs + " or later).");
+        // Gradle's foojay toolchain resolver before 1.0.0 names JvmVendorSpec.IBM_SEMERU, which Gradle 9 removed: a build
+        // that provisions a toolchain then fails to evaluate. 1.0.0 is the resolver release written for Gradle 9.
+        String settings = read("settings.gradle");
+        Matcher foojay = Pattern.compile("(id\\s*\\(?\\s*['\"]org\\.gradle\\.toolchains\\.foojay-resolver-convention['\"]\\s*\\)?\\s*version\\s*\\(?\\s*['\"])([\\d.]+)(['\"])").matcher(settings);
+        if (Versions.compare(best, "9") >= 0 && foojay.find() && Versions.compare(foojay.group(2), "1.0.0") < 0) {
+            write("settings.gradle", settings.substring(0, foojay.start(2)) + "1.0.0" + settings.substring(foojay.end(2)));
+            notes.add("Gradle's foojay toolchain resolver: " + foojay.group(2) + " to 1.0.0, the first release that runs on Gradle 9.");
+        }
     }
 
     static Map<String, String> properties(String text) {
@@ -3528,8 +3536,6 @@ final class Convert {
         gradle = publishLoader(gradle, "neoforge", "fabric");
         gradle = dropPluginCode(gradle, "net.neoforged.moddevgradle");
         gradle = dropPluginCode(gradle, "net.neoforged.gradle");
-        // Gradle 9, which Loom needs, has no JvmVendorSpec.JETBRAINS constant; matching("JetBrains") picks the same JDKs.
-        gradle = gradle.replaceAll("\\bJvmVendorSpec\\.JETBRAINS\\b", "JvmVendorSpec.matching(\"JetBrains\")");
         if (!neutralDependencies.isEmpty() && !gradle.contains("exclude group: 'net.neoforged', module: 'neoforge'")) {
             // A dependency kept as it is can be a NeoForge mod whose own metadata asks for NeoForge; Fabric's build has none.
             gradle +=
