@@ -4,13 +4,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 
-/** Each case triggers a failure modaccel used to report badly (or as a pass) and checks the message. */
+/** Each case triggers a failure mmt used to report badly (or as a pass) and checks the message. */
 public final class HardeningTest {
 
     static int count;
 
     public static void main(String[] args) throws Exception {
-        Path scratch = Files.createTempDirectory("modaccel-hardening");
+        Path scratch = Files.createTempDirectory("mmt-hardening");
         try {
             missingDependency(scratch);
             nonCompilerFailure(scratch);
@@ -458,19 +458,19 @@ public final class HardeningTest {
     static void timeouts(Path scratch) throws Exception {
         require(
             Build.gradleTimeout(" 3600 ") == 3600 && Build.gradleTimeout("") == Build.GRADLE_TIMEOUT,
-            "MODACCEL_GRADLE_TIMEOUT overrides the default, and blank means the default"
+            "MMT_GRADLE_TIMEOUT overrides the default, and blank means the default"
         );
         try {
             Build.gradleTimeout("soon");
             throw new AssertionError("bad timeout accepted");
         } catch (IllegalArgumentException expected) {
-            require(expected.getMessage().contains("MODACCEL_GRADLE_TIMEOUT"), "a bad value names the variable");
+            require(expected.getMessage().contains("MMT_GRADLE_TIMEOUT"), "a bad value names the variable");
         }
         String message = Build.timeoutMessage(2700, true, scratch.resolve("metadata.log"));
         require(
             message.contains("2700 s") &&
             message.contains("cold first setup") &&
-            message.contains("MODACCEL_GRADLE_TIMEOUT=5400") &&
+            message.contains("MMT_GRADLE_TIMEOUT=5400") &&
             message.contains("metadata.log"),
             "the timeout message names the limit, the cold setup and how to raise it: " + message
         );

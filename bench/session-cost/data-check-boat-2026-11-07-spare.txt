@@ -3,7 +3,7 @@ Stack trace lines cut; nothing else changed.
 
 creating a default sandbox...
 bx_276m6qjw ready in 1.1s
-pushed 567 files (23.3 MB) to ~/modaccel-no-window
+pushed 567 files (23.3 MB) to ~/mmt-no-window
 == clean run, exit 0
 ok: True | seconds: 58 | CPU-s: 6.2 | first in JVM: True | loaded the game's code; it stays loaded for the next data-check (game-stop ends it)
 prismlab: 1 block, 1 block entity type, 2 item, 1 loot table, 1 recipe.
@@ -12,7 +12,7 @@ prismlab: 1 block, 1 block entity type, 2 item, 1 loot table, 1 recipe.
 0 errors and 0 warnings logged by the game while loading
 == broken recipe under src, exit 1
 ok: False | seconds: 1 | CPU-s: None | first in JVM: False | reused the loaded game (process 8972), data read again
-data-check did not complete: net.minecraft.ReportedException: Registry Loading. Log: /home/user/modaccel-no-window/.runs/portable/2026-11-07T21-20-20.080383225Z-5760f873/3-data-check.log
+data-check did not complete: net.minecraft.ReportedException: Registry Loading. Log: /home/user/mmt-no-window/.runs/portable/2026-11-07T21-20-20.080383225Z-5760f873/3-data-check.log
   [error] net.minecraft.resources.RegistryDataLoader: Registry loading errors:
 > Errors in registry minecraft:recipe:
 >> Errors in element prismlab:broken_probe:

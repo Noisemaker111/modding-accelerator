@@ -51,7 +51,7 @@ final class Route {
                 FIRST_MAPPED +
                 ". " +
                 reason +
-                " modaccel ports between " +
+                " mmt ports between " +
                 FIRST_MAPPED +
                 " and the newest indexed release; nothing was changed."
             );
@@ -79,7 +79,7 @@ final class Route {
     }
 
     /**
-     * A plain release number that is older than the newest release modaccel knows but is not one of
+     * A plain release number that is older than the newest release mmt knows but is not one of
      * them is a typo (1.21.66, 26.0): say so before any build or download. Newer numbers pass, since
      * the list can be behind a fresh release; snapshots and pre-releases pass too.
      */
@@ -108,7 +108,7 @@ final class Route {
         return (
             "Minecraft " +
             version +
-            " is not a Java Edition release (modaccel's list runs from " +
+            " is not a Java Edition release (mmt's list runs from " +
             known.get(0) +
             " to " +
             newest +
@@ -131,7 +131,7 @@ final class Route {
         if (Versions.compare(version, FIRST_MAPPED) < 0) return (
             "Mojang published no official mappings before " +
             FIRST_MAPPED +
-            " and Fabric intermediary ids start there, so no proven name links this release to newer ones (it would need MCP or other legacy community mappings, which modaccel does not use)."
+            " and Fabric intermediary ids start there, so no proven name links this release to newer ones (it would need MCP or other legacy community mappings, which mmt does not use)."
         );
         return null;
     }

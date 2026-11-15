@@ -1,14 +1,14 @@
 """Record what happened, so no one edits the truth files by hand.
 
     python bench/record.py port RECEIPT --mod NAME --loader fabric [--status S] [--detail TEXT] [--measure ID]
-        A port run becomes a row in coverage/ledger.json. RECEIPT is the result.json that modaccel port
+        A port run becomes a row in coverage/ledger.json. RECEIPT is the result.json that mmt port
         printed (or its --json output saved to a file). The versions and the errors left are read from it.
         The status is build when the port built and stop when errors are left; load and behaviour are
         claims about the game, so they need --status and a --detail that says what was checked and how.
         --measure also records the errors left as a point on that measure.
 
     python bench/record.py perf RECORD [RECORD ...] [--dry-run]
-        A run record (record.json from modaccel perf, perf-optimize or a comparison script) is kept in
+        A run record (record.json from mmt perf, perf-optimize or a comparison script) is kept in
         coverage/perf-runs.json. Records are checked first; one with problems is refused. An id already
         kept is skipped. knowledge/perf-patterns.json cites accepted runs from here as its proof.
 
@@ -53,7 +53,7 @@ def save_roadmap(roadmap, path=M.ROADMAP):
 
 # ---- a port receipt -----------------------------------------------------------------------------
 def read_port(receipt):
-    """What a port run reached, from modaccel's receipt: versions, whether it built, and each error left."""
+    """What a port run reached, from mmt's receipt: versions, whether it built, and each error left."""
     out = receipt if isinstance(receipt, dict) else load_json(receipt)
     result = out.get("result", out)
     waypoints = next((s.get("waypoints") for s in out.get("stages", []) if s.get("name") == "route" and s.get("waypoints")), None)
@@ -86,14 +86,14 @@ def subject(error):
 
 def port_detail(run):
     if run["built"]:
-        return "Ported by modaccel port --fix with nothing written by hand: it builds and the mixin check passed. Not started in the game."
+        return "Ported by mmt port --fix with nothing written by hand: it builds and the mixin check passed. Not started in the game."
     if run["errors"] is None:
-        return f"modaccel port --fix stopped before compiling: {' '.join(str(run['reason'] or 'no reason given').split())[:300]}"
+        return f"mmt port --fix stopped before compiling: {' '.join(str(run['reason'] or 'no reason given').split())[:300]}"
     by = {}
     for e in run["unresolved"]:
         by.setdefault(cause(e), []).append(subject(e))
     parts = [f"{len(v)} from {k} ({', '.join(sorted(set(v))[:3])}{', ...' if len(set(v)) > 3 else ''})" for k, v in sorted(by.items(), key=lambda kv: -len(kv[1]))]
-    return f"modaccel port --fix with nothing written by hand stops at {run['errors']} error{'s' if run['errors'] != 1 else ''}: " + "; ".join(parts) + "."
+    return f"mmt port --fix with nothing written by hand stops at {run['errors']} error{'s' if run['errors'] != 1 else ''}: " + "; ".join(parts) + "."
 
 
 def ledger_row(run, mod, loader, status=None, detail=None, date=None, frm=None, to=None):

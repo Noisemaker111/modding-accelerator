@@ -13,7 +13,7 @@ public final class FabricMetadataTest {
              "depends":{"minecraft":"~1.20.1","fabricloader":">=0.14.21"}}
             """;
         var before = Json.object(Json.parse(original));
-        Path root = Files.createTempDirectory("modaccel-fabric-metadata-").toRealPath();
+        Path root = Files.createTempDirectory("mmt-fabric-metadata-").toRealPath();
         try {
             Path resources = root.resolve("src/main/resources");
             Files.createDirectories(resources);

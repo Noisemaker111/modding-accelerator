@@ -15,11 +15,11 @@ final class JdkDownloads {
     private static final long MAX_EXPANDED = 2L * 1024 * 1024 * 1024;
 
     /**
-     * The one place downloaded JDKs live, shared by every modaccel version. A jar's home is named after its own hash,
+     * The one place downloaded JDKs live, shared by every mmt version. A jar's home is named after its own hash,
      * so a cache inside it was downloaded again on every upgrade (and on every CI build).
      */
     static Path cache() {
-        return Path.of(System.getProperty("user.home"), ".modaccel/jdks").toAbsolutePath().normalize();
+        return Path.of(System.getProperty("user.home"), ".mmt/jdks").toAbsolutePath().normalize();
     }
 
     static Path install(int feature) throws IOException {

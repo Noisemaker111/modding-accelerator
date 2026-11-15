@@ -66,7 +66,7 @@ loom {
 		clientWarm {
 			client()
 			property("prismlab.lab.port", "27499")
-			vmArg "-javaagent:${projectDir}/.modaccel/agent.jar"
+			vmArg "-javaagent:${projectDir}/.mmt/agent.jar"
 			vmArg "-Dprismlab.agent.port=27498"
 			vmArg "-XX:+AllowEnhancedClassRedefinition"
 			vmArg "-XX:TieredStopAtLevel=1"

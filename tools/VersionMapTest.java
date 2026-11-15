@@ -74,7 +74,7 @@ public final class VersionMapTest {
 		String echoed = (colA + colB).lines().map(s -> "  " + s).collect(java.util.stream.Collectors.joining("\n")) + "\n";
 		Files.writeString(log, colA + colB + echoed);
 		check(VersionMap.readErrors(log).size() == 2, "deduplicate Gradle echoes while preserving separate columns", failures);
-		Path backup = repo.resolve(".modaccel/portable/ports/example/before/Screen.java");
+		Path backup = repo.resolve(".mmt/portable/ports/example/before/Screen.java");
 		Files.createDirectories(backup.getParent()); Files.writeString(backup, "import net.minecraft.Old;\nclass Screen {}\n");
 		Path dependency = repo.resolve("dependency"); Files.createDirectories(dependency.resolve(".git"));
 		Files.writeString(dependency.resolve("Dependency.java"), "class Dependency {}\n");

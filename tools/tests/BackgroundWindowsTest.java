@@ -7,12 +7,12 @@ import javax.tools.ToolProvider;
 /**
  * The hidden-window transform keeps a game's window hidden and records that it did, with no error,
  * even when the launch names the agent twice (recorded launches did: every saved 26.3 launch logged
- * MODACCEL_BACKGROUND_ERROR and hooked each frame twice). Stand-in org.lwjgl classes copy LWJGL
+ * MMT_BACKGROUND_ERROR and hooked each frame twice). Stand-in org.lwjgl classes copy LWJGL
  * 3.4.3's SDL call shapes and fail if a call reaches "native" code, so a window that would show is caught.
  *
- *   java tools/tests/BackgroundWindowsTest.java PROJECT_ROOT path/to/modaccel.jar
+ *   java tools/tests/BackgroundWindowsTest.java PROJECT_ROOT path/to/mmt.jar
  *
- * PROJECT_ROOT is a project modaccel can read (it builds the agent with that project's ASM).
+ * PROJECT_ROOT is a project mmt can read (it builds the agent with that project's ASM).
  */
 public class BackgroundWindowsTest {
 
@@ -62,7 +62,7 @@ public class BackgroundWindowsTest {
                 SDLVideo.SDL_ShowWindow(1); SDLVideo.SDL_RaiseWindow(1);
                 SDLVideo.SDL_SetWindowMouseGrab(1, true); SDLVideo.SDL_SetWindowKeyboardGrab(1, true);
                 SDLMouse.SDL_SetWindowRelativeMouseMode(1, true); SDLMouse.SDL_WarpMouseInWindow(1, 2, 3); SDLMouse.SDL_WarpMouseGlobal(2, 3);
-                String applied = System.getProperty("modaccel.background.applied", ""), error = System.getProperty("modaccel.background.error", "");
+                String applied = System.getProperty("mmt.background.applied", ""), error = System.getProperty("mmt.background.error", "");
                 if (!error.isEmpty()) throw new IllegalStateException("agent recorded an error: " + error);
                 if (!applied.equals("org/lwjgl/sdl/SDLVideo,org/lwjgl/sdl/SDLMouse")) throw new IllegalStateException("agent recorded applied=" + applied);
                 System.out.println("HIDDEN");
@@ -71,12 +71,12 @@ public class BackgroundWindowsTest {
         """;
 
     public static void main(String[] args) throws Exception {
-        Path root = Path.of(args[0]).toAbsolutePath(), modaccel = Path.of(args[1]).toAbsolutePath();
+        Path root = Path.of(args[0]).toAbsolutePath(), mmt = Path.of(args[1]).toAbsolutePath();
         String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
         Process built = new ProcessBuilder(
             java,
             "-jar",
-            modaccel.toString(),
+            mmt.toString(),
             "legacy-agent",
             "--root",
             root.toString(),
@@ -90,7 +90,7 @@ public class BackgroundWindowsTest {
         if (!m.find()) throw new AssertionError("no agent path in:\n" + json);
         String agent = m.group(1).replace("\\\\", "\\");
 
-        Path dir = Files.createTempDirectory("modaccel-background");
+        Path dir = Files.createTempDirectory("mmt-background");
         Map<String, String> sources = Map.of(
             "org/lwjgl/system/JNI.java",
             JNI,
@@ -136,7 +136,7 @@ public class BackgroundWindowsTest {
         List<String> command = new ArrayList<>(List.of(java));
         for (int i = 0; i < copies; i++) command.add("-javaagent:" + agent + "=legacy");
         command.addAll(
-            List.of("-Dmodaccel.background=" + background, "-cp", dir.resolve("classes").toString(), "Probe")
+            List.of("-Dmmt.background=" + background, "-cp", dir.resolve("classes").toString(), "Probe")
         );
         Process p = new ProcessBuilder(command).redirectErrorStream(true).start();
         String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);

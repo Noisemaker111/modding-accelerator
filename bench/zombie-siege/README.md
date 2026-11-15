@@ -16,20 +16,20 @@ All three moved checks are free of side effects, so every decision is unchanged.
 
 ## Run it
 
-Windows uses `modaccel.cmd`. From the Mod Accel checkout:
+Windows uses `mmt.cmd`. From the Minecraft Modding Tools checkout:
 
 ```sh
 git clone https://github.com/Riqqqque/ZombieApocalypseAddon .runs/mods/zombie
 git -C .runs/mods/zombie checkout 1bb67d4a487f57c3f005c73f35ebf60b1370c684
 
 # Once: make the starting save (superflat, fixed seed, no natural spawning).
-./modaccel ui-check --root .runs/mods/zombie
-./modaccel eval --root .runs/mods/zombie --file bench/zombie-siege/create-world.java
-./modaccel eval --root .runs/mods/zombie --until "mc.player != null" --timeout 120
-./modaccel game-stop --root .runs/mods/zombie
+./mmt ui-check --root .runs/mods/zombie
+./mmt eval --root .runs/mods/zombie --file bench/zombie-siege/create-world.java
+./mmt eval --root .runs/mods/zombie --until "mc.player != null" --timeout 120
+./mmt game-stop --root .runs/mods/zombie
 mkdir -p .runs/zombie-siege && cp -r .runs/mods/zombie/runs/client/saves/siege .runs/zombie-siege/siege
 
-./modaccel perf-optimize --root .runs/mods/zombie --experiment bench/zombie-siege/experiment.json \
+./mmt perf-optimize --root .runs/mods/zombie --experiment bench/zombie-siege/experiment.json \
   --patch bench/zombie-siege/gating.diff --runs 5 --dry-run --out .runs/zombie-siege/result
 ```
 

@@ -91,7 +91,7 @@ final class HotUi {
 
 	private static void compile(Path root, long sourceStamp) throws Exception {
 		if (out == null) {
-			out = root.resolve(".modaccel/hot/classes");
+			out = root.resolve(".mmt/hot/classes");
 			deps = classpath(root);
 		}
 		if (sourceStamp == lastCompile) {
@@ -202,11 +202,11 @@ final class HotUi {
 			return kept.toString();
 		}
 		// BootstrapLauncher can trim java.class.path; the launcher saves the same list.
-		Path saved = root.resolve(".modaccel/hot-cp.txt");
+		Path saved = root.resolve(".mmt/hot-cp.txt");
 		if (Files.isRegularFile(saved)) {
 			return Files.readString(saved, StandardCharsets.UTF_8).trim();
 		}
-		throw new IllegalStateException("no game classpath: java.class.path has no neoforge entry and .modaccel/hot-cp.txt is missing");
+		throw new IllegalStateException("no game classpath: java.class.path has no neoforge entry and .mmt/hot-cp.txt is missing");
 	}
 
 	private static String ask(String className, byte[] bytes) {

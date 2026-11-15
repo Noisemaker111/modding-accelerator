@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  */
 final class PerfCheck {
     /** Written into generated snippets; a gate still holding it was never written for the mod. */
-    static final String TEMPLATE_MARK = "MODACCEL-TEMPLATE";
+    static final String TEMPLATE_MARK = "MMT-TEMPLATE";
     static final Pattern NONDETERMINISTIC = Pattern.compile(
         "currentTimeMillis|nanoTime|Math\\.random|new Random\\(\\)|ThreadLocalRandom|identityHashCode|UUID\\.randomUUID|Instant\\.now|getRandom\\(\\)");
     static final Pattern FRAME_METRIC = Pattern.compile("(?i)frame|fps");

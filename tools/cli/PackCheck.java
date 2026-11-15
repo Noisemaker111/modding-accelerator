@@ -70,8 +70,8 @@ final class PackCheck {
     }
 
     final Path harness, cache;
-    final Modaccel.Options options;
-    final Modaccel.Report report;
+    final Mmt.Options options;
+    final Mmt.Report report;
     final List<Object> findings = new ArrayList<>();
     /** Mod files the pack lists that its source no longer serves: a player's launcher cannot get them either. */
     final List<Unavailable> unavailable = new ArrayList<>();
@@ -88,22 +88,22 @@ final class PackCheck {
     /** Server starts share this; a start that lost a fixed port (a mod's own, such as a voice chat server's) to the other lane runs again alone. */
     final java.util.concurrent.locks.ReentrantReadWriteLock starts = new java.util.concurrent.locks.ReentrantReadWriteLock();
 
-    PackCheck(Path harness, Modaccel.Options options, Modaccel.Report report) {
+    PackCheck(Path harness, Mmt.Options options, Mmt.Report report) {
         this.harness = harness;
         this.options = options;
         this.report = report;
-        cache = Path.of(System.getProperty("user.home"), ".modaccel", "packs");
+        cache = Path.of(System.getProperty("user.home"), ".mmt", "packs");
     }
 
     static Path receipts() {
-        return Path.of(System.getProperty("user.home"), ".modaccel", "packs");
+        return Path.of(System.getProperty("user.home"), ".mmt", "packs");
     }
 
     Map<String, Object> run() throws Exception {
         if (options.has("list")) return list();
         Path input = Path.of(options.get("pack", "")).toAbsolutePath().normalize();
         if (options.get("pack", "").isEmpty() || !Files.exists(input)) throw new IllegalArgumentException(
-            "Name the pack: modaccel pack-check --pack PACK.zip|PACK.mrpack|FOLDER. Got: " + options.get("pack", "(nothing)")
+            "Name the pack: mmt pack-check --pack PACK.zip|PACK.mrpack|FOLDER. Got: " + options.get("pack", "(nothing)")
         );
         if (options.values.containsKey("undo")) return undo(input);
         long started = System.nanoTime();
@@ -380,11 +380,11 @@ final class PackCheck {
         if (Files.isRegularFile(input)) {
             // 1,800 small files took 10-25 s to unpack each run on Windows.
             directory = cache.resolve("exports").resolve(HexFormat.of().formatHex(digest("SHA-256", input)).substring(0, 16));
-            if (!Files.isRegularFile(directory.resolve(".modaccel-unpacked"))) {
+            if (!Files.isRegularFile(directory.resolve(".mmt-unpacked"))) {
                 Path temporary = Files.createDirectories(cache.resolve("exports")).resolve(directory.getFileName() + "-" + ProcessHandle.current().pid());
                 deleteTree(temporary);
                 unzip(input, temporary);
-                Files.writeString(temporary.resolve(".modaccel-unpacked"), input.getFileName() + "\n");
+                Files.writeString(temporary.resolve(".mmt-unpacked"), input.getFileName() + "\n");
                 deleteTree(directory);
                 Files.move(temporary, directory);
             }
@@ -564,7 +564,7 @@ final class PackCheck {
 
     /** Modrinth's answer for a path under its API, parsed; null when it has none or cannot be reached. */
     static Object modrinthJson(String path) {
-        if (Boolean.getBoolean("modaccel.pack.offline")) return null;
+        if (Boolean.getBoolean("mmt.pack.offline")) return null;
         try {
             return Json.parse(new String(get(MODRINTH + path), StandardCharsets.UTF_8));
         } catch (Exception unknown) {
@@ -666,8 +666,8 @@ final class PackCheck {
             ) asked.add(hash);
         }
         String blocker = "";
-        // Tests run with no network: modaccel.pack.offline keeps every answer from the cache.
-        if (Boolean.getBoolean("modaccel.pack.offline")) asked.clear();
+        // Tests run with no network: mmt.pack.offline keeps every answer from the cache.
+        if (Boolean.getBoolean("mmt.pack.offline")) asked.clear();
         if (!asked.isEmpty()) try {
             var versions = Json.object(
                 Json.parse(new String(post(MODRINTH + "version_files", Json.write(Json.map("hashes", asked, "algorithm", "sha1"))), StandardCharsets.UTF_8))
@@ -777,7 +777,7 @@ final class PackCheck {
      * downloaded from Modrinth's CDN and checked against the hash. null when Modrinth has no file with this hash.
      */
     static byte[] modrinthByHash(String algorithm, String hash) throws Exception {
-        if (Boolean.getBoolean("modaccel.pack.offline") || !hash.matches("[0-9a-f]{40}|[0-9a-f]{128}")) return null;
+        if (Boolean.getBoolean("mmt.pack.offline") || !hash.matches("[0-9a-f]{40}|[0-9a-f]{128}")) return null;
         byte[] answer;
         try {
             answer = get(MODRINTH + "version_file/" + hash + "?algorithm=" + algorithm);
@@ -964,7 +964,7 @@ final class PackCheck {
             stage("new-world", checks);
             if (Boolean.TRUE.equals(first.get("opened"))) {
                 // Start 2: the same world again.
-                Map<String, Object> second = start("verify", "world", Map.of("modaccel.probe.placed", first.get("probeFile").toString()));
+                Map<String, Object> second = start("verify", "world", Map.of("mmt.probe.placed", first.get("probeFile").toString()));
                 game.put("reopen", second);
                 checks.first = first;
                 checks.start = second;
@@ -1013,12 +1013,12 @@ final class PackCheck {
                     List.of(
                         context.java().java().toString(),
                         "-Xmx" + options.get("memory", "6G"),
-                        "-Dmodaccel.probe.mode=" + mode,
-                        "-Dmodaccel.probe.out=" + out
+                        "-Dmmt.probe.mode=" + mode,
+                        "-Dmmt.probe.out=" + out
                     )
                 );
                 for (var p : properties.entrySet()) command.add("-D" + p.getKey() + "=" + p.getValue());
-                if (!options.get("only", "").isEmpty()) command.add("-Dmodaccel.probe.only=" + options.get("only", ""));
+                if (!options.get("only", "").isEmpty()) command.add("-Dmmt.probe.only=" + options.get("only", ""));
                 command.addAll(loader.launch(install, instance, pack.minecraft(), pack.loaderVersion()));
                 command.add("nogui");
                 var lock = alone ? starts.writeLock() : starts.readLock();
@@ -1158,7 +1158,7 @@ final class PackCheck {
                     }
                     String text = Files.readString(log, StandardCharsets.ISO_8859_1);
                     // The server logged Done but the probe never said it began: waiting out the whole timeout shows nothing more.
-                    if (!text.contains("MODACCEL-PROBE-STARTED") && PackChecks.startedLine(text) != null) {
+                    if (!text.contains("MMT-PROBE-STARTED") && PackChecks.startedLine(text) != null) {
                         if (started == 0) started = System.nanoTime();
                         else if (System.nanoTime() - started > TimeUnit.SECONDS.toNanos(PROBE_SILENT_SECONDS)) {
                             ended = "probe silent " + PROBE_SILENT_SECONDS + " s after the server finished starting";
@@ -1167,17 +1167,17 @@ final class PackCheck {
                             break;
                         }
                     }
-                    String failure = text.contains("MODACCEL-PROBE-DONE")
+                    String failure = text.contains("MMT-PROBE-DONE")
                         ? null
                         : failed.stream()
                             .filter(text::contains)
                             .findFirst()
                             .orElse(
-                                text.contains("MODACCEL-PROBE-STARTED") && text.contains("Stopping server")
+                                text.contains("MMT-PROBE-STARTED") && text.contains("Stopping server")
                                     ? "the server stopped before the probe finished"
                                     : null
                             );
-                    if (failure != null || text.contains("MODACCEL-PROBE-DONE")) {
+                    if (failure != null || text.contains("MMT-PROBE-DONE")) {
                         ended = failure != null ? "failed: " + failure : "probe done";
                         if (!process.waitFor(failure != null ? 15 : keepWorld ? 120 : 0, TimeUnit.SECONDS)) stop(process);
                         break;
@@ -1214,7 +1214,7 @@ final class PackCheck {
                 dump.getOutputStream().close();
                 String text = new String(dump.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
                 dump.waitFor(30, TimeUnit.SECONDS);
-                Path report = instance.resolve("crash-reports").resolve("modaccel-stuck-" + System.currentTimeMillis() + ".txt");
+                Path report = instance.resolve("crash-reports").resolve("mmt-stuck-" + System.currentTimeMillis() + ".txt");
                 Files.createDirectories(report.getParent());
                 Files.writeString(report, stuckReport(text));
             } catch (Exception unavailable) {
@@ -1243,10 +1243,10 @@ final class PackCheck {
         }
 
         void writeServerFiles(String level) throws IOException {
-            // Accepted by modaccel only for this throwaway, offline, localhost-only test server, as server-check does.
+            // Accepted by mmt only for this throwaway, offline, localhost-only test server, as server-check does.
             Files.writeString(
                 instance.resolve("eula.txt"),
-                "# Accepted by modaccel pack-check for a throwaway local test server (offline mode, 127.0.0.1 only).\neula=true\n"
+                "# Accepted by mmt pack-check for a throwaway local test server (offline mode, 127.0.0.1 only).\neula=true\n"
             );
             int port;
             try (var socket = new java.net.ServerSocket(0)) {
@@ -1259,14 +1259,14 @@ final class PackCheck {
             Files.writeString(
                 instance.resolve("server.properties"),
                 "server-ip=127.0.0.1\nserver-port=" + port + "\nonline-mode=false\nspawn-protection=0\nmax-tick-time=-1\nlevel-name=" + level +
-                "\nmotd=modaccel pack-check\n"
+                "\nmotd=mmt pack-check\n"
             );
             voiceChatPort(instance);
         }
 
         /**
          * Simple Voice Chat, in many packs, opens a fixed UDP port (24454) and stops the whole server when it cannot, so two
-         * servers side by side (the shipped and the repaired pack) collide. modaccel's copy of its config gets a free port.
+         * servers side by side (the shipped and the repaired pack) collide. mmt's copy of its config gets a free port.
          */
         static void voiceChatPort(Path instance) throws IOException {
             try (var mods = Files.list(instance.resolve("mods"))) {
@@ -1311,7 +1311,7 @@ final class PackCheck {
             Files.createDirectories(mods);
             for (Mod mod : pack.mods()) if (chosen.kept().contains(mod.file())) link(mod.jar(), mods.resolve(mod.file()));
             for (Path jar : change.add()) link(jar, mods.resolve(jar.getFileName().toString()));
-            link(probe, mods.resolve("zz-modaccel-pack-probe.jar"));
+            link(probe, mods.resolve("zz-mmt-pack-probe.jar"));
             selection = chosen;
             return chosen;
         }
@@ -1451,11 +1451,11 @@ final class PackCheck {
         }
         if (pack.instance()) {
             // The user's instance: add and take out the files, and record them so --undo restores exactly those.
-            Path mods = pack.overrides().resolve("mods"), record = pack.input().resolve(".modaccel/pack-fixes.json");
+            Path mods = pack.overrides().resolve("mods"), record = pack.input().resolve(".mmt/pack-fixes.json");
             var old = Files.isRegularFile(record) ? Json.read(record) : Json.map();
             List<Object> added = new ArrayList<>(Json.array(old.getOrDefault("added", List.of())));
             List<Object> removed = new ArrayList<>(Json.array(old.getOrDefault("removed", List.of())));
-            Path keep = pack.input().resolve(".modaccel/removed");
+            Path keep = pack.input().resolve(".mmt/removed");
             for (String jar : change.remove()) if (Files.isRegularFile(mods.resolve(jar))) {
                 Files.createDirectories(keep);
                 Files.move(mods.resolve(jar), keep.resolve(jar), StandardCopyOption.REPLACE_EXISTING);
@@ -1469,7 +1469,7 @@ final class PackCheck {
             }
             Json.save(record, Json.map("mods", mods.toString(), "added", added, "removed", removed));
             result.put("changed", mods.toString());
-            result.put("undo", "modaccel pack-check --pack \"" + pack.input() + "\" --undo");
+            result.put("undo", "mmt pack-check --pack \"" + pack.input() + "\" --undo");
             if (!change.serverOnly().isEmpty()) result.put("server", "A server of this pack must leave out " + change.serverOnly() + "; this instance keeps them for play.");
         } else {
             Path fixed = fixedCopy(pack, change);
@@ -1501,7 +1501,7 @@ final class PackCheck {
     Path fixedCopy(Pack pack, PackRepairs.Change change) throws Exception {
         String name = pack.input().getFileName().toString();
         String extension = name.toLowerCase(Locale.ROOT).endsWith(".mrpack") ? ".mrpack" : ".zip";
-        Path fixed = report.directory.resolve(name.replaceFirst("(?i)\\.(zip|mrpack)$", "") + " (modaccel fixed)" + extension);
+        Path fixed = report.directory.resolve(name.replaceFirst("(?i)\\.(zip|mrpack)$", "") + " (mmt fixed)" + extension);
         Files.createDirectories(fixed.getParent());
         Set<String> projects = new HashSet<>(change.dropped()), indexPaths = new HashSet<>(), serverless = new HashSet<>();
         for (Mod mod : pack.mods()) if (change.remove().contains(mod.file())) {
@@ -1605,14 +1605,14 @@ final class PackCheck {
     }
 
     Map<String, Object> undo(Path input) throws IOException {
-        Path record = input.resolve(".modaccel/pack-fixes.json");
+        Path record = input.resolve(".mmt/pack-fixes.json");
         if (!Files.isRegularFile(record)) return Json.map("ok", true, "undone", List.of(), "details", "pack-check has not changed this folder.");
         var done = Json.read(record);
         Path mods = Path.of(Json.text(done, "mods", input.resolve("mods").toString()));
         List<Object> removed = new ArrayList<>(), restored = new ArrayList<>();
         for (Object name : Json.array(done.get("added"))) if (Files.deleteIfExists(mods.resolve(String.valueOf(name)))) removed.add(name);
         for (Object name : Json.array(done.getOrDefault("removed", List.of()))) {
-            Path kept = input.resolve(".modaccel/removed").resolve(String.valueOf(name));
+            Path kept = input.resolve(".mmt/removed").resolve(String.valueOf(name));
             if (!Files.isRegularFile(kept)) continue;
             Files.move(kept, mods.resolve(String.valueOf(name)), StandardCopyOption.REPLACE_EXISTING);
             restored.add(name);

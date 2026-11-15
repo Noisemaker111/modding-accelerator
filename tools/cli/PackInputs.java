@@ -276,7 +276,7 @@ final class PackInputs {
                 bytes = sha512.isEmpty() ? PackCheck.modrinthByHash("sha1", sha1) : PackCheck.modrinthByHash("sha512", sha512);
                 if (bytes != null) source += ", from Modrinth by its " + (sha512.isEmpty() ? "SHA-1" : "SHA-512") + (last == null ? "" : " (" + last.getMessage() + ")");
             }
-            if (bytes == null && !Boolean.getBoolean("modaccel.pack.offline")) for (Object u : Json.array(file.get("downloads"))) {
+            if (bytes == null && !Boolean.getBoolean("mmt.pack.offline")) for (Object u : Json.array(file.get("downloads"))) {
                 String url = String.valueOf(u);
                 if (!ModrinthPack.CURSEFORGE_CDN.contains(String.valueOf(URI.create(url).getHost()))) continue;
                 try {

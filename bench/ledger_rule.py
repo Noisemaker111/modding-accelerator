@@ -20,7 +20,7 @@ WORD = {"behaviour": "Behaviour checked in the game", "load": "Loads in the real
         "build": "Builds, mixins checked", "stop": "Stops with named errors"}
 SAID = {"behaviour": "behaviour checked in the game", "load": "loads in the real game",
         "build": "packaged build, not loaded yet", "stop": "stopped with named errors"}
-BLOCKED = "No official mappings before 1.14.4, so nothing here is measured and modaccel cannot port it yet."
+BLOCKED = "No official mappings before 1.14.4, so nothing here is measured and mmt cannot port it yet."
 WORST = {"red": 0, "yellow": 1, "green": 2}
 LOADERS = ["fabric", "neoforge", "forge", "quilt"]
 NAME = {"fabric": "Fabric", "neoforge": "NeoForge", "forge": "Forge", "quilt": "Quilt"}

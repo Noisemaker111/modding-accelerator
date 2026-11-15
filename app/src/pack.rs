@@ -1,4 +1,4 @@
-//! "Modpack": `modaccel pack-check` on an export or instance folder, its mods laid out on the bench
+//! "Modpack": `mmt pack-check` on an export or instance folder, its mods laid out on the bench
 //! as parts with the clashing ones flagged, then its proven repair (`--fix`) and undo.
 
 use std::path::PathBuf;

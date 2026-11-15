@@ -1,5 +1,5 @@
 {
- "about": "Every number modaccel shows: on the roadmap page, in ROADMAP.md, in a PR or a report. One entry per thing measured, with every point it ever had and the target it is heading for. Record a point with python bench/measures.py add; print a table for a PR with python bench/measures.py table. A point carries its date, value, how many runs (n), what it was measured on, and where the receipt is. Cold and warm are separate measures, and so is the same check on another loader: a measure only ever compares the same work. A measure with 'computed' gets its points from the ledger or the roadmap at render time instead of from 'points'. A target with value null is set once its step measures a baseline. 'context' measures are other people's numbers we compare against, and 'info' measures are facts worth showing; neither has a target. Every other measure has one. The measures that say most about each goal are named in that goal's 'headline' in coverage/roadmap.json.",
+ "about": "Every number mmt shows: on the roadmap page, in ROADMAP.md, in a PR or a report. One entry per thing measured, with every point it ever had and the target it is heading for. Record a point with python bench/measures.py add; print a table for a PR with python bench/measures.py table. A point carries its date, value, how many runs (n), what it was measured on, and where the receipt is. Cold and warm are separate measures, and so is the same check on another loader: a measure only ever compares the same work. A measure with 'computed' gets its points from the ledger or the roadmap at render time instead of from 'points'. A target with value null is set once its step measures a baseline. 'context' measures are other people's numbers we compare against, and 'info' measures are facts worth showing; neither has a target. Every other measure has one. The measures that say most about each goal are named in that goal's 'headline' in coverage/roadmap.json.",
  "machines": {"jon-pc": "Ryzen 9 3900X, Windows 11, JDK 25 (JDK 21 for NeoForge 1.21.1)", "ci": "GitHub-hosted runners (windows, macos, ubuntu)", "boat": "boat.dev default machine: 4 vCPU, 8 GB, Ubuntu, idle apart from the check", "boat-host": "boat.dev Linux T3 host: 8 cores, 16 GB, Ubuntu 24.04, Temurin 21, idle apart from one thread's work"},
  "areas": {"test": "Goal 1 · Testing mods", "plugin": "Goal 1 · Testing plugins", "port": "Goal 2 · Porting versions", "pack": "Goal 3 · Modpacks", "loader": "Goal 4 · Loaders and platforms", "ci": "CI", "roadmap": "Roadmap", "context": "Compared with"},
  "measures": [
@@ -301,7 +301,7 @@
    "machine": "jon-pc",
    "points": [
     {"date": "2026-10-21", "value": 1.49, "n": 5, "note": "with a game window", "source": "bench/data.json loop"},
-    {"date": "2026-11-07", "value": 3.94, "n": 5, "note": "ui-check --screen, hidden game, 0 windows on screen, the whole modaccel command; machine 29.3% busy", "source": "bench/session-cost/warm-2026-11-07T17-33-07.json"}
+    {"date": "2026-11-07", "value": 3.94, "n": 5, "note": "ui-check --screen, hidden game, 0 windows on screen, the whole mmt command; machine 29.3% busy", "source": "bench/session-cost/warm-2026-11-07T17-33-07.json"}
    ],
    "info": true
   },
@@ -341,7 +341,7 @@
    "machine": "jon-pc",
    "points": [
     {"date": "2026-10-21", "value": 2.9, "n": 5, "source": "bench/data.json loop"},
-    {"date": "2026-11-07", "value": 5.14, "n": 5, "note": "eval step then ui-check capture, hidden game, 0 windows on screen, the whole modaccel command; machine 29.3% busy", "source": "bench/session-cost/warm-2026-11-07T17-33-07.json"}
+    {"date": "2026-11-07", "value": 5.14, "n": 5, "note": "eval step then ui-check capture, hidden game, 0 windows on screen, the whole mmt command; machine 29.3% busy", "source": "bench/session-cost/warm-2026-11-07T17-33-07.json"}
    ],
    "info": true
   },
@@ -388,7 +388,7 @@
   {
    "id": "test.parallel-sessions",
    "area": "test",
-   "name": "Game checks modaccel runs at once on one PC",
+   "name": "Game checks mmt runs at once on one PC",
    "unit": "sessions",
    "better": "higher",
    "machine": "jon-pc",
@@ -522,7 +522,7 @@
    "info": true,
    "machine": "jon-pc",
    "points": [
-    {"date": "2026-11-06", "value": 16, "n": 1, "note": "bench/session_cost.py parallel from one saved launch, 18.2 GB, 100 s on a busy PC; not yet a modaccel command", "source": "bench/session-cost/2026-11-06T20-52-48.json"}
+    {"date": "2026-11-06", "value": 16, "n": 1, "note": "bench/session_cost.py parallel from one saved launch, 18.2 GB, 100 s on a busy PC; not yet a mmt command", "source": "bench/session-cost/2026-11-06T20-52-48.json"}
    ]
   },
   {
@@ -752,7 +752,7 @@
   {
    "id": "test.edit-fast",
    "area": "test",
-   "name": "One-file edit, modaccel fast",
+   "name": "One-file edit, mmt fast",
    "unit": "s",
    "better": "lower",
    "condition": "warm",

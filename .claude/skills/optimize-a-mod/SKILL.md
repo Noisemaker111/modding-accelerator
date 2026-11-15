@@ -1,6 +1,6 @@
 ---
 name: optimize-a-mod
-description: Take an unfamiliar Minecraft mod's source to a measured, gated, accepted speedup with modaccel perf and perf-optimize, and turn each accepted change into a reusable pattern. Use when Jon names a mod and says "make it faster", "optimize this mod", "next mod to optimize", "where does this mod's time go", or asks to push knowledge/perf-patterns.json further.
+description: Take an unfamiliar Minecraft mod's source to a measured, gated, accepted speedup with mmt perf and perf-optimize, and turn each accepted change into a reusable pattern. Use when Jon names a mod and says "make it faster", "optimize this mod", "next mod to optimize", "where does this mod's time go", or asks to push knowledge/perf-patterns.json further.
 ---
 
 # Optimize a mod
@@ -9,13 +9,13 @@ The goal is a speedup players get, proved to change nothing they can see: one ac
 cold and warm 95% intervals both lie above 1 and whose gates all pass, kept in `coverage/perf-runs.json`, and, when
 the change generalises, a pattern in `knowledge/perf-patterns.json` so the next mod's report names it.
 
-You write every optimization. modaccel only profiles, measures and gates; it makes no AI or network calls.
+You write every optimization. mmt only profiles, measures and gates; it makes no AI or network calls.
 
 ## Rules
-- Launches stay hidden and muted (`~/.modaccel/preferences.json` is `{"background": true, "quiet": true}`; never change
+- Launches stay hidden and muted (`~/.mmt/preferences.json` is `{"background": true, "quiet": true}`; never change
   it). Jon may be playing, and other agents may be measuring: run at most 2 heavy jobs (a build, a game, a
   `perf-optimize`) at a time, and keep the load each run records (`machine.load` in record.json).
-- Use modaccel for builds and games, never raw Gradle. Clones, worlds and outputs go in `.runs/`.
+- Use mmt for builds and games, never raw Gradle. Clones, worlds and outputs go in `.runs/`.
 - Never push to the mod's upstream or open issues there without asking Jon. The accepted diff stays in our clone and
   in `bench/<mod>/`.
 - One idea per candidate diff. A bundle that is rejected tells you nothing about its parts.
@@ -60,13 +60,13 @@ once before the first run), a compile beside a launch crashed that arm, two ran 
 four games up beside other agents' work (run one `perf-optimize` at a time then), and a gate named a
 field the unmodified build lacks (reach a candidate's switches by reflection).
 
-`modaccel perf-optimize --replay OUT1,OUT2` decides finished runs again under the current stopping rule and prints
+`mmt perf-optimize --replay OUT1,OUT2` decides finished runs again under the current stopping rule and prints
 the wall time they would take, sequentially and with paired arms. Diorama's four `perf-optimize` runs replay to the
 same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with paired arms.
 
 ## Steps
 
-1. **Pin and build.** Clone into `.runs/<mod>` at a commit and note it. `modaccel compile --root .runs/<mod> --json`.
+1. **Pin and build.** Clone into `.runs/<mod>` at a commit and note it. `mmt compile --root .runs/<mod> --json`.
    Pick a mod whose cost is in **ticks or worker threads**: a hidden client presents about 8 frames per second, so
    per-frame work (overlays, HUDs, renderers) barely registers in it. Jade cost 0.3 ms/s hidden; Pipez's item pipes
    cost about 1 ms of every server tick; Simple Storage Network's master cost 3.2 ms of every tick in a 256-barrel base.
@@ -75,7 +75,7 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
    set the run's `logLevel` to INFO. A mod's dev run often logs DEBUG to the console, where one line cost 15 µs; a
    player's game writes DEBUG only to the buffered `debug.log` (0.7 µs), so the dev console inflates fixed costs.
    A fresh clone has no git identity: set a local `user.name` and `user.email` in it before that commit.
-   When the build is not a plain one (`modaccel support --root R` names its kind):
+   When the build is not a plain one (`mmt support --root R` names its kind):
    - **ModDevGradle** (`net.neoforged.moddev`): runs live in `neoForge { runs { client { ... } } }`; set
      `logLevel = org.slf4j.event.Level.INFO` there. Optional test mods are `localRuntime` or `runtimeOnly` lines.
    - **A remote build script** (`apply from: 'https://.../mod.gradle'`, as Easy Villagers does) cannot be edited where
@@ -86,16 +86,16 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
      stubbing it, because a stub changes what you measure.
 2. **Make a world once and reuse it.** Start the client with `ui-check --root R --jit full`, create a fixed-seed
    superflat world with an eval snippet (`bench/pipez/create-world.java`), and **wait until the world has loaded**
-   before the next snippet: `modaccel eval --root R --until "mc.player != null"` (a snippet run while the world is
+   before the next snippet: `mmt eval --root R --until "mc.player != null"` (a snippet run while the world is
    still loading finds no player and no server level). Then build the scene a player would have
    (`bench/pipez/scene.java`: a base whose pipes keep moving items), save (`saveEverything`), `game-stop`, and copy
    the save to `.runs/<mod>-world/`. Every launch of every run copies that save; nothing is generated per launch.
    The workload must keep running for as long as the world does (a loop, not a one-off burst), so cold and warm
    captures see the same work.
-3. **Profile.** Load the save first (`modaccel world-check --root R --world NAME --jit full` leaves the game in it),
-   wait for it (`modaccel eval --root R --until "mc.player != null"`), then
-   `modaccel perf --root R --duration 30 --warmup 5 --session <mod>-optimize` (`--root` profiles the hidden client
-   modaccel started; `--allow-hidden` is only for `--attach` and `--instance`). Open `report.html`: **Where the cost
+3. **Profile.** Load the save first (`mmt world-check --root R --world NAME --jit full` leaves the game in it),
+   wait for it (`mmt eval --root R --until "mc.player != null"`), then
+   `mmt perf --root R --duration 30 --warmup 5 --session <mod>-optimize` (`--root` profiles the hidden client
+   mmt started; `--allow-hidden` is only for `--attach` and `--instance`). Open `report.html`: **Where the cost
    is, by mod and feature**. Read your mod's row (★): ms per tick and per frame with 95% ranges, its features (block
    entity, mixin, event handler) and their top methods, self and inclusive. An agent reads the same from
    `report.json` (below).
@@ -119,8 +119,8 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
 4. **Match known patterns.** The report's **Known patterns** section lists `knowledge/perf-patterns.json` entries whose
    symptom matches the capture. Read each `change` and `gate`; a match is the first candidate to write.
 5. **Write the experiment.** First capture once more with the suggested probes, for call counts:
-   `modaccel perf --root R --duration 30 --warmup 5 --probes CAPTURE/probes.suggested.json --out .runs/<mod>-probed`.
-   Then `modaccel perf-template --family experiment --from .runs/<mod>-probed --root R` writes, into
+   `mmt perf --root R --duration 30 --warmup 5 --probes CAPTURE/probes.suggested.json --out .runs/<mod>-probed`.
+   Then `mmt perf-template --family experiment --from .runs/<mod>-probed --root R` writes, into
    `.runs/<modid>-experiment` (drafts stay in `.runs/`; copy them into `bench/<mod>/` only once a change is accepted),
    `experiment.json` (metric, scopes, the full JIT), `probes.json`, `options.txt`, and three gate snippets to fill in
    (`behaviour.java`, `digest.java`, `chunks.java`). A method the capture timed at more than `--max-calls-per-tick`
@@ -172,7 +172,7 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
    Run the exact gate in two separate launches and compare: it must return the same text. Then **break it once on
    purpose**: a candidate that changes behaviour slightly (Pipez: nearest-first sorted the other way) must fail the
    exact gate. `perf-optimize` stops at the second pair (an `expect` gate at the first), so this costs two pairs.
-   `modaccel perf-optimize --check-only --experiment E --root R [--patch P]` checks the experiment offline: every
+   `mmt perf-optimize --check-only --experiment E --root R [--patch P]` checks the experiment offline: every
    file, the world, probe labels, unwritten template gates, clock reads in exact gates, a frame metric on a hidden
    client, the JIT, and whether the patch applies. It runs again at the start of every `perf-optimize`.
 7. **Write a candidate.** From the hottest self and inclusive methods, write the smallest change that keeps every
@@ -187,7 +187,7 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
    server thread (`ms per call`) shows what is left better than 20 ms samples do.
 8. **Run perf-optimize.**
    ```sh
-   modaccel perf-optimize --root R --experiment bench/<mod>/experiment.json --patch NAME.diff \
+   mmt perf-optimize --root R --experiment bench/<mod>/experiment.json --patch NAME.diff \
      --runs 8 --min-runs 3 --dry-run --session <mod>-optimize --label NAME --out .runs/<mod>-opt/NAME
    ```
    Pairs run until the rule decides: the first failed gate stops the run; from `--min-runs` pairs, 99% t intervals
@@ -197,7 +197,7 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
    candidate near 1.0x runs all `--runs` pairs, so when its lines show it will not decide (or a later candidate makes
    it moot), create `OUT/stop`: the run ends after the pair in progress and is decided and recorded like any other.
    A run reads a copy of the experiment's files taken when it started, so editing gates while it runs is safe.
-   Editing modaccel itself is not: every launch compiles the tool and its profiler agent from the checkout, so run
+   Editing mmt itself is not: every launch compiles the tool and its profiler agent from the checkout, so run
    `perf-optimize` from a frozen worktree (`git worktree add --detach .runs/tool HEAD`, then pass absolute paths)
    while you change `tools/`.
 9. **Record.** Keep every decided run, accepted or not: `python bench/record.py perf .runs/<mod>-opt/NAME/record.json`.
@@ -208,7 +208,7 @@ same verdicts in 158.6 min instead of 175.5 sequentially, and about 86 min with 
 10. **Add the pattern.** For an accepted change that would apply to other mods, add an entry to
     `knowledge/perf-patterns.json`: a symptom (`when` clauses over methods, features or threads with a regex and a
     minimum share), the change in words, the gain with its intervals, the gate that proved it, `provenIn` with the
-    kept run's id, and `test.fires` / `test.quiet` attribution rows. `modaccel self-test --only perf` checks it.
+    kept run's id, and `test.fires` / `test.quiet` attribution rows. `mmt self-test --only perf` checks it.
 
 ## Lessons the records show
 - **An optimization must keep side effects: chunk loading and tickets.** Storage Network's accepted cumulative change

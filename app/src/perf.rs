@@ -1,4 +1,4 @@
-//! "Measure": `modaccel perf` on a running game, then its numbers drawn as a measuring sheet: frame
+//! "Measure": `mmt perf` on a running game, then its numbers drawn as a measuring sheet: frame
 //! rate, a plotted frame-time chart, time by origin, and a hatched treemap of the hottest classes.
 
 use std::path::PathBuf;

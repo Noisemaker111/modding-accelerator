@@ -1,4 +1,4 @@
-//! Minecraft Modding Tools: a window over the modaccel command line for people who don't use one.
+//! Minecraft Modding Tools: a window over the mmt command line for people who don't use one.
 //! Every action runs the CLI with `--json` (see `cli.rs`); this program only shows what it says.
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 

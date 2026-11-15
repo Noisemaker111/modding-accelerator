@@ -9,7 +9,7 @@ import java.util.regex.*;
 /**
  * Server-plugin merge gate: each pinned plugin in bench/server-plugins/manifest.json is cloned fresh and must
  * run its exact test count through `fast` (cold, then warm) and build its jar through `compile --task`.
- * Usage: java ServerPluginFixtures.java <checkout> <modaccel.jar>
+ * Usage: java ServerPluginFixtures.java <checkout> <mmt.jar>
  */
 public final class ServerPluginFixtures {
 
@@ -29,7 +29,7 @@ public final class ServerPluginFixtures {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) throw new IllegalArgumentException(
-            "Usage: java ServerPluginFixtures.java <checkout> <modaccel.jar>"
+            "Usage: java ServerPluginFixtures.java <checkout> <mmt.jar>"
         );
         run(Path.of(args[0]).toRealPath(), Path.of(args[1]).toAbsolutePath().normalize());
     }
@@ -45,7 +45,7 @@ public final class ServerPluginFixtures {
             command(List.of("git", "clone", "--quiet", plugin.repo(), root.toString()), home, 5);
             command(List.of("git", "-C", root.toString(), "checkout", "--quiet", plugin.commit()), home, 2);
             String counts = "\"executed\":" + plugin.executed() + ",\"failed\":" + plugin.failed();
-            Run fast = modaccel(home, jar, root, "fast");
+            Run fast = mmt(home, jar, root, "fast");
             if (
                 fast.exit() != 0 ||
                 !fast.output().contains(counts) ||
@@ -66,7 +66,7 @@ public final class ServerPluginFixtures {
                 plugin.executed(),
                 fast.seconds()
             );
-            Run build = modaccel(home, jar, root, "compile", "--task", plugin.task());
+            Run build = mmt(home, jar, root, "compile", "--task", plugin.task());
             Path built = root.resolve(plugin.file());
             if (build.exit() != 0 || !Files.isRegularFile(built)) throw new AssertionError(
                 plugin.id() +
@@ -102,7 +102,7 @@ public final class ServerPluginFixtures {
      * with its own message and file:line, and a wired-up command must pass again: the check decides, not the fixture.
      */
     static void pluginCheck(Path home, Path jar, Path root, Plugin plugin) throws Exception {
-        Run clean = modaccel(home, jar, root, "plugin-check");
+        Run clean = mmt(home, jar, root, "plugin-check");
         if (
             clean.exit() != 0 ||
             !clean.output().contains("plugin-check passed for " + plugin.checkName()) ||
@@ -134,7 +134,7 @@ public final class ServerPluginFixtures {
         Matcher enable = Pattern.compile("public void onEnable\\(\\)\\s*\\{\\r?\\n").matcher(source);
         if (!enable.find()) throw new AssertionError(plugin.id() + ": " + mainSource + " has no onEnable() { line");
         String command =
-            "commands:\n  modaccelcheck:\n    description: added by the plugin-check gate\n    usage: /modaccelcheck\n";
+            "commands:\n  mmtcheck:\n    description: added by the plugin-check gate\n    usage: /mmtcheck\n";
         String simple = main.substring(main.lastIndexOf('.') + 1);
         record Break(String name, String yml, String java, int exit, List<String> expects) {}
         List<Break> breaks = List.of(
@@ -155,7 +155,7 @@ public final class ServerPluginFixtures {
                 source,
                 1,
                 List.of(
-                    "FAIL commands: /modaccelcheck is declared in plugin.yml but nothing handles it",
+                    "FAIL commands: /mmtcheck is declared in plugin.yml but nothing handles it",
                     "plugin.yml:" + (descriptor.lines().count() + 2)
                 )
             ),
@@ -173,11 +173,11 @@ public final class ServerPluginFixtures {
             ),
             new Break(
                 "missing hard dependency",
-                descriptor + "depend: [ModaccelMissingDependency]\n",
+                descriptor + "depend: [MmtMissingDependency]\n",
                 source,
                 1,
                 List.of(
-                    "FAIL dependencies: plugin.yml needs the plugin ModaccelMissingDependency",
+                    "FAIL dependencies: plugin.yml needs the plugin MmtMissingDependency",
                     "plugin.yml:" + (descriptor.lines().count() + 1)
                 )
             ),
@@ -185,7 +185,7 @@ public final class ServerPluginFixtures {
                 "command in plugin.yml with an executor (control)",
                 descriptor + command,
                 source.substring(0, enable.end()) +
-                "        getCommand(\"modaccelcheck\").setExecutor((sender, cmd, label, args) -> true);\n" +
+                "        getCommand(\"mmtcheck\").setExecutor((sender, cmd, label, args) -> true);\n" +
                 source.substring(enable.end()),
                 0,
                 List.of(
@@ -197,7 +197,7 @@ public final class ServerPluginFixtures {
         for (Break b : breaks) {
             Files.writeString(yml, b.yml(), StandardCharsets.UTF_8);
             Files.writeString(mainSource, b.java(), StandardCharsets.UTF_8);
-            Run check = modaccel(home, jar, copy, "plugin-check");
+            Run check = mmt(home, jar, copy, "plugin-check");
             boolean expected = check.exit() == b.exit() && b.expects().stream().allMatch(check.output()::contains);
             if (!expected) throw new AssertionError(
                 plugin.id() +
@@ -221,7 +221,7 @@ public final class ServerPluginFixtures {
                 check.seconds()
             );
         }
-        modaccel(home, jar, copy, "game-stop");
+        mmt(home, jar, copy, "game-stop");
     }
 
     static int line(String text, String prefix) {
@@ -236,7 +236,7 @@ public final class ServerPluginFixtures {
                 Path rel = from.relativize(p);
                 if (
                     rel.getNameCount() > 0 &&
-                    Set.of(".git", ".gradle", "build", ".modaccel", ".runs").contains(rel.getName(0).toString())
+                    Set.of(".git", ".gradle", "build", ".mmt", ".runs").contains(rel.getName(0).toString())
                 ) continue;
                 Path target = to.resolve(rel.toString());
                 if (Files.isDirectory(p)) Files.createDirectories(target);
@@ -297,9 +297,9 @@ public final class ServerPluginFixtures {
         return m.group(1);
     }
 
-    static Run modaccel(Path home, Path jar, Path root, String... args) throws Exception {
+    static Run mmt(Path home, Path jar, Path root, String... args) throws Exception {
         String java = Path.of(System.getProperty("java.home"), "bin", isWindows() ? "java.exe" : "java").toString();
-        List<String> command = new ArrayList<>(List.of(java, "-Dmodaccel.home=" + home, "-jar", jar.toString()));
+        List<String> command = new ArrayList<>(List.of(java, "-Dmmt.home=" + home, "-jar", jar.toString()));
         command.addAll(List.of(args));
         command.addAll(List.of("--root", root.toString(), "--json"));
         return process(command, home, 10);
@@ -313,7 +313,7 @@ public final class ServerPluginFixtures {
     }
 
     static Run process(List<String> command, Path directory, int minutes) throws Exception {
-        Path output = Files.createTempFile("modaccel-plugin-", ".log");
+        Path output = Files.createTempFile("mmt-plugin-", ".log");
         long start = System.nanoTime();
         Process process = new ProcessBuilder(command)
             .directory(directory.toFile())

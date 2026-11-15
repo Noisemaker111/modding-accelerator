@@ -95,16 +95,16 @@
   "forgeloop": [
     { "name": "their gradlew build -x test", "seconds": 328.3 },
     { "name": "install the built jar", "seconds": 5.0 },
-    { "name": "first .\\modaccel fast", "seconds": 23.9 },
-    { "name": "one-file edit, .\\modaccel fast", "seconds": 2.3 },
+    { "name": "first .\\mmt fast", "seconds": 23.9 },
+    { "name": "one-file edit, .\\mmt fast", "seconds": 2.3 },
     { "name": "broken file: FAIL, no build", "seconds": 1.3 }
   ],
   "neoforgeloop": [
-    { "name": "first .\\modaccel ui (client start included)", "seconds": 25.6 },
+    { "name": "first .\\mmt ui (client start included)", "seconds": 25.6 },
     { "name": "cold start, client listening", "seconds": 18.4 },
     { "name": "first ui after start", "seconds": 2.4 },
     { "name": "screen check, 2 screenshots", "seconds": 3.2 },
-    { "name": "repeat .\\modaccel ui, total", "seconds": 6.1 }
+    { "name": "repeat .\\mmt ui, total", "seconds": 6.1 }
   ],
   "dioramaloop": [
     { "name": "their :26.3:build -x test", "seconds": 204.5 },
@@ -129,7 +129,7 @@
     { "name": "Traveler's Backpack build after repair", "seconds": 5.0 },
     { "name": "Artifacts build after repair", "seconds": 13.0 }
   ],
-  "editloop_measured": "2026-10-23, one mod at a time. warm = the mod's own build after a one-file edit, Gradle daemon up (one warm-up build, then 3 edits). fast = the whole modaccel fast command after the same edit (lint + compile + pure tests, PowerShell start included). lane = the compile + test step inside it. cold = the first build from bench/port and bench/mods.",
+  "editloop_measured": "2026-10-23, one mod at a time. warm = the mod's own build after a one-file edit, Gradle daemon up (one warm-up build, then 3 edits). fast = the whole mmt fast command after the same edit (lint + compile + pure tests, PowerShell start included). lane = the compile + test step inside it. cold = the first build from bench/port and bench/mods.",
   "editloop": [
     { "mod": "MineColonies", "loader": "Forge", "mc": "1.20.1", "task": "build -x test", "cold": 328.3, "warm": [137.8, 120.9, 137.1], "fast": [4.2, 4.4, 4.0], "lane": [2.5, 2.6, 2.4] },
     { "mod": "Polymer", "loader": "Fabric", "mc": "1.21.6", "task": "build -x test", "cold": 474.4, "warm": [24.3, 34.4, 20.6], "fast": [3.9, 3.8, 3.5], "lane": [2.1, 2.2, 1.8] },
@@ -145,8 +145,8 @@
     "Timings come from .runs/bench.jsonl and .runs/index.jsonl; n is the number of runs.",
     "Screenshots are 854x480 PNGs a human or an agent looks at; there are no pixel goldens.",
     "Diorama figures are its own documented numbers, same machine where noted.",
-    "Forge loop, MineColonies 1.20.1 with 2102 sources on JDK 17: their gradlew build -x test 328.3s, install 5s, first .\\modaccel fast 23.9s, one-file edit 2.3s, broken file FAIL 1.3s.",
-    "NeoForge 1.21.1 node: first .\\modaccel ui 25.6s with client start, cold start to a listening client 18.4s, first ui after start 2.4s, screen check 3.2s with two screenshots, repeat .\\modaccel ui 6.1s total.",
+    "Forge loop, MineColonies 1.20.1 with 2102 sources on JDK 17: their gradlew build -x test 328.3s, install 5s, first .\\mmt fast 23.9s, one-file edit 2.3s, broken file FAIL 1.3s.",
+    "NeoForge 1.21.1 node: first .\\mmt ui 25.6s with client start, cold start to a listening client 18.4s, first ui after start 2.4s, screen check 3.2s with two screenshots, repeat .\\mmt ui 6.1s total.",
     "Diorama (Stonecutter): their :26.3:build -x test 204.5s, fast lane 2.1s, toolchain gate READY 5.2s.",
     "Toolchain gate: Diorama READY 5.2s; MineColonies 1.20.4 BLOCKED 29.4s; MineColonies main configures 88.7s; Traverse BLOCKED 11.1s; Artifacts BLOCKED 8.8s; NeoForge client direct launch 7s to listening.",
     "Port repairs, all six mods green: Trinkets 21 errors in 1.15 min; Polymer 35 errors in 8.6 min; Traverse 68 call sites in a single pass, 5.9s build after; Terrestria 142 sites, 7.5s build after; Traveler's Backpack 196 errors over 4 repair cycles, 11 min of edits, 5s final build; Artifacts 97 errors over 8 builds, 28 min of edits, 13s final build.",

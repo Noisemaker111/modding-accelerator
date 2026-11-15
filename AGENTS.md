@@ -1,25 +1,25 @@
-# Modding Accelerator
+# Minecraft Modding Tools
 
-`modaccel` tests Minecraft mods/plugins, ports mod source between versions, and diagnoses modpacks.
+`mmt` tests Minecraft mods/plugins, ports mod source between versions, and diagnoses modpacks.
 The root is also Prism Lab, the demo mod fixture. Scope: `README.md` and `SCOPE.md`.
 
 ## Commands
 
 From the repo root, with JDK 17+ and Python 3.12+. No install step: the launcher compiles itself.
-POSIX below; Windows uses `modaccel.cmd` and `python` instead of `./modaccel` and `python3`.
+POSIX below; Windows uses `mmt.cmd` and `python` instead of `./mmt` and `python3`.
 
 ```sh
-./modaccel help
-./modaccel doctor --json
-./modaccel fast
-./modaccel package
+./mmt help
+./mmt doctor --json
+./mmt fast
+./mmt package
 ```
 
-Use modaccel for builds and game launches; never raw Gradle or `--no-daemon`.
+Use mmt for builds and game launches; never raw Gradle or `--no-daemon`.
 Offline gate before pushing (game/network checks: `.github/workflows/portable.yml`):
 
 ```sh
-./modaccel self-test &&
+./mmt self-test &&
 python3 bench/test_measures.py &&
 python3 bench/test_record.py &&
 python3 bench/test_ledger_rule.py &&
@@ -41,13 +41,13 @@ gh pr merge --squash
 
 ## Start here
 
-- CLI: `tools/cli/Modaccel.java` (entry/help), one class per command; `tools/tests/PortableTests.java` (self-test).
+- CLI: `tools/cli/Mmt.java` (entry/help), one class per command; `tools/tests/PortableTests.java` (self-test).
 - Game probes: `tools/{agent,datacheck,mixincheck,packcheck,plugincheck,servercheck}/`.
 - Modpacks: `tools/cli/PackCheck.java` runs the registries `PackInputs` (pack shapes), `PackLoaders` with `knowledge/pack-loaders.json` (loader servers), `PackMods` (jar metadata), `PackChecks` and `PackRepairs` with `knowledge/pack-fixes.json`; the loader-neutral probe is `tools/packcheck/`. Extending them: `tools/packcheck/CONTRIBUTING.md`.
 - Porter/rules: `tools/cli/Port.java`, `knowledge/fixes.json`, `coverage/changes/`. Run `python3 bench/port_board.py` when changing them; each rule needs a `test {error,before,after}`. Writer: `python3 bench/rule_test.py --help`.
 - Optimizing a mod: `perf` then `perf-optimize` (PERFORMANCE.md); each run writes record.json. Keep runs with `python3 bench/record.py perf`, summarise with `python3 bench/perf_sessions.py`; accepted changes become `knowledge/perf-patterns.json` entries, each citing its kept run.
 - Port receipts and measures: `coverage/{ledger,measures}.json`; recording commands in `bench/README.md`. Plans, dated status and findings belong in PRs/issues, never docs or memory notes.
-- Desktop app: `app/` (Rust, Rune pinned in `app/Cargo.toml`) runs the CLI with `--json` and `MODACCEL_PROGRESS=1`; headless UI scripts are in `app/ui-tests/`.
+- Desktop app: `app/` (Rust, Rune pinned in `app/Cargo.toml`) runs the CLI with `--json` and `MMT_PROGRESS=1`; headless UI scripts are in `app/ui-tests/`.
 - Website: `bench/bench_page.py`, `bench/page_style.py`; map uses `bench/porting_map.py`. `docs/` is generated on main; change its generators. Keep docs about current use, not history or plans.
 
 ## Gotchas

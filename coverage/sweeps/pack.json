@@ -1,5 +1,5 @@
 {
-  "about": "modaccel pack-check on the pinned packs in bench/pack-sweep/corpus.json, by python bench/pack_sweep.py. gaps ranks each gap by how many packs show it; history keeps each labelled sweep's pass rates.",
+  "about": "mmt pack-check on the pinned packs in bench/pack-sweep/corpus.json, by python bench/pack_sweep.py. gaps ranks each gap by how many packs show it; history keeps each labelled sweep's pass rates.",
   "corpus": 24,
   "latest": {
     "label": "repairs",
@@ -310,7 +310,7 @@
             "repaired": 0
           }
         ],
-        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T17-44-24.650253500Z-48e80ea2\\atm10-neoforge-1.21.1 (modaccel fixed).zip",
+        "fixedExport": "C:\\Users\\Jk101\\.mmt\\packs\\.runs\\portable\\2026-11-15T17-44-24.650253500Z-48e80ea2\\atm10-neoforge-1.21.1 (mmt fixed).zip",
         "recheck": {
           "newWorld": {
             "opened": true,
@@ -573,7 +573,7 @@
             "repaired": 0
           }
         ],
-        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T16-08-52.532354400Z-da3f9344\\atm9-forge-1.20.1 (modaccel fixed).zip",
+        "fixedExport": "C:\\Users\\Jk101\\.mmt\\packs\\.runs\\portable\\2026-11-15T16-08-52.532354400Z-da3f9344\\atm9-forge-1.20.1 (mmt fixed).zip",
         "recheck": {
           "newWorld": {
             "opened": true,
@@ -717,7 +717,7 @@
             "repaired": 0
           }
         ],
-        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T16-38-50.299005300Z-24062bab\\create-above-and-beyond-forge-1.16.5 (modaccel fixed).zip",
+        "fixedExport": "C:\\Users\\Jk101\\.mmt\\packs\\.runs\\portable\\2026-11-15T16-38-50.299005300Z-24062bab\\create-above-and-beyond-forge-1.16.5 (mmt fixed).zip",
         "recheck": {
           "newWorld": {
             "opened": true,
@@ -914,7 +914,7 @@
             "repaired": 0
           }
         ],
-        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T16-04-48.921148400Z-240daf02\\create-astral-fabric-1.18.2 (modaccel fixed).zip",
+        "fixedExport": "C:\\Users\\Jk101\\.mmt\\packs\\.runs\\portable\\2026-11-15T16-04-48.921148400Z-240daf02\\create-astral-fabric-1.18.2 (mmt fixed).zip",
         "recheck": {
           "newWorld": {
             "opened": true,
@@ -2503,7 +2503,7 @@
             "repaired": 0
           }
         ],
-        "fixedExport": "C:\\Users\\Jk101\\.modaccel\\packs\\.runs\\portable\\2026-11-15T15-31-14.312652100Z-9065f4e6\\Sodium Plus 2.2.11 (modaccel fixed).mrpack",
+        "fixedExport": "C:\\Users\\Jk101\\.mmt\\packs\\.runs\\portable\\2026-11-15T15-31-14.312652100Z-9065f4e6\\Sodium Plus 2.2.11 (mmt fixed).mrpack",
         "recheck": {
           "newWorld": {
             "opened": true,

@@ -1,7 +1,7 @@
 """The loader-change rules and their record of published-jar symbols agree. Run: python bench/test_loader_api.py
 
 Offline: reads knowledge/loaders.json and coverage/loader/api.json, and parses a class file built here, so it
-needs no checkout, no jar and no network. The rules' before/after tests themselves run in Java: modaccel self-test.
+needs no checkout, no jar and no network. The rules' before/after tests themselves run in Java: mmt self-test.
 """
 import hashlib
 import io

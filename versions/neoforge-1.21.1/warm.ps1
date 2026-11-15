@@ -2,7 +2,7 @@
 <#
   Warm-client driver for the NeoForge 1.21.1 node.
 
-  Same socket protocol as the parent's modaccel.ps1 warm client and the 1.21.11 node,
+  Same socket protocol as the parent's mmt.ps1 warm client and the 1.21.11 node,
   on this node's own ports: client 27599, agent 27598 (the agent is not attached here).
   Runs from versions\neoforge-1.21.1.
 
@@ -24,7 +24,7 @@ $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $root
 
-$lab = Join-Path $root '.modaccel'
+$lab = Join-Path $root '.mmt'
 $clientPort = 27599
 $agentPort = 27598
 $clientLog = Join-Path $lab 'client.log'

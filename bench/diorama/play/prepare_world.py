@@ -25,8 +25,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent.parent
 
 
-def modaccel(args, root, project, timeout=900):
-    launcher = str(ROOT / ("modaccel.cmd" if os.name == "nt" else "modaccel"))
+def mmt(args, root, project, timeout=900):
+    launcher = str(ROOT / ("mmt.cmd" if os.name == "nt" else "mmt"))
     done = subprocess.run([launcher, *args, "--root", str(root), "--project", project, "--json"],
                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
     text = done.stdout.strip()
@@ -35,7 +35,7 @@ def modaccel(args, root, project, timeout=900):
     except ValueError:
         out = {"ok": False, "result": {"error": (done.stderr or text)[-2000:]}}
     if not out.get("ok"):
-        raise SystemExit(f"modaccel {args[0]} failed: {(out.get('result') or {}).get('error')}")
+        raise SystemExit(f"mmt {args[0]} failed: {(out.get('result') or {}).get('error')}")
     return out.get("result") or {}
 
 
@@ -73,27 +73,27 @@ def main(argv=None):
     if save.exists():
         raise SystemExit(f"{save} exists; remove it to create the world again")
     try:
-        modaccel(["ui-check"], root, args.project)
-        modaccel(["eval", "--file", str(HERE / "create-world.java")], root, args.project)
-        modaccel(["eval", "--thread", "control", "--until", "mc.level != null && mc.player != null", "--timeout", "120", "--code", "true"], root, args.project)
-        modaccel(["eval", "--file", str(HERE / "fly.java")], root, args.project)
+        mmt(["ui-check"], root, args.project)
+        mmt(["eval", "--file", str(HERE / "create-world.java")], root, args.project)
+        mmt(["eval", "--thread", "control", "--until", "mc.level != null && mc.player != null", "--timeout", "120", "--code", "true"], root, args.project)
+        mmt(["eval", "--file", str(HERE / "fly.java")], root, args.project)
         # The whole path (fly.segment unset) takes 60 s and fly.done follows 20 s later; wait in bounded steps.
         for _ in range(2):
             try:
-                modaccel(["eval", "--thread", "control", "--until", 'Boolean.TRUE.equals(vars.get("fly.done"))', "--timeout", "120", "--code", "true"], root, args.project)
+                mmt(["eval", "--thread", "control", "--until", 'Boolean.TRUE.equals(vars.get("fly.done"))', "--timeout", "120", "--code", "true"], root, args.project)
                 break
             except SystemExit:
                 continue
         # Generate one chunk in every region the experiment copies; leaving the world saves them.
         load = "; ".join(f"level.getChunk({x}, {z})" for x, z in chunks)
-        modaccel(["eval", "--thread", "control", "--timeout", "120", "--code",
+        mmt(["eval", "--thread", "control", "--timeout", "120", "--code",
                   "var server = mc.getSingleplayerServer(); var level = server.overworld(); "
                   f"server.submit(() -> {{ {load}; }}).join(); return \"{len(chunks)} region chunks\";"], root, args.project)
-        modaccel(["eval", "--code", 'mc.level.disconnect(); mc.disconnect(new net.minecraft.client.gui.screens.TitleScreen()); return "left";'], root, args.project)
-        modaccel(["eval", "--thread", "control", "--until", "mc.level == null && mc.getSingleplayerServer() == null", "--timeout", "120", "--code", "true"], root, args.project)
+        mmt(["eval", "--code", 'mc.level.disconnect(); mc.disconnect(new net.minecraft.client.gui.screens.TitleScreen()); return "left";'], root, args.project)
+        mmt(["eval", "--thread", "control", "--until", "mc.level == null && mc.getSingleplayerServer() == null", "--timeout", "120", "--code", "true"], root, args.project)
     finally:
         # A failed step must not leave a hidden game running.
-        modaccel(["game-stop"], root, args.project)
+        mmt(["game-stop"], root, args.project)
     target = Path(args.out).resolve() / "diorama-play"
     if target.exists():
         shutil.rmtree(target)

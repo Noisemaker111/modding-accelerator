@@ -19,22 +19,22 @@ extraction, lead.
 
 ## Run it
 
-Windows uses `modaccel.cmd`. From the Mod Accel checkout:
+Windows uses `mmt.cmd`. From the Minecraft Modding Tools checkout:
 
 ```sh
 git clone --branch 1.21.1 https://github.com/henkelmax/pipez .runs/pipez
 git -C .runs/pipez checkout 91a01deda19e5beb19fe7840aa14daaa312aa212
 
 # Once: make the world (superflat, fixed seed, peaceful) and the base, then keep the save.
-./modaccel ui-check --root .runs/pipez --jit full
-./modaccel eval --root .runs/pipez --file bench/pipez/create-world.java
-./modaccel eval --root .runs/pipez --until "mc.player != null" --timeout 120
-./modaccel eval --root .runs/pipez --file bench/pipez/scene.java --thread control
-./modaccel eval --root .runs/pipez --code "mc.getSingleplayerServer().submit(() -> mc.getSingleplayerServer().saveEverything(true, true, true)).join()" --thread control
-./modaccel game-stop --root .runs/pipez
+./mmt ui-check --root .runs/pipez --jit full
+./mmt eval --root .runs/pipez --file bench/pipez/create-world.java
+./mmt eval --root .runs/pipez --until "mc.player != null" --timeout 120
+./mmt eval --root .runs/pipez --file bench/pipez/scene.java --thread control
+./mmt eval --root .runs/pipez --code "mc.getSingleplayerServer().submit(() -> mc.getSingleplayerServer().saveEverything(true, true, true)).join()" --thread control
+./mmt game-stop --root .runs/pipez
 mkdir -p .runs/pipez-world && cp -r .runs/pipez/run/saves/pipez-base .runs/pipez-world/pipez-base
 
-./modaccel perf-optimize --root .runs/pipez --experiment bench/pipez/experiment.json \
+./mmt perf-optimize --root .runs/pipez --experiment bench/pipez/experiment.json \
   --patch bench/pipez/sorted-connections.diff --runs 8 --dry-run --out .runs/pipez-opt/sorted-connections
 ```
 

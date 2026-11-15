@@ -15,7 +15,7 @@ public final class FastLaneIsolationTest {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) throw new IllegalArgumentException(
-            "Usage: java FastLaneIsolationTest.java <checkout> <modaccel.jar>"
+            "Usage: java FastLaneIsolationTest.java <checkout> <mmt.jar>"
         );
         Path home = Path.of(args[0]).toRealPath(), jar = Path.of(args[1]).toAbsolutePath().normalize();
         if (!Files.isRegularFile(jar)) throw new IOException("Missing package: " + jar);
@@ -129,7 +129,7 @@ public final class FastLaneIsolationTest {
         Process process = new ProcessBuilder(
             List.of(
                 java,
-                "-Dmodaccel.home=" + home,
+                "-Dmmt.home=" + home,
                 "-jar",
                 jar.toString(),
                 "fast",

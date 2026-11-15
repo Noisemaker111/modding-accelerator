@@ -33,7 +33,7 @@ check(not found, "coverage files have problems:\n  " + "\n  ".join(found))
 # main rewrites both after every merge (.github/workflows/generated.yml), so a branch never has to.
 have = bench_page.roadmap_md(book)
 check(have.startswith("# Roadmap") and all(f"## Goal {g['id']} — " in have for g in book.roadmap["goals"]), "ROADMAP.md renders every goal")
-check("<title>Modding Accelerator</title>" in bench_page.page(book), "the page renders")
+check("<title>Minecraft Modding Tools</title>" in bench_page.page(book), "the page renders")
 
 
 def broken(edit):

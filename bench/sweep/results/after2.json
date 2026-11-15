@@ -195,7 +195,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.minecraftforge:forge:1.20.5-49.0.38. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven.apache.org, "
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: net.minecraftforge:forge:1.20.5-49.0.38. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven.apache.org, "
    },
    "seconds": {
     "port": 83.5
@@ -655,7 +655,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: org.ladysnake:elmendorf:0.16.0. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven.apache.org, https://j"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: org.ladysnake:elmendorf:0.16.0. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven.apache.org, https://j"
    },
    "seconds": {
     "port": 15.6
@@ -688,7 +688,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: org.ladysnake:elmendorf:0.16.0. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven.apache.org, https://j"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: org.ladysnake:elmendorf:0.16.0. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven.apache.org, https://j"
    },
    "seconds": {
     "port": 15.7
@@ -720,7 +720,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: me.shedaniel.cloth:cloth-config-forge:18.0.145. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven.apach"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: me.shedaniel.cloth:cloth-config-forge:18.0.145. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven.apach"
    },
    "seconds": {
     "port": 20.4
@@ -752,7 +752,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: me.shedaniel.cloth:cloth-config-forge:19.0.147. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven.apach"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: me.shedaniel.cloth:cloth-config-forge:19.0.147. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven.apach"
    },
    "seconds": {
     "port": 73.9
@@ -1089,7 +1089,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
    },
    "seconds": {
     "port": 15.1
@@ -1122,7 +1122,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
    },
    "seconds": {
     "port": 15.0
@@ -1155,7 +1155,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: net.darkhax.curseforgegradle:CurseForgeGradle:1.3.33. Add the repository that publishes it, or a version that exists, then rerun. A problem occ"
    },
    "seconds": {
     "port": 17.7
@@ -1441,7 +1441,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Could not determine the dependencies of task ':modaccelMetadata'. > A problem occurred configuring project ':1.21.1'. > Failed to setup Minecraft, java.io.UncheckedIOException: Failed to setup mapping"
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Could not determine the dependencies of task ':mmtMetadata'. > A problem occurred configuring project ':1.21.1'. > Failed to setup Minecraft, java.io.UncheckedIOException: Failed to setup mapping"
    },
    "seconds": {
     "port": 9.7
@@ -1474,7 +1474,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Could not determine the dependencies of task ':modaccelMetadata'. > A problem occurred configuring project ':1.21.1'. > Failed to setup Minecraft, java.io.UncheckedIOException: Failed to setup mapping"
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Could not determine the dependencies of task ':mmtMetadata'. > A problem occurred configuring project ':1.21.1'. > Failed to setup Minecraft, java.io.UncheckedIOException: Failed to setup mapping"
    },
    "seconds": {
     "port": 8.1
@@ -1507,7 +1507,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Could not determine the dependencies of task ':modaccelMetadata'. > A problem occurred configuring project ':1.21.1'. > Failed to setup Minecraft, java.io.UncheckedIOException: Failed to setup mapping"
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Could not determine the dependencies of task ':mmtMetadata'. > A problem occurred configuring project ':1.21.1'. > Failed to setup Minecraft, java.io.UncheckedIOException: Failed to setup mapping"
    },
    "seconds": {
     "port": 8.1
@@ -4710,7 +4710,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: org.ajoberstar.grgit:grgit-core:4.1.0. Searched: https://plugins.gradle.org. Add the repository that publishes it, or a version that exists, th"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: org.ajoberstar.grgit:grgit-core:4.1.0. Searched: https://plugins.gradle.org. Add the repository that publishes it, or a version that exists, th"
    },
    "seconds": {
     "port": 11.1
@@ -4742,7 +4742,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: org.ajoberstar.grgit:grgit-core:4.1.0. Searched: https://plugins.gradle.org. Add the repository that publishes it, or a version that exists, th"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: org.ajoberstar.grgit:grgit-core:4.1.0. Searched: https://plugins.gradle.org. Add the repository that publishes it, or a version that exists, th"
    },
    "seconds": {
     "port": 5.3
@@ -5099,7 +5099,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Input length = 1 Undo this port with: port --undo \"C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\owo-1.18.2\\.modaccel\\portable\\ports\\2026-11-15T12-17-31.592341100Z-1335b743\""
+    "detail": "Input length = 1 Undo this port with: port --undo \"C:\\Users\\Jk101\\.t3\\worktrees\\modding-accelerator\\t3-75bc7664-a828190cfac5f0c5\\.runs\\sweep\\clones\\owo-1.18.2\\.mmt\\portable\\ports\\2026-11-15T12-17-31.592341100Z-1335b743\""
    },
    "seconds": {
     "port": 52.9
@@ -5132,7 +5132,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: com.github.CaffeineMC.lithium-fabric:lithium:d2a5d9e. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: com.github.CaffeineMC.lithium-fabric:lithium:d2a5d9e. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven"
    },
    "seconds": {
     "port": 49.7
@@ -5165,7 +5165,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: com.github.CaffeineMC.lithium-fabric:lithium:d2a5d9e. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: com.github.CaffeineMC.lithium-fabric:lithium:d2a5d9e. Searched: https://maven.fabricmc.net, https://libraries.minecraft.net, https://repo.maven"
    },
    "seconds": {
     "port": 15.2
@@ -5259,7 +5259,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: org.quiltmc:loom:1.+. Add the repository that publishes it, or a version that exists, then rerun. A problem occurred configuring root project '"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: org.quiltmc:loom:1.+. Add the repository that publishes it, or a version that exists, then rerun. A problem occurred configuring root project '"
    },
    "seconds": {
     "port": 12.6
@@ -5291,7 +5291,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: org.quiltmc:loom:1.+. Add the repository that publishes it, or a version that exists, then rerun. A problem occurred configuring root project '"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: org.quiltmc:loom:1.+. Add the repository that publishes it, or a version that exists, then rerun. A problem occurred configuring root project '"
    },
    "seconds": {
     "port": 7.3
@@ -5323,7 +5323,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Execution failed for task ':modaccelProjectMetadata'. > Could not create task ':modrinth'. > 'void com.modrinth.minotaur.TaskModrinthUpload.notCompatibleWithConfigurationCache(java.lang.String)' Log: "
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Execution failed for task ':mmtProjectMetadata'. > Could not create task ':modrinth'. > 'void com.modrinth.minotaur.TaskModrinthUpload.notCompatibleWithConfigurationCache(java.lang.String)' Log: "
    },
    "seconds": {
     "port": 18.7
@@ -5355,7 +5355,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Execution failed for task ':modaccelProjectMetadata'. > Could not create task ':modrinth'. > 'void com.modrinth.minotaur.TaskModrinthUpload.notCompatibleWithConfigurationCache(java.lang.String)' Log: "
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. Execution failed for task ':mmtProjectMetadata'. > Could not create task ':modrinth'. > 'void com.modrinth.minotaur.TaskModrinthUpload.notCompatibleWithConfigurationCache(java.lang.String)' Log: "
    },
    "seconds": {
     "port": 17.0
@@ -5490,7 +5490,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':forge'. > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\.t3\\wor"
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':forge'. > Process 'command 'C:\\Users\\Jk101\\.mmt\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\.t3\\wor"
    },
    "seconds": {
     "port": 87.4
@@ -5522,7 +5522,7 @@
    },
    "blocker": {
     "class": "build-tooling",
-    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':forge'. > Process 'command 'C:\\Users\\Jk101\\.modaccel\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\.t3\\wor"
+    "detail": "Could not read this project's build: Gradle stopped while loading it, before any code was compiled. A problem occurred configuring project ':forge'. > Process 'command 'C:\\Users\\Jk101\\.mmt\\jdks\\temurin-25-windows-x64\\bin\\java.exe'' finished with non-zero exit value 1 Log: C:\\Users\\Jk101\\.t3\\wor"
    },
    "seconds": {
     "port": 118.3
@@ -5739,7 +5739,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve 2 dependencies: net.fabricmc.unpick:unpick:3.0.0-beta.13, net.fabricmc.unpick:unpick-format-utils:3.0.0-beta.13. Searched: https://plugins.gradle.org, https:"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve 2 dependencies: net.fabricmc.unpick:unpick:3.0.0-beta.13, net.fabricmc.unpick:unpick-format-utils:3.0.0-beta.13. Searched: https://plugins.gradle.org, https:"
    },
    "seconds": {
     "port": 54.7
@@ -6152,7 +6152,7 @@
    },
    "blocker": {
     "class": "dependency-unavailable",
-    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so modaccel could not read the build. Gradle could not resolve a dependency: net.blay09.mods:balm-fabric:21.6.3+1.21.6. Searched: https://libraries.minecraft.net, https://repo.maven.apache.org, https://maven.twelveiterat"
+    "detail": "Missing dependency: this project's build needs a library Gradle could not find, so mmt could not read the build. Gradle could not resolve a dependency: net.blay09.mods:balm-fabric:21.6.3+1.21.6. Searched: https://libraries.minecraft.net, https://repo.maven.apache.org, https://maven.twelveiterat"
    },
    "seconds": {
     "port": 67.2

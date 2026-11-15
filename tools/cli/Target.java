@@ -1392,7 +1392,7 @@ final class Target {
         );
         if (!loader.find()) return;
         String block =
-            "\n// Written by modaccel port: on NeoForge 26.x the game can only be bootstrapped inside FancyModLoader, so the\n" +
+            "\n// Written by mmt port: on NeoForge 26.x the game can only be bootstrapped inside FancyModLoader, so the\n" +
             "// tests run on junit-fml, with the mod and its tests in FML's class loader.\n" +
             "runs {\n    junit {\n        junit true\n        modSource sourceSets.main\n        unitTestSource sourceSets.test\n    }\n}\n\n" +
             "dependencies {\n    testRuntimeOnly 'net.neoforged.fancymodloader:junit-fml:" +
@@ -1789,8 +1789,8 @@ final class Target {
                     " reads its resources from " +
                     root +
                     ", a folder it shares with other projects" +
-                    " (a Stonecutter build does this: every version node compiles the same src/). Porting one node would change the files every other node uses, so modaccel does not edit them." +
-                    " To build another Minecraft version, select the node that already targets it (modaccel setup lists them, e.g. --project :26.2), or add a node for it in settings.gradle.kts. Nothing was changed."
+                    " (a Stonecutter build does this: every version node compiles the same src/). Porting one node would change the files every other node uses, so mmt does not edit them." +
+                    " To build another Minecraft version, select the node that already targets it (mmt setup lists them, e.g. --project :26.2), or add a node for it in settings.gradle.kts. Nothing was changed."
                 );
                 Path file = root.resolve("fabric.mod.json");
                 if (Files.isRegularFile(file)) {

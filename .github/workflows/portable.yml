@@ -42,14 +42,14 @@ jobs:
             ~/.gradle/wrapper
             ~/.gradle/jdks
           key: command-${{ runner.os }}-${{ hashFiles('portable workspace/build.gradle', 'portable workspace/settings.gradle', 'portable workspace/gradle.properties', 'portable workspace/gradle/wrapper/gradle-wrapper.properties') }}
-      # Downloaded JDKs live in ~/.modaccel/jdks and have their own cache, so the Gradle cache keeps main's paths
+      # Downloaded JDKs live in ~/.mmt/jdks and have their own cache, so the Gradle cache keeps main's paths
       # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
       - name: Downloaded JDKs
         id: jdks
         uses: actions/cache/restore@v4
         with:
-          path: ~/.modaccel/jdks
-          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
+          path: ~/.mmt/jdks
+          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Map and bench colour per loader
         working-directory: portable workspace
         run: python bench/test_ledger_rule.py
@@ -84,41 +84,41 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         working-directory: portable workspace
-        run: '& .\modaccel.cmd doctor --json'
+        run: '& .\mmt.cmd doctor --json'
       - name: Source launcher (POSIX)
         if: runner.os != 'Windows'
         working-directory: portable workspace
-        run: ./modaccel doctor --json
+        run: ./mmt doctor --json
       - name: Standalone package
         working-directory: portable workspace
-        run: java -jar build/distributions/modaccel.jar self-test --root . --json
+        run: java -jar build/distributions/mmt.jar self-test --root . --json
       - name: Extracted portable ZIP acceptance
         working-directory: portable workspace
-        run: java tools/tests/PackageAcceptanceTest.java build/distributions/modaccel-portable.zip build/distributions/modaccel-portable.zip.sha256 "${{ runner.temp }}"
+        run: java tools/tests/PackageAcceptanceTest.java build/distributions/mmt-portable.zip build/distributions/mmt-portable.zip.sha256 "${{ runner.temp }}"
       - name: Fabric metadata and logic
         working-directory: portable workspace
-        run: java -jar build/distributions/modaccel.jar fast --json
+        run: java -jar build/distributions/mmt.jar fast --json
       - name: Hidden window stays hidden with the agent named twice
         working-directory: portable workspace
-        run: java tools/tests/BackgroundWindowsTest.java . build/distributions/modaccel.jar
+        run: java tools/tests/BackgroundWindowsTest.java . build/distributions/mmt.jar
       - name: Legacy launch agent with Gradle
         if: runner.os == 'Windows'
         shell: pwsh
         working-directory: portable workspace
         run: |
-          $prepared = & java -jar build/distributions/modaccel.jar legacy-agent --json | ConvertFrom-Json
+          $prepared = & java -jar build/distributions/mmt.jar legacy-agent --json | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0 -or -not $prepared.ok) { throw 'Could not build the legacy launch agent' }
-          $env:JAVA_TOOL_OPTIONS = '"-javaagent:' + $prepared.result.agent + '=legacy" -Dmodaccel.background=true -Dmodaccel.quiet=true'
+          $env:JAVA_TOOL_OPTIONS = '"-javaagent:' + $prepared.result.agent + '=legacy" -Dmmt.background=true -Dmmt.quiet=true'
           & java tools/tests/LegacyAgentPropertiesTest.java
           if ($LASTEXITCODE -ne 0) { throw 'Legacy launch agent corrupted system properties' }
-          & java -jar build/distributions/modaccel.jar fast --refresh --json
+          & java -jar build/distributions/mmt.jar fast --refresh --json
           if ($LASTEXITCODE -ne 0) { throw 'Gradle failed with the legacy launch agent enabled' }
       - name: Multi-module FastLane isolation
         working-directory: portable workspace
-        run: java tools/tests/FastLaneIsolationTest.java . build/distributions/modaccel.jar
+        run: java tools/tests/FastLaneIsolationTest.java . build/distributions/mmt.jar
       - name: Runtime-only file that does not download
         working-directory: portable workspace
-        run: java tools/tests/RuntimeNativesTest.java . build/distributions/modaccel.jar
+        run: java tools/tests/RuntimeNativesTest.java . build/distributions/mmt.jar
       - name: Port rewrites before compilation
         working-directory: portable workspace
         run: |
@@ -137,8 +137,8 @@ jobs:
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
           size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
-          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/servers ~/.modaccel/tools)
-          jdk_kb=$(size ~/.modaccel/jdks)
+          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.mmt/servers ~/.mmt/tools)
+          jdk_kb=$(size ~/.mmt/jdks)
           echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
           if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
       - name: Save caches on a miss
@@ -154,8 +154,8 @@ jobs:
         if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
         uses: actions/cache/save@v4
         with:
-          path: ~/.modaccel/jdks
-          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
+          path: ~/.mmt/jdks
+          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Outcome receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -163,7 +163,7 @@ jobs:
           name: portable-${{ runner.os }}-${{ runner.arch }}-outcomes
           path: |
             portable workspace/.runs
-            portable workspace/.modaccel
+            portable workspace/.mmt
           include-hidden-files: true
           if-no-files-found: ignore
   server-plugins:
@@ -191,20 +191,20 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
+            .mmt/jdks
           key: server-plugins-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json') }}
-      # Downloaded JDKs live in ~/.modaccel/jdks and have their own cache, so the Gradle cache keeps main's paths
+      # Downloaded JDKs live in ~/.mmt/jdks and have their own cache, so the Gradle cache keeps main's paths
       # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
       - name: Downloaded JDKs
         id: jdks
         uses: actions/cache/restore@v4
         with:
-          path: ~/.modaccel/jdks
-          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
+          path: ~/.mmt/jdks
+          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Package without PowerShell
         run: java tools/cli/Bootstrap.java . package --json
-      - name: Server plugins through modaccel
-        run: java tools/tests/ServerPluginFixtures.java . build/distributions/modaccel.jar
+      - name: Server plugins through mmt
+        run: java tools/tests/ServerPluginFixtures.java . build/distributions/mmt.jar
       - name: Stop the plugin's Gradle daemon so Windows can read its cache locks
         if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
         shell: pwsh
@@ -217,8 +217,8 @@ jobs:
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
           size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
-          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/servers ~/.modaccel/tools)
-          jdk_kb=$(size ~/.modaccel/jdks)
+          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.mmt/servers ~/.mmt/tools)
+          jdk_kb=$(size ~/.mmt/jdks)
           echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
           if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
       - name: Save caches on a miss, even when the check fails
@@ -229,14 +229,14 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
+            .mmt/jdks
           key: server-plugins-${{ runner.os }}-${{ hashFiles('bench/server-plugins/manifest.json') }}
       - name: Save downloaded JDKs on a miss
         if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
         uses: actions/cache/save@v4
         with:
-          path: ~/.modaccel/jdks
-          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
+          path: ~/.mmt/jdks
+          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Outcome receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -276,22 +276,22 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
-            ~/.modaccel/servers
-            ~/.modaccel/tools
+            .mmt/jdks
+            ~/.mmt/servers
+            ~/.mmt/tools
           key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
-      # Downloaded JDKs live in ~/.modaccel/jdks and have their own cache, so the Gradle cache keeps main's paths
+      # Downloaded JDKs live in ~/.mmt/jdks and have their own cache, so the Gradle cache keeps main's paths
       # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
       - name: Downloaded JDKs
         id: jdks
         uses: actions/cache/restore@v4
         with:
-          path: ~/.modaccel/jdks
-          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
+          path: ~/.mmt/jdks
+          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Package without PowerShell
         run: java tools/cli/Bootstrap.java . package --json
-      - name: Plugins on a real Paper server through modaccel
-        run: java tools/tests/ServerCheckFixtures.java . build/distributions/modaccel.jar "${{ matrix.part }}"
+      - name: Plugins on a real Paper server through mmt
+        run: java tools/tests/ServerCheckFixtures.java . build/distributions/mmt.jar "${{ matrix.part }}"
       - name: Stop the plugin's Gradle daemon so Windows can read its cache locks
         if: always() && runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
         shell: pwsh
@@ -304,8 +304,8 @@ jobs:
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
           size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
-          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/servers ~/.modaccel/tools)
-          jdk_kb=$(size ~/.modaccel/jdks)
+          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.mmt/servers ~/.mmt/tools)
+          jdk_kb=$(size ~/.mmt/jdks)
           echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
           if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
       - name: Save caches on a miss, even when the check fails
@@ -316,16 +316,16 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
-            ~/.modaccel/servers
-            ~/.modaccel/tools
+            .mmt/jdks
+            ~/.mmt/servers
+            ~/.mmt/tools
           key: server-check-${{ runner.os }}-${{ matrix.part }}-${{ hashFiles('bench/server-plugins/manifest.json', 'knowledge/mcprotocollib.json', 'knowledge/viaproxy.json') }}
       - name: Save downloaded JDKs on a miss
         if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
         uses: actions/cache/save@v4
         with:
-          path: ~/.modaccel/jdks
-          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
+          path: ~/.mmt/jdks
+          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Outcome receipts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -337,7 +337,7 @@ jobs:
           if-no-files-found: ignore
   stonecutter-sample:
     # Three representative Stonecutter nodes, fresh pinned clones, setup and compile through
-    # modaccel, one job per node. No game. Every node of both
+    # mmt, one job per node. No game. Every node of both
     # mods compiles on demand in stonecutter-nodes.yml (not a merge blocker).
     strategy:
       fail-fast: false
@@ -363,16 +363,16 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
+            .mmt/jdks
           key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
-      # Downloaded JDKs live in ~/.modaccel/jdks and have their own cache, so the Gradle cache keeps main's paths
+      # Downloaded JDKs live in ~/.mmt/jdks and have their own cache, so the Gradle cache keeps main's paths
       # (a cache's paths are part of its version) and a PR still restores the caches main already holds.
       - name: Downloaded JDKs
         id: jdks
         uses: actions/cache/restore@v4
         with:
-          path: ~/.modaccel/jdks
-          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
+          path: ~/.mmt/jdks
+          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Setup and compile the node
         run: python bench/real-mods/run.py --compile-nodes --only ${{ matrix.mod }} --cache "${{ runner.temp }}/real-mods" --out "${{ runner.temp }}/real-mods-results" --label ${{ matrix.mod }}
       - name: Anything downloaded worth caching
@@ -383,8 +383,8 @@ jobs:
         # later run restored it and downloaded again, so a passing outage kept failing CI.
         run: |
           size() { (du -sk "$@" 2>/dev/null || true) | awk '{s+=$1} END {print s+0}'; }
-          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.modaccel/servers ~/.modaccel/tools)
-          jdk_kb=$(size ~/.modaccel/jdks)
+          kb=$(size ~/.gradle/caches ~/.gradle/wrapper ~/.gradle/jdks ~/.mmt/servers ~/.mmt/tools)
+          jdk_kb=$(size ~/.mmt/jdks)
           echo "kb=$kb" >> "$GITHUB_OUTPUT"; echo "jdk_kb=$jdk_kb" >> "$GITHUB_OUTPUT"
           if [ "$kb" -lt 51200 ]; then echo "degraded: only $kb KB of Gradle files was downloaded, so that cache is not saved and the next run downloads again"; fi
       - name: Save caches on a miss, even when the node fails
@@ -395,14 +395,14 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/jdks
-            .modaccel/jdks
+            .mmt/jdks
           key: sample-${{ runner.os }}-${{ matrix.mod }}-${{ hashFiles('bench/real-mods/manifest.json') }}
       - name: Save downloaded JDKs on a miss
         if: always() && steps.jdks.outputs.cache-hit != 'true' && fromJSON(steps.worth.outputs.jdk_kb || '0') >= 51200
         uses: actions/cache/save@v4
         with:
-          path: ~/.modaccel/jdks
-          key: modaccel-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
+          path: ~/.mmt/jdks
+          key: mmt-jdks-${{ runner.os }}-${{ github.job }}-${{ strategy.job-index }}
       - name: Node results
         if: always()
         uses: actions/upload-artifact@v4

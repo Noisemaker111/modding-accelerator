@@ -1,5 +1,5 @@
 //! "Change version": the road between two Minecraft versions drawn on map paper (family hubs as
-//! rings, the updates between them as dots), inked as `modaccel port` previews and applies it. Preview
+//! rings, the updates between them as dots), inked as `mmt port` previews and applies it. Preview
 //! runs without `--fix` (nothing is edited), Apply with `--fix`, Undo hands back its transaction.
 
 use rune::{Color, El, LineCap, LoopSpec, Path, Shape, TextEdit, canvas, col, el, oklch, row, text};

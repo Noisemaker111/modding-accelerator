@@ -65,11 +65,11 @@ final class MavenRange {
         try {
             return new Answer(
                 own(spec, version),
-                "modaccel's copy of Maven's range rules (no maven-artifact on the build classpath)",
+                "mmt's copy of Maven's range rules (no maven-artifact on the build classpath)",
                 null
             );
         } catch (IllegalArgumentException invalid) {
-            return new Answer(false, "modaccel's copy of Maven's range rules", invalid.getMessage());
+            return new Answer(false, "mmt's copy of Maven's range rules", invalid.getMessage());
         }
     }
 

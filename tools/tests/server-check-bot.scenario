@@ -1,5 +1,5 @@
 # server-check's own bot, on whatever plugin's server it runs: what it reads back from a real server.
-# This is a check of modaccel, not of the plugin: every effect here comes from vanilla commands sent over RCON.
+# This is a check of mmt, not of the plugin: every effect here comes from vanilla commands sent over RCON.
 # The secret BOT_SECRET must never appear in the receipts, logs or server files (ServerCheckFixtures greps for it).
 join
 rcon op ${bot}

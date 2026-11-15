@@ -15,7 +15,7 @@ for (const [before, after] of replacements) {
   if (adapted.split(before).length !== 2) throw new Error("AgentCraft bot transport changed; cannot run the original assertions safely.");
   adapted = adapted.replace(before, after);
 }
-const temp = path.join(dir, `.modaccel-bot-${process.pid}-${Date.now()}.mjs`);
+const temp = path.join(dir, `.mmt-bot-${process.pid}-${Date.now()}.mjs`);
 const here = path.dirname(fileURLToPath(import.meta.url));
 fs.writeFileSync(temp, adapted, { flag: "wx" });
 try {

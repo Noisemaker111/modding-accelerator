@@ -251,7 +251,7 @@ function New-PortReportFromLog {
 			''
 			'1. Fix the build so it reaches compilation (dependency version, Gradle/Loom/NeoGradle pin, JDK).'
 			'2. Run the build again; when it fails in source, `-Log` will group those errors by file.'
-			'3. When it compiles, `.\modaccel port -New <jar>` sweeps references against the target jar.'
+			'3. When it compiles, `.\mmt port -New <jar>` sweeps references against the target jar.'
 			''
 		)
 		$lines | Set-Content $Out
@@ -297,7 +297,7 @@ function New-PortReportFromLog {
 	$lines += '## Handoff'
 	$lines += ''
 	$lines += 'Work file by file, then build again. When the build compiles, run'
-	$lines += '`.\modaccel port -New <jar>` to sweep the references that only appear once classes exist.'
+	$lines += '`.\mmt port -New <jar>` to sweep the references that only appear once classes exist.'
 	$lines += ''
 	$lines += 'Only trust a count from a clean build: an incremental build reports errors only for the files'
 	$lines += 'it rebuilt, and javac still prints a 100-errors summary even when it listed every line.'
@@ -387,7 +387,7 @@ function Update-LearnedRewrites {
 	param([string]$From, [string]$To, [string]$Names, [string]$Harness, [string]$Map, [string]$Java, [string]$Out, [string]$Repo)
 	$corpusFile = Join-Path $Harness 'knowledge\port-corpus.json'
 	if (-not (Test-Path $corpusFile)) { return }
-	$cache = Join-Path $env:USERPROFILE '.modaccel\corpus'
+	$cache = Join-Path $env:USERPROFILE '.mmt\corpus'
 	New-Item -ItemType Directory -Force $cache | Out-Null
 	$self = (& git -C $Repo remote get-url origin 2>$null | Out-String).Trim()
 	$gh = Get-Command gh -ErrorAction SilentlyContinue
@@ -398,7 +398,7 @@ function Update-LearnedRewrites {
 			else { & gh api $path 2>$null | Out-String }
 		}
 		else {
-			$headers = @{ 'User-Agent' = 'modaccel' }
+			$headers = @{ 'User-Agent' = 'mmt' }
 			if ($Diff) { $headers.Accept = 'application/vnd.github.v3.diff' }
 			try { (Invoke-WebRequest "https://api.github.com/$path" -Headers $headers -UseBasicParsing).Content } catch { '' }
 		}
@@ -453,7 +453,7 @@ function Get-PortVersionMap {
 	$java = Join-Path $env:JAVA_HOME 'bin\java.exe'
 	$jdk25 = Get-ChildItem (Join-Path $Harness '.tools') -Directory -Filter 'jdk-25*' -ErrorAction SilentlyContinue | Select-Object -First 1
 	if ($jdk25) { $java = Join-Path $jdk25.FullName 'bin\java.exe' }
-	$out = Join-Path $env:USERPROFILE ".modaccel\mappings\map-$names-$From-to-$to.json"
+	$out = Join-Path $env:USERPROFILE ".mmt\mappings\map-$names-$From-to-$to.json"
 	if (-not (Test-Path $out)) {
 		$said = & $java (Join-Path $Harness 'tools\VersionMap.java') $From $to --names $names --out $out 2>&1 | Out-String
 		if ($LASTEXITCODE -ne 0 -or -not (Test-Path $out)) {
@@ -464,7 +464,7 @@ function Get-PortVersionMap {
 	# Rewrites learned from other mods' real ports of the same jump (VersionMap.java --learn).
 	# The excluded corpus repo depends on the target. Never share its learned answer with another
 	# target, or reuse rules produced by an older learner after its safety checks change.
-	$learned = Join-Path $Repo ".modaccel\learned\$names-$From-to-$to.json"
+	$learned = Join-Path $Repo ".mmt\learned\$names-$From-to-$to.json"
 	$inputs = @((Join-Path $Harness 'tools\VersionMap.java'), (Join-Path $Harness 'knowledge\port-corpus.json'))
 	$stale = -not (Test-Path $learned)
 	if (-not $stale) {

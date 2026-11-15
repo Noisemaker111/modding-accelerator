@@ -13,13 +13,13 @@ import java.util.zip.*;
  * server-check: a scenario of in-game steps against a real, headless server with the project loaded and a
  * protocol bot player. For a Paper/Bukkit plugin the server is the real Paper server for the plugin's API
  * version, downloaded from PaperMC's official API (fill.papermc.io) and cached per version and build; the
- * plugin's own jar task builds the jar. tools/servercheck/ModaccelServerCheck runs the scenario in its own
+ * plugin's own jar task builds the jar. tools/servercheck/MmtServerCheck runs the scenario in its own
  * JVM with MCProtocolLib (knowledge/mcprotocollib.json) and reports each step. The bot speaks the newest
  * protocol it has; a server on any other version is joined through ViaProxy (knowledge/viaproxy.json).
  */
 final class ServerCheck {
 
-    static final List<String> SOURCES = List.of("tools/servercheck/ModaccelServerCheck.java", "tools/cli/Json.java");
+    static final List<String> SOURCES = List.of("tools/servercheck/MmtServerCheck.java", "tools/cli/Json.java");
     static final String FILL = "https://fill.papermc.io/v3/projects/paper";
     static final int TIMEOUT_SECONDS = 900;
 
@@ -114,7 +114,7 @@ final class ServerCheck {
         return java <= 11 ? Runtimes.ensureExact(harness, java) : Runtimes.ensureAtLeast(harness, java);
     }
 
-    Map<String, Object> run(Modaccel.Options options) throws Exception {
+    Map<String, Object> run(Mmt.Options options) throws Exception {
         long begin = System.nanoTime();
         PluginCheck plugins = new PluginCheck(build, model);
         PluginCheck.Api api = PluginCheck.api(model);
@@ -155,7 +155,7 @@ final class ServerCheck {
         );
         String path = project.get("path").toString();
         Run.Result gradle = build.gradle(
-            List.of("-Dmodaccel.pluginCheck=" + spec, (path.equals(":") ? "" : path) + ":modaccelPluginClasspath"),
+            List.of("-Dmmt.pluginCheck=" + spec, (path.equals(":") ? "" : path) + ":mmtPluginClasspath"),
             "plugin-build"
         );
         if (gradle.exit() != 0 || !Files.isRegularFile(classpathFile)) {
@@ -227,11 +227,11 @@ final class ServerCheck {
         );
         List<String> serverPlugins = new ArrayList<>(List.of(jar));
         serverPlugins.addAll(extraPlugins);
-        // .modaccel holds secrets.properties and the server's logs; keep the whole folder out of the plugin's git.
-        Path ignore = build.project.root.resolve(".modaccel/.gitignore");
+        // .mmt holds secrets.properties and the server's logs; keep the whole folder out of the plugin's git.
+        Path ignore = build.project.root.resolve(".mmt/.gitignore");
         if (!Files.exists(ignore)) {
             Files.createDirectories(ignore.getParent());
-            Files.writeString(ignore, "# Written by modaccel: secrets and test-server files stay out of git.\n*\n");
+            Files.writeString(ignore, "# Written by mmt: secrets and test-server files stay out of git.\n*\n");
         }
         Json.save(
             checkSpec,
@@ -247,7 +247,7 @@ final class ServerCheck {
                 "logDir",
                 work.toString(),
                 "secretsFile",
-                build.project.root.resolve(".modaccel/secrets.properties").toString(),
+                build.project.root.resolve(".mmt/secrets.properties").toString(),
                 "ids",
                 names.ids().toString(),
                 "lang",
@@ -284,7 +284,7 @@ final class ServerCheck {
                 "-Djava.awt.headless=true",
                 "-cp",
                 tools + File.pathSeparator + String.join(File.pathSeparator, classpath),
-                "ModaccelServerCheck",
+                "MmtServerCheck",
                 checkSpec.toString()
             )
         );
@@ -428,19 +428,19 @@ final class ServerCheck {
         return plugins;
     }
 
-    /** --file, else .modaccel/server-check.scenario, else modaccel/server-check.scenario in the project. */
-    Path scenario(Modaccel.Options options) throws IOException {
+    /** --file, else .mmt/server-check.scenario, else mmt/server-check.scenario in the project. */
+    Path scenario(Mmt.Options options) throws IOException {
         Path root = build.project.root;
         if (options.values.containsKey("file")) {
             Path file = root.resolve(options.get("file", "")).normalize();
             if (!Files.isRegularFile(file)) throw new IllegalArgumentException("No scenario file at " + file + ".");
             return file;
         }
-        for (String candidate : List.of(".modaccel/server-check.scenario", "modaccel/server-check.scenario")) if (
+        for (String candidate : List.of(".mmt/server-check.scenario", "mmt/server-check.scenario")) if (
             Files.isRegularFile(root.resolve(candidate))
         ) return root.resolve(candidate);
         throw new IllegalArgumentException(
-            "server-check needs a scenario: pass --file SCENARIO, or put one at .modaccel/server-check.scenario. Run modaccel help server-check for the steps."
+            "server-check needs a scenario: pass --file SCENARIO, or put one at .mmt/server-check.scenario. Run mmt help server-check for the steps."
         );
     }
 
@@ -464,7 +464,7 @@ final class ServerCheck {
 
     /**
      * The newest Paper build for this Minecraft version from PaperMC's fill API, verified by its SHA-256, cached under
-     * ~/.modaccel/servers (shared by every modaccel install, like the JDK cache). The cached build is reused until --refresh asks the API again. Its block and
+     * ~/.mmt/servers (shared by every mmt install, like the JDK cache). The cached build is reused until --refresh asks the API again. Its block and
      * item ids (the server's own data reports) and en_us translations are extracted once beside it, for the bot.
      */
     Paper paper(String minecraft, Runtimes.Jdk jdk, boolean refresh, boolean names) throws Exception {
@@ -475,7 +475,7 @@ final class ServerCheck {
         throws Exception {
         Path cache = Path.of(
             System.getProperty("user.home"),
-            ".modaccel",
+            ".mmt",
             "servers",
             "paper-" + minecraft
         ).toAbsolutePath();
@@ -497,7 +497,7 @@ final class ServerCheck {
             HttpResponse<String> answer = send(
                 client,
                 HttpRequest.newBuilder(URI.create(endpoint))
-                    .header("User-Agent", "modaccel server-check (github.com/Noisemaker111/modding-accelerator)")
+                    .header("User-Agent", "mmt server-check (github.com/Noisemaker111/modding-accelerator)")
                     .timeout(Duration.ofSeconds(30))
                     .GET()
                     .build(),
@@ -531,7 +531,7 @@ final class ServerCheck {
                 HttpResponse<Path> file = send(
                     client,
                     HttpRequest.newBuilder(URI.create(url))
-                        .header("User-Agent", "modaccel server-check")
+                        .header("User-Agent", "mmt server-check")
                         .timeout(Duration.ofMinutes(10))
                         .GET()
                         .build(),
@@ -605,7 +605,7 @@ final class ServerCheck {
 
     /**
      * ViaProxy for a server the bot cannot speak to directly: the pinned jar (SHA-256 checked, cached under
-     * ~/.modaccel/tools like Paper) and its own name for the server's version. Throws when ViaProxy cannot reach it.
+     * ~/.mmt/tools like Paper) and its own name for the server's version. Throws when ViaProxy cannot reach it.
      */
     Map<String, Object> viaProxy(Runtimes.Jdk jdk, String minecraft) throws Exception {
         var pin = Json.read(build.harness.resolve("knowledge/viaproxy.json"));
@@ -616,7 +616,7 @@ final class ServerCheck {
         );
         Path cache = Path.of(
             System.getProperty("user.home"),
-            ".modaccel",
+            ".mmt",
             "tools",
             "viaproxy-" + version
         ).toAbsolutePath();
@@ -632,7 +632,7 @@ final class ServerCheck {
             HttpResponse<Path> got = send(
                 client,
                 HttpRequest.newBuilder(URI.create(Json.text(pin, "url", "")))
-                    .header("User-Agent", "modaccel server-check")
+                    .header("User-Agent", "mmt server-check")
                     .timeout(Duration.ofMinutes(10))
                     .GET()
                     .build(),

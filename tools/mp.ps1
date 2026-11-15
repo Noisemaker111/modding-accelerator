@@ -1,5 +1,5 @@
 # Lab processes and the multiplayer tier.
-# Loaded by modaccel.ps1; every function reads $root and the lab paths from there.
+# Loaded by mmt.ps1; every function reads $root and the lab paths from there.
 
 $mpPort = 27389
 $serverPort = 25565
@@ -179,7 +179,7 @@ function Start-MpClient {
 	$clientHome = if ($jbr) { $jbr.FullName } else { $env:JAVA_HOME }
 	if (Test-Port -Port $Port) {
 		$stale = Get-PortOwner -Port $Port
-		Write-Stage ("port {0} is already held by pid {1} that does not answer this repo. Run modaccel stop, or close that client." -f $Port, $stale.Pid) 'Red'
+		Write-Stage ("port {0} is already held by pid {1} that does not answer this repo. Run mmt stop, or close that client." -f $Port, $stale.Pid) 'Red'
 		return $false
 	}
 	Write-Stage ("$Tag client: starting on port {0}, will join 127.0.0.1:{1}" -f $Port, $serverPort)

@@ -1,5 +1,5 @@
 {
-  "about": "modaccel convert on the pinned corpus in bench/convert-sweep/corpus.json, by python bench/convert_sweep.py. gaps ranks each missing loader concept by how many mods it affects (blocking: refusals). history keeps each labelled sweep's pass rates.",
+  "about": "mmt convert on the pinned corpus in bench/convert-sweep/corpus.json, by python bench/convert_sweep.py. gaps ranks each missing loader concept by how many mods it affects (blocking: refusals). history keeps each labelled sweep's pass rates.",
   "corpus": 35,
   "latest": {
     "label": "round-2",
@@ -680,7 +680,7 @@
       "blocking": 0,
       "examples": [
         "clientcommands: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nA problem occurred evaluating root project 'clientcommands'.",
-        "laserio: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nExecution failed for task ':modaccelProjectMetadata' (regist",
+        "laserio: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nExecution failed for task ':mmtProjectMetadata' (regist",
         "prettypipes: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nA problem occurred evaluating root project 'prettypipes-to-f",
         "satin: Could not read this project's build: Gradle stopped while loading it, before any code was compiled.\nAn exception occurred applying plugin request [id: 'io.githu"
       ],

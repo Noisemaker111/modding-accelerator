@@ -4,10 +4,10 @@ import java.nio.file.*;
 import java.util.*;
 
 /**
- * A changed recipe, loot table, tag or texture without a Gradle run. After the launch's Gradle run, modaccel
+ * A changed recipe, loot table, tag or texture without a Gradle run. After the launch's Gradle run, mmt
  * records each input file's hash, which resource folder Gradle copied to which output folder, and which
  * resource files Gradle changed on the way (fabric.mod.json's ${version}, any expand or token filter). Later,
- * when every changed input is a resource file Gradle copied as it was, modaccel copies (or deletes) those
+ * when every changed input is a resource file Gradle copied as it was, mmt copies (or deletes) those
  * files in the output itself: what processResources would have written, with no Gradle start (2 to 25 s).
  *
  * Gradle stays the authority: a changed class source, build file or dependency, a file Gradle filtered, a
@@ -69,7 +69,7 @@ final class ResourceCopy {
      * made, and returns how many; -1 when Gradle must run (nothing is written then).
      */
     static int copy(Map<String, Object> record, Map<String, String> now) throws IOException {
-        // A launch recorded before modaccel kept these runs Gradle once, which records them.
+        // A launch recorded before mmt kept these runs Gradle once, which records them.
         if (!(record.get("inputs") instanceof Map<?, ?>) || record.get("resourceRoots") == null) return -1;
         Map<String, Object> then = Json.object(record.get("inputs"));
         Set<String> filtered = new HashSet<>(ProjectModel.strings(record.get("filtered")));

@@ -7,21 +7,21 @@ import org.gradle.api.tasks.testing.Test
 // Per-invocation metadata and launch capture. Never edits the user's build or sources.
 // Everything is registered per project as that project finishes configuring, so a build with
 // org.gradle.configureondemand=true configures only the selected project (plus what it needs).
-// modaccel asks for :modaccelMetadata and :<project>:modaccelProjectMetadata by path; an
+// mmt asks for :mmtMetadata and :<project>:mmtProjectMetadata by path; an
 // unqualified task name would make Gradle configure every project to look for it.
-def selected = System.getProperty('modaccel.project', '')
+def selected = System.getProperty('mmt.project', '')
 // explain names two projects, the one that fails and one that builds, separated by a comma.
 def selectedPaths = selected ? selected.split(',')*.trim() : []
-def planning = System.getProperty('modaccel.metadataMode', '') == 'plan'
-// Test hook for modaccel's fallback: behave like an init script that registers too late
+def planning = System.getProperty('mmt.metadataMode', '') == 'plan'
+// Test hook for mmt's fallback: behave like an init script that registers too late
 // whenever Gradle is configuring on demand, so the retry without it can be exercised.
-def simulateMiss = System.getProperty('modaccel.simulateCodMiss', '') == 'true' && gradle.startParameter.configureOnDemand
+def simulateMiss = System.getProperty('mmt.simulateCodMiss', '') == 'true' && gradle.startParameter.configureOnDemand
 def partFile = { File state, String path -> new File(state, 'model-parts/' + Base64.urlEncoder.withoutPadding().encodeToString(path.bytes) + '.json') }
-def metadataPath = { String path -> (path == ':' ? '' : path) + ':modaccelProjectMetadata' }
+def metadataPath = { String path -> (path == ':' ? '' : path) + ':mmtProjectMetadata' }
 gradle.rootProject { root ->
     if (simulateMiss) return
-    def state = new File(root.projectDir, '.modaccel/portable')
-    root.tasks.register('modaccelMetadata') {
+    def state = new File(root.projectDir, '.mmt/portable')
+    root.tasks.register('mmtMetadata') {
         def missing = selectedPaths.findAll { root.findProject(it) == null }
         if (missing) throw new GradleException("No project ${missing.join(', ')}; available projects: ${root.allprojects*.path}")
         def targetPaths = selected ? selectedPaths : root.allprojects*.path
@@ -33,7 +33,7 @@ gradle.rootProject { root ->
                          java: System.getProperty('java.home'), projects: parts.collect { new JsonSlurper().parse(it) }]
             def output = new File(state, planning ? 'plan-model.json' : 'model.json')
             output.text = JsonOutput.toJson(model)
-            println 'MODACCEL_MODEL ' + output.absolutePath
+            println 'MMT_MODEL ' + output.absolutePath
         }
     }
 }
@@ -41,7 +41,7 @@ gradle.afterProject { p ->
     if (simulateMiss) return
     if (selected && !(p.path in selectedPaths)) return
     def root = p.rootProject
-    def state = new File(root.projectDir, '.modaccel/portable')
+    def state = new File(root.projectDir, '.mmt/portable')
     def launchDirectory = { t ->
         def directory = t.workingDir
         // Loader tasks select their real game directory inside exec(), after doFirst.
@@ -53,7 +53,7 @@ gradle.afterProject { p ->
         directory
     }
     def part = partFile(state, p.path)
-    p.tasks.register('modaccelProjectMetadata') {
+    p.tasks.register('mmtProjectMetadata') {
         doLast {
             part.parentFile.mkdirs()
             def projects = [p].collect { ownedProject ->
@@ -146,7 +146,7 @@ gradle.afterProject { p ->
             part.text = JsonOutput.toJson(projects[0])
         }
     }
-    if (System.getProperty('modaccel.recompile', '') == 'true') {
+    if (System.getProperty('mmt.recompile', '') == 'true') {
         // Force the project's own compilers to rerun, never a loader plugin's Minecraft
         // recompile (NeoGradle's neoFormRecompile is a JavaCompile task too and costs a minute).
         p.tasks.withType(JavaCompile).configureEach { t ->
@@ -160,16 +160,16 @@ gradle.afterProject { p ->
     }
     // mixin-check prepares the client launch to apply mixins, never to render, so it skips the game's
     // sound and texture download (hundreds of MB on a cold machine). Off unless asked for.
-    if (System.getProperty('modaccel.skipAssets', '') == 'true') {
+    if (System.getProperty('mmt.skipAssets', '') == 'true') {
         p.tasks.matching { it.name == 'downloadAssets' }.configureEach { enabled = false }
     }
     def sets = p.extensions.findByName('sourceSets')
-    if (sets?.findByName('test') && !p.tasks.findByName('modaccelPure')) {
-        p.tasks.register('modaccelPure', Test) {
+    if (sets?.findByName('test') && !p.tasks.findByName('mmtPure')) {
+        p.tasks.register('mmtPure', Test) {
             testClassesDirs = sets.test.output.classesDirs
             classpath = sets.test.runtimeClasspath
-            // modaccel.allTests is set by FastLane when no game or loader is on the test classpath (plain Java, server plugins).
-            useJUnitPlatform { if (System.getProperty('modaccel.allTests', '') != 'true') includeTags 'pure'; includeEngines 'junit-jupiter' }
+            // mmt.allTests is set by FastLane when no game or loader is on the test classpath (plain Java, server plugins).
+            useJUnitPlatform { if (System.getProperty('mmt.allTests', '') != 'true') includeTags 'pure'; includeEngines 'junit-jupiter' }
             outputs.upToDateWhen { false }
             // FastLane reports an empty run itself, with the reason; Gradle 9's own failure would only add a tail.
             if (delegate.hasProperty('failOnNoDiscoveredTests')) failOnNoDiscoveredTests = false
@@ -178,8 +178,8 @@ gradle.afterProject { p ->
     }
     // plugin-check: build the plugin's jar with its own task and resolve MockBukkit with the plugin's Paper API
     // in a detached configuration, so the build's own configurations are never changed. Off unless asked for.
-    def pluginSpec = System.getProperty('modaccel.pluginCheck', '')
-    if (pluginSpec && !p.tasks.findByName('modaccelPluginClasspath')) {
+    def pluginSpec = System.getProperty('mmt.pluginCheck', '')
+    if (pluginSpec && !p.tasks.findByName('mmtPluginClasspath')) {
         def spec = new JsonSlurper().parse(new File(pluginSpec))
         def urls = p.repositories.withType(org.gradle.api.artifacts.repositories.MavenArtifactRepository).collect { it.url.toString().replaceAll('/+$', '') }
         // MockBukkit and its libraries are on Maven Central, the Paper API on PaperMC's repository.
@@ -188,7 +188,7 @@ gradle.afterProject { p ->
         // server-check's bot library (MCProtocolLib) lives on GeyserMC's repository; the spec names any extra ones.
         (spec.repositories ?: []).each { extra -> if (!urls.any { it == extra.toString().replaceAll('/+$', '') }) p.repositories.maven { url = extra.toString() } }
         def jarName = spec.jarTask ? spec.jarTask.toString().replaceAll('^.*:', '') : ['shadowJar', 'reobfJar', 'jar'].find { p.tasks.findByName(it) != null }
-        p.tasks.register('modaccelPluginClasspath') {
+        p.tasks.register('mmtPluginClasspath') {
             if (jarName) dependsOn jarName
             outputs.upToDateWhen { false }
             doLast {
@@ -203,27 +203,27 @@ gradle.afterProject { p ->
     // A cached test task is build evidence, not a fresh logic check.
     p.tasks.withType(Test).configureEach {
         outputs.upToDateWhen { false }
-        def runId = System.getProperty('modaccel.runId', '')
-        if (runId) reports.junitXml.outputLocation = p.layout.buildDirectory.dir("modaccel/test-results/${runId}/${name}")
+        def runId = System.getProperty('mmt.runId', '')
+        if (runId) reports.junitXml.outputLocation = p.layout.buildDirectory.dir("mmt/test-results/${runId}/${name}")
     }
     // Capture at the JavaExec action boundary, after loader plugins have prepared natives/assets.
     // A generated Launch Java agent (injected only by the portable command) supplies game control.
     p.tasks.withType(JavaExec).configureEach { t ->
         t.doFirst {
-            def wanted = System.getProperty('modaccel.captureTask', '')
+            def wanted = System.getProperty('mmt.captureTask', '')
             if (wanted != t.path) return
             state.mkdirs()
-            def agent = System.getProperty('modaccel.agent', '')
-            def fingerprint = System.getProperty('modaccel.fingerprint', '')
-            def token = System.getProperty('modaccel.token', '')
-            def c1 = agent && System.getProperty('modaccel.c1', 'false') == 'true'
+            def agent = System.getProperty('mmt.agent', '')
+            def fingerprint = System.getProperty('mmt.fingerprint', '')
+            def token = System.getProperty('mmt.token', '')
+            def c1 = agent && System.getProperty('mmt.c1', 'false') == 'true'
             if (agent) {
                 // Fabric's error popup otherwise waits for a click instead of reporting startup failure.
-                t.jvmArgs "-javaagent:${agent}", "-Dmodaccel.root=${root.projectDir.absolutePath}",
-                        "-Dmodaccel.fingerprint=${fingerprint}", "-Dmodaccel.token=${token}",
-                        "-Dmodaccel.background=${System.getProperty('modaccel.background', 'false')}",
-                        "-Dmodaccel.quiet=${System.getProperty('modaccel.quiet', 'false')}",
-                        "-Dmodaccel.state=${state.absolutePath}", '-Dprismlab.lab.port=', '-Dmodlabbridge.port=',
+                t.jvmArgs "-javaagent:${agent}", "-Dmmt.root=${root.projectDir.absolutePath}",
+                        "-Dmmt.fingerprint=${fingerprint}", "-Dmmt.token=${token}",
+                        "-Dmmt.background=${System.getProperty('mmt.background', 'false')}",
+                        "-Dmmt.quiet=${System.getProperty('mmt.quiet', 'false')}",
+                        "-Dmmt.state=${state.absolutePath}", '-Dprismlab.lab.port=', '-Dmodlabbridge.port=',
                         '-Dfabric.noGui=true'
                 // Game.start decides: hidden test sessions run C1 alone, perf and visible games the full JIT.
                 if (c1) t.jvmArgs '-XX:TieredStopAtLevel=1'
@@ -253,14 +253,14 @@ gradle.afterProject { p ->
             def directory = launchDirectory(t)
             if (t.hasProperty('internalEnvironmentVars')) environment.putAll(t.internalEnvironmentVars.get())
             if (t.hasProperty('environmentProperty')) environment.putAll(t.environmentProperty.get())
-            def launchFile = new File(System.getProperty('modaccel.launchFile', new File(state, 'launch.json').absolutePath))
+            def launchFile = new File(System.getProperty('mmt.launchFile', new File(state, 'launch.json').absolutePath))
             launchFile.parentFile.mkdirs()
             // --jbr: the same launch on JetBrains Runtime of the same Java version, so reload can also
             // add and remove methods and fields. Loom fixes runClient's launcher before this runs, so
-            // Gradle only prepares and records the launch here and modaccel starts it.
-            def jbr = System.getProperty('modaccel.jbr', '') == 'true'
+            // Gradle only prepares and records the launch here and mmt starts it.
+            def jbr = System.getProperty('mmt.jbr', '') == 'true'
             // --java: the same launch on a runtime the caller names, so recorded and started the same way.
-            def recordOnly = jbr || System.getProperty('modaccel.recordOnly', '') == 'true'
+            def recordOnly = jbr || System.getProperty('mmt.recordOnly', '') == 'true'
             def jbrExecutable = null
             if (jbr) {
                 def version = t.javaLauncher.get().metadata.languageVersion
@@ -270,7 +270,7 @@ gradle.afterProject { p ->
             launchFile.text = JsonOutput.toJson([schema: 1, task: t.path,
                 executable: executable, arguments: arguments, directory: directory.absolutePath,
                 environment: environment, fingerprint: fingerprint, jbr: jbr, jbrExecutable: jbrExecutable, c1: c1])
-            println 'MODACCEL_LAUNCH ' + launchFile.absolutePath
+            println 'MMT_LAUNCH ' + launchFile.absolutePath
             if (recordOnly) {
                 // Loom writes the classpath file the launch names (@.../argFiles/runClient) inside
                 // exec(), which this skips, so a checkout that never ran the client has none.
@@ -282,7 +282,7 @@ gradle.afterProject { p ->
                     writeArgFile.accessible = true
                     writeArgFile.invoke(t)
                 }
-                throw new StopExecutionException('modaccel starts this launch itself')
+                throw new StopExecutionException('mmt starts this launch itself')
             }
         }
     }

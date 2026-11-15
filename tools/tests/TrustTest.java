@@ -3,7 +3,7 @@ import java.nio.file.*;
 import java.util.*;
 
 /**
- * Verdicts that used to come from modaccel's own guess. Each case is one the old code got wrong:
+ * Verdicts that used to come from mmt's own guess. Each case is one the old code got wrong:
  * a game check passed with the mod refused, a frame change counted as the mod's behaviour, a
  * Maven range was read as text, an Architectury NeoForge project was called Fabric, pre-releases
  * sorted after their release, the own compile looked like Gradle's, and a newer-Loom dependency
@@ -14,7 +14,7 @@ public final class TrustTest {
     static int count;
 
     public static void main(String[] args) throws Exception {
-        Path scratch = Files.createTempDirectory("modaccel-trust");
+        Path scratch = Files.createTempDirectory("mmt-trust");
         try {
             modsLoaded(scratch);
             behaviour(scratch);
@@ -356,7 +356,7 @@ public final class TrustTest {
 
     /**
      * maven-artifact 3.9.9, the library NeoForge itself reads ranges with: from the Gradle cache when a
-     * build fetched it, else downloaded once into ~/.modaccel/test-libs. Either copy must match the
+     * build fetched it, else downloaded once into ~/.mmt/test-libs. Either copy must match the
      * pinned SHA-1. When neither can be had this throws: the comparison is never quietly skipped.
      */
     static Path mavenArtifact() throws Exception {
@@ -367,7 +367,7 @@ public final class TrustTest {
             "maven-artifact-3.9.9.jar"
         );
         if (Files.isRegularFile(cached) && sha1(cached).equals(MAVEN_ARTIFACT_SHA1)) return cached;
-        Path own = Path.of(System.getProperty("user.home"), ".modaccel/test-libs/maven-artifact-3.9.9.jar");
+        Path own = Path.of(System.getProperty("user.home"), ".mmt/test-libs/maven-artifact-3.9.9.jar");
         if (Files.isRegularFile(own) && sha1(own).equals(MAVEN_ARTIFACT_SHA1)) return own;
         Files.createDirectories(own.getParent());
         Path temporary = Files.createTempFile(own.getParent(), "maven-artifact-", ".tmp");
@@ -519,7 +519,7 @@ public final class TrustTest {
             "own-compile".equals(result.get("tier")) &&
             Boolean.FALSE.equals(result.get("gradleConfirmed")) &&
             String.valueOf(result.get("details")).startsWith("Own compile"),
-            "the own compile says it is modaccel's, not Gradle's"
+            "the own compile says it is mmt's, not Gradle's"
         );
     }
 

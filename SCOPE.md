@@ -1,4 +1,4 @@
-# Scope: what modaccel supports, and how new things get in
+# Scope: what mmt supports, and how new things get in
 
 The four goals (README.md) meet this file in the ladder of section 2: rungs 1 to 4 are Goal 1 (test a mod in seconds), rung 5 is Goal 2 (port to any version) and rung 6 is Goal 4 (change loader or platform). Goal 3 (modpacks) takes installed packs, not source projects, so it has no rung.
 
@@ -68,9 +68,9 @@ Each platform climbs these rungs in order. A rung counts only when it passes on 
 ## 5. Example: where AgentCraft lands
 
 - Paper plugin, server side, at rung 4.
-- Rung 1: `modaccel compile --task :jar` builds the plugin jar.
-- Rung 2: `modaccel fast` runs all 17 of its tests, because no Minecraft or loader is on the test classpath.
-- Rung 3: `modaccel plugin-check` loads the jar on MockBukkit. It is a fake server: world, entity and network behaviour are not proven.
-- Rung 4: `modaccel server-check` starts a real Paper server with the plugin, joins a bot player and runs a scenario with expect steps. Two breaks made on purpose fail at the step that catches them.
+- Rung 1: `mmt compile --task :jar` builds the plugin jar.
+- Rung 2: `mmt fast` runs all 17 of its tests, because no Minecraft or loader is on the test classpath.
+- Rung 3: `mmt plugin-check` loads the jar on MockBukkit. It is a fake server: world, entity and network behaviour are not proven.
+- Rung 4: `mmt server-check` starts a real Paper server with the plugin, joins a bot player and runs a scenario with expect steps. Two breaks made on purpose fail at the step that catches them.
 - It is the first server fixture in the merge gate (`bench/server-plugins/manifest.json`, run by `tools/tests/ServerPluginFixtures.java`).
-What each check covers is in `modaccel help plugin-check` and `modaccel help server-check`; use `python3 bench/measures.py table --area plugin` for timings.
+What each check covers is in `mmt help plugin-check` and `mmt help server-check`; use `python3 bench/measures.py table --area plugin` for timings.
