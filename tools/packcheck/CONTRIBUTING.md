@@ -115,7 +115,34 @@ A repair is an entry in `knowledge/pack-fixes.json`, added only after a real run
 - `test`: jars written in the loader's own metadata format that must match before the action and must not after it.
   Bundled jars go in `bundles`. `self-test` runs every entry's test.
 
+### Rules
+
+A rule is a repair for a kind of fault, not one mod: `"loader": "*"` (or a list) and `"minecraft": ["*"]`, so a new pack
+hits it with nothing added. Its action finds the file at run time and checks it before use:
+
+| Match | Action | What it does |
+|---|---|---|
+| `unavailable-file` | `substitute-file` | A CurseForge file the pack lists that CurseForge no longer serves: the same project's file for the pack's game version and loader, nearest newer first, checked against CurseForge's size, its own metadata and Modrinth's SHA-1 where Modrinth has it. None: the file is dropped from the fixed pack with a note. |
+| `dependency-missing` with `"mod": "*"` | `fetch-dependency` | A library no jar provides: the version the dependant's own Modrinth release names (by the dependant jar's SHA-1), else the oldest Modrinth release in every dependant's range; checked against Modrinth's SHA-512 and its own metadata. |
+| `dependency-unmet` with `"mod": "*"` | `fetch-dependency` (`"replace": true`) | A library in a version a dependant does not accept: pinned the same way, replacing the pack's copy. |
+| `start-failure` (`patterns`, `side`) | `leave-out-of-server` | A mod a pattern finds stopping the server at start-up, which its Modrinth page or the `.mrpack` says a server may go without: the server leaves it out, players keep it (a fixed `.mrpack` marks it `env.server: unsupported`). |
+
+`"when": "start-failed"` matches on a failed start instead of the jars: the failing lines of its log
+(`PackRepairs.failing`, not the mod list a crash report prints), so `dependency-*` rules only take a mod id the failure
+names. Such a rule's test gives that `log`; an `unavailable-file` test gives `unavailable` (`project`, `file`); a rule's test
+names its own `loader` and `minecraft`, and a jar in it can carry `serverSide`.
+
+With `--fix`, repairs known from the jars run beside the shipped pack; then, at most three times, a start that failed
+(the repaired pack's, else the shipped one's) is matched against the `start-failed` rules, and a new repair joins the
+others for one more repaired start. `fix.rounds` and `fix.notes` say what each round added and did.
+
 A new matcher or action is a small function in `PackRepairs.java` (`MATCHERS`, `ACTIONS` and `change`).
+
+A start is judged by its log, not a fixed time: it is stuck when its log has not grown for `--timeout` seconds (default
+600; the probe logs every 30 s while it places), and a ceiling of 30 minutes plus 8 s per mod past 100 stops one that
+never finishes. A placed block whose block entity cannot be sent to players (which on a real server stops it at the next
+tick) is taken out again and reported as `block-entity-unsendable`; a placed block that still had a scheduled tick when
+the world saved and changed when it ran is `settled-after-save`, a note, not `changed-by-save`.
 
 To prove a repair, run `modaccel pack-check --pack PACK --fix`. pack-check starts the repaired pack's server beside
 the shipped one, and compares them check by check (`fix.comparison`). It changes the user's pack only when the
