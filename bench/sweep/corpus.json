@@ -256,7 +256,7 @@
    "from": "1.20.1",
    "loader": "fabric",
    "names": "yarn",
-   "project": "",
+   "project": ":",
    "kinds": [
     "networking",
     "multi-module"
